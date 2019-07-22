@@ -80,6 +80,7 @@ public:
     DeclAST();
 
     void add(std::pair<NamePool::Id, std::unique_ptr<ExprAST>> decl);
+    const std::vector<std::pair<NamePool::Id, std::unique_ptr<ExprAST>>>& getDecls() const { return decls; }
 
     ASTType type() const { return AST_Decl; }
 

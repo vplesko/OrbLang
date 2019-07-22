@@ -16,6 +16,7 @@ void BinExprAST::print() const {
     lhs->print();
     cout << " ";
     switch (op) {
+    case Token::O_ASGN: cout << "="; break;
     case Token::O_ADD: cout << "+"; break;
     case Token::O_SUB: cout << "-"; break;
     case Token::O_MUL: cout << "*"; break;

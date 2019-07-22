@@ -13,7 +13,6 @@ struct Token {
         T_COMMA,
         T_SEMICOLON,
         T_VAR, // TODO var types
-        T_ASGN, // TODO make into oper
         T_ID,
         T_END,
         T_UNKNOWN
@@ -23,7 +22,8 @@ struct Token {
         O_ADD,
         O_SUB,
         O_MUL,
-        O_DIV
+        O_DIV,
+        O_ASGN
     };
 
     Type type;

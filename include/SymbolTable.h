@@ -2,7 +2,7 @@
 
 #include <unordered_map>
 #include <string>
-#include "llvm/IR/Value.h"
+#include "llvm/IR/Instructions.h"
 
 class NamePool {
 public:
@@ -22,10 +22,10 @@ public:
 };
 
 class SymbolTable {
-    std::unordered_map<NamePool::Id, llvm::Value*> symbols;
+    std::unordered_map<NamePool::Id, llvm::AllocaInst*> symbols;
 
 public:
 
-    void add(NamePool::Id name, llvm::Value *val) { symbols.insert(std::make_pair(name, val)); }
-    llvm::Value* get(NamePool::Id name);
+    void add(NamePool::Id name, llvm::AllocaInst *val) { symbols.insert(std::make_pair(name, val)); }
+    llvm::AllocaInst* get(NamePool::Id name);
 };

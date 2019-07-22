@@ -4,10 +4,11 @@ using namespace std;
 
 const OperPrec minOperPrec = -1000;
 const unordered_map<Token::Oper, OperInfo> operInfos = {
-    {Token::O_ADD, {1}},
-    {Token::O_SUB, {1}},
-    {Token::O_MUL, {2}},
-    {Token::O_DIV, {2}}
+    {Token::O_ASGN, {1, false}},
+    {Token::O_ADD, {2}},
+    {Token::O_SUB, {2}},
+    {Token::O_MUL, {3}},
+    {Token::O_DIV, {3}}
 };
 
 Lexer::Lexer(istream &istr) : in(istr), col(0) {
@@ -68,7 +69,7 @@ Token Lexer::next() {
     } else if (ch == '/') {
         tok = {Token::T_OPER, Token::O_DIV};
     } else if (ch == '=') {
-        tok = {Token::T_ASGN};
+        tok = {Token::T_OPER, Token::O_ASGN};
     } else if (ch == ',') {
         tok = {Token::T_COMMA};
     } else if (ch == ';') {

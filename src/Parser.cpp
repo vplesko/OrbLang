@@ -56,8 +56,8 @@ unique_ptr<DeclAST> Parser::decl() {
         Token id = lex->next();
         if (id.type != Token::T_ID) { panic = true; return nullptr; }
 
-        // TODO can't have multiple vars of same name
-        if (!lex->match(Token::T_ASGN)) { panic = true; return nullptr; }
+        Token asgn = lex->next();
+        if (asgn.type != Token::T_OPER || asgn.op != Token::O_ASGN) {panic = true; return nullptr; }
 
         unique_ptr<ExprAST> init = expr();
         if (panic) return nullptr;
@@ -87,6 +87,7 @@ unique_ptr<BaseAST> Parser::stmnt() {
 }
 
 void Parser::parse() {
+    codegenStart();
     while (lex->peek().type != Token::T_END) {
         unique_ptr<BaseAST> st = stmnt();
         if (panic || !st) {
@@ -97,10 +98,10 @@ void Parser::parse() {
         st->print();
         cout << endl;
 
-        codegen(st.get())->print(llvm::outs());
-        cout << endl;
+        codegen(st.get());
         if (panic) return;
     }
+    codegenEnd();
 
     llvmModule->print(llvm::outs(), nullptr);
 }

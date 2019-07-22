@@ -24,9 +24,13 @@ class Parser {
     std::unique_ptr<DeclAST> decl();
     std::unique_ptr<BaseAST> stmnt();
 
+    llvm::Function *main; // TODO tmp, remove
+    void codegenStart(); // TODO tmp, remove
     llvm::Value* codegen(const BaseAST *ast);
     llvm::Value* codegen(const VarExprAST *ast);
     llvm::Value* codegen(const BinExprAST *ast);
+    llvm::Value* codegen(const DeclAST *ast);
+    void codegenEnd(); // TODO tmp, remove
 
 public:
     Parser(Lexer *lexer);
