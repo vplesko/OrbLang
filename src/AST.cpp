@@ -43,8 +43,11 @@ void DeclAST::print() const {
     cout << "Decl(";
     for (size_t i = 0; i < decls.size(); ++i) {
         if (i > 0) cout << ", ";
-        cout << "[" << decls[i].first << "] := ";
-        decls[i].second->print();
+        cout << "[" << decls[i].first << "]";
+        if (decls[i].second) {
+            cout << ":= ";
+            decls[i].second->print();
+        }
     }
     cout << ")";
 }

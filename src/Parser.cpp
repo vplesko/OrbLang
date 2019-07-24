@@ -2,7 +2,7 @@
 #include <iostream>
 using namespace std;
 
-Parser::Parser(Lexer *lexer) : lex(lexer), llvmBuilder(llvmContext), panic(false) {
+Parser::Parser(Lexer *lexer) : lex(lexer), llvmBuilder(llvmContext), llvmBuilderAlloca(llvmContext), panic(false) {
     symbolTable = std::make_unique<SymbolTable>();
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("test"), llvmContext);
 }
@@ -56,15 +56,15 @@ unique_ptr<DeclAST> Parser::decl() {
         Token id = lex->next();
         if (id.type != Token::T_ID) { panic = true; return nullptr; }
 
-        Token asgn = lex->next();
-        if (asgn.type != Token::T_OPER || asgn.op != Token::O_ASGN) {panic = true; return nullptr; }
-
-        unique_ptr<ExprAST> init = expr();
-        if (panic) return nullptr;
-
+        unique_ptr<ExprAST> init;
+        Token look = lex->next();
+        if (look.type == Token::T_OPER && look.op == Token::O_ASGN) {
+            init = expr();
+            if (panic || !init) return nullptr;
+            look = lex->next();
+        }
         ret->add(make_pair(id.nameId, move(init)));
 
-        Token look = lex->next();
         if (look.type == Token::T_SEMICOLON) {
             return ret;
         } else if (look.type != Token::T_COMMA) {
@@ -103,5 +103,6 @@ void Parser::parse() {
     }
     codegenEnd();
 
+    cout << endl;
     llvmModule->print(llvm::outs(), nullptr);
 }

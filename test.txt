@@ -5,3 +5,5 @@ var n=8;
 var a=9,b=a+10;
 a=b-11;
 n=a=b=12;
+var c;
+c=13;

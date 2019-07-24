@@ -4,10 +4,8 @@
 #include "llvm/IR/Verifier.h"
 using namespace std;
 
-llvm::AllocaInst* createEntryAlloca(llvm::Function *func, llvm::Type *type, const string &name) {
-    // TODO: this inverts the order of vars. is this consequential (eg. for padding optimizations)?
-    llvm::IRBuilder<> builder(&func->getEntryBlock(), func->getEntryBlock().begin());
-    return builder.CreateAlloca(type, 0, name);
+llvm::AllocaInst* Parser::createAlloca(const string &name) {
+    return llvmBuilderAlloca.CreateAlloca(llvm::IntegerType::getInt64Ty(llvmContext), 0, name);
 }
 
 llvm::Value* Parser::codegen(const BaseAST *ast) {
@@ -84,14 +82,15 @@ llvm::Value* Parser::codegen(const DeclAST *ast) {
         }
 
         const string &name = lex->getNamePool()->get(it.first);
+        llvm::AllocaInst *alloca = createAlloca(name);
+
         const ExprAST *init = it.second.get();
+        if (init != nullptr) {
+            llvm::Value *initVal = codegen(init);
+            if (panic || initVal == nullptr) return nullptr;
 
-        llvm::Value *initVal = codegen(init);
-        if (panic || initVal == nullptr) return nullptr;
-
-        llvm::AllocaInst *alloca = createEntryAlloca(
-            func, llvm::IntegerType::getInt64Ty(llvmContext), name);
-        llvmBuilder.CreateStore(initVal, alloca);
+            llvmBuilder.CreateStore(initVal, alloca);
+        }
 
         symbolTable->add(it.first, alloca);
     }
@@ -103,10 +102,15 @@ void Parser::codegenStart() {
     llvm::FunctionType *funcTy = llvm::FunctionType::get(llvm::Type::getVoidTy(llvmContext), false);
     main = llvm::Function::Create(funcTy, llvm::Function::ExternalLinkage, "main", *llvmModule);
 
-    llvm::BasicBlock *block = llvm::BasicBlock::Create(llvmContext, "entry", main);
-    llvmBuilder.SetInsertPoint(block);
+    llvmBuilderAlloca.SetInsertPoint(llvm::BasicBlock::Create(llvmContext, "alloca", main));
+    llvmBuilder.SetInsertPoint(funcBody = llvm::BasicBlock::Create(llvmContext, "body", main));
 }
 
 void Parser::codegenEnd() {
-    llvm::verifyFunction(*main);
+    llvmBuilderAlloca.CreateBr(funcBody);
+    llvmBuilder.CreateRetVoid();
+
+    cout << endl;
+    cout << "LLVM func verification:" << endl;
+    llvm::verifyFunction(*main, &llvm::outs());
 }
