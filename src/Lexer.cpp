@@ -11,6 +11,11 @@ const unordered_map<Token::Oper, OperInfo> operInfos = {
     {Token::O_DIV, {3}}
 };
 
+const unordered_map<string, Token::Type> keywords = {
+    {"var", {Token::T_VAR}},
+    {"fnc", {Token::T_FNC}}
+};
+
 Lexer::Lexer(NamePool *namePool) : namePool(namePool) {
 }
 
@@ -80,13 +85,22 @@ Token Lexer::next() {
         tok = {Token::T_COMMA};
     } else if (ch == ';') {
         tok = {Token::T_SEMICOLON};
+    } else if (ch == '(') {
+        tok = {Token::T_BRACE_L_REG};
+    } else if (ch == ')') {
+        tok = {Token::T_BRACE_R_REG};
+    } else if (ch == '{') {
+        tok = {Token::T_BRACE_L_CUR};
+    } else if (ch == '}') {
+        tok = {Token::T_BRACE_R_CUR};
     } else if (isalpha(ch) || ch == '_') {
         int l = col-1;
         while (isalnum(peekCh()) || peekCh() == '_') nextCh();
         string id = line.substr(l, col-l);
 
-        if (id.compare("var") == 0) {
-            tok.type = Token::T_VAR;
+        auto loc = keywords.find(id);
+        if (loc != keywords.end()) {
+            tok.type = loc->second;
         } else {
             tok.type = Token::T_ID;
             tok.nameId = namePool->add(id);

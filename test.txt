@@ -7,3 +7,20 @@ a=b-11;
 n=a=b=12;
 var c;
 c=13;
+
+{
+    var f = 14;
+    f=a+15;
+}
+
+{
+    var g=16;
+    {
+        var h = 17;
+        g=h;
+    }
+}
+
+fnc foo();
+fnc bar(var d);
+fnc zee(var a, var e);

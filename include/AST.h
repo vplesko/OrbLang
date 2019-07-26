@@ -9,7 +9,9 @@ enum ASTType {
     AST_LiteralExpr,
     AST_VarExpr,
     AST_BinExpr,
-    AST_Decl
+    AST_Decl,
+    AST_FuncProto,
+    AST_Block
 };
 
 class BaseAST {
@@ -22,7 +24,13 @@ public:
     virtual ~BaseAST() {}
 };
 
-class ExprAST : public BaseAST {
+class StmntAST : public BaseAST {
+public:
+
+    virtual ~StmntAST() {}
+};
+
+class ExprAST : public StmntAST {
 public:
 
     virtual ~ExprAST() {}
@@ -73,7 +81,7 @@ public:
     void print() const;
 };
 
-class DeclAST : public BaseAST {
+class DeclAST : public StmntAST {
     std::vector<std::pair<NamePool::Id, std::unique_ptr<ExprAST>>> decls;
 
 public:
@@ -83,6 +91,36 @@ public:
     const std::vector<std::pair<NamePool::Id, std::unique_ptr<ExprAST>>>& getDecls() const { return decls; }
 
     ASTType type() const { return AST_Decl; }
+
+    void print() const;
+};
+
+class BlockAST : public StmntAST {
+    std::vector<std::unique_ptr<StmntAST>> body;
+
+public:
+
+    void add(std::unique_ptr<StmntAST> st) { body.push_back(std::move(st)); }
+    const std::vector<std::unique_ptr<StmntAST>>& getBody() const { return body; }
+
+    ASTType type() const { return AST_Block; }
+
+    void print() const;
+};
+
+class FuncProtoAST : public BaseAST {
+    NamePool::Id name;
+    std::vector<NamePool::Id> args;
+
+public:
+    FuncProtoAST(NamePool::Id name) : name(name) {}
+
+    NamePool::Id getName() const { return name; }
+
+    void addArg(NamePool::Id arg) { args.push_back(arg); }
+    const std::vector<NamePool::Id> getArgs() const { return args; }
+
+    ASTType type() const { return AST_FuncProto; }
 
     void print() const;
 };

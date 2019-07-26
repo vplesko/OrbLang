@@ -28,6 +28,10 @@ llvm::Value* CodeGen::codegen(const BaseAST *ast) {
         return codegen((BinExprAST*)ast);
     case AST_Decl:
         return codegen((DeclAST*)ast);
+    case AST_Block:
+        return codegen((BlockAST*)ast);
+    case AST_FuncProto:
+        return codegen((FuncProtoAST*)ast);
     default:
         panic = true;
         return nullptr;
@@ -35,7 +39,7 @@ llvm::Value* CodeGen::codegen(const BaseAST *ast) {
 }
 
 llvm::Value* CodeGen::codegen(const VarExprAST *ast) {
-    llvm::Value *val = symbolTable->get(ast->getNameId());
+    llvm::Value *val = symbolTable->getVar(ast->getNameId());
     if (val == nullptr) { panic = true; return nullptr; }
     return llvmBuilder.CreateLoad(val, namePool->get(ast->getNameId()));
 }
@@ -48,7 +52,7 @@ llvm::Value* CodeGen::codegen(const BinExprAST *ast) {
             return nullptr;
         }
         const VarExprAST *var = (const VarExprAST*)ast->getL();
-        valL = symbolTable->get(var->getNameId());
+        valL = symbolTable->getVar(var->getNameId());
     } else {
         valL = codegen(ast->getL());
     }
@@ -81,10 +85,11 @@ llvm::Value* CodeGen::codegen(const BinExprAST *ast) {
 }
 
 llvm::Value* CodeGen::codegen(const DeclAST *ast) {
-    llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
-
     for (const auto &it : ast->getDecls()) {
-        if (symbolTable->get(it.first) != nullptr) {
+        // TODO global vars can't have same names, or same name as func
+        // TODO local vars can't have same names
+        if (symbolTable->getVar(it.first) != nullptr ||
+            symbolTable->getFunc(it.first) != nullptr) {
             panic = true;
             return nullptr;
         }
@@ -100,10 +105,41 @@ llvm::Value* CodeGen::codegen(const DeclAST *ast) {
             llvmBuilder.CreateStore(initVal, alloca);
         }
 
-        symbolTable->add(it.first, alloca);
+        symbolTable->addVar(it.first, alloca);
     }
 
     return nullptr;
+}
+
+llvm::Value* CodeGen::codegen(const BlockAST *ast) {
+    // TODO var scope
+    for (const auto &it : ast->getBody()) codegen(it.get());
+
+    return nullptr;
+}
+
+llvm::Value* CodeGen::codegen(const FuncProtoAST *ast) {
+    if (symbolTable->getVar(ast->getName()) != nullptr ||
+        symbolTable->getFunc(ast->getName()) != nullptr) {
+            panic = true;
+            return nullptr;
+    }
+
+    vector<llvm::Type*> argTypes(ast->getArgs().size(), llvm::IntegerType::getInt64Ty(llvmContext));
+    llvm::FunctionType *funcType = llvm::FunctionType::get(llvm::Type::getVoidTy(llvmContext), argTypes, false);
+    llvm::Function *func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, 
+            namePool->get(ast->getName()), llvmModule.get());
+    
+    // TODO two args can't have same names
+    size_t i = 0;
+    for (auto &arg : func->args()) {
+        arg.setName(namePool->get(ast->getArgs()[i]));
+        ++i;
+    }
+
+    symbolTable->addFunc(ast->getName(), func);
+
+    return func;
 }
 
 void CodeGen::codegenStart() {

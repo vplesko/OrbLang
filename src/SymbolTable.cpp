@@ -15,9 +15,16 @@ NamePool::Id NamePool::add(const std::string &name) {
     return next-1;
 }
 
-llvm::AllocaInst* SymbolTable::get(NamePool::Id name) const {
-    auto loc = symbols.find(name);
-    if (loc == symbols.end()) return nullptr;
+llvm::AllocaInst* SymbolTable::getVar(NamePool::Id name) const {
+    auto loc = vars.find(name);
+    if (loc == vars.end()) return nullptr;
+
+    return loc->second;
+}
+
+llvm::Function* SymbolTable::getFunc(NamePool::Id name) const {
+    auto loc = funcs.find(name);
+    if (loc == funcs.end()) return nullptr;
 
     return loc->second;
 }

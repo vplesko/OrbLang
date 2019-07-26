@@ -21,11 +21,18 @@ public:
     const std::string& get(Id id) const { return names.at(id); }
 };
 
+// TODO scoping for vars
 class SymbolTable {
-    std::unordered_map<NamePool::Id, llvm::AllocaInst*> symbols;
+    std::unordered_map<NamePool::Id, llvm::AllocaInst*> vars;
+
+    // TODO need to store func info (args, ret type)
+    std::unordered_map<NamePool::Id, llvm::Function*> funcs;
 
 public:
 
-    void add(NamePool::Id name, llvm::AllocaInst *val) { symbols.insert(std::make_pair(name, val)); }
-    llvm::AllocaInst* get(NamePool::Id name) const;
+    void addVar(NamePool::Id name, llvm::AllocaInst *val) { vars.insert(std::make_pair(name, val)); }
+    llvm::AllocaInst* getVar(NamePool::Id name) const;
+
+    void addFunc(NamePool::Id name, llvm::Function *val) { funcs.insert(std::make_pair(name, val)); }
+    llvm::Function* getFunc(NamePool::Id name) const;
 };

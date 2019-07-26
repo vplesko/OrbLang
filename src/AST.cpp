@@ -51,3 +51,21 @@ void DeclAST::print() const {
     }
     cout << ")";
 }
+
+void BlockAST::print() const {
+    cout << "*** BLOCK START" << endl;
+    for (const auto &it : body) {
+        it->print();
+        cout << endl;
+    }
+    cout << "*** BLOCK END";
+}
+
+void FuncProtoAST::print() const {
+    cout << "FuncProto([" << name << "] := [";
+    for (size_t i = 0; i < args.size(); ++i) {
+        if (i > 0) cout << ", ";
+        cout << args[i];
+    }
+    cout << "])";
+}
