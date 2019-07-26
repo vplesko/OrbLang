@@ -1,3 +1,4 @@
+#include "SymbolTable.h"
 #include "Lexer.h"
 #include "Parser.h"
 #include <fstream>
@@ -9,6 +10,8 @@ int main(int argc,  char** argv) {
         return -1;
     }
 
+    cout << "Parsing file: " << argv[1] << endl << endl;
+
     ifstream file(argv[1]);
 
     if (!file.is_open()) {
@@ -16,9 +19,11 @@ int main(int argc,  char** argv) {
         return -2;
     }
     
-    Lexer lex(file);
-    Parser par(&lex);
-    par.parse();
+    NamePool names;
+    SymbolTable symbols;
+    Lexer lex(&names);
+    Parser par(&names, &symbols, &lex);
+    par.parse(file);
 
     return 0;
 }

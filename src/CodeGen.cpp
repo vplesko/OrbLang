@@ -1,14 +1,22 @@
+#include "Codegen.h"
 #include "Parser.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/ADT/APInt.h"
 #include "llvm/IR/Verifier.h"
 using namespace std;
 
-llvm::AllocaInst* Parser::createAlloca(const string &name) {
+CodeGen::CodeGen(const NamePool *namePool, SymbolTable *symbolTable) : namePool(namePool), symbolTable(symbolTable), 
+        llvmBuilder(llvmContext), llvmBuilderAlloca(llvmContext), panic(false) {
+    llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("test"), llvmContext);
+    funcBody = nullptr;
+    main = nullptr;
+}
+
+llvm::AllocaInst* CodeGen::createAlloca(const string &name) {
     return llvmBuilderAlloca.CreateAlloca(llvm::IntegerType::getInt64Ty(llvmContext), 0, name);
 }
 
-llvm::Value* Parser::codegen(const BaseAST *ast) {
+llvm::Value* CodeGen::codegen(const BaseAST *ast) {
     switch (ast->type()) {
     case AST_LiteralExpr:
         return llvm::ConstantInt::get(
@@ -26,13 +34,13 @@ llvm::Value* Parser::codegen(const BaseAST *ast) {
     }
 }
 
-llvm::Value* Parser::codegen(const VarExprAST *ast) {
+llvm::Value* CodeGen::codegen(const VarExprAST *ast) {
     llvm::Value *val = symbolTable->get(ast->getNameId());
     if (val == nullptr) { panic = true; return nullptr; }
-    return llvmBuilder.CreateLoad(val, lex->getNamePool()->get(ast->getNameId()));
+    return llvmBuilder.CreateLoad(val, namePool->get(ast->getNameId()));
 }
 
-llvm::Value* Parser::codegen(const BinExprAST *ast) {
+llvm::Value* CodeGen::codegen(const BinExprAST *ast) {
     llvm::Value *valL;
     if (ast->getOp() == Token::O_ASGN) {
         if (ast->getL()->type() != AST_VarExpr) {
@@ -72,7 +80,7 @@ llvm::Value* Parser::codegen(const BinExprAST *ast) {
     }
 }
 
-llvm::Value* Parser::codegen(const DeclAST *ast) {
+llvm::Value* CodeGen::codegen(const DeclAST *ast) {
     llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
 
     for (const auto &it : ast->getDecls()) {
@@ -81,7 +89,7 @@ llvm::Value* Parser::codegen(const DeclAST *ast) {
             return nullptr;
         }
 
-        const string &name = lex->getNamePool()->get(it.first);
+        const string &name = namePool->get(it.first);
         llvm::AllocaInst *alloca = createAlloca(name);
 
         const ExprAST *init = it.second.get();
@@ -98,7 +106,7 @@ llvm::Value* Parser::codegen(const DeclAST *ast) {
     return nullptr;
 }
 
-void Parser::codegenStart() {
+void CodeGen::codegenStart() {
     llvm::FunctionType *funcTy = llvm::FunctionType::get(llvm::Type::getVoidTy(llvmContext), false);
     main = llvm::Function::Create(funcTy, llvm::Function::ExternalLinkage, "main", *llvmModule);
 
@@ -106,11 +114,17 @@ void Parser::codegenStart() {
     llvmBuilder.SetInsertPoint(funcBody = llvm::BasicBlock::Create(llvmContext, "body", main));
 }
 
-void Parser::codegenEnd() {
+void CodeGen::codegenEnd() {
     llvmBuilderAlloca.CreateBr(funcBody);
     llvmBuilder.CreateRetVoid();
 
     cout << endl;
-    cout << "LLVM func verification:" << endl;
+    cout << "LLVM func verification:" << endl << endl;
     llvm::verifyFunction(*main, &llvm::outs());
+}
+
+void CodeGen::printout() const {
+    cout << "LLVM module printout:" << endl << endl;
+    // TODO sometimes prints empty function
+    llvmModule->print(llvm::outs(), nullptr);
 }

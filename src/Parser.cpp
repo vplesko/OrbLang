@@ -2,9 +2,8 @@
 #include <iostream>
 using namespace std;
 
-Parser::Parser(Lexer *lexer) : lex(lexer), llvmBuilder(llvmContext), llvmBuilderAlloca(llvmContext), panic(false) {
-    symbolTable = std::make_unique<SymbolTable>();
-    llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("test"), llvmContext);
+Parser::Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer) : namePool(namePool), symbolTable(symbolTable), lex(lexer), panic(false) {
+    codegen = std::make_unique<CodeGen>(namePool, symbolTable);
 }
 
 unique_ptr<ExprAST> Parser::prim() {
@@ -86,8 +85,12 @@ unique_ptr<BaseAST> Parser::stmnt() {
     return st;
 }
 
-void Parser::parse() {
-    codegenStart();
+void Parser::parse(std::istream &istr) {
+    lex->start(istr);
+
+    codegen->codegenStart();
+    if (codegen->isPanic()) { panic = true; return; }
+
     while (lex->peek().type != Token::T_END) {
         unique_ptr<BaseAST> st = stmnt();
         if (panic || !st) {
@@ -98,11 +101,14 @@ void Parser::parse() {
         st->print();
         cout << endl;
 
-        codegen(st.get());
+        codegen->codegen(st.get());
+        if (codegen->isPanic()) { panic = true; }
         if (panic) return;
     }
-    codegenEnd();
+    
+    codegen->codegenEnd();
+    if (codegen->isPanic()) { panic = true; return; }
 
     cout << endl;
-    llvmModule->print(llvm::outs(), nullptr);
+    codegen->printout();
 }

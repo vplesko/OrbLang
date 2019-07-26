@@ -27,5 +27,5 @@ class SymbolTable {
 public:
 
     void add(NamePool::Id name, llvm::AllocaInst *val) { symbols.insert(std::make_pair(name, val)); }
-    llvm::AllocaInst* get(NamePool::Id name);
+    llvm::AllocaInst* get(NamePool::Id name) const;
 };

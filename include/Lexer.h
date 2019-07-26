@@ -44,8 +44,8 @@ extern const OperPrec minOperPrec;
 extern const std::unordered_map<Token::Oper, OperInfo> operInfos;
 
 class Lexer {
-    std::istream &in;
-    std::unique_ptr<NamePool> namePool;
+    NamePool *namePool;
+    std::istream *in;
     std::string line;
     int col;
     char ch;
@@ -55,9 +55,9 @@ class Lexer {
     char nextCh();
 
 public:
-    Lexer(std::istream &istr);
+    Lexer(NamePool *namePool);
 
-    const NamePool* getNamePool() const { return namePool.get(); }
+    void start(std::istream &istr);
 
     Token peek() const { return tok; }
     Token next();

@@ -11,9 +11,15 @@ const unordered_map<Token::Oper, OperInfo> operInfos = {
     {Token::O_DIV, {3}}
 };
 
-Lexer::Lexer(istream &istr) : in(istr), col(0) {
-    namePool = make_unique<NamePool>();
-    
+Lexer::Lexer(NamePool *namePool) : namePool(namePool) {
+}
+
+void Lexer::start(std::istream &istr) {
+    in = &istr;
+    col = 0;
+    ch = 0; // not EOF
+    tok.type = Token::T_NUM; // not END
+
     nextCh();
     next();
 }
@@ -26,7 +32,7 @@ char Lexer::nextCh() {
     ++col;
 
     if (col > line.size()) {
-        if (!getline(in, line)) ch = EOF;
+        if (!getline(*in, line)) ch = EOF;
         col = 0;
     }
 

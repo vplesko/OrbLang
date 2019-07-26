@@ -2,21 +2,16 @@
 
 #include <memory>
 #include "Lexer.h"
-#include "AST.h"
+#include "Codegen.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
 
 class Parser {
+    NamePool *namePool;
+    SymbolTable *symbolTable;
     Lexer *lex;
-
-    std::unique_ptr<SymbolTable> symbolTable;
-
-    llvm::LLVMContext llvmContext;
-    llvm::IRBuilder<> llvmBuilder, llvmBuilderAlloca;
-    std::unique_ptr<llvm::Module> llvmModule;
-
-    llvm::BasicBlock *funcBody;
+    std::unique_ptr<CodeGen> codegen;
 
     bool panic;
 
@@ -26,18 +21,8 @@ class Parser {
     std::unique_ptr<DeclAST> decl();
     std::unique_ptr<BaseAST> stmnt();
 
-    // TODO move into a separate CodeGen class
-    llvm::Function *main; // TODO tmp, remove
-    void codegenStart(); // TODO tmp, remove
-    llvm::AllocaInst* createAlloca(const std::string &name);
-    llvm::Value* codegen(const BaseAST *ast);
-    llvm::Value* codegen(const VarExprAST *ast);
-    llvm::Value* codegen(const BinExprAST *ast);
-    llvm::Value* codegen(const DeclAST *ast);
-    void codegenEnd(); // TODO tmp, remove
-
 public:
-    Parser(Lexer *lexer);
+    Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer);
 
-    void parse();
+    void parse(std::istream &istr);
 };
