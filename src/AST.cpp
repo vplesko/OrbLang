@@ -69,3 +69,15 @@ void FuncProtoAST::print() const {
     }
     cout << "])";
 }
+
+FuncAST::FuncAST(unique_ptr<FuncProtoAST> proto, unique_ptr<BlockAST> body)
+        : proto(move(proto)), body(move(body)) {
+}
+
+void FuncAST::print() const {
+    cout << "***** FUNC START" << endl;
+    proto->print();
+    cout << endl;
+    body->print();
+    cout << endl << "***** FUNC END";
+}

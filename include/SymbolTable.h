@@ -23,11 +23,11 @@ public:
 
 class SymbolTable {
     struct Scope {
-        std::unordered_map<NamePool::Id, llvm::AllocaInst*> vars;
+        std::unordered_map<NamePool::Id, llvm::Value*> vars;
         Scope *prev;
     };
 
-    // TODO need to store func info (args, ret type)
+    // TODO need to store func info (args, ret type) and if it's defined (or just declared)
     std::unordered_map<NamePool::Id, llvm::Function*> funcs;
 
     Scope *last, *glob;
@@ -38,11 +38,14 @@ public:
     void newScope();
     void endScope();
 
-    void addVar(NamePool::Id name, llvm::AllocaInst *val);
-    llvm::AllocaInst* getVar(NamePool::Id name) const;
+    void addVar(NamePool::Id name, llvm::Value *val);
+    llvm::Value* getVar(NamePool::Id name) const;
 
     void addFunc(NamePool::Id name, llvm::Function *val);
     llvm::Function* getFunc(NamePool::Id name) const;
-
+    
+    bool inGlobalScope() const { return last == glob; }
     bool taken(NamePool::Id name) const;
+
+    ~SymbolTable();
 };

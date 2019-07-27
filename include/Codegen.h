@@ -14,24 +14,22 @@ class CodeGen {
     llvm::IRBuilder<> llvmBuilder, llvmBuilderAlloca;
     std::unique_ptr<llvm::Module> llvmModule;
 
-    llvm::BasicBlock *funcBody;
-
     bool panic;
 
-    llvm::Function *main; // TODO tmp, remove
-
-public:
-    CodeGen(const NamePool *namePool, SymbolTable *symbolTable);
-
-    void codegenStart(); // TODO tmp, remove
     llvm::AllocaInst* createAlloca(const std::string &name);
-    llvm::Value* codegen(const BaseAST *ast);
+    llvm::GlobalValue* createGlobal(const std::string &name);
+
     llvm::Value* codegen(const VarExprAST *ast);
     llvm::Value* codegen(const BinExprAST *ast);
     llvm::Value* codegen(const DeclAST *ast);
     llvm::Value* codegen(const BlockAST *ast, bool makeScope);
-    llvm::Value* codegen(const FuncProtoAST *ast);
-    void codegenEnd(); // TODO tmp, remove
+    llvm::Function* codegen(const FuncProtoAST *ast);
+    llvm::Function* codegen(const FuncAST *ast);
+
+public:
+    CodeGen(const NamePool *namePool, SymbolTable *symbolTable);
+
+    llvm::Value* codegen(const BaseAST *ast);
 
     bool isPanic() const { return panic; }
 

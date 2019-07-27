@@ -33,11 +33,11 @@ void SymbolTable::endScope() {
     delete s;
 }
 
-void SymbolTable::addVar(NamePool::Id name, llvm::AllocaInst *val) {
+void SymbolTable::addVar(NamePool::Id name, llvm::Value *val) {
     last->vars.insert(make_pair(name, val));
 }
 
-llvm::AllocaInst* SymbolTable::getVar(NamePool::Id name) const {
+llvm::Value* SymbolTable::getVar(NamePool::Id name) const {
     for (Scope *s = last; s != nullptr; s = s->prev) {
         auto loc = s->vars.find(name);
         if (loc != s->vars.end()) return loc->second;
@@ -60,4 +60,12 @@ llvm::Function* SymbolTable::getFunc(NamePool::Id name) const {
 bool SymbolTable::taken(NamePool::Id name) const {
     if (last == glob && funcs.find(name) != funcs.end()) return true;
     return last->vars.find(name) != last->vars.end();
+}
+
+SymbolTable::~SymbolTable() {
+    while (last != nullptr) {
+        Scope *s = last;
+        last = last->prev;
+        delete s;
+    }
 }

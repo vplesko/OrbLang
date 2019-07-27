@@ -11,6 +11,7 @@ enum ASTType {
     AST_BinExpr,
     AST_Decl,
     AST_FuncProto,
+    AST_Func,
     AST_Block
 };
 
@@ -115,12 +116,29 @@ class FuncProtoAST : public BaseAST {
 public:
     FuncProtoAST(NamePool::Id name) : name(name) {}
 
+    ASTType type() const { return AST_FuncProto; }
+
     NamePool::Id getName() const { return name; }
 
     void addArg(NamePool::Id arg) { args.push_back(arg); }
     const std::vector<NamePool::Id> getArgs() const { return args; }
 
-    ASTType type() const { return AST_FuncProto; }
+    void print() const;
+};
+
+class FuncAST : public BaseAST {
+    std::unique_ptr<FuncProtoAST> proto;
+    std::unique_ptr<BlockAST> body;
+
+public:
+    FuncAST(
+        std::unique_ptr<FuncProtoAST> proto,
+        std::unique_ptr<BlockAST> body);
+
+    ASTType type() const { return AST_Func; }
+
+    const FuncProtoAST* getProto() const { return proto.get(); }
+    const BlockAST* getBody() const { return body.get(); }
 
     void print() const;
 };

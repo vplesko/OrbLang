@@ -24,7 +24,7 @@ class Parser {
     std::unique_ptr<DeclAST> decl();
     std::unique_ptr<StmntAST> stmnt();
     std::unique_ptr<BlockAST> block();
-    std::unique_ptr<FuncProtoAST> proto();
+    std::unique_ptr<BaseAST> func();
 
 public:
     Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer);

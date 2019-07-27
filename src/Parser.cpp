@@ -108,7 +108,7 @@ unique_ptr<StmntAST> Parser::stmnt() {
     return st;
 }
 
-unique_ptr<FuncProtoAST> Parser::proto() {
+unique_ptr<BaseAST> Parser::func() {
     if (mismatch(Token::T_FNC)) return nullptr;
 
     Token name = lex->next();
@@ -117,7 +117,7 @@ unique_ptr<FuncProtoAST> Parser::proto() {
         return nullptr;
     }
 
-    unique_ptr<FuncProtoAST> ret = make_unique<FuncProtoAST>(name.nameId);
+    unique_ptr<FuncProtoAST> proto = make_unique<FuncProtoAST>(name.nameId);
 
     if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
 
@@ -138,32 +138,38 @@ unique_ptr<FuncProtoAST> Parser::proto() {
             return nullptr;
         }
 
-        ret->addArg(arg.nameId);
+        proto->addArg(arg.nameId);
 
         first = false;
     }
 
-    if (mismatch(Token::T_SEMICOLON)) return nullptr;
+    Token look = lex->peek();
+    if (look.type == Token::T_BRACE_L_CUR) {
+        unique_ptr<BlockAST> body = block();
+        if (broken(body)) return nullptr;
 
-    return ret;
+        return make_unique<FuncAST>(move(proto), move(body));
+    } else if (look.type == Token::T_SEMICOLON) {
+        lex->next();
+        return proto;
+    } else {
+        panic = true;
+        return nullptr;
+    }
 }
 
 void Parser::parse(std::istream &istr) {
     lex->start(istr);
 
-    codegen->codegenStart();
-    if (codegen->isPanic()) { panic = true; return; }
-
     while (lex->peek().type != Token::T_END) {
         unique_ptr<BaseAST> next;
 
-        // TODO after funcs are done, global scope will only contain decls and funcs/protos
-        if (lex->peek().type == Token::T_FNC) next = proto();
-        else next = stmnt();
+        if (lex->peek().type == Token::T_FNC) next = func();
+        else next = decl();
         
         if (panic || !next) {
-            cout << "ERROR!" << endl;
-            return;
+            panic = true;
+            break;
         }
 
         next->print();
@@ -171,11 +177,14 @@ void Parser::parse(std::istream &istr) {
 
         codegen->codegen(next.get());
         if (codegen->isPanic()) { panic = true; }
-        if (panic) return;
+        if (panic) break;
     }
-    
-    codegen->codegenEnd();
-    if (codegen->isPanic()) { panic = true; return; }
+
+    if (codegen->isPanic()) panic = true;
+    if (panic) {
+        cout << "ERROR!" << endl;
+        return;
+    }
 
     cout << endl;
     codegen->printout();

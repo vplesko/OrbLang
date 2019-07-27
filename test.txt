@@ -1,29 +1,42 @@
-1;
-2+3;
-4+5*6-7;
-var n=8;
-var a=9,b=a+10;
-a=b-11;
-n=a=b=12;
-var c;
-c=13;
+var _a;
 
-{
-    var f = 14;
-    f=a+15;
-}
+fnc main() {
+    1;
+    2+3;
+    4+5*6-7;
+    var n=8;
+    var a=9,b=a+10;
+    a=b-11;
+    n=a=b=12;
+    var c;
+    c=13;
 
-{
-    var g=16;
     {
-        var h = 17;
-        g=h;
+        var f = 14;
+        f=a+15;
     }
-    var h;
+
+    {
+        var g=16;
+        {
+            var h = 17;
+            g=h;
+        }
+        var h;
+    }
 }
 
-var g=18;
+var g;
+var i;
 
 fnc foo();
 fnc bar(var d);
 fnc zee(var a, var e);
+
+fnc eta() {}
+
+fnc tet(var i) {
+    g=18;
+    i=g+19;
+    var j=i;
+}
