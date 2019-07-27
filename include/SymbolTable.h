@@ -21,18 +21,28 @@ public:
     const std::string& get(Id id) const { return names.at(id); }
 };
 
-// TODO scoping for vars
 class SymbolTable {
-    std::unordered_map<NamePool::Id, llvm::AllocaInst*> vars;
+    struct Scope {
+        std::unordered_map<NamePool::Id, llvm::AllocaInst*> vars;
+        Scope *prev;
+    };
 
     // TODO need to store func info (args, ret type)
     std::unordered_map<NamePool::Id, llvm::Function*> funcs;
 
-public:
+    Scope *last, *glob;
 
-    void addVar(NamePool::Id name, llvm::AllocaInst *val) { vars.insert(std::make_pair(name, val)); }
+public:
+    SymbolTable();
+
+    void newScope();
+    void endScope();
+
+    void addVar(NamePool::Id name, llvm::AllocaInst *val);
     llvm::AllocaInst* getVar(NamePool::Id name) const;
 
-    void addFunc(NamePool::Id name, llvm::Function *val) { funcs.insert(std::make_pair(name, val)); }
+    void addFunc(NamePool::Id name, llvm::Function *val);
     llvm::Function* getFunc(NamePool::Id name) const;
+
+    bool taken(NamePool::Id name) const;
 };

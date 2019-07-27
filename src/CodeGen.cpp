@@ -29,7 +29,7 @@ llvm::Value* CodeGen::codegen(const BaseAST *ast) {
     case AST_Decl:
         return codegen((DeclAST*)ast);
     case AST_Block:
-        return codegen((BlockAST*)ast);
+        return codegen((BlockAST*)ast, true);
     case AST_FuncProto:
         return codegen((FuncProtoAST*)ast);
     default:
@@ -86,10 +86,7 @@ llvm::Value* CodeGen::codegen(const BinExprAST *ast) {
 
 llvm::Value* CodeGen::codegen(const DeclAST *ast) {
     for (const auto &it : ast->getDecls()) {
-        // TODO global vars can't have same names, or same name as func
-        // TODO local vars can't have same names
-        if (symbolTable->getVar(it.first) != nullptr ||
-            symbolTable->getFunc(it.first) != nullptr) {
+        if (symbolTable->taken(it.first)) {
             panic = true;
             return nullptr;
         }
@@ -111,16 +108,19 @@ llvm::Value* CodeGen::codegen(const DeclAST *ast) {
     return nullptr;
 }
 
-llvm::Value* CodeGen::codegen(const BlockAST *ast) {
-    // TODO var scope
+llvm::Value* CodeGen::codegen(const BlockAST *ast, bool makeScope) {
+    if (makeScope) symbolTable->newScope();
+
     for (const auto &it : ast->getBody()) codegen(it.get());
+
+    if (makeScope) symbolTable->endScope();
 
     return nullptr;
 }
 
 llvm::Value* CodeGen::codegen(const FuncProtoAST *ast) {
-    if (symbolTable->getVar(ast->getName()) != nullptr ||
-        symbolTable->getFunc(ast->getName()) != nullptr) {
+    // TODO funcs can share name if different args
+    if (symbolTable->taken(ast->getName())) {
             panic = true;
             return nullptr;
     }

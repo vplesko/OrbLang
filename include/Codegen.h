@@ -29,7 +29,7 @@ public:
     llvm::Value* codegen(const VarExprAST *ast);
     llvm::Value* codegen(const BinExprAST *ast);
     llvm::Value* codegen(const DeclAST *ast);
-    llvm::Value* codegen(const BlockAST *ast);
+    llvm::Value* codegen(const BlockAST *ast, bool makeScope);
     llvm::Value* codegen(const FuncProtoAST *ast);
     void codegenEnd(); // TODO tmp, remove
 

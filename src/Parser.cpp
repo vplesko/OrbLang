@@ -137,7 +137,6 @@ unique_ptr<FuncProtoAST> Parser::proto() {
             panic = true;
             return nullptr;
         }
-        // TODO arg should eclipse global var with same name
 
         ret->addArg(arg.nameId);
 
@@ -158,6 +157,7 @@ void Parser::parse(std::istream &istr) {
     while (lex->peek().type != Token::T_END) {
         unique_ptr<BaseAST> next;
 
+        // TODO after funcs are done, global scope will only contain decls and funcs/protos
         if (lex->peek().type == Token::T_FNC) next = proto();
         else next = stmnt();
         
