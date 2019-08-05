@@ -67,7 +67,9 @@ void FuncProtoAST::print() const {
         if (i > 0) cout << ", ";
         cout << args[i];
     }
-    cout << "])";
+    cout << "]";
+    if (ret) cout << " -> var";
+    cout << ")";
 }
 
 FuncAST::FuncAST(unique_ptr<FuncProtoAST> proto, unique_ptr<BlockAST> body)
@@ -80,4 +82,10 @@ void FuncAST::print() const {
     cout << endl;
     body->print();
     cout << endl << "***** FUNC END";
+}
+
+void RetAST::print() const {
+    cout << "Ret(";
+    if (val) val->print();
+    cout << ")";
 }

@@ -1,6 +1,6 @@
 var _a;
 
-fnc main() {
+fnc main() var {
     1;
     2+3;
     4+5*6-7;
@@ -24,6 +24,7 @@ fnc main() {
         }
         var h;
     }
+    ret 0;
 }
 
 var g;
@@ -33,10 +34,13 @@ fnc foo();
 fnc bar(var d);
 fnc zee(var a, var e);
 
-fnc eta() {}
+fnc eta() var {
+    ret 18*g;
+}
 
 fnc tet(var i) {
-    g=18;
-    i=g+19;
+    g=19;
+    i=g+20;
     var j=i;
+    ret;
 }

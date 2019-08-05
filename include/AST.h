@@ -12,7 +12,8 @@ enum ASTType {
     AST_Decl,
     AST_FuncProto,
     AST_Func,
-    AST_Block
+    AST_Block,
+    AST_Ret
 };
 
 class BaseAST {
@@ -112,6 +113,7 @@ public:
 class FuncProtoAST : public BaseAST {
     NamePool::Id name;
     std::vector<NamePool::Id> args;
+    bool ret;
 
 public:
     FuncProtoAST(NamePool::Id name) : name(name) {}
@@ -122,6 +124,9 @@ public:
 
     void addArg(NamePool::Id arg) { args.push_back(arg); }
     const std::vector<NamePool::Id> getArgs() const { return args; }
+
+    void setRetVal(bool r) { ret = r; }
+    bool hasRetVal() const { return ret; }
 
     void print() const;
 };
@@ -139,6 +144,19 @@ public:
 
     const FuncProtoAST* getProto() const { return proto.get(); }
     const BlockAST* getBody() const { return body.get(); }
+
+    void print() const;
+};
+
+class RetAST : public StmntAST {
+    std::unique_ptr<ExprAST> val;
+
+public:
+    RetAST(std::unique_ptr<ExprAST> v) : val(std::move(v)) {}
+
+    const ExprAST* getVal() const { return val.get(); }
+
+    ASTType type() const { return AST_Ret; }
 
     void print() const;
 };

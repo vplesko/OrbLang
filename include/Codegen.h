@@ -19,9 +19,11 @@ class CodeGen {
     llvm::AllocaInst* createAlloca(const std::string &name);
     llvm::GlobalValue* createGlobal(const std::string &name);
 
+    // TODO some of these always ret null, but declare otherwise
     llvm::Value* codegen(const VarExprAST *ast);
     llvm::Value* codegen(const BinExprAST *ast);
     llvm::Value* codegen(const DeclAST *ast);
+    llvm::Value* codegen(const RetAST *ast);
     llvm::Value* codegen(const BlockAST *ast, bool makeScope);
     llvm::Function* codegen(const FuncProtoAST *ast);
     llvm::Function* codegen(const FuncAST *ast);

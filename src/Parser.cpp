@@ -6,8 +6,9 @@ Parser::Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer) : nam
     codegen = std::make_unique<CodeGen>(namePool, symbolTable);
 }
 
-bool Parser::mismatch(Token::Type t) {
-    if (!lex->match(t)) panic = true;
+// Eats the next token and panics if it doesn't match the expected type.
+bool Parser::mismatch(Token::Type expected) {
+    if (!lex->match(expected)) panic = true;
     return panic;
 }
 
@@ -52,7 +53,7 @@ unique_ptr<ExprAST> Parser::expr(unique_ptr<ExprAST> lhs, OperPrec min_prec) {
 }
 
 unique_ptr<DeclAST> Parser::decl() {
-    if (!lex->match(Token::T_VAR)) { panic = true; return nullptr; }
+    if (mismatch(Token::T_VAR)) return nullptr;
 
     unique_ptr<DeclAST> ret = make_unique<DeclAST>();
 
@@ -81,6 +82,20 @@ unique_ptr<DeclAST> Parser::decl() {
     }
 }
 
+std::unique_ptr<RetAST> Parser::ret() {
+    if (mismatch(Token::T_RET)) return nullptr;
+
+    unique_ptr<ExprAST> val;
+    if (lex->peek().type != Token::T_SEMICOLON) {
+        val = expr();
+        if (broken(val)) return nullptr;
+    }
+
+    if (mismatch(Token::T_SEMICOLON)) return nullptr;
+
+    return make_unique<RetAST>(move(val));
+}
+
 unique_ptr<BlockAST> Parser::block() {
     if (mismatch(Token::T_BRACE_L_CUR)) return nullptr;
 
@@ -99,6 +114,8 @@ unique_ptr<BlockAST> Parser::block() {
 
 unique_ptr<StmntAST> Parser::stmnt() {
     if (lex->peek().type == Token::T_VAR) return decl();
+
+    if (lex->peek().type == Token::T_RET) return ret();
 
     if (lex->peek().type == Token::T_BRACE_L_CUR) return block();
     
@@ -144,6 +161,14 @@ unique_ptr<BaseAST> Parser::func() {
     }
 
     Token look = lex->peek();
+    if (look.type == Token::T_VAR) {
+        proto->setRetVal(true);
+        lex->next();
+        look = lex->peek();
+    } else {
+        proto->setRetVal(false);
+    }
+
     if (look.type == Token::T_BRACE_L_CUR) {
         unique_ptr<BlockAST> body = block();
         if (broken(body)) return nullptr;

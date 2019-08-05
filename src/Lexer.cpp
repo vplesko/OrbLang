@@ -13,7 +13,8 @@ const unordered_map<Token::Oper, OperInfo> operInfos = {
 
 const unordered_map<string, Token::Type> keywords = {
     {"var", {Token::T_VAR}},
-    {"fnc", {Token::T_FNC}}
+    {"fnc", {Token::T_FNC}},
+    {"ret", {Token::T_RET}}
 };
 
 Lexer::Lexer(NamePool *namePool) : namePool(namePool) {
@@ -112,6 +113,7 @@ Token Lexer::next() {
     return old;
 }
 
+// Eats the next token and returns whether it matches the type.
 bool Lexer::match(Token::Type type) {
     return next().type == type;
 }

@@ -36,6 +36,8 @@ llvm::Value* CodeGen::codegen(const BaseAST *ast) {
         return codegen((BinExprAST*)ast);
     case AST_Decl:
         return codegen((DeclAST*)ast);
+    case AST_Ret:
+        return codegen((RetAST*)ast);
     case AST_Block:
         return codegen((BlockAST*)ast, true);
     case AST_FuncProto:
@@ -130,6 +132,22 @@ llvm::Value* CodeGen::codegen(const DeclAST *ast) {
     return nullptr;
 }
 
+llvm::Value* CodeGen::codegen(const RetAST *ast) {
+    if (!ast->getVal()) {
+        llvmBuilder.CreateRetVoid();
+        return nullptr;
+    }
+
+    llvm::Value *val = codegen(ast->getVal());
+    if (panic || val == nullptr) {
+        panic = true;
+        return nullptr;
+    }
+
+    llvmBuilder.CreateRet(val);
+    return nullptr;
+}
+
 llvm::Value* CodeGen::codegen(const BlockAST *ast, bool makeScope) {
     // TODO maybe create a new LLVM basic block?
 
@@ -153,7 +171,8 @@ llvm::Function* CodeGen::codegen(const FuncProtoAST *ast) {
     }
 
     vector<llvm::Type*> argTypes(ast->getArgs().size(), llvm::IntegerType::getInt64Ty(llvmContext));
-    llvm::FunctionType *funcType = llvm::FunctionType::get(llvm::Type::getVoidTy(llvmContext), argTypes, false);
+    llvm::Type *retType = ast->hasRetVal() ? llvm::IntegerType::getInt64Ty(llvmContext) : llvm::Type::getVoidTy(llvmContext);
+    llvm::FunctionType *funcType = llvm::FunctionType::get(retType, argTypes, false);
     llvm::Function *func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, 
             namePool->get(ast->getName()), llvmModule.get());
     
@@ -204,7 +223,9 @@ llvm::Function* CodeGen::codegen(const FuncAST *ast) {
     }
 
     llvmBuilderAlloca.CreateBr(body);
-    llvmBuilder.CreateRetVoid();
+
+    if (!ast->getProto()->hasRetVal() && ast->getBody()->getBody().back()->type() != AST_Ret)
+            llvmBuilder.CreateRetVoid();
 
     symbolTable->endScope();
 

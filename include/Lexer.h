@@ -19,6 +19,7 @@ struct Token {
         T_BRACE_L_CUR,
         T_BRACE_R_CUR,
         T_ID,
+        T_RET,
         T_END,
         T_UNKNOWN
     };
