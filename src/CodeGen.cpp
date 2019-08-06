@@ -24,22 +24,25 @@ llvm::GlobalValue* CodeGen::createGlobal(const std::string &name) {
         name);
 }
 
-llvm::Value* CodeGen::codegen(const BaseAST *ast) {
+llvm::Value* CodeGen::codegenNode(const BaseAST *ast) {
     switch (ast->type()) {
     case AST_LiteralExpr:
-        return llvm::ConstantInt::get(
-            llvm::IntegerType::getInt64Ty(llvmContext), 
-            llvm::APInt(64, ((LiteralExprAST*)ast)->getVal(), true));
+        return codegen((LiteralExprAST*)ast);
     case AST_VarExpr:
         return codegen((VarExprAST*)ast);
     case AST_BinExpr:
         return codegen((BinExprAST*)ast);
+    case AST_CallExpr:
+        return codegen((CallExprAST*)ast);
     case AST_Decl:
-        return codegen((DeclAST*)ast);
+        codegen((DeclAST*)ast);
+        return nullptr;
     case AST_Ret:
-        return codegen((RetAST*)ast);
+        codegen((RetAST*)ast);
+        return nullptr;
     case AST_Block:
-        return codegen((BlockAST*)ast, true);
+        codegen((BlockAST*)ast, true);
+        return nullptr;
     case AST_FuncProto:
         return codegen((FuncProtoAST*)ast, false);
     case AST_Func:
@@ -48,6 +51,12 @@ llvm::Value* CodeGen::codegen(const BaseAST *ast) {
         panic = true;
         return nullptr;
     }
+}
+
+llvm::Value* CodeGen::codegen(const LiteralExprAST *ast) {
+    return llvm::ConstantInt::get(
+        llvm::IntegerType::getInt64Ty(llvmContext), 
+        llvm::APInt(64, ast->getVal(), true));
 }
 
 llvm::Value* CodeGen::codegen(const VarExprAST *ast) {
@@ -66,13 +75,13 @@ llvm::Value* CodeGen::codegen(const BinExprAST *ast) {
         const VarExprAST *var = (const VarExprAST*)ast->getL();
         valL = symbolTable->getVar(var->getNameId());
     } else {
-        valL = codegen(ast->getL());
+        valL = codegenNode(ast->getL());
     }
     if (panic || valL == nullptr) {
         panic = true;
         return nullptr;
     }
-    llvm::Value *valR = codegen(ast->getR());
+    llvm::Value *valR = codegenNode(ast->getR());
     if (panic || valR == nullptr) {
         panic = true;
         return nullptr;
@@ -96,11 +105,32 @@ llvm::Value* CodeGen::codegen(const BinExprAST *ast) {
     }
 }
 
-llvm::Value* CodeGen::codegen(const DeclAST *ast) {
+llvm::Value* CodeGen::codegen(const CallExprAST *ast) {
+    const FuncValue *func = symbolTable->getFunc({ast->getName(), ast->getArgs().size()});
+    if (func == nullptr) {
+        panic = true;
+        return nullptr;
+    }
+
+    std::vector<llvm::Value*> args(ast->getArgs().size());
+    for (size_t i = 0; i < ast->getArgs().size(); ++i) {
+        llvm::Value *arg = codegenNode(ast->getArgs()[i].get());
+        if (arg == nullptr) {
+            panic = true;
+            return nullptr;
+        }
+
+        args[i] = arg;
+    }
+
+    return llvmBuilder.CreateCall(func->func, args, "calltmp");
+}
+
+void CodeGen::codegen(const DeclAST *ast) {
     for (const auto &it : ast->getDecls()) {
         if (symbolTable->taken(it.first)) {
             panic = true;
-            return nullptr;
+            return;
         }
 
         const string &name = namePool->get(it.first);
@@ -112,15 +142,18 @@ llvm::Value* CodeGen::codegen(const DeclAST *ast) {
             if (it.second.get() != nullptr) {
                 // TODO allow init global vars
                 panic = true;
-                return nullptr;
+                return;
             }
         } else {
             val = createAlloca(name);
 
             const ExprAST *init = it.second.get();
             if (init != nullptr) {
-                llvm::Value *initVal = codegen(init);
-                if (panic || initVal == nullptr) return nullptr;
+                llvm::Value *initVal = codegenNode(init);
+                if (panic || initVal == nullptr) {
+                    panic = true;
+                    return;
+                }
 
                 llvmBuilder.CreateStore(initVal, val);
             }
@@ -128,36 +161,31 @@ llvm::Value* CodeGen::codegen(const DeclAST *ast) {
 
         symbolTable->addVar(it.first, val);
     }
-
-    return nullptr;
 }
 
-llvm::Value* CodeGen::codegen(const RetAST *ast) {
+void CodeGen::codegen(const RetAST *ast) {
     if (!ast->getVal()) {
         llvmBuilder.CreateRetVoid();
-        return nullptr;
+        return;
     }
 
-    llvm::Value *val = codegen(ast->getVal());
+    llvm::Value *val = codegenNode(ast->getVal());
     if (panic || val == nullptr) {
         panic = true;
-        return nullptr;
+        return;
     }
 
     llvmBuilder.CreateRet(val);
-    return nullptr;
 }
 
-llvm::Value* CodeGen::codegen(const BlockAST *ast, bool makeScope) {
+void CodeGen::codegen(const BlockAST *ast, bool makeScope) {
     // TODO maybe create a new llvm::BasicBlock and insert into it?
 
     if (makeScope) symbolTable->newScope();
 
-    for (const auto &it : ast->getBody()) codegen(it.get());
+    for (const auto &it : ast->getBody()) codegenNode(it.get());
 
     if (makeScope) symbolTable->endScope();
-
-    return nullptr;
 }
 
 llvm::Function* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {

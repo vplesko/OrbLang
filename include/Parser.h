@@ -18,6 +18,7 @@ class Parser {
     bool mismatch(Token::Type t);
     template<typename T> bool broken(const T &x);
 
+    std::unique_ptr<CallExprAST> call(NamePool::Id func);
     std::unique_ptr<ExprAST> prim();
     std::unique_ptr<ExprAST> expr(std::unique_ptr<ExprAST> lhs, OperPrec min_prec);
     std::unique_ptr<ExprAST> expr();

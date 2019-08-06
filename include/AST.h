@@ -9,6 +9,7 @@ enum ASTType {
     AST_LiteralExpr,
     AST_VarExpr,
     AST_BinExpr,
+    AST_CallExpr,
     AST_Decl,
     AST_FuncProto,
     AST_Func,
@@ -79,6 +80,23 @@ public:
     const ExprAST* getL() const { return lhs.get(); }
     const ExprAST* getR() const { return rhs.get(); }
     Token::Oper getOp() const { return op; }
+
+    void print() const;
+};
+
+class CallExprAST : public ExprAST {
+    NamePool::Id func;
+    std::vector<std::unique_ptr<ExprAST>> args;
+
+public:
+    CallExprAST(NamePool::Id funcName) : func(funcName) {}
+
+    NamePool::Id getName() const { return func; }
+    const std::vector<std::unique_ptr<ExprAST>>& getArgs() const { return args; }
+
+    void addArg(std::unique_ptr<ExprAST> arg) { args.push_back(std::move(arg)); }
+
+    ASTType type() const { return AST_CallExpr; }
 
     void print() const;
 };

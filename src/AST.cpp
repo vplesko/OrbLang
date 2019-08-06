@@ -5,6 +5,10 @@ void LiteralExprAST::print() const {
     cout << "Literal(" << val << ")";
 }
 
+void VarExprAST::print() const {
+    cout << "Var([" << nameId << "])";
+}
+
 BinExprAST::BinExprAST(
     unique_ptr<ExprAST> _lhs, 
     unique_ptr<ExprAST>  _rhs, 
@@ -28,8 +32,16 @@ void BinExprAST::print() const {
     cout << ")";
 }
 
-void VarExprAST::print() const {
-    cout << "Var([" << nameId << "])";
+void CallExprAST::print() const {
+    cout << "Call([" << func << "]";
+    if (!args.empty()) {
+        cout << " : ";
+        for (size_t i = 0; i < args.size(); ++i) {
+            if (i > 0) cout << ", ";
+            args[i]->print();
+        }
+    }
+    cout << ")";
 }
 
 DeclAST::DeclAST() {

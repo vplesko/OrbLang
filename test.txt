@@ -35,6 +35,12 @@ fnc main() var {
         }
         var h;
     }
+
+    inc();
+    inc(n);
+    inc(1);
+    c=inc(c)+2;
+
     ret 0;
 }
 
@@ -45,7 +51,7 @@ fnc foo() {}
 fnc foo();
 
 fnc bar(var d);
-fnc zee(var a, var e);
+fnc zee(var a, var e) var;
 
 fnc eta() var {
     ret 18*g;
@@ -54,6 +60,6 @@ fnc eta() var {
 fnc tet(var i) {
     g=19;
     i=g+20;
-    var j=i;
+    var j=zee(i, inc());
     ret;
 }

@@ -19,19 +19,20 @@ class CodeGen {
     llvm::AllocaInst* createAlloca(const std::string &name);
     llvm::GlobalValue* createGlobal(const std::string &name);
 
-    // TODO some of these always ret null, but declare otherwise
+    llvm::Value* codegen(const LiteralExprAST *ast);
     llvm::Value* codegen(const VarExprAST *ast);
     llvm::Value* codegen(const BinExprAST *ast);
-    llvm::Value* codegen(const DeclAST *ast);
-    llvm::Value* codegen(const RetAST *ast);
-    llvm::Value* codegen(const BlockAST *ast, bool makeScope);
+    llvm::Value* codegen(const CallExprAST *ast);
+    void codegen(const DeclAST *ast);
+    void codegen(const RetAST *ast);
+    void codegen(const BlockAST *ast, bool makeScope);
     llvm::Function* codegen(const FuncProtoAST *ast, bool definition);
     llvm::Function* codegen(const FuncAST *ast);
 
 public:
     CodeGen(const NamePool *namePool, SymbolTable *symbolTable);
 
-    llvm::Value* codegen(const BaseAST *ast);
+    llvm::Value* codegenNode(const BaseAST *ast);
 
     bool isPanic() const { return panic; }
 

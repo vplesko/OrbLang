@@ -12,12 +12,38 @@ bool Parser::mismatch(Token::Type expected) {
     return panic;
 }
 
+std::unique_ptr<CallExprAST> Parser::call(NamePool::Id func) {
+    unique_ptr<CallExprAST> call = make_unique<CallExprAST>(func);
+
+    if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
+
+    bool first = true;
+    while (true) {
+        if (lex->peek().type == Token::T_BRACE_R_REG) {
+            lex->next();
+            break;
+        }
+
+        if (!first && mismatch(Token::T_COMMA)) return nullptr;
+
+        unique_ptr<ExprAST> arg = expr();
+        if (broken(arg)) return nullptr;
+
+        call->addArg(move(arg));
+
+        first = false;
+    }
+
+    return call;
+}
+
 unique_ptr<ExprAST> Parser::prim() {
     Token tok = lex->next();
     if (tok.type == Token::T_NUM) {
         return make_unique<LiteralExprAST>(tok.num);
     } else if (tok.type == Token::T_ID) {
-        return make_unique<VarExprAST>(tok.nameId);
+        if (lex->peek().type == Token::T_BRACE_L_REG) return call(tok.nameId);
+        else return make_unique<VarExprAST>(tok.nameId);
     } else {
         panic = true;
         return nullptr;
@@ -200,7 +226,7 @@ void Parser::parse(std::istream &istr) {
         next->print();
         cout << endl;
 
-        codegen->codegen(next.get());
+        codegen->codegenNode(next.get());
         if (codegen->isPanic()) { panic = true; }
         if (panic) break;
     }
