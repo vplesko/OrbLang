@@ -25,7 +25,7 @@ class CodeGen {
     llvm::Value* codegen(const DeclAST *ast);
     llvm::Value* codegen(const RetAST *ast);
     llvm::Value* codegen(const BlockAST *ast, bool makeScope);
-    llvm::Function* codegen(const FuncProtoAST *ast);
+    llvm::Function* codegen(const FuncProtoAST *ast, bool definition);
     llvm::Function* codegen(const FuncAST *ast);
 
 public:

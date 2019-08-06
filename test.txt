@@ -1,5 +1,16 @@
 var _a;
 
+fnc inc() var;
+
+fnc inc(var x) var {
+    ret x+1;
+}
+
+fnc inc() var {
+    _a = _a + 1;
+    ret _a;
+}
+
 fnc main() var {
     1;
     2+3;
@@ -30,7 +41,9 @@ fnc main() var {
 var g;
 var i;
 
+fnc foo() {}
 fnc foo();
+
 fnc bar(var d);
 fnc zee(var a, var e);
 

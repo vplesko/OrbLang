@@ -41,7 +41,7 @@ llvm::Value* CodeGen::codegen(const BaseAST *ast) {
     case AST_Block:
         return codegen((BlockAST*)ast, true);
     case AST_FuncProto:
-        return codegen((FuncProtoAST*)ast);
+        return codegen((FuncProtoAST*)ast, false);
     case AST_Func:
         return codegen((FuncAST*)ast);
     default:
@@ -149,7 +149,7 @@ llvm::Value* CodeGen::codegen(const RetAST *ast) {
 }
 
 llvm::Value* CodeGen::codegen(const BlockAST *ast, bool makeScope) {
-    // TODO maybe create a new LLVM basic block?
+    // TODO maybe create a new llvm::BasicBlock and insert into it?
 
     if (makeScope) symbolTable->newScope();
 
@@ -160,7 +160,20 @@ llvm::Value* CodeGen::codegen(const BlockAST *ast, bool makeScope) {
     return nullptr;
 }
 
-llvm::Function* CodeGen::codegen(const FuncProtoAST *ast) {
+llvm::Function* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
+    const FuncValue *prev = symbolTable->getFunc({ast->getName(), ast->getArgs().size()});
+
+    if (prev != nullptr) {
+        if ((prev->defined && definition) ||
+            (prev->hasRetVal != ast->hasRetVal())) {
+            panic = true;
+            return nullptr;
+        }
+
+        return prev->func;
+    }
+
+    // can't have args with same name
     for (size_t i = 0; i+1 < ast->getArgs().size(); ++i) {
         for (size_t j = i+1; j < ast->getArgs().size(); ++j) {
             if (ast->getArgs()[i] == ast->getArgs()[j]) {
@@ -182,19 +195,15 @@ llvm::Function* CodeGen::codegen(const FuncProtoAST *ast) {
         ++i;
     }
 
-    symbolTable->addFunc(ast->getName(), func);
+    symbolTable->addFunc(
+        {ast->getName(), ast->getArgs().size()}, 
+        {func, ast->hasRetVal(), definition});
 
     return func;
 }
 
 llvm::Function* CodeGen::codegen(const FuncAST *ast) {
-    // TODO funcs can share name if different args
-    if (symbolTable->taken(ast->getProto()->getName())) {
-        panic = true;
-        return nullptr;
-    }
-
-    llvm::Function *func = codegen(ast->getProto());
+    llvm::Function *func = codegen(ast->getProto(), true);
     if (panic) {
         return nullptr;
     }
@@ -224,7 +233,9 @@ llvm::Function* CodeGen::codegen(const FuncAST *ast) {
 
     llvmBuilderAlloca.CreateBr(body);
 
-    if (!ast->getProto()->hasRetVal() && ast->getBody()->getBody().back()->type() != AST_Ret)
+    if (!ast->getProto()->hasRetVal() && 
+        (ast->getBody()->getBody().empty() || 
+        ast->getBody()->getBody().back()->type() != AST_Ret))
             llvmBuilder.CreateRetVoid();
 
     symbolTable->endScope();
@@ -238,6 +249,5 @@ llvm::Function* CodeGen::codegen(const FuncAST *ast) {
 
 void CodeGen::printout() const {
     cout << "LLVM module printout:" << endl << endl;
-    // TODO sometimes prints empty function
     llvmModule->print(llvm::outs(), nullptr);
 }

@@ -46,19 +46,25 @@ llvm::Value* SymbolTable::getVar(NamePool::Id name) const {
     return nullptr;
 }
 
-void SymbolTable::addFunc(NamePool::Id name, llvm::Function *val) {
-    funcs.insert(make_pair(name, val));
+void SymbolTable::addFunc(const FuncSignature &sig, const FuncValue &val) {
+    funcs.insert(make_pair(sig, val));
 }
 
-llvm::Function* SymbolTable::getFunc(NamePool::Id name) const {
-    auto loc = funcs.find(name);
+const FuncValue* SymbolTable::getFunc(const FuncSignature &sig) const {
+    auto loc = funcs.find(sig);
     if (loc == funcs.end()) return nullptr;
 
-    return loc->second;
+    return &loc->second;
 }
 
 bool SymbolTable::taken(NamePool::Id name) const {
-    if (last == glob && funcs.find(name) != funcs.end()) return true;
+    if (last == glob) {
+        // you can have vars with same name as funcs, except in global
+        for (const auto &p : funcs)
+            if (p.first.name == name)
+                return true;
+    }
+
     return last->vars.find(name) != last->vars.end();
 }
 
