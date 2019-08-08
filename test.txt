@@ -1,3 +1,5 @@
+// TODO split into multiple test files
+
 var _a;
 
 fnc inc() var;
@@ -62,4 +64,14 @@ fnc tet(var i) {
     i=g+20;
     var j=zee(i, inc());
     ret;
+}
+
+fnc comment_test() {
+    // test
+    var x = 0; // abcd
+    var y = 1;//
+    var z = 2 //
+    + 3;
+    var a; // abcd // pqr
+    // lmnop
 }

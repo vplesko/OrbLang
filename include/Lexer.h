@@ -57,8 +57,11 @@ class Lexer {
     char ch;
     Token tok;
 
+    bool over() const { return ch == EOF; }
+
     char peekCh() const { return ch; }
     char nextCh();
+    void skipLine();
 
 public:
     Lexer(NamePool *namePool);
