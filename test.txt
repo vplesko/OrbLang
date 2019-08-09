@@ -74,4 +74,21 @@ fnc comment_test() {
     + 3;
     var a; // abcd // pqr
     // lmnop
+
+    /*
+    blah
+    */
+
+    /**
+    blah
+    //
+    ///
+    *
+    **/
+
+    /*/*/
+
+    /**/
+
+    var b = 1/*blah*/+2;
 }

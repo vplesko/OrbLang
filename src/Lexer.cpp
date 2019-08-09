@@ -81,6 +81,22 @@ Token Lexer::next() {
             skipLine();
             continue;
         }
+        if (ch == '/' && peekCh() == '*') {
+            nextCh();
+            do {
+                do {
+                    ch = nextCh();
+                } while (ch != '*' && !over());
+            } while (peekCh() != '/' && !over());
+
+            if (over()) {
+                tok.type = Token::T_UNKNOWN;
+                return tok; // unclosed comment error, so skip old token
+            }
+
+            nextCh(); // eat '/'
+            continue;
+        }
         
         if (ch >= '0' && ch <= '9') {
             tok.type = Token::T_NUM;
