@@ -1,4 +1,4 @@
-// TODO split into multiple test files
+// some comment
 
 var _a;
 
