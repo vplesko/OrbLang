@@ -92,13 +92,25 @@ llvm::Value* CodeGen::codegen(const BinExprAST *ast) {
             llvmBuilder.CreateStore(valR, valL);
             return valR;
         case Token::O_ADD:
-            return llvmBuilder.CreateAdd(valL, valR, "addtmp");
+            return llvmBuilder.CreateAdd(valL, valR, "add_tmp");
         case Token::O_SUB:
-            return llvmBuilder.CreateSub(valL, valR, "subtmp");
+            return llvmBuilder.CreateSub(valL, valR, "sub_tmp");
         case Token::O_MUL:
-            return llvmBuilder.CreateMul(valL, valR, "multmp");
+            return llvmBuilder.CreateMul(valL, valR, "mul_tmp");
         case Token::O_DIV:
-            return llvmBuilder.CreateSDiv(valL, valR, "divtmp");
+            return llvmBuilder.CreateSDiv(valL, valR, "div_tmp");
+        case Token::O_EQ:
+            return llvmBuilder.CreateICmpEQ(valL, valR, "cmp_eq_tmp");
+        case Token::O_NEQ:
+            return llvmBuilder.CreateICmpNE(valL, valR, "cmp_neq_tmp");
+        case Token::O_LT:
+            return llvmBuilder.CreateICmpSLT(valL, valR, "cmp_lt_tmp");
+        case Token::O_LTEQ:
+            return llvmBuilder.CreateICmpSLE(valL, valR, "cmp_lteq_tmp");
+        case Token::O_GT:
+            return llvmBuilder.CreateICmpSGT(valL, valR, "cmp_gt_tmp");
+        case Token::O_GTEQ:
+            return llvmBuilder.CreateICmpSGE(valL, valR, "cmp_gteq_tmp");
         default:
             panic = true;
             return nullptr;
@@ -123,7 +135,7 @@ llvm::Value* CodeGen::codegen(const CallExprAST *ast) {
         args[i] = arg;
     }
 
-    return llvmBuilder.CreateCall(func->func, args, "calltmp");
+    return llvmBuilder.CreateCall(func->func, args, "call_tmp");
 }
 
 void CodeGen::codegen(const DeclAST *ast) {

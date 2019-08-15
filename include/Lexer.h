@@ -29,6 +29,12 @@ struct Token {
         O_SUB,
         O_MUL,
         O_DIV,
+        O_EQ,
+        O_NEQ,
+        O_LT,
+        O_LTEQ,
+        O_GT,
+        O_GTEQ,
         O_ASGN
     };
 

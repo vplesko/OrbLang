@@ -5,10 +5,16 @@ using namespace std;
 const OperPrec minOperPrec = -1000;
 const unordered_map<Token::Oper, OperInfo> operInfos = {
     {Token::O_ASGN, {1, false}},
-    {Token::O_ADD, {2}},
-    {Token::O_SUB, {2}},
-    {Token::O_MUL, {3}},
-    {Token::O_DIV, {3}}
+    {Token::O_EQ, {2}},
+    {Token::O_NEQ, {2}},
+    {Token::O_LT, {3}},
+    {Token::O_LTEQ, {3}},
+    {Token::O_GT, {3}},
+    {Token::O_GTEQ, {3}},
+    {Token::O_ADD, {4}},
+    {Token::O_SUB, {4}},
+    {Token::O_MUL, {5}},
+    {Token::O_DIV, {5}}
 };
 
 const unordered_map<string, Token::Type> keywords = {
@@ -115,7 +121,33 @@ Token Lexer::next() {
         } else if (ch == '/') {
             tok = {Token::T_OPER, Token::O_DIV};
         } else if (ch == '=') {
-            tok = {Token::T_OPER, Token::O_ASGN};
+            if (peekCh() == '=') {
+                nextCh();
+                tok = {Token::T_OPER, Token::O_EQ};
+            } else {
+                tok = {Token::T_OPER, Token::O_ASGN};
+            }
+        } else if (ch == '!') {
+            if (peekCh() != '=') {
+                tok.type = Token::T_UNKNOWN;
+            } else {
+                nextCh();
+                tok = {Token::T_OPER, Token::O_NEQ};
+            }
+        } else if (ch == '<') {
+            if (peekCh() == '=') {
+                nextCh();
+                tok = {Token::T_OPER, Token::O_LTEQ};
+            } else {
+                tok = {Token::T_OPER, Token::O_LT};
+            }
+        } else if (ch == '>') {
+            if (peekCh() == '=') {
+                nextCh();
+                tok = {Token::T_OPER, Token::O_GTEQ};
+            } else {
+                tok = {Token::T_OPER, Token::O_GT};
+            }
         } else if (ch == ',') {
             tok = {Token::T_COMMA};
         } else if (ch == ';') {

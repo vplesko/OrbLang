@@ -44,6 +44,13 @@ unique_ptr<ExprAST> Parser::prim() {
     } else if (tok.type == Token::T_ID) {
         if (lex->peek().type == Token::T_BRACE_L_REG) return call(tok.nameId);
         else return make_unique<VarExprAST>(tok.nameId);
+    } else if (tok.type == Token::T_BRACE_L_REG) {
+        unique_ptr<ExprAST> e = expr();
+        if (broken(e)) return nullptr;
+
+        if (mismatch(Token::T_BRACE_R_REG)) return nullptr;
+
+        return e;
     } else {
         panic = true;
         return nullptr;

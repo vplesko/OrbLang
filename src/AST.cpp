@@ -25,7 +25,13 @@ void BinExprAST::print() const {
     case Token::O_SUB: cout << "-"; break;
     case Token::O_MUL: cout << "*"; break;
     case Token::O_DIV: cout << "/"; break;
-    default: break;
+    case Token::O_EQ: cout << "=="; break;
+    case Token::O_NEQ: cout << "!="; break;
+    case Token::O_LT: cout << "<"; break;
+    case Token::O_LTEQ: cout << "<="; break;
+    case Token::O_GT: cout << ">"; break;
+    case Token::O_GTEQ: cout << ">="; break;
+    default: cout << "??"; break;
     }
     cout << " ";
     rhs->print();
