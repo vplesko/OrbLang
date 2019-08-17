@@ -55,11 +55,12 @@ class SymbolTable {
 
     Scope *last, *glob;
 
-public:
-    SymbolTable();
-
+    friend class ScopeControl;
     void newScope();
     void endScope();
+
+public:
+    SymbolTable();
 
     void addVar(NamePool::Id name, llvm::Value *val);
     llvm::Value* getVar(NamePool::Id name) const;
@@ -71,4 +72,23 @@ public:
     bool taken(NamePool::Id name) const;
 
     ~SymbolTable();
+};
+
+class ScopeControl {
+    SymbolTable *symTable;
+
+public:
+    ScopeControl(SymbolTable *symTable = nullptr) : symTable(symTable) {
+        if (symTable != nullptr) symTable->newScope();
+    }
+
+    ScopeControl(const ScopeControl&) = delete;
+    void operator=(const ScopeControl&) = delete;
+
+    ScopeControl(const ScopeControl&&) = delete;
+    void operator=(const ScopeControl&&) = delete;
+
+    ~ScopeControl() {
+        if (symTable) symTable->endScope();
+    }
 };

@@ -185,10 +185,10 @@ void CodeGen::codegen(const DeclAST *ast) {
 }
 
 void CodeGen::codegen(const IfAST *ast) {
-    if (ast->hasInit()) {
-        // unlike C++, then and else may eclipse vars declared in if's init
-        symbolTable->newScope();
+    // unlike C++, then and else may eclipse vars declared in if's init
+    ScopeControl scope(ast->hasInit() ? symbolTable : nullptr);
 
+    if (ast->hasInit()) {
         codegenNode(ast->getInit());
         if (panic) return;
     }
@@ -207,34 +207,29 @@ void CodeGen::codegen(const IfAST *ast) {
 
     llvmBuilder.CreateCondBr(condVal, thenBlock, ast->hasElse() ? elseBlock : afterBlock);
 
-    llvmBuilder.SetInsertPoint(thenBlock);
-    symbolTable->newScope();
-    if (ast->getThen()->type() == AST_Block) {
-        codegen((BlockAST*) ast->getThen(), false);
-    } else {
-        codegenNode(ast->getThen());
+    {
+        ScopeControl thenScope(symbolTable);
+        llvmBuilder.SetInsertPoint(thenBlock);
+        if (ast->getThen()->type() == AST_Block) {
+            codegen((BlockAST*) ast->getThen(), false);
+        } else {
+            codegenNode(ast->getThen());
+        }
+        if (panic) return;
+        if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
     }
-    if (panic) return;
-    symbolTable->endScope();
-    if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
 
     if (ast->hasElse()) {
+        ScopeControl elseScope(symbolTable);
         func->getBasicBlockList().push_back(elseBlock);
-
         llvmBuilder.SetInsertPoint(elseBlock);
-        symbolTable->newScope();
         if (ast->getElse()->type() == AST_Block) {
             codegen((BlockAST*) ast->getElse(), false);
         } else {
             codegenNode(ast->getElse());
         }
         if (panic) return;
-        symbolTable->endScope();
         if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
-    }
-
-    if (ast->hasInit()) {
-        symbolTable->endScope();
     }
 
     func->getBasicBlockList().push_back(afterBlock);
@@ -257,11 +252,9 @@ void CodeGen::codegen(const RetAST *ast) {
 }
 
 void CodeGen::codegen(const BlockAST *ast, bool makeScope) {
-    if (makeScope) symbolTable->newScope();
+    ScopeControl scope(makeScope ? symbolTable : nullptr);
 
     for (const auto &it : ast->getBody()) codegenNode(it.get());
-
-    if (makeScope) symbolTable->endScope();
 }
 
 llvm::Function* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
@@ -312,7 +305,7 @@ llvm::Function* CodeGen::codegen(const FuncAST *ast) {
         return nullptr;
     }
 
-    symbolTable->newScope();
+    ScopeControl scope(symbolTable);
 
     llvmBuilderAlloca.SetInsertPoint(llvm::BasicBlock::Create(llvmContext, "alloca", func));
 
@@ -339,8 +332,6 @@ llvm::Function* CodeGen::codegen(const FuncAST *ast) {
 
     if (!ast->getProto()->hasRetVal() && !isBlockTerminated())
             llvmBuilder.CreateRetVoid();
-
-    symbolTable->endScope();
 
     cout << endl;
     cout << "LLVM func verification for " << namePool->get(ast->getProto()->getName()) << ":" << endl << endl;

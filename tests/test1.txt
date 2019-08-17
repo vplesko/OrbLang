@@ -30,6 +30,10 @@ fnc main() var {
     }
 
     {
+        var a;
+    }
+
+    {
         var g=16;
         {
             var h = 17;
