@@ -125,13 +125,16 @@ public:
 
 class IfAST : public StmntAST {
     std::unique_ptr<ExprAST> cond;
-    std::unique_ptr<StmntAST> body;
+    std::unique_ptr<StmntAST> thenBody, elseBody;
 
 public:
-    IfAST(std::unique_ptr<ExprAST> cond, std::unique_ptr<StmntAST> body);
+    IfAST(std::unique_ptr<ExprAST> cond, std::unique_ptr<StmntAST> thenBody, std::unique_ptr<StmntAST> elseBody);
     
     const ExprAST* getCond() const { return cond.get(); }
-    const StmntAST* getBody() const { return body.get(); }
+    const StmntAST* getThen() const { return thenBody.get(); }
+    const StmntAST* getElse() const { return elseBody.get(); }
+
+    bool hasElse() const { return elseBody != nullptr; }
 
     ASTType type() const { return AST_If; }
 };

@@ -124,10 +124,18 @@ std::unique_ptr<IfAST> Parser::if_stmnt() {
 
     if (mismatch(Token::T_BRACE_R_REG)) return nullptr;
 
-    unique_ptr<StmntAST> body = stmnt();
-    if (broken(body)) return nullptr;
+    unique_ptr<StmntAST> thenBody = stmnt();
+    if (broken(thenBody)) return nullptr;
 
-    return make_unique<IfAST>(move(cond), move(body));
+    unique_ptr<StmntAST> elseBody;
+    if (lex->peek().type == Token::T_ELSE) {
+        lex->next();
+
+        elseBody = stmnt();
+        if (broken(elseBody)) return nullptr;
+    }
+
+    return make_unique<IfAST>(move(cond), move(thenBody), move(elseBody));
 }
 
 std::unique_ptr<RetAST> Parser::ret() {

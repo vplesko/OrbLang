@@ -20,6 +20,7 @@ struct Token {
         T_BRACE_R_CUR,
         T_ID,
         T_IF,
+        T_ELSE,
         T_RET,
         T_END,
         T_UNKNOWN

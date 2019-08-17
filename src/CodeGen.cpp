@@ -194,20 +194,36 @@ void CodeGen::codegen(const IfAST *ast) {
     llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
 
     llvm::BasicBlock *thenBlock = llvm::BasicBlock::Create(llvmContext, "then", func);
+    llvm::BasicBlock *elseBlock = ast->hasElse() ? llvm::BasicBlock::Create(llvmContext, "else") : nullptr;
     llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
 
-    llvmBuilder.CreateCondBr(condVal, thenBlock, afterBlock);
+    llvmBuilder.CreateCondBr(condVal, thenBlock, ast->hasElse() ? elseBlock : afterBlock);
 
     llvmBuilder.SetInsertPoint(thenBlock);
     symbolTable->newScope();
-    if (ast->getBody()->type() == AST_Block) {
-        codegen((BlockAST*) ast->getBody(), false);
+    if (ast->getThen()->type() == AST_Block) {
+        codegen((BlockAST*) ast->getThen(), false);
     } else {
-        codegenNode(ast->getBody());
+        codegenNode(ast->getThen());
     }
     if (panic) return;
     symbolTable->endScope();
     if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
+
+    if (ast->hasElse()) {
+        func->getBasicBlockList().push_back(elseBlock);
+
+        llvmBuilder.SetInsertPoint(elseBlock);
+        symbolTable->newScope();
+        if (ast->getElse()->type() == AST_Block) {
+            codegen((BlockAST*) ast->getElse(), false);
+        } else {
+            codegenNode(ast->getElse());
+        }
+        if (panic) return;
+        symbolTable->endScope();
+        if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
+    }
 
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);
