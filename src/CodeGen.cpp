@@ -14,6 +14,10 @@ llvm::AllocaInst* CodeGen::createAlloca(const string &name) {
     return llvmBuilderAlloca.CreateAlloca(llvm::IntegerType::getInt64Ty(llvmContext), 0, name);
 }
 
+bool CodeGen::isBlockTerminated() const {
+    return !llvmBuilder.GetInsertBlock()->empty() && llvmBuilder.GetInsertBlock()->back().isTerminator();
+}
+
 llvm::GlobalValue* CodeGen::createGlobal(const std::string &name) {
     return new llvm::GlobalVariable(
         *llvmModule.get(),
@@ -203,7 +207,7 @@ void CodeGen::codegen(const IfAST *ast) {
     }
     if (panic) return;
     symbolTable->endScope();
-    llvmBuilder.CreateBr(afterBlock);
+    if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
 
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);
@@ -310,9 +314,7 @@ llvm::Function* CodeGen::codegen(const FuncAST *ast) {
 
     llvmBuilderAlloca.CreateBr(body);
 
-    if (!ast->getProto()->hasRetVal() && 
-        (ast->getBody()->getBody().empty() || 
-        ast->getBody()->getBody().back()->type() != AST_Ret))
+    if (!ast->getProto()->hasRetVal() && !isBlockTerminated())
             llvmBuilder.CreateRetVoid();
 
     symbolTable->endScope();

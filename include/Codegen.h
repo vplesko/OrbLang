@@ -19,6 +19,8 @@ class CodeGen {
     llvm::AllocaInst* createAlloca(const std::string &name);
     llvm::GlobalValue* createGlobal(const std::string &name);
 
+    bool isBlockTerminated() const;
+
     llvm::Value* codegen(const LiteralExprAST *ast);
     llvm::Value* codegen(const VarExprAST *ast);
     llvm::Value* codegen(const BinExprAST *ast);
