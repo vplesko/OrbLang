@@ -115,12 +115,43 @@ unique_ptr<DeclAST> Parser::decl() {
     }
 }
 
+std::unique_ptr<StmntAST> Parser::simple() {
+    if (lex->peek().type == Token::T_VAR) return decl();
+
+    if (lex->peek().type == Token::T_SEMICOLON) {
+        lex->next();
+        return make_unique<NullExprAST>();
+    }
+
+    return expr();
+}
+
 std::unique_ptr<IfAST> Parser::if_stmnt() {
     if (mismatch(Token::T_IF)) return nullptr;
     if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
 
-    unique_ptr<ExprAST> cond = expr();
-    if (broken(cond)) return nullptr;
+    unique_ptr<StmntAST> init;
+    unique_ptr<ExprAST> cond;
+
+    init = simple();
+    if (broken(init)) return nullptr;
+
+    if (init->type() == AST_Decl || init->type() == AST_NullExpr) {
+        // semicolon was eaten, parse condition
+        cond = expr();
+        if (broken(cond)) return nullptr;
+    } else {
+        if (lex->peek().type == Token::T_SEMICOLON) {
+            // init was expression, eat semicolon and parse condition
+            lex->next();
+
+            cond = expr();
+            if (broken(cond)) return nullptr;
+        } else {
+            // there was no init
+            cond = unique_ptr<ExprAST>((ExprAST*) init.release()); // modern C++ is modern
+        }
+    }
 
     if (mismatch(Token::T_BRACE_R_REG)) return nullptr;
 
@@ -135,7 +166,7 @@ std::unique_ptr<IfAST> Parser::if_stmnt() {
         if (broken(elseBody)) return nullptr;
     }
 
-    return make_unique<IfAST>(move(cond), move(thenBody), move(elseBody));
+    return make_unique<IfAST>(move(init), move(cond), move(thenBody), move(elseBody));
 }
 
 std::unique_ptr<RetAST> Parser::ret() {
@@ -145,8 +176,6 @@ std::unique_ptr<RetAST> Parser::ret() {
     if (lex->peek().type != Token::T_SEMICOLON) {
         val = expr();
         if (broken(val)) return nullptr;
-    } else {
-        val = make_unique<NullExprAST>();
     }
 
     if (mismatch(Token::T_SEMICOLON)) return nullptr;

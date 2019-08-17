@@ -30,6 +30,7 @@ Lexer::Lexer(NamePool *namePool) : namePool(namePool) {
 
 void Lexer::start(std::istream &istr) {
     in = &istr;
+    ln = 0;
     col = 0;
     ch = 0; // not EOF
     tok.type = Token::T_NUM; // not END
@@ -47,6 +48,7 @@ char Lexer::nextCh() {
 
     if (col > line.size()) {
         if (!getline(*in, line)) ch = EOF;
+        else ++ln;
         col = 0;
     }
 
@@ -65,6 +67,7 @@ void Lexer::skipLine() {
         return;
     }
 
+    ++ln;
     col = 0;
     ch = col == line.size() ? '\n' : line[col];
 }

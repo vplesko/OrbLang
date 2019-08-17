@@ -185,6 +185,14 @@ void CodeGen::codegen(const DeclAST *ast) {
 }
 
 void CodeGen::codegen(const IfAST *ast) {
+    if (ast->hasInit()) {
+        // unlike C++, then and else may eclipse vars declared in if's init
+        symbolTable->newScope();
+
+        codegenNode(ast->getInit());
+        if (panic) return;
+    }
+
     llvm::Value *condVal = codegenNode(ast->getCond());
     if (condVal == nullptr) {
         panic = true;
@@ -225,17 +233,16 @@ void CodeGen::codegen(const IfAST *ast) {
         if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
     }
 
+    if (ast->hasInit()) {
+        symbolTable->endScope();
+    }
+
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);
 }
 
 void CodeGen::codegen(const RetAST *ast) {
     if (!ast->getVal()) {
-        panic = true;
-        return;
-    }
-
-    if (ast->getVal()->type() == AST_NullExpr) {
         llvmBuilder.CreateRetVoid();
         return;
     }

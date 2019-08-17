@@ -61,7 +61,7 @@ class Lexer {
     NamePool *namePool;
     std::istream *in;
     std::string line;
-    int col;
+    int ln, col;
     char ch;
     Token tok;
 
