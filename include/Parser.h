@@ -23,6 +23,7 @@ class Parser {
     std::unique_ptr<ExprAST> expr(std::unique_ptr<ExprAST> lhs, OperPrec min_prec);
     std::unique_ptr<ExprAST> expr();
     std::unique_ptr<DeclAST> decl();
+    std::unique_ptr<IfAST> if_stmnt();
     std::unique_ptr<RetAST> ret();
     std::unique_ptr<StmntAST> stmnt();
     std::unique_ptr<BlockAST> block();

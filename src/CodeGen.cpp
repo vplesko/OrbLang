@@ -39,6 +39,9 @@ llvm::Value* CodeGen::codegenNode(const BaseAST *ast) {
     case AST_Decl:
         codegen((DeclAST*)ast);
         return nullptr;
+    case AST_If:
+        codegen((IfAST*)ast);
+        return nullptr;
     case AST_Ret:
         codegen((RetAST*)ast);
         return nullptr;
@@ -177,6 +180,35 @@ void CodeGen::codegen(const DeclAST *ast) {
     }
 }
 
+void CodeGen::codegen(const IfAST *ast) {
+    llvm::Value *condVal = codegenNode(ast->getCond());
+    if (condVal == nullptr) {
+        panic = true;
+        return;
+    }
+
+    llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
+
+    llvm::BasicBlock *thenBlock = llvm::BasicBlock::Create(llvmContext, "then", func);
+    llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
+
+    llvmBuilder.CreateCondBr(condVal, thenBlock, afterBlock);
+
+    llvmBuilder.SetInsertPoint(thenBlock);
+    symbolTable->newScope();
+    if (ast->getBody()->type() == AST_Block) {
+        codegen((BlockAST*) ast->getBody(), false);
+    } else {
+        codegenNode(ast->getBody());
+    }
+    if (panic) return;
+    symbolTable->endScope();
+    llvmBuilder.CreateBr(afterBlock);
+
+    func->getBasicBlockList().push_back(afterBlock);
+    llvmBuilder.SetInsertPoint(afterBlock);
+}
+
 void CodeGen::codegen(const RetAST *ast) {
     if (!ast->getVal()) {
         panic = true;
@@ -198,8 +230,6 @@ void CodeGen::codegen(const RetAST *ast) {
 }
 
 void CodeGen::codegen(const BlockAST *ast, bool makeScope) {
-    // TODO maybe create a new llvm::BasicBlock and insert into it?
-
     if (makeScope) symbolTable->newScope();
 
     for (const auto &it : ast->getBody()) codegenNode(it.get());

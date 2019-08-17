@@ -115,6 +115,21 @@ unique_ptr<DeclAST> Parser::decl() {
     }
 }
 
+std::unique_ptr<IfAST> Parser::if_stmnt() {
+    if (mismatch(Token::T_IF)) return nullptr;
+    if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
+
+    unique_ptr<ExprAST> cond = expr();
+    if (broken(cond)) return nullptr;
+
+    if (mismatch(Token::T_BRACE_R_REG)) return nullptr;
+
+    unique_ptr<StmntAST> body = stmnt();
+    if (broken(body)) return nullptr;
+
+    return make_unique<IfAST>(move(cond), move(body));
+}
+
 std::unique_ptr<RetAST> Parser::ret() {
     if (mismatch(Token::T_RET)) return nullptr;
 
@@ -138,6 +153,8 @@ unique_ptr<StmntAST> Parser::stmnt() {
     }
 
     if (lex->peek().type == Token::T_VAR) return decl();
+
+    if (lex->peek().type == Token::T_IF) return if_stmnt();
 
     if (lex->peek().type == Token::T_RET) return ret();
 
@@ -240,8 +257,8 @@ void Parser::parse(std::istream &istr) {
             break;
         }
 
-        next->print();
-        cout << endl;
+        //next->print();
+        //cout << endl;
 
         codegen->codegenNode(next.get());
         if (codegen->isPanic()) { panic = true; }

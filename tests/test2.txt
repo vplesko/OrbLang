@@ -1,4 +1,6 @@
-fnc main() var {
+// TODO actual automated tests
+
+fnc foo1() var {
     var a=1,b=1,c=2;
     a==b;
     b==a;
@@ -13,4 +15,14 @@ fnc main() var {
     a+1>b == c<=c;
 
     ret 0;
+}
+
+fnc foo2() {
+    var a=1,b=1,c=2;
+    
+    if (a==b) b=b+1;
+    if (a<b) {
+        var x;
+        x=c+1;
+    }
 }

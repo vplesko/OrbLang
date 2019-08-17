@@ -12,6 +12,7 @@ enum ASTType {
     AST_BinExpr,
     AST_CallExpr,
     AST_Decl,
+    AST_If,
     AST_FuncProto,
     AST_Func,
     AST_Block,
@@ -23,7 +24,7 @@ public:
 
     virtual ASTType type() const =0;
 
-    virtual void print() const =0;
+    virtual void print() const;
 
     virtual ~BaseAST() {}
 };
@@ -113,7 +114,6 @@ class DeclAST : public StmntAST {
     std::vector<std::pair<NamePool::Id, std::unique_ptr<ExprAST>>> decls;
 
 public:
-    DeclAST();
 
     void add(std::pair<NamePool::Id, std::unique_ptr<ExprAST>> decl);
     const std::vector<std::pair<NamePool::Id, std::unique_ptr<ExprAST>>>& getDecls() const { return decls; }
@@ -121,6 +121,19 @@ public:
     ASTType type() const { return AST_Decl; }
 
     void print() const;
+};
+
+class IfAST : public StmntAST {
+    std::unique_ptr<ExprAST> cond;
+    std::unique_ptr<StmntAST> body;
+
+public:
+    IfAST(std::unique_ptr<ExprAST> cond, std::unique_ptr<StmntAST> body);
+    
+    const ExprAST* getCond() const { return cond.get(); }
+    const StmntAST* getBody() const { return body.get(); }
+
+    ASTType type() const { return AST_If; }
 };
 
 class BlockAST : public StmntAST {

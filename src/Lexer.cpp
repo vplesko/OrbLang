@@ -20,6 +20,7 @@ const unordered_map<Token::Oper, OperInfo> operInfos = {
 const unordered_map<string, Token::Type> keywords = {
     {"var", {Token::T_VAR}},
     {"fnc", {Token::T_FNC}},
+    {"if", {Token::T_IF}},
     {"ret", {Token::T_RET}}
 };
 
