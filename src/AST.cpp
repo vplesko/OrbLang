@@ -1,6 +1,10 @@
 #include "AST.h"
 using namespace std;
 
+void NullExprAST::print() const {
+    cout << "Epsilon";
+}
+
 void LiteralExprAST::print() const {
     cout << "Literal(" << val << ")";
 }

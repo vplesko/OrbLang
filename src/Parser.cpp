@@ -57,20 +57,13 @@ unique_ptr<ExprAST> Parser::prim() {
     }
 }
 
-unique_ptr<ExprAST> Parser::expr() {
-    unique_ptr<ExprAST> first = prim();
-    if (panic) return nullptr;
-
-    return expr(move(first), minOperPrec);
-}
-
 unique_ptr<ExprAST> Parser::expr(unique_ptr<ExprAST> lhs, OperPrec min_prec) {
     Token lookOp = lex->peek();
     while (lookOp.type == Token::T_OPER && operInfos.at(lookOp.op).prec >= min_prec) {
         Token op = lex->next();
         
         unique_ptr<ExprAST> rhs = prim();
-        if (panic) return 0;
+        if (broken(rhs)) return nullptr;
 
         lookOp = lex->peek();
         while (lookOp.type == Token::T_OPER && 
@@ -83,6 +76,13 @@ unique_ptr<ExprAST> Parser::expr(unique_ptr<ExprAST> lhs, OperPrec min_prec) {
         lhs = make_unique<BinExprAST>(move(lhs), move(rhs), op.op);
     }
     return lhs;
+}
+
+unique_ptr<ExprAST> Parser::expr() {
+    unique_ptr<ExprAST> first = prim();
+    if (panic) return nullptr;
+
+    return expr(move(first), minOperPrec);
 }
 
 unique_ptr<DeclAST> Parser::decl() {
@@ -122,11 +122,31 @@ std::unique_ptr<RetAST> Parser::ret() {
     if (lex->peek().type != Token::T_SEMICOLON) {
         val = expr();
         if (broken(val)) return nullptr;
+    } else {
+        val = make_unique<NullExprAST>();
     }
 
     if (mismatch(Token::T_SEMICOLON)) return nullptr;
 
     return make_unique<RetAST>(move(val));
+}
+
+unique_ptr<StmntAST> Parser::stmnt() {
+    if (lex->peek().type == Token::T_SEMICOLON) {
+        lex->next();
+        return make_unique<NullExprAST>();
+    }
+
+    if (lex->peek().type == Token::T_VAR) return decl();
+
+    if (lex->peek().type == Token::T_RET) return ret();
+
+    if (lex->peek().type == Token::T_BRACE_L_CUR) return block();
+    
+    unique_ptr<StmntAST> st = expr();
+    if (broken(st)) return nullptr;
+    if (mismatch(Token::T_SEMICOLON)) return nullptr;
+    return st;
 }
 
 unique_ptr<BlockAST> Parser::block() {
@@ -145,19 +165,6 @@ unique_ptr<BlockAST> Parser::block() {
     return ret;
 }
 
-unique_ptr<StmntAST> Parser::stmnt() {
-    if (lex->peek().type == Token::T_VAR) return decl();
-
-    if (lex->peek().type == Token::T_RET) return ret();
-
-    if (lex->peek().type == Token::T_BRACE_L_CUR) return block();
-    
-    unique_ptr<StmntAST> st = expr();
-    if (broken(st)) return nullptr;
-    if (mismatch(Token::T_SEMICOLON)) return nullptr;
-    return st;
-}
-
 unique_ptr<BaseAST> Parser::func() {
     if (mismatch(Token::T_FNC)) return nullptr;
 
@@ -171,6 +178,7 @@ unique_ptr<BaseAST> Parser::func() {
 
     if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
 
+    // args
     bool first = true;
     while (true) {
         if (lex->peek().type == Token::T_BRACE_R_REG) {
@@ -193,6 +201,7 @@ unique_ptr<BaseAST> Parser::func() {
         first = false;
     }
 
+    // ret type
     Token look = lex->peek();
     if (look.type == Token::T_VAR) {
         proto->setRetVal(true);
@@ -203,6 +212,7 @@ unique_ptr<BaseAST> Parser::func() {
     }
 
     if (look.type == Token::T_BRACE_L_CUR) {
+        //body
         unique_ptr<BlockAST> body = block();
         if (broken(body)) return nullptr;
 

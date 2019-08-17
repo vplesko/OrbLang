@@ -6,6 +6,7 @@
 #include "SymbolTable.h"
 
 enum ASTType {
+    AST_NullExpr,
     AST_LiteralExpr,
     AST_VarExpr,
     AST_BinExpr,
@@ -37,6 +38,13 @@ class ExprAST : public StmntAST {
 public:
 
     virtual ~ExprAST() {}
+};
+
+class NullExprAST : public ExprAST {
+public:
+
+    ASTType type() const { return AST_NullExpr; }
+    void print() const;
 };
 
 class LiteralExprAST : public ExprAST {

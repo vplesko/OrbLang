@@ -26,6 +26,8 @@ llvm::GlobalValue* CodeGen::createGlobal(const std::string &name) {
 
 llvm::Value* CodeGen::codegenNode(const BaseAST *ast) {
     switch (ast->type()) {
+    case AST_NullExpr:
+        return nullptr;
     case AST_LiteralExpr:
         return codegen((LiteralExprAST*)ast);
     case AST_VarExpr:
@@ -177,6 +179,11 @@ void CodeGen::codegen(const DeclAST *ast) {
 
 void CodeGen::codegen(const RetAST *ast) {
     if (!ast->getVal()) {
+        panic = true;
+        return;
+    }
+
+    if (ast->getVal()->type() == AST_NullExpr) {
         llvmBuilder.CreateRetVoid();
         return;
     }
