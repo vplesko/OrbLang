@@ -54,3 +54,16 @@ fnc foo3() {
         if (b==0)
             ret;
 }
+
+fnc foo4() {
+    var a=1, b=2;
+
+    do {
+        a=a+1;
+    } while (a<10);
+    do b=b-1; while (b>0);
+    do ; while (b==0);
+    do var x=1; while (1==2);
+    do if (a>1) ret; while (a>1);
+    //do ret; while (0==1);
+}

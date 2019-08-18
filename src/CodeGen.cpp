@@ -49,6 +49,9 @@ llvm::Value* CodeGen::codegenNode(const BaseAST *ast, bool blockMakeScope) {
     case AST_While:
         codegen((WhileAST*) ast);
         return nullptr;
+    case AST_DoWhile:
+        codegen((DoWhileAST*) ast);
+        return nullptr;
     case AST_Ret:
         codegen((RetAST*)ast);
         return nullptr;
@@ -197,7 +200,7 @@ void CodeGen::codegen(const IfAST *ast) {
     }
 
     llvm::Value *condVal = codegenNode(ast->getCond());
-    if (condVal == nullptr) {
+    if (panic || condVal == nullptr) {
         panic = true;
         return;
     }
@@ -242,7 +245,7 @@ void CodeGen::codegen(const WhileAST *ast) {
     llvmBuilder.SetInsertPoint(condBlock);
 
     llvm::Value *condVal = codegenNode(ast->getCond());
-    if (condVal == nullptr) {
+    if (panic || condVal == nullptr) {
         panic = true;
         return;
     }
@@ -257,6 +260,33 @@ void CodeGen::codegen(const WhileAST *ast) {
         if (panic) return;
         if (!isBlockTerminated()) llvmBuilder.CreateBr(condBlock);
     }
+
+    func->getBasicBlockList().push_back(afterBlock);
+    llvmBuilder.SetInsertPoint(afterBlock);
+}
+
+void CodeGen::codegen(const DoWhileAST *ast) {
+    llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
+
+    llvm::BasicBlock *bodyBlock = llvm::BasicBlock::Create(llvmContext, "body", func);
+    llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
+
+    llvmBuilder.CreateBr(bodyBlock);
+    llvmBuilder.SetInsertPoint(bodyBlock);
+
+    {
+        ScopeControl scope(symbolTable);
+        codegenNode(ast->getBody(), false);
+        if (panic) return;
+    }
+
+    llvm::Value *condVal = codegenNode(ast->getCond());
+    if (panic || condVal == nullptr) {
+        panic = true;
+        return;
+    }
+
+    llvmBuilder.CreateCondBr(condVal, bodyBlock, afterBlock);
 
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);

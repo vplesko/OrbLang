@@ -23,6 +23,7 @@ const unordered_map<string, Token::Type> keywords = {
     {"if", {Token::T_IF}},
     {"else", {Token::T_ELSE}},
     {"while", {Token::T_WHILE}},
+    {"do", {Token::T_DO}},
     {"ret", {Token::T_RET}}
 };
 

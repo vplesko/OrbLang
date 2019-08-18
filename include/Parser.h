@@ -26,6 +26,7 @@ class Parser {
     std::unique_ptr<StmntAST> simple();
     std::unique_ptr<IfAST> if_stmnt();
     std::unique_ptr<WhileAST> while_stmnt();
+    std::unique_ptr<DoWhileAST> do_while_stmnt();
     std::unique_ptr<RetAST> ret();
     std::unique_ptr<StmntAST> stmnt();
     std::unique_ptr<BlockAST> block();

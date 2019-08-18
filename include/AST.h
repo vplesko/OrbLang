@@ -14,6 +14,7 @@ enum ASTType {
     AST_Decl,
     AST_If,
     AST_While,
+    AST_DoWhile,
     AST_FuncProto,
     AST_Func,
     AST_Block,
@@ -155,6 +156,19 @@ public:
     const StmntAST* getBody() const { return body.get(); }
 
     ASTType type() const { return AST_While; }
+};
+
+class DoWhileAST : public StmntAST {
+    std::unique_ptr<StmntAST> body;
+    std::unique_ptr<ExprAST> cond;
+
+public:
+    DoWhileAST(std::unique_ptr<StmntAST> body, std::unique_ptr<ExprAST> cond);
+
+    const StmntAST* getBody() const { return body.get(); }
+    const ExprAST* getCond() const { return cond.get(); }
+
+    ASTType type() const { return AST_DoWhile; }
 };
 
 class BlockAST : public StmntAST {

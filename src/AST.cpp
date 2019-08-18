@@ -7,16 +7,20 @@ BinExprAST::BinExprAST(
     Token::Oper _op) : lhs(move(_lhs)), rhs(move(_rhs)), op(_op) {
 }
 
-IfAST::IfAST(std::unique_ptr<StmntAST> init, std::unique_ptr<ExprAST> cond, 
-        std::unique_ptr<StmntAST> thenBody, std::unique_ptr<StmntAST> elseBody)
-        : init(move(init)), cond(std::move(cond)), thenBody(std::move(thenBody)), elseBody(move(elseBody)) {
+IfAST::IfAST(unique_ptr<StmntAST> init, unique_ptr<ExprAST> cond, 
+        unique_ptr<StmntAST> thenBody, unique_ptr<StmntAST> elseBody)
+        : init(move(init)), cond(move(cond)), thenBody(move(thenBody)), elseBody(move(elseBody)) {
 }
 
-WhileAST::WhileAST(std::unique_ptr<ExprAST> cond, std::unique_ptr<StmntAST> body)
+WhileAST::WhileAST(unique_ptr<ExprAST> cond, unique_ptr<StmntAST> body)
     : cond(move(cond)), body(move(body)) {
 }
 
-void DeclAST::add(std::pair<NamePool::Id, std::unique_ptr<ExprAST>> decl) {
+DoWhileAST::DoWhileAST(unique_ptr<StmntAST> body, unique_ptr<ExprAST> cond)
+    : body(move(body)), cond(move(cond)) {
+}
+
+void DeclAST::add(pair<NamePool::Id, unique_ptr<ExprAST>> decl) {
     decls.push_back(move(decl));
 }
 
