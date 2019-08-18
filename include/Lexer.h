@@ -21,6 +21,7 @@ struct Token {
         T_ID,
         T_IF,
         T_ELSE,
+        T_WHILE,
         T_RET,
         T_END,
         T_UNKNOWN

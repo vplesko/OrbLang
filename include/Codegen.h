@@ -27,6 +27,7 @@ class CodeGen {
     llvm::Value* codegen(const CallExprAST *ast);
     void codegen(const DeclAST *ast);
     void codegen(const IfAST *ast);
+    void codegen(const WhileAST *ast);
     void codegen(const RetAST *ast);
     void codegen(const BlockAST *ast, bool makeScope);
     llvm::Function* codegen(const FuncProtoAST *ast, bool definition);
@@ -35,7 +36,7 @@ class CodeGen {
 public:
     CodeGen(const NamePool *namePool, SymbolTable *symbolTable);
 
-    llvm::Value* codegenNode(const BaseAST *ast);
+    llvm::Value* codegenNode(const BaseAST *ast, bool blockMakeScope = true);
 
     bool isPanic() const { return panic; }
 

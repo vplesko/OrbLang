@@ -41,3 +41,16 @@ fnc foo2() {
     if (; c==1);
     if (var x=a; x>0) var x=b;
 }
+
+fnc foo3() {
+    var a=1, b=2;
+
+    while (a<100) a=a+1;
+    while (b!=0) {
+        var x;
+        x=b+1;
+    }
+    while (a<b)
+        if (b==0)
+            ret;
+}

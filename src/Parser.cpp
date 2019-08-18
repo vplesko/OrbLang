@@ -169,6 +169,21 @@ std::unique_ptr<IfAST> Parser::if_stmnt() {
     return make_unique<IfAST>(move(init), move(cond), move(thenBody), move(elseBody));
 }
 
+std::unique_ptr<WhileAST> Parser::while_stmnt() {
+    if (mismatch(Token::T_WHILE)) return nullptr;
+    if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
+
+    unique_ptr<ExprAST> cond = expr();
+    if (broken(cond)) return nullptr;
+
+    if (mismatch(Token::T_BRACE_R_REG)) return nullptr;
+
+    unique_ptr<StmntAST> body = stmnt();
+    if (broken(body)) return nullptr;
+
+    return make_unique<WhileAST>(move(cond), move(body));
+}
+
 std::unique_ptr<RetAST> Parser::ret() {
     if (mismatch(Token::T_RET)) return nullptr;
 
@@ -192,6 +207,8 @@ unique_ptr<StmntAST> Parser::stmnt() {
     if (lex->peek().type == Token::T_VAR) return decl();
 
     if (lex->peek().type == Token::T_IF) return if_stmnt();
+
+    if (lex->peek().type == Token::T_WHILE) return while_stmnt();
 
     if (lex->peek().type == Token::T_RET) return ret();
 

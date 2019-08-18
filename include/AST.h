@@ -13,6 +13,7 @@ enum ASTType {
     AST_CallExpr,
     AST_Decl,
     AST_If,
+    AST_While,
     AST_FuncProto,
     AST_Func,
     AST_Block,
@@ -141,6 +142,19 @@ public:
     bool hasElse() const { return elseBody != nullptr; }
 
     ASTType type() const { return AST_If; }
+};
+
+class WhileAST : public StmntAST {
+    std::unique_ptr<ExprAST> cond;
+    std::unique_ptr<StmntAST> body;
+
+public:
+    WhileAST(std::unique_ptr<ExprAST> cond, std::unique_ptr<StmntAST> body);
+
+    const ExprAST* getCond() const { return cond.get(); }
+    const StmntAST* getBody() const { return body.get(); }
+
+    ASTType type() const { return AST_While; }
 };
 
 class BlockAST : public StmntAST {
