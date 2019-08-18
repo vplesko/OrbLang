@@ -12,6 +12,10 @@ IfAST::IfAST(unique_ptr<StmntAST> init, unique_ptr<ExprAST> cond,
         : init(move(init)), cond(move(cond)), thenBody(move(thenBody)), elseBody(move(elseBody)) {
 }
 
+ForAST::ForAST(unique_ptr<StmntAST> init, unique_ptr<ExprAST> cond, unique_ptr<ExprAST> iter, std::unique_ptr<StmntAST> body)
+    : init(move(init)), cond(move(cond)), iter(move(iter)), body(move(body)) {
+}
+
 WhileAST::WhileAST(unique_ptr<ExprAST> cond, unique_ptr<StmntAST> body)
     : cond(move(cond)), body(move(body)) {
 }

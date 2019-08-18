@@ -67,3 +67,18 @@ fnc foo4() {
     do if (a>1) ret; while (a>1);
     //do ret; while (0==1);
 }
+
+fnc foo5() {
+    var a=1, b=2;
+
+    for (var i = 0; i < 10; i=i+1) a=a+1;
+    for (; a<b; a) {
+        var i=a;
+    }
+    for (a=0; ; b+1);
+    for (;;) b=b-1;
+    for (;;) {
+        ret;
+    }
+    for (var x=100,y;;);
+}

@@ -46,6 +46,9 @@ llvm::Value* CodeGen::codegenNode(const BaseAST *ast, bool blockMakeScope) {
     case AST_If:
         codegen((IfAST*)ast);
         return nullptr;
+    case AST_For:
+        codegen((ForAST*) ast);
+        return nullptr;
     case AST_While:
         codegen((WhileAST*) ast);
         return nullptr;
@@ -229,6 +232,54 @@ void CodeGen::codegen(const IfAST *ast) {
         if (panic) return;
         if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
     }
+
+    func->getBasicBlockList().push_back(afterBlock);
+    llvmBuilder.SetInsertPoint(afterBlock);
+}
+
+void CodeGen::codegen(const ForAST *ast) {
+    ScopeControl scope(ast->getInit()->type() == AST_Decl ? symbolTable : nullptr);
+
+    codegenNode(ast->getInit());
+    if (panic) return;
+
+    llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
+
+    llvm::BasicBlock *condBlock = llvm::BasicBlock::Create(llvmContext, "cond", func);
+    llvm::BasicBlock *bodyBlock = llvm::BasicBlock::Create(llvmContext, "body");
+    llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
+
+    llvmBuilder.CreateBr(condBlock);
+    llvmBuilder.SetInsertPoint(condBlock);
+
+    llvm::Value *condVal;
+    if (ast->hasCond()) {
+        condVal = codegenNode(ast->getCond());
+        if (panic || condVal == nullptr) {
+            panic = true;
+            return;
+        }
+    } else {
+        condVal = llvm::ConstantInt::getTrue(llvmContext);
+    }
+
+    llvmBuilder.CreateCondBr(condVal, bodyBlock, afterBlock);
+
+    {
+        ScopeControl scopeBody(symbolTable);
+        func->getBasicBlockList().push_back(bodyBlock);
+        llvmBuilder.SetInsertPoint(bodyBlock);
+
+        codegenNode(ast->getBody(), false);
+        if (panic) return;
+    }
+        
+    if (ast->hasIter()) {
+        codegenNode(ast->getIter());
+        if (panic) return;
+    }
+
+    if (!isBlockTerminated()) llvmBuilder.CreateBr(condBlock);
 
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);

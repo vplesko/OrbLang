@@ -27,6 +27,7 @@ class CodeGen {
     llvm::Value* codegen(const CallExprAST *ast);
     void codegen(const DeclAST *ast);
     void codegen(const IfAST *ast);
+    void codegen(const ForAST *ast);
     void codegen(const WhileAST *ast);
     void codegen(const DoWhileAST *ast);
     void codegen(const RetAST *ast);

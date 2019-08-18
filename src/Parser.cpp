@@ -169,6 +169,38 @@ std::unique_ptr<IfAST> Parser::if_stmnt() {
     return make_unique<IfAST>(move(init), move(cond), move(thenBody), move(elseBody));
 }
 
+std::unique_ptr<ForAST> Parser::for_stmnt() {
+    if (mismatch(Token::T_FOR)) return nullptr;
+    if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
+
+    unique_ptr<StmntAST> init = simple();
+    if (init->type() != AST_Decl && init->type() != AST_NullExpr) {
+        // init was expression, need to eat semicolon
+        if (mismatch(Token::T_SEMICOLON)) return nullptr;
+    }
+
+    unique_ptr<ExprAST> cond;
+    if (lex->peek().type != Token::T_SEMICOLON) {
+        cond = expr();
+        if (broken(cond)) return nullptr;
+    }
+    
+    if (mismatch(Token::T_SEMICOLON)) return nullptr;
+
+    unique_ptr<ExprAST> iter;
+    if (lex->peek().type != Token::T_BRACE_R_REG) {
+        iter = expr();
+        if (broken(iter)) return nullptr;
+    }
+    
+    if (mismatch(Token::T_BRACE_R_REG)) return nullptr;
+
+    unique_ptr<StmntAST> body = stmnt();
+    if (broken(body)) return nullptr;
+
+    return make_unique<ForAST>(move(init), move(cond), move(iter), move(body));
+}
+
 std::unique_ptr<WhileAST> Parser::while_stmnt() {
     if (mismatch(Token::T_WHILE)) return nullptr;
     if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
@@ -223,6 +255,8 @@ unique_ptr<StmntAST> Parser::stmnt() {
     if (lex->peek().type == Token::T_VAR) return decl();
 
     if (lex->peek().type == Token::T_IF) return if_stmnt();
+
+    if (lex->peek().type == Token::T_FOR) return for_stmnt();
 
     if (lex->peek().type == Token::T_WHILE) return while_stmnt();
 
