@@ -350,6 +350,10 @@ unique_ptr<BaseAST> Parser::func() {
 }
 
 void Parser::parse(std::istream &istr) {
+    // TODO make a Compiler class to do this and stuff from main
+
+    codegen->genPrimitiveTypes();
+
     lex->start(istr);
 
     while (lex->peek().type != Token::T_END) {

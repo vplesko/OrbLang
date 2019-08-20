@@ -38,6 +38,8 @@ class CodeGen {
 public:
     CodeGen(const NamePool *namePool, SymbolTable *symbolTable);
 
+    void genPrimitiveTypes();
+
     llvm::Value* codegenNode(const BaseAST *ast, bool blockMakeScope = true);
 
     bool isPanic() const { return panic; }

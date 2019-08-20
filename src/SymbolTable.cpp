@@ -19,6 +19,7 @@ NamePool::Id NamePool::add(const string &name) {
 SymbolTable::SymbolTable() {
     last = glob = new Scope();
     glob->prev = nullptr;
+    intType = nullptr;
 }
 
 void SymbolTable::newScope() {

@@ -10,8 +10,12 @@ CodeGen::CodeGen(const NamePool *namePool, SymbolTable *symbolTable) : namePool(
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("test"), llvmContext);
 }
 
+void CodeGen::genPrimitiveTypes() {
+    symbolTable->setIntType(llvm::IntegerType::getInt64Ty(llvmContext));
+}
+
 llvm::AllocaInst* CodeGen::createAlloca(const string &name) {
-    return llvmBuilderAlloca.CreateAlloca(llvm::IntegerType::getInt64Ty(llvmContext), 0, name);
+    return llvmBuilderAlloca.CreateAlloca(symbolTable->getIntType(), 0, name);
 }
 
 bool CodeGen::isBlockTerminated() const {
@@ -21,7 +25,7 @@ bool CodeGen::isBlockTerminated() const {
 llvm::GlobalValue* CodeGen::createGlobal(const std::string &name) {
     return new llvm::GlobalVariable(
         *llvmModule.get(),
-        llvm::IntegerType::getInt64Ty(llvmContext),
+        symbolTable->getIntType(),
         false,
         llvm::GlobalValue::CommonLinkage,
         nullptr,
@@ -73,7 +77,7 @@ llvm::Value* CodeGen::codegenNode(const BaseAST *ast, bool blockMakeScope) {
 
 llvm::Value* CodeGen::codegen(const LiteralExprAST *ast) {
     return llvm::ConstantInt::get(
-        llvm::IntegerType::getInt64Ty(llvmContext), 
+        symbolTable->getIntType(), 
         llvm::APInt(64, ast->getVal(), true));
 }
 
@@ -387,8 +391,8 @@ llvm::Function* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
         }
     }
 
-    vector<llvm::Type*> argTypes(ast->getArgs().size(), llvm::IntegerType::getInt64Ty(llvmContext));
-    llvm::Type *retType = ast->hasRetVal() ? llvm::IntegerType::getInt64Ty(llvmContext) : llvm::Type::getVoidTy(llvmContext);
+    vector<llvm::Type*> argTypes(ast->getArgs().size(), symbolTable->getIntType());
+    llvm::Type *retType = ast->hasRetVal() ? symbolTable->getIntType() : llvm::Type::getVoidTy(llvmContext);
     llvm::FunctionType *funcType = llvm::FunctionType::get(retType, argTypes, false);
     llvm::Function *func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, 
             namePool->get(ast->getName()), llvmModule.get());

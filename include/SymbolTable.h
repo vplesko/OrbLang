@@ -55,6 +55,8 @@ class SymbolTable {
 
     Scope *last, *glob;
 
+    llvm::Type *intType;
+
     friend class ScopeControl;
     void newScope();
     void endScope();
@@ -70,6 +72,9 @@ public:
     
     bool inGlobalScope() const { return last == glob; }
     bool taken(NamePool::Id name) const;
+
+    void setIntType(llvm::Type *t) { intType = t; }
+    llvm::Type* getIntType() { return intType; }
 
     ~SymbolTable();
 };
