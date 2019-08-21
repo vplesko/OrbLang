@@ -71,6 +71,9 @@ public:
     const FuncValue* getFunc(const FuncSignature &sig) const;
     
     bool inGlobalScope() const { return last == glob; }
+
+    // TODO: different rules for vars and funcs (and types)
+    // also, bug allows func to take same name as prev glob var
     bool taken(NamePool::Id name) const;
 
     void setIntType(llvm::Type *t) { intType = t; }

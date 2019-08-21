@@ -1,7 +1,7 @@
 // TODO actual automated tests
 
-fnc foo1() var {
-    var a=1,b=1,c=2;
+fnc foo1() i64 {
+    i64 a=1,b=1,c=2;
     a==b;
     b==a;
     a==c;
@@ -18,11 +18,11 @@ fnc foo1() var {
 }
 
 fnc foo2() {
-    var a=1,b=1,c=2;
+    i64 a=1,b=1,c=2;
     
     if (a==b) b=b+1;
     if (a<b) {
-        var x;
+        i64 x;
         x=c+1;
     }
     if (c==c+1);
@@ -36,18 +36,18 @@ fnc foo2() {
     if (1+1==2) a=2;
     else if (1+1==3) a=3; else a=0;
 
-    if (var x=a+b; x>c) c=0;
+    if (i64 x=a+b; x>c) c=0;
     if (a=0; a==b);
     if (; c==1);
-    if (var x=a; x>0) var x=b;
+    if (i64 x=a; x>0) i64 x=b;
 }
 
 fnc foo3() {
-    var a=1, b=2;
+    i64 a=1, b=2;
 
     while (a<100) a=a+1;
     while (b!=0) {
-        var x;
+        i64 x;
         x=b+1;
     }
     while (a<b)
@@ -56,29 +56,29 @@ fnc foo3() {
 }
 
 fnc foo4() {
-    var a=1, b=2;
+    i64 a=1, b=2;
 
     do {
         a=a+1;
     } while (a<10);
     do b=b-1; while (b>0);
     do ; while (b==0);
-    do var x=1; while (1==2);
+    do i64 x=1; while (1==2);
     do if (a>1) ret; while (a>1);
     //do ret; while (0==1);
 }
 
 fnc foo5() {
-    var a=1, b=2;
+    i64 a=1, b=2;
 
-    for (var i = 0; i < 10; i=i+1) a=a+1;
+    for (i64 i = 0; i < 10; i=i+1) a=a+1;
     for (; a<b; a) {
-        var i=a;
+        i64 i=a;
     }
     for (a=0; ; b+1);
     for (;;) b=b-1;
     for (;;) {
         ret;
     }
-    for (var x=100,y;;);
+    for (i64 x=100,y;;);
 }

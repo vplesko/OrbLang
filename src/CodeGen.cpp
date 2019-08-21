@@ -369,6 +369,7 @@ void CodeGen::codegen(const BlockAST *ast, bool makeScope) {
 }
 
 llvm::Function* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
+    // TODO: args have types, need to compare for checking name collision
     const FuncValue *prev = symbolTable->getFunc({ast->getName(), ast->getArgs().size()});
 
     if (prev != nullptr) {

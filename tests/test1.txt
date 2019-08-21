@@ -1,45 +1,45 @@
 // some comment
 
-var _a;
+i64 _a;
 
-fnc inc() var;
+fnc inc() i64;
 
-fnc inc(var x) var {
+fnc inc(i64 x) i64 {
     ret x+1;
 }
 
-fnc inc() var {
+fnc inc() i64 {
     _a = _a + 1;
     ret _a;
 }
 
-fnc main() var {
+fnc main() i64 {
     1;
     2+3;
     4+5*6-7;
-    var n=8;
-    var a=9,b=a+10;
+    i64 n=8;
+    i64 a=9,b=a+10;
     a=b-11;
     n=a=b=12;
-    var c;
+    i64 c;
     c=13;
 
     {
-        var f = 14;
+        i64 f = 14;
         f=a+15;
     }
 
     {
-        var a;
+        i64 a;
     }
 
     {
-        var g=16;
+        i64 g=16;
         {
-            var h = 17;
+            i64 h = 17;
             g=h;
         }
-        var h;
+        i64 h;
     }
 
     inc();
@@ -50,33 +50,33 @@ fnc main() var {
     ret 0;
 }
 
-var g;
-var i;
+i64 g;
+i64 i;
 
 fnc foo() {}
 fnc foo();
 
-fnc bar(var d);
-fnc zee(var a, var e) var;
+fnc bar(i64 d);
+fnc zee(i64 a, i64 e) i64;
 
-fnc eta() var {
+fnc eta() i64 {
     ret 18*g;
 }
 
-fnc tet(var i) {
+fnc tet(i64 i) {
     g=19;
     i=g+20;
-    var j=zee(i, inc());
+    i64 j=zee(i, inc());
     ret;
 }
 
 fnc comment_test() {
     // test
-    var x = 0; // abcd
-    var y = 1;//
-    var z = 2 //
+    i64 x = 0; // abcd
+    i64 y = 1;//
+    i64 z = 2 //
     + 3;
-    var a; // abcd // pqr
+    i64 a; // abcd // pqr
     // lmnop
 
     /*
@@ -94,7 +94,7 @@ fnc comment_test() {
 
     /**/
 
-    var b = 1/*blah*/+2;
+    i64 b = 1/*blah*/+2;
 
     ;;;;
 }

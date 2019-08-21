@@ -206,6 +206,7 @@ public:
 
 class FuncProtoAST : public BaseAST {
     NamePool::Id name;
+    // TODO args have types
     std::vector<NamePool::Id> args;
     bool ret;
 
