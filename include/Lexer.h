@@ -12,7 +12,6 @@ struct Token {
         T_OPER,
         T_COMMA,
         T_SEMICOLON,
-        T_VAR, // TODO var types
         T_FNC,
         T_BRACE_L_REG,
         T_BRACE_R_REG,

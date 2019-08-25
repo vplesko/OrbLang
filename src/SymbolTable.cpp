@@ -16,10 +16,25 @@ NamePool::Id NamePool::add(const string &name) {
     return next-1;
 }
 
+bool FuncSignature::operator==(const FuncSignature &other) const {
+    if (name != other.name) return false;
+    if (argTypes.size() != other.argTypes.size()) return false;
+    for (std::size_t i = 0; i < argTypes.size(); ++i)
+        if (argTypes[i] != other.argTypes[i]) return false;
+    
+    return true;
+}
+
+std::size_t FuncSignature::Hasher::operator()(const FuncSignature &k) const {
+    // le nice hashe functione
+    std::size_t sum = k.argTypes.size();
+    for (const auto &it : k.argTypes) sum += it;
+    return (17*31+k.name)*31+sum;
+}
+
 SymbolTable::SymbolTable() {
     last = glob = new Scope();
     glob->prev = nullptr;
-    intType = nullptr;
 }
 
 void SymbolTable::newScope() {
@@ -34,14 +49,14 @@ void SymbolTable::endScope() {
     delete s;
 }
 
-void SymbolTable::addVar(NamePool::Id name, llvm::Value *val) {
-    last->vars.insert(make_pair(name, val));
+void SymbolTable::addVar(NamePool::Id name, const VarPayload &var) {
+    last->vars.insert(make_pair(name, var));
 }
 
-llvm::Value* SymbolTable::getVar(NamePool::Id name) const {
+const SymbolTable::VarPayload* SymbolTable::getVar(NamePool::Id name) const {
     for (Scope *s = last; s != nullptr; s = s->prev) {
         auto loc = s->vars.find(name);
-        if (loc != s->vars.end()) return loc->second;
+        if (loc != s->vars.end()) return &loc->second;
     }
 
     return nullptr;
@@ -80,4 +95,19 @@ SymbolTable::~SymbolTable() {
         last = last->prev;
         delete s;
     }
+}
+
+void SymbolTable::addType(TypeId id, llvm::Type *type) {
+    types.insert(make_pair(id, type));
+}
+
+llvm::Type* SymbolTable::getType(TypeId id) {
+    auto loc = types.find(id);
+    if (loc == types.end()) return nullptr;
+
+    return loc->second;
+}
+
+bool SymbolTable::isType(NamePool::Id name) const {
+    return types.find((TypeId) name) == types.end();
 }

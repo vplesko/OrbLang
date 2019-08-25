@@ -21,33 +21,36 @@ public:
     const std::string& get(Id id) const { return names.at(id); }
 };
 
+typedef NamePool::Id TypeId;
+
 struct FuncSignature {
-    typedef std::size_t ArgSize;
-
     NamePool::Id name;
-    ArgSize argCnt;
+    std::vector<TypeId> argTypes;
 
-    bool operator==(const FuncSignature &other) const {
-        return name == other.name && argCnt == other.argCnt;
-    }
+    bool operator==(const FuncSignature &other) const;
 
     struct Hasher {
-        std::size_t operator()(const FuncSignature &k) const {
-            // le nice hashe functione
-            return (17*31+k.name)*31+k.argCnt;
-        }
+        std::size_t operator()(const FuncSignature &k) const;
     };
 };
 
 struct FuncValue {
     llvm::Function *func;
-    bool hasRetVal;
+    bool hasRet;
+    TypeId retType;
     bool defined;
 };
 
 class SymbolTable {
+public:
+    struct VarPayload {
+        TypeId type;
+        llvm::Value *val;
+    };
+
+private:
     struct Scope {
-        std::unordered_map<NamePool::Id, llvm::Value*> vars;
+        std::unordered_map<NamePool::Id, VarPayload> vars;
         Scope *prev;
     };
 
@@ -55,7 +58,7 @@ class SymbolTable {
 
     Scope *last, *glob;
 
-    llvm::Type *intType;
+    std::unordered_map<TypeId, llvm::Type*> types;
 
     friend class ScopeControl;
     void newScope();
@@ -64,8 +67,8 @@ class SymbolTable {
 public:
     SymbolTable();
 
-    void addVar(NamePool::Id name, llvm::Value *val);
-    llvm::Value* getVar(NamePool::Id name) const;
+    void addVar(NamePool::Id name, const VarPayload &var);
+    const VarPayload* getVar(NamePool::Id name) const;
 
     void addFunc(const FuncSignature &sig, const FuncValue &val);
     FuncValue* getFunc(const FuncSignature &sig);
@@ -75,8 +78,9 @@ public:
     bool varNameTaken(NamePool::Id name) const;
     bool funcNameTaken(NamePool::Id name) const;
 
-    void setIntType(llvm::Type *t) { intType = t; }
-    llvm::Type* getIntType() { return intType; }
+    void addType(TypeId id, llvm::Type *type);
+    llvm::Type* getType(TypeId id);
+    bool isType(NamePool::Id name) const;
 
     ~SymbolTable();
 };

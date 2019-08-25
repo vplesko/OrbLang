@@ -7,7 +7,7 @@
 #include "llvm/IR/Module.h"
 
 class CodeGen {
-    const NamePool *namePool;
+    NamePool *namePool;
     SymbolTable *symbolTable;
 
     llvm::LLVMContext llvmContext;
@@ -16,8 +16,8 @@ class CodeGen {
 
     bool panic;
 
-    llvm::AllocaInst* createAlloca(const std::string &name);
-    llvm::GlobalValue* createGlobal(const std::string &name);
+    llvm::AllocaInst* createAlloca(llvm::Type *type, const std::string &name);
+    llvm::GlobalValue* createGlobal(llvm::Type *type, const std::string &name);
 
     bool isBlockTerminated() const;
 
@@ -25,6 +25,7 @@ class CodeGen {
     llvm::Value* codegen(const VarExprAST *ast);
     llvm::Value* codegen(const BinExprAST *ast);
     llvm::Value* codegen(const CallExprAST *ast);
+    llvm::Type* codegen(const TypeAST *ast);
     void codegen(const DeclAST *ast);
     void codegen(const IfAST *ast);
     void codegen(const ForAST *ast);
@@ -35,8 +36,12 @@ class CodeGen {
     llvm::Function* codegen(const FuncProtoAST *ast, bool definition);
     llvm::Function* codegen(const FuncAST *ast);
 
+    // TODO literals of other types
+    TypeId i64Type;
+    llvm::Type* getI64Type();
+
 public:
-    CodeGen(const NamePool *namePool, SymbolTable *symbolTable);
+    CodeGen(NamePool *namePool, SymbolTable *symbolTable);
 
     void genPrimitiveTypes();
 

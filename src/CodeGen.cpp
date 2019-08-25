@@ -5,27 +5,32 @@
 #include "llvm/IR/Verifier.h"
 using namespace std;
 
-CodeGen::CodeGen(const NamePool *namePool, SymbolTable *symbolTable) : namePool(namePool), symbolTable(symbolTable), 
+CodeGen::CodeGen(NamePool *namePool, SymbolTable *symbolTable) : namePool(namePool), symbolTable(symbolTable), 
         llvmBuilder(llvmContext), llvmBuilderAlloca(llvmContext), panic(false) {
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("test"), llvmContext);
 }
 
 void CodeGen::genPrimitiveTypes() {
-    symbolTable->setIntType(llvm::IntegerType::getInt64Ty(llvmContext));
+    i64Type = namePool->add("i64");
+    symbolTable->addType(i64Type, llvm::IntegerType::getInt64Ty(llvmContext));
 }
 
-llvm::AllocaInst* CodeGen::createAlloca(const string &name) {
-    return llvmBuilderAlloca.CreateAlloca(symbolTable->getIntType(), 0, name);
+llvm::Type* CodeGen::getI64Type() {
+    return symbolTable->getType(i64Type);
+}
+
+llvm::AllocaInst* CodeGen::createAlloca(llvm::Type *type, const string &name) {
+    return llvmBuilderAlloca.CreateAlloca(type, 0, name);
 }
 
 bool CodeGen::isBlockTerminated() const {
     return !llvmBuilder.GetInsertBlock()->empty() && llvmBuilder.GetInsertBlock()->back().isTerminator();
 }
 
-llvm::GlobalValue* CodeGen::createGlobal(const std::string &name) {
+llvm::GlobalValue* CodeGen::createGlobal(llvm::Type *type, const std::string &name) {
     return new llvm::GlobalVariable(
         *llvmModule.get(),
-        symbolTable->getIntType(),
+        type,
         false,
         llvm::GlobalValue::CommonLinkage,
         nullptr,
@@ -69,6 +74,7 @@ llvm::Value* CodeGen::codegenNode(const BaseAST *ast, bool blockMakeScope) {
         return codegen((FuncProtoAST*)ast, false);
     case AST_Func:
         return codegen((FuncAST*)ast);
+    //case AST_Type:
     default:
         panic = true;
         return nullptr;
@@ -77,12 +83,12 @@ llvm::Value* CodeGen::codegenNode(const BaseAST *ast, bool blockMakeScope) {
 
 llvm::Value* CodeGen::codegen(const LiteralExprAST *ast) {
     return llvm::ConstantInt::get(
-        symbolTable->getIntType(), 
+        getI64Type(), 
         llvm::APInt(64, ast->getVal(), true));
 }
 
 llvm::Value* CodeGen::codegen(const VarExprAST *ast) {
-    llvm::Value *val = symbolTable->getVar(ast->getNameId());
+    llvm::Value *val = symbolTable->getVar(ast->getNameId())->val;
     if (val == nullptr) { panic = true; return nullptr; }
     return llvmBuilder.CreateLoad(val, namePool->get(ast->getNameId()));
 }
@@ -95,7 +101,7 @@ llvm::Value* CodeGen::codegen(const BinExprAST *ast) {
             return nullptr;
         }
         const VarExprAST *var = (const VarExprAST*)ast->getL();
-        valL = symbolTable->getVar(var->getNameId());
+        valL = symbolTable->getVar(var->getNameId())->val;
     } else {
         valL = codegenNode(ast->getL());
     }
@@ -140,11 +146,22 @@ llvm::Value* CodeGen::codegen(const BinExprAST *ast) {
 }
 
 llvm::Value* CodeGen::codegen(const CallExprAST *ast) {
-    const FuncValue *func = symbolTable->getFunc({ast->getName(), ast->getArgs().size()});
-    if (func == nullptr) {
-        panic = true;
-        return nullptr;
-    }
+    /*
+        TODO
+        TODO
+        TODO
+
+        fill sig with arg types
+        for this, you need to know the types
+        for that, expr ast's need to know their result type
+
+        TODO
+        TODO
+        TODO
+    */
+    FuncSignature sig;
+    sig.name = ast->getName();
+    sig.argTypes = vector<TypeId>(ast->getArgs().size());
 
     std::vector<llvm::Value*> args(ast->getArgs().size());
     for (size_t i = 0; i < ast->getArgs().size(); ++i) {
@@ -157,10 +174,32 @@ llvm::Value* CodeGen::codegen(const CallExprAST *ast) {
         args[i] = arg;
     }
 
+    const FuncValue *func = symbolTable->getFunc(sig);
+    if (func == nullptr) {
+        panic = true;
+        return nullptr;
+    }
+
     return llvmBuilder.CreateCall(func->func, args, "call_tmp");
 }
 
+llvm::Type* CodeGen::codegen(const TypeAST *ast) {
+    llvm::Type *type = symbolTable->getType(ast->getId());
+    if (type == nullptr) {
+        panic = true;
+        return nullptr;
+    }
+
+    return type;
+}
+
 void CodeGen::codegen(const DeclAST *ast) {
+    llvm::Type *type = codegen(ast->getType());
+    if (type == nullptr) {
+        panic = true;
+        return;
+    }
+
     for (const auto &it : ast->getDecls()) {
         if (symbolTable->varNameTaken(it.first)) {
             panic = true;
@@ -171,7 +210,7 @@ void CodeGen::codegen(const DeclAST *ast) {
 
         llvm::Value *val;
         if (symbolTable->inGlobalScope()) {
-            val = createGlobal(name);
+            val = createGlobal(type, name);
 
             if (it.second.get() != nullptr) {
                 // TODO allow init global vars
@@ -179,7 +218,7 @@ void CodeGen::codegen(const DeclAST *ast) {
                 return;
             }
         } else {
-            val = createAlloca(name);
+            val = createAlloca(type, name);
 
             const ExprAST *init = it.second.get();
             if (init != nullptr) {
@@ -193,7 +232,7 @@ void CodeGen::codegen(const DeclAST *ast) {
             }
         }
 
-        symbolTable->addVar(it.first, val);
+        symbolTable->addVar(it.first, {ast->getType()->getId(), val});
     }
 }
 
@@ -374,12 +413,17 @@ llvm::Function* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
         return nullptr;
     }
 
-    // TODO: args have types, need to compare for checking func sig collision
-    FuncValue *prev = symbolTable->getFunc({ast->getName(), ast->getArgs().size()});
+    FuncSignature sig;
+    sig.name = ast->getName();
+    sig.argTypes = vector<TypeId>(ast->getArgs().size());
+    for (size_t i = 0; i < ast->getArgs().size(); ++i) sig.argTypes[i] = ast->getArgs()[i].first;
+
+    FuncValue *prev = symbolTable->getFunc(sig);
 
     if (prev != nullptr) {
         if ((prev->defined && definition) ||
-            (prev->hasRetVal != ast->hasRetVal())) {
+            (prev->hasRet != ast->hasRetVal()) ||
+            (prev->hasRet && prev->retType != ast->getRetType())) {
             panic = true;
             return nullptr;
         }
@@ -401,21 +445,28 @@ llvm::Function* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
         }
     }
 
-    vector<llvm::Type*> argTypes(ast->getArgs().size(), symbolTable->getIntType());
-    llvm::Type *retType = ast->hasRetVal() ? symbolTable->getIntType() : llvm::Type::getVoidTy(llvmContext);
+    vector<llvm::Type*> argTypes(ast->getArgs().size());
+    for (size_t i = 0; i < argTypes.size(); ++i)
+        argTypes[i] = symbolTable->getType(ast->getArgs()[i].first);
+    llvm::Type *retType = ast->hasRetVal() ? symbolTable->getType(ast->getRetType()) : llvm::Type::getVoidTy(llvmContext);
     llvm::FunctionType *funcType = llvm::FunctionType::get(retType, argTypes, false);
+
     llvm::Function *func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, 
             namePool->get(ast->getName()), llvmModule.get());
     
     size_t i = 0;
     for (auto &arg : func->args()) {
-        arg.setName(namePool->get(ast->getArgs()[i]));
+        arg.setName(namePool->get(ast->getArgs()[i].second));
         ++i;
     }
 
-    symbolTable->addFunc(
-        {ast->getName(), ast->getArgs().size()}, 
-        {func, ast->hasRetVal(), definition});
+    FuncValue val;
+    val.func = func;
+    val.hasRet = ast->hasRetVal();
+    val.retType = ast->getRetType();
+    val.defined = definition;
+
+    symbolTable->addFunc(sig, val);
 
     return func;
 }
@@ -435,10 +486,11 @@ llvm::Function* CodeGen::codegen(const FuncAST *ast) {
 
     size_t i = 0;
     for (auto &arg : func->args()) {
-        const string &name = namePool->get(ast->getProto()->getArgs()[i]);
-        llvm::AllocaInst *alloca = createAlloca(name);
+        pair<TypeId, NamePool::Id> astArg = ast->getProto()->getArgs()[i];
+        const string &name = namePool->get(astArg.second);
+        llvm::AllocaInst *alloca = createAlloca(arg.getType(), name);
         llvmBuilder.CreateStore(&arg, alloca);
-        symbolTable->addVar(ast->getProto()->getArgs()[i], alloca);
+        symbolTable->addVar(ast->getProto()->getArgs()[i].second, {astArg.first, alloca});
 
         ++i;
     }

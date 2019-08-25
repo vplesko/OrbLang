@@ -11,6 +11,7 @@ enum ASTType {
     AST_VarExpr,
     AST_BinExpr,
     AST_CallExpr,
+    AST_Type,
     AST_Decl,
     AST_If,
     AST_For,
@@ -113,10 +114,25 @@ public:
     void print() const;
 };
 
+class TypeAST : public BaseAST {
+    TypeId id;
+
+public:
+    TypeAST(TypeId id) : id(id) {}
+
+    TypeId getId() const { return id; }
+
+    ASTType type() const { return AST_Type; }
+};
+
 class DeclAST : public StmntAST {
+    std::unique_ptr<TypeAST> varType;
     std::vector<std::pair<NamePool::Id, std::unique_ptr<ExprAST>>> decls;
 
 public:
+    DeclAST(std::unique_ptr<TypeAST> type);
+
+    const TypeAST* getType() const { return varType.get(); }
 
     void add(std::pair<NamePool::Id, std::unique_ptr<ExprAST>> decl);
     const std::vector<std::pair<NamePool::Id, std::unique_ptr<ExprAST>>>& getDecls() const { return decls; }
@@ -206,22 +222,23 @@ public:
 
 class FuncProtoAST : public BaseAST {
     NamePool::Id name;
-    // TODO args have types
-    std::vector<NamePool::Id> args;
+    std::vector<std::pair<TypeId, NamePool::Id>> args;
     bool ret;
+    TypeId retType;
 
 public:
-    FuncProtoAST(NamePool::Id name) : name(name) {}
+    FuncProtoAST(NamePool::Id name) : name(name), ret(false) {}
 
     ASTType type() const { return AST_FuncProto; }
 
     NamePool::Id getName() const { return name; }
 
-    void addArg(NamePool::Id arg) { args.push_back(arg); }
-    const std::vector<NamePool::Id> getArgs() const { return args; }
+    void addArg(std::pair<TypeId, NamePool::Id> arg) { args.push_back(arg); }
+    const std::vector<std::pair<TypeId, NamePool::Id>> getArgs() const { return args; }
 
-    void setRetVal(bool r) { ret = r; }
+    void setRetType(TypeId t) { ret = true; retType = t; }
     bool hasRetVal() const { return ret; }
+    TypeId getRetType() const { return retType; }
 
     void print() const;
 };
