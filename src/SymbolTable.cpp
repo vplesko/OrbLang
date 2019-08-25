@@ -51,14 +51,14 @@ void SymbolTable::addFunc(const FuncSignature &sig, const FuncValue &val) {
     funcs.insert(make_pair(sig, val));
 }
 
-const FuncValue* SymbolTable::getFunc(const FuncSignature &sig) const {
+FuncValue* SymbolTable::getFunc(const FuncSignature &sig) {
     auto loc = funcs.find(sig);
     if (loc == funcs.end()) return nullptr;
 
     return &loc->second;
 }
 
-bool SymbolTable::taken(NamePool::Id name) const {
+bool SymbolTable::varNameTaken(NamePool::Id name) const {
     if (last == glob) {
         // you can have vars with same name as funcs, except in global
         for (const auto &p : funcs)
@@ -66,6 +66,11 @@ bool SymbolTable::taken(NamePool::Id name) const {
                 return true;
     }
 
+    return last->vars.find(name) != last->vars.end();
+}
+
+// only checks for name collisions with global vars, NOT with funcs of same sig!
+bool SymbolTable::funcNameTaken(NamePool::Id name) const {
     return last->vars.find(name) != last->vars.end();
 }
 

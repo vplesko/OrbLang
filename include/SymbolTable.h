@@ -68,13 +68,12 @@ public:
     llvm::Value* getVar(NamePool::Id name) const;
 
     void addFunc(const FuncSignature &sig, const FuncValue &val);
-    const FuncValue* getFunc(const FuncSignature &sig) const;
+    FuncValue* getFunc(const FuncSignature &sig);
     
     bool inGlobalScope() const { return last == glob; }
 
-    // TODO: different rules for vars and funcs (and types)
-    // also, bug allows func to take same name as prev glob var
-    bool taken(NamePool::Id name) const;
+    bool varNameTaken(NamePool::Id name) const;
+    bool funcNameTaken(NamePool::Id name) const;
 
     void setIntType(llvm::Type *t) { intType = t; }
     llvm::Type* getIntType() { return intType; }

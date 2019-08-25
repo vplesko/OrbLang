@@ -162,7 +162,7 @@ llvm::Value* CodeGen::codegen(const CallExprAST *ast) {
 
 void CodeGen::codegen(const DeclAST *ast) {
     for (const auto &it : ast->getDecls()) {
-        if (symbolTable->taken(it.first)) {
+        if (symbolTable->varNameTaken(it.first)) {
             panic = true;
             return;
         }
@@ -369,14 +369,23 @@ void CodeGen::codegen(const BlockAST *ast, bool makeScope) {
 }
 
 llvm::Function* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
-    // TODO: args have types, need to compare for checking name collision
-    const FuncValue *prev = symbolTable->getFunc({ast->getName(), ast->getArgs().size()});
+    if (symbolTable->funcNameTaken(ast->getName())) {
+        panic = true;
+        return nullptr;
+    }
+
+    // TODO: args have types, need to compare for checking func sig collision
+    FuncValue *prev = symbolTable->getFunc({ast->getName(), ast->getArgs().size()});
 
     if (prev != nullptr) {
         if ((prev->defined && definition) ||
             (prev->hasRetVal != ast->hasRetVal())) {
             panic = true;
             return nullptr;
+        }
+
+        if (definition) {
+            prev->defined = true;
         }
 
         return prev->func;
