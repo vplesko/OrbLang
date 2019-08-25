@@ -28,8 +28,6 @@ public:
 
     virtual ASTType type() const =0;
 
-    virtual void print() const;
-
     virtual ~BaseAST() {}
 };
 
@@ -49,7 +47,6 @@ class NullExprAST : public ExprAST {
 public:
 
     ASTType type() const { return AST_NullExpr; }
-    void print() const;
 };
 
 class LiteralExprAST : public ExprAST {
@@ -61,8 +58,6 @@ public:
     ASTType type() const { return AST_LiteralExpr; }
 
     int getVal() const { return val; }
-
-    void print() const;
 };
 
 class VarExprAST : public ExprAST {
@@ -74,8 +69,6 @@ public:
     ASTType type() const { return AST_VarExpr; }
 
     NamePool::Id getNameId() const { return nameId; }
-
-    void print() const;
 };
 
 class BinExprAST : public ExprAST {
@@ -93,8 +86,6 @@ public:
     const ExprAST* getL() const { return lhs.get(); }
     const ExprAST* getR() const { return rhs.get(); }
     Token::Oper getOp() const { return op; }
-
-    void print() const;
 };
 
 class CallExprAST : public ExprAST {
@@ -110,8 +101,6 @@ public:
     void addArg(std::unique_ptr<ExprAST> arg) { args.push_back(std::move(arg)); }
 
     ASTType type() const { return AST_CallExpr; }
-
-    void print() const;
 };
 
 class TypeAST : public BaseAST {
@@ -138,8 +127,6 @@ public:
     const std::vector<std::pair<NamePool::Id, std::unique_ptr<ExprAST>>>& getDecls() const { return decls; }
 
     ASTType type() const { return AST_Decl; }
-
-    void print() const;
 };
 
 class IfAST : public StmntAST {
@@ -216,8 +203,6 @@ public:
     const std::vector<std::unique_ptr<StmntAST>>& getBody() const { return body; }
 
     ASTType type() const { return AST_Block; }
-
-    void print() const;
 };
 
 class FuncProtoAST : public BaseAST {
@@ -239,8 +224,6 @@ public:
     void setRetType(TypeId t) { ret = true; retType = t; }
     bool hasRetVal() const { return ret; }
     TypeId getRetType() const { return retType; }
-
-    void print() const;
 };
 
 class FuncAST : public BaseAST {
@@ -256,8 +239,6 @@ public:
 
     const FuncProtoAST* getProto() const { return proto.get(); }
     const BlockAST* getBody() const { return body.get(); }
-
-    void print() const;
 };
 
 class RetAST : public StmntAST {
@@ -269,6 +250,4 @@ public:
     const ExprAST* getVal() const { return val.get(); }
 
     ASTType type() const { return AST_Ret; }
-
-    void print() const;
 };
