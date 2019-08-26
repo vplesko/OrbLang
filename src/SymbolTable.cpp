@@ -44,7 +44,7 @@ llvm::Type* TypeTable::getType(TypeId id) {
 }
 
 bool TypeTable::isType(NamePool::Id name) const {
-    return types.find((TypeId) name) == types.end();
+    return types.find((TypeId) name) != types.end();
 }
 
 void TypeTable::addI64Type(TypeId id, llvm::Type *type) {

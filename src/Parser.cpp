@@ -333,17 +333,17 @@ unique_ptr<BaseAST> Parser::func() {
             return nullptr;
         }
 
-        proto->addArg(make_pair(argType->getId(), arg.nameId));
+        proto->addArg(make_pair(move(argType), arg.nameId));
 
         first = false;
     }
 
     // ret type
     Token look = lex->peek();
-    if (look.type != Token::T_BRACE_L_CUR) {
+    if (look.type != Token::T_BRACE_L_CUR && look.type != Token::T_SEMICOLON) {
         unique_ptr<TypeAST> retType = type();
         if (broken(retType)) return nullptr;
-        proto->setRetType(retType->getId());
+        proto->setRetType(move(retType));
 
         look = lex->peek();
     }

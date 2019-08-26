@@ -33,10 +33,8 @@ llvm::GlobalValue* CodeGen::createGlobal(llvm::Type *type, const std::string &na
         name);
 }
 
-llvm::Value* CodeGen::codegenNode(const BaseAST *ast, bool blockMakeScope) {
+CodeGen::ExprGenPayload CodeGen::codegenExpr(const ExprAST *ast) {
     switch (ast->type()) {
-    case AST_NullExpr:
-        return nullptr;
     case AST_LiteralExpr:
         return codegen((LiteralExprAST*)ast);
     case AST_VarExpr:
@@ -45,142 +43,179 @@ llvm::Value* CodeGen::codegenNode(const BaseAST *ast, bool blockMakeScope) {
         return codegen((BinExprAST*)ast);
     case AST_CallExpr:
         return codegen((CallExprAST*)ast);
-    case AST_Decl:
-        codegen((DeclAST*)ast);
-        return nullptr;
-    case AST_If:
-        codegen((IfAST*)ast);
-        return nullptr;
-    case AST_For:
-        codegen((ForAST*) ast);
-        return nullptr;
-    case AST_While:
-        codegen((WhileAST*) ast);
-        return nullptr;
-    case AST_DoWhile:
-        codegen((DoWhileAST*) ast);
-        return nullptr;
-    case AST_Ret:
-        codegen((RetAST*)ast);
-        return nullptr;
-    case AST_Block:
-        codegen((BlockAST*)ast, blockMakeScope);
-        return nullptr;
-    case AST_FuncProto:
-        return codegen((FuncProtoAST*)ast, false);
-    case AST_Func:
-        return codegen((FuncAST*)ast);
-    //case AST_Type:
     default:
         panic = true;
-        return nullptr;
+        return {};
     }
 }
 
-llvm::Value* CodeGen::codegen(const LiteralExprAST *ast) {
-    return llvm::ConstantInt::get(
-        symbolTable->getTypeTable()->getI64Type(), 
-        llvm::APInt(64, ast->getVal(), true));
+void CodeGen::codegenNode(const BaseAST *ast, bool blockMakeScope) {
+    switch (ast->type()) {
+    case AST_NullExpr:
+        return;
+    case AST_LiteralExpr:
+        codegen((LiteralExprAST*)ast);
+        return;
+    case AST_VarExpr:
+        codegen((VarExprAST*)ast);
+        return;
+    case AST_BinExpr:
+        codegen((BinExprAST*)ast);
+        return;
+    case AST_CallExpr:
+        codegen((CallExprAST*)ast);
+        return;
+    case AST_Decl:
+        codegen((DeclAST*)ast);
+        return;
+    case AST_If:
+        codegen((IfAST*)ast);
+        return;
+    case AST_For:
+        codegen((ForAST*) ast);
+        return;
+    case AST_While:
+        codegen((WhileAST*) ast);
+        return;
+    case AST_DoWhile:
+        codegen((DoWhileAST*) ast);
+        return;
+    case AST_Ret:
+        codegen((RetAST*)ast);
+        return;
+    case AST_Block:
+        codegen((BlockAST*)ast, blockMakeScope);
+        return;
+    case AST_FuncProto:
+        codegen((FuncProtoAST*)ast, false);
+        return;
+    case AST_Func:
+        codegen((FuncAST*)ast);
+        return;
+    default:
+        panic = true;
+    }
 }
 
-llvm::Value* CodeGen::codegen(const VarExprAST *ast) {
-    llvm::Value *val = symbolTable->getVar(ast->getNameId())->val;
-    if (val == nullptr) { panic = true; return nullptr; }
-    return llvmBuilder.CreateLoad(val, namePool->get(ast->getNameId()));
+CodeGen::ExprGenPayload CodeGen::codegen(const LiteralExprAST *ast) {
+    // TODO literals of other types
+    return {symbolTable->getTypeTable()->getI64TypeId(),
+        llvm::ConstantInt::get(
+            symbolTable->getTypeTable()->getI64Type(), 
+            llvm::APInt(64, ast->getVal(), true))
+    };
 }
 
-llvm::Value* CodeGen::codegen(const BinExprAST *ast) {
+CodeGen::ExprGenPayload CodeGen::codegen(const VarExprAST *ast) {
+    const SymbolTable::VarPayload *var = symbolTable->getVar(ast->getNameId());
+    if (var == nullptr) { panic = true; return {}; }
+    return {var->type, llvmBuilder.CreateLoad(var->val, namePool->get(ast->getNameId()))};
+}
+
+CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
+    // TODO currently returning left op's type, check same type OR implicit casts
+    ExprGenPayload ret;
+
     llvm::Value *valL;
     if (ast->getOp() == Token::O_ASGN) {
         if (ast->getL()->type() != AST_VarExpr) {
             panic = true;
-            return nullptr;
+            return {};
         }
         const VarExprAST *var = (const VarExprAST*)ast->getL();
-        valL = symbolTable->getVar(var->getNameId())->val;
+        const SymbolTable::VarPayload *symVar = symbolTable->getVar(var->getNameId());
+        ret.first = symVar->type;
+        valL = symVar->val;
     } else {
-        valL = codegenNode(ast->getL());
+        ExprGenPayload exprVar = codegenExpr(ast->getL());
+        ret.first = exprVar.first;
+        valL = exprVar.second;
     }
     if (panic || valL == nullptr) {
         panic = true;
-        return nullptr;
+        return {};
     }
-    llvm::Value *valR = codegenNode(ast->getR());
+
+    llvm::Value *valR = codegenExpr(ast->getR()).second;
     if (panic || valR == nullptr) {
         panic = true;
-        return nullptr;
+        return {};
     }
 
     // TODO bin ops for non-int types (float, unsigned)
     switch (ast->getOp()) {
         case Token::O_ASGN:
             llvmBuilder.CreateStore(valR, valL);
-            return valR;
+            ret.second = valR;
+            break;
         case Token::O_ADD:
-            return llvmBuilder.CreateAdd(valL, valR, "add_tmp");
+            ret.second = llvmBuilder.CreateAdd(valL, valR, "add_tmp");
+            break;
         case Token::O_SUB:
-            return llvmBuilder.CreateSub(valL, valR, "sub_tmp");
+            ret.second = llvmBuilder.CreateSub(valL, valR, "sub_tmp");
+            break;
         case Token::O_MUL:
-            return llvmBuilder.CreateMul(valL, valR, "mul_tmp");
+            ret.second = llvmBuilder.CreateMul(valL, valR, "mul_tmp");
+            break;
         case Token::O_DIV:
-            return llvmBuilder.CreateSDiv(valL, valR, "div_tmp");
+            ret.second = llvmBuilder.CreateSDiv(valL, valR, "div_tmp");
+            break;
         case Token::O_EQ:
-            return llvmBuilder.CreateICmpEQ(valL, valR, "cmp_eq_tmp");
+            ret.second = llvmBuilder.CreateICmpEQ(valL, valR, "cmp_eq_tmp");
+            break;
         case Token::O_NEQ:
-            return llvmBuilder.CreateICmpNE(valL, valR, "cmp_neq_tmp");
+            ret.second = llvmBuilder.CreateICmpNE(valL, valR, "cmp_neq_tmp");
+            break;
         case Token::O_LT:
-            return llvmBuilder.CreateICmpSLT(valL, valR, "cmp_lt_tmp");
+            ret.second = llvmBuilder.CreateICmpSLT(valL, valR, "cmp_lt_tmp");
+            break;
         case Token::O_LTEQ:
-            return llvmBuilder.CreateICmpSLE(valL, valR, "cmp_lteq_tmp");
+            ret.second = llvmBuilder.CreateICmpSLE(valL, valR, "cmp_lteq_tmp");
+            break;
         case Token::O_GT:
-            return llvmBuilder.CreateICmpSGT(valL, valR, "cmp_gt_tmp");
+            ret.second = llvmBuilder.CreateICmpSGT(valL, valR, "cmp_gt_tmp");
+            break;
         case Token::O_GTEQ:
-            return llvmBuilder.CreateICmpSGE(valL, valR, "cmp_gteq_tmp");
+            ret.second = llvmBuilder.CreateICmpSGE(valL, valR, "cmp_gteq_tmp");
+            break;
         default:
             panic = true;
-            return nullptr;
+            return {};
     }
+
+    return ret;
 }
 
-llvm::Value* CodeGen::codegen(const CallExprAST *ast) {
-    /*
-        TODO
-        TODO
-        TODO
-
-        fill sig with arg types
-        for this, you need to know the types
-        for that, expr ast's need to know their result type
-
-        TODO
-        TODO
-        TODO
-    */
+CodeGen::ExprGenPayload CodeGen::codegen(const CallExprAST *ast) {
     FuncSignature sig;
     sig.name = ast->getName();
     sig.argTypes = vector<TypeId>(ast->getArgs().size());
 
     std::vector<llvm::Value*> args(ast->getArgs().size());
     for (size_t i = 0; i < ast->getArgs().size(); ++i) {
-        llvm::Value *arg = codegenNode(ast->getArgs()[i].get());
+        ExprGenPayload exprPay = codegenExpr(ast->getArgs()[i].get());
+
+        sig.argTypes[i] = exprPay.first;
+
+        llvm::Value *arg = exprPay.second;
         if (arg == nullptr) {
             panic = true;
-            return nullptr;
+            return {};
         }
-
         args[i] = arg;
     }
 
     const FuncValue *func = symbolTable->getFunc(sig);
     if (func == nullptr) {
         panic = true;
-        return nullptr;
+        return {};
     }
 
-    return llvmBuilder.CreateCall(func->func, args, "call_tmp");
+    // TODO void-y type if func has no ret
+    return {func->retType, llvmBuilder.CreateCall(func->func, args, "call_tmp")};
 }
 
-llvm::Type* CodeGen::codegen(const TypeAST *ast) {
+llvm::Type* CodeGen::codegenType(const TypeAST *ast) {
     llvm::Type *type = symbolTable->getTypeTable()->getType(ast->getId());
     if (type == nullptr) {
         panic = true;
@@ -191,7 +226,7 @@ llvm::Type* CodeGen::codegen(const TypeAST *ast) {
 }
 
 void CodeGen::codegen(const DeclAST *ast) {
-    llvm::Type *type = codegen(ast->getType());
+    llvm::Type *type = codegenType(ast->getType());
     if (type == nullptr) {
         panic = true;
         return;
@@ -219,7 +254,8 @@ void CodeGen::codegen(const DeclAST *ast) {
 
             const ExprAST *init = it.second.get();
             if (init != nullptr) {
-                llvm::Value *initVal = codegenNode(init);
+                // TODO check type validity, implicit casts
+                llvm::Value *initVal = codegenExpr(init).second;
                 if (panic || initVal == nullptr) {
                     panic = true;
                     return;
@@ -242,7 +278,8 @@ void CodeGen::codegen(const IfAST *ast) {
         if (panic) return;
     }
 
-    llvm::Value *condVal = codegenNode(ast->getCond());
+    // TODO check that type is bool, though LLVM is returning error anyway
+    llvm::Value *condVal = codegenExpr(ast->getCond()).second;
     if (panic || condVal == nullptr) {
         panic = true;
         return;
@@ -294,7 +331,8 @@ void CodeGen::codegen(const ForAST *ast) {
 
     llvm::Value *condVal;
     if (ast->hasCond()) {
-        condVal = codegenNode(ast->getCond());
+        // TODO check that type is bool, though LLVM is returning error anyway
+        condVal = codegenExpr(ast->getCond()).second;
         if (panic || condVal == nullptr) {
             panic = true;
             return;
@@ -335,7 +373,8 @@ void CodeGen::codegen(const WhileAST *ast) {
     llvmBuilder.CreateBr(condBlock);
     llvmBuilder.SetInsertPoint(condBlock);
 
-    llvm::Value *condVal = codegenNode(ast->getCond());
+    // TODO check that type is bool, though LLVM is returning error anyway
+    llvm::Value *condVal = codegenExpr(ast->getCond()).second;
     if (panic || condVal == nullptr) {
         panic = true;
         return;
@@ -371,7 +410,8 @@ void CodeGen::codegen(const DoWhileAST *ast) {
         if (panic) return;
     }
 
-    llvm::Value *condVal = codegenNode(ast->getCond());
+    // TODO check that type is bool, though LLVM is returning error anyway
+    llvm::Value *condVal = codegenExpr(ast->getCond()).second;
     if (panic || condVal == nullptr) {
         panic = true;
         return;
@@ -389,7 +429,8 @@ void CodeGen::codegen(const RetAST *ast) {
         return;
     }
 
-    llvm::Value *val = codegenNode(ast->getVal());
+    // TODO check that type is equal, implicit casts
+    llvm::Value *val = codegenExpr(ast->getVal()).second;
     if (panic || val == nullptr) {
         panic = true;
         return;
@@ -412,15 +453,15 @@ llvm::Function* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
 
     FuncSignature sig;
     sig.name = ast->getName();
-    sig.argTypes = vector<TypeId>(ast->getArgs().size());
-    for (size_t i = 0; i < ast->getArgs().size(); ++i) sig.argTypes[i] = ast->getArgs()[i].first;
+    sig.argTypes = vector<TypeId>(ast->getArgCnt());
+    for (size_t i = 0; i < ast->getArgCnt(); ++i) sig.argTypes[i] = ast->getArgType(i)->getId();
 
     FuncValue *prev = symbolTable->getFunc(sig);
 
     if (prev != nullptr) {
         if ((prev->defined && definition) ||
             (prev->hasRet != ast->hasRetVal()) ||
-            (prev->hasRet && prev->retType != ast->getRetType())) {
+            (prev->hasRet && prev->retType != ast->getRetType()->getId())) {
             panic = true;
             return nullptr;
         }
@@ -433,19 +474,19 @@ llvm::Function* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
     }
 
     // can't have args with same name
-    for (size_t i = 0; i+1 < ast->getArgs().size(); ++i) {
-        for (size_t j = i+1; j < ast->getArgs().size(); ++j) {
-            if (ast->getArgs()[i] == ast->getArgs()[j]) {
+    for (size_t i = 0; i+1 < ast->getArgCnt(); ++i) {
+        for (size_t j = i+1; j < ast->getArgCnt(); ++j) {
+            if (ast->getArgName(i) == ast->getArgName(j)) {
                 panic = true;
                 return nullptr;
             }
         }
     }
 
-    vector<llvm::Type*> argTypes(ast->getArgs().size());
+    vector<llvm::Type*> argTypes(ast->getArgCnt());
     for (size_t i = 0; i < argTypes.size(); ++i)
-        argTypes[i] = symbolTable->getTypeTable()->getType(ast->getArgs()[i].first);
-    llvm::Type *retType = ast->hasRetVal() ? symbolTable->getTypeTable()->getType(ast->getRetType()) : llvm::Type::getVoidTy(llvmContext);
+        argTypes[i] = symbolTable->getTypeTable()->getType(ast->getArgType(i)->getId());
+    llvm::Type *retType = ast->hasRetVal() ? symbolTable->getTypeTable()->getType(ast->getRetType()->getId()) : llvm::Type::getVoidTy(llvmContext);
     llvm::FunctionType *funcType = llvm::FunctionType::get(retType, argTypes, false);
 
     llvm::Function *func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, 
@@ -453,14 +494,14 @@ llvm::Function* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
     
     size_t i = 0;
     for (auto &arg : func->args()) {
-        arg.setName(namePool->get(ast->getArgs()[i].second));
+        arg.setName(namePool->get(ast->getArgName(i)));
         ++i;
     }
 
     FuncValue val;
     val.func = func;
     val.hasRet = ast->hasRetVal();
-    val.retType = ast->getRetType();
+    if (ast->hasRetVal()) val.retType = ast->getRetType()->getId();
     val.defined = definition;
 
     symbolTable->addFunc(sig, val);
@@ -468,10 +509,10 @@ llvm::Function* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
     return func;
 }
 
-llvm::Function* CodeGen::codegen(const FuncAST *ast) {
+void CodeGen::codegen(const FuncAST *ast) {
     llvm::Function *func = codegen(ast->getProto(), true);
     if (panic) {
-        return nullptr;
+        return;
     }
 
     ScopeControl scope(symbolTable);
@@ -483,11 +524,12 @@ llvm::Function* CodeGen::codegen(const FuncAST *ast) {
 
     size_t i = 0;
     for (auto &arg : func->args()) {
-        pair<TypeId, NamePool::Id> astArg = ast->getProto()->getArgs()[i];
-        const string &name = namePool->get(astArg.second);
+        const TypeAST *astArgType = ast->getProto()->getArgType(i);
+        NamePool::Id astArgName = ast->getProto()->getArgName(i);
+        const string &name = namePool->get(astArgName);
         llvm::AllocaInst *alloca = createAlloca(arg.getType(), name);
         llvmBuilder.CreateStore(&arg, alloca);
-        symbolTable->addVar(ast->getProto()->getArgs()[i].second, {astArg.first, alloca});
+        symbolTable->addVar(astArgName, {astArgType->getId(), alloca});
 
         ++i;
     }
@@ -495,7 +537,7 @@ llvm::Function* CodeGen::codegen(const FuncAST *ast) {
     codegen(ast->getBody(), false);
     if (panic) {
         func->eraseFromParent();
-        return nullptr;
+        return;
     }
 
     llvmBuilderAlloca.CreateBr(body);
@@ -506,8 +548,6 @@ llvm::Function* CodeGen::codegen(const FuncAST *ast) {
     cout << endl;
     cout << "LLVM func verification for " << namePool->get(ast->getProto()->getName()) << ":" << endl << endl;
     llvm::verifyFunction(*func, &llvm::outs());
-
-    return func;
 }
 
 void CodeGen::printout() const {

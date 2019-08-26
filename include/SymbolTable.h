@@ -23,6 +23,7 @@ public:
 
 // TODO have TypeId be separate from name ids
 // TODO known TypeIds for primitive types
+// TODO at some point, have Type struct that can represent ptrs, arrs...
 typedef NamePool::Id TypeId;
 
 struct FuncSignature {
@@ -56,6 +57,7 @@ public:
     // TODO refactor, need other types too
     void addI64Type(TypeId id, llvm::Type *type);
     llvm::Type* getI64Type();
+    TypeId getI64TypeId() const { return i64Id; }
 };
 
 class SymbolTable {

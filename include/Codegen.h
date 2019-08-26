@@ -21,11 +21,12 @@ class CodeGen {
 
     bool isBlockTerminated() const;
 
-    llvm::Value* codegen(const LiteralExprAST *ast);
-    llvm::Value* codegen(const VarExprAST *ast);
-    llvm::Value* codegen(const BinExprAST *ast);
-    llvm::Value* codegen(const CallExprAST *ast);
-    llvm::Type* codegen(const TypeAST *ast);
+    typedef std::pair<TypeId, llvm::Value*> ExprGenPayload;
+
+    ExprGenPayload codegen(const LiteralExprAST *ast);
+    ExprGenPayload codegen(const VarExprAST *ast);
+    ExprGenPayload codegen(const BinExprAST *ast);
+    ExprGenPayload codegen(const CallExprAST *ast);
     void codegen(const DeclAST *ast);
     void codegen(const IfAST *ast);
     void codegen(const ForAST *ast);
@@ -34,14 +35,17 @@ class CodeGen {
     void codegen(const RetAST *ast);
     void codegen(const BlockAST *ast, bool makeScope);
     llvm::Function* codegen(const FuncProtoAST *ast, bool definition);
-    llvm::Function* codegen(const FuncAST *ast);
+    void codegen(const FuncAST *ast);
+
+    llvm::Type* codegenType(const TypeAST *ast);
+    ExprGenPayload codegenExpr(const ExprAST *ast);
 
 public:
     CodeGen(NamePool *namePool, SymbolTable *symbolTable);
 
     void genPrimitiveTypes();
 
-    llvm::Value* codegenNode(const BaseAST *ast, bool blockMakeScope = true);
+    void codegenNode(const BaseAST *ast, bool blockMakeScope = true);
 
     bool isPanic() const { return panic; }
 

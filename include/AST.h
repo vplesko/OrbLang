@@ -207,23 +207,25 @@ public:
 
 class FuncProtoAST : public BaseAST {
     NamePool::Id name;
-    std::vector<std::pair<TypeId, NamePool::Id>> args;
-    bool ret;
-    TypeId retType;
+    std::vector<std::pair<std::unique_ptr<TypeAST>, NamePool::Id>> args;
+    std::unique_ptr<TypeAST> retType;
 
 public:
-    FuncProtoAST(NamePool::Id name) : name(name), ret(false) {}
+    FuncProtoAST(NamePool::Id name) : name(name) {}
 
     ASTType type() const { return AST_FuncProto; }
 
     NamePool::Id getName() const { return name; }
 
-    void addArg(std::pair<TypeId, NamePool::Id> arg) { args.push_back(arg); }
-    const std::vector<std::pair<TypeId, NamePool::Id>> getArgs() const { return args; }
+    void addArg(std::pair<std::unique_ptr<TypeAST>, NamePool::Id> arg) { args.push_back(std::move(arg)); }
 
-    void setRetType(TypeId t) { ret = true; retType = t; }
-    bool hasRetVal() const { return ret; }
-    TypeId getRetType() const { return retType; }
+    std::size_t getArgCnt() const { return args.size(); }
+    const TypeAST* getArgType(std::size_t index) const { return args[index].first.get(); }
+    NamePool::Id getArgName(std::size_t index) const { return args[index].second; }
+
+    void setRetType(std::unique_ptr<TypeAST> t) { retType = std::move(t); }
+    const TypeAST* getRetType() const { return retType.get(); }
+    bool hasRetVal() const { return retType != nullptr; }
 };
 
 class FuncAST : public BaseAST {
