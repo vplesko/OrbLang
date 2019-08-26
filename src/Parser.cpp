@@ -93,7 +93,7 @@ std::unique_ptr<TypeAST> Parser::type() {
 
     Token type = lex->next();
 
-    if (!symbolTable->isType(type.nameId)) {
+    if (!symbolTable->getTypeTable()->isType(type.nameId)) {
         panic = true;
         return nullptr;
     }
@@ -138,7 +138,8 @@ std::unique_ptr<StmntAST> Parser::simple() {
         return make_unique<NullExprAST>();
     }
 
-    if (lex->peek().type == Token::T_ID && symbolTable->isType(lex->peek().nameId)) return decl();
+    if (lex->peek().type == Token::T_ID && symbolTable->getTypeTable()->isType(lex->peek().nameId))
+        return decl();
 
     return expr();
 }

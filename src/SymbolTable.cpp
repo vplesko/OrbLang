@@ -32,7 +32,31 @@ std::size_t FuncSignature::Hasher::operator()(const FuncSignature &k) const {
     return (17*31+k.name)*31+sum;
 }
 
-SymbolTable::SymbolTable() {
+void TypeTable::addType(TypeId id, llvm::Type *type) {
+    types.insert(make_pair(id, type));
+}
+
+llvm::Type* TypeTable::getType(TypeId id) {
+    auto loc = types.find(id);
+    if (loc == types.end()) return nullptr;
+
+    return loc->second;
+}
+
+bool TypeTable::isType(NamePool::Id name) const {
+    return types.find((TypeId) name) == types.end();
+}
+
+void TypeTable::addI64Type(TypeId id, llvm::Type *type) {
+    i64Id = id;
+    types.insert(make_pair(id, type));
+}
+
+llvm::Type* TypeTable::getI64Type() {
+    return types.find(i64Id)->second;
+}
+
+SymbolTable::SymbolTable(TypeTable *typeTable) : typeTable(typeTable) {
     last = glob = new Scope();
     glob->prev = nullptr;
 }
@@ -74,6 +98,8 @@ FuncValue* SymbolTable::getFunc(const FuncSignature &sig) {
 }
 
 bool SymbolTable::varNameTaken(NamePool::Id name) const {
+    if (typeTable->isType(name)) return true;
+
     if (last == glob) {
         // you can have vars with same name as funcs, except in global
         for (const auto &p : funcs)
@@ -86,7 +112,7 @@ bool SymbolTable::varNameTaken(NamePool::Id name) const {
 
 // only checks for name collisions with global vars, NOT with funcs of same sig!
 bool SymbolTable::funcNameTaken(NamePool::Id name) const {
-    return last->vars.find(name) != last->vars.end();
+    return typeTable->isType(name) || last->vars.find(name) != last->vars.end();
 }
 
 SymbolTable::~SymbolTable() {
@@ -95,19 +121,4 @@ SymbolTable::~SymbolTable() {
         last = last->prev;
         delete s;
     }
-}
-
-void SymbolTable::addType(TypeId id, llvm::Type *type) {
-    types.insert(make_pair(id, type));
-}
-
-llvm::Type* SymbolTable::getType(TypeId id) {
-    auto loc = types.find(id);
-    if (loc == types.end()) return nullptr;
-
-    return loc->second;
-}
-
-bool SymbolTable::isType(NamePool::Id name) const {
-    return types.find((TypeId) name) == types.end();
 }

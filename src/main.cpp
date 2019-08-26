@@ -20,7 +20,8 @@ int main(int argc,  char** argv) {
     }
     
     NamePool names;
-    SymbolTable symbols;
+    TypeTable types;
+    SymbolTable symbols(&types);
     Lexer lex(&names);
     Parser par(&names, &symbols, &lex);
     par.parse(file);

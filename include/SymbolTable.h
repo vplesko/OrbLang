@@ -21,6 +21,8 @@ public:
     const std::string& get(Id id) const { return names.at(id); }
 };
 
+// TODO have TypeId be separate from name ids
+// TODO known TypeIds for primitive types
 typedef NamePool::Id TypeId;
 
 struct FuncSignature {
@@ -41,6 +43,21 @@ struct FuncValue {
     bool defined;
 };
 
+class TypeTable {
+    std::unordered_map<TypeId, llvm::Type*> types;
+    TypeId i64Id;
+
+public:
+
+    void addType(TypeId id, llvm::Type *type);
+    llvm::Type* getType(TypeId id);
+    bool isType(NamePool::Id name) const;
+
+    // TODO refactor, need other types too
+    void addI64Type(TypeId id, llvm::Type *type);
+    llvm::Type* getI64Type();
+};
+
 class SymbolTable {
 public:
     struct VarPayload {
@@ -58,14 +75,14 @@ private:
 
     Scope *last, *glob;
 
-    std::unordered_map<TypeId, llvm::Type*> types;
+    TypeTable *typeTable;
 
     friend class ScopeControl;
     void newScope();
     void endScope();
 
 public:
-    SymbolTable();
+    SymbolTable(TypeTable *typeTable);
 
     void addVar(NamePool::Id name, const VarPayload &var);
     const VarPayload* getVar(NamePool::Id name) const;
@@ -78,9 +95,7 @@ public:
     bool varNameTaken(NamePool::Id name) const;
     bool funcNameTaken(NamePool::Id name) const;
 
-    void addType(TypeId id, llvm::Type *type);
-    llvm::Type* getType(TypeId id);
-    bool isType(NamePool::Id name) const;
+    TypeTable* getTypeTable() { return typeTable; }
 
     ~SymbolTable();
 };

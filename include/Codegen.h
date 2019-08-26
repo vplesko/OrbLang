@@ -36,10 +36,6 @@ class CodeGen {
     llvm::Function* codegen(const FuncProtoAST *ast, bool definition);
     llvm::Function* codegen(const FuncAST *ast);
 
-    // TODO literals of other types
-    TypeId i64Type;
-    llvm::Type* getI64Type();
-
 public:
     CodeGen(NamePool *namePool, SymbolTable *symbolTable);
 

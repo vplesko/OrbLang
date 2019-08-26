@@ -11,12 +11,8 @@ CodeGen::CodeGen(NamePool *namePool, SymbolTable *symbolTable) : namePool(namePo
 }
 
 void CodeGen::genPrimitiveTypes() {
-    i64Type = namePool->add("i64");
-    symbolTable->addType(i64Type, llvm::IntegerType::getInt64Ty(llvmContext));
-}
-
-llvm::Type* CodeGen::getI64Type() {
-    return symbolTable->getType(i64Type);
+    TypeId i64Type = namePool->add("i64");
+    symbolTable->getTypeTable()->addI64Type(i64Type, llvm::IntegerType::getInt64Ty(llvmContext));
 }
 
 llvm::AllocaInst* CodeGen::createAlloca(llvm::Type *type, const string &name) {
@@ -83,7 +79,7 @@ llvm::Value* CodeGen::codegenNode(const BaseAST *ast, bool blockMakeScope) {
 
 llvm::Value* CodeGen::codegen(const LiteralExprAST *ast) {
     return llvm::ConstantInt::get(
-        getI64Type(), 
+        symbolTable->getTypeTable()->getI64Type(), 
         llvm::APInt(64, ast->getVal(), true));
 }
 
@@ -115,6 +111,7 @@ llvm::Value* CodeGen::codegen(const BinExprAST *ast) {
         return nullptr;
     }
 
+    // TODO bin ops for non-int types (float, unsigned)
     switch (ast->getOp()) {
         case Token::O_ASGN:
             llvmBuilder.CreateStore(valR, valL);
@@ -184,7 +181,7 @@ llvm::Value* CodeGen::codegen(const CallExprAST *ast) {
 }
 
 llvm::Type* CodeGen::codegen(const TypeAST *ast) {
-    llvm::Type *type = symbolTable->getType(ast->getId());
+    llvm::Type *type = symbolTable->getTypeTable()->getType(ast->getId());
     if (type == nullptr) {
         panic = true;
         return nullptr;
@@ -447,8 +444,8 @@ llvm::Function* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
 
     vector<llvm::Type*> argTypes(ast->getArgs().size());
     for (size_t i = 0; i < argTypes.size(); ++i)
-        argTypes[i] = symbolTable->getType(ast->getArgs()[i].first);
-    llvm::Type *retType = ast->hasRetVal() ? symbolTable->getType(ast->getRetType()) : llvm::Type::getVoidTy(llvmContext);
+        argTypes[i] = symbolTable->getTypeTable()->getType(ast->getArgs()[i].first);
+    llvm::Type *retType = ast->hasRetVal() ? symbolTable->getTypeTable()->getType(ast->getRetType()) : llvm::Type::getVoidTy(llvmContext);
     llvm::FunctionType *funcType = llvm::FunctionType::get(retType, argTypes, false);
 
     llvm::Function *func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, 
