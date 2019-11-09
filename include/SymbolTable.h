@@ -21,14 +21,37 @@ public:
     const std::string& get(Id id) const { return names.at(id); }
 };
 
-// TODO have TypeId be separate from name ids
-// TODO known TypeIds for primitive types
-// TODO at some point, have Type struct that can represent ptrs, arrs...
-typedef NamePool::Id TypeId;
+class TypeTable {
+public:
+    // TODO known TypeIds for primitive types
+    // TODO at some point, have Type struct that can represent ptrs, arrs...
+    typedef unsigned Id;
+
+private:
+    Id next;
+
+    std::unordered_map<NamePool::Id, Id> typeIds;
+    std::vector<llvm::Type*> types;
+    TypeTable::Id i64Id;
+
+public:
+    TypeTable();
+
+    TypeTable::Id addType(NamePool::Id name, llvm::Type *type);
+    llvm::Type* getType(Id id);
+
+    bool isType(NamePool::Id name) const;
+    TypeTable::Id getTypeId(NamePool::Id name) const { return typeIds.at(name); }
+
+    // TODO refactor, need other types too
+    TypeTable::Id addI64Type(NamePool::Id name, llvm::Type *type);
+    llvm::Type* getI64Type();
+    TypeTable::Id getI64TypeId() const { return i64Id; }
+};
 
 struct FuncSignature {
     NamePool::Id name;
-    std::vector<TypeId> argTypes;
+    std::vector<TypeTable::Id> argTypes;
 
     bool operator==(const FuncSignature &other) const;
 
@@ -40,30 +63,14 @@ struct FuncSignature {
 struct FuncValue {
     llvm::Function *func;
     bool hasRet;
-    TypeId retType;
+    TypeTable::Id retType;
     bool defined;
-};
-
-class TypeTable {
-    std::unordered_map<TypeId, llvm::Type*> types;
-    TypeId i64Id;
-
-public:
-
-    void addType(TypeId id, llvm::Type *type);
-    llvm::Type* getType(TypeId id);
-    bool isType(NamePool::Id name) const;
-
-    // TODO refactor, need other types too
-    void addI64Type(TypeId id, llvm::Type *type);
-    llvm::Type* getI64Type();
-    TypeId getI64TypeId() const { return i64Id; }
 };
 
 class SymbolTable {
 public:
     struct VarPayload {
-        TypeId type;
+        TypeTable::Id type;
         llvm::Value *val;
     };
 

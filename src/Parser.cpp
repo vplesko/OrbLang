@@ -98,7 +98,8 @@ std::unique_ptr<TypeAST> Parser::type() {
         return nullptr;
     }
 
-    return make_unique<TypeAST>(type.nameId);
+    TypeTable::Id typeId = symbolTable->getTypeTable()->getTypeId(type.nameId);
+    return make_unique<TypeAST>(typeId);
 }
 
 unique_ptr<DeclAST> Parser::decl() {

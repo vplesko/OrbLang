@@ -104,12 +104,12 @@ public:
 };
 
 class TypeAST : public BaseAST {
-    TypeId id;
+    TypeTable::Id id;
 
 public:
-    TypeAST(TypeId id) : id(id) {}
+    TypeAST(TypeTable::Id id) : id(id) {}
 
-    TypeId getId() const { return id; }
+    TypeTable::Id getTypeId() const { return id; }
 
     ASTType type() const { return AST_Type; }
 };

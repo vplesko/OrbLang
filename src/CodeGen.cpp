@@ -11,8 +11,8 @@ CodeGen::CodeGen(NamePool *namePool, SymbolTable *symbolTable) : namePool(namePo
 }
 
 void CodeGen::genPrimitiveTypes() {
-    TypeId i64Type = namePool->add("i64");
-    symbolTable->getTypeTable()->addI64Type(i64Type, llvm::IntegerType::getInt64Ty(llvmContext));
+    NamePool::Id i64Name = namePool->add("i64");
+    symbolTable->getTypeTable()->addI64Type(i64Name, llvm::IntegerType::getInt64Ty(llvmContext));
 }
 
 llvm::AllocaInst* CodeGen::createAlloca(llvm::Type *type, const string &name) {
@@ -189,7 +189,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
 CodeGen::ExprGenPayload CodeGen::codegen(const CallExprAST *ast) {
     FuncSignature sig;
     sig.name = ast->getName();
-    sig.argTypes = vector<TypeId>(ast->getArgs().size());
+    sig.argTypes = vector<TypeTable::Id>(ast->getArgs().size());
 
     std::vector<llvm::Value*> args(ast->getArgs().size());
     for (size_t i = 0; i < ast->getArgs().size(); ++i) {
@@ -216,7 +216,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const CallExprAST *ast) {
 }
 
 llvm::Type* CodeGen::codegenType(const TypeAST *ast) {
-    llvm::Type *type = symbolTable->getTypeTable()->getType(ast->getId());
+    llvm::Type *type = symbolTable->getTypeTable()->getType(ast->getTypeId());
     if (type == nullptr) {
         panic = true;
         return nullptr;
@@ -265,7 +265,7 @@ void CodeGen::codegen(const DeclAST *ast) {
             }
         }
 
-        symbolTable->addVar(it.first, {ast->getType()->getId(), val});
+        symbolTable->addVar(it.first, {ast->getType()->getTypeId(), val});
     }
 }
 
@@ -453,15 +453,15 @@ llvm::Function* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
 
     FuncSignature sig;
     sig.name = ast->getName();
-    sig.argTypes = vector<TypeId>(ast->getArgCnt());
-    for (size_t i = 0; i < ast->getArgCnt(); ++i) sig.argTypes[i] = ast->getArgType(i)->getId();
+    sig.argTypes = vector<TypeTable::Id>(ast->getArgCnt());
+    for (size_t i = 0; i < ast->getArgCnt(); ++i) sig.argTypes[i] = ast->getArgType(i)->getTypeId();
 
     FuncValue *prev = symbolTable->getFunc(sig);
 
     if (prev != nullptr) {
         if ((prev->defined && definition) ||
             (prev->hasRet != ast->hasRetVal()) ||
-            (prev->hasRet && prev->retType != ast->getRetType()->getId())) {
+            (prev->hasRet && prev->retType != ast->getRetType()->getTypeId())) {
             panic = true;
             return nullptr;
         }
@@ -485,8 +485,8 @@ llvm::Function* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
 
     vector<llvm::Type*> argTypes(ast->getArgCnt());
     for (size_t i = 0; i < argTypes.size(); ++i)
-        argTypes[i] = symbolTable->getTypeTable()->getType(ast->getArgType(i)->getId());
-    llvm::Type *retType = ast->hasRetVal() ? symbolTable->getTypeTable()->getType(ast->getRetType()->getId()) : llvm::Type::getVoidTy(llvmContext);
+        argTypes[i] = symbolTable->getTypeTable()->getType(ast->getArgType(i)->getTypeId());
+    llvm::Type *retType = ast->hasRetVal() ? symbolTable->getTypeTable()->getType(ast->getRetType()->getTypeId()) : llvm::Type::getVoidTy(llvmContext);
     llvm::FunctionType *funcType = llvm::FunctionType::get(retType, argTypes, false);
 
     llvm::Function *func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, 
@@ -501,7 +501,7 @@ llvm::Function* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
     FuncValue val;
     val.func = func;
     val.hasRet = ast->hasRetVal();
-    if (ast->hasRetVal()) val.retType = ast->getRetType()->getId();
+    if (ast->hasRetVal()) val.retType = ast->getRetType()->getTypeId();
     val.defined = definition;
 
     symbolTable->addFunc(sig, val);
@@ -529,7 +529,7 @@ void CodeGen::codegen(const FuncAST *ast) {
         const string &name = namePool->get(astArgName);
         llvm::AllocaInst *alloca = createAlloca(arg.getType(), name);
         llvmBuilder.CreateStore(&arg, alloca);
-        symbolTable->addVar(astArgName, {astArgType->getId(), alloca});
+        symbolTable->addVar(astArgName, {astArgType->getTypeId(), alloca});
 
         ++i;
     }

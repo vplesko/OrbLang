@@ -21,7 +21,7 @@ class CodeGen {
 
     bool isBlockTerminated() const;
 
-    typedef std::pair<TypeId, llvm::Value*> ExprGenPayload;
+    typedef std::pair<TypeTable::Id, llvm::Value*> ExprGenPayload;
 
     ExprGenPayload codegen(const LiteralExprAST *ast);
     ExprGenPayload codegen(const VarExprAST *ast);
