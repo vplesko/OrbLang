@@ -43,7 +43,7 @@ class CodeGen {
 public:
     CodeGen(NamePool *namePool, SymbolTable *symbolTable);
 
-    void genPrimitiveTypes();
+    llvm::Type* genPrimTypeInt(unsigned bits);
 
     void codegenNode(const BaseAST *ast, bool blockMakeScope = true);
 

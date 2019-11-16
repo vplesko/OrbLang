@@ -32,7 +32,7 @@ std::size_t FuncSignature::Hasher::operator()(const FuncSignature &k) const {
     return (17*31+k.name)*31+sum;
 }
 
-TypeTable::TypeTable() : next(0) {
+TypeTable::TypeTable() : next(P_ENUM_END), types(P_ENUM_END, nullptr) {
 }
 
 TypeTable::Id TypeTable::addType(NamePool::Id name, llvm::Type *type) {
@@ -41,21 +41,17 @@ TypeTable::Id TypeTable::addType(NamePool::Id name, llvm::Type *type) {
     return next++;
 }
 
+void TypeTable::addPrimType(NamePool::Id name, PrimIds id, llvm::Type *type) {
+    typeIds.insert(make_pair(name, id));
+    types[id] = type;
+}
+
 llvm::Type* TypeTable::getType(Id id) {
     return types[id];
 }
 
 bool TypeTable::isType(NamePool::Id name) const {
     return typeIds.find(name) != typeIds.end();
-}
-
-TypeTable::Id TypeTable::addI64Type(NamePool::Id name, llvm::Type *type) {
-    i64Id = next;
-    return addType(name, type);
-}
-
-llvm::Type* TypeTable::getI64Type() {
-    return types[i64Id];
 }
 
 SymbolTable::SymbolTable(TypeTable *typeTable) : typeTable(typeTable) {

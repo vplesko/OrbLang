@@ -50,13 +50,15 @@ public:
 };
 
 class LiteralExprAST : public ExprAST {
+    TypeTable::Id typeId;
     int val;
 
 public:
-    LiteralExprAST(int v) : val(v) {}
+    LiteralExprAST(TypeTable::Id t, int v) : typeId(t), val(v) {}
 
     ASTType type() const { return AST_LiteralExpr; }
 
+    TypeTable::Id getType() const { return typeId; }
     int getVal() const { return val; }
 };
 

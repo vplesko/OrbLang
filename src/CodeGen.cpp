@@ -10,9 +10,8 @@ CodeGen::CodeGen(NamePool *namePool, SymbolTable *symbolTable) : namePool(namePo
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("test"), llvmContext);
 }
 
-void CodeGen::genPrimitiveTypes() {
-    NamePool::Id i64Name = namePool->add("i64");
-    symbolTable->getTypeTable()->addI64Type(i64Name, llvm::IntegerType::getInt64Ty(llvmContext));
+llvm::Type* CodeGen::genPrimTypeInt(unsigned bits) {
+    return llvm::IntegerType::get(llvmContext, bits);
 }
 
 llvm::AllocaInst* CodeGen::createAlloca(llvm::Type *type, const string &name) {
@@ -99,10 +98,10 @@ void CodeGen::codegenNode(const BaseAST *ast, bool blockMakeScope) {
 
 CodeGen::ExprGenPayload CodeGen::codegen(const LiteralExprAST *ast) {
     // TODO literals of other types
-    return {symbolTable->getTypeTable()->getI64TypeId(),
+    return {ast->getType(),
         llvm::ConstantInt::get(
-            symbolTable->getTypeTable()->getI64Type(), 
-            llvm::APInt(64, ast->getVal(), true))
+            symbolTable->getTypeTable()->getType(ast->getType()), 
+            ast->getVal(), true)
     };
 }
 

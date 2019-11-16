@@ -40,7 +40,9 @@ std::unique_ptr<CallExprAST> Parser::call(NamePool::Id func) {
 unique_ptr<ExprAST> Parser::prim() {
     Token tok = lex->next();
     if (tok.type == Token::T_NUM) {
-        return make_unique<LiteralExprAST>(tok.num);
+        // TODO negative num literals
+        // TODO take care of overflows
+        return make_unique<LiteralExprAST>(TypeTable::P_I64, tok.num);
     } else if (tok.type == Token::T_ID) {
         if (lex->peek().type == Token::T_BRACE_L_REG) return call(tok.nameId);
         else return make_unique<VarExprAST>(tok.nameId);
@@ -364,10 +366,33 @@ unique_ptr<BaseAST> Parser::func() {
     }
 }
 
+void Parser::genPrimTypes() {
+    symbolTable->getTypeTable()->addPrimType(
+        namePool->add("i8"),
+        TypeTable::P_I8,
+        codegen->genPrimTypeInt(8)
+    );
+    symbolTable->getTypeTable()->addPrimType(
+        namePool->add("i16"),
+        TypeTable::P_I16,
+        codegen->genPrimTypeInt(16)
+    );
+    symbolTable->getTypeTable()->addPrimType(
+        namePool->add("i32"),
+        TypeTable::P_I32,
+        codegen->genPrimTypeInt(32)
+    );
+    symbolTable->getTypeTable()->addPrimType(
+        namePool->add("i64"),
+        TypeTable::P_I64,
+        codegen->genPrimTypeInt(64)
+    );
+}
+
 void Parser::parse(std::istream &istr) {
     // TODO make a Compiler class to do this and stuff from main
 
-    codegen->genPrimitiveTypes();
+    genPrimTypes();
 
     lex->start(istr);
 

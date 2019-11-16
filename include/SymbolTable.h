@@ -27,26 +27,29 @@ public:
     // TODO at some point, have Type struct that can represent ptrs, arrs...
     typedef unsigned Id;
 
+    enum PrimIds {
+        P_I8,
+        P_I16,
+        P_I32,
+        P_I64,
+        P_ENUM_END // length marker, do not reference
+    };
+
 private:
     Id next;
 
     std::unordered_map<NamePool::Id, Id> typeIds;
     std::vector<llvm::Type*> types;
-    TypeTable::Id i64Id;
 
 public:
     TypeTable();
 
     TypeTable::Id addType(NamePool::Id name, llvm::Type *type);
+    void addPrimType(NamePool::Id name, PrimIds id, llvm::Type *type);
     llvm::Type* getType(Id id);
 
     bool isType(NamePool::Id name) const;
     TypeTable::Id getTypeId(NamePool::Id name) const { return typeIds.at(name); }
-
-    // TODO refactor, need other types too
-    TypeTable::Id addI64Type(NamePool::Id name, llvm::Type *type);
-    llvm::Type* getI64Type();
-    TypeTable::Id getI64TypeId() const { return i64Id; }
 };
 
 struct FuncSignature {
