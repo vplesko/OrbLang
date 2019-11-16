@@ -113,9 +113,8 @@ CodeGen::ExprGenPayload CodeGen::codegen(const VarExprAST *ast) {
 
 CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
     // TODO currently returning left op's type, check same type OR implicit casts
-    ExprGenPayload ret;
+    ExprGenPayload exprPayL, exprPayR, exprPayRet;
 
-    llvm::Value *valL;
     if (ast->getOp() == Token::O_ASGN) {
         if (ast->getL()->type() != AST_VarExpr) {
             panic = true;
@@ -123,66 +122,81 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
         }
         const VarExprAST *var = (const VarExprAST*)ast->getL();
         const SymbolTable::VarPayload *symVar = symbolTable->getVar(var->getNameId());
-        ret.first = symVar->type;
-        valL = symVar->val;
+        exprPayL.first = symVar->type;
+        exprPayL.second = symVar->val;
     } else {
-        ExprGenPayload exprVar = codegenExpr(ast->getL());
-        ret.first = exprVar.first;
-        valL = exprVar.second;
+        exprPayL = codegenExpr(ast->getL());
     }
-    if (panic || valL == nullptr) {
+    if (panic || exprPayL.second == nullptr) {
         panic = true;
         return {};
     }
 
-    llvm::Value *valR = codegenExpr(ast->getR()).second;
-    if (panic || valR == nullptr) {
+    exprPayR = codegenExpr(ast->getR());
+    if (panic || exprPayR.second == nullptr) {
         panic = true;
         return {};
+    }
+
+    llvm::Value *valL = exprPayL.second, *valR = exprPayR.second;
+    exprPayRet.first = exprPayL.first;
+
+    if (exprPayL.first != exprPayR.first) {
+        // currently, only int types
+        if (TypeTable::isImplicitCastable(exprPayR.first, exprPayL.first)) {
+            valR = llvmBuilder.CreateIntCast(valR, symbolTable->getTypeTable()->getType(exprPayL.first), true, "i_cast");
+            exprPayRet.first = exprPayL.first;
+        } else if (TypeTable::isImplicitCastable(exprPayL.first, exprPayR.first) && ast->getOp() != Token::O_ASGN) {
+            valL = llvmBuilder.CreateIntCast(valL, symbolTable->getTypeTable()->getType(exprPayR.first), true, "i_cast");
+            exprPayRet.first = exprPayR.first;
+        } else {
+            panic = true;
+            return {};
+        }
     }
 
     // TODO bin ops for non-int types (float, unsigned)
     switch (ast->getOp()) {
         case Token::O_ASGN:
             llvmBuilder.CreateStore(valR, valL);
-            ret.second = valR;
+            exprPayRet.second = valR;
             break;
         case Token::O_ADD:
-            ret.second = llvmBuilder.CreateAdd(valL, valR, "add_tmp");
+            exprPayRet.second = llvmBuilder.CreateAdd(valL, valR, "add_tmp");
             break;
         case Token::O_SUB:
-            ret.second = llvmBuilder.CreateSub(valL, valR, "sub_tmp");
+            exprPayRet.second = llvmBuilder.CreateSub(valL, valR, "sub_tmp");
             break;
         case Token::O_MUL:
-            ret.second = llvmBuilder.CreateMul(valL, valR, "mul_tmp");
+            exprPayRet.second = llvmBuilder.CreateMul(valL, valR, "mul_tmp");
             break;
         case Token::O_DIV:
-            ret.second = llvmBuilder.CreateSDiv(valL, valR, "div_tmp");
+            exprPayRet.second = llvmBuilder.CreateSDiv(valL, valR, "div_tmp");
             break;
         case Token::O_EQ:
-            ret.second = llvmBuilder.CreateICmpEQ(valL, valR, "cmp_eq_tmp");
+            exprPayRet.second = llvmBuilder.CreateICmpEQ(valL, valR, "cmp_eq_tmp");
             break;
         case Token::O_NEQ:
-            ret.second = llvmBuilder.CreateICmpNE(valL, valR, "cmp_neq_tmp");
+            exprPayRet.second = llvmBuilder.CreateICmpNE(valL, valR, "cmp_neq_tmp");
             break;
         case Token::O_LT:
-            ret.second = llvmBuilder.CreateICmpSLT(valL, valR, "cmp_lt_tmp");
+            exprPayRet.second = llvmBuilder.CreateICmpSLT(valL, valR, "cmp_lt_tmp");
             break;
         case Token::O_LTEQ:
-            ret.second = llvmBuilder.CreateICmpSLE(valL, valR, "cmp_lteq_tmp");
+            exprPayRet.second = llvmBuilder.CreateICmpSLE(valL, valR, "cmp_lteq_tmp");
             break;
         case Token::O_GT:
-            ret.second = llvmBuilder.CreateICmpSGT(valL, valR, "cmp_gt_tmp");
+            exprPayRet.second = llvmBuilder.CreateICmpSGT(valL, valR, "cmp_gt_tmp");
             break;
         case Token::O_GTEQ:
-            ret.second = llvmBuilder.CreateICmpSGE(valL, valR, "cmp_gteq_tmp");
+            exprPayRet.second = llvmBuilder.CreateICmpSGE(valL, valR, "cmp_gteq_tmp");
             break;
         default:
             panic = true;
             return {};
     }
 
-    return ret;
+    return exprPayRet;
 }
 
 CodeGen::ExprGenPayload CodeGen::codegen(const CallExprAST *ast) {
@@ -225,6 +239,7 @@ llvm::Type* CodeGen::codegenType(const TypeAST *ast) {
 }
 
 void CodeGen::codegen(const DeclAST *ast) {
+    TypeTable::Id typeId = ast->getType()->getTypeId();
     llvm::Type *type = codegenType(ast->getType());
     if (type == nullptr) {
         panic = true;
@@ -253,18 +268,29 @@ void CodeGen::codegen(const DeclAST *ast) {
 
             const ExprAST *init = it.second.get();
             if (init != nullptr) {
-                // TODO check type validity, implicit casts
-                llvm::Value *initVal = codegenExpr(init).second;
-                if (panic || initVal == nullptr) {
+                ExprGenPayload initPay = codegenExpr(init);
+                if (panic || initPay.second == nullptr) {
                     panic = true;
                     return;
                 }
 
-                llvmBuilder.CreateStore(initVal, val);
+                llvm::Value *src = initPay.second;
+
+                if (initPay.first != typeId) {
+                    if (!TypeTable::isImplicitCastable(initPay.first, typeId)) {
+                        panic = true;
+                        return;
+                    }
+
+                    // currently, only int types
+                    src = llvmBuilder.CreateIntCast(src, type, true, "i_cast");
+                }
+
+                llvmBuilder.CreateStore(src, val);
             }
         }
 
-        symbolTable->addVar(it.first, {ast->getType()->getTypeId(), val});
+        symbolTable->addVar(it.first, {typeId, val});
     }
 }
 

@@ -1,5 +1,7 @@
 #include "Parser.h"
 #include <iostream>
+#include <limits>
+#include <cstdint>
 using namespace std;
 
 Parser::Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer) : namePool(namePool), symbolTable(symbolTable), lex(lexer), panic(false) {
@@ -41,8 +43,17 @@ unique_ptr<ExprAST> Parser::prim() {
     Token tok = lex->next();
     if (tok.type == Token::T_NUM) {
         // TODO negative num literals
-        // TODO take care of overflows
-        return make_unique<LiteralExprAST>(TypeTable::P_I64, tok.num);
+        TypeTable::Id t;
+        if (tok.num > numeric_limits<int8_t>::min() && tok.num < numeric_limits<int8_t>::max()) t = TypeTable::P_I8;
+        else if (tok.num > numeric_limits<int16_t>::min() && tok.num < numeric_limits<int16_t>::max()) t = TypeTable::P_I16;
+        else if (tok.num > numeric_limits<int32_t>::min() && tok.num < numeric_limits<int32_t>::max()) t = TypeTable::P_I32;
+        else /*if (tok.num > numeric_limits<int64_t>::min() && tok.num < numeric_limits<int64_t>::max())*/ t = TypeTable::P_I64;
+        /*else {
+            panic = true;
+            return nullptr;
+        }*/
+
+        return make_unique<LiteralExprAST>(t, tok.num);
     } else if (tok.type == Token::T_ID) {
         if (lex->peek().type == Token::T_BRACE_L_REG) return call(tok.nameId);
         else return make_unique<VarExprAST>(tok.nameId);

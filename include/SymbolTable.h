@@ -23,7 +23,6 @@ public:
 
 class TypeTable {
 public:
-    // TODO known TypeIds for primitive types
     // TODO at some point, have Type struct that can represent ptrs, arrs...
     typedef unsigned Id;
 
@@ -34,6 +33,11 @@ public:
         P_I64,
         P_ENUM_END // length marker, do not reference
     };
+
+    static bool isImplicitCastable(Id from, Id into) {
+        if (from >= P_ENUM_END || into >= P_ENUM_END) return false;
+        return into != P_ENUM_END && from <= into;
+    }
 
 private:
     Id next;
