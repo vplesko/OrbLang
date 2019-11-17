@@ -43,6 +43,8 @@ unique_ptr<ExprAST> Parser::prim() {
     Token tok = lex->next();
     if (tok.type == Token::T_NUM) {
         // TODO negative num literals
+        // TODO float literals (eg. 1.2, 1., .2)
+        // TODO explicitly sized literals (eg. 100u32, 1f64)
         TypeTable::Id t;
         if (tok.num > numeric_limits<int8_t>::min() && tok.num < numeric_limits<int8_t>::max()) t = TypeTable::P_I8;
         else if (tok.num > numeric_limits<int16_t>::min() && tok.num < numeric_limits<int16_t>::max()) t = TypeTable::P_I16;
@@ -378,25 +380,47 @@ unique_ptr<BaseAST> Parser::func() {
 }
 
 void Parser::genPrimTypes() {
+    // i
     symbolTable->getTypeTable()->addPrimType(
         namePool->add("i8"),
         TypeTable::P_I8,
-        codegen->genPrimTypeInt(8)
+        codegen->genPrimTypeI(8)
     );
     symbolTable->getTypeTable()->addPrimType(
         namePool->add("i16"),
         TypeTable::P_I16,
-        codegen->genPrimTypeInt(16)
+        codegen->genPrimTypeI(16)
     );
     symbolTable->getTypeTable()->addPrimType(
         namePool->add("i32"),
         TypeTable::P_I32,
-        codegen->genPrimTypeInt(32)
+        codegen->genPrimTypeI(32)
     );
     symbolTable->getTypeTable()->addPrimType(
         namePool->add("i64"),
         TypeTable::P_I64,
-        codegen->genPrimTypeInt(64)
+        codegen->genPrimTypeI(64)
+    );
+    // u
+    symbolTable->getTypeTable()->addPrimType(
+        namePool->add("u8"),
+        TypeTable::P_U8,
+        codegen->genPrimTypeU(8)
+    );
+    symbolTable->getTypeTable()->addPrimType(
+        namePool->add("u16"),
+        TypeTable::P_U16,
+        codegen->genPrimTypeU(16)
+    );
+    symbolTable->getTypeTable()->addPrimType(
+        namePool->add("u32"),
+        TypeTable::P_U32,
+        codegen->genPrimTypeU(32)
+    );
+    symbolTable->getTypeTable()->addPrimType(
+        namePool->add("u64"),
+        TypeTable::P_U64,
+        codegen->genPrimTypeU(64)
     );
 }
 

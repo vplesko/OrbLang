@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <string>
 #include "llvm/IR/Instructions.h"
+#include "utils.h"
 
 class NamePool {
 public:
@@ -31,12 +32,25 @@ public:
         P_I16,
         P_I32,
         P_I64,
+        P_U8,
+        P_U16,
+        P_U32,
+        P_U64,
         P_ENUM_END // length marker, do not reference
     };
 
     static bool isImplicitCastable(Id from, Id into) {
-        if (from >= P_ENUM_END || into >= P_ENUM_END) return false;
-        return into != P_ENUM_END && from <= into;
+        PrimIds s = (PrimIds) from, d = (PrimIds) into;
+        return (between(s, P_I8, P_I64) && between(d, s, P_I64)) ||
+            (between(s, P_U8, P_U64) && between(d, s, P_U64));
+    }
+
+    static bool isTypeI(Id t) {
+        return between((PrimIds) t, P_I8, P_I64);
+    }
+
+    static bool isTypeU(Id t) {
+        return between((PrimIds) t, P_U8, P_U64);
     }
 
 private:

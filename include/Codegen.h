@@ -18,6 +18,8 @@ class CodeGen {
 
     llvm::AllocaInst* createAlloca(llvm::Type *type, const std::string &name);
     llvm::GlobalValue* createGlobal(llvm::Type *type, const std::string &name);
+    void createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId);
+    void createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
 
     bool isBlockTerminated() const;
 
@@ -43,7 +45,8 @@ class CodeGen {
 public:
     CodeGen(NamePool *namePool, SymbolTable *symbolTable);
 
-    llvm::Type* genPrimTypeInt(unsigned bits);
+    llvm::Type* genPrimTypeI(unsigned bits);
+    llvm::Type* genPrimTypeU(unsigned bits);
 
     void codegenNode(const BaseAST *ast, bool blockMakeScope = true);
 

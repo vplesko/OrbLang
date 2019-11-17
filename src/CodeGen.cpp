@@ -10,7 +10,12 @@ CodeGen::CodeGen(NamePool *namePool, SymbolTable *symbolTable) : namePool(namePo
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("test"), llvmContext);
 }
 
-llvm::Type* CodeGen::genPrimTypeInt(unsigned bits) {
+llvm::Type* CodeGen::genPrimTypeI(unsigned bits) {
+    return llvm::IntegerType::get(llvmContext, bits);
+}
+
+llvm::Type* CodeGen::genPrimTypeU(unsigned bits) {
+    // LLVM makes no distinction between signed and unsigned int
     return llvm::IntegerType::get(llvmContext, bits);
 }
 
@@ -30,6 +35,21 @@ llvm::GlobalValue* CodeGen::createGlobal(llvm::Type *type, const std::string &na
         llvm::GlobalValue::CommonLinkage,
         nullptr,
         name);
+}
+
+void CodeGen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId) {
+    if (TypeTable::isTypeI(srcTypeId)) {
+        val = llvmBuilder.CreateIntCast(val, symbolTable->getTypeTable()->getType(dstTypeId), true, "i_cast");
+    } else if (TypeTable::isTypeU(srcTypeId)) {
+        val = llvmBuilder.CreateIntCast(val, symbolTable->getTypeTable()->getType(dstTypeId), false, "u_cast");
+    } else {
+        panic = true;
+        val = nullptr;
+    }
+}
+
+void CodeGen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId) {
+    createCast(val, srcTypeId, symbolTable->getTypeTable()->getType(dstTypeId), dstTypeId);
 }
 
 CodeGen::ExprGenPayload CodeGen::codegenExpr(const ExprAST *ast) {
@@ -122,6 +142,10 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
         }
         const VarExprAST *var = (const VarExprAST*)ast->getL();
         const SymbolTable::VarPayload *symVar = symbolTable->getVar(var->getNameId());
+        if (symVar == nullptr) {
+            panic = true;
+            return {};
+        }
         exprPayL.first = symVar->type;
         exprPayL.second = symVar->val;
     } else {
@@ -142,12 +166,11 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
     exprPayRet.first = exprPayL.first;
 
     if (exprPayL.first != exprPayR.first) {
-        // currently, only int types
         if (TypeTable::isImplicitCastable(exprPayR.first, exprPayL.first)) {
-            valR = llvmBuilder.CreateIntCast(valR, symbolTable->getTypeTable()->getType(exprPayL.first), true, "i_cast");
+            createCast(valR, exprPayR.first, exprPayL.first);
             exprPayRet.first = exprPayL.first;
         } else if (TypeTable::isImplicitCastable(exprPayL.first, exprPayR.first) && ast->getOp() != Token::O_ASGN) {
-            valL = llvmBuilder.CreateIntCast(valL, symbolTable->getTypeTable()->getType(exprPayR.first), true, "i_cast");
+            createCast(valL, exprPayL.first, exprPayR.first);
             exprPayRet.first = exprPayR.first;
         } else {
             panic = true;
@@ -171,7 +194,10 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
             exprPayRet.second = llvmBuilder.CreateMul(valL, valR, "mul_tmp");
             break;
         case Token::O_DIV:
-            exprPayRet.second = llvmBuilder.CreateSDiv(valL, valR, "div_tmp");
+            if (TypeTable::isTypeI(exprPayRet.first))
+                exprPayRet.second = llvmBuilder.CreateSDiv(valL, valR, "sdiv_tmp");
+            else
+                exprPayRet.second = llvmBuilder.CreateUDiv(valL, valR, "udiv_tmp");
             break;
         case Token::O_EQ:
             exprPayRet.second = llvmBuilder.CreateICmpEQ(valL, valR, "cmp_eq_tmp");
@@ -180,16 +206,28 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
             exprPayRet.second = llvmBuilder.CreateICmpNE(valL, valR, "cmp_neq_tmp");
             break;
         case Token::O_LT:
-            exprPayRet.second = llvmBuilder.CreateICmpSLT(valL, valR, "cmp_lt_tmp");
+            if (TypeTable::isTypeI(exprPayRet.first))
+                exprPayRet.second = llvmBuilder.CreateICmpSLT(valL, valR, "scmp_lt_tmp");
+            else
+                exprPayRet.second = llvmBuilder.CreateICmpULT(valL, valR, "ucmp_lt_tmp");
             break;
         case Token::O_LTEQ:
-            exprPayRet.second = llvmBuilder.CreateICmpSLE(valL, valR, "cmp_lteq_tmp");
+            if (TypeTable::isTypeI(exprPayRet.first))
+                exprPayRet.second = llvmBuilder.CreateICmpSLE(valL, valR, "scmp_lteq_tmp");
+            else
+                exprPayRet.second = llvmBuilder.CreateICmpULE(valL, valR, "ucmp_lteq_tmp");
             break;
         case Token::O_GT:
-            exprPayRet.second = llvmBuilder.CreateICmpSGT(valL, valR, "cmp_gt_tmp");
+            if (TypeTable::isTypeI(exprPayRet.first))
+                exprPayRet.second = llvmBuilder.CreateICmpSGT(valL, valR, "scmp_gt_tmp");
+            else
+                exprPayRet.second = llvmBuilder.CreateICmpUGT(valL, valR, "ucmp_gt_tmp");
             break;
         case Token::O_GTEQ:
-            exprPayRet.second = llvmBuilder.CreateICmpSGE(valL, valR, "cmp_gteq_tmp");
+            if (TypeTable::isTypeI(exprPayRet.first))
+                exprPayRet.second = llvmBuilder.CreateICmpSGE(valL, valR, "scmp_gteq_tmp");
+            else
+                exprPayRet.second = llvmBuilder.CreateICmpUGE(valL, valR, "ucmp_gteq_tmp");
             break;
         default:
             panic = true;
@@ -282,8 +320,7 @@ void CodeGen::codegen(const DeclAST *ast) {
                         return;
                     }
 
-                    // currently, only int types
-                    src = llvmBuilder.CreateIntCast(src, type, true, "i_cast");
+                    createCast(src, initPay.first, type, typeId);
                 }
 
                 llvmBuilder.CreateStore(src, val);
