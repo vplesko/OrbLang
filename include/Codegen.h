@@ -36,7 +36,7 @@ class CodeGen {
     void codegen(const DoWhileAST *ast);
     void codegen(const RetAST *ast);
     void codegen(const BlockAST *ast, bool makeScope);
-    llvm::Function* codegen(const FuncProtoAST *ast, bool definition);
+    FuncValue* codegen(const FuncProtoAST *ast, bool definition);
     void codegen(const FuncAST *ast);
 
     llvm::Type* codegenType(const TypeAST *ast);

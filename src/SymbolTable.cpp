@@ -54,7 +54,7 @@ bool TypeTable::isType(NamePool::Id name) const {
     return typeIds.find(name) != typeIds.end();
 }
 
-SymbolTable::SymbolTable(TypeTable *typeTable) : typeTable(typeTable) {
+SymbolTable::SymbolTable(TypeTable *typeTable) : typeTable(typeTable), currFunc(nullptr) {
     last = glob = new Scope();
     glob->prev = nullptr;
 }

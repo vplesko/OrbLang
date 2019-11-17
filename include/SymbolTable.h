@@ -106,18 +106,24 @@ public:
     };
 
 private:
+    friend class ScopeControl;
+
     struct Scope {
         std::unordered_map<NamePool::Id, VarPayload> vars;
         Scope *prev;
     };
 
+    TypeTable *typeTable;
+
     std::unordered_map<FuncSignature, FuncValue, FuncSignature::Hasher> funcs;
 
     Scope *last, *glob;
 
-    TypeTable *typeTable;
+    // this for now; someday might contain loop info for break/continue (maybe lambda info)
+    FuncValue *currFunc;
 
-    friend class ScopeControl;
+    void setCurrFunc(FuncValue *func) { currFunc = func; }
+
     void newScope();
     void endScope();
 
@@ -133,6 +139,8 @@ public:
     
     bool inGlobalScope() const { return last == glob; }
 
+    const FuncValue* getCurrFunc() const { return currFunc; }
+
     bool varNameTaken(NamePool::Id name) const;
     bool funcNameTaken(NamePool::Id name) const;
 
@@ -143,10 +151,16 @@ public:
 
 class ScopeControl {
     SymbolTable *symTable;
+    bool funcOpen;
 
 public:
-    ScopeControl(SymbolTable *symTable = nullptr) : symTable(symTable) {
+    ScopeControl(SymbolTable *symTable = nullptr) : symTable(symTable), funcOpen(false) {
         if (symTable != nullptr) symTable->newScope();
+    }
+    // ref cuz must not be null
+    ScopeControl(SymbolTable &symTable, FuncValue &func) : symTable(&symTable), funcOpen(true) {
+        this->symTable->setCurrFunc(&func);
+        this->symTable->newScope();
     }
 
     ScopeControl(const ScopeControl&) = delete;
@@ -157,5 +171,6 @@ public:
 
     ~ScopeControl() {
         if (symTable) symTable->endScope();
+        if (funcOpen) symTable->setCurrFunc(nullptr);
     }
 };

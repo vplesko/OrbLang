@@ -3,7 +3,7 @@ i16 g16;
 i32 g32;
 i64 g64;
 
-fnc main() {
+fnc main() f64 {
     i8 l8;
     i16 l16;
     i32 l32;
@@ -32,4 +32,6 @@ fnc main() {
     if (lb_1) {
         lb_2 = lb_2;
     }
+
+    ret lf16;
 }

@@ -565,19 +565,37 @@ void CodeGen::codegen(const DoWhileAST *ast) {
 }
 
 void CodeGen::codegen(const RetAST *ast) {
+    const FuncValue *currFunc = symbolTable->getCurrFunc();
+    if (currFunc == nullptr) {
+        panic = true;
+        return;
+    }
+
     if (!ast->getVal()) {
+        if (currFunc->hasRet) {
+            panic = true;
+            return;
+        }
         llvmBuilder.CreateRetVoid();
         return;
     }
 
-    // TODO check that type is equal, implicit casts
     ExprGenPayload condExpr = codegenExpr(ast->getVal());
     if (panic || condExpr.second == nullptr) {
         panic = true;
         return;
     }
 
-    llvmBuilder.CreateRet(condExpr.second);
+    llvm::Value *retVal = condExpr.second;
+    if (condExpr.first != currFunc->retType) {
+        if (!TypeTable::isImplicitCastable(condExpr.first, currFunc->retType)) {
+            panic = true;
+            return;
+        }
+        createCast(retVal, condExpr.first, currFunc->retType);
+    }
+
+    llvmBuilder.CreateRet(retVal);
 }
 
 void CodeGen::codegen(const BlockAST *ast, bool makeScope) {
@@ -586,7 +604,7 @@ void CodeGen::codegen(const BlockAST *ast, bool makeScope) {
     for (const auto &it : ast->getBody()) codegenNode(it.get());
 }
 
-llvm::Function* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
+FuncValue* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
     if (symbolTable->funcNameTaken(ast->getName())) {
         panic = true;
         return nullptr;
@@ -611,7 +629,7 @@ llvm::Function* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
             prev->defined = true;
         }
 
-        return prev->func;
+        return prev;
     }
 
     // can't have args with same name
@@ -646,25 +664,25 @@ llvm::Function* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
     val.defined = definition;
 
     symbolTable->addFunc(sig, val);
-
-    return func;
+    // cannot return &val, as it is a local var
+    return symbolTable->getFunc(sig);
 }
 
 void CodeGen::codegen(const FuncAST *ast) {
-    llvm::Function *func = codegen(ast->getProto(), true);
+    FuncValue *funcVal = codegen(ast->getProto(), true);
     if (panic) {
         return;
     }
 
-    ScopeControl scope(symbolTable);
+    ScopeControl scope(*symbolTable, *funcVal);
 
-    llvmBuilderAlloca.SetInsertPoint(llvm::BasicBlock::Create(llvmContext, "alloca", func));
+    llvmBuilderAlloca.SetInsertPoint(llvm::BasicBlock::Create(llvmContext, "alloca", funcVal->func));
 
-    llvm::BasicBlock *body = llvm::BasicBlock::Create(llvmContext, "entry", func);
+    llvm::BasicBlock *body = llvm::BasicBlock::Create(llvmContext, "entry", funcVal->func);
     llvmBuilder.SetInsertPoint(body);
 
     size_t i = 0;
-    for (auto &arg : func->args()) {
+    for (auto &arg : funcVal->func->args()) {
         const TypeAST *astArgType = ast->getProto()->getArgType(i);
         NamePool::Id astArgName = ast->getProto()->getArgName(i);
         const string &name = namePool->get(astArgName);
@@ -677,7 +695,7 @@ void CodeGen::codegen(const FuncAST *ast) {
 
     codegen(ast->getBody(), false);
     if (panic) {
-        func->eraseFromParent();
+        funcVal->func->eraseFromParent();
         return;
     }
 
@@ -688,7 +706,7 @@ void CodeGen::codegen(const FuncAST *ast) {
 
     cout << endl;
     cout << "LLVM func verification for " << namePool->get(ast->getProto()->getName()) << ":" << endl << endl;
-    llvm::verifyFunction(*func, &llvm::outs());
+    llvm::verifyFunction(*funcVal->func, &llvm::outs());
 }
 
 void CodeGen::printout() const {
