@@ -6,12 +6,13 @@
 #include "SymbolTable.h"
 
 enum ASTType {
+    AST_Type,
     AST_NullExpr,
     AST_LiteralExpr,
     AST_VarExpr,
     AST_BinExpr,
     AST_CallExpr,
-    AST_Type,
+    AST_CastExpr,
     AST_Decl,
     AST_If,
     AST_For,
@@ -29,6 +30,17 @@ public:
     virtual ASTType type() const =0;
 
     virtual ~BaseAST() {}
+};
+
+class TypeAST : public BaseAST {
+    TypeTable::Id id;
+
+public:
+    explicit TypeAST(TypeTable::Id id) : id(id) {}
+
+    TypeTable::Id getTypeId() const { return id; }
+
+    ASTType type() const { return AST_Type; }
 };
 
 class StmntAST : public BaseAST {
@@ -58,7 +70,7 @@ class LiteralExprAST : public ExprAST {
 
 public:
     LiteralExprAST(TypeTable::Id t, int v) : typeId(t), val(v) {}
-    LiteralExprAST(bool bb) : typeId(TypeTable::P_BOOL), b(bb) {}
+    explicit LiteralExprAST(bool bb) : typeId(TypeTable::P_BOOL), b(bb) {}
 
     ASTType type() const { return AST_LiteralExpr; }
 
@@ -71,7 +83,7 @@ class VarExprAST : public ExprAST {
     NamePool::Id nameId;
 
 public:
-    VarExprAST(NamePool::Id id) : nameId(id) {}
+    explicit VarExprAST(NamePool::Id id) : nameId(id) {}
 
     ASTType type() const { return AST_VarExpr; }
 
@@ -100,7 +112,7 @@ class CallExprAST : public ExprAST {
     std::vector<std::unique_ptr<ExprAST>> args;
 
 public:
-    CallExprAST(NamePool::Id funcName) : func(funcName) {}
+    explicit CallExprAST(NamePool::Id funcName) : func(funcName) {}
 
     NamePool::Id getName() const { return func; }
     const std::vector<std::unique_ptr<ExprAST>>& getArgs() const { return args; }
@@ -110,15 +122,17 @@ public:
     ASTType type() const { return AST_CallExpr; }
 };
 
-class TypeAST : public BaseAST {
-    TypeTable::Id id;
+class CastExprAST : public ExprAST {
+    std::unique_ptr<TypeAST> t;
+    std::unique_ptr<ExprAST> v;
 
 public:
-    TypeAST(TypeTable::Id id) : id(id) {}
+    CastExprAST(std::unique_ptr<TypeAST> ty, std::unique_ptr<ExprAST> val);
 
-    TypeTable::Id getTypeId() const { return id; }
+    const TypeAST* getType() const { return t.get(); }
+    const ExprAST* getVal() const { return v.get(); }
 
-    ASTType type() const { return AST_Type; }
+    ASTType type() const { return AST_CastExpr; }
 };
 
 class DeclAST : public StmntAST {
@@ -126,7 +140,7 @@ class DeclAST : public StmntAST {
     std::vector<std::pair<NamePool::Id, std::unique_ptr<ExprAST>>> decls;
 
 public:
-    DeclAST(std::unique_ptr<TypeAST> type);
+    explicit DeclAST(std::unique_ptr<TypeAST> type);
 
     const TypeAST* getType() const { return varType.get(); }
 
@@ -218,7 +232,7 @@ class FuncProtoAST : public BaseAST {
     std::unique_ptr<TypeAST> retType;
 
 public:
-    FuncProtoAST(NamePool::Id name) : name(name) {}
+    explicit FuncProtoAST(NamePool::Id name) : name(name) {}
 
     ASTType type() const { return AST_FuncProto; }
 
@@ -254,7 +268,7 @@ class RetAST : public StmntAST {
     std::unique_ptr<ExprAST> val;
 
 public:
-    RetAST(std::unique_ptr<ExprAST> v) : val(std::move(v)) {}
+    explicit RetAST(std::unique_ptr<ExprAST> v) : val(std::move(v)) {}
 
     const ExprAST* getVal() const { return val.get(); }
 

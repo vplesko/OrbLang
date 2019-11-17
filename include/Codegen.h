@@ -16,6 +16,7 @@ class CodeGen {
 
     bool panic;
 
+    llvm::Value* getConstB(bool val);
     llvm::AllocaInst* createAlloca(llvm::Type *type, const std::string &name);
     llvm::GlobalValue* createGlobal(llvm::Type *type, const std::string &name);
     void createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId);
@@ -29,6 +30,7 @@ class CodeGen {
     ExprGenPayload codegen(const VarExprAST *ast);
     ExprGenPayload codegen(const BinExprAST *ast);
     ExprGenPayload codegen(const CallExprAST *ast);
+    ExprGenPayload codegen(const CastExprAST *ast);
     void codegen(const DeclAST *ast);
     void codegen(const IfAST *ast);
     void codegen(const ForAST *ast);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <queue>
 #include "Lexer.h"
 #include "Codegen.h"
 #include "llvm/IR/LLVMContext.h"
@@ -15,6 +16,12 @@ class Parser {
 
     bool panic;
 
+    // needed to due ambiguity between decl and expr in some starting tokens
+    std::queue<Token> tokQu;
+
+    Token peek() const;
+    Token next();
+    bool match(Token::Type type);
     bool mismatch(Token::Type t);
     template<typename T> bool broken(const T &x);
 
@@ -42,6 +49,7 @@ public:
     void parse(std::istream &istr);
 };
 
+// panics if pointer x is null; returns panic
 template<typename T>
 bool Parser::broken(const T &x) {
     if (x == nullptr) panic = true;

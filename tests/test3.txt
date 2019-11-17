@@ -1,3 +1,22 @@
+fnc foo() {
+    { i32 a = i32(0-10); i32 b = i16(10); i8 c = i8(i64(1027)); }
+    { u32 a = u32(0-10); }
+    { f16 a = f16(0-10); }
+    { i32 x = 10; bool a = bool(x); bool b = bool(10); bool c = bool(0-10); }
+
+    { i32 a = i32(u32(10)); }
+    { u32 a = u32(10); u32 b = u16(10); u8 c = u8(u64(1027)); }
+    { u32 a = u32(f32(10)); }
+    { u32 x = u32(10); bool a = bool(x); bool b = bool(u32(10)); bool c = bool(u32(0-10)); }
+
+    { f32 a = f32(10); }
+    { f32 a = f32(u32(10)); }
+    { f32 a = f32(0-10); f32 b = f16(10); f16 c = f16(f64(1027)); }
+
+    { i32 a = i32(true); i32 b = i32(false); }
+    { u32 a = u32(true); u32 b = u32(false); }
+}
+
 i8 g8;
 i16 g16;
 i32 g32;

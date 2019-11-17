@@ -10,6 +10,11 @@ CodeGen::CodeGen(NamePool *namePool, SymbolTable *symbolTable) : namePool(namePo
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("test"), llvmContext);
 }
 
+llvm::Value* CodeGen::getConstB(bool val) {
+    if (val) return llvm::ConstantInt::getTrue(llvmContext);
+    else return llvm::ConstantInt::getFalse(llvmContext);
+}
+
 llvm::Type* CodeGen::genPrimTypeBool() {
     return llvm::IntegerType::get(llvmContext, 1);
 }
@@ -54,12 +59,58 @@ llvm::GlobalValue* CodeGen::createGlobal(llvm::Type *type, const std::string &na
 }
 
 void CodeGen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId) {
+    if (srcTypeId == dstTypeId) return;
+
+    // TODO test the casts
+    // yes, all of them
     if (TypeTable::isTypeI(srcTypeId)) {
-        val = llvmBuilder.CreateIntCast(val, type, true, "i_cast");
+        if (TypeTable::isTypeI(dstTypeId))
+            val = llvmBuilder.CreateIntCast(val, type, true, "i2i_cast");
+        else if (TypeTable::isTypeU(dstTypeId))
+            val = llvmBuilder.CreateIntCast(val, type, false, "i2u_cast");
+        else if (TypeTable::isTypeF(dstTypeId))
+            val = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::SIToFP, val, type, "i2f_cast"));
+        else if (dstTypeId == TypeTable::P_BOOL) {
+            llvm::Value *z = llvmBuilder.CreateIntCast(getConstB(false), val->getType(), true);
+            val = llvmBuilder.CreateICmpNE(val, z, "i2b_cast");
+        } else {
+            panic = true;
+            val = nullptr;
+        }
     } else if (TypeTable::isTypeU(srcTypeId)) {
-        val = llvmBuilder.CreateIntCast(val, type, false, "u_cast");
+        if (TypeTable::isTypeI(dstTypeId))
+            val = llvmBuilder.CreateIntCast(val, type, true, "u2i_cast");
+        else if (TypeTable::isTypeU(dstTypeId))
+            val = llvmBuilder.CreateIntCast(val, type, false, "u2u_cast");
+        else if (TypeTable::isTypeF(dstTypeId))
+            val = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::UIToFP, val, type, "u2f_cast"));
+        else if (dstTypeId == TypeTable::P_BOOL) {
+            llvm::Value *z = llvmBuilder.CreateIntCast(getConstB(false), val->getType(), false);
+            val = llvmBuilder.CreateICmpNE(val, z, "i2b_cast");
+        } else {
+            panic = true;
+            val = nullptr;
+        }
     } else if (TypeTable::isTypeF(srcTypeId)) {
-        val = llvmBuilder.CreateFPCast(val, type, "f_cast");
+        if (TypeTable::isTypeI(dstTypeId))
+            val = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::FPToSI, val, type, "f2i_cast"));
+        else if (TypeTable::isTypeU(dstTypeId))
+            val = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::FPToUI, val, type, "f2u_cast"));
+        else if (TypeTable::isTypeF(dstTypeId))
+            val = llvmBuilder.CreateFPCast(val, type, "f2f_cast");
+        else {
+            panic = true;
+            val = nullptr;
+        }
+    } else if (srcTypeId == TypeTable::P_BOOL) {
+        if (TypeTable::isTypeI(dstTypeId))
+            val = llvmBuilder.CreateIntCast(val, type, false, "b2i_cast");
+        else if (TypeTable::isTypeU(dstTypeId))
+            val = llvmBuilder.CreateIntCast(val, type, false, "b2u_cast");
+        else {
+            panic = true;
+            val = nullptr;
+        }
     } else {
         panic = true;
         val = nullptr;
@@ -73,13 +124,15 @@ void CodeGen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::
 CodeGen::ExprGenPayload CodeGen::codegenExpr(const ExprAST *ast) {
     switch (ast->type()) {
     case AST_LiteralExpr:
-        return codegen((LiteralExprAST*)ast);
+        return codegen((const LiteralExprAST*)ast);
     case AST_VarExpr:
-        return codegen((VarExprAST*)ast);
+        return codegen((const VarExprAST*)ast);
     case AST_BinExpr:
-        return codegen((BinExprAST*)ast);
+        return codegen((const BinExprAST*)ast);
     case AST_CallExpr:
-        return codegen((CallExprAST*)ast);
+        return codegen((const CallExprAST*)ast);
+    case AST_CastExpr:
+        return codegen((const CastExprAST*)ast);
     default:
         panic = true;
         return {};
@@ -90,47 +143,35 @@ void CodeGen::codegenNode(const BaseAST *ast, bool blockMakeScope) {
     switch (ast->type()) {
     case AST_NullExpr:
         return;
-    case AST_LiteralExpr:
-        codegen((LiteralExprAST*)ast);
-        return;
-    case AST_VarExpr:
-        codegen((VarExprAST*)ast);
-        return;
-    case AST_BinExpr:
-        codegen((BinExprAST*)ast);
-        return;
-    case AST_CallExpr:
-        codegen((CallExprAST*)ast);
-        return;
     case AST_Decl:
-        codegen((DeclAST*)ast);
+        codegen((const DeclAST*)ast);
         return;
     case AST_If:
-        codegen((IfAST*)ast);
+        codegen((const IfAST*)ast);
         return;
     case AST_For:
-        codegen((ForAST*) ast);
+        codegen((const ForAST*) ast);
         return;
     case AST_While:
-        codegen((WhileAST*) ast);
+        codegen((const WhileAST*) ast);
         return;
     case AST_DoWhile:
-        codegen((DoWhileAST*) ast);
+        codegen((const DoWhileAST*) ast);
         return;
     case AST_Ret:
-        codegen((RetAST*)ast);
+        codegen((const RetAST*)ast);
         return;
     case AST_Block:
-        codegen((BlockAST*)ast, blockMakeScope);
+        codegen((const BlockAST*)ast, blockMakeScope);
         return;
     case AST_FuncProto:
-        codegen((FuncProtoAST*)ast, false);
+        codegen((const FuncProtoAST*)ast, false);
         return;
     case AST_Func:
-        codegen((FuncAST*)ast);
+        codegen((const FuncAST*)ast);
         return;
     default:
-        panic = true;
+        codegenExpr((const ExprAST*)ast);
     }
 }
 
@@ -146,7 +187,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const LiteralExprAST *ast) {
     } else if (ast->getType() == TypeTable::P_BOOL) {
         return {
             ast->getType(),
-            ast->getValB() ? llvm::ConstantInt::getTrue(llvmContext) : llvm::ConstantInt::getFalse(llvmContext)
+            ast->getValB() ? getConstB(true) : getConstB(false)
         };
     } else {
         panic = true;
@@ -348,6 +389,26 @@ CodeGen::ExprGenPayload CodeGen::codegen(const CallExprAST *ast) {
     return {func.second->retType, llvmBuilder.CreateCall(func.second->func, args, "call_tmp")};
 }
 
+CodeGen::ExprGenPayload CodeGen::codegen(const CastExprAST *ast) {
+    llvm::Type *type = codegenType(ast->getType());
+    if (panic || type == nullptr) {
+        panic = true;
+        return {};
+    }
+
+    ExprGenPayload exprVal = codegenExpr(ast->getVal());
+    if (panic || exprVal.second == nullptr) {
+        panic = true;
+        return {};
+    }
+
+    llvm::Value *val = exprVal.second;
+    createCast(val, exprVal.first, type, ast->getType()->getTypeId());
+
+    if (val == nullptr) panic = true;
+    return {ast->getType()->getTypeId(), val};
+}
+
 llvm::Type* CodeGen::codegenType(const TypeAST *ast) {
     llvm::Type *type = symbolTable->getTypeTable()->getType(ast->getTypeId());
     if (type == nullptr) {
@@ -481,7 +542,7 @@ void CodeGen::codegen(const ForAST *ast) {
         }
     } else {
         condExpr.first = TypeTable::P_BOOL;
-        condExpr.second = llvm::ConstantInt::getTrue(llvmContext);
+        condExpr.second = getConstB(true);
     }
 
     llvmBuilder.CreateCondBr(condExpr.second, bodyBlock, afterBlock);

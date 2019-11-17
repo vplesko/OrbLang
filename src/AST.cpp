@@ -24,7 +24,10 @@ DoWhileAST::DoWhileAST(unique_ptr<StmntAST> body, unique_ptr<ExprAST> cond)
     : body(move(body)), cond(move(cond)) {
 }
 
-DeclAST::DeclAST(std::unique_ptr<TypeAST> type) : varType(move(type)) {
+CastExprAST::CastExprAST(unique_ptr<TypeAST> ty, unique_ptr<ExprAST> val) : t(move(ty)), v(move(val)) {
+}
+
+DeclAST::DeclAST(unique_ptr<TypeAST> type) : varType(move(type)) {
 }
 
 void DeclAST::add(pair<NamePool::Id, unique_ptr<ExprAST>> decl) {
