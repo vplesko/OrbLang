@@ -10,6 +10,10 @@ CodeGen::CodeGen(NamePool *namePool, SymbolTable *symbolTable) : namePool(namePo
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("test"), llvmContext);
 }
 
+llvm::Type* CodeGen::genPrimTypeBool() {
+    return llvm::IntegerType::get(llvmContext, 1);
+}
+
 llvm::Type* CodeGen::genPrimTypeI(unsigned bits) {
     return llvm::IntegerType::get(llvmContext, bits);
 }
@@ -132,11 +136,22 @@ void CodeGen::codegenNode(const BaseAST *ast, bool blockMakeScope) {
 
 CodeGen::ExprGenPayload CodeGen::codegen(const LiteralExprAST *ast) {
     // TODO literals of other types
-    return {ast->getType(),
-        llvm::ConstantInt::get(
-            symbolTable->getTypeTable()->getType(ast->getType()), 
-            ast->getVal(), true)
-    };
+    if (TypeTable::isTypeI(ast->getType())) {
+        return {
+            ast->getType(),
+            llvm::ConstantInt::get(
+                symbolTable->getTypeTable()->getType(ast->getType()), 
+                ast->getValI(), true)
+        };
+    } else if (ast->getType() == TypeTable::P_BOOL) {
+        return {
+            ast->getType(),
+            ast->getValB() ? llvm::ConstantInt::getTrue(llvmContext) : llvm::ConstantInt::getFalse(llvmContext)
+        };
+    } else {
+        panic = true;
+        return {};
+    }
 }
 
 CodeGen::ExprGenPayload CodeGen::codegen(const VarExprAST *ast) {
@@ -146,7 +161,6 @@ CodeGen::ExprGenPayload CodeGen::codegen(const VarExprAST *ast) {
 }
 
 CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
-    // TODO currently returning left op's type, check same type OR implicit casts
     ExprGenPayload exprPayL, exprPayR, exprPayRet;
 
     if (ast->getOp() == Token::O_ASGN) {
@@ -192,84 +206,108 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
         }
     }
 
-    switch (ast->getOp()) {
+    if (exprPayRet.first == TypeTable::P_BOOL) {
+        // TODO moah bool operations
+        switch (ast->getOp()) {
         case Token::O_ASGN:
             llvmBuilder.CreateStore(valR, valL);
             exprPayRet.second = valR;
             break;
-        case Token::O_ADD:
-            if (TypeTable::isTypeF(exprPayRet.first))
-                exprPayRet.second = llvmBuilder.CreateFAdd(valL, valR, "fadd_tmp");
-            else
-                exprPayRet.second = llvmBuilder.CreateAdd(valL, valR, "add_tmp");
-            break;
-        case Token::O_SUB:
-            if (TypeTable::isTypeF(exprPayRet.first))
-                exprPayRet.second = llvmBuilder.CreateFSub(valL, valR, "fsub_tmp");
-            else
-                exprPayRet.second = llvmBuilder.CreateSub(valL, valR, "sub_tmp");
-            break;
-        case Token::O_MUL:
-            if (TypeTable::isTypeF(exprPayRet.first))
-                exprPayRet.second = llvmBuilder.CreateFMul(valL, valR, "fmul_tmp");
-            else
-                exprPayRet.second = llvmBuilder.CreateMul(valL, valR, "mul_tmp");
-            break;
-        case Token::O_DIV:
-            if (TypeTable::isTypeF(exprPayRet.first))
-                exprPayRet.second = llvmBuilder.CreateFDiv(valL, valR, "fdiv_tmp");
-            else if (TypeTable::isTypeI(exprPayRet.first))
-                exprPayRet.second = llvmBuilder.CreateSDiv(valL, valR, "sdiv_tmp");
-            else
-                exprPayRet.second = llvmBuilder.CreateUDiv(valL, valR, "udiv_tmp");
-            break;
         case Token::O_EQ:
-            if (TypeTable::isTypeF(exprPayRet.first))
-                exprPayRet.second = llvmBuilder.CreateFCmpOEQ(valL, valR, "fcmp_eq_tmp");
-            else
-                exprPayRet.second = llvmBuilder.CreateICmpEQ(valL, valR, "cmp_eq_tmp");
+            exprPayRet.second = llvmBuilder.CreateICmpEQ(valL, valR, "bcmp_eq_tmp");
             break;
         case Token::O_NEQ:
-            if (TypeTable::isTypeF(exprPayRet.first))
-                exprPayRet.second = llvmBuilder.CreateFCmpONE(valL, valR, "fcmp_neq_tmp");
-            else
-                exprPayRet.second = llvmBuilder.CreateICmpNE(valL, valR, "cmp_neq_tmp");
-            break;
-        case Token::O_LT:
-            if (TypeTable::isTypeF(exprPayRet.first))
-                exprPayRet.second = llvmBuilder.CreateFCmpOLT(valL, valR, "fcmp_lt_tmp");
-            else if (TypeTable::isTypeI(exprPayRet.first))
-                exprPayRet.second = llvmBuilder.CreateICmpSLT(valL, valR, "scmp_lt_tmp");
-            else
-                exprPayRet.second = llvmBuilder.CreateICmpULT(valL, valR, "ucmp_lt_tmp");
-            break;
-        case Token::O_LTEQ:
-            if (TypeTable::isTypeF(exprPayRet.first))
-                exprPayRet.second = llvmBuilder.CreateFCmpOLE(valL, valR, "fcmp_lteq_tmp");
-            else if (TypeTable::isTypeI(exprPayRet.first))
-                exprPayRet.second = llvmBuilder.CreateICmpSLE(valL, valR, "scmp_lteq_tmp");
-            else
-                exprPayRet.second = llvmBuilder.CreateICmpULE(valL, valR, "ucmp_lteq_tmp");
-            break;
-        case Token::O_GT:
-            if (TypeTable::isTypeF(exprPayRet.first))
-                exprPayRet.second = llvmBuilder.CreateFCmpOGT(valL, valR, "fcmp_gt_tmp");
-            else if (TypeTable::isTypeI(exprPayRet.first))
-                exprPayRet.second = llvmBuilder.CreateICmpSGT(valL, valR, "scmp_gt_tmp");
-            else
-                exprPayRet.second = llvmBuilder.CreateICmpUGT(valL, valR, "ucmp_gt_tmp");
-            break;
-        case Token::O_GTEQ:
-            if (TypeTable::isTypeF(exprPayRet.first))
-                exprPayRet.second = llvmBuilder.CreateFCmpOGE(valL, valR, "fcmp_gteq_tmp");
-            else if (TypeTable::isTypeI(exprPayRet.first))
-                exprPayRet.second = llvmBuilder.CreateICmpSGE(valL, valR, "scmp_gteq_tmp");
-            else
-                exprPayRet.second = llvmBuilder.CreateICmpUGE(valL, valR, "ucmp_gteq_tmp");
+            exprPayRet.second = llvmBuilder.CreateICmpNE(valL, valR, "bcmp_neq_tmp");
             break;
         default:
-            panic = true;
-            return {};
+            break;
+        }
+    } else {
+        switch (ast->getOp()) {
+            case Token::O_ASGN:
+                llvmBuilder.CreateStore(valR, valL);
+                exprPayRet.second = valR;
+                break;
+            case Token::O_ADD:
+                if (TypeTable::isTypeF(exprPayRet.first))
+                    exprPayRet.second = llvmBuilder.CreateFAdd(valL, valR, "fadd_tmp");
+                else
+                    exprPayRet.second = llvmBuilder.CreateAdd(valL, valR, "add_tmp");
+                break;
+            case Token::O_SUB:
+                if (TypeTable::isTypeF(exprPayRet.first))
+                    exprPayRet.second = llvmBuilder.CreateFSub(valL, valR, "fsub_tmp");
+                else
+                    exprPayRet.second = llvmBuilder.CreateSub(valL, valR, "sub_tmp");
+                break;
+            case Token::O_MUL:
+                if (TypeTable::isTypeF(exprPayRet.first))
+                    exprPayRet.second = llvmBuilder.CreateFMul(valL, valR, "fmul_tmp");
+                else
+                    exprPayRet.second = llvmBuilder.CreateMul(valL, valR, "mul_tmp");
+                break;
+            case Token::O_DIV:
+                if (TypeTable::isTypeF(exprPayRet.first))
+                    exprPayRet.second = llvmBuilder.CreateFDiv(valL, valR, "fdiv_tmp");
+                else if (TypeTable::isTypeI(exprPayRet.first))
+                    exprPayRet.second = llvmBuilder.CreateSDiv(valL, valR, "sdiv_tmp");
+                else
+                    exprPayRet.second = llvmBuilder.CreateUDiv(valL, valR, "udiv_tmp");
+                break;
+            case Token::O_EQ:
+                if (TypeTable::isTypeF(exprPayRet.first))
+                    exprPayRet.second = llvmBuilder.CreateFCmpOEQ(valL, valR, "fcmp_eq_tmp");
+                else
+                    exprPayRet.second = llvmBuilder.CreateICmpEQ(valL, valR, "cmp_eq_tmp");
+                exprPayRet.first = TypeTable::P_BOOL;
+                break;
+            case Token::O_NEQ:
+                if (TypeTable::isTypeF(exprPayRet.first))
+                    exprPayRet.second = llvmBuilder.CreateFCmpONE(valL, valR, "fcmp_neq_tmp");
+                else
+                    exprPayRet.second = llvmBuilder.CreateICmpNE(valL, valR, "cmp_neq_tmp");
+                exprPayRet.first = TypeTable::P_BOOL;
+                break;
+            case Token::O_LT:
+                if (TypeTable::isTypeF(exprPayRet.first))
+                    exprPayRet.second = llvmBuilder.CreateFCmpOLT(valL, valR, "fcmp_lt_tmp");
+                else if (TypeTable::isTypeI(exprPayRet.first))
+                    exprPayRet.second = llvmBuilder.CreateICmpSLT(valL, valR, "scmp_lt_tmp");
+                else
+                    exprPayRet.second = llvmBuilder.CreateICmpULT(valL, valR, "ucmp_lt_tmp");
+                exprPayRet.first = TypeTable::P_BOOL;
+                break;
+            case Token::O_LTEQ:
+                if (TypeTable::isTypeF(exprPayRet.first))
+                    exprPayRet.second = llvmBuilder.CreateFCmpOLE(valL, valR, "fcmp_lteq_tmp");
+                else if (TypeTable::isTypeI(exprPayRet.first))
+                    exprPayRet.second = llvmBuilder.CreateICmpSLE(valL, valR, "scmp_lteq_tmp");
+                else
+                    exprPayRet.second = llvmBuilder.CreateICmpULE(valL, valR, "ucmp_lteq_tmp");
+                exprPayRet.first = TypeTable::P_BOOL;
+                break;
+            case Token::O_GT:
+                if (TypeTable::isTypeF(exprPayRet.first))
+                    exprPayRet.second = llvmBuilder.CreateFCmpOGT(valL, valR, "fcmp_gt_tmp");
+                else if (TypeTable::isTypeI(exprPayRet.first))
+                    exprPayRet.second = llvmBuilder.CreateICmpSGT(valL, valR, "scmp_gt_tmp");
+                else
+                    exprPayRet.second = llvmBuilder.CreateICmpUGT(valL, valR, "ucmp_gt_tmp");
+                exprPayRet.first = TypeTable::P_BOOL;
+                break;
+            case Token::O_GTEQ:
+                if (TypeTable::isTypeF(exprPayRet.first))
+                    exprPayRet.second = llvmBuilder.CreateFCmpOGE(valL, valR, "fcmp_gteq_tmp");
+                else if (TypeTable::isTypeI(exprPayRet.first))
+                    exprPayRet.second = llvmBuilder.CreateICmpSGE(valL, valR, "scmp_gteq_tmp");
+                else
+                    exprPayRet.second = llvmBuilder.CreateICmpUGE(valL, valR, "ucmp_gteq_tmp");
+                exprPayRet.first = TypeTable::P_BOOL;
+                break;
+            default:
+                panic = true;
+                return {};
+        }
     }
 
     return exprPayRet;
@@ -294,14 +332,20 @@ CodeGen::ExprGenPayload CodeGen::codegen(const CallExprAST *ast) {
         args[i] = arg;
     }
 
-    const FuncValue *func = symbolTable->getFunc(sig);
-    if (func == nullptr) {
+    pair<const FuncSignature*, const FuncValue*> func = symbolTable->getFuncImplicitCastsAllowed(sig);
+    if (func.second == nullptr) {
         panic = true;
         return {};
     }
 
+    for (size_t i = 0; i < ast->getArgs().size(); ++i) {
+        if (sig.argTypes[i] != func.first->argTypes[i]) {
+            createCast(args[i], sig.argTypes[i], func.first->argTypes[i]);
+        }
+    }
+
     // TODO void-y type if func has no ret
-    return {func->retType, llvmBuilder.CreateCall(func->func, args, "call_tmp")};
+    return {func.second->retType, llvmBuilder.CreateCall(func.second->func, args, "call_tmp")};
 }
 
 llvm::Type* CodeGen::codegenType(const TypeAST *ast) {
@@ -378,9 +422,8 @@ void CodeGen::codegen(const IfAST *ast) {
         if (panic) return;
     }
 
-    // TODO check that type is bool, though LLVM is returning error anyway
-    llvm::Value *condVal = codegenExpr(ast->getCond()).second;
-    if (panic || condVal == nullptr) {
+    ExprGenPayload condExpr = codegenExpr(ast->getCond());
+    if (panic || condExpr.first != TypeTable::P_BOOL || condExpr.second == nullptr) {
         panic = true;
         return;
     }
@@ -391,7 +434,7 @@ void CodeGen::codegen(const IfAST *ast) {
     llvm::BasicBlock *elseBlock = ast->hasElse() ? llvm::BasicBlock::Create(llvmContext, "else") : nullptr;
     llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
 
-    llvmBuilder.CreateCondBr(condVal, thenBlock, ast->hasElse() ? elseBlock : afterBlock);
+    llvmBuilder.CreateCondBr(condExpr.second, thenBlock, ast->hasElse() ? elseBlock : afterBlock);
 
     {
         ScopeControl thenScope(symbolTable);
@@ -429,19 +472,19 @@ void CodeGen::codegen(const ForAST *ast) {
     llvmBuilder.CreateBr(condBlock);
     llvmBuilder.SetInsertPoint(condBlock);
 
-    llvm::Value *condVal;
+    ExprGenPayload condExpr;
     if (ast->hasCond()) {
-        // TODO check that type is bool, though LLVM is returning error anyway
-        condVal = codegenExpr(ast->getCond()).second;
-        if (panic || condVal == nullptr) {
+        condExpr = codegenExpr(ast->getCond());
+        if (panic || condExpr.first != TypeTable::P_BOOL || condExpr.second == nullptr) {
             panic = true;
             return;
         }
     } else {
-        condVal = llvm::ConstantInt::getTrue(llvmContext);
+        condExpr.first = TypeTable::P_BOOL;
+        condExpr.second = llvm::ConstantInt::getTrue(llvmContext);
     }
 
-    llvmBuilder.CreateCondBr(condVal, bodyBlock, afterBlock);
+    llvmBuilder.CreateCondBr(condExpr.second, bodyBlock, afterBlock);
 
     {
         ScopeControl scopeBody(symbolTable);
@@ -473,14 +516,13 @@ void CodeGen::codegen(const WhileAST *ast) {
     llvmBuilder.CreateBr(condBlock);
     llvmBuilder.SetInsertPoint(condBlock);
 
-    // TODO check that type is bool, though LLVM is returning error anyway
-    llvm::Value *condVal = codegenExpr(ast->getCond()).second;
-    if (panic || condVal == nullptr) {
+    ExprGenPayload condExpr = codegenExpr(ast->getCond());
+    if (panic || condExpr.first != TypeTable::P_BOOL || condExpr.second == nullptr) {
         panic = true;
         return;
     }
 
-    llvmBuilder.CreateCondBr(condVal, bodyBlock, afterBlock);
+    llvmBuilder.CreateCondBr(condExpr.second, bodyBlock, afterBlock);
 
     {
         ScopeControl scope(symbolTable);
@@ -510,14 +552,13 @@ void CodeGen::codegen(const DoWhileAST *ast) {
         if (panic) return;
     }
 
-    // TODO check that type is bool, though LLVM is returning error anyway
-    llvm::Value *condVal = codegenExpr(ast->getCond()).second;
-    if (panic || condVal == nullptr) {
+    ExprGenPayload condExpr = codegenExpr(ast->getCond());
+    if (panic || condExpr.first != TypeTable::P_BOOL || condExpr.second == nullptr) {
         panic = true;
         return;
     }
 
-    llvmBuilder.CreateCondBr(condVal, bodyBlock, afterBlock);
+    llvmBuilder.CreateCondBr(condExpr.second, bodyBlock, afterBlock);
 
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);
@@ -530,13 +571,13 @@ void CodeGen::codegen(const RetAST *ast) {
     }
 
     // TODO check that type is equal, implicit casts
-    llvm::Value *val = codegenExpr(ast->getVal()).second;
-    if (panic || val == nullptr) {
+    ExprGenPayload condExpr = codegenExpr(ast->getVal());
+    if (panic || condExpr.second == nullptr) {
         panic = true;
         return;
     }
 
-    llvmBuilder.CreateRet(val);
+    llvmBuilder.CreateRet(condExpr.second);
 }
 
 void CodeGen::codegen(const BlockAST *ast, bool makeScope) {

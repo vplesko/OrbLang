@@ -50,16 +50,21 @@ public:
 };
 
 class LiteralExprAST : public ExprAST {
-    TypeTable::Id typeId;
-    int val;
+    const TypeTable::Id typeId;
+    union {
+        const int val;
+        const bool b;
+    };
 
 public:
     LiteralExprAST(TypeTable::Id t, int v) : typeId(t), val(v) {}
+    LiteralExprAST(bool bb) : typeId(TypeTable::P_BOOL), b(bb) {}
 
     ASTType type() const { return AST_LiteralExpr; }
 
     TypeTable::Id getType() const { return typeId; }
-    int getVal() const { return val; }
+    int getValI() const { return val; }
+    bool getValB() const { return b; }
 };
 
 class VarExprAST : public ExprAST {

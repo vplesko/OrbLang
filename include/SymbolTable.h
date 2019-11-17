@@ -28,6 +28,7 @@ public:
     typedef unsigned Id;
 
     enum PrimIds {
+        P_BOOL,
         P_I8,
         P_I16,
         P_I32,
@@ -128,6 +129,7 @@ public:
 
     void addFunc(const FuncSignature &sig, const FuncValue &val);
     FuncValue* getFunc(const FuncSignature &sig);
+    std::pair<const FuncSignature*, FuncValue*> getFuncImplicitCastsAllowed(const FuncSignature &sig);
     
     bool inGlobalScope() const { return last == glob; }
 

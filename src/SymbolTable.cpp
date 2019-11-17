@@ -90,9 +90,40 @@ void SymbolTable::addFunc(const FuncSignature &sig, const FuncValue &val) {
 
 FuncValue* SymbolTable::getFunc(const FuncSignature &sig) {
     auto loc = funcs.find(sig);
-    if (loc == funcs.end()) return nullptr;
+    if (loc != funcs.end()) return &loc->second;
+    else return nullptr;
+}
 
-    return &loc->second;
+pair<const FuncSignature*, FuncValue*> SymbolTable::getFuncImplicitCastsAllowed(const FuncSignature &sig) {
+    auto loc = funcs.find(sig);
+    if (loc != funcs.end()) return {&loc->first, &loc->second};
+
+    if (!sig.argTypes.empty()) {
+        const FuncSignature *foundSig = nullptr;
+        FuncValue *foundVal = nullptr;
+        for (auto &it : funcs) {
+            if (it.first.argTypes.size() != sig.argTypes.size()) continue;
+            const FuncSignature *candSig = &it.first;
+            FuncValue *candVal = &it.second;
+            for (size_t i = 0; i < it.first.argTypes.size(); ++i) {
+                if (!TypeTable::isImplicitCastable(sig.argTypes[i], it.first.argTypes[i])) {
+                    candVal = nullptr;
+                    break;
+                }
+            }
+            if (candVal == nullptr) continue;
+            // in case of multiple possible funcs, error due to ambiguity
+            // TODO error info in ret val
+            if (foundVal != nullptr) return {nullptr, nullptr};
+            else {
+                foundSig = candSig;
+                foundVal = candVal;
+            }
+        }
+        return {foundSig, foundVal};
+    } else {
+        return {nullptr, nullptr};
+    }
 }
 
 bool SymbolTable::varNameTaken(NamePool::Id name) const {

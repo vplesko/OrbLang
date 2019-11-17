@@ -9,6 +9,8 @@
 struct Token {
     enum Type {
         T_NUM,
+        T_TRUE,
+        T_FALSE,
         T_OPER,
         T_COMMA,
         T_SEMICOLON,

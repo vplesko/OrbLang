@@ -18,6 +18,8 @@ const unordered_map<Token::Oper, OperInfo> operInfos = {
 };
 
 const unordered_map<string, Token::Type> keywords = {
+    {"true", {Token::T_TRUE}},
+    {"false", {Token::T_FALSE}},
     {"fnc", {Token::T_FNC}},
     {"if", {Token::T_IF}},
     {"else", {Token::T_ELSE}},

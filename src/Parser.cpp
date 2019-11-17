@@ -56,6 +56,8 @@ unique_ptr<ExprAST> Parser::prim() {
         }*/
 
         return make_unique<LiteralExprAST>(t, tok.num);
+    } else if (tok.type == Token::T_TRUE || tok.type == Token::T_FALSE) {
+        return make_unique<LiteralExprAST>(tok.type == Token::T_TRUE);
     } else if (tok.type == Token::T_ID) {
         if (lex->peek().type == Token::T_BRACE_L_REG) return call(tok.nameId);
         else return make_unique<VarExprAST>(tok.nameId);
@@ -154,6 +156,8 @@ std::unique_ptr<StmntAST> Parser::simple() {
         return make_unique<NullExprAST>();
     }
 
+    // TODO explicit cast, ctor calls are expressions that start with type
+    // need to distinguish between those and decls
     if (lex->peek().type == Token::T_ID && symbolTable->getTypeTable()->isType(lex->peek().nameId))
         return decl();
 
@@ -380,6 +384,12 @@ unique_ptr<BaseAST> Parser::func() {
 }
 
 void Parser::genPrimTypes() {
+    // b
+    symbolTable->getTypeTable()->addPrimType(
+        namePool->add("bool"),
+        TypeTable::P_BOOL,
+        codegen->genPrimTypeBool()
+    );
     // i
     symbolTable->getTypeTable()->addPrimType(
         namePool->add("i8"),

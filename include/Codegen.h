@@ -45,6 +45,7 @@ class CodeGen {
 public:
     CodeGen(NamePool *namePool, SymbolTable *symbolTable);
 
+    llvm::Type* genPrimTypeBool();
     llvm::Type* genPrimTypeI(unsigned bits);
     llvm::Type* genPrimTypeU(unsigned bits);
     llvm::Type* genPrimTypeF16();

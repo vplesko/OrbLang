@@ -24,4 +24,12 @@ fnc main() {
     f64 lf64 = lf32 - lf16;
     lf64 = lf16 * lf64;
     lf32 < lf64;
+
+    bool lb_1 = false, lb_2 = true;
+    lb_1 = lb_2;
+    lb_1 == lb_2;
+    lb_2 != lb_1;
+    if (lb_1) {
+        lb_2 = lb_2;
+    }
 }
