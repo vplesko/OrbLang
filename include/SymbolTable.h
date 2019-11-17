@@ -36,13 +36,18 @@ public:
         P_U16,
         P_U32,
         P_U64,
+        P_F16,
+        P_F32,
+        P_F64,
         P_ENUM_END // length marker, do not reference
     };
 
     static bool isImplicitCastable(Id from, Id into) {
+        // TODO should int be castable to unsigned, and those to float?
         PrimIds s = (PrimIds) from, d = (PrimIds) into;
         return (between(s, P_I8, P_I64) && between(d, s, P_I64)) ||
-            (between(s, P_U8, P_U64) && between(d, s, P_U64));
+            (between(s, P_U8, P_U64) && between(d, s, P_U64)) ||
+            (between(s, P_F16, P_F64) && between(d, s, P_F64));
     }
 
     static bool isTypeI(Id t) {
@@ -51,6 +56,10 @@ public:
 
     static bool isTypeU(Id t) {
         return between((PrimIds) t, P_U8, P_U64);
+    }
+
+    static bool isTypeF(Id t) {
+        return between((PrimIds) t, P_F16, P_F64);
     }
 
 private:

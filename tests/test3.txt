@@ -18,4 +18,10 @@ fnc main() {
     u16 lu16;
     lu8 / lu16;
     lu16 <= lu8;
+
+    f16 lf16;
+    f32 lf32;
+    f64 lf64 = lf32 - lf16;
+    lf64 = lf16 * lf64;
+    lf32 < lf64;
 }

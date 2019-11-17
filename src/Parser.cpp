@@ -422,6 +422,22 @@ void Parser::genPrimTypes() {
         TypeTable::P_U64,
         codegen->genPrimTypeU(64)
     );
+    // f
+    symbolTable->getTypeTable()->addPrimType(
+        namePool->add("f16"),
+        TypeTable::P_F16,
+        codegen->genPrimTypeF16()
+    );
+    symbolTable->getTypeTable()->addPrimType(
+        namePool->add("f32"),
+        TypeTable::P_F32,
+        codegen->genPrimTypeF32()
+    );
+    symbolTable->getTypeTable()->addPrimType(
+        namePool->add("f64"),
+        TypeTable::P_F64,
+        codegen->genPrimTypeF64()
+    );
 }
 
 void Parser::parse(std::istream &istr) {
