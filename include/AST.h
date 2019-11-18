@@ -10,6 +10,7 @@ enum ASTType {
     AST_NullExpr,
     AST_LiteralExpr,
     AST_VarExpr,
+    AST_UnExpr,
     AST_BinExpr,
     AST_CallExpr,
     AST_CastExpr,
@@ -88,6 +89,19 @@ public:
     ASTType type() const { return AST_VarExpr; }
 
     NamePool::Id getNameId() const { return nameId; }
+};
+
+class UnExprAST : public ExprAST {
+    std::unique_ptr<ExprAST> expr;
+    Token::Oper op;
+
+public:
+    UnExprAST(std::unique_ptr<ExprAST> e, Token::Oper o);
+
+    ASTType type() const { return AST_UnExpr; }
+
+    const ExprAST* getExpr() const { return expr.get(); }
+    Token::Oper getOp() const { return op; }
 };
 
 class BinExprAST : public ExprAST {

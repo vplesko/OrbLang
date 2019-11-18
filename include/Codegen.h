@@ -16,6 +16,8 @@ class CodeGen {
 
     bool panic;
 
+    template<typename T> bool broken(const T &x);
+
     llvm::Value* getConstB(bool val);
     llvm::AllocaInst* createAlloca(llvm::Type *type, const std::string &name);
     llvm::GlobalValue* createGlobal(llvm::Type *type, const std::string &name);
@@ -24,10 +26,15 @@ class CodeGen {
 
     bool isBlockTerminated() const;
 
-    typedef std::pair<TypeTable::Id, llvm::Value*> ExprGenPayload;
+    struct ExprGenPayload {
+        TypeTable::Id type;
+        llvm::Value *val = nullptr;
+        bool isL;
+    };
 
     ExprGenPayload codegen(const LiteralExprAST *ast);
     ExprGenPayload codegen(const VarExprAST *ast);
+    ExprGenPayload codegen(const UnExprAST *ast);
     ExprGenPayload codegen(const BinExprAST *ast);
     ExprGenPayload codegen(const CallExprAST *ast);
     ExprGenPayload codegen(const CastExprAST *ast);
@@ -60,3 +67,10 @@ public:
 
     void printout() const;
 };
+
+// panics if pointer x is null; returns panic
+template<typename T>
+bool CodeGen::broken(const T &x) {
+    if (x == nullptr) panic = true;
+    return panic;
+}

@@ -1,6 +1,9 @@
 #include "AST.h"
 using namespace std;
 
+UnExprAST::UnExprAST(unique_ptr<ExprAST> e, Token::Oper o) : expr(move(e)), op(o) {
+}
+
 BinExprAST::BinExprAST(
     unique_ptr<ExprAST> _lhs, 
     unique_ptr<ExprAST>  _rhs, 

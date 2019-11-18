@@ -58,6 +58,7 @@ std::unique_ptr<CallExprAST> Parser::call(NamePool::Id func) {
 }
 
 unique_ptr<ExprAST> Parser::prim() {
+    // remember, string literal is lvalue
     Token tok = next();
     if (tok.type == Token::T_NUM) {
         // TODO negative num literals
@@ -91,6 +92,16 @@ unique_ptr<ExprAST> Parser::prim() {
             return make_unique<CastExprAST>(move(t), move(e));
         } else if (peek().type == Token::T_BRACE_L_REG) return call(tok.nameId);
         else return make_unique<VarExprAST>(tok.nameId);
+    } else if (tok.type == Token::T_OPER) {
+        if (tok.op != Token::O_INC && tok.op != Token::O_DEC) {
+            panic = true;
+            return nullptr;
+        }
+
+        unique_ptr<ExprAST> e = expr();
+        if (broken(e)) return nullptr;
+
+        return make_unique<UnExprAST>(move(e), tok.op);
     } else if (tok.type == Token::T_BRACE_L_REG) {
         unique_ptr<ExprAST> e = expr();
         if (broken(e)) return nullptr;

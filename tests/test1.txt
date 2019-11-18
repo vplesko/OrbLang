@@ -70,6 +70,13 @@ fnc tet(i64 i) {
     ret;
 }
 
+fnc uno() {
+    i64 k;
+    ++k;
+    --k;
+    k = 5 + ++k;
+}
+
 fnc comment_test() {
     // test
     i64 x = 0; // abcd
