@@ -185,13 +185,13 @@ CodeGen::ExprGenPayload CodeGen::codegen(const LiteralExprAST *ast) {
             llvm::ConstantInt::get(
                 symbolTable->getTypeTable()->getType(ast->getType()), 
                 ast->getValI(), true),
-            false
+            nullptr
         };
     } else if (ast->getType() == TypeTable::P_BOOL) {
         return {
             ast->getType(),
             ast->getValB() ? getConstB(true) : getConstB(false),
-            false
+            nullptr
         };
     } else {
         panic = true;
@@ -202,24 +202,31 @@ CodeGen::ExprGenPayload CodeGen::codegen(const LiteralExprAST *ast) {
 CodeGen::ExprGenPayload CodeGen::codegen(const VarExprAST *ast) {
     const SymbolTable::VarPayload *var = symbolTable->getVar(ast->getNameId());
     if (broken(var)) return {};
-    return {var->type, llvmBuilder.CreateLoad(var->val, namePool->get(ast->getNameId())), true};
+    return {var->type, llvmBuilder.CreateLoad(var->val, namePool->get(ast->getNameId())), var->val};
 }
 
 CodeGen::ExprGenPayload CodeGen::codegen(const UnExprAST *ast) {
     ExprGenPayload exprPay = codegenExpr(ast->getExpr());
-    if (panic || exprPay.val == nullptr || !exprPay.isL ||
-        !(TypeTable::isTypeI(exprPay.type) || TypeTable::isTypeU(exprPay.type))) {
+    if (panic || exprPay.ref == nullptr) {
+        panic = true;
+        return {};
+    }
+
+    if (!(TypeTable::isTypeI(exprPay.type) || TypeTable::isTypeU(exprPay.type))) {
         panic = true;
         return {};
     }
 
     ExprGenPayload exprRet;
     exprRet.type = exprPay.type;
-    exprPay.isL = true;
     if (ast->getOp() == Token::O_INC) {
         exprRet.val = llvmBuilder.CreateAdd(exprPay.val, llvm::ConstantInt::get(symbolTable->getTypeTable()->getType(exprPay.type), 1), "inc");
+        exprRet.ref = exprPay.ref;
+        llvmBuilder.CreateStore(exprRet.val, exprRet.ref);
     } else if (ast->getOp() == Token::O_DEC) {
         exprRet.val = llvmBuilder.CreateSub(exprPay.val, llvm::ConstantInt::get(symbolTable->getTypeTable()->getType(exprPay.type), 1), "dec");
+        exprRet.ref = exprPay.ref;
+        llvmBuilder.CreateStore(exprRet.val, exprRet.ref);
     } else {
         panic = true;
         return {};
@@ -231,29 +238,22 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
     ExprGenPayload exprPayL, exprPayR, exprPayRet;
 
     if (ast->getOp() == Token::O_ASGN) {
-        if (ast->getL()->type() != AST_VarExpr) {
+        exprPayL = codegenExpr(ast->getL());
+        if (panic || exprPayL.ref == nullptr) {
             panic = true;
             return {};
         }
-        const VarExprAST *var = (const VarExprAST*)ast->getL();
-        const SymbolTable::VarPayload *symVar = symbolTable->getVar(var->getNameId());
-        if (symVar == nullptr) {
-            panic = true;
-            return {};
-        }
-        exprPayL.type = symVar->type;
-        exprPayL.val = symVar->val;
     } else {
         exprPayL = codegenExpr(ast->getL());
+        if (broken(exprPayL.val)) return {};
     }
-    if (broken(exprPayL.val)) return {};
 
     exprPayR = codegenExpr(ast->getR());
     if (broken(exprPayR.val)) return {};
 
     llvm::Value *valL = exprPayL.val, *valR = exprPayR.val;
     exprPayRet.type = exprPayL.type;
-    exprPayRet.isL = false;
+    exprPayRet.ref = nullptr;
 
     if (exprPayL.type != exprPayR.type) {
         if (TypeTable::isImplicitCastable(exprPayR.type, exprPayL.type)) {
@@ -272,9 +272,9 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
         // TODO moah bool operations
         switch (ast->getOp()) {
         case Token::O_ASGN:
-            llvmBuilder.CreateStore(valR, valL);
+            llvmBuilder.CreateStore(valR, exprPayL.ref);
             exprPayRet.val = valR;
-            exprPayRet.isL = true;
+            exprPayRet.ref = exprPayL.ref;
             break;
         case Token::O_EQ:
             exprPayRet.val = llvmBuilder.CreateICmpEQ(valL, valR, "bcmp_eq_tmp");
@@ -288,9 +288,9 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
     } else {
         switch (ast->getOp()) {
             case Token::O_ASGN:
-                llvmBuilder.CreateStore(valR, valL);
+                llvmBuilder.CreateStore(valR, exprPayL.ref);
                 exprPayRet.val = valR;
-                exprPayRet.isL = true;
+                exprPayRet.ref = exprPayL.ref;
                 break;
             case Token::O_ADD:
                 if (TypeTable::isTypeF(exprPayRet.type))
@@ -404,7 +404,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const CallExprAST *ast) {
 
     // TODO void-y type if func has no ret
     // is lvalue if returning a lvalue (by ref)
-    return {func.second->retType, llvmBuilder.CreateCall(func.second->func, args, "call_tmp"), false};
+    return {func.second->retType, llvmBuilder.CreateCall(func.second->func, args, "call_tmp"), nullptr};
 }
 
 CodeGen::ExprGenPayload CodeGen::codegen(const CastExprAST *ast) {
@@ -418,7 +418,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const CastExprAST *ast) {
     createCast(val, exprVal.type, type, ast->getType()->getTypeId());
 
     if (val == nullptr) panic = true;
-    return {ast->getType()->getTypeId(), val, false};
+    return {ast->getType()->getTypeId(), val, nullptr};
 }
 
 llvm::Type* CodeGen::codegenType(const TypeAST *ast) {

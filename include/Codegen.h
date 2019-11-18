@@ -29,7 +29,7 @@ class CodeGen {
     struct ExprGenPayload {
         TypeTable::Id type;
         llvm::Value *val = nullptr;
-        bool isL;
+        llvm::Value *ref = nullptr;
     };
 
     ExprGenPayload codegen(const LiteralExprAST *ast);
