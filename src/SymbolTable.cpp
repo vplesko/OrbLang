@@ -102,6 +102,7 @@ pair<const FuncSignature*, FuncValue*> SymbolTable::getFuncImplicitCastsAllowed(
         const FuncSignature *foundSig = nullptr;
         FuncValue *foundVal = nullptr;
         for (auto &it : funcs) {
+            if (it.first.name != sig.name) continue;
             if (it.first.argTypes.size() != sig.argTypes.size()) continue;
             const FuncSignature *candSig = &it.first;
             FuncValue *candVal = &it.second;

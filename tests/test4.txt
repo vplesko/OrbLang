@@ -1,3 +1,37 @@
+fnc print_i8(i8 x);
+fnc print_i16(i16 x);
+fnc print_i32(i32 x);
+fnc print_i64(i64 x);
+
+fnc println_i8(i8 x);
+fnc println_i16(i16 x);
+fnc println_i32(i32 x);
+fnc println_i64(i64 x);
+
+fnc scan_i8() i8;
+fnc scan_i16() i16;
+fnc scan_i32() i32;
+fnc scan_i64() i64;
+
+fnc print_u8(u8 x);
+fnc print_u16(u16 x);
+fnc print_u32(u32 x);
+fnc print_u64(u64 x);
+
+fnc println_u8(u8 x);
+fnc println_u16(u16 x);
+fnc println_u32(u32 x);
+fnc println_u64(u64 x);
+
+fnc scan_u8() u8;
+fnc scan_u16() u16;
+fnc scan_u32() u32;
+fnc scan_u64() u64;
+
 fnc main() i64 {
-    ret 42;
+    println_i64(0-42);
+    println_u32(u16(256));
+    println_i32(scan_i32());
+
+    ret 0;
 }

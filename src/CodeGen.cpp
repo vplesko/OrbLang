@@ -407,9 +407,9 @@ CodeGen::ExprGenPayload CodeGen::codegen(const CallExprAST *ast) {
         }
     }
 
-    // TODO void-y type if func has no ret
-    // is lvalue if returning a lvalue (by ref)
-    return {func.second->retType, llvmBuilder.CreateCall(func.second->func, args, "call_tmp"), nullptr};
+    // TODO reminder, it's lvalue if returning a lvalue (by ref)
+    return {func.second->retType, llvmBuilder.CreateCall(func.second->func, args, 
+        func.second->hasRet ? "call_tmp" : ""), nullptr};
 }
 
 CodeGen::ExprGenPayload CodeGen::codegen(const CastExprAST *ast) {

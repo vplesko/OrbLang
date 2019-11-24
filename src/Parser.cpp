@@ -61,6 +61,7 @@ unique_ptr<ExprAST> Parser::prim() {
     // remember, string literal is lvalue
     Token tok = next();
     if (tok.type == Token::T_NUM) {
+        // TODO positive literal is unsigned
         // TODO negative num literals
         // TODO float literals (eg. 1.2, 1., .2)
         // TODO explicitly sized literals (eg. 100u32, 1f64)

@@ -44,8 +44,7 @@ public:
     };
 
     static bool isImplicitCastable(Id from, Id into) {
-        // TODO if int literal assigned to uint, allow it (if val within range)
-        // (eg. u8 i = 0) (specific exception to lang rules)
+        // TODO allow unsigned to int if lossless
         PrimIds s = (PrimIds) from, d = (PrimIds) into;
         return (between(s, P_I8, P_I64) && between(d, s, P_I64)) ||
             (between(s, P_U8, P_U64) && between(d, s, P_U64)) ||
