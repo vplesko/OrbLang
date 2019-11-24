@@ -12,7 +12,7 @@ class Parser {
     NamePool *namePool;
     SymbolTable *symbolTable;
     Lexer *lex;
-    std::unique_ptr<CodeGen> codegen;
+    CodeGen* codegen;
 
     bool panic;
 
@@ -24,8 +24,6 @@ class Parser {
     bool match(Token::Type type);
     bool mismatch(Token::Type t);
     template<typename T> bool broken(const T &x);
-
-    void genPrimTypes();
 
     std::unique_ptr<CallExprAST> call(NamePool::Id func);
     std::unique_ptr<ExprAST> prim();
@@ -44,9 +42,11 @@ class Parser {
     std::unique_ptr<BaseAST> func();
 
 public:
-    Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer);
+    Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer, CodeGen* codegen);
 
     void parse(std::istream &istr);
+
+    bool isPanic() const { return panic; }
 };
 
 // panics if pointer x is null; returns panic

@@ -4,8 +4,8 @@
 #include <cstdint>
 using namespace std;
 
-Parser::Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer) : namePool(namePool), symbolTable(symbolTable), lex(lexer), panic(false) {
-    codegen = std::make_unique<CodeGen>(namePool, symbolTable);
+Parser::Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer, CodeGen* codegen) 
+    : namePool(namePool), symbolTable(symbolTable), lex(lexer), codegen(codegen), panic(false) {
 }
 
 Token Parser::peek() const {
@@ -428,78 +428,7 @@ unique_ptr<BaseAST> Parser::func() {
     }
 }
 
-void Parser::genPrimTypes() {
-    // b
-    symbolTable->getTypeTable()->addPrimType(
-        namePool->add("bool"),
-        TypeTable::P_BOOL,
-        codegen->genPrimTypeBool()
-    );
-    // i
-    symbolTable->getTypeTable()->addPrimType(
-        namePool->add("i8"),
-        TypeTable::P_I8,
-        codegen->genPrimTypeI(8)
-    );
-    symbolTable->getTypeTable()->addPrimType(
-        namePool->add("i16"),
-        TypeTable::P_I16,
-        codegen->genPrimTypeI(16)
-    );
-    symbolTable->getTypeTable()->addPrimType(
-        namePool->add("i32"),
-        TypeTable::P_I32,
-        codegen->genPrimTypeI(32)
-    );
-    symbolTable->getTypeTable()->addPrimType(
-        namePool->add("i64"),
-        TypeTable::P_I64,
-        codegen->genPrimTypeI(64)
-    );
-    // u
-    symbolTable->getTypeTable()->addPrimType(
-        namePool->add("u8"),
-        TypeTable::P_U8,
-        codegen->genPrimTypeU(8)
-    );
-    symbolTable->getTypeTable()->addPrimType(
-        namePool->add("u16"),
-        TypeTable::P_U16,
-        codegen->genPrimTypeU(16)
-    );
-    symbolTable->getTypeTable()->addPrimType(
-        namePool->add("u32"),
-        TypeTable::P_U32,
-        codegen->genPrimTypeU(32)
-    );
-    symbolTable->getTypeTable()->addPrimType(
-        namePool->add("u64"),
-        TypeTable::P_U64,
-        codegen->genPrimTypeU(64)
-    );
-    // f
-    symbolTable->getTypeTable()->addPrimType(
-        namePool->add("f16"),
-        TypeTable::P_F16,
-        codegen->genPrimTypeF16()
-    );
-    symbolTable->getTypeTable()->addPrimType(
-        namePool->add("f32"),
-        TypeTable::P_F32,
-        codegen->genPrimTypeF32()
-    );
-    symbolTable->getTypeTable()->addPrimType(
-        namePool->add("f64"),
-        TypeTable::P_F64,
-        codegen->genPrimTypeF64()
-    );
-}
-
 void Parser::parse(std::istream &istr) {
-    // TODO make a Compiler class to do this and stuff from main
-
-    genPrimTypes();
-
     lex->start(istr);
 
     while (peek().type != Token::T_END) {
@@ -512,9 +441,6 @@ void Parser::parse(std::istream &istr) {
             panic = true;
             break;
         }
-
-        //next->print();
-        //cout << endl;
 
         codegen->codegenNode(next.get());
         if (codegen->isPanic()) { panic = true; }

@@ -61,8 +61,6 @@ llvm::GlobalValue* CodeGen::createGlobal(llvm::Type *type, const std::string &na
 void CodeGen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId) {
     if (srcTypeId == dstTypeId) return;
 
-    // TODO test the casts
-    // yes, all of them
     if (TypeTable::isTypeI(srcTypeId)) {
         if (TypeTable::isTypeI(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, true, "i2i_cast");
@@ -269,7 +267,6 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
     }
 
     if (exprPayRet.type == TypeTable::P_BOOL) {
-        // TODO moah bool operations
         switch (ast->getOp()) {
         case Token::O_ASGN:
             llvmBuilder.CreateStore(valR, exprPayL.ref);

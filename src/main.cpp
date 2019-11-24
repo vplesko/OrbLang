@@ -1,7 +1,5 @@
-#include "SymbolTable.h"
-#include "Lexer.h"
-#include "Parser.h"
-#include <fstream>
+#include "Compiler.h"
+#include <iostream>
 using namespace std;
 
 int main(int argc,  char** argv) {
@@ -10,21 +8,12 @@ int main(int argc,  char** argv) {
         return -1;
     }
 
-    cout << "Parsing file: " << argv[1] << endl << endl;
+    cout << "File: " << argv[1] << endl << endl;
 
-    ifstream file(argv[1]);
-
-    if (!file.is_open()) {
-        cout << "Could not open file" << endl;
-        return -2;
+    Compiler com;
+    if (!com.compile(argv[1])) {
+        cout << "Something went wrong!" << endl;
     }
-    
-    NamePool names;
-    TypeTable types;
-    SymbolTable symbols(&types);
-    Lexer lex(&names);
-    Parser par(&names, &symbols, &lex);
-    par.parse(file);
 
     return 0;
 }

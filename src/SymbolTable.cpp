@@ -113,7 +113,7 @@ pair<const FuncSignature*, FuncValue*> SymbolTable::getFuncImplicitCastsAllowed(
             }
             if (candVal == nullptr) continue;
             // in case of multiple possible funcs, error due to ambiguity
-            // TODO error info in ret val
+            // TODO ret what the exact error was in ret val
             if (foundVal != nullptr) return {nullptr, nullptr};
             else {
                 foundSig = candSig;
