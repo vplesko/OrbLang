@@ -1,8 +1,16 @@
 #include "Codegen.h"
 #include "Parser.h"
-#include "llvm/IR/Constants.h"
 #include "llvm/ADT/APInt.h"
+#include "llvm/IR/Constants.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Host.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/TargetRegistry.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Target/TargetOptions.h"
 using namespace std;
 
 CodeGen::CodeGen(NamePool *namePool, SymbolTable *symbolTable) : namePool(namePool), symbolTable(symbolTable), 
@@ -765,12 +773,59 @@ void CodeGen::codegen(const FuncAST *ast) {
     if (!ast->getProto()->hasRetVal() && !isBlockTerminated())
             llvmBuilder.CreateRetVoid();
 
-    cout << endl;
-    cout << "LLVM func verification for " << namePool->get(ast->getProto()->getName()) << ":" << endl << endl;
-    llvm::verifyFunction(*funcVal->func, &llvm::outs());
+    if (llvm::verifyFunction(*funcVal->func, &llvm::outs())) cout << endl;
 }
 
 void CodeGen::printout() const {
-    cout << "LLVM module printout:" << endl << endl;
     llvmModule->print(llvm::outs(), nullptr);
+}
+
+bool CodeGen::binary(const std::string &filename) {
+    // TODO add optimizer passes
+    
+    llvm::InitializeAllTargetInfos();
+    llvm::InitializeAllTargets();
+    llvm::InitializeAllTargetMCs();
+    llvm::InitializeAllAsmParsers();
+    llvm::InitializeAllAsmPrinters();
+
+    std::string targetTriple = llvm::sys::getDefaultTargetTriple();
+    llvmModule->setTargetTriple(targetTriple);
+
+    std::string error;
+    const llvm::Target *target = llvm::TargetRegistry::lookupTarget(targetTriple, error);
+    if (target == nullptr) {
+        llvm::errs() << error;
+        return false;
+    }
+
+    const std::string cpu = "generic";
+    const std::string features = "";
+
+    const llvm::TargetOptions options;
+    llvm::Optional<llvm::Reloc::Model> RM = llvm::Optional<llvm::Reloc::Model>();
+    llvm::TargetMachine *targetMachine = target->createTargetMachine(targetTriple, cpu, features, options, RM);
+
+    llvmModule->setDataLayout(targetMachine->createDataLayout());
+
+    std::error_code EC;
+    llvm::raw_fd_ostream dest(filename, EC, llvm::sys::fs::F_None);
+    if (EC) {
+        llvm::errs() << "Could not open file: " << EC.message();
+        return false;
+    }
+
+    llvm::legacy::PassManager pass;
+    llvm::TargetMachine::CodeGenFileType fileType = llvm::TargetMachine::CGFT_ObjectFile;
+
+    bool fail = targetMachine->addPassesToEmitFile(pass, dest, nullptr, fileType);
+    if (fail) {
+        llvm::errs() << "Target machine can't emit to this file type!";
+        return false;
+    }
+
+    pass.run(*llvmModule);
+    dest.flush();
+
+    return true;
 }

@@ -16,6 +16,8 @@ class Compiler {
 public:
     Compiler();
 
+    bool parse(const std::string &filename);
+    void printout() const;
     bool compile(const std::string &filename);
 
     ~Compiler();

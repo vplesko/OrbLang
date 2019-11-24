@@ -66,6 +66,8 @@ public:
     bool isPanic() const { return panic; }
 
     void printout() const;
+
+    bool binary(const std::string &filename);
 };
 
 // panics if pointer x is null; returns panic

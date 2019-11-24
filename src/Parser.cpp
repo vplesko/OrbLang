@@ -452,7 +452,4 @@ void Parser::parse(std::istream &istr) {
         cout << "ERROR!" << endl;
         return;
     }
-
-    cout << endl;
-    codegen->printout();
 }

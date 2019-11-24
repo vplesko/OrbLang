@@ -81,7 +81,7 @@ void Compiler::genPrimTypes() {
     );
 }
 
-bool Compiler::compile(const std::string &filename) {
+bool Compiler::parse(const std::string &filename) {
     ifstream file(filename);
     if (!file.is_open()) return false;
 
@@ -90,6 +90,14 @@ bool Compiler::compile(const std::string &filename) {
     par.parse(file);
 
     return !par.isPanic();
+}
+
+void Compiler::printout() const {
+    codegen->printout();
+}
+
+bool Compiler::compile(const std::string &filename) {
+    return codegen->binary(filename);
 }
 
 Compiler::~Compiler() {
