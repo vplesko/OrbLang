@@ -1,4 +1,5 @@
 .PHONY: build clean
+# TODO automated tests
 
 APP_NAME = main
 

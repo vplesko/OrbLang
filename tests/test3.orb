@@ -1,0 +1,48 @@
+fnc print_i8(i8 x);
+fnc print_i16(i16 x);
+fnc print_i32(i32 x);
+fnc print_i64(i64 x);
+
+fnc println_i8(i8 x);
+fnc println_i16(i16 x);
+fnc println_i32(i32 x);
+fnc println_i64(i64 x);
+
+fnc scan_i8() i8;
+fnc scan_i16() i16;
+fnc scan_i32() i32;
+fnc scan_i64() i64;
+
+fnc print_u8(u8 x);
+fnc print_u16(u16 x);
+fnc print_u32(u32 x);
+fnc print_u64(u64 x);
+
+fnc println_u8(u8 x);
+fnc println_u16(u16 x);
+fnc println_u32(u32 x);
+fnc println_u64(u64 x);
+
+fnc scan_u8() u8;
+fnc scan_u16() u16;
+fnc scan_u32() u32;
+fnc scan_u64() u64;
+
+fnc main() {
+    { println_i32(i32(0-10)); println_i32(i16(10)); println_i8(i8(i64(1027))); }
+    { println_u32(u32(0-10)); }
+    { println_i32(i32(f16(0-10))); }
+    { i32 x = 10; println_i32(i32(bool(x))); println_i32(i32(bool(10))); println_i32(i32(bool(0-10))); }
+
+    { println_i32(i32(u32(10))); }
+    { println_u32(u32(10)); println_u32(u16(10)); println_u8(u8(u64(1027))); }
+    { println_u32(u32(f32(10))); }
+    { u32 x = u32(10); println_i32(i32(bool(x))); println_i32(i32(bool(u32(10)))); println_i32(i32(bool(u32(0-10)))); }
+
+    { println_i32(i32(f32(10))); }
+    { println_i32(i32(f32(u32(10)))); }
+    { println_i32(i32(f32(0-10))); println_i32(i32(f16(10))); println_i32(i32(f16(f64(1027)))); }
+
+    { println_i32(i32(true)); println_i32(i32(false)); }
+    { println_u32(u32(true)); println_u32(u32(false)); }
+}

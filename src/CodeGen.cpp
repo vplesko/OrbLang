@@ -57,8 +57,9 @@ bool CodeGen::isBlockTerminated() const {
 }
 
 llvm::GlobalValue* CodeGen::createGlobal(llvm::Type *type, const std::string &name) {
+    // TODO llvm expects global vars to be initialized
     return new llvm::GlobalVariable(
-        *llvmModule.get(),
+        *llvmModule,
         type,
         false,
         llvm::GlobalValue::CommonLinkage,
@@ -773,7 +774,7 @@ void CodeGen::codegen(const FuncAST *ast) {
     if (!ast->getProto()->hasRetVal() && !isBlockTerminated())
             llvmBuilder.CreateRetVoid();
 
-    if (llvm::verifyFunction(*funcVal->func, &llvm::outs())) cout << endl;
+    if (llvm::verifyFunction(*funcVal->func, &llvm::errs())) cout << endl;
 }
 
 void CodeGen::printout() const {
