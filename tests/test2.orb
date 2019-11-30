@@ -59,8 +59,7 @@ fnc main() {
         println_i64(b);
         b = b + x;
     } while (b + a < 8);
-    // TODO there's a bug!!! cond parsed as (--(a>=0))
-    //do println_i64(1); while (--a >= 0);
+    do println_i64(1); while (--a >= 0);
     do ; while (a > 0);
 
     bar();

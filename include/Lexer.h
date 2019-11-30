@@ -58,6 +58,7 @@ typedef int OperPrec;
 struct OperInfo {
     OperPrec prec;
     bool l_assoc = true;
+    unsigned nary = 2;
 };
 
 extern const OperPrec minOperPrec;

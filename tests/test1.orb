@@ -51,6 +51,10 @@ fnc main() {
     println_i64(a);
     println_i64(--a);
     println_i64(a);
+    println_i64(--++a);
+    println_i64(a);
+    println_i64(++a + 10);
+    println_i64(a);
 
     i64 b=1;
     println_i64(a-b);

@@ -94,12 +94,12 @@ unique_ptr<ExprAST> Parser::prim() {
         } else if (peek().type == Token::T_BRACE_L_REG) return call(tok.nameId);
         else return make_unique<VarExprAST>(tok.nameId);
     } else if (tok.type == Token::T_OPER) {
-        if (tok.op != Token::O_INC && tok.op != Token::O_DEC) {
+        if (operInfos.at(tok.op).nary != 1) {
             panic = true;
             return nullptr;
         }
 
-        unique_ptr<ExprAST> e = expr();
+        unique_ptr<ExprAST> e = prim();
         if (broken(e)) return nullptr;
 
         return make_unique<UnExprAST>(move(e), tok.op);

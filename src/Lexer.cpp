@@ -15,8 +15,8 @@ const unordered_map<Token::Oper, OperInfo> operInfos = {
     {Token::O_SUB, {4}},
     {Token::O_MUL, {5}},
     {Token::O_DIV, {5}},
-    {Token::O_INC, {6, false}},
-    {Token::O_DEC, {6, false}}
+    {Token::O_INC, {6, false, 1}},
+    {Token::O_DEC, {6, false, 1}}
 };
 
 const unordered_map<string, Token::Type> keywords = {
