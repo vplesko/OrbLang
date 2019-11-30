@@ -43,14 +43,6 @@ public:
         P_ENUM_END // length marker, do not reference
     };
 
-    static bool isImplicitCastable(Id from, Id into) {
-        // TODO allow unsigned to int if lossless
-        PrimIds s = (PrimIds) from, d = (PrimIds) into;
-        return (between(s, P_I8, P_I64) && between(d, s, P_I64)) ||
-            (between(s, P_U8, P_U64) && between(d, s, P_U64)) ||
-            (between(s, P_F16, P_F64) && between(d, s, P_F64));
-    }
-
     static bool isTypeI(Id t) {
         return between((PrimIds) t, P_I8, P_I64);
     }
@@ -61,6 +53,14 @@ public:
 
     static bool isTypeF(Id t) {
         return between((PrimIds) t, P_F16, P_F64);
+    }
+
+    // TODO allow assigning non-neg literals to unisgned vars (lang rule)
+    static bool isImplicitCastable(Id from, Id into) {
+        PrimIds s = (PrimIds) from, d = (PrimIds) into;
+        return (isTypeI(s) && between(d, s, P_I64)) ||
+            (isTypeU(s) && between(d, s, P_U64)) ||
+            (isTypeF(s) && between(d, s, P_F64));
     }
 
 private:

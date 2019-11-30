@@ -77,6 +77,7 @@ public:
 
     TypeTable::Id getType() const { return typeId; }
     int getValI() const { return val; }
+    unsigned getValU() const { return (unsigned) val; }
     bool getValB() const { return b; }
 };
 

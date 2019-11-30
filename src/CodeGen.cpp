@@ -185,13 +185,20 @@ void CodeGen::codegenNode(const BaseAST *ast, bool blockMakeScope) {
 }
 
 CodeGen::ExprGenPayload CodeGen::codegen(const LiteralExprAST *ast) {
-    // TODO literals of other types
     if (TypeTable::isTypeI(ast->getType())) {
         return {
             ast->getType(),
             llvm::ConstantInt::get(
                 symbolTable->getTypeTable()->getType(ast->getType()), 
                 ast->getValI(), true),
+            nullptr
+        };
+    } else if (TypeTable::isTypeU(ast->getType())) {
+        return {
+            ast->getType(),
+            llvm::ConstantInt::get(
+                symbolTable->getTypeTable()->getType(ast->getType()), 
+                ast->getValU(), false),
             nullptr
         };
     } else if (ast->getType() == TypeTable::P_BOOL) {
