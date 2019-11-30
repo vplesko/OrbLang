@@ -29,19 +29,20 @@ fnc scan_u32() u32;
 fnc scan_u64() u64;
 
 fnc main() {
-    { println_i32(i32(0-10)); println_i32(i16(10)); println_i8(i8(i64(1027))); }
-    { println_u32(u32(0-10)); }
-    { println_i32(i32(f16(0-10))); }
-    { i32 x = 10; println_i32(i32(bool(x))); println_i32(i32(bool(10))); println_i32(i32(bool(0-10))); }
+    -10;
+    { println_i32(i32(-10)); println_i32(i16(10)); println_i8(i8(i64(1027))); }
+    { println_u32(u32(-10)); }
+    { println_i32(i32(f16(-10))); }
+    { i32 x = 10; println_i32(i32(bool(x))); println_i32(i32(bool(10))); println_i32(i32(bool(-10))); }
 
     { println_i32(i32(u32(10))); }
     { println_u32(u32(10)); println_u32(u16(10)); println_u8(u8(u64(1027))); }
     { println_u32(u32(f32(10))); }
-    { u32 x = u32(10); println_i32(i32(bool(x))); println_i32(i32(bool(u32(10)))); println_i32(i32(bool(u32(0-10)))); }
+    { u32 x = u32(10); println_i32(i32(bool(x))); println_i32(i32(bool(u32(10)))); println_i32(i32(bool(u32(-10)))); }
 
     { println_i32(i32(f32(10))); }
     { println_i32(i32(f32(u32(10)))); }
-    { println_i32(i32(f32(0-10))); println_i32(i32(f16(10))); println_i32(i32(f16(f64(1027)))); }
+    { println_i32(i32(f32(-10))); println_i32(i32(f16(10))); println_i32(i32(f16(f64(1027)))); }
 
     { println_i32(i32(true)); println_i32(i32(false)); }
     { println_u32(u32(true)); println_u32(u32(false)); }

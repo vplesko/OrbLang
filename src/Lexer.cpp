@@ -11,12 +11,12 @@ const unordered_map<Token::Oper, OperInfo> operInfos = {
     {Token::O_LTEQ, {3}},
     {Token::O_GT, {3}},
     {Token::O_GTEQ, {3}},
-    {Token::O_ADD, {4}},
-    {Token::O_SUB, {4}},
+    {Token::O_ADD, {4, true, true, true}},
+    {Token::O_SUB, {4, true, true, true}},
     {Token::O_MUL, {5}},
     {Token::O_DIV, {5}},
-    {Token::O_INC, {6, false, 1}},
-    {Token::O_DEC, {6, false, 1}}
+    {Token::O_INC, {6, false, true, false}},
+    {Token::O_DEC, {6, false, true, false}}
 };
 
 const unordered_map<string, Token::Type> keywords = {

@@ -78,7 +78,6 @@ unique_ptr<ExprAST> Parser::prim() {
     } else if (tok.type == Token::T_TRUE || tok.type == Token::T_FALSE) {
         return make_unique<LiteralExprAST>(tok.type == Token::T_TRUE);
     } else if (tok.type == Token::T_ID) {
-        // TODO TypeTable lookup is performed again, optimize?
         if (symbolTable->getTypeTable()->isType(tok.nameId)) {
             tokQu.push(tok);
             unique_ptr<TypeAST> t = type();
@@ -93,7 +92,7 @@ unique_ptr<ExprAST> Parser::prim() {
         } else if (peek().type == Token::T_BRACE_L_REG) return call(tok.nameId);
         else return make_unique<VarExprAST>(tok.nameId);
     } else if (tok.type == Token::T_OPER) {
-        if (operInfos.at(tok.op).nary != 1) {
+        if (!operInfos.at(tok.op).unary) {
             panic = true;
             return nullptr;
         }
@@ -117,6 +116,11 @@ unique_ptr<ExprAST> Parser::expr(unique_ptr<ExprAST> lhs, OperPrec min_prec) {
     Token lookOp = peek();
     while (lookOp.type == Token::T_OPER && operInfos.at(lookOp.op).prec >= min_prec) {
         Token op = next();
+
+        if (!operInfos.at(op.op).binary) {
+            panic = true;
+            return nullptr;
+        }
         
         unique_ptr<ExprAST> rhs = prim();
         if (broken(rhs)) return nullptr;

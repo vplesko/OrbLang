@@ -221,24 +221,45 @@ CodeGen::ExprGenPayload CodeGen::codegen(const VarExprAST *ast) {
 
 CodeGen::ExprGenPayload CodeGen::codegen(const UnExprAST *ast) {
     ExprGenPayload exprPay = codegenExpr(ast->getExpr());
-    if (panic || exprPay.ref == nullptr) {
-        panic = true;
-        return {};
-    }
-
-    if (!(TypeTable::isTypeI(exprPay.type) || TypeTable::isTypeU(exprPay.type))) {
+    if (panic) {
         panic = true;
         return {};
     }
 
     ExprGenPayload exprRet;
     exprRet.type = exprPay.type;
-    if (ast->getOp() == Token::O_INC) {
-        exprRet.val = llvmBuilder.CreateAdd(exprPay.val, llvm::ConstantInt::get(symbolTable->getTypeTable()->getType(exprPay.type), 1), "inc");
+    if (ast->getOp() == Token::O_ADD) {
+        if (!(TypeTable::isTypeI(exprPay.type) || TypeTable::isTypeU(exprPay.type) || TypeTable::isTypeF(exprPay.type))) {
+            panic = true;
+            return {};
+        }
+        exprRet.val = exprPay.val;
+        exprRet.ref = nullptr;
+    } else if (ast->getOp() == Token::O_SUB) {
+        if (TypeTable::isTypeI(exprPay.type)) {
+            exprRet.val = llvmBuilder.CreateSub(llvm::ConstantInt::get(symbolTable->getTypeTable()->getType(exprPay.type), 0), exprPay.val, "s_neg_tmp");
+            exprRet.ref = nullptr;
+        } else if (TypeTable::isTypeF(exprPay.type)) {
+            exprRet.val = llvmBuilder.CreateFSub(llvm::ConstantFP::get(symbolTable->getTypeTable()->getType(exprPay.type), 0), exprPay.val, "f_neg_tmp");
+            exprRet.ref = nullptr;
+        } else {
+            panic = true;
+            return {};
+        }
+    } else if (ast->getOp() == Token::O_INC) {
+        if (!(TypeTable::isTypeI(exprPay.type) || TypeTable::isTypeU(exprPay.type)) || exprPay.ref == nullptr) {
+            panic = true;
+            return {};
+        }
+        exprRet.val = llvmBuilder.CreateAdd(exprPay.val, llvm::ConstantInt::get(symbolTable->getTypeTable()->getType(exprPay.type), 1), "inc_tmp");
         exprRet.ref = exprPay.ref;
         llvmBuilder.CreateStore(exprRet.val, exprRet.ref);
     } else if (ast->getOp() == Token::O_DEC) {
-        exprRet.val = llvmBuilder.CreateSub(exprPay.val, llvm::ConstantInt::get(symbolTable->getTypeTable()->getType(exprPay.type), 1), "dec");
+        if (!(TypeTable::isTypeI(exprPay.type) || TypeTable::isTypeU(exprPay.type)) || exprPay.ref == nullptr) {
+            panic = true;
+            return {};
+        }
+        exprRet.val = llvmBuilder.CreateSub(exprPay.val, llvm::ConstantInt::get(symbolTable->getTypeTable()->getType(exprPay.type), 1), "dec_tmp");
         exprRet.ref = exprPay.ref;
         llvmBuilder.CreateStore(exprRet.val, exprRet.ref);
     } else {
