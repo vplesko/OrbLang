@@ -1,4 +1,5 @@
 #include "Parser.h"
+#include "AST.h"
 #include <iostream>
 #include <limits>
 #include <cstdint>
@@ -160,7 +161,15 @@ unique_ptr<ExprAST> Parser::expr() {
         unique_ptr<ExprAST> f = expr();
         if (broken(f)) return nullptr;
 
-        return make_unique<TernCondExprAST>(move(e), move(t), move(f));
+        if (e->type() == AST_BinExpr && operInfos.at(((BinExprAST*)e.get())->getOp()).assignment) {
+            // assignment has the same precedence as ternary cond, but they're right-to-left assoc
+            // beware, move labyrinth ahead
+            BinExprAST *binE = (BinExprAST*)e.get();
+            binE->setR(make_unique<TernCondExprAST>(move(binE->resetR()), move(t), move(f)));
+            return e;
+        } else {
+            return make_unique<TernCondExprAST>(move(e), move(t), move(f));
+        }
     } else {
         return e;
     }

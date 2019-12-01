@@ -10,6 +10,10 @@ BinExprAST::BinExprAST(
     Token::Oper _op) : lhs(move(_lhs)), rhs(move(_rhs)), op(_op) {
 }
 
+void BinExprAST::setR(std::unique_ptr<ExprAST> _rhs) {
+    rhs = move(_rhs);
+}
+
 TernCondExprAST::TernCondExprAST(
     unique_ptr<ExprAST> _cond,
     unique_ptr<ExprAST> _op1,

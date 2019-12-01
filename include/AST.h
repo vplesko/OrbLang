@@ -121,6 +121,10 @@ public:
     const ExprAST* getL() const { return lhs.get(); }
     const ExprAST* getR() const { return rhs.get(); }
     Token::Oper getOp() const { return op; }
+
+    // needed when parsing ternary conditional oper
+    std::unique_ptr<ExprAST> resetR() { return move(rhs); }
+    void setR(std::unique_ptr<ExprAST> _rhs);
 };
 
 class TernCondExprAST : public ExprAST {

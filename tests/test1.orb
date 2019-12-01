@@ -138,6 +138,8 @@ fnc main() {
     println_i32(1<0?2>1?100:101:2==2?100+2:100+3);
     println_i32(3+3>0?1:2);
     println_i32(3+(3>0?1:2));
+    println_i64(a=1>0?100:101);
+    println_i64(a+=1>0?100:101);
 
     //println_i64(0);
     /* println_i64(0); */
