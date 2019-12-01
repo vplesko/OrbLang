@@ -7,18 +7,24 @@ const unordered_map<Token::Oper, OperInfo> operInfos = {
     {Token::O_ASGN, {1, false}},
     {Token::O_EQ, {2}},
     {Token::O_NEQ, {2}},
-    {Token::O_LT, {3}},
-    {Token::O_LTEQ, {3}},
-    {Token::O_GT, {3}},
-    {Token::O_GTEQ, {3}},
-    {Token::O_ADD, {4, true, true, true}},
-    {Token::O_SUB, {4, true, true, true}},
-    {Token::O_MUL, {5}},
-    {Token::O_DIV, {5}},
-    {Token::O_INC, {6, false, true, false}},
-    {Token::O_DEC, {6, false, true, false}},
-    {Token::O_NOT, {6, false, true, false}},
-    {Token::O_BIT_NOT, {6, false, true, false}}
+    {Token::O_BIT_OR, {3}},
+    {Token::O_BIT_XOR, {4}},
+    {Token::O_BIT_AND, {5}},
+    {Token::O_LT, {6}},
+    {Token::O_LTEQ, {6}},
+    {Token::O_GT, {6}},
+    {Token::O_GTEQ, {6}},
+    {Token::O_SHL, {7}},
+    {Token::O_SHR, {7}},
+    {Token::O_ADD, {8, true, true, true}},
+    {Token::O_SUB, {8, true, true, true}},
+    {Token::O_MUL, {9}},
+    {Token::O_DIV, {9}},
+    {Token::O_REM, {9}},
+    {Token::O_INC, {10, false, true, false}},
+    {Token::O_DEC, {10, false, true, false}},
+    {Token::O_NOT, {10, false, true, false}},
+    {Token::O_BIT_NOT, {10, false, true, false}}
 };
 
 const unordered_map<string, Token::Type> keywords = {
@@ -143,6 +149,14 @@ Token Lexer::next() {
             tok = {Token::T_OPER, Token::O_MUL};
         } else if (ch == '/') {
             tok = {Token::T_OPER, Token::O_DIV};
+        } else if (ch == '%') {
+            tok = {Token::T_OPER, Token::O_REM};
+        } else if (ch == '&') {
+            tok = {Token::T_OPER, Token::O_BIT_AND};
+        } else if (ch == '^') {
+            tok = {Token::T_OPER, Token::O_BIT_XOR};
+        } else if (ch == '|') {
+            tok = {Token::T_OPER, Token::O_BIT_OR};
         } else if (ch == '=') {
             if (peekCh() == '=') {
                 nextCh();
@@ -163,6 +177,9 @@ Token Lexer::next() {
             if (peekCh() == '=') {
                 nextCh();
                 tok = {Token::T_OPER, Token::O_LTEQ};
+            } else if (peekCh() == '<') {
+                nextCh();
+                tok = {Token::T_OPER, Token::O_SHL};
             } else {
                 tok = {Token::T_OPER, Token::O_LT};
             }
@@ -170,6 +187,9 @@ Token Lexer::next() {
             if (peekCh() == '=') {
                 nextCh();
                 tok = {Token::T_OPER, Token::O_GTEQ};
+            } else if (peekCh() == '>') {
+                nextCh();
+                tok = {Token::T_OPER, Token::O_SHR};
             } else {
                 tok = {Token::T_OPER, Token::O_GT};
             }

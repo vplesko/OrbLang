@@ -55,7 +55,9 @@ public:
         return between((PrimIds) t, P_F16, P_F64);
     }
 
-    // TODO allow assigning non-neg literals to unisgned vars (lang rule)
+    // TODO lang rules:
+    // allow assigning non-neg literals to unsigned vars
+    // and literals who's vals would fit to shorter type
     static bool isImplicitCastable(Id from, Id into) {
         PrimIds s = (PrimIds) from, d = (PrimIds) into;
         return (isTypeI(s) && between(d, s, P_I64)) ||

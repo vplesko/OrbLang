@@ -61,6 +61,7 @@ unique_ptr<ExprAST> Parser::prim() {
     // remember, string literal is lvalue
     Token tok = next();
     if (tok.type == Token::T_NUM) {
+        // TODO delete i8 and i16 defaults
         // TODO float literals (eg. 1.2, 1., .2)
         // TODO explicitly sized literals (eg. 100u32, 1f64)
         TypeTable::Id t;
