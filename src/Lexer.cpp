@@ -253,6 +253,10 @@ Token Lexer::next() {
             tok = {Token::T_COMMA};
         } else if (ch == ';') {
             tok = {Token::T_SEMICOLON};
+        } else if (ch == '?') {
+            tok = {Token::T_QUESTION};
+        } else if (ch == ':') {
+            tok = {Token::T_COLON};
         } else if (ch == '(') {
             tok = {Token::T_BRACE_L_REG};
         } else if (ch == ')') {

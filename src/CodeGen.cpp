@@ -139,6 +139,8 @@ CodeGen::ExprGenPayload CodeGen::codegenExpr(const ExprAST *ast) {
         return codegen((const UnExprAST*)ast);
     case AST_BinExpr:
         return codegen((const BinExprAST*)ast);
+    case AST_TernCondExpr:
+        return codegen((const TernCondExprAST*)ast);
     case AST_CallExpr:
         return codegen((const CallExprAST*)ast);
     case AST_CastExpr:
@@ -472,6 +474,52 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
     }
 
     return exprPayRet;
+}
+
+CodeGen::ExprGenPayload CodeGen::codegen(const TernCondExprAST *ast) {
+    ExprGenPayload condExpr = codegenExpr(ast->getCond());
+    if (broken(condExpr.val) || condExpr.type != TypeTable::P_BOOL) {
+        panic = true;
+        return {};
+    }
+
+    llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
+
+    llvm::BasicBlock *trueBlock = llvm::BasicBlock::Create(llvmContext, "true", func);
+    llvm::BasicBlock *falseBlock = llvm::BasicBlock::Create(llvmContext, "else");
+    llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
+
+    llvmBuilder.CreateCondBr(condExpr.val, trueBlock, falseBlock);
+
+    llvmBuilder.SetInsertPoint(trueBlock);
+    ExprGenPayload trueExpr = codegenExpr(ast->getOp1());
+    if (broken(trueExpr.val)) {
+        panic = true;
+        return {};
+    }
+    llvmBuilder.CreateBr(afterBlock);
+    trueBlock = llvmBuilder.GetInsertBlock();
+
+    func->getBasicBlockList().push_back(falseBlock);
+    llvmBuilder.SetInsertPoint(falseBlock);
+    ExprGenPayload falseExpr = codegenExpr(ast->getOp2());
+    if (broken(falseExpr.val) || falseExpr.type != trueExpr.type) {
+        panic = true;
+        return {};
+    }
+    llvmBuilder.CreateBr(afterBlock);
+    falseBlock = llvmBuilder.GetInsertBlock();
+
+    func->getBasicBlockList().push_back(afterBlock);
+    llvmBuilder.SetInsertPoint(afterBlock);
+    llvm::PHINode *phi = llvmBuilder.CreatePHI(symbolTable->getTypeTable()->getType(trueExpr.type), 2, "tern_tmp");
+    phi->addIncoming(trueExpr.val, trueBlock);
+    phi->addIncoming(falseExpr.val, falseBlock);
+
+    ExprGenPayload ret;
+    ret.type = trueExpr.type;
+    ret.val = phi;
+    return ret;
 }
 
 CodeGen::ExprGenPayload CodeGen::codegen(const CallExprAST *ast) {

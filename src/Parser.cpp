@@ -22,6 +22,7 @@ Token Parser::next() {
     return lex->next();
 }
 
+// Eats the next token and returns whether its type matches the given type.
 bool Parser::match(Token::Type type) {
     return next().type == type;
 }
@@ -139,10 +140,30 @@ unique_ptr<ExprAST> Parser::expr(unique_ptr<ExprAST> lhs, OperPrec min_prec) {
 }
 
 unique_ptr<ExprAST> Parser::expr() {
-    unique_ptr<ExprAST> first = prim();
-    if (panic) return nullptr;
+    unique_ptr<ExprAST> e = prim();
+    if (broken(e)) return nullptr;
 
-    return expr(move(first), minOperPrec);
+    e = expr(move(e), minOperPrec);
+    if (broken(e)) return nullptr;
+
+    if (peek().type == Token::T_QUESTION) {
+        next();
+
+        unique_ptr<ExprAST> t = expr();
+        if (broken(t)) return nullptr;
+
+        if (!match(Token::T_COLON)) {
+            panic = true;
+            return nullptr;
+        }
+
+        unique_ptr<ExprAST> f = expr();
+        if (broken(f)) return nullptr;
+
+        return make_unique<TernCondExprAST>(move(e), move(t), move(f));
+    } else {
+        return e;
+    }
 }
 
 std::unique_ptr<TypeAST> Parser::type() {

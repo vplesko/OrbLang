@@ -40,6 +40,11 @@ fnc inc(i64 a) i64 {
     ret a+1;
 }
 
+fnc blocker() i64 {
+    while (true);
+    ret 0;
+}
+
 fnc main() {
     i64 a = 1, b = 2;
     if (a == b) println_i64(101);
@@ -66,4 +71,7 @@ fnc main() {
 
     println_i64(inc(b));
     println_i64(inc(b)+1);
+
+    println_i64(1>0?i64(0):blocker());
+    println_i64(1<0?blocker():i64(0));
 }

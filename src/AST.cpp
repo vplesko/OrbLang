@@ -10,6 +10,12 @@ BinExprAST::BinExprAST(
     Token::Oper _op) : lhs(move(_lhs)), rhs(move(_rhs)), op(_op) {
 }
 
+TernCondExprAST::TernCondExprAST(
+    unique_ptr<ExprAST> _cond,
+    unique_ptr<ExprAST> _op1,
+    unique_ptr<ExprAST> _op2) : cond(move(_cond)), op1(move(_op1)), op2(move(_op2)) {
+}
+
 IfAST::IfAST(unique_ptr<StmntAST> init, unique_ptr<ExprAST> cond, 
         unique_ptr<StmntAST> thenBody, unique_ptr<StmntAST> elseBody)
         : init(move(init)), cond(move(cond)), thenBody(move(thenBody)), elseBody(move(elseBody)) {

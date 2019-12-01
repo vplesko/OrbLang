@@ -12,6 +12,7 @@ enum ASTType {
     AST_VarExpr,
     AST_UnExpr,
     AST_BinExpr,
+    AST_TernCondExpr,
     AST_CallExpr,
     AST_CastExpr,
     AST_Decl,
@@ -120,6 +121,22 @@ public:
     const ExprAST* getL() const { return lhs.get(); }
     const ExprAST* getR() const { return rhs.get(); }
     Token::Oper getOp() const { return op; }
+};
+
+class TernCondExprAST : public ExprAST {
+    std::unique_ptr<ExprAST> cond, op1, op2;
+
+public:
+    TernCondExprAST(
+        std::unique_ptr<ExprAST> _cond,
+        std::unique_ptr<ExprAST> _op1,
+        std::unique_ptr<ExprAST> _op2);
+
+    ASTType type() const { return AST_TernCondExpr; }
+
+    const ExprAST* getCond() const { return cond.get(); }
+    const ExprAST* getOp1() const { return op1.get(); }
+    const ExprAST* getOp2() const { return op2.get(); }
 };
 
 class CallExprAST : public ExprAST {

@@ -36,6 +36,7 @@ class CodeGen {
     ExprGenPayload codegen(const VarExprAST *ast);
     ExprGenPayload codegen(const UnExprAST *ast);
     ExprGenPayload codegen(const BinExprAST *ast);
+    ExprGenPayload codegen(const TernCondExprAST *ast);
     ExprGenPayload codegen(const CallExprAST *ast);
     ExprGenPayload codegen(const CastExprAST *ast);
     void codegen(const DeclAST *ast);
