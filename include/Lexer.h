@@ -43,7 +43,9 @@ struct Token {
         O_GTEQ,
         O_ASGN,
         O_INC,
-        O_DEC
+        O_DEC,
+        O_NOT,
+        O_BIT_NOT
     };
 
     Type type;

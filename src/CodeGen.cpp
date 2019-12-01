@@ -57,13 +57,14 @@ bool CodeGen::isBlockTerminated() const {
 }
 
 llvm::GlobalValue* CodeGen::createGlobal(llvm::Type *type, const std::string &name) {
-    // TODO llvm expects global vars to be initialized
     return new llvm::GlobalVariable(
         *llvmModule,
         type,
         false,
         llvm::GlobalValue::CommonLinkage,
-        nullptr,
+        // llvm demands global vars be initialized, but by deafult we don't init them
+        // TODO this is very hacky
+        llvm::ConstantInt::get(type, 0),
         name);
 }
 
@@ -228,20 +229,18 @@ CodeGen::ExprGenPayload CodeGen::codegen(const UnExprAST *ast) {
 
     ExprGenPayload exprRet;
     exprRet.type = exprPay.type;
+    exprRet.ref = nullptr;
     if (ast->getOp() == Token::O_ADD) {
         if (!(TypeTable::isTypeI(exprPay.type) || TypeTable::isTypeU(exprPay.type) || TypeTable::isTypeF(exprPay.type))) {
             panic = true;
             return {};
         }
         exprRet.val = exprPay.val;
-        exprRet.ref = nullptr;
     } else if (ast->getOp() == Token::O_SUB) {
         if (TypeTable::isTypeI(exprPay.type)) {
-            exprRet.val = llvmBuilder.CreateSub(llvm::ConstantInt::get(symbolTable->getTypeTable()->getType(exprPay.type), 0), exprPay.val, "s_neg_tmp");
-            exprRet.ref = nullptr;
+            exprRet.val = llvmBuilder.CreateNeg(exprPay.val, "s_neg_tmp");
         } else if (TypeTable::isTypeF(exprPay.type)) {
-            exprRet.val = llvmBuilder.CreateFSub(llvm::ConstantFP::get(symbolTable->getTypeTable()->getType(exprPay.type), 0), exprPay.val, "f_neg_tmp");
-            exprRet.ref = nullptr;
+            exprRet.val = llvmBuilder.CreateFNeg(exprPay.val, "f_neg_tmp");
         } else {
             panic = true;
             return {};
@@ -262,6 +261,18 @@ CodeGen::ExprGenPayload CodeGen::codegen(const UnExprAST *ast) {
         exprRet.val = llvmBuilder.CreateSub(exprPay.val, llvm::ConstantInt::get(symbolTable->getTypeTable()->getType(exprPay.type), 1), "dec_tmp");
         exprRet.ref = exprPay.ref;
         llvmBuilder.CreateStore(exprRet.val, exprRet.ref);
+    } else if (ast->getOp() == Token::O_BIT_NOT) {
+        if (!(TypeTable::isTypeI(exprPay.type) || TypeTable::isTypeU(exprPay.type))) {
+            panic = true;
+            return {};
+        }
+        exprRet.val = llvmBuilder.CreateNot(exprPay.val, "bit_not_tmp");
+    } else if (ast->getOp() == Token::O_NOT) {
+        if (exprPay.type != TypeTable::P_BOOL) {
+            panic = true;
+            return {};
+        }
+        exprRet.val = llvmBuilder.CreateNot(exprPay.val, "not_tmp");
     } else {
         panic = true;
         return {};

@@ -16,7 +16,9 @@ const unordered_map<Token::Oper, OperInfo> operInfos = {
     {Token::O_MUL, {5}},
     {Token::O_DIV, {5}},
     {Token::O_INC, {6, false, true, false}},
-    {Token::O_DEC, {6, false, true, false}}
+    {Token::O_DEC, {6, false, true, false}},
+    {Token::O_NOT, {6, false, true, false}},
+    {Token::O_BIT_NOT, {6, false, true, false}}
 };
 
 const unordered_map<string, Token::Type> keywords = {
@@ -150,11 +152,13 @@ Token Lexer::next() {
             }
         } else if (ch == '!') {
             if (peekCh() != '=') {
-                tok.type = Token::T_UNKNOWN;
+                tok = {Token::T_OPER, Token::O_NOT};
             } else {
                 nextCh();
                 tok = {Token::T_OPER, Token::O_NEQ};
             }
+        } else if (ch == '~') {
+            tok = {Token::T_OPER, Token::O_BIT_NOT};
         } else if (ch == '<') {
             if (peekCh() == '=') {
                 nextCh();

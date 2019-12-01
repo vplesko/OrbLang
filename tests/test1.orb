@@ -29,6 +29,8 @@ fnc scan_u16() u16;
 fnc scan_u32() u32;
 fnc scan_u64() u64;
 
+i32 glob;
+
 fnc main() {
     println_i64(0);
     println_i64(1);
@@ -73,6 +75,17 @@ fnc main() {
     println_i32(i32(c));
     println_i32(i32(+c));
     println_i32(i32(-c));
+
+    glob = 6;
+    println_i32(glob);
+
+    bool d = false;
+    if (!d) println_i32(0);
+    if (!!d) println_i32(0);
+
+    println_i32(~100);
+    println_i32(~-100);
+    println_u32(~u32(100));
 
     //println_i64(0);
     /* println_i64(0); */
