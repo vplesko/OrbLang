@@ -62,6 +62,26 @@ fnc main() {
     println_i64(a + ++a);
     println_i64(+a);
     println_i64(-a);
+    println_i64(a += 2);
+    println_i64(a);
+    println_i64(a -= 2);
+    println_i64(a);
+    println_i64(a *= 2);
+    println_i64(a);
+    println_i64(a /= 2);
+    println_i64(a);
+    println_i64(a %= 2);
+    println_i64(a);
+    println_i64(a <<= 2);
+    println_i64(a);
+    println_i64(a >>= 2);
+    println_i64(a);
+    println_i64(a |= 3);
+    println_i64(a);
+    println_i64(a &= 10);
+    println_i64(a);
+    println_i64(a ^= 5);
+    println_i64(a);
 
     i64 b=1;
     println_i64(a-b);
@@ -91,15 +111,11 @@ fnc main() {
     println_u32(u32(100)%u32(3));
     println_i32(i32(f32(100)%f32(11)));
 
-    println_i32(i32(100)<<2);
-    println_i32(i32(100)<<u8(2));
-    println_u32(u32(100)<<2);
+    println_i32(i32(100)<<i32(2));
     println_u32(u32(100)<<u8(2));
 
-    println_i32(i32(100)>>2);
-    println_i32(i32(-100)>>2);
-    println_i32(i32(100)>>u8(2));
-    println_u32(u32(100)>>2);
+    println_i32(i32(100)>>i32(2));
+    println_i32(i32(-100)>>i32(2));
     println_u32(u32(100)>>u8(2));
 
     println_i32(11 & 7);

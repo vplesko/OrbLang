@@ -48,6 +48,16 @@ struct Token {
         O_GT,
         O_GTEQ,
         O_ASGN,
+        O_ADD_ASGN,
+        O_SUB_ASGN,
+        O_MUL_ASGN,
+        O_DIV_ASGN,
+        O_REM_ASGN,
+        O_SHL_ASGN,
+        O_SHR_ASGN,
+        O_BIT_AND_ASGN,
+        O_BIT_XOR_ASGN,
+        O_BIT_OR_ASGN,
         O_INC,
         O_DEC,
         O_NOT,
@@ -68,6 +78,7 @@ struct OperInfo {
     bool l_assoc = true;
     bool unary = false;
     bool binary = true;
+    bool assignment = false;
 };
 
 extern const OperPrec minOperPrec;

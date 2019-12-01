@@ -283,7 +283,9 @@ CodeGen::ExprGenPayload CodeGen::codegen(const UnExprAST *ast) {
 CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
     ExprGenPayload exprPayL, exprPayR, exprPayRet;
 
-    if (ast->getOp() == Token::O_ASGN) {
+    bool assignment = operInfos.at(ast->getOp()).assignment;
+
+    if (assignment) {
         exprPayL = codegenExpr(ast->getL());
         if (panic || exprPayL.ref == nullptr) {
             panic = true;
@@ -300,14 +302,13 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
     llvm::Value *valL = exprPayL.val, *valR = exprPayR.val;
     exprPayRet.type = exprPayL.type;
     exprPayRet.val = nullptr;
-    exprPayRet.ref = nullptr;
+    exprPayRet.ref = assignment ? exprPayL.ref : nullptr;
 
-    if (exprPayL.type != exprPayR.type &&
-        ast->getOp() != Token::O_SHL && ast->getOp() != Token::O_SHR) {
+    if (exprPayL.type != exprPayR.type) {
         if (TypeTable::isImplicitCastable(exprPayR.type, exprPayL.type)) {
             createCast(valR, exprPayR.type, exprPayL.type);
             exprPayRet.type = exprPayL.type;
-        } else if (TypeTable::isImplicitCastable(exprPayL.type, exprPayR.type) && ast->getOp() != Token::O_ASGN) {
+        } else if (TypeTable::isImplicitCastable(exprPayL.type, exprPayR.type) && !assignment) {
             createCast(valL, exprPayL.type, exprPayR.type);
             exprPayRet.type = exprPayR.type;
         } else {
@@ -319,9 +320,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
     if (exprPayRet.type == TypeTable::P_BOOL) {
         switch (ast->getOp()) {
         case Token::O_ASGN:
-            llvmBuilder.CreateStore(valR, exprPayL.ref);
             exprPayRet.val = valR;
-            exprPayRet.ref = exprPayL.ref;
             break;
         case Token::O_EQ:
             exprPayRet.val = llvmBuilder.CreateICmpEQ(valL, valR, "bcmp_eq_tmp");
@@ -339,51 +338,58 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
 
         switch (ast->getOp()) {
             case Token::O_ASGN:
-                llvmBuilder.CreateStore(valR, exprPayL.ref);
                 exprPayRet.val = valR;
-                exprPayRet.ref = exprPayL.ref;
                 break;
             case Token::O_ADD:
+            case Token::O_ADD_ASGN:
                 if (isTypeF)
                     exprPayRet.val = llvmBuilder.CreateFAdd(valL, valR, "fadd_tmp");
                 else if (isTypeI || isTypeU)
                     exprPayRet.val = llvmBuilder.CreateAdd(valL, valR, "add_tmp");
                 break;
             case Token::O_SUB:
+            case Token::O_SUB_ASGN:
                 if (isTypeF)
                     exprPayRet.val = llvmBuilder.CreateFSub(valL, valR, "fsub_tmp");
                 else if (isTypeI || isTypeU)
                     exprPayRet.val = llvmBuilder.CreateSub(valL, valR, "sub_tmp");
                 break;
             case Token::O_SHL:
+            case Token::O_SHL_ASGN:
                 if (isTypeI || isTypeU)
                     exprPayRet.val = llvmBuilder.CreateShl(valL, valR, "shl_tmp");
                 break;
             case Token::O_SHR:
+            case Token::O_SHR_ASGN:
                 if (isTypeI)
                     exprPayRet.val = llvmBuilder.CreateAShr(valL, valR, "ashr_tmp");
                 else if (isTypeU)
                     exprPayRet.val = llvmBuilder.CreateLShr(valL, valR, "lshr_tmp");
                 break;
             case Token::O_BIT_AND:
+            case Token::O_BIT_AND_ASGN:
                 if (isTypeI || isTypeU)
                     exprPayRet.val = llvmBuilder.CreateAnd(valL, valR, "and_tmp");
                 break;
             case Token::O_BIT_XOR:
+            case Token::O_BIT_XOR_ASGN:
                 if (isTypeI || isTypeU)
                     exprPayRet.val = llvmBuilder.CreateXor(valL, valR, "xor_tmp");
                 break;
             case Token::O_BIT_OR:
+            case Token::O_BIT_OR_ASGN:
                 if (isTypeI || isTypeU)
                     exprPayRet.val = llvmBuilder.CreateOr(valL, valR, "or_tmp");
                 break;
             case Token::O_MUL:
+            case Token::O_MUL_ASGN:
                 if (isTypeF)
                     exprPayRet.val = llvmBuilder.CreateFMul(valL, valR, "fmul_tmp");
                 else if (isTypeI || isTypeU)
                     exprPayRet.val = llvmBuilder.CreateMul(valL, valR, "mul_tmp");
                 break;
             case Token::O_DIV:
+            case Token::O_DIV_ASGN:
                 if (isTypeF)
                     exprPayRet.val = llvmBuilder.CreateFDiv(valL, valR, "fdiv_tmp");
                 else if (isTypeI)
@@ -392,6 +398,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
                     exprPayRet.val = llvmBuilder.CreateUDiv(valL, valR, "udiv_tmp");
                 break;
             case Token::O_REM:
+            case Token::O_REM_ASGN:
                 if (isTypeI)
                     exprPayRet.val = llvmBuilder.CreateSRem(valL, valR, "srem_tmp");
                 else if (isTypeU)
@@ -455,7 +462,14 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
         }
     }
 
-    if (exprPayRet.val == nullptr) panic = true;
+    if (exprPayRet.val == nullptr) {
+        panic = true;
+        return {};
+    }
+
+    if (assignment) {
+        llvmBuilder.CreateStore(exprPayRet.val, exprPayRet.ref);
+    }
 
     return exprPayRet;
 }
