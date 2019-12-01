@@ -15,26 +15,28 @@ const unordered_map<Token::Oper, OperInfo> operInfos = {
     {Token::O_BIT_AND_ASGN, {1, .assignment=true}},
     {Token::O_BIT_XOR_ASGN, {1, .assignment=true}},
     {Token::O_BIT_OR_ASGN, {1, .assignment=true}},
-    {Token::O_BIT_OR, {2}},
-    {Token::O_BIT_XOR, {3}},
-    {Token::O_BIT_AND, {4}},
-    {Token::O_EQ, {5}},
-    {Token::O_NEQ, {5}},
-    {Token::O_LT, {6}},
-    {Token::O_LTEQ, {6}},
-    {Token::O_GT, {6}},
-    {Token::O_GTEQ, {6}},
-    {Token::O_SHL, {7}},
-    {Token::O_SHR, {7}},
-    {Token::O_ADD, {8, .unary=true}},
-    {Token::O_SUB, {8, .unary=true}},
-    {Token::O_MUL, {9}},
-    {Token::O_DIV, {9}},
-    {Token::O_REM, {9}},
-    {Token::O_INC, {10, .l_assoc=false, .unary=true, .binary=false}},
-    {Token::O_DEC, {10, .l_assoc=false, .unary=true, .binary=false}},
-    {Token::O_NOT, {10, .l_assoc=false, .unary=true, .binary=false}},
-    {Token::O_BIT_NOT, {10, .l_assoc=false, .unary=true, .binary=false}}
+    {Token::O_OR, {2}},
+    {Token::O_AND, {3}},
+    {Token::O_BIT_OR, {4}},
+    {Token::O_BIT_XOR, {5}},
+    {Token::O_BIT_AND, {6}},
+    {Token::O_EQ, {7}},
+    {Token::O_NEQ, {7}},
+    {Token::O_LT, {8}},
+    {Token::O_LTEQ, {8}},
+    {Token::O_GT, {8}},
+    {Token::O_GTEQ, {8}},
+    {Token::O_SHL, {9}},
+    {Token::O_SHR, {9}},
+    {Token::O_ADD, {10, .unary=true}},
+    {Token::O_SUB, {10, .unary=true}},
+    {Token::O_MUL, {11}},
+    {Token::O_DIV, {11}},
+    {Token::O_REM, {11}},
+    {Token::O_INC, {12, .l_assoc=false, .unary=true, .binary=false}},
+    {Token::O_DEC, {12, .l_assoc=false, .unary=true, .binary=false}},
+    {Token::O_NOT, {12, .l_assoc=false, .unary=true, .binary=false}},
+    {Token::O_BIT_NOT, {12, .l_assoc=false, .unary=true, .binary=false}}
 };
 
 const unordered_map<string, Token::Type> keywords = {
@@ -186,6 +188,9 @@ Token Lexer::next() {
             if (peekCh() == '=') {
                 nextCh();
                 tok = {Token::T_OPER, Token::O_BIT_AND_ASGN};
+            } else if (peekCh() == '&') {
+                nextCh();
+                tok = {Token::T_OPER, Token::O_AND};
             } else {
                 tok = {Token::T_OPER, Token::O_BIT_AND};
             }
@@ -200,6 +205,9 @@ Token Lexer::next() {
             if (peekCh() == '=') {
                 nextCh();
                 tok = {Token::T_OPER, Token::O_BIT_OR_ASGN};
+            } else if (peekCh() == '|') {
+                nextCh();
+                tok = {Token::T_OPER, Token::O_OR};
             } else {
                 tok = {Token::T_OPER, Token::O_BIT_OR};
             }

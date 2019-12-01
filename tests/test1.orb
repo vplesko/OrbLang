@@ -141,6 +141,19 @@ fnc main() {
     println_i64(a=1>0?100:101);
     println_i64(a+=1>0?100:101);
 
+    if (true && true) println_i32(1);
+    if (false && true) println_i32(1);
+    if (true && false) println_i32(1);
+    if (false && false) println_i32(1);
+    if (true || true) println_i32(2);
+    if (false || true) println_i32(2);
+    if (true || false) println_i32(2);
+    if (false || false) println_i32(2);
+    if (1>0 || false) println_i32(3);
+    if (1<0 || true) println_i32(4);
+    if (true && 1>0) println_i32(5);
+    if (1<0 && true) println_i32(6);
+
     //println_i64(0);
     /* println_i64(0); */
     /*

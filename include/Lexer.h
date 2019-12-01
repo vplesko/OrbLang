@@ -43,6 +43,8 @@ struct Token {
         O_BIT_AND,
         O_BIT_XOR,
         O_BIT_OR,
+        O_AND,
+        O_OR,
         O_EQ,
         O_NEQ,
         O_LT,

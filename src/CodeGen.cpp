@@ -283,6 +283,9 @@ CodeGen::ExprGenPayload CodeGen::codegen(const UnExprAST *ast) {
 }
 
 CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
+    if (ast->getOp() == Token::O_AND || ast->getOp() == Token::O_OR)
+        return codegenLogicBin(ast);
+    
     ExprGenPayload exprPayL, exprPayR, exprPayRet;
 
     bool assignment = operInfos.at(ast->getOp()).assignment;
@@ -474,6 +477,59 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
     }
 
     return exprPayRet;
+}
+
+CodeGen::ExprGenPayload CodeGen::codegenLogicBin(const BinExprAST *ast) {
+    ExprGenPayload exprPayL, exprPayR, exprPayRet;
+
+    llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
+
+    llvm::BasicBlock *firstBlock = llvm::BasicBlock::Create(llvmContext, "start", func);
+    llvm::BasicBlock *otherBlock = llvm::BasicBlock::Create(llvmContext, "other");
+    llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
+
+    llvmBuilder.CreateBr(firstBlock);
+
+    llvmBuilder.SetInsertPoint(firstBlock);
+    exprPayL = codegenExpr(ast->getL());
+    if (broken(exprPayL.val) || exprPayL.type != TypeTable::P_BOOL) {
+        panic = true;
+        return {};
+    }
+
+    if (ast->getOp() == Token::O_AND) {
+        llvmBuilder.CreateCondBr(exprPayL.val, otherBlock, afterBlock);
+    } else if (ast->getOp() == Token::O_OR) {
+        llvmBuilder.CreateCondBr(exprPayL.val, afterBlock, otherBlock);
+    } else {
+        panic = true;
+        return {};
+    }
+    firstBlock = llvmBuilder.GetInsertBlock();
+
+    func->getBasicBlockList().push_back(otherBlock);
+    llvmBuilder.SetInsertPoint(otherBlock);
+    exprPayR = codegenExpr(ast->getR());
+    if (broken(exprPayR.val) || exprPayR.type != TypeTable::P_BOOL) {
+        panic = true;
+        return {};
+    }
+    llvmBuilder.CreateBr(afterBlock);
+    otherBlock = llvmBuilder.GetInsertBlock();
+
+    func->getBasicBlockList().push_back(afterBlock);
+    llvmBuilder.SetInsertPoint(afterBlock);
+    llvm::PHINode *phi = llvmBuilder.CreatePHI(symbolTable->getTypeTable()->getType(TypeTable::P_BOOL), 2, "logic_tmp");
+    if (ast->getOp() == Token::O_AND)
+        phi->addIncoming(getConstB(false), firstBlock);
+    else
+        phi->addIncoming(getConstB(true), firstBlock);
+    phi->addIncoming(exprPayR.val, otherBlock);
+
+    ExprGenPayload ret;
+    ret.type = exprPayL.type;
+    ret.val = phi;
+    return ret;
 }
 
 CodeGen::ExprGenPayload CodeGen::codegen(const TernCondExprAST *ast) {

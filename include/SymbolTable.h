@@ -55,7 +55,7 @@ public:
         return between((PrimIds) t, P_F16, P_F64);
     }
 
-    // TODO lang rules:
+    // TODO lang rules about implicit casts:
     // allow assigning non-neg literals to unsigned vars
     // and literals who's vals would fit to shorter type
     static bool isImplicitCastable(Id from, Id into) {
