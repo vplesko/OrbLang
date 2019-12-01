@@ -153,10 +153,7 @@ unique_ptr<ExprAST> Parser::expr() {
         unique_ptr<ExprAST> t = expr();
         if (broken(t)) return nullptr;
 
-        if (!match(Token::T_COLON)) {
-            panic = true;
-            return nullptr;
-        }
+        if (mismatch(Token::T_COLON)) return nullptr;
 
         unique_ptr<ExprAST> f = expr();
         if (broken(f)) return nullptr;
