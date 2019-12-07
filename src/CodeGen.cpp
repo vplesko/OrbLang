@@ -18,6 +18,21 @@ CodeGen::CodeGen(NamePool *namePool, SymbolTable *symbolTable) : namePool(namePo
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("test"), llvmContext);
 }
 
+bool CodeGen::valueBroken(const ExprGenPayload &e) {
+    if (e.val == nullptr && e.litVal.type == LiteralVal::T_NONE) panic = true;
+    return panic;
+}
+
+bool CodeGen::valBroken(const ExprGenPayload &e) {
+    if (e.val == nullptr) panic = true;
+    return panic;
+}
+
+bool CodeGen::refBroken(const ExprGenPayload &e) {
+    if (e.ref == nullptr) panic = true;
+    return panic;
+}
+
 llvm::Value* CodeGen::getConstB(bool val) {
     if (val) return llvm::ConstantInt::getTrue(llvmContext);
     else return llvm::ConstantInt::getFalse(llvmContext);
@@ -194,7 +209,8 @@ CodeGen::ExprGenPayload CodeGen::codegen(const LiteralExprAST *ast) {
             llvm::ConstantInt::get(
                 symbolTable->getTypeTable()->getType(ast->getType()), 
                 ast->getVal().val_si, true),
-            nullptr
+            nullptr,
+            ast->getVal()
         };
     } else if (TypeTable::isTypeU(ast->getType())) {
         return {
@@ -202,13 +218,15 @@ CodeGen::ExprGenPayload CodeGen::codegen(const LiteralExprAST *ast) {
             llvm::ConstantInt::get(
                 symbolTable->getTypeTable()->getType(ast->getType()), 
                 ast->getVal().val_ui, false),
-            nullptr
+            nullptr,
+            ast->getVal()
         };
     } else if (ast->getType() == TypeTable::P_BOOL) {
         return {
             ast->getType(),
             ast->getVal().val_b ? getConstB(true) : getConstB(false),
-            nullptr
+            nullptr,
+            ast->getVal()
         };
     } else {
         panic = true;
@@ -224,10 +242,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const VarExprAST *ast) {
 
 CodeGen::ExprGenPayload CodeGen::codegen(const UnExprAST *ast) {
     ExprGenPayload exprPay = codegenExpr(ast->getExpr());
-    if (panic) {
-        panic = true;
-        return {};
-    }
+    if (valueBroken(exprPay)) return {};
 
     ExprGenPayload exprRet;
     exprRet.type = exprPay.type;
@@ -248,7 +263,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const UnExprAST *ast) {
             return {};
         }
     } else if (ast->getOp() == Token::O_INC) {
-        if (!(TypeTable::isTypeI(exprPay.type) || TypeTable::isTypeU(exprPay.type)) || exprPay.ref == nullptr) {
+        if (!(TypeTable::isTypeI(exprPay.type) || TypeTable::isTypeU(exprPay.type)) || refBroken(exprPay)) {
             panic = true;
             return {};
         }
@@ -256,7 +271,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const UnExprAST *ast) {
         exprRet.ref = exprPay.ref;
         llvmBuilder.CreateStore(exprRet.val, exprRet.ref);
     } else if (ast->getOp() == Token::O_DEC) {
-        if (!(TypeTable::isTypeI(exprPay.type) || TypeTable::isTypeU(exprPay.type)) || exprPay.ref == nullptr) {
+        if (!(TypeTable::isTypeI(exprPay.type) || TypeTable::isTypeU(exprPay.type)) || refBroken(exprPay)) {
             panic = true;
             return {};
         }
@@ -292,17 +307,14 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
 
     if (assignment) {
         exprPayL = codegenExpr(ast->getL());
-        if (panic || exprPayL.ref == nullptr) {
-            panic = true;
-            return {};
-        }
+        if (refBroken(exprPayL)) return {};
     } else {
         exprPayL = codegenExpr(ast->getL());
-        if (broken(exprPayL.val)) return {};
+        if (valueBroken(exprPayL)) return {};
     }
 
     exprPayR = codegenExpr(ast->getR());
-    if (broken(exprPayR.val)) return {};
+    if (valueBroken(exprPayR)) return {};
 
     llvm::Value *valL = exprPayL.val, *valR = exprPayR.val;
     exprPayRet.type = exprPayL.type;
@@ -467,10 +479,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
         }
     }
 
-    if (exprPayRet.val == nullptr) {
-        panic = true;
-        return {};
-    }
+    if (valueBroken(exprPayRet)) return {};
 
     if (assignment) {
         llvmBuilder.CreateStore(exprPayRet.val, exprPayRet.ref);
@@ -492,7 +501,7 @@ CodeGen::ExprGenPayload CodeGen::codegenLogicBin(const BinExprAST *ast) {
 
     llvmBuilder.SetInsertPoint(firstBlock);
     exprPayL = codegenExpr(ast->getL());
-    if (broken(exprPayL.val) || exprPayL.type != TypeTable::P_BOOL) {
+    if (valueBroken(exprPayL) || exprPayL.type != TypeTable::P_BOOL) {
         panic = true;
         return {};
     }
@@ -510,7 +519,7 @@ CodeGen::ExprGenPayload CodeGen::codegenLogicBin(const BinExprAST *ast) {
     func->getBasicBlockList().push_back(otherBlock);
     llvmBuilder.SetInsertPoint(otherBlock);
     exprPayR = codegenExpr(ast->getR());
-    if (broken(exprPayR.val) || exprPayR.type != TypeTable::P_BOOL) {
+    if (valueBroken(exprPayR) || exprPayR.type != TypeTable::P_BOOL) {
         panic = true;
         return {};
     }
@@ -534,7 +543,7 @@ CodeGen::ExprGenPayload CodeGen::codegenLogicBin(const BinExprAST *ast) {
 
 CodeGen::ExprGenPayload CodeGen::codegen(const TernCondExprAST *ast) {
     ExprGenPayload condExpr = codegenExpr(ast->getCond());
-    if (broken(condExpr.val) || condExpr.type != TypeTable::P_BOOL) {
+    if (valueBroken(condExpr) || condExpr.type != TypeTable::P_BOOL) {
         panic = true;
         return {};
     }
@@ -549,10 +558,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const TernCondExprAST *ast) {
 
     llvmBuilder.SetInsertPoint(trueBlock);
     ExprGenPayload trueExpr = codegenExpr(ast->getOp1());
-    if (broken(trueExpr.val)) {
-        panic = true;
-        return {};
-    }
+    if (valueBroken(trueExpr)) return {};
     llvmBuilder.CreateBr(afterBlock);
     trueBlock = llvmBuilder.GetInsertBlock();
 
@@ -560,7 +566,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const TernCondExprAST *ast) {
     llvmBuilder.SetInsertPoint(falseBlock);
     ExprGenPayload falseExpr = codegenExpr(ast->getOp2());
     // implicit casts intentionally left out in order not to lose l-valness
-    if (broken(falseExpr.val) || falseExpr.type != trueExpr.type) {
+    if (valueBroken(falseExpr) || falseExpr.type != trueExpr.type) {
         panic = true;
         return {};
     }
@@ -587,6 +593,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const CallExprAST *ast) {
     std::vector<llvm::Value*> args(ast->getArgs().size());
     for (size_t i = 0; i < ast->getArgs().size(); ++i) {
         ExprGenPayload exprPay = codegenExpr(ast->getArgs()[i].get());
+        if (valueBroken(exprPay)) return {};
 
         sig.argTypes[i] = exprPay.type;
 
@@ -692,7 +699,7 @@ void CodeGen::codegen(const IfAST *ast) {
     }
 
     ExprGenPayload condExpr = codegenExpr(ast->getCond());
-    if (panic || condExpr.type != TypeTable::P_BOOL || condExpr.val == nullptr) {
+    if (valueBroken(condExpr) || condExpr.type != TypeTable::P_BOOL) {
         panic = true;
         return;
     }
@@ -744,7 +751,7 @@ void CodeGen::codegen(const ForAST *ast) {
     ExprGenPayload condExpr;
     if (ast->hasCond()) {
         condExpr = codegenExpr(ast->getCond());
-        if (panic || condExpr.type != TypeTable::P_BOOL || condExpr.val == nullptr) {
+        if (valueBroken(condExpr) || condExpr.type != TypeTable::P_BOOL) {
             panic = true;
             return;
         }
@@ -786,7 +793,7 @@ void CodeGen::codegen(const WhileAST *ast) {
     llvmBuilder.SetInsertPoint(condBlock);
 
     ExprGenPayload condExpr = codegenExpr(ast->getCond());
-    if (panic || condExpr.type != TypeTable::P_BOOL || condExpr.val == nullptr) {
+    if (valueBroken(condExpr) || condExpr.type != TypeTable::P_BOOL) {
         panic = true;
         return;
     }
@@ -822,7 +829,7 @@ void CodeGen::codegen(const DoWhileAST *ast) {
     }
 
     ExprGenPayload condExpr = codegenExpr(ast->getCond());
-    if (panic || condExpr.type != TypeTable::P_BOOL || condExpr.val == nullptr) {
+    if (valueBroken(condExpr) || condExpr.type != TypeTable::P_BOOL) {
         panic = true;
         return;
     }
@@ -936,7 +943,7 @@ FuncValue* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
 
 void CodeGen::codegen(const FuncAST *ast) {
     FuncValue *funcVal = codegen(ast->getProto(), true);
-    if (panic) {
+    if (broken(funcVal)) {
         return;
     }
 

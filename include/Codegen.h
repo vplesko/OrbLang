@@ -30,7 +30,12 @@ class CodeGen {
         TypeTable::Id type;
         llvm::Value *val = nullptr;
         llvm::Value *ref = nullptr;
+        LiteralVal litVal{ .type = LiteralVal::T_NONE };
     };
+
+    bool valueBroken(const ExprGenPayload &e);
+    bool valBroken(const ExprGenPayload &e);
+    bool refBroken(const ExprGenPayload &e);
 
     ExprGenPayload codegen(const LiteralExprAST *ast);
     ExprGenPayload codegen(const VarExprAST *ast);
