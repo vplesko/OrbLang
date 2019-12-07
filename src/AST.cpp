@@ -1,6 +1,11 @@
 #include "AST.h"
 using namespace std;
 
+LiteralExprAST::LiteralExprAST(bool bb) : typeId(TypeTable::P_BOOL) {
+    val.type = LiteralVal::T_BOOL;
+    val.val_b = bb;
+}
+
 UnExprAST::UnExprAST(unique_ptr<ExprAST> e, Token::Oper o) : expr(move(e)), op(o) {
 }
 

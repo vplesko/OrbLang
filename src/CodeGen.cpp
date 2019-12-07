@@ -193,7 +193,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const LiteralExprAST *ast) {
             ast->getType(),
             llvm::ConstantInt::get(
                 symbolTable->getTypeTable()->getType(ast->getType()), 
-                ast->getValI(), true),
+                ast->getVal().val_si, true),
             nullptr
         };
     } else if (TypeTable::isTypeU(ast->getType())) {
@@ -201,13 +201,13 @@ CodeGen::ExprGenPayload CodeGen::codegen(const LiteralExprAST *ast) {
             ast->getType(),
             llvm::ConstantInt::get(
                 symbolTable->getTypeTable()->getType(ast->getType()), 
-                ast->getValU(), false),
+                ast->getVal().val_ui, false),
             nullptr
         };
     } else if (ast->getType() == TypeTable::P_BOOL) {
         return {
             ast->getType(),
-            ast->getValB() ? getConstB(true) : getConstB(false),
+            ast->getVal().val_b ? getConstB(true) : getConstB(false),
             nullptr
         };
     } else {
@@ -559,6 +559,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const TernCondExprAST *ast) {
     func->getBasicBlockList().push_back(falseBlock);
     llvmBuilder.SetInsertPoint(falseBlock);
     ExprGenPayload falseExpr = codegenExpr(ast->getOp2());
+    // implicit casts intentionally left out in order not to lose l-valness
     if (broken(falseExpr.val) || falseExpr.type != trueExpr.type) {
         panic = true;
         return {};

@@ -76,7 +76,11 @@ unique_ptr<ExprAST> Parser::prim() {
             return nullptr;
         }*/
 
-        return make_unique<LiteralExprAST>(t, tok.num);
+        LiteralVal val;
+        val.type = LiteralVal::T_SINT;
+        val.val_si = tok.num;
+
+        return make_unique<LiteralExprAST>(t, val);
     } else if (tok.type == Token::T_TRUE || tok.type == Token::T_FALSE) {
         return make_unique<LiteralExprAST>(tok.type == Token::T_TRUE);
     } else if (tok.type == Token::T_ID) {

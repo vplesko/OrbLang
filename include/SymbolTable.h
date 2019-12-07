@@ -22,6 +22,24 @@ public:
     const std::string& get(Id id) const { return names.at(id); }
 };
 
+struct LiteralVal {
+    enum Type {
+        T_NONE,
+        T_SINT,
+        T_UINT,
+        T_FLOAT,
+        T_BOOL
+    };
+
+    Type type;
+    union {
+        std::int64_t val_si;
+        std::uint64_t val_ui;
+        double val_f;
+        bool val_b;
+    };
+};
+
 class TypeTable {
 public:
     // TODO at some point, have Type struct that can represent ptrs, arrs...
