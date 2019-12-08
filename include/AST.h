@@ -64,16 +64,14 @@ public:
 };
 
 class LiteralExprAST : public ExprAST {
-    const TypeTable::Id typeId;
     LiteralVal val;
 
 public:
-    LiteralExprAST(TypeTable::Id t, LiteralVal v) : typeId(t), val(v) {}
+    LiteralExprAST(LiteralVal v) : val(v) {}
     explicit LiteralExprAST(bool bb);
 
     ASTType type() const { return AST_LiteralExpr; }
 
-    TypeTable::Id getType() const { return typeId; }
     LiteralVal getVal() const { return val; }
 };
 

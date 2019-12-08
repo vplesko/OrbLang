@@ -30,18 +30,27 @@ class CodeGen {
         TypeTable::Id type;
         llvm::Value *val = nullptr;
         llvm::Value *ref = nullptr;
-        LiteralVal litVal{ .type = LiteralVal::T_NONE };
+        LiteralVal litVal = { .type = LiteralVal::T_NONE };
+
+        bool isLitVal() const { return litVal.type != LiteralVal::T_NONE; }
+        void resetLitVal() { litVal.type = LiteralVal::T_NONE; }
+        bool isBool() const { return isLitVal() ? litVal.type == LiteralVal::T_BOOL : type == TypeTable::P_BOOL; }
     };
 
     bool valueBroken(const ExprGenPayload &e);
     bool valBroken(const ExprGenPayload &e);
     bool refBroken(const ExprGenPayload &e);
 
+    bool promoteLiteral(ExprGenPayload &e, TypeTable::Id t);
+
     ExprGenPayload codegen(const LiteralExprAST *ast);
     ExprGenPayload codegen(const VarExprAST *ast);
     ExprGenPayload codegen(const UnExprAST *ast);
+    ExprGenPayload codegenLiteralUn(Token::Oper op, LiteralVal lit);
     ExprGenPayload codegen(const BinExprAST *ast);
-    ExprGenPayload codegenLogicBin(const BinExprAST *ast);
+    // helper function for short-circuit evaluation of boolean AND and OR
+    ExprGenPayload codegenLogicShortCircuit(Token::Oper op, ExprGenPayload exprPayL, ExprGenPayload exprPayR);
+    ExprGenPayload codegenLiteralBin(Token::Oper op, LiteralVal litL, LiteralVal litR);
     ExprGenPayload codegen(const TernCondExprAST *ast);
     ExprGenPayload codegen(const CallExprAST *ast);
     ExprGenPayload codegen(const CastExprAST *ast);

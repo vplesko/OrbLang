@@ -26,7 +26,6 @@ struct LiteralVal {
     enum Type {
         T_NONE,
         T_SINT,
-        T_UINT,
         T_FLOAT,
         T_BOOL
     };
@@ -34,7 +33,6 @@ struct LiteralVal {
     Type type;
     union {
         std::int64_t val_si;
-        std::uint64_t val_ui;
         double val_f;
         bool val_b;
     };
@@ -42,7 +40,7 @@ struct LiteralVal {
 
 class TypeTable {
 public:
-    // TODO at some point, have Type struct that can represent ptrs, arrs...
+    // TODO at some point, have Type struct that can represent ptrs, arrs, constness...
     typedef unsigned Id;
 
     enum PrimIds {
@@ -73,9 +71,9 @@ public:
         return between((PrimIds) t, P_F16, P_F64);
     }
 
-    // TODO lang rules about implicit casts:
-    // allow assigning non-neg literals to unsigned vars
-    // and literals who's vals would fit to shorter type
+    static bool fitsType(int64_t x, Id t);
+    static Id shortestFittingTypeI(int64_t x);
+
     static bool isImplicitCastable(Id from, Id into) {
         PrimIds s = (PrimIds) from, d = (PrimIds) into;
         return (isTypeI(s) && between(d, s, P_I64)) ||
@@ -155,7 +153,7 @@ public:
 
     void addFunc(const FuncSignature &sig, const FuncValue &val);
     FuncValue* getFunc(const FuncSignature &sig);
-    std::pair<const FuncSignature*, FuncValue*> getFuncImplicitCastsAllowed(const FuncSignature &sig);
+    std::pair<const FuncSignature*, FuncValue*> getFuncCastsAllowed(const FuncSignature &sig, const LiteralVal *litVals);
     
     bool inGlobalScope() const { return last == glob; }
 

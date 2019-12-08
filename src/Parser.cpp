@@ -1,7 +1,6 @@
 #include "Parser.h"
 #include "AST.h"
 #include <iostream>
-#include <limits>
 #include <cstdint>
 using namespace std;
 
@@ -63,24 +62,12 @@ unique_ptr<ExprAST> Parser::prim() {
     // remember, string literal is lvalue
     Token tok = next();
     if (tok.type == Token::T_NUM) {
-        // TODO delete i8 and i16 defaults
         // TODO float literals (eg. 1.2, 1., .2)
-        // TODO explicitly sized literals (eg. 100u32, 1f64)
-        TypeTable::Id t;
-        if (tok.num >= numeric_limits<int8_t>::min() && tok.num <= numeric_limits<int8_t>::max()) t = TypeTable::P_I8;
-        else if (tok.num >= numeric_limits<int16_t>::min() && tok.num <= numeric_limits<int16_t>::max()) t = TypeTable::P_I16;
-        else if (tok.num >= numeric_limits<int32_t>::min() && tok.num <= numeric_limits<int32_t>::max()) t = TypeTable::P_I32;
-        else /*if (tok.num >= numeric_limits<int64_t>::min() && tok.num <= numeric_limits<int64_t>::max())*/ t = TypeTable::P_I64;
-        /*else {
-            panic = true;
-            return nullptr;
-        }*/
-
         LiteralVal val;
         val.type = LiteralVal::T_SINT;
         val.val_si = tok.num;
 
-        return make_unique<LiteralExprAST>(t, val);
+        return make_unique<LiteralExprAST>(val);
     } else if (tok.type == Token::T_TRUE || tok.type == Token::T_FALSE) {
         return make_unique<LiteralExprAST>(tok.type == Token::T_TRUE);
     } else if (tok.type == Token::T_ID) {

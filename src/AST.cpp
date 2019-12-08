@@ -1,7 +1,7 @@
 #include "AST.h"
 using namespace std;
 
-LiteralExprAST::LiteralExprAST(bool bb) : typeId(TypeTable::P_BOOL) {
+LiteralExprAST::LiteralExprAST(bool bb) {
     val.type = LiteralVal::T_BOOL;
     val.val_b = bb;
 }
