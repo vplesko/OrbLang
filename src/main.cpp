@@ -17,7 +17,7 @@ int main(int argc,  char** argv) {
     }
     
     /*cout << "Code printout:" << endl;
-    com.printout();*/
+    compiler.printout();*/
 
     if (argc >= 3) {
         if (!compiler.compile(argv[2])) {

@@ -362,6 +362,10 @@ CodeGen::ExprGenPayload CodeGen::codegenLiteralUn(Token::Oper op, LiteralVal lit
 }
 
 CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
+    if (ast->getOp() == Token::O_AND || ast->getOp() == Token::O_OR) {
+        return codegenLogicShortCircuit(ast);
+    }
+
     ExprGenPayload exprPayL, exprPayR, exprPayRet;
 
     bool assignment = operInfos.at(ast->getOp()).assignment;
@@ -383,9 +387,6 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
     } else if (exprPayL.isLitVal() && exprPayR.isLitVal()) {
         return codegenLiteralBin(ast->getOp(), exprPayL.litVal, exprPayR.litVal);
     }
-
-    if (ast->getOp() == Token::O_AND || ast->getOp() == Token::O_OR)
-        return codegenLogicShortCircuit(ast->getOp(), exprPayL, exprPayR);
 
     llvm::Value *valL = exprPayL.val, *valR = exprPayR.val;
     exprPayRet.type = exprPayL.type;
@@ -559,8 +560,9 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
     return exprPayRet;
 }
 
-CodeGen::ExprGenPayload CodeGen::codegenLogicShortCircuit(Token::Oper op, ExprGenPayload exprPayL, ExprGenPayload exprPayR) {
-    // TODO!!! there's a bug, second gets evaluated even when not needed
+CodeGen::ExprGenPayload CodeGen::codegenLogicShortCircuit(const BinExprAST *ast) {
+    ExprGenPayload exprPayL, exprPayR, exprPayRet;
+
     llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
 
     llvm::BasicBlock *firstBlock = llvm::BasicBlock::Create(llvmContext, "start", func);
@@ -570,15 +572,24 @@ CodeGen::ExprGenPayload CodeGen::codegenLogicShortCircuit(Token::Oper op, ExprGe
     llvmBuilder.CreateBr(firstBlock);
 
     llvmBuilder.SetInsertPoint(firstBlock);
-    if (valBroken(exprPayL) || exprPayL.type != TypeTable::P_BOOL) {
+    exprPayL = codegenExpr(ast->getL());
+    if (valueBroken(exprPayL) || !exprPayL.isBool()) {
         panic = true;
         return {};
     }
 
-    if (op == Token::O_AND) {
-        llvmBuilder.CreateCondBr(exprPayL.val, otherBlock, afterBlock);
-    } else if (op == Token::O_OR) {
-        llvmBuilder.CreateCondBr(exprPayL.val, afterBlock, otherBlock);
+    if (ast->getOp() == Token::O_AND) {
+        if (exprPayL.isLitVal()) {
+            llvmBuilder.CreateBr(exprPayL.litVal.val_b ? otherBlock : afterBlock);
+        } else {
+            llvmBuilder.CreateCondBr(exprPayL.val, otherBlock, afterBlock);
+        }
+    } else if (ast->getOp() == Token::O_OR) {
+        if (exprPayL.isLitVal()) {
+            llvmBuilder.CreateBr(exprPayL.litVal.val_b ? afterBlock : otherBlock);
+        } else {
+            llvmBuilder.CreateCondBr(exprPayL.val, afterBlock, otherBlock);
+        }
     } else {
         panic = true;
         return {};
@@ -587,7 +598,8 @@ CodeGen::ExprGenPayload CodeGen::codegenLogicShortCircuit(Token::Oper op, ExprGe
 
     func->getBasicBlockList().push_back(otherBlock);
     llvmBuilder.SetInsertPoint(otherBlock);
-    if (valBroken(exprPayR) || exprPayR.type != TypeTable::P_BOOL) {
+    exprPayR = codegenExpr(ast->getR());
+    if (valueBroken(exprPayR) || !exprPayR.isBool()) {
         panic = true;
         return {};
     }
@@ -596,16 +608,34 @@ CodeGen::ExprGenPayload CodeGen::codegenLogicShortCircuit(Token::Oper op, ExprGe
 
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);
-    llvm::PHINode *phi = llvmBuilder.CreatePHI(symbolTable->getTypeTable()->getType(TypeTable::P_BOOL), 2, "logic_tmp");
-    if (op == Token::O_AND)
-        phi->addIncoming(getConstB(false), firstBlock);
-    else
-        phi->addIncoming(getConstB(true), firstBlock);
-    phi->addIncoming(exprPayR.val, otherBlock);
-
     ExprGenPayload ret;
-    ret.type = exprPayL.type;
-    ret.val = phi;
+    if (exprPayL.isLitVal() && exprPayR.isLitVal()) {
+        // this cannot be moved to other codegen methods,
+        // as we don't know whether exprs are litVals until we call codegenExpr,
+        // but calling it emits code to LLVM at that point
+        ret.litVal.type = LiteralVal::T_BOOL;
+        if (ast->getOp() == Token::O_AND)
+            ret.litVal.val_b = exprPayL.litVal.val_b && exprPayR.litVal.val_b;
+        else
+            ret.litVal.val_b = exprPayL.litVal.val_b || exprPayR.litVal.val_b;
+    } else {
+        llvm::PHINode *phi = llvmBuilder.CreatePHI(symbolTable->getTypeTable()->getType(TypeTable::P_BOOL), 2, "logic_tmp");
+
+        if (ast->getOp() == Token::O_AND)
+            phi->addIncoming(getConstB(false), firstBlock);
+        else
+            phi->addIncoming(getConstB(true), firstBlock);
+        
+        if (exprPayR.isLitVal()) {
+            phi->addIncoming(getConstB(exprPayR.litVal.val_b), otherBlock);
+        } else {
+            phi->addIncoming(exprPayR.val, otherBlock);
+        }
+
+        ret.type = TypeTable::P_BOOL;
+        ret.val = phi;
+    }
+
     return ret;
 }
 
@@ -626,12 +656,7 @@ CodeGen::ExprGenPayload CodeGen::codegenLiteralBin(Token::Oper op, LiteralVal li
         case Token::O_NEQ:
             litValRet.val_b = litL.val_b != litR.val_b;
             break;
-        case Token::O_AND:
-            litValRet.val_b = litL.val_b && litR.val_b;
-            break;
-        case Token::O_OR:
-            litValRet.val_b = litL.val_b || litR.val_b;
-            break;
+        // AND and OR handled with the non-litVal cases
         default:
             panic = true;
             break;

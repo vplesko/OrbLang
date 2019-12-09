@@ -49,7 +49,7 @@ class CodeGen {
     ExprGenPayload codegenLiteralUn(Token::Oper op, LiteralVal lit);
     ExprGenPayload codegen(const BinExprAST *ast);
     // helper function for short-circuit evaluation of boolean AND and OR
-    ExprGenPayload codegenLogicShortCircuit(Token::Oper op, ExprGenPayload exprPayL, ExprGenPayload exprPayR);
+    ExprGenPayload codegenLogicShortCircuit(const BinExprAST *ast);
     ExprGenPayload codegenLiteralBin(Token::Oper op, LiteralVal litL, LiteralVal litR);
     ExprGenPayload codegen(const TernCondExprAST *ast);
     ExprGenPayload codegen(const CallExprAST *ast);
