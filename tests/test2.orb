@@ -28,6 +28,15 @@ fnc scan_u16() u16;
 fnc scan_u32() u32;
 fnc scan_u64() u64;
 
+fnc print_f32(f32 x);
+fnc print_f64(f64 x);
+
+fnc println_f32(f32 x);
+fnc println_f64(f64 x);
+
+fnc scan_f32() f32;
+fnc scan_f64() f64;
+
 fnc foo() {
     println_i64(10);
 }
