@@ -38,7 +38,11 @@ fnc println_f64(f64 x);
 fnc scan_f32() f32;
 fnc scan_f64() f64;
 
-i32 glob;
+i32 glob1;
+i32 glob2 = 1;
+i32 glob3 = 1+2*3, glob4 = 1, glob5;
+i32 glob6 = 1>2?3:4;
+bool glob7 = true || false;
 
 fnc main() {
     println_i64(0);
@@ -105,8 +109,15 @@ fnc main() {
     println_i32(i32(+c));
     println_i32(i32(-c));
 
-    glob = 6;
-    println_i32(glob);
+    glob1 = 6;
+    glob5 = 7;
+    println_i32(glob1);
+    println_i32(glob2);
+    println_i32(glob3);
+    println_i32(glob4);
+    println_i32(glob5);
+    println_i32(glob6);
+    println_i32(glob7 ? 1 : 0);
 
     bool d = false;
     if (!d) println_i32(0);

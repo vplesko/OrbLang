@@ -1,7 +1,6 @@
 #include "Lexer.h"
 #include <cstdlib>
 #include <algorithm>
-#include <cmath>
 using namespace std;
 
 const string numLitChars = "0123456789abcdefABCDEF.xXeEpP_";
@@ -285,12 +284,6 @@ Token Lexer::next() {
                 auto loc = keywords.find(id);
                 if (loc != keywords.end()) {
                     tok.type = loc->second;
-
-                    if (id.compare(keywordInf) == 0) {
-                        tok.fnum = INFINITY;
-                    } else if (id.compare(keywordNan) == 0) {
-                        tok.fnum = NAN;
-                    }
                 } else {
                     tok.type = Token::T_ID;
                     tok.nameId = namePool->add(id);

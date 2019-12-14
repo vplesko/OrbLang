@@ -137,7 +137,7 @@ CodeGen::ExprGenPayload CodeGen::codegenLiteralUn(Token::Oper op, LiteralVal lit
 
 CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
     if (ast->getOp() == Token::O_AND || ast->getOp() == Token::O_OR) {
-        return codegenLogicShortCircuit(ast);
+        return codegenLogicAndOr(ast);
     }
 
     ExprGenPayload exprPayL, exprPayR, exprPayRet;
@@ -334,7 +334,11 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
     return exprPayRet;
 }
 
-CodeGen::ExprGenPayload CodeGen::codegenLogicShortCircuit(const BinExprAST *ast) {
+CodeGen::ExprGenPayload CodeGen::codegenLogicAndOr(const BinExprAST *ast) {
+    if (isGlobalScope()) {
+        return codegenLogicAndOrGlobalScope(ast);
+    }
+
     ExprGenPayload exprPayL, exprPayR, exprPayRet;
 
     llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
@@ -411,6 +415,29 @@ CodeGen::ExprGenPayload CodeGen::codegenLogicShortCircuit(const BinExprAST *ast)
     }
 
     return ret;
+}
+
+CodeGen::ExprGenPayload CodeGen::codegenLogicAndOrGlobalScope(const BinExprAST *ast) {
+    ExprGenPayload exprPayL = codegenExpr(ast->getL());
+    if (!exprPayL.isLitVal() || !exprPayL.isBool()) {
+        panic = true;
+        return {};
+    }
+
+    ExprGenPayload exprPayR = codegenExpr(ast->getR());
+    if (!exprPayR.isLitVal() || !exprPayR.isBool()) {
+        panic = true;
+        return {};
+    }
+
+    ExprGenPayload exprPayRet;
+    exprPayRet.litVal.type = LiteralVal::T_BOOL;
+    if (ast->getOp() == Token::O_AND)
+        exprPayRet.litVal.val_b = exprPayL.litVal.val_b && exprPayR.litVal.val_b;
+    else
+        exprPayRet.litVal.val_b = exprPayL.litVal.val_b || exprPayR.litVal.val_b;
+
+    return exprPayRet;
 }
 
 CodeGen::ExprGenPayload CodeGen::codegenLiteralBin(Token::Oper op, LiteralVal litL, LiteralVal litR) {
@@ -552,6 +579,10 @@ CodeGen::ExprGenPayload CodeGen::codegenLiteralBin(Token::Oper op, LiteralVal li
 }
 
 CodeGen::ExprGenPayload CodeGen::codegen(const TernCondExprAST *ast) {
+    if (isGlobalScope()) {
+        return codegenGlobalScope(ast);
+    }
+    
     ExprGenPayload condExpr = codegenExpr(ast->getCond());
     if (valueBroken(condExpr) || !condExpr.isBool()) {
         panic = true;
@@ -651,6 +682,39 @@ CodeGen::ExprGenPayload CodeGen::codegen(const TernCondExprAST *ast) {
         phi->addIncoming(falseExpr.val, falseBlock);
         ret.type = trueExpr.type;
         ret.val = phi;
+    }
+
+    return ret;
+}
+
+CodeGen::ExprGenPayload CodeGen::codegenGlobalScope(const TernCondExprAST *ast) {
+    ExprGenPayload condExpr = codegenExpr(ast->getCond());
+    if (!condExpr.isLitVal() || !condExpr.isBool()) {
+        panic = true;
+        return {};
+    }
+
+    ExprGenPayload trueExpr = codegenExpr(ast->getOp1());
+    if (!trueExpr.isLitVal()) return {};
+
+    ExprGenPayload falseExpr = codegenExpr(ast->getOp2());
+    if (!falseExpr.isLitVal()) return {};
+
+    if (trueExpr.litVal.type != falseExpr.litVal.type) {
+        panic = true;
+        return {};
+    }
+
+    ExprGenPayload ret;
+    ret.litVal.type = trueExpr.litVal.type;
+    if (ret.litVal.type == LiteralVal::T_BOOL)
+        ret.litVal.val_b = condExpr.litVal.val_b ? trueExpr.litVal.val_b : falseExpr.litVal.val_b;
+    else if (ret.litVal.type == LiteralVal::T_SINT)
+        ret.litVal.val_si = condExpr.litVal.val_b ? trueExpr.litVal.val_si : falseExpr.litVal.val_si;
+    // don't allow float casts, as don't know which to cast to
+    else {
+        panic = true;
+        return {};
     }
 
     return ret;

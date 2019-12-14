@@ -20,10 +20,11 @@ class CodeGen {
 
     llvm::Value* getConstB(bool val);
     llvm::AllocaInst* createAlloca(llvm::Type *type, const std::string &name);
-    llvm::GlobalValue* createGlobal(llvm::Type *type, const std::string &name);
+    llvm::GlobalValue* createGlobal(llvm::Type *type, llvm::Constant *init, const std::string &name);
     void createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId);
     void createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
 
+    bool isGlobalScope() const;
     bool isBlockTerminated() const;
 
     struct ExprGenPayload {
@@ -49,9 +50,11 @@ class CodeGen {
     ExprGenPayload codegenLiteralUn(Token::Oper op, LiteralVal lit);
     ExprGenPayload codegen(const BinExprAST *ast);
     // helper function for short-circuit evaluation of boolean AND and OR
-    ExprGenPayload codegenLogicShortCircuit(const BinExprAST *ast);
+    ExprGenPayload codegenLogicAndOr(const BinExprAST *ast);
+    ExprGenPayload codegenLogicAndOrGlobalScope(const BinExprAST *ast);
     ExprGenPayload codegenLiteralBin(Token::Oper op, LiteralVal litL, LiteralVal litR);
     ExprGenPayload codegen(const TernCondExprAST *ast);
+    ExprGenPayload codegenGlobalScope(const TernCondExprAST *ast);
     ExprGenPayload codegen(const CallExprAST *ast);
     ExprGenPayload codegen(const CastExprAST *ast);
     void codegen(const DeclAST *ast);

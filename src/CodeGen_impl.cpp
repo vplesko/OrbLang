@@ -125,14 +125,20 @@ void CodeGen::codegen(const DeclAST *ast) {
         const string &name = namePool->get(it.first);
 
         llvm::Value *val;
-        if (symbolTable->inGlobalScope()) {
-            val = createGlobal(type, name);
+        if (isGlobalScope()) {
+            llvm::Constant *initConst = nullptr;
 
-            if (it.second.get() != nullptr) {
-                // TODO allow init global vars
-                panic = true;
-                return;
+            const ExprAST *init = it.second.get();
+            if (init != nullptr) {
+                ExprGenPayload initPay = codegenExpr(init);
+                if (valueBroken(initPay) || !initPay.isLitVal() || !promoteLiteral(initPay, typeId)) {
+                    panic = true;
+                    return;
+                }
+                initConst = (llvm::Constant*) initPay.val;
             }
+
+            val = createGlobal(type, initConst, name);
         } else {
             val = createAlloca(type, name);
 

@@ -101,19 +101,28 @@ llvm::AllocaInst* CodeGen::createAlloca(llvm::Type *type, const string &name) {
     return llvmBuilderAlloca.CreateAlloca(type, 0, name);
 }
 
+bool CodeGen::isGlobalScope() const {
+    return symbolTable->inGlobalScope();
+}
+
 bool CodeGen::isBlockTerminated() const {
     return !llvmBuilder.GetInsertBlock()->empty() && llvmBuilder.GetInsertBlock()->back().isTerminator();
 }
 
-llvm::GlobalValue* CodeGen::createGlobal(llvm::Type *type, const std::string &name) {
+llvm::GlobalValue* CodeGen::createGlobal(llvm::Type *type, llvm::Constant *init, const std::string &name) {
+    if (init == nullptr) {
+        // llvm demands global vars be initialized, but by deafult we don't init them
+        // TODO this is very hacky
+        init = llvm::ConstantInt::get(type, 0);
+    }
+
     return new llvm::GlobalVariable(
         *llvmModule,
         type,
         false,
-        llvm::GlobalValue::CommonLinkage,
-        // llvm demands global vars be initialized, but by deafult we don't init them
-        // TODO this is very hacky
-        llvm::ConstantInt::get(type, 0),
+        // TODO revise when implementing multi-file compilation
+        llvm::GlobalValue::PrivateLinkage,
+        init,
         name);
 }
 
