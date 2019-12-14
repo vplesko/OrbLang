@@ -38,6 +38,8 @@ const unordered_map<Token::Oper, OperInfo> operInfos = {
     {Token::O_BIT_NOT, {12, .l_assoc=false, .unary=true, .binary=false}}
 };
 
+const std::string keywordInf("INF"), keywordNan("NAN");
+
 const unordered_map<string, Token::Type> keywords = {
     {"true", {Token::T_TRUE}},
     {"false", {Token::T_FALSE}},
@@ -47,5 +49,7 @@ const unordered_map<string, Token::Type> keywords = {
     {"for", {Token::T_FOR}},
     {"while", {Token::T_WHILE}},
     {"do", {Token::T_DO}},
-    {"ret", {Token::T_RET}}
+    {"ret", {Token::T_RET}},
+    {keywordInf, {Token::T_FNUM}},
+    {keywordNan, {Token::T_FNUM}}
 };

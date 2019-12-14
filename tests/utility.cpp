@@ -35,6 +35,5 @@ IO_FUNCS(std::uint16_t, u16, PRIu16, SCNu16)
 IO_FUNCS(std::uint32_t, u32, PRIu32, SCNu32)
 IO_FUNCS(std::uint64_t, u64, PRIu64, SCNu64)
 
-// TODO is there anything in std for these?
-IO_FUNCS(float, f32, "f", "f")
-IO_FUNCS(double, f64, "lf", "lf")
+IO_FUNCS(float, f32, ".4f", "f")
+IO_FUNCS(double, f64, ".4lf", "lf")

@@ -62,10 +62,15 @@ unique_ptr<ExprAST> Parser::prim() {
     // remember, string literal is lvalue
     Token tok = next();
     if (tok.type == Token::T_NUM) {
-        // TODO float literals (eg. 1.2, 1., .2)
         LiteralVal val;
         val.type = LiteralVal::T_SINT;
         val.val_si = tok.num;
+
+        return make_unique<LiteralExprAST>(val);
+    } else if (tok.type == Token::T_FNUM) {
+        LiteralVal val;
+        val.type = LiteralVal::T_FLOAT;
+        val.val_f = tok.fnum;
 
         return make_unique<LiteralExprAST>(val);
     } else if (tok.type == Token::T_TRUE || tok.type == Token::T_FALSE) {

@@ -1,9 +1,10 @@
 #include "Lexer.h"
 #include <cstdlib>
 #include <algorithm>
+#include <cmath>
 using namespace std;
 
-const string numLitChars = "0123456789abcdefABCDEFxX_";
+const string numLitChars = "0123456789abcdefABCDEF.xXeEpP_";
 
 Lexer::Lexer(NamePool *namePool) : namePool(namePool) {
 }
@@ -89,37 +90,53 @@ Token Lexer::next() {
             continue;
         }
         
-        if (ch >= '0' && ch <= '9') {
-            tok.type = Token::T_NUM;
+        if ((ch >= '0' && ch <= '9') || ch == '.') {
             int l = col-1;
             while (numLitChars.find(peekCh()) != numLitChars.npos) nextCh();
-
             int r = col-1;
-            int base = 10;
-            if (r-l+1 > 2 && line[l] == '0' && (line[l+1] == 'x' || line[l+1] == 'X')) {
-                base = 16;
-                l += 2;
-            } else if (r-l+1 > 2 && line[l] == '0' && line[l+1] == 'b') {
-                base = 2;
-                l += 2;
-            } else if (r-l+1 > 1 && line[l] == '0') {
-                base = 8;
-                l += 1;
-            }
 
-            string lit = line.substr(l, r-l+1);
-            lit.erase(remove(lit.begin(), lit.end(), '_'), lit.end());
-            if (lit.empty()) {
-                // 0_, 0__... are allowed and equal to 0
-                if (base == 8) {
-                    tok.num = 0;
-                } else {
+            size_t dotIndex = line.find(".", l);
+            if (dotIndex != line.npos && dotIndex <= r) {
+                tok.type = Token::T_FNUM;
+
+                string lit = line.substr(l, r-l+1);
+                if (lit.size() >= 3 && lit[0] == '0' && lit[1] == '_' && (lit[2] == 'x' || lit[2] == 'X')) {
                     tok.type = Token::T_UNKNOWN;
+                } else {
+                    lit.erase(remove(lit.begin(), lit.end(), '_'), lit.end());
+                    
+                    char *end;
+                    tok.fnum = strtod(lit.c_str(), &end);
+                    if (end != lit.end().base() || errno == ERANGE) tok.type = Token::T_UNKNOWN;
                 }
             } else {
-                char *end = &lit[0];
-                tok.num = strtol(lit.c_str(), &end, base);
-                if (*end) tok.type = Token::T_UNKNOWN;
+                tok.type = Token::T_NUM;
+                int base = 10;
+                if (r-l+1 > 2 && line[l] == '0' && (line[l+1] == 'x' || line[l+1] == 'X')) {
+                    base = 16;
+                    l += 2;
+                } else if (r-l+1 > 2 && line[l] == '0' && line[l+1] == 'b') {
+                    base = 2;
+                    l += 2;
+                } else if (r-l+1 > 1 && line[l] == '0') {
+                    base = 8;
+                    l += 1;
+                }
+
+                string lit = line.substr(l, r-l+1);
+                lit.erase(remove(lit.begin(), lit.end(), '_'), lit.end());
+                if (lit.empty()) {
+                    // 0_, 0__... are allowed and equal to 0
+                    if (base == 8) {
+                        tok.num = 0;
+                    } else {
+                        tok.type = Token::T_UNKNOWN;
+                    }
+                } else {
+                    char *end;
+                    tok.num = strtol(lit.c_str(), &end, base);
+                    if (end != lit.end().base() || errno == ERANGE) tok.type = Token::T_UNKNOWN;
+                }
             }
         } else if (ch == '+') {
             if (peekCh() == '+') {
@@ -268,6 +285,12 @@ Token Lexer::next() {
                 auto loc = keywords.find(id);
                 if (loc != keywords.end()) {
                     tok.type = loc->second;
+
+                    if (id.compare(keywordInf) == 0) {
+                        tok.fnum = INFINITY;
+                    } else if (id.compare(keywordNan) == 0) {
+                        tok.fnum = NAN;
+                    }
                 } else {
                     tok.type = Token::T_ID;
                     tok.nameId = namePool->add(id);
