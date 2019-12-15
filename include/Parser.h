@@ -3,7 +3,7 @@
 #include <memory>
 #include <queue>
 #include "Lexer.h"
-#include "Codegen.h"
+#include "AST.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
@@ -12,7 +12,6 @@ class Parser {
     NamePool *namePool;
     SymbolTable *symbolTable;
     Lexer *lex;
-    CodeGen* codegen;
 
     bool panic;
 
@@ -42,10 +41,11 @@ class Parser {
     std::unique_ptr<BaseAST> func();
 
 public:
-    Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer, CodeGen* codegen);
+    Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer);
 
-    void parse(std::istream &istr);
+    std::unique_ptr<BaseAST> parseNode();
 
+    bool isOver() const { return peek().type == Token::T_END; }
     bool isPanic() const { return panic; }
 };
 

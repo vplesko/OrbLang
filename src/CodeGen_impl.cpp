@@ -70,7 +70,7 @@ void CodeGen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::
 
 void CodeGen::codegenNode(const BaseAST *ast, bool blockMakeScope) {
     switch (ast->type()) {
-    case AST_NullExpr:
+    case AST_EmptyExpr:
         return;
     case AST_Decl:
         codegen((const DeclAST*)ast);

@@ -86,10 +86,17 @@ bool Compiler::parse(const std::string &filename) {
     if (!file.is_open()) return false;
 
     Lexer lex(namePool.get());
-    Parser par(namePool.get(), symbolTable.get(), &lex, codegen.get());
-    par.parse(file);
+    lex.start(file);
 
-    return !par.isPanic();
+    Parser par(namePool.get(), symbolTable.get(), &lex);
+    while (!par.isOver()) {
+        unique_ptr<BaseAST> node = par.parseNode();
+        if (par.isPanic()) return false;
+        codegen->codegenNode(node.get());
+        if (codegen->isPanic()) return false;
+    }
+
+    return true;
 }
 
 void Compiler::printout() const {

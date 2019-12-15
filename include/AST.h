@@ -7,7 +7,7 @@
 
 enum ASTType {
     AST_Type,
-    AST_NullExpr,
+    AST_EmptyExpr,
     AST_LiteralExpr,
     AST_VarExpr,
     AST_UnExpr,
@@ -57,10 +57,10 @@ public:
     virtual ~ExprAST() {}
 };
 
-class NullExprAST : public ExprAST {
+class EmptyExprAST : public ExprAST {
 public:
 
-    ASTType type() const { return AST_NullExpr; }
+    ASTType type() const { return AST_EmptyExpr; }
 };
 
 class LiteralExprAST : public ExprAST {

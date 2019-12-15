@@ -5,8 +5,8 @@
 #include <cmath>
 using namespace std;
 
-Parser::Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer, CodeGen* codegen) 
-    : namePool(namePool), symbolTable(symbolTable), lex(lexer), codegen(codegen), panic(false) {
+Parser::Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer) 
+    : namePool(namePool), symbolTable(symbolTable), lex(lexer), panic(false) {
 }
 
 Token Parser::peek() const {
@@ -232,7 +232,7 @@ unique_ptr<DeclAST> Parser::decl() {
 std::unique_ptr<StmntAST> Parser::simple() {
     if (peek().type == Token::T_SEMICOLON) {
         next();
-        return make_unique<NullExprAST>();
+        return make_unique<EmptyExprAST>();
     }
 
     if (peek().type == Token::T_ID && symbolTable->getTypeTable()->isType(peek().nameId)) {
@@ -258,7 +258,7 @@ std::unique_ptr<IfAST> Parser::if_stmnt() {
     init = simple();
     if (broken(init)) return nullptr;
 
-    if (init->type() == AST_Decl || init->type() == AST_NullExpr) {
+    if (init->type() == AST_Decl || init->type() == AST_EmptyExpr) {
         // semicolon was eaten, parse condition
         cond = expr();
         if (broken(cond)) return nullptr;
@@ -296,7 +296,7 @@ std::unique_ptr<ForAST> Parser::for_stmnt() {
     if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
 
     unique_ptr<StmntAST> init = simple();
-    if (init->type() != AST_Decl && init->type() != AST_NullExpr) {
+    if (init->type() != AST_Decl && init->type() != AST_EmptyExpr) {
         // init was expression, need to eat semicolon
         if (mismatch(Token::T_SEMICOLON)) return nullptr;
     }
@@ -383,7 +383,7 @@ unique_ptr<StmntAST> Parser::stmnt() {
     
     unique_ptr<StmntAST> st = simple();
     if (broken(st)) return nullptr;
-    if (st->type() != AST_NullExpr && st->type() != AST_Decl) {
+    if (st->type() != AST_EmptyExpr && st->type() != AST_Decl) {
         if (mismatch(Token::T_SEMICOLON)) return nullptr;
     }
     
@@ -468,28 +468,16 @@ unique_ptr<BaseAST> Parser::func() {
     }
 }
 
-void Parser::parse(std::istream &istr) {
-    lex->start(istr);
+unique_ptr<BaseAST> Parser::parseNode() {
+    unique_ptr<BaseAST> next;
 
-    while (peek().type != Token::T_END) {
-        unique_ptr<BaseAST> next;
-
-        if (peek().type == Token::T_FNC) next = func();
-        else next = decl();
+    if (peek().type == Token::T_FNC) next = func();
+    else next = decl();
         
-        if (panic || !next) {
-            panic = true;
-            break;
-        }
-
-        codegen->codegenNode(next.get());
-        if (codegen->isPanic()) { panic = true; }
-        if (panic) break;
+    if (panic || !next) {
+        panic = true;
+        return nullptr;
     }
 
-    if (codegen->isPanic()) panic = true;
-    if (panic) {
-        cout << "ERROR!" << endl;
-        return;
-    }
+    return next;
 }
