@@ -63,6 +63,24 @@ fnc main() {
     if (i64 x = 5; x > a) println_i64(105);
     if (a = 100; a > b) println_i64(106);
 
+    a = 1;
+    b = 2;
+    if (a < b) println_i64(107);
+    else println_i64(108);
+    if (a == b) println_i64(109);
+    else println_i64(110);
+    if (a / b == 1) println_i64(111);
+    else if (a * b == 1) println_i64(112);
+    else println_i64(113);
+    if (a + b == 3) {
+        println_i64(114);
+        if (a % b == 1) {
+            println_i64(115);
+        } else {
+            println_i64(116);
+        }
+    }
+
     for (i64 i = 0, j = -1; i < 10; ++i) println_i64(i+j);
     for (a = 0; a < 3; ++a) println_i64(a);
     for (; a >= 0; --a) println_i64(a);

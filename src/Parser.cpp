@@ -10,14 +10,14 @@ Parser::Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer)
 }
 
 Token Parser::peek() const {
-    if (!tokQu.empty()) return tokQu.front();
+    if (!tokRewind.empty()) return tokRewind.front();
     return lex->peek();
 }
 
 Token Parser::next() {
-    if (!tokQu.empty()) {
-        Token tok = tokQu.front();
-        tokQu.pop();
+    if (!tokRewind.empty()) {
+        Token tok = tokRewind.front();
+        tokRewind.pop();
         return tok;
     }
     return lex->next();
@@ -34,8 +34,14 @@ bool Parser::mismatch(Token::Type expected) {
     return panic;
 }
 
-std::unique_ptr<CallExprAST> Parser::call(NamePool::Id func) {
-    unique_ptr<CallExprAST> call = make_unique<CallExprAST>(func);
+std::unique_ptr<ExprAST> Parser::call() {
+    Token tok = next();
+    if (tok.type != Token::T_ID) {
+        panic = true;
+        return nullptr;
+    }
+
+    unique_ptr<CallExprAST> call = make_unique<CallExprAST>(tok.nameId);
 
     if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
 
@@ -90,7 +96,7 @@ unique_ptr<ExprAST> Parser::prim() {
         return make_unique<LiteralExprAST>(tok.type == Token::T_TRUE);
     } else if (tok.type == Token::T_ID) {
         if (symbolTable->getTypeTable()->isType(tok.nameId)) {
-            tokQu.push(tok);
+            tokRewind.push(tok);
             unique_ptr<TypeAST> t = type();
             if (broken(t)) return nullptr;
 
@@ -100,8 +106,12 @@ unique_ptr<ExprAST> Parser::prim() {
             if (mismatch(Token::T_BRACE_R_REG)) return nullptr;
 
             return make_unique<CastExprAST>(move(t), move(e));
-        } else if (peek().type == Token::T_BRACE_L_REG) return call(tok.nameId);
-        else return make_unique<VarExprAST>(tok.nameId);
+        } else if (peek().type == Token::T_BRACE_L_REG) {
+            tokRewind.push(tok);
+            return call();
+        } else {
+            return make_unique<VarExprAST>(tok.nameId);
+        }
     } else if (tok.type == Token::T_OPER) {
         if (!operInfos.at(tok.op).unary) {
             panic = true;
@@ -236,7 +246,7 @@ std::unique_ptr<StmntAST> Parser::simple() {
     }
 
     if (peek().type == Token::T_ID && symbolTable->getTypeTable()->isType(peek().nameId)) {
-        tokQu.push(lex->next());
+        tokRewind.push(lex->next());
         if (lex->peek().type == Token::T_BRACE_L_REG) {
             // expression starting with a cast (or ctor)
             return expr();
@@ -248,7 +258,7 @@ std::unique_ptr<StmntAST> Parser::simple() {
     return expr();
 }
 
-std::unique_ptr<IfAST> Parser::if_stmnt() {
+std::unique_ptr<StmntAST> Parser::if_stmnt() {
     if (mismatch(Token::T_IF)) return nullptr;
     if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
 
@@ -291,7 +301,7 @@ std::unique_ptr<IfAST> Parser::if_stmnt() {
     return make_unique<IfAST>(move(init), move(cond), move(thenBody), move(elseBody));
 }
 
-std::unique_ptr<ForAST> Parser::for_stmnt() {
+std::unique_ptr<StmntAST> Parser::for_stmnt() {
     if (mismatch(Token::T_FOR)) return nullptr;
     if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
 
@@ -323,7 +333,7 @@ std::unique_ptr<ForAST> Parser::for_stmnt() {
     return make_unique<ForAST>(move(init), move(cond), move(iter), move(body));
 }
 
-std::unique_ptr<WhileAST> Parser::while_stmnt() {
+std::unique_ptr<StmntAST> Parser::while_stmnt() {
     if (mismatch(Token::T_WHILE)) return nullptr;
     if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
 
@@ -338,7 +348,7 @@ std::unique_ptr<WhileAST> Parser::while_stmnt() {
     return make_unique<WhileAST>(move(cond), move(body));
 }
 
-std::unique_ptr<DoWhileAST> Parser::do_while_stmnt() {
+std::unique_ptr<StmntAST> Parser::do_while_stmnt() {
     if (mismatch(Token::T_DO)) return nullptr;
 
     unique_ptr<StmntAST> body = stmnt();
@@ -354,7 +364,7 @@ std::unique_ptr<DoWhileAST> Parser::do_while_stmnt() {
     return make_unique<DoWhileAST>(move(body), move(cond));
 }
 
-std::unique_ptr<RetAST> Parser::ret() {
+std::unique_ptr<StmntAST> Parser::ret() {
     if (mismatch(Token::T_RET)) return nullptr;
 
     unique_ptr<ExprAST> val;

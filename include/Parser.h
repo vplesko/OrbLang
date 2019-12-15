@@ -16,7 +16,7 @@ class Parser {
     bool panic;
 
     // needed to due ambiguity between decl and expr in some starting tokens
-    std::queue<Token> tokQu;
+    std::queue<Token> tokRewind;
 
     Token peek() const;
     Token next();
@@ -24,18 +24,18 @@ class Parser {
     bool mismatch(Token::Type t);
     template<typename T> bool broken(const T &x);
 
-    std::unique_ptr<CallExprAST> call(NamePool::Id func);
+    std::unique_ptr<ExprAST> call();
     std::unique_ptr<ExprAST> prim();
     std::unique_ptr<ExprAST> expr(std::unique_ptr<ExprAST> lhs, OperPrec min_prec);
     std::unique_ptr<ExprAST> expr();
     std::unique_ptr<TypeAST> type();
     std::unique_ptr<DeclAST> decl();
     std::unique_ptr<StmntAST> simple();
-    std::unique_ptr<IfAST> if_stmnt();
-    std::unique_ptr<ForAST> for_stmnt();
-    std::unique_ptr<WhileAST> while_stmnt();
-    std::unique_ptr<DoWhileAST> do_while_stmnt();
-    std::unique_ptr<RetAST> ret();
+    std::unique_ptr<StmntAST> if_stmnt();
+    std::unique_ptr<StmntAST> for_stmnt();
+    std::unique_ptr<StmntAST> while_stmnt();
+    std::unique_ptr<StmntAST> do_while_stmnt();
+    std::unique_ptr<StmntAST> ret();
     std::unique_ptr<StmntAST> stmnt();
     std::unique_ptr<BlockAST> block();
     std::unique_ptr<BaseAST> func();
