@@ -29,8 +29,8 @@ bool Parser::match(Token::Type type) {
 }
 
 // Eats the next token and panics if it doesn't match the expected type.
-bool Parser::mismatch(Token::Type expected) {
-    if (!match(expected)) panic = true;
+bool Parser::mismatch(Token::Type type) {
+    if (!match(type)) panic = true;
     return panic;
 }
 

@@ -21,7 +21,7 @@ class Parser {
     Token peek() const;
     Token next();
     bool match(Token::Type type);
-    bool mismatch(Token::Type t);
+    bool mismatch(Token::Type type);
     template<typename T> bool broken(const T &x);
 
     std::unique_ptr<ExprAST> call();
