@@ -351,6 +351,18 @@ std::unique_ptr<StmntAST> Parser::do_while_stmnt() {
     return make_unique<DoWhileAST>(move(body), move(cond));
 }
 
+std::unique_ptr<StmntAST> Parser::break_stmnt() {
+    if (mismatch(Token::T_BREAK) || mismatch(Token::T_SEMICOLON)) return nullptr;
+
+    return make_unique<BreakAST>();
+}
+
+std::unique_ptr<StmntAST> Parser::continue_stmnt() {
+    if (mismatch(Token::T_CONTINUE) || mismatch(Token::T_SEMICOLON)) return nullptr;
+
+    return make_unique<ContinueAST>();
+}
+
 std::unique_ptr<StmntAST> Parser::ret() {
     if (mismatch(Token::T_RET)) return nullptr;
 
@@ -373,6 +385,10 @@ unique_ptr<StmntAST> Parser::stmnt() {
     if (peek().type == Token::T_WHILE) return while_stmnt();
 
     if (peek().type == Token::T_DO) return do_while_stmnt();
+
+    if (peek().type == Token::T_BREAK) return break_stmnt();
+
+    if (peek().type == Token::T_CONTINUE) return continue_stmnt();
 
     if (peek().type == Token::T_RET) return ret();
 

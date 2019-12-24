@@ -96,6 +96,73 @@ fnc main() {
 
     bar();
 
+    for (i32 i = 0; i < 10; ++i) {
+        if (i >= 3) break;
+        println_i32(i);
+    }
+
+    while (a <= 0) {
+        if (a <= -3) break;
+        println_i64(a);
+        --a;
+    }
+
+    do {
+        if (a == 0) break;
+        println_i64(a);
+        a = 0;
+    } while (a < 1);
+
+    for (i32 i = 0; i < 10; ++i) {
+        if (i >= 2) continue;
+        println_i32(i);
+    }
+
+    while (a <= 0) {
+        ++a;
+        if (a > 0) continue;
+        println_i64(a);
+    }
+
+    a = 99;
+    do {
+        if (a == 0) continue;
+        println_i64(a);
+        a = 0;
+    } while (a != 0);
+
+    for (i32 i = 0; i < 2; ++i) {
+        println_i32(i);
+        for (i32 j = 0; j < 5; ++j) {
+            println_i32(j);
+            if (j >= 1) break;
+        }
+    }
+
+    for (i32 i = 0; i > -2; --i) {
+        println_i32(i);
+        for (i32 j = 0; j > -5; --j) {
+            if (j <= -1) continue;
+            println_i32(j);
+        }
+    }
+
+    for (i32 i = 10; i < 15; ++i) {
+        println_i32(i);
+        if (i >= 11) break;
+        for (i32 j = 10; j < 12; ++j) {
+            println_i32(j);
+        }
+    }
+
+    for (i32 i = -10; i > -13; --i) {
+        println_i32(i);
+        if (i <= -11) continue;
+        for (i32 j = -10; j > -12; --j) {
+            println_i32(j);
+        }
+    }
+
     println_i64(inc(b));
     println_i64(inc(b)+1);
 

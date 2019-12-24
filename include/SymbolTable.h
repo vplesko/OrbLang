@@ -60,7 +60,6 @@ private:
 
     Scope *last, *glob;
 
-    // this for now; someday might contain loop info for break/continue (maybe lambda info)
     FuncValue *currFunc;
 
     void setCurrFunc(FuncValue *func) { currFunc = func; }

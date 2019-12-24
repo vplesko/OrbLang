@@ -5,6 +5,7 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
+#include <stack>
 
 class CodeGen {
     NamePool *namePool;
@@ -13,6 +14,8 @@ class CodeGen {
     llvm::LLVMContext llvmContext;
     llvm::IRBuilder<> llvmBuilder, llvmBuilderAlloca;
     std::unique_ptr<llvm::Module> llvmModule;
+
+    std::stack<llvm::BasicBlock*> breakStack, continueStack;
 
     bool panic;
 
@@ -62,6 +65,8 @@ class CodeGen {
     void codegen(const ForAST *ast);
     void codegen(const WhileAST *ast);
     void codegen(const DoWhileAST *ast);
+    void codegen(const BreakAST *ast);
+    void codegen(const ContinueAST *ast);
     void codegen(const RetAST *ast);
     void codegen(const BlockAST *ast, bool makeScope);
     FuncValue* codegen(const FuncProtoAST *ast, bool definition);

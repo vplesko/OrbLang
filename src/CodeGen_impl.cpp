@@ -87,6 +87,12 @@ void CodeGen::codegenNode(const BaseAST *ast, bool blockMakeScope) {
     case AST_DoWhile:
         codegen((const DoWhileAST*) ast);
         return;
+    case AST_Break:
+        codegen((const BreakAST*) ast);
+        return;
+    case AST_Continue:
+        codegen((const ContinueAST*) ast);
+        return;
     case AST_Ret:
         codegen((const RetAST*)ast);
         return;
@@ -228,47 +234,61 @@ void CodeGen::codegen(const ForAST *ast) {
 
     llvm::BasicBlock *condBlock = llvm::BasicBlock::Create(llvmContext, "cond", func);
     llvm::BasicBlock *bodyBlock = llvm::BasicBlock::Create(llvmContext, "body");
+    llvm::BasicBlock *iterBlock = llvm::BasicBlock::Create(llvmContext, "iter");
     llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
+
+    continueStack.push(iterBlock);
+    breakStack.push(afterBlock);
 
     llvmBuilder.CreateBr(condBlock);
     llvmBuilder.SetInsertPoint(condBlock);
 
-    ExprGenPayload condExpr;
-    if (ast->hasCond()) {
-        condExpr = codegenExpr(ast->getCond());
-        if (condExpr.isLitVal() && !promoteLiteral(condExpr, TypeTable::P_BOOL)) {
-            panic = true;
-            return;
+    {
+        ExprGenPayload condExpr;
+        if (ast->hasCond()) {
+            condExpr = codegenExpr(ast->getCond());
+            if (condExpr.isLitVal() && !promoteLiteral(condExpr, TypeTable::P_BOOL)) {
+                panic = true;
+                return;
+            }
+            if (valBroken(condExpr) || condExpr.type != TypeTable::P_BOOL) {
+                panic = true;
+                return;
+            }
+        } else {
+            condExpr.type = TypeTable::P_BOOL;
+            condExpr.val = getConstB(true);
         }
-        if (valBroken(condExpr) || condExpr.type != TypeTable::P_BOOL) {
-            panic = true;
-            return;
-        }
-    } else {
-        condExpr.type = TypeTable::P_BOOL;
-        condExpr.val = getConstB(true);
-    }
 
-    llvmBuilder.CreateCondBr(condExpr.val, bodyBlock, afterBlock);
+        llvmBuilder.CreateCondBr(condExpr.val, bodyBlock, afterBlock);
+    }
 
     {
         ScopeControl scopeBody(symbolTable);
         func->getBasicBlockList().push_back(bodyBlock);
         llvmBuilder.SetInsertPoint(bodyBlock);
-
         codegenNode(ast->getBody(), false);
         if (panic) return;
+        if (!isBlockTerminated()) llvmBuilder.CreateBr(iterBlock);
     }
-        
-    if (ast->hasIter()) {
-        codegenNode(ast->getIter());
-        if (panic) return;
-    }
+    
+    {
+        func->getBasicBlockList().push_back(iterBlock);
+        llvmBuilder.SetInsertPoint(iterBlock);
 
-    if (!isBlockTerminated()) llvmBuilder.CreateBr(condBlock);
+        if (ast->hasIter()) {
+            codegenNode(ast->getIter());
+            if (panic) return;
+        }
+
+        if (!isBlockTerminated()) llvmBuilder.CreateBr(condBlock);
+    }
 
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);
+
+    breakStack.pop();
+    continueStack.pop();
 }
 
 void CodeGen::codegen(const WhileAST *ast) {
@@ -278,20 +298,25 @@ void CodeGen::codegen(const WhileAST *ast) {
     llvm::BasicBlock *bodyBlock = llvm::BasicBlock::Create(llvmContext, "body");
     llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
 
+    continueStack.push(condBlock);
+    breakStack.push(afterBlock);
+
     llvmBuilder.CreateBr(condBlock);
     llvmBuilder.SetInsertPoint(condBlock);
 
-    ExprGenPayload condExpr = codegenExpr(ast->getCond());
-    if (condExpr.isLitVal() && !promoteLiteral(condExpr, TypeTable::P_BOOL)) {
-        panic = true;
-        return;
-    }
-    if (valBroken(condExpr) || condExpr.type != TypeTable::P_BOOL) {
-        panic = true;
-        return;
-    }
+    {
+        ExprGenPayload condExpr = codegenExpr(ast->getCond());
+        if (condExpr.isLitVal() && !promoteLiteral(condExpr, TypeTable::P_BOOL)) {
+            panic = true;
+            return;
+        }
+        if (valBroken(condExpr) || condExpr.type != TypeTable::P_BOOL) {
+            panic = true;
+            return;
+        }
 
-    llvmBuilder.CreateCondBr(condExpr.val, bodyBlock, afterBlock);
+        llvmBuilder.CreateCondBr(condExpr.val, bodyBlock, afterBlock);
+    }
 
     {
         ScopeControl scope(symbolTable);
@@ -304,13 +329,20 @@ void CodeGen::codegen(const WhileAST *ast) {
 
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);
+
+    breakStack.pop();
+    continueStack.pop();
 }
 
 void CodeGen::codegen(const DoWhileAST *ast) {
     llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
 
     llvm::BasicBlock *bodyBlock = llvm::BasicBlock::Create(llvmContext, "body", func);
+    llvm::BasicBlock *condBlock = llvm::BasicBlock::Create(llvmContext, "cond");
     llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
+
+    continueStack.push(condBlock);
+    breakStack.push(afterBlock);
 
     llvmBuilder.CreateBr(bodyBlock);
     llvmBuilder.SetInsertPoint(bodyBlock);
@@ -319,22 +351,49 @@ void CodeGen::codegen(const DoWhileAST *ast) {
         ScopeControl scope(symbolTable);
         codegenNode(ast->getBody(), false);
         if (panic) return;
+        if (!isBlockTerminated()) llvmBuilder.CreateBr(condBlock);
     }
 
-    ExprGenPayload condExpr = codegenExpr(ast->getCond());
-    if (condExpr.isLitVal() && !promoteLiteral(condExpr, TypeTable::P_BOOL)) {
-        panic = true;
-        return;
-    }
-    if (valBroken(condExpr) || condExpr.type != TypeTable::P_BOOL) {
-        panic = true;
-        return;
-    }
+    {
+        func->getBasicBlockList().push_back(condBlock);
+        llvmBuilder.SetInsertPoint(condBlock);
 
-    llvmBuilder.CreateCondBr(condExpr.val, bodyBlock, afterBlock);
+        ExprGenPayload condExpr = codegenExpr(ast->getCond());
+        if (condExpr.isLitVal() && !promoteLiteral(condExpr, TypeTable::P_BOOL)) {
+            panic = true;
+            return;
+        }
+        if (valBroken(condExpr) || condExpr.type != TypeTable::P_BOOL) {
+            panic = true;
+            return;
+        }
+
+        llvmBuilder.CreateCondBr(condExpr.val, bodyBlock, afterBlock);
+    }
 
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);
+
+    breakStack.pop();
+    continueStack.pop();
+}
+
+void CodeGen::codegen(const BreakAST *ast) {
+    if (breakStack.empty()) {
+        panic = true;
+        return;
+    }
+
+    llvmBuilder.CreateBr(breakStack.top());
+}
+
+void CodeGen::codegen(const ContinueAST *ast) {
+    if (continueStack.empty()) {
+        panic = true;
+        return;
+    }
+
+    llvmBuilder.CreateBr(continueStack.top());
 }
 
 void CodeGen::codegen(const RetAST *ast) {

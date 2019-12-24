@@ -52,5 +52,7 @@ const unordered_map<string, Token> keywords = {
     {"for", {Token::T_FOR}},
     {"while", {Token::T_WHILE}},
     {"do", {Token::T_DO}},
+    {"break", {Token::T_BREAK}},
+    {"continue", {Token::T_CONTINUE}},
     {"ret", {Token::T_RET}}
 };

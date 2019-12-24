@@ -24,6 +24,8 @@ struct Token {
         T_FOR,
         T_WHILE,
         T_DO,
+        T_BREAK,
+        T_CONTINUE,
         T_RET,
         T_END,
         T_UNKNOWN
