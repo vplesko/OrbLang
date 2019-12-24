@@ -182,9 +182,6 @@ Token Lexer::next() {
             if (peekCh() == '=') {
                 nextCh();
                 tok = {Token::T_OPER, Token::O_BIT_AND_ASGN};
-            } else if (peekCh() == '&') {
-                nextCh();
-                tok = {Token::T_OPER, Token::O_AND};
             } else {
                 tok = {Token::T_OPER, Token::O_BIT_AND};
             }
@@ -199,9 +196,6 @@ Token Lexer::next() {
             if (peekCh() == '=') {
                 nextCh();
                 tok = {Token::T_OPER, Token::O_BIT_OR_ASGN};
-            } else if (peekCh() == '|') {
-                nextCh();
-                tok = {Token::T_OPER, Token::O_OR};
             } else {
                 tok = {Token::T_OPER, Token::O_BIT_OR};
             }
@@ -283,7 +277,7 @@ Token Lexer::next() {
 
                 auto loc = keywords.find(id);
                 if (loc != keywords.end()) {
-                    tok.type = loc->second;
+                    tok = loc->second;
                 } else {
                     tok.type = Token::T_ID;
                     tok.nameId = namePool->add(id);

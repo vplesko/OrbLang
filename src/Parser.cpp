@@ -2,7 +2,6 @@
 #include "AST.h"
 #include <iostream>
 #include <cstdint>
-#include <cmath>
 using namespace std;
 
 Parser::Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer) 
@@ -80,20 +79,8 @@ unique_ptr<ExprAST> Parser::prim() {
         val.val_f = tok.fnum;
 
         return make_unique<LiteralExprAST>(val);
-    } else if (tok.type == Token::T_INF) {
-        LiteralVal val;
-        val.type = LiteralVal::T_FLOAT;
-        val.val_f = INFINITY;
-
-        return make_unique<LiteralExprAST>(val);
-    } else if (tok.type == Token::T_NAN) {
-        LiteralVal val;
-        val.type = LiteralVal::T_FLOAT;
-        val.val_f = NAN;
-
-        return make_unique<LiteralExprAST>(val);
-    } else if (tok.type == Token::T_TRUE || tok.type == Token::T_FALSE) {
-        return make_unique<LiteralExprAST>(tok.type == Token::T_TRUE);
+    } else if (tok.type == Token::T_BVAL) {
+        return make_unique<LiteralExprAST>(tok.bval);
     } else if (tok.type == Token::T_ID) {
         if (symbolTable->getTypeTable()->isType(tok.nameId)) {
             tokRewind.push(tok);

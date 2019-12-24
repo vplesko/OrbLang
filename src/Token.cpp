@@ -1,4 +1,5 @@
 #include "Token.h"
+#include <cmath>
 using namespace std;
 
 const OperPrec minOperPrec = -1000;
@@ -38,11 +39,13 @@ const unordered_map<Token::Oper, OperInfo> operInfos = {
     {Token::O_BIT_NOT, {12, .l_assoc=false, .unary=true, .binary=false}}
 };
 
-const unordered_map<string, Token::Type> keywords = {
-    {"true", {Token::T_TRUE}},
-    {"false", {Token::T_FALSE}},
-    {"INF", {Token::T_INF}},
-    {"NAN", {Token::T_NAN}},
+const unordered_map<string, Token> keywords = {
+    {"true", {.type=Token::T_BVAL, .bval=true}},
+    {"false", {.type=Token::T_BVAL, .bval=false}},
+    {"INF", {.type=Token::T_FNUM, .fnum=INFINITY}},
+    {"NAN", {.type=Token::T_FNUM, .fnum=NAN}},
+    {"and", {.type=Token::T_OPER, .op=Token::O_AND}},
+    {"or", {.type=Token::T_OPER, .op=Token::O_OR}},
     {"fnc", {Token::T_FNC}},
     {"if", {Token::T_IF}},
     {"else", {Token::T_ELSE}},

@@ -7,10 +7,7 @@ struct Token {
     enum Type {
         T_NUM,
         T_FNUM,
-        T_INF,
-        T_NAN,
-        T_TRUE,
-        T_FALSE,
+        T_BVAL,
         T_OPER,
         T_COMMA,
         T_SEMICOLON,
@@ -72,6 +69,7 @@ struct Token {
     union {
         int num;
         double fnum;
+        bool bval;
         Oper op;
         NamePool::Id nameId;
     };
@@ -88,4 +86,4 @@ struct OperInfo {
 
 extern const OperPrec minOperPrec;
 extern const std::unordered_map<Token::Oper, OperInfo> operInfos;
-extern const std::unordered_map<std::string, Token::Type> keywords;
+extern const std::unordered_map<std::string, Token> keywords;
