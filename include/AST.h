@@ -22,6 +22,7 @@ enum ASTType {
     AST_DoWhile,
     AST_Break,
     AST_Continue,
+    AST_Switch,
     AST_FuncProto,
     AST_Func,
     AST_Block,
@@ -267,6 +268,31 @@ public:
     const std::vector<std::unique_ptr<StmntAST>>& getBody() const { return body; }
 
     ASTType type() const override { return AST_Block; }
+};
+
+class SwitchAST : public StmntAST {
+public:
+    struct Case {
+        std::vector<std::unique_ptr<ExprAST>> comparisons;
+        std::unique_ptr<BlockAST> body;
+
+        Case(std::vector<std::unique_ptr<ExprAST>> comparisons, std::unique_ptr<BlockAST> body);
+
+        bool isDefault() const { return comparisons.empty(); }
+    };
+
+private:
+    std::unique_ptr<ExprAST> value;
+    std::vector<Case> cases;
+
+public:
+    SwitchAST(std::unique_ptr<ExprAST> value, std::vector<Case> cases);
+    
+    const ExprAST* getValue() const { return value.get(); }
+    const std::vector<Case>& getCases() const { return cases; }
+    std::pair<bool, std::size_t> getDefault() const;
+
+    ASTType type() const override { return AST_Switch; }
 };
 
 class FuncProtoAST : public BaseAST {

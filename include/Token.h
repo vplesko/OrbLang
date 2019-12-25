@@ -26,6 +26,9 @@ struct Token {
         T_DO,
         T_BREAK,
         T_CONTINUE,
+        T_SWITCH,
+        T_CASE,
+        T_DEFAULT,
         T_RET,
         T_END,
         T_UNKNOWN

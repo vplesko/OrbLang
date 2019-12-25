@@ -93,6 +93,9 @@ void CodeGen::codegenNode(const BaseAST *ast, bool blockMakeScope) {
     case AST_Continue:
         codegen((const ContinueAST*) ast);
         return;
+    case AST_Switch:
+        codegen ((const SwitchAST*) ast);
+        return;
     case AST_Ret:
         codegen((const RetAST*)ast);
         return;
@@ -394,6 +397,70 @@ void CodeGen::codegen(const ContinueAST *ast) {
     }
 
     llvmBuilder.CreateBr(continueStack.top());
+}
+
+void CodeGen::codegen(const SwitchAST *ast) {
+    ExprGenPayload valExprPay = codegenExpr(ast->getValue());
+
+    // literals get cast to the widest sint type, along with comparison values
+    // TODO when switch gets allowed for other types, a lot of this func will need to be revised
+    if (valExprPay.isLitVal() && !promoteLiteral(valExprPay, TypeTable::WIDEST_I)) {
+        panic = true;
+        return;
+    }
+    if (valBroken(valExprPay) ||
+        !(TypeTable::isTypeI(valExprPay.type) || TypeTable::isTypeU(valExprPay.type))) {
+        panic = true;
+        return;
+    }
+
+    size_t caseBlockNum = ast->getCases().size();
+    size_t caseCompNum = 0;
+
+    vector<llvm::BasicBlock*> blocks(caseBlockNum);
+    for (size_t i = 0; i < blocks.size(); ++i) {
+        blocks[i] = llvm::BasicBlock::Create(llvmContext, "case");
+    }
+    llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
+
+    vector<vector<llvm::ConstantInt*>> caseComps(caseBlockNum);
+    for (size_t i = 0; i < caseBlockNum; ++i) {
+        for (const auto &comp_ : ast->getCases()[i].comparisons) {
+            ExprGenPayload compExprPay = codegenExpr(comp_.get());
+            if (!compExprPay.isLitVal() ||
+                compExprPay.litVal.type != LiteralVal::T_SINT || !promoteLiteral(compExprPay, valExprPay.type)) {
+                panic = true;
+                return;
+            }
+
+            caseComps[i].push_back((llvm::ConstantInt*) compExprPay.val);
+            ++caseCompNum;
+        }
+    }
+
+    pair<bool, size_t> def = ast->getDefault();
+    llvm::BasicBlock *defBlock = def.first ? blocks[def.second] : afterBlock;
+
+    llvm::SwitchInst *switchInst = llvmBuilder.CreateSwitch(valExprPay.val, defBlock, caseCompNum);
+    for (size_t i = 0; i < caseBlockNum; ++i) {
+        for (const auto &it : caseComps[i]) {
+            switchInst->addCase(it, blocks[i]);
+        }
+    }
+
+    llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
+    for (size_t i = 0; i < caseBlockNum; ++i) {
+        func->getBasicBlockList().push_back(blocks[i]);
+        llvmBuilder.SetInsertPoint(blocks[i]);
+
+        codegen(ast->getCases()[i].body.get(), true);
+        if (panic) return;
+
+        if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
+    }
+
+    func->getBasicBlockList().push_back(afterBlock);
+    llvmBuilder.SetInsertPoint(afterBlock);
 }
 
 void CodeGen::codegen(const RetAST *ast) {

@@ -363,6 +363,79 @@ std::unique_ptr<StmntAST> Parser::continue_stmnt() {
     return make_unique<ContinueAST>();
 }
 
+std::unique_ptr<StmntAST> Parser::switch_stmnt() {
+    if (mismatch(Token::T_SWITCH) || mismatch(Token::T_BRACE_L_REG)) return nullptr;
+
+    unique_ptr<ExprAST> value = expr();
+    if (broken(value)) return nullptr;
+
+    if (mismatch(Token::T_BRACE_R_REG) || mismatch(Token::T_BRACE_L_CUR)) return nullptr;
+
+    vector<SwitchAST::Case> cases;
+
+    bool parsedDefault = false;
+    while (peek().type != Token::T_BRACE_R_CUR) {
+        Token::Type case_ = next().type;
+
+        vector<unique_ptr<ExprAST>> comparisons;
+
+        if (case_ == Token::T_CASE) {
+            while (true) {
+                unique_ptr<ExprAST> comp = expr();
+                if (broken(comp)) return nullptr;
+
+                comparisons.push_back(move(comp));
+
+                Token::Type ty = peek().type;
+                if (ty == Token::T_COMMA) {
+                    next();
+                } else if (ty == Token::T_COLON) {
+                    break;
+                } else {
+                    panic = true;
+                    return nullptr;
+                }
+            }
+
+            if (comparisons.empty()) {
+                panic = true;
+                return nullptr;
+            }
+        } else if (case_ == Token::T_DEFAULT) {
+            if (parsedDefault) {
+                panic = true;
+                return nullptr;
+            }
+            parsedDefault = true;
+        } else {
+            panic = true;
+            return nullptr;
+        }
+
+        if (mismatch(Token::T_COLON)) return nullptr;
+
+        unique_ptr<BlockAST> body = make_unique<BlockAST>();
+        while (peek().type != Token::T_CASE && peek().type != Token::T_DEFAULT && peek().type != Token::T_BRACE_R_CUR) {
+            unique_ptr<StmntAST> st = stmnt();
+            if (broken(st)) return nullptr;
+
+            body->add(move(st));
+        }
+
+        // i like to move it, move it
+        SwitchAST::Case caseSection(move(comparisons), move(body));
+        cases.push_back(move(caseSection));
+    }
+    next();
+
+    if (cases.empty()) {
+        panic = true;
+        return nullptr;
+    }
+
+    return make_unique<SwitchAST>(move(value), move(cases));
+}
+
 std::unique_ptr<StmntAST> Parser::ret() {
     if (mismatch(Token::T_RET)) return nullptr;
 
@@ -389,6 +462,8 @@ unique_ptr<StmntAST> Parser::stmnt() {
     if (peek().type == Token::T_BREAK) return break_stmnt();
 
     if (peek().type == Token::T_CONTINUE) return continue_stmnt();
+
+    if (peek().type == Token::T_SWITCH) return switch_stmnt();
 
     if (peek().type == Token::T_RET) return ret();
 

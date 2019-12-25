@@ -26,6 +26,10 @@ public:
         P_ENUM_END // length marker, do not reference
     };
 
+    static const PrimIds WIDEST_I = P_I64;
+    static const PrimIds WIDEST_U = P_U64;
+    static const PrimIds WIDEST_F = P_F64;
+
     static bool isTypeI(Id t) {
         return between((PrimIds) t, P_I8, P_I64);
     }

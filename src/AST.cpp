@@ -42,6 +42,22 @@ DoWhileAST::DoWhileAST(unique_ptr<StmntAST> body, unique_ptr<ExprAST> cond)
     : body(move(body)), cond(move(cond)) {
 }
 
+SwitchAST::Case::Case(std::vector<std::unique_ptr<ExprAST>> comparisons, std::unique_ptr<BlockAST> body)
+    : comparisons(move(comparisons)), body(move(body)) {
+}
+
+SwitchAST::SwitchAST(unique_ptr<ExprAST> value, vector<Case> cases)
+    : value(move(value)), cases(move(cases)) {
+}
+
+pair<bool, size_t> SwitchAST::getDefault() const {
+    for (size_t i = 0; i < cases.size(); ++i) {
+        if (cases[i].isDefault()) return {true, i};
+    }
+
+    return {false, 0};
+}
+
 CastExprAST::CastExprAST(unique_ptr<TypeAST> ty, unique_ptr<ExprAST> val) : t(move(ty)), v(move(val)) {
 }
 

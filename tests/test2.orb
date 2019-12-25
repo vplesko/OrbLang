@@ -54,6 +54,36 @@ fnc blocker() i64 {
     ret 0;
 }
 
+fnc fib(u32 n) {
+	switch (n) {
+	case 0, 1:
+		println_i32(1);
+	case 2, 3:
+		println_u32(n);
+	case 4:
+		i32 n = 5;
+		println_i32(n);
+	case 5:
+		i32 n = 8;
+		println_i32(n);
+	default:
+		println_i32(-1);
+	}
+}
+
+fnc abc(i32 n) {
+	switch (n) {
+	case 1:
+		println_i32(65);
+	default:
+		println_i32(63);
+	case 2:
+		println_i32(66);
+	case 3:
+		println_i32(67);
+	}
+}
+
 fnc main() {
     i64 a = 1, b = 2;
     if (a == b) println_i64(101);
@@ -174,4 +204,35 @@ fnc main() {
 
     println_f32(true ? f32(0.1) : 1.0);
     println_f32(1.0>0.1 ? 0.1 : f32(1.0));
+
+	switch (1+1) {
+	case 2:
+	}
+
+	switch (1+1) {
+	case 3:
+        blocker();
+	}
+
+	switch (-1) {
+	default:
+		println_i32(-1);
+	}
+
+	switch (-1) {
+	default:
+		switch (-1) {
+        case -1:
+            println_i32(0);
+        }
+	}
+
+    fib(0);
+    fib(3);
+    fib(5);
+    fib(8);
+
+    abc(1);
+    abc(2);
+    abc(-1);
 }

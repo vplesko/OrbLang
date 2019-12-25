@@ -67,6 +67,7 @@ class CodeGen {
     void codegen(const DoWhileAST *ast);
     void codegen(const BreakAST *ast);
     void codegen(const ContinueAST *ast);
+    void codegen(const SwitchAST *ast);
     void codegen(const RetAST *ast);
     void codegen(const BlockAST *ast, bool makeScope);
     FuncValue* codegen(const FuncProtoAST *ast, bool definition);

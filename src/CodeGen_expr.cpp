@@ -775,7 +775,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const CastExprAST *ast) {
         case LiteralVal::T_FLOAT:
             // cast to widest float type
             // TODO is this the best way?
-            promoType = TypeTable::P_F64;
+            promoType = TypeTable::WIDEST_F;
             break;
         default:
             panic = true;
