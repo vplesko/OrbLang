@@ -15,16 +15,12 @@ class Parser {
 
     bool panic;
 
-    // needed to due ambiguity between decl and expr in some starting tokens
-    std::queue<Token> tokRewind;
-
     Token peek() const;
     Token next();
     bool match(Token::Type type);
     bool mismatch(Token::Type type);
     template<typename T> bool broken(const T &x);
 
-    std::unique_ptr<ExprAST> call();
     std::unique_ptr<ExprAST> prim();
     std::unique_ptr<ExprAST> expr(std::unique_ptr<ExprAST> lhs, OperPrec min_prec);
     std::unique_ptr<ExprAST> expr();

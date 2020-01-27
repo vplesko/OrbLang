@@ -9,16 +9,10 @@ Parser::Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer)
 }
 
 Token Parser::peek() const {
-    if (!tokRewind.empty()) return tokRewind.front();
     return lex->peek();
 }
 
 Token Parser::next() {
-    if (!tokRewind.empty()) {
-        Token tok = tokRewind.front();
-        tokRewind.pop();
-        return tok;
-    }
     return lex->next();
 }
 
@@ -33,57 +27,30 @@ bool Parser::mismatch(Token::Type type) {
     return panic;
 }
 
-std::unique_ptr<ExprAST> Parser::call() {
-    Token tok = next();
-    if (tok.type != Token::T_ID) {
-        panic = true;
-        return nullptr;
-    }
-
-    unique_ptr<CallExprAST> call = make_unique<CallExprAST>(tok.nameId);
-
-    if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
-
-    bool first = true;
-    while (true) {
-        if (peek().type == Token::T_BRACE_R_REG) {
-            next();
-            break;
-        }
-
-        if (!first && mismatch(Token::T_COMMA)) return nullptr;
-
-        unique_ptr<ExprAST> arg = expr();
-        if (broken(arg)) return nullptr;
-
-        call->addArg(move(arg));
-
-        first = false;
-    }
-
-    return call;
-}
-
 unique_ptr<ExprAST> Parser::prim() {
     // remember, string literal is lvalue
-    Token tok = next();
-    if (tok.type == Token::T_NUM) {
+    if (peek().type == Token::T_NUM) {
+        Token tok = next();
+
         LiteralVal val;
         val.type = LiteralVal::T_SINT;
         val.val_si = tok.num;
 
         return make_unique<LiteralExprAST>(val);
-    } else if (tok.type == Token::T_FNUM) {
+    } else if (peek().type == Token::T_FNUM) {
+        Token tok = next();
+
         LiteralVal val;
         val.type = LiteralVal::T_FLOAT;
         val.val_f = tok.fnum;
 
         return make_unique<LiteralExprAST>(val);
-    } else if (tok.type == Token::T_BVAL) {
+    } else if (peek().type == Token::T_BVAL) {
+        Token tok = next();
+
         return make_unique<LiteralExprAST>(tok.bval);
-    } else if (tok.type == Token::T_ID) {
-        if (symbolTable->getTypeTable()->isType(tok.nameId)) {
-            tokRewind.push(tok);
+    } else if (peek().type == Token::T_ID) {
+        if (symbolTable->getTypeTable()->isType(peek().nameId)) {
             unique_ptr<TypeAST> t = type();
             if (broken(t)) return nullptr;
 
@@ -93,13 +60,39 @@ unique_ptr<ExprAST> Parser::prim() {
             if (mismatch(Token::T_BRACE_R_REG)) return nullptr;
 
             return make_unique<CastExprAST>(move(t), move(e));
-        } else if (peek().type == Token::T_BRACE_L_REG) {
-            tokRewind.push(tok);
-            return call();
         } else {
-            return make_unique<VarExprAST>(tok.nameId);
+            Token tok = next();
+
+            if (peek().type == Token::T_BRACE_L_REG) {
+                next();
+
+                unique_ptr<CallExprAST> call = make_unique<CallExprAST>(tok.nameId);
+
+                bool first = true;
+                while (true) {
+                    if (peek().type == Token::T_BRACE_R_REG) {
+                        next();
+                        break;
+                    }
+
+                    if (!first && mismatch(Token::T_COMMA)) return nullptr;
+
+                    unique_ptr<ExprAST> arg = expr();
+                    if (broken(arg)) return nullptr;
+
+                    call->addArg(move(arg));
+
+                    first = false;
+                }
+
+                return call;
+            } else {
+                return make_unique<VarExprAST>(tok.nameId);
+            }
         }
-    } else if (tok.type == Token::T_OPER) {
+    } else if (peek().type == Token::T_OPER) {
+        Token tok = next();
+
         if (!operInfos.at(tok.op).unary) {
             panic = true;
             return nullptr;
@@ -109,10 +102,14 @@ unique_ptr<ExprAST> Parser::prim() {
         if (broken(e)) return nullptr;
 
         return make_unique<UnExprAST>(move(e), tok.op);
-    } else if (tok.type == Token::T_BRACE_L_REG) {
+    } else if (peek().type == Token::T_BRACE_L_REG) {
+        next();
+
         unique_ptr<ExprAST> e = expr();
         if (broken(e)) return nullptr;
+
         if (mismatch(Token::T_BRACE_R_REG)) return nullptr;
+
         return e;
     } else {
         panic = true;
@@ -229,20 +226,14 @@ unique_ptr<DeclAST> Parser::decl() {
 std::unique_ptr<StmntAST> Parser::simple() {
     if (peek().type == Token::T_SEMICOLON) {
         next();
-        return make_unique<EmptyExprAST>();
+        return make_unique<EmptyStmntAST>();
+    } else if (peek().type == Token::T_ID && symbolTable->getTypeTable()->isType(peek().nameId)) {
+        // if a statement begins with a type, it has to be a declaration
+        // to begin an expression with a cast, put it inside brackets
+        return decl();
+    } else {
+        return expr();
     }
-
-    if (peek().type == Token::T_ID && symbolTable->getTypeTable()->isType(peek().nameId)) {
-        tokRewind.push(lex->next());
-        if (lex->peek().type == Token::T_BRACE_L_REG) {
-            // expression starting with a cast (or ctor)
-            return expr();
-        } else {
-            return decl();
-        }
-    }
-
-    return expr();
 }
 
 std::unique_ptr<StmntAST> Parser::if_stmnt() {
@@ -561,7 +552,7 @@ unique_ptr<BaseAST> Parser::parseNode() {
 
     if (peek().type == Token::T_FNC) next = func();
     else next = decl();
-        
+
     if (panic || !next) {
         panic = true;
         return nullptr;

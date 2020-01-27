@@ -39,6 +39,8 @@ fnc scan_f64() f64;
 
 fnc main() {
     -10;
+    (i64(0));
+    
     { println_i32(i32(-10)); println_i32(i16(10)); println_i8(i8(i64(1027))); }
     { println_u32(u32(-10)); }
     { println_i32(i32(f16(-10))); }

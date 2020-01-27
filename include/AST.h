@@ -60,12 +60,6 @@ public:
     virtual ~ExprAST() {}
 };
 
-class EmptyExprAST : public ExprAST {
-public:
-
-    ASTType type() const override { return AST_EmptyExpr; }
-};
-
 class LiteralExprAST : public ExprAST {
     LiteralVal val;
 
@@ -165,6 +159,12 @@ public:
     const ExprAST* getVal() const { return v.get(); }
 
     ASTType type() const override { return AST_CastExpr; }
+};
+
+class EmptyStmntAST : public StmntAST {
+public:
+
+    ASTType type() const override { return AST_EmptyExpr; }
 };
 
 class DeclAST : public StmntAST {
