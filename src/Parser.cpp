@@ -392,7 +392,7 @@ std::unique_ptr<StmntAST> Parser::switch_stmnt() {
                 panic = true;
                 return nullptr;
             }
-        } else if (case_ == Token::T_DEFAULT) {
+        } else if (case_ == Token::T_ELSE) {
             if (parsedDefault) {
                 panic = true;
                 return nullptr;
@@ -406,7 +406,7 @@ std::unique_ptr<StmntAST> Parser::switch_stmnt() {
         if (mismatch(Token::T_COLON)) return nullptr;
 
         unique_ptr<BlockAST> body = make_unique<BlockAST>();
-        while (peek().type != Token::T_CASE && peek().type != Token::T_DEFAULT && peek().type != Token::T_BRACE_R_CUR) {
+        while (peek().type != Token::T_CASE && peek().type != Token::T_ELSE && peek().type != Token::T_BRACE_R_CUR) {
             unique_ptr<StmntAST> st = stmnt();
             if (broken(st)) return nullptr;
 

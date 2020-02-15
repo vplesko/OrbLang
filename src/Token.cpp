@@ -56,6 +56,5 @@ const unordered_map<string, Token> keywords = {
     {"continue", {Token::T_CONTINUE}},
     {"switch", {Token::T_SWITCH}},
     {"case", {Token::T_CASE}},
-    {"default", {Token::T_DEFAULT}},
     {"ret", {Token::T_RET}}
 };

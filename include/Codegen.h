@@ -21,15 +21,6 @@ class CodeGen {
 
     template<typename T> bool broken(const T &x);
 
-    llvm::Value* getConstB(bool val);
-    llvm::AllocaInst* createAlloca(llvm::Type *type, const std::string &name);
-    llvm::GlobalValue* createGlobal(llvm::Type *type, llvm::Constant *init, const std::string &name);
-    void createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId);
-    void createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
-
-    bool isGlobalScope() const;
-    bool isBlockTerminated() const;
-
     struct ExprGenPayload {
         TypeTable::Id type;
         llvm::Value *val = nullptr;
@@ -40,6 +31,16 @@ class CodeGen {
         void resetLitVal() { litVal.type = LiteralVal::T_NONE; }
         bool isBool() const { return isLitVal() ? litVal.type == LiteralVal::T_BOOL : type == TypeTable::P_BOOL; }
     };
+
+    llvm::Value* getConstB(bool val);
+    llvm::AllocaInst* createAlloca(llvm::Type *type, const std::string &name);
+    llvm::GlobalValue* createGlobal(llvm::Type *type, llvm::Constant *init, const std::string &name);
+    void createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId);
+    void createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
+    void createCast(ExprGenPayload &e, TypeTable::Id t);
+
+    bool isGlobalScope() const;
+    bool isBlockTerminated() const;
 
     bool valueBroken(const ExprGenPayload &e);
     bool valBroken(const ExprGenPayload &e);

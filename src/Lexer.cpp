@@ -269,8 +269,8 @@ Token Lexer::next() {
                 nextCh();
             }
 
-            if (firstAlnum < 0 || firstAlnum >= 2) {
-                // all _ or starting with __ is not allowed
+            if (firstAlnum < 0) {
+                // all _ is not allowed
                 tok.type = Token::T_UNKNOWN;
             } else {            
                 string id = line.substr(l, col-l);

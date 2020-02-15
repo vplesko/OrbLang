@@ -604,33 +604,40 @@ CodeGen::ExprGenPayload CodeGen::codegen(const TernCondExprAST *ast) {
     llvmBuilder.SetInsertPoint(trueBlock);
     ExprGenPayload trueExpr = codegenExpr(ast->getOp1());
     if (valueBroken(trueExpr)) return {};
-    llvmBuilder.CreateBr(afterBlock);
     trueBlock = llvmBuilder.GetInsertBlock();
 
     func->getBasicBlockList().push_back(falseBlock);
     llvmBuilder.SetInsertPoint(falseBlock);
     ExprGenPayload falseExpr = codegenExpr(ast->getOp2());
     if (valueBroken(falseExpr)) return {};
-    llvmBuilder.CreateBr(afterBlock);
     falseBlock = llvmBuilder.GetInsertBlock();
 
-    if (trueExpr.isLitVal() && !falseExpr.isLitVal()) {
+    if (!trueExpr.isLitVal() && !falseExpr.isLitVal()) {
+        if (trueExpr.type != falseExpr.type) {
+            if (TypeTable::isImplicitCastable(trueExpr.type, falseExpr.type)) {
+                llvmBuilder.SetInsertPoint(trueBlock);
+                createCast(trueExpr, falseExpr.type);
+                trueBlock = llvmBuilder.GetInsertBlock();
+            } else if (TypeTable::isImplicitCastable(falseExpr.type, trueExpr.type)) {
+                llvmBuilder.SetInsertPoint(falseBlock);
+                createCast(falseExpr, trueExpr.type);
+                falseBlock = llvmBuilder.GetInsertBlock();
+            } else {
+                panic = true;
+                return {};
+            }
+        }
+    } else if (trueExpr.isLitVal() && !falseExpr.isLitVal()) {
         if (!promoteLiteral(trueExpr, falseExpr.type)) return {};
     } else if (!trueExpr.isLitVal() && falseExpr.isLitVal()) {
         if (!promoteLiteral(falseExpr, trueExpr.type)) return {};
-    } else if (!trueExpr.isLitVal() && !falseExpr.isLitVal()) {
-        // implicit casts intentionally left out in order not to lose l-valness
-        if (falseExpr.type != trueExpr.type) {
-            panic = true;
-            return {};
-        }
-    } else {
+    } else if (trueExpr.isLitVal() && falseExpr.isLitVal()) {
         if (trueExpr.litVal.type != falseExpr.litVal.type) {
             panic = true;
             return {};
         }
 
-        // if all three litVals, we will return a litVal
+        // if all three litVals, we will return a litVal, handled below in function
         if (!condExpr.isLitVal()) {
             if (trueExpr.litVal.type == LiteralVal::T_BOOL) {
                 if (!promoteLiteral(trueExpr, TypeTable::P_BOOL) ||
@@ -649,13 +656,28 @@ CodeGen::ExprGenPayload CodeGen::codegen(const TernCondExprAST *ast) {
                         !promoteLiteral(falseExpr, trueT))
                         return {};
                 }
-            // don't allow float casts, as don't know which to cast to
             } else {
+                /*
+                REM
+                Here, we have two floats and need to decide whether to cast them to f32 or f64.
+                It's a compromise between more precision and easier casting.
+                If we say just cast it to the widest float type, then future versions of the lang
+                would not necessarily be backwards-compatible with old code.
+                Therefore, it's simply dissalowed. Can be overcome by explicit casting.
+                */
                 panic = true;
                 return {};
             }
         }
     }
+
+    llvmBuilder.SetInsertPoint(trueBlock);
+    llvmBuilder.CreateBr(afterBlock);
+    trueBlock = llvmBuilder.GetInsertBlock();
+
+    llvmBuilder.SetInsertPoint(falseBlock);
+    llvmBuilder.CreateBr(afterBlock);
+    falseBlock = llvmBuilder.GetInsertBlock();
 
     ExprGenPayload ret;
 
@@ -668,6 +690,8 @@ CodeGen::ExprGenPayload CodeGen::codegen(const TernCondExprAST *ast) {
                 ret.litVal.val_b = condExpr.litVal.val_b ? trueExpr.litVal.val_b : falseExpr.litVal.val_b;
             else if (ret.litVal.type == LiteralVal::T_SINT)
                 ret.litVal.val_si = condExpr.litVal.val_b ? trueExpr.litVal.val_si : falseExpr.litVal.val_si;
+            else if (ret.litVal.type == LiteralVal::T_FLOAT)
+                ret.litVal.val_f = condExpr.litVal.val_b ? trueExpr.litVal.val_f : falseExpr.litVal.val_f;
             else {
                 panic = true;
                 return {};
@@ -711,7 +735,8 @@ CodeGen::ExprGenPayload CodeGen::codegenGlobalScope(const TernCondExprAST *ast) 
         ret.litVal.val_b = condExpr.litVal.val_b ? trueExpr.litVal.val_b : falseExpr.litVal.val_b;
     else if (ret.litVal.type == LiteralVal::T_SINT)
         ret.litVal.val_si = condExpr.litVal.val_b ? trueExpr.litVal.val_si : falseExpr.litVal.val_si;
-    // don't allow float casts, as don't know which to cast to
+    else if (ret.litVal.type == LiteralVal::T_FLOAT)
+        ret.litVal.val_f = condExpr.litVal.val_b ? trueExpr.litVal.val_f : falseExpr.litVal.val_f;
     else {
         panic = true;
         return {};
@@ -774,7 +799,6 @@ CodeGen::ExprGenPayload CodeGen::codegen(const CastExprAST *ast) {
             break;
         case LiteralVal::T_FLOAT:
             // cast to widest float type
-            // TODO is this the best way?
             promoType = TypeTable::WIDEST_F;
             break;
         default:

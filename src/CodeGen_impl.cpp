@@ -68,6 +68,12 @@ void CodeGen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::
     createCast(val, srcTypeId, symbolTable->getTypeTable()->getType(dstTypeId), dstTypeId);
 }
 
+void CodeGen::createCast(ExprGenPayload &e, TypeTable::Id t) {
+    createCast(e.val, e.type, t);
+    if (panic) return;
+    e.type = t;
+}
+
 void CodeGen::codegenNode(const BaseAST *ast, bool blockMakeScope) {
     switch (ast->type()) {
     case AST_EmptyExpr:

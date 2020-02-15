@@ -5,6 +5,20 @@
 #include "NamePool.h"
 #include "TypeTable.h"
 
+/*
+LiteralVal is needed to represent a literal value who's exact type is yet unknown.
+
+Let's say we interpret an integer literal as i32.
+Then the user couldn't do this: i8 i = 0;
+
+Let's say we interpret it as the shortest type it can fit.
+Then this would underflow: i32 i = 250 + 10;
+
+Therefore, we need this intermediate value holder.
+
+REM
+Does not hold uint values. Users can overcome this by casting.
+*/
 struct LiteralVal {
     enum Type {
         T_NONE,
