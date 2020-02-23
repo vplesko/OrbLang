@@ -94,4 +94,21 @@ fnc main() {
     ptr f = null;
     if (e == f) println_i32(16);
     if (e != f) println_i32(17);
+
+    if (&d != null) println_i32(100);
+    if (&d == null) println_i32(101);
+    if (&glob != null) println_i32(102);
+    if (&glob == null) println_i32(103);
+
+    a = i32*(malloc(4));
+    b = i32*(malloc(4));
+    *a = 200;
+    println_i32(*a);
+    c = a;
+    *a = 201;
+    println_i32(*c);
+    *a = 202;
+    println_i32(**&*&a);
+    free(ptr(a));
+    free(ptr(b));
 }

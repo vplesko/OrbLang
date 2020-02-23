@@ -83,6 +83,33 @@ TypeTable::Id TypeTable::addType(TypeDescr typeDescr, llvm::Type *type) {
     return id;
 }
 
+pair<bool, TypeTable::Id> TypeTable::addTypeDeref(Id typeId) {
+    const TypeDescr &typeDescr = types[typeId].first;
+    
+    // ptr cannot be dereferenced
+    if (typeId == TypeTable::P_PTR || !isTypeP(typeId))
+        return make_pair(false, 0);
+    
+    TypeDescr typeDerefDescr(typeDescr.base);
+    typeDerefDescr.decors = vector<TypeDescr::Decor>(typeDescr.decors.size()-1);
+    for (size_t i = 0; i < typeDerefDescr.decors.size(); ++i)
+        typeDerefDescr.decors[i] = typeDescr.decors[i];
+    
+    return make_pair(true, addType(move(typeDerefDescr)));
+}
+
+TypeTable::Id TypeTable::addTypeAddr(Id typeId) {
+    const TypeDescr &typeDescr = types[typeId].first;
+
+    TypeDescr typeAddrDescr(typeDescr.base);
+    typeAddrDescr.decors = vector<TypeDescr::Decor>(typeDescr.decors.size()+1);
+    for (size_t i = 0; i < typeDescr.decors.size(); ++i)
+        typeAddrDescr.decors[i] = typeDescr.decors[i];
+    typeAddrDescr.decors.back() = TypeDescr::D_PTR;
+
+    return addType(move(typeAddrDescr));
+}
+
 void TypeTable::addPrimType(NamePool::Id name, PrimIds id, llvm::Type *type) {
     typeIds.insert(make_pair(name, id));
     types[id].first.base = id;
@@ -105,6 +132,6 @@ bool TypeTable::isType(NamePool::Id name) const {
     return typeIds.find(name) != typeIds.end();
 }
 
-bool TypeTable::isTypeAnyP(Id t) {
+bool TypeTable::isTypeAnyP(Id t) const {
     return t == P_PTR || (!types[t].first.decors.empty() && types[t].first.decors.back() == TypeDescr::D_PTR);
 }

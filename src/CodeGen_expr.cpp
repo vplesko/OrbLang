@@ -89,6 +89,23 @@ CodeGen::ExprGenPayload CodeGen::codegen(const UnExprAST *ast) {
             return {};
         }
         exprRet.val = llvmBuilder.CreateNot(exprPay.val, "not_tmp");
+    } else if (ast->getOp() == Token::O_MUL) {
+        pair<bool, TypeTable::Id> typeId = symbolTable->getTypeTable()->addTypeDeref(exprPay.type);
+        if (typeId.first == false) {
+            panic = true;
+            return {};
+        }
+        exprRet.type = typeId.second;
+        exprRet.val = llvmBuilder.CreateLoad(exprPay.val, "deref_tmp");
+        exprRet.ref = exprPay.val;
+    } else if (ast->getOp() == Token::O_BIT_AND) {
+        if (exprPay.ref == nullptr) {
+            panic = true;
+            return {};
+        }
+        TypeTable::Id typeId = symbolTable->getTypeTable()->addTypeAddr(exprPay.type);
+        exprRet.type = typeId;
+        exprRet.val = exprPay.ref;
     } else {
         panic = true;
         return {};
@@ -96,8 +113,6 @@ CodeGen::ExprGenPayload CodeGen::codegen(const UnExprAST *ast) {
     return exprRet;
 }
 
-// TODO * and &
-// TODO can't deref null or ptr
 CodeGen::ExprGenPayload CodeGen::codegenLiteralUn(Token::Oper op, LiteralVal lit) {
     ExprGenPayload exprRet;
     exprRet.litVal.type = lit.type;
@@ -131,6 +146,7 @@ CodeGen::ExprGenPayload CodeGen::codegenLiteralUn(Token::Oper op, LiteralVal lit
             return {};
         }
     } else {
+        // TODO error msg when null, can't & or *
         panic = true;
         return {};
     }

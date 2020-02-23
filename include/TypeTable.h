@@ -94,6 +94,8 @@ public:
     TypeTable();
 
     TypeTable::Id addType(TypeDescr typeDescr);
+    std::pair<bool, TypeTable::Id> addTypeDeref(Id typeId);
+    TypeTable::Id addTypeAddr(Id typeId);
     TypeTable::Id addType(TypeDescr typeDescr, llvm::Type *type);
     void addPrimType(NamePool::Id name, PrimIds id, llvm::Type *type);
 
@@ -104,5 +106,6 @@ public:
     bool isType(NamePool::Id name) const;
     TypeTable::Id getTypeId(NamePool::Id name) const { return typeIds.at(name); }
 
-    bool isTypeAnyP(Id t);
+    bool isTypeAnyP(Id t) const;
+    bool isTypeP(Id t) const { return isTypeAnyP(t); }
 };
