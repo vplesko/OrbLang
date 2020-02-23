@@ -8,6 +8,7 @@ struct Token {
         T_NUM,
         T_FNUM,
         T_BVAL,
+        T_NULL,
         T_OPER,
         T_COMMA,
         T_SEMICOLON,

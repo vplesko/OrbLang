@@ -49,6 +49,13 @@ unique_ptr<ExprAST> Parser::prim() {
         Token tok = next();
 
         return make_unique<LiteralExprAST>(tok.bval);
+    } else if (peek().type == Token::T_NULL) {
+        next();
+
+        LiteralVal val;
+        val.type = LiteralVal::T_NULL;
+
+        return make_unique<LiteralExprAST>(val);
     } else if (peek().type == Token::T_ID) {
         if (symbolTable->getTypeTable()->isType(peek().nameId)) {
             unique_ptr<TypeAST> t = type();
@@ -181,14 +188,21 @@ std::unique_ptr<TypeAST> Parser::type() {
         return nullptr;
     }
 
-    Token type = next();
-
-    if (!symbolTable->getTypeTable()->isType(type.nameId)) {
+    Token typeTok = next();
+    if (!symbolTable->getTypeTable()->isType(typeTok.nameId)) {
         panic = true;
         return nullptr;
     }
 
-    TypeTable::Id typeId = symbolTable->getTypeTable()->getTypeId(type.nameId);
+    TypeTable::TypeDescr typeDescr(symbolTable->getTypeTable()->getTypeId(typeTok.nameId));
+
+    while (peek().type == Token::T_OPER && peek().op == Token::O_MUL) {
+        typeDescr.addDecor(TypeTable::TypeDescr::D_PTR);
+        next();
+    }
+
+    TypeTable::Id typeId = symbolTable->getTypeTable()->addType(move(typeDescr));
+
     return make_unique<TypeAST>(typeId);
 }
 

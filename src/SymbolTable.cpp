@@ -85,7 +85,7 @@ pair<const FuncSignature*, FuncValue*> SymbolTable::getFuncCastsAllowed(const Fu
             if (!argTypeOk && litVals[i].type != LiteralVal::T_NONE) {
                 switch (litVals[i].type) {
                 case LiteralVal::T_BOOL:
-                    argTypeOk = it.first.argTypes[i] == TypeTable::P_BOOL;
+                    argTypeOk = TypeTable::isTypeB(it.first.argTypes[i]);
                     break;
                 case LiteralVal::T_SINT:
                     argTypeOk = TypeTable::isTypeI(it.first.argTypes[i]) ||

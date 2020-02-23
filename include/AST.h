@@ -64,7 +64,7 @@ class LiteralExprAST : public ExprAST {
     LiteralVal val;
 
 public:
-    LiteralExprAST(LiteralVal v) : val(v) {}
+    explicit LiteralExprAST(LiteralVal v) : val(v) {}
     explicit LiteralExprAST(bool bb);
 
     ASTType type() const override { return AST_LiteralExpr; }

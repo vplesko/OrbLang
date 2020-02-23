@@ -24,7 +24,8 @@ struct LiteralVal {
         T_NONE,
         T_SINT,
         T_FLOAT,
-        T_BOOL
+        T_BOOL,
+        T_NULL
     };
 
     Type type;

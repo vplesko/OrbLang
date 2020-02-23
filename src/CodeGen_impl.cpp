@@ -17,9 +17,11 @@ void CodeGen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
             val = llvmBuilder.CreateIntCast(val, type, false, "i2u_cast");
         else if (TypeTable::isTypeF(dstTypeId))
             val = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::SIToFP, val, type, "i2f_cast"));
-        else if (dstTypeId == TypeTable::P_BOOL) {
+        else if (TypeTable::isTypeB(dstTypeId)) {
             llvm::Value *z = llvmBuilder.CreateIntCast(getConstB(false), val->getType(), true);
             val = llvmBuilder.CreateICmpNE(val, z, "i2b_cast");
+        } else if (symbolTable->getTypeTable()->isTypeAnyP(dstTypeId)) {
+            val = llvmBuilder.CreatePointerCast(val, type, "i2p_cast");
         } else {
             panic = true;
             val = nullptr;
@@ -31,9 +33,11 @@ void CodeGen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
             val = llvmBuilder.CreateIntCast(val, type, false, "u2u_cast");
         else if (TypeTable::isTypeF(dstTypeId))
             val = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::UIToFP, val, type, "u2f_cast"));
-        else if (dstTypeId == TypeTable::P_BOOL) {
+        else if (TypeTable::isTypeB(dstTypeId)) {
             llvm::Value *z = llvmBuilder.CreateIntCast(getConstB(false), val->getType(), false);
             val = llvmBuilder.CreateICmpNE(val, z, "i2b_cast");
+        } else if (symbolTable->getTypeTable()->isTypeAnyP(dstTypeId)) {
+            val = llvmBuilder.CreatePointerCast(val, type, "u2p_cast");
         } else {
             panic = true;
             val = nullptr;
@@ -49,11 +53,22 @@ void CodeGen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
             panic = true;
             val = nullptr;
         }
-    } else if (srcTypeId == TypeTable::P_BOOL) {
+    } else if (TypeTable::isTypeB(srcTypeId)) {
         if (TypeTable::isTypeI(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, false, "b2i_cast");
         else if (TypeTable::isTypeU(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, false, "b2u_cast");
+        else {
+            panic = true;
+            val = nullptr;
+        }
+    } else if (symbolTable->getTypeTable()->isTypeAnyP(srcTypeId)) {
+        if (TypeTable::isTypeI(dstTypeId))
+            val = llvmBuilder.CreatePtrToInt(val, type, "p2i_cast");
+        else if (TypeTable::isTypeU(dstTypeId))
+            val = llvmBuilder.CreatePtrToInt(val, type, "p2u_cast");
+        else if (symbolTable->getTypeTable()->isTypeAnyP(dstTypeId))
+            val = llvmBuilder.CreatePointerCast(val, type, "p2p_cast");
         else {
             panic = true;
             val = nullptr;
@@ -65,7 +80,7 @@ void CodeGen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
 }
 
 void CodeGen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId) {
-    createCast(val, srcTypeId, symbolTable->getTypeTable()->getType(dstTypeId), dstTypeId);
+    createCast(val, srcTypeId, getType(dstTypeId), dstTypeId);
 }
 
 void CodeGen::createCast(ExprGenPayload &e, TypeTable::Id t) {
@@ -120,8 +135,8 @@ void CodeGen::codegenNode(const BaseAST *ast, bool blockMakeScope) {
 }
 
 llvm::Type* CodeGen::codegenType(const TypeAST *ast) {
-    llvm::Type *type = symbolTable->getTypeTable()->getType(ast->getTypeId());
-    if (broken(type)) return {};
+    llvm::Type *type = getType(ast->getTypeId());
+    if (broken(type)) return nullptr;
 
     return type;
 }
@@ -199,7 +214,7 @@ void CodeGen::codegen(const IfAST *ast) {
         panic = true;
         return;
     }
-    if (valBroken(condExpr) || condExpr.type != TypeTable::P_BOOL) {
+    if (valBroken(condExpr) || !TypeTable::isTypeB(condExpr.type)) {
         panic = true;
         return;
     }
@@ -260,7 +275,7 @@ void CodeGen::codegen(const ForAST *ast) {
                 panic = true;
                 return;
             }
-            if (valBroken(condExpr) || condExpr.type != TypeTable::P_BOOL) {
+            if (valBroken(condExpr) || !TypeTable::isTypeB(condExpr.type)) {
                 panic = true;
                 return;
             }
@@ -319,7 +334,7 @@ void CodeGen::codegen(const WhileAST *ast) {
             panic = true;
             return;
         }
-        if (valBroken(condExpr) || condExpr.type != TypeTable::P_BOOL) {
+        if (valBroken(condExpr) || !TypeTable::isTypeB(condExpr.type)) {
             panic = true;
             return;
         }
@@ -372,7 +387,7 @@ void CodeGen::codegen(const DoWhileAST *ast) {
             panic = true;
             return;
         }
-        if (valBroken(condExpr) || condExpr.type != TypeTable::P_BOOL) {
+        if (valBroken(condExpr) || !TypeTable::isTypeB(condExpr.type)) {
             panic = true;
             return;
         }
@@ -405,11 +420,11 @@ void CodeGen::codegen(const ContinueAST *ast) {
     llvmBuilder.CreateBr(continueStack.top());
 }
 
+// TODO get rid of llvm::SwitchInst, allow other types
 void CodeGen::codegen(const SwitchAST *ast) {
     ExprGenPayload valExprPay = codegenExpr(ast->getValue());
 
     // literals get cast to the widest sint type, along with comparison values
-    // TODO when switch gets allowed for other types, a lot of this func will need to be revised
     if (valExprPay.isLitVal() && !promoteLiteral(valExprPay, TypeTable::WIDEST_I)) {
         panic = true;
         return;
@@ -548,8 +563,8 @@ FuncValue* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
 
     vector<llvm::Type*> argTypes(ast->getArgCnt());
     for (size_t i = 0; i < argTypes.size(); ++i)
-        argTypes[i] = symbolTable->getTypeTable()->getType(ast->getArgType(i)->getTypeId());
-    llvm::Type *retType = ast->hasRetVal() ? symbolTable->getTypeTable()->getType(ast->getRetType()->getTypeId()) : llvm::Type::getVoidTy(llvmContext);
+        argTypes[i] = getType(ast->getArgType(i)->getTypeId());
+    llvm::Type *retType = ast->hasRetVal() ? getType(ast->getRetType()->getTypeId()) : llvm::Type::getVoidTy(llvmContext);
     llvm::FunctionType *funcType = llvm::FunctionType::get(retType, argTypes, false);
 
     llvm::Function *func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, 

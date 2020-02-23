@@ -79,6 +79,11 @@ void Compiler::genPrimTypes() {
         TypeTable::P_F64,
         codegen->genPrimTypeF64()
     );
+    symbolTable->getTypeTable()->addPrimType(
+        namePool->add("ptr"),
+        TypeTable::P_PTR,
+        codegen->genPrimTypePtr()
+    );
 }
 
 bool Compiler::parse(const std::string &filename) {

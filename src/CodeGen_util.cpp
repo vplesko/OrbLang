@@ -14,6 +14,34 @@ CodeGen::CodeGen(NamePool *namePool, SymbolTable *symbolTable) : namePool(namePo
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("test"), llvmContext);
 }
 
+llvm::Type* CodeGen::getType(TypeTable::Id typeId) {
+    llvm::Type *llvmType = symbolTable->getTypeTable()->getType(typeId);
+
+    if (llvmType == nullptr) {
+        const TypeTable::TypeDescr &descr = symbolTable->getTypeTable()->getTypeDescr(typeId);
+
+        llvmType = symbolTable->getTypeTable()->getType(descr.base);
+        if (broken(llvmType)) return nullptr;
+
+        for (const TypeTable::TypeDescr::Decor &decor : descr.decors) {
+            switch (decor) {
+            case TypeTable::TypeDescr::D_PTR:
+                llvmType = llvm::PointerType::get(llvmType, 0);
+                break;
+            default:
+                panic = true;
+                return nullptr;
+            }
+
+            if (broken(llvmType)) return nullptr;
+        }
+
+        symbolTable->getTypeTable()->setType(typeId, llvmType);
+    }
+
+    return llvmType;
+}
+
 bool CodeGen::valueBroken(const ExprGenPayload &e) {
     if (e.val == nullptr && !e.isLitVal()) panic = true;
     return panic;
@@ -37,7 +65,7 @@ bool CodeGen::promoteLiteral(ExprGenPayload &e, TypeTable::Id t) {
 
     switch (e.litVal.type) {
     case LiteralVal::T_BOOL:
-        if (t != TypeTable::P_BOOL) {
+        if (!TypeTable::isTypeB(t)) {
             panic = true;
         } else {
             e.val = getConstB(e.litVal.val_b);
@@ -47,7 +75,7 @@ bool CodeGen::promoteLiteral(ExprGenPayload &e, TypeTable::Id t) {
         if ((!TypeTable::isTypeI(t) && !TypeTable::isTypeU(t)) || !TypeTable::fitsType(e.litVal.val_si, t)) {
             panic = true;
         } else {
-            e.val = llvm::ConstantInt::get(symbolTable->getTypeTable()->getType(t), e.litVal.val_si, TypeTable::isTypeI(t));
+            e.val = llvm::ConstantInt::get(getType(t), e.litVal.val_si, TypeTable::isTypeI(t));
         }
         break;
     case LiteralVal::T_FLOAT:
@@ -55,7 +83,14 @@ bool CodeGen::promoteLiteral(ExprGenPayload &e, TypeTable::Id t) {
         if (!TypeTable::isTypeF(t)) {
             panic = true;
         } else {
-            e.val = llvm::ConstantFP::get(symbolTable->getTypeTable()->getType(t), e.litVal.val_f);
+            e.val = llvm::ConstantFP::get(getType(t), e.litVal.val_f);
+        }
+        break;
+    case LiteralVal::T_NULL:
+        if (!symbolTable->getTypeTable()->isTypeAnyP(t)) {
+            panic = true;
+        } else {
+            e.val = llvm::ConstantPointerNull::get((llvm::PointerType*)getType(t));
         }
         break;
     default:
@@ -95,6 +130,10 @@ llvm::Type* CodeGen::genPrimTypeF32() {
 
 llvm::Type* CodeGen::genPrimTypeF64() {
     return llvm::Type::getDoubleTy(llvmContext);
+}
+
+llvm::Type* CodeGen::genPrimTypePtr() {
+    return llvm::Type::getInt8PtrTy(llvmContext);
 }
 
 llvm::AllocaInst* CodeGen::createAlloca(llvm::Type *type, const string &name) {

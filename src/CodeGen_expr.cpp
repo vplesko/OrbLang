@@ -66,7 +66,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const UnExprAST *ast) {
             panic = true;
             return {};
         }
-        exprRet.val = llvmBuilder.CreateAdd(exprPay.val, llvm::ConstantInt::get(symbolTable->getTypeTable()->getType(exprPay.type), 1), "inc_tmp");
+        exprRet.val = llvmBuilder.CreateAdd(exprPay.val, llvm::ConstantInt::get(getType(exprPay.type), 1), "inc_tmp");
         exprRet.ref = exprPay.ref;
         llvmBuilder.CreateStore(exprRet.val, exprRet.ref);
     } else if (ast->getOp() == Token::O_DEC) {
@@ -74,7 +74,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const UnExprAST *ast) {
             panic = true;
             return {};
         }
-        exprRet.val = llvmBuilder.CreateSub(exprPay.val, llvm::ConstantInt::get(symbolTable->getTypeTable()->getType(exprPay.type), 1), "dec_tmp");
+        exprRet.val = llvmBuilder.CreateSub(exprPay.val, llvm::ConstantInt::get(getType(exprPay.type), 1), "dec_tmp");
         exprRet.ref = exprPay.ref;
         llvmBuilder.CreateStore(exprRet.val, exprRet.ref);
     } else if (ast->getOp() == Token::O_BIT_NOT) {
@@ -84,7 +84,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const UnExprAST *ast) {
         }
         exprRet.val = llvmBuilder.CreateNot(exprPay.val, "bit_not_tmp");
     } else if (ast->getOp() == Token::O_NOT) {
-        if (exprPay.type != TypeTable::P_BOOL) {
+        if (!TypeTable::isTypeB(exprPay.type)) {
             panic = true;
             return {};
         }
@@ -96,6 +96,8 @@ CodeGen::ExprGenPayload CodeGen::codegen(const UnExprAST *ast) {
     return exprRet;
 }
 
+// TODO * and &
+// TODO can't deref null or ptr
 CodeGen::ExprGenPayload CodeGen::codegenLiteralUn(Token::Oper op, LiteralVal lit) {
     ExprGenPayload exprRet;
     exprRet.litVal.type = lit.type;
@@ -180,7 +182,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
         }
     }
 
-    if (exprPayRet.type == TypeTable::P_BOOL) {
+    if (TypeTable::isTypeB(exprPayRet.type)) {
         switch (ast->getOp()) {
         case Token::O_ASGN:
             exprPayRet.val = valR;
@@ -198,6 +200,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
         bool isTypeI = TypeTable::isTypeI(exprPayRet.type);
         bool isTypeU = TypeTable::isTypeU(exprPayRet.type);
         bool isTypeF = TypeTable::isTypeF(exprPayRet.type);
+        bool isTypeP = symbolTable->getTypeTable()->isTypeAnyP(exprPayRet.type);
 
         switch (ast->getOp()) {
             case Token::O_ASGN:
@@ -274,6 +277,10 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
                     exprPayRet.val = llvmBuilder.CreateFCmpOEQ(valL, valR, "fcmp_eq_tmp");
                 else if (isTypeI || isTypeU)
                     exprPayRet.val = llvmBuilder.CreateICmpEQ(valL, valR, "cmp_eq_tmp");
+                else if (isTypeP) {
+                    exprPayRet.val = llvmBuilder.CreateICmpEQ(llvmBuilder.CreatePtrToInt(valL, getType(TypeTable::WIDEST_I)), 
+                        llvmBuilder.CreatePtrToInt(valR, getType(TypeTable::WIDEST_I)), "pcmp_eq_tmp");
+                }
                 exprPayRet.type = TypeTable::P_BOOL;
                 break;
             case Token::O_NEQ:
@@ -281,6 +288,10 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
                     exprPayRet.val = llvmBuilder.CreateFCmpONE(valL, valR, "fcmp_neq_tmp");
                 else if (isTypeI || isTypeU)
                     exprPayRet.val = llvmBuilder.CreateICmpNE(valL, valR, "cmp_neq_tmp");
+                else if (isTypeP) {
+                    exprPayRet.val = llvmBuilder.CreateICmpNE(llvmBuilder.CreatePtrToInt(valL, getType(TypeTable::WIDEST_I)), 
+                        llvmBuilder.CreatePtrToInt(valR, getType(TypeTable::WIDEST_I)), "pcmp_eq_tmp");
+                }
                 exprPayRet.type = TypeTable::P_BOOL;
                 break;
             case Token::O_LT:
@@ -397,7 +408,7 @@ CodeGen::ExprGenPayload CodeGen::codegenLogicAndOr(const BinExprAST *ast) {
         else
             ret.litVal.val_b = exprPayL.litVal.val_b || exprPayR.litVal.val_b;
     } else {
-        llvm::PHINode *phi = llvmBuilder.CreatePHI(symbolTable->getTypeTable()->getType(TypeTable::P_BOOL), 2, "logic_tmp");
+        llvm::PHINode *phi = llvmBuilder.CreatePHI(getType(TypeTable::P_BOOL), 2, "logic_tmp");
 
         if (ast->getOp() == Token::O_AND)
             phi->addIncoming(getConstB(false), firstBlock);
@@ -458,6 +469,21 @@ CodeGen::ExprGenPayload CodeGen::codegenLiteralBin(Token::Oper op, LiteralVal li
             litValRet.val_b = litL.val_b != litR.val_b;
             break;
         // AND and OR handled with the non-litVal cases
+        default:
+            panic = true;
+            break;
+        }
+    } else if (litValRet.type == LiteralVal::T_NULL) {
+        // both are null
+        switch (op) {
+        case Token::O_EQ:
+            litValRet.type = LiteralVal::T_BOOL;
+            litValRet.val_b = true;
+            break;
+        case Token::O_NEQ:
+            litValRet.type = LiteralVal::T_BOOL;
+            litValRet.val_b = false;
+            break;
         default:
             panic = true;
             break;
@@ -656,7 +682,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const TernCondExprAST *ast) {
                         !promoteLiteral(falseExpr, trueT))
                         return {};
                 }
-            } else {
+            } else if (trueExpr.litVal.type == LiteralVal::T_FLOAT) {
                 /*
                 REM
                 Here, we have two floats and need to decide whether to cast them to f32 or f64.
@@ -665,6 +691,17 @@ CodeGen::ExprGenPayload CodeGen::codegen(const TernCondExprAST *ast) {
                 would not necessarily be backwards-compatible with old code.
                 Therefore, it's simply dissalowed. Can be overcome by explicit casting.
                 */
+                panic = true;
+                return {};
+            } else if (trueExpr.litVal.type == LiteralVal::T_NULL) {
+                /*
+                REM
+                Similarily, don't know into which type to cast this null.
+                This should rarely be used anyway.
+                */
+                panic = true;
+                return {};
+            } else {
                 panic = true;
                 return {};
             }
@@ -692,6 +729,8 @@ CodeGen::ExprGenPayload CodeGen::codegen(const TernCondExprAST *ast) {
                 ret.litVal.val_si = condExpr.litVal.val_b ? trueExpr.litVal.val_si : falseExpr.litVal.val_si;
             else if (ret.litVal.type == LiteralVal::T_FLOAT)
                 ret.litVal.val_f = condExpr.litVal.val_b ? trueExpr.litVal.val_f : falseExpr.litVal.val_f;
+            else if (ret.litVal.type == LiteralVal::T_NULL)
+                ; //ret.litVal.type = LiteralVal::T_NULL;
             else {
                 panic = true;
                 return {};
@@ -701,7 +740,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const TernCondExprAST *ast) {
             ret.val = condExpr.litVal.val_b ? trueExpr.val : falseExpr.val;
         }
     } else {
-        llvm::PHINode *phi = llvmBuilder.CreatePHI(symbolTable->getTypeTable()->getType(trueExpr.type), 2, "tern_tmp");
+        llvm::PHINode *phi = llvmBuilder.CreatePHI(getType(trueExpr.type), 2, "tern_tmp");
         phi->addIncoming(trueExpr.val, trueBlock);
         phi->addIncoming(falseExpr.val, falseBlock);
         ret.type = trueExpr.type;
@@ -737,6 +776,8 @@ CodeGen::ExprGenPayload CodeGen::codegenGlobalScope(const TernCondExprAST *ast) 
         ret.litVal.val_si = condExpr.litVal.val_b ? trueExpr.litVal.val_si : falseExpr.litVal.val_si;
     else if (ret.litVal.type == LiteralVal::T_FLOAT)
         ret.litVal.val_f = condExpr.litVal.val_b ? trueExpr.litVal.val_f : falseExpr.litVal.val_f;
+    else if (ret.litVal.type == LiteralVal::T_NULL)
+        ; //ret.litVal.type = LiteralVal::T_NULL;
     else {
         panic = true;
         return {};
@@ -800,6 +841,9 @@ CodeGen::ExprGenPayload CodeGen::codegen(const CastExprAST *ast) {
         case LiteralVal::T_FLOAT:
             // cast to widest float type
             promoType = TypeTable::WIDEST_F;
+            break;
+        case LiteralVal::T_NULL:
+            promoType = TypeTable::P_PTR;
             break;
         default:
             panic = true;

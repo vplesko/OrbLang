@@ -29,12 +29,15 @@ class CodeGen {
 
         bool isLitVal() const { return litVal.type != LiteralVal::T_NONE; }
         void resetLitVal() { litVal.type = LiteralVal::T_NONE; }
-        bool isBool() const { return isLitVal() ? litVal.type == LiteralVal::T_BOOL : type == TypeTable::P_BOOL; }
+        bool isBool() const { return isLitVal() ? litVal.type == LiteralVal::T_BOOL : TypeTable::isTypeB(type); }
     };
 
     llvm::Value* getConstB(bool val);
+
     llvm::AllocaInst* createAlloca(llvm::Type *type, const std::string &name);
     llvm::GlobalValue* createGlobal(llvm::Type *type, llvm::Constant *init, const std::string &name);
+
+    llvm::Type* getType(TypeTable::Id typeId);
     void createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId);
     void createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
     void createCast(ExprGenPayload &e, TypeTable::Id t);
@@ -86,6 +89,7 @@ public:
     llvm::Type* genPrimTypeF16();
     llvm::Type* genPrimTypeF32();
     llvm::Type* genPrimTypeF64();
+    llvm::Type* genPrimTypePtr();
 
     void codegenNode(const BaseAST *ast, bool blockMakeScope = true);
 
