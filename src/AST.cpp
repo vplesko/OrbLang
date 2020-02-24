@@ -6,6 +6,9 @@ LiteralExprAST::LiteralExprAST(bool bb) {
     val.val_b = bb;
 }
 
+IndExprAST::IndExprAST(unique_ptr<ExprAST> base, unique_ptr<ExprAST> ind) : base(move(base)), ind(move(ind)) {
+}
+
 UnExprAST::UnExprAST(unique_ptr<ExprAST> e, Token::Oper o) : expr(move(e)), op(o) {
 }
 

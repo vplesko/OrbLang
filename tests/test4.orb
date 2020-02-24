@@ -42,10 +42,21 @@ fnc free(ptr addr);
 
 i32 * glob = true ? null : null;
 
+fnc pass(i32 [] x) i32 [] {
+    ret x;
+}
+
 fnc main() {
     i32 * a;
     i32 * b, c;
     i32 ** d;
+    ptr e;
+    ptr f = null;
+    i32 [] g, h;
+    i32 [][] i;
+    i32 j;
+    i32 []* k;
+    i32 *[] l;
 
     b = true ? a : c;
 
@@ -86,12 +97,10 @@ fnc main() {
     c = i32*(null);
     if (c == null) println_i32(15);
 
-    ptr e;
     e = null;
     (i8*(e));
     (i32*(e));
 
-    ptr f = null;
     if (e == f) println_i32(16);
     if (e != f) println_i32(17);
 
@@ -111,4 +120,34 @@ fnc main() {
     println_i32(**&*&a);
     free(ptr(a));
     free(ptr(b));
+
+    g = i32[](malloc(4*4));
+    g[0] = 300;
+    println_i32(g[0]);
+    j = 0;
+    println_i32(g[j]);
+    println_i32((g)[0]);
+    println_i32(i32[](g)[0]);
+    println_i32(pass(g)[0]);
+    g[1] = 301;
+    println_i32(g[1]);
+    println_i32(g[j+1]);
+    h = i32[](&g[1]);
+    println_i32(h[0]);
+    println_i32(h[-1]);
+    println_i32(h[j-1]);
+    free(ptr(g));
+
+    i = i32[][](malloc(32)); // some number larger than size of pointer
+    i[0] = i32[](malloc(4));
+    i[0][0] = 400;
+    println_i32(i[0][0]);
+    i[0][0] = 401;
+    k = i32[]*(i);
+    println_i32((*k)[0]);
+    i[0][0] = 402;
+    l = i32*[](i);
+    println_i32(*l[0]);
+    free(ptr(i[0]));
+    free(ptr(i));
 }

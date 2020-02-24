@@ -26,6 +26,7 @@ llvm::Type* CodeGen::getType(TypeTable::Id typeId) {
         for (const TypeTable::TypeDescr::Decor &decor : descr.decors) {
             switch (decor) {
             case TypeTable::TypeDescr::D_PTR:
+            case TypeTable::TypeDescr::D_ARR_PTR:
                 llvmType = llvm::PointerType::get(llvmType, 0);
                 break;
             default:

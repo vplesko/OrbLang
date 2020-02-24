@@ -261,6 +261,10 @@ Token Lexer::next() {
             tok = {Token::T_BRACE_L_CUR};
         } else if (ch == '}') {
             tok = {Token::T_BRACE_R_CUR};
+        } else if (ch == '[') {
+            tok = {Token::T_BRACE_L_SQR};
+        } else if (ch == ']') {
+            tok = {Token::T_BRACE_R_SQR};
         } else if (isalpha(ch) || ch == '_') {
             int l = col-1;
             int firstAlnum = ch == '_' ? -1 : 0;

@@ -7,6 +7,8 @@ CodeGen::ExprGenPayload CodeGen::codegenExpr(const ExprAST *ast) {
         return codegen((const LiteralExprAST*)ast);
     case AST_VarExpr:
         return codegen((const VarExprAST*)ast);
+    case AST_IndExpr:
+        return codegen((const IndExprAST*)ast);
     case AST_UnExpr:
         return codegen((const UnExprAST*)ast);
     case AST_BinExpr:
@@ -36,6 +38,31 @@ CodeGen::ExprGenPayload CodeGen::codegen(const VarExprAST *ast) {
     const SymbolTable::VarPayload *var = symbolTable->getVar(ast->getNameId());
     if (broken(var)) return {};
     return {var->type, llvmBuilder.CreateLoad(var->val, namePool->get(ast->getNameId())), var->val};
+}
+
+CodeGen::ExprGenPayload CodeGen::codegen(const IndExprAST *ast) {
+    ExprGenPayload baseExprPay = codegenExpr(ast->getBase());
+    // no literal can indexed (no indexing on null)
+    if (valBroken(baseExprPay)) return {};
+
+    ExprGenPayload indExprPay = codegenExpr(ast->getInd());
+    if (valueBroken(indExprPay)) return {};
+
+    pair<bool, TypeTable::Id> typeId = symbolTable->getTypeTable()->addTypeIndex(baseExprPay.type);
+    if (typeId.first == false) return {};
+
+    ExprGenPayload retPay;
+    retPay.type = typeId.second;
+
+    if (indExprPay.isLitVal()) {
+        if (indExprPay.litVal.type != LiteralVal::T_SINT) return {};
+        if (!promoteLiteral(indExprPay, TypeTable::shortestFittingTypeI(indExprPay.litVal.val_si))) return {};
+    }
+
+    retPay.ref = llvmBuilder.CreateGEP(baseExprPay.val, indExprPay.val);
+    retPay.val = llvmBuilder.CreateLoad(retPay.ref, "index_tmp");
+
+    return retPay;
 }
 
 CodeGen::ExprGenPayload CodeGen::codegen(const UnExprAST *ast) {
@@ -146,7 +173,7 @@ CodeGen::ExprGenPayload CodeGen::codegenLiteralUn(Token::Oper op, LiteralVal lit
             return {};
         }
     } else {
-        // TODO error msg when null, can't & or *
+        // TODO error msg when null, can't & or * or index
         panic = true;
         return {};
     }
@@ -216,7 +243,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
         bool isTypeI = TypeTable::isTypeI(exprPayRet.type);
         bool isTypeU = TypeTable::isTypeU(exprPayRet.type);
         bool isTypeF = TypeTable::isTypeF(exprPayRet.type);
-        bool isTypeP = symbolTable->getTypeTable()->isTypeAnyP(exprPayRet.type);
+        bool isTypeP = symbolTable->getTypeTable()->isTypeP(exprPayRet.type);
 
         switch (ast->getOp()) {
             case Token::O_ASGN:

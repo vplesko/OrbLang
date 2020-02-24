@@ -19,6 +19,8 @@ struct Token {
         T_BRACE_R_REG,
         T_BRACE_L_CUR,
         T_BRACE_R_CUR,
+        T_BRACE_L_SQR,
+        T_BRACE_R_SQR,
         T_ID,
         T_IF,
         T_ELSE,

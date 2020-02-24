@@ -13,6 +13,7 @@ public:
     struct TypeDescr {
         enum Decor {
             D_PTR,
+            D_ARR_PTR,
             D_INVALID
         };
 
@@ -95,6 +96,7 @@ public:
 
     TypeTable::Id addType(TypeDescr typeDescr);
     std::pair<bool, TypeTable::Id> addTypeDeref(Id typeId);
+    std::pair<bool, TypeTable::Id> addTypeIndex(Id typeId);
     TypeTable::Id addTypeAddr(Id typeId);
     TypeTable::Id addType(TypeDescr typeDescr, llvm::Type *type);
     void addPrimType(NamePool::Id name, PrimIds id, llvm::Type *type);
@@ -107,5 +109,6 @@ public:
     TypeTable::Id getTypeId(NamePool::Id name) const { return typeIds.at(name); }
 
     bool isTypeAnyP(Id t) const;
-    bool isTypeP(Id t) const { return isTypeAnyP(t); }
+    bool isTypeP(Id t) const;
+    bool isTypeArrP(Id t) const;
 };

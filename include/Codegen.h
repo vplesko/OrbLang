@@ -45,14 +45,18 @@ class CodeGen {
     bool isGlobalScope() const;
     bool isBlockTerminated() const;
 
+    // panics if both val and lit val are invalid, returns panic
     bool valueBroken(const ExprGenPayload &e);
+    // panics if val is invalid, returns panic
     bool valBroken(const ExprGenPayload &e);
+    // panics if ref is invalid, returns panic
     bool refBroken(const ExprGenPayload &e);
 
     bool promoteLiteral(ExprGenPayload &e, TypeTable::Id t);
 
     ExprGenPayload codegen(const LiteralExprAST *ast);
     ExprGenPayload codegen(const VarExprAST *ast);
+    ExprGenPayload codegen(const IndExprAST *ast);
     ExprGenPayload codegen(const UnExprAST *ast);
     ExprGenPayload codegenLiteralUn(Token::Oper op, LiteralVal lit);
     ExprGenPayload codegen(const BinExprAST *ast);

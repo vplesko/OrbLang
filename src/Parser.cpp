@@ -29,6 +29,8 @@ bool Parser::mismatch(Token::Type type) {
 
 unique_ptr<ExprAST> Parser::prim() {
     // remember, string literal is lvalue
+    unique_ptr<ExprAST> ret;
+
     if (peek().type == Token::T_NUM) {
         Token tok = next();
 
@@ -36,7 +38,7 @@ unique_ptr<ExprAST> Parser::prim() {
         val.type = LiteralVal::T_SINT;
         val.val_si = tok.num;
 
-        return make_unique<LiteralExprAST>(val);
+        ret = make_unique<LiteralExprAST>(val);
     } else if (peek().type == Token::T_FNUM) {
         Token tok = next();
 
@@ -44,18 +46,18 @@ unique_ptr<ExprAST> Parser::prim() {
         val.type = LiteralVal::T_FLOAT;
         val.val_f = tok.fnum;
 
-        return make_unique<LiteralExprAST>(val);
+        ret = make_unique<LiteralExprAST>(val);
     } else if (peek().type == Token::T_BVAL) {
         Token tok = next();
 
-        return make_unique<LiteralExprAST>(tok.bval);
+        ret = make_unique<LiteralExprAST>(tok.bval);
     } else if (peek().type == Token::T_NULL) {
         next();
 
         LiteralVal val;
         val.type = LiteralVal::T_NULL;
 
-        return make_unique<LiteralExprAST>(val);
+        ret = make_unique<LiteralExprAST>(val);
     } else if (peek().type == Token::T_ID) {
         if (symbolTable->getTypeTable()->isType(peek().nameId)) {
             unique_ptr<TypeAST> t = type();
@@ -66,7 +68,7 @@ unique_ptr<ExprAST> Parser::prim() {
             if (broken(e)) return nullptr;
             if (mismatch(Token::T_BRACE_R_REG)) return nullptr;
 
-            return make_unique<CastExprAST>(move(t), move(e));
+            ret = make_unique<CastExprAST>(move(t), move(e));
         } else {
             Token tok = next();
 
@@ -92,9 +94,9 @@ unique_ptr<ExprAST> Parser::prim() {
                     first = false;
                 }
 
-                return call;
+                ret = move(call);
             } else {
-                return make_unique<VarExprAST>(tok.nameId);
+                ret = make_unique<VarExprAST>(tok.nameId);
             }
         }
     } else if (peek().type == Token::T_OPER) {
@@ -108,7 +110,7 @@ unique_ptr<ExprAST> Parser::prim() {
         unique_ptr<ExprAST> e = prim();
         if (broken(e)) return nullptr;
 
-        return make_unique<UnExprAST>(move(e), tok.op);
+        ret = make_unique<UnExprAST>(move(e), tok.op);
     } else if (peek().type == Token::T_BRACE_L_REG) {
         next();
 
@@ -117,11 +119,21 @@ unique_ptr<ExprAST> Parser::prim() {
 
         if (mismatch(Token::T_BRACE_R_REG)) return nullptr;
 
-        return e;
+        ret = move(e);
     } else {
         panic = true;
         return nullptr;
     }
+
+    while (peek().type == Token::T_BRACE_L_SQR) {
+        next();
+        unique_ptr<ExprAST> ind = expr();
+        if (broken(ind)) return nullptr;
+        if (mismatch(Token::T_BRACE_R_SQR)) return nullptr;
+        ret = make_unique<IndExprAST>(move(ret), move(ind));
+    }
+
+    return ret;
 }
 
 unique_ptr<ExprAST> Parser::expr(unique_ptr<ExprAST> lhs, OperPrec min_prec) {
@@ -196,9 +208,17 @@ std::unique_ptr<TypeAST> Parser::type() {
 
     TypeTable::TypeDescr typeDescr(symbolTable->getTypeTable()->getTypeId(typeTok.nameId));
 
-    while (peek().type == Token::T_OPER && peek().op == Token::O_MUL) {
-        typeDescr.addDecor(TypeTable::TypeDescr::D_PTR);
-        next();
+    while (true) {
+        if (peek().type == Token::T_OPER && peek().op == Token::O_MUL) {
+            typeDescr.addDecor(TypeTable::TypeDescr::D_PTR);
+            next();
+        } else if (peek().type == Token::T_BRACE_L_SQR) {
+            next();
+            if (mismatch(Token::T_BRACE_R_SQR)) return nullptr;
+            typeDescr.addDecor(TypeTable::TypeDescr::D_ARR_PTR);
+        } else {
+            break;
+        }
     }
 
     TypeTable::Id typeId = symbolTable->getTypeTable()->addType(move(typeDescr));

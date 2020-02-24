@@ -10,6 +10,7 @@ enum ASTType {
     AST_EmptyExpr,
     AST_LiteralExpr,
     AST_VarExpr,
+    AST_IndExpr,
     AST_UnExpr,
     AST_BinExpr,
     AST_TernCondExpr,
@@ -81,6 +82,18 @@ public:
     ASTType type() const override { return AST_VarExpr; }
 
     NamePool::Id getNameId() const { return nameId; }
+};
+
+class IndExprAST : public ExprAST {
+    std::unique_ptr<ExprAST> base, ind;
+
+public:
+    IndExprAST(std::unique_ptr<ExprAST> base, std::unique_ptr<ExprAST> ind);
+
+    ASTType type() const override { return AST_IndExpr; }
+
+    const ExprAST* getBase() const { return base.get(); }
+    const ExprAST* getInd() const { return ind.get(); }
 };
 
 class UnExprAST : public ExprAST {

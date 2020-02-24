@@ -91,11 +91,21 @@ pair<bool, TypeTable::Id> TypeTable::addTypeDeref(Id typeId) {
         return make_pair(false, 0);
     
     TypeDescr typeDerefDescr(typeDescr.base);
-    typeDerefDescr.decors = vector<TypeDescr::Decor>(typeDescr.decors.size()-1);
-    for (size_t i = 0; i < typeDerefDescr.decors.size(); ++i)
-        typeDerefDescr.decors[i] = typeDescr.decors[i];
+    typeDerefDescr.decors = vector<TypeDescr::Decor>(typeDescr.decors.begin(), typeDescr.decors.end()-1);
     
     return make_pair(true, addType(move(typeDerefDescr)));
+}
+
+pair<bool, TypeTable::Id> TypeTable::addTypeIndex(Id typeId) {
+    const TypeDescr &typeDescr = types[typeId].first;
+    
+    if (!isTypeArrP(typeId))
+        return make_pair(false, 0);
+    
+    TypeDescr typeIndexDescr(typeDescr.base);
+    typeIndexDescr.decors = vector<TypeDescr::Decor>(typeDescr.decors.begin(), typeDescr.decors.end()-1);
+    
+    return make_pair(true, addType(move(typeIndexDescr)));
 }
 
 TypeTable::Id TypeTable::addTypeAddr(Id typeId) {
@@ -133,5 +143,13 @@ bool TypeTable::isType(NamePool::Id name) const {
 }
 
 bool TypeTable::isTypeAnyP(Id t) const {
+    return isTypeP(t) || isTypeArrP(t);
+}
+
+bool TypeTable::isTypeP(Id t) const {
     return t == P_PTR || (!types[t].first.decors.empty() && types[t].first.decors.back() == TypeDescr::D_PTR);
+}
+
+bool TypeTable::isTypeArrP(Id t) const {
+    return !types[t].first.decors.empty() && types[t].first.decors.back() == TypeDescr::D_ARR_PTR;
 }
