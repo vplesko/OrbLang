@@ -24,10 +24,13 @@ llvm::Type* CodeGen::getType(TypeTable::Id typeId) {
         if (broken(llvmType)) return nullptr;
 
         for (const TypeTable::TypeDescr::Decor &decor : descr.decors) {
-            switch (decor) {
-            case TypeTable::TypeDescr::D_PTR:
-            case TypeTable::TypeDescr::D_ARR_PTR:
+            switch (decor.type) {
+            case TypeTable::TypeDescr::Decor::D_PTR:
+            case TypeTable::TypeDescr::Decor::D_ARR_PTR:
                 llvmType = llvm::PointerType::get(llvmType, 0);
+                break;
+            case TypeTable::TypeDescr::Decor::D_ARR:
+                llvmType = llvm::ArrayType::get(llvmType, decor.len);
                 break;
             default:
                 panic = true;

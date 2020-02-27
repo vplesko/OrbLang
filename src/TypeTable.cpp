@@ -1,10 +1,10 @@
 #include "TypeTable.h"
 using namespace std;
 
-bool TypeTable::TypeDescr::operator==(const TypeDescr &other) const {
+bool TypeTable::TypeDescr::eq(const TypeDescr &other) const {
     if (base != other.base || decors.size() != other.decors.size()) return false;
     for (size_t i = 0; i < decors.size(); ++i) {
-        if (decors[i] != other.decors[i]) return false;
+        if (!decors[i].eq(other.decors[i])) return false;
     }
     return true;
 }
@@ -69,7 +69,7 @@ TypeTable::TypeTable() : next(P_ENUM_END), types(P_ENUM_END) {
 TypeTable::Id TypeTable::addType(TypeDescr typeDescr) {
     // TODO this is somewhat slow, find a way to more quickly ensure uniqueness
     for (size_t i = 0; i < types.size(); ++i) {
-        if (types[i].first == typeDescr)
+        if (types[i].first.eq(typeDescr))
             return i;
     }
 
@@ -99,7 +99,7 @@ pair<bool, TypeTable::Id> TypeTable::addTypeDeref(Id typeId) {
 pair<bool, TypeTable::Id> TypeTable::addTypeIndex(Id typeId) {
     const TypeDescr &typeDescr = types[typeId].first;
     
-    if (!isTypeArrP(typeId))
+    if (!isTypeArrP(typeId) && !isTypeArr(typeId))
         return make_pair(false, 0);
     
     TypeDescr typeIndexDescr(typeDescr.base);
@@ -115,7 +115,7 @@ TypeTable::Id TypeTable::addTypeAddr(Id typeId) {
     typeAddrDescr.decors = vector<TypeDescr::Decor>(typeDescr.decors.size()+1);
     for (size_t i = 0; i < typeDescr.decors.size(); ++i)
         typeAddrDescr.decors[i] = typeDescr.decors[i];
-    typeAddrDescr.decors.back() = TypeDescr::D_PTR;
+    typeAddrDescr.decors.back() = {TypeDescr::Decor::D_PTR};
 
     return addType(move(typeAddrDescr));
 }
@@ -147,9 +147,13 @@ bool TypeTable::isTypeAnyP(Id t) const {
 }
 
 bool TypeTable::isTypeP(Id t) const {
-    return t == P_PTR || (!types[t].first.decors.empty() && types[t].first.decors.back() == TypeDescr::D_PTR);
+    return t == P_PTR || (!types[t].first.decors.empty() && types[t].first.decors.back().type == TypeDescr::Decor::D_PTR);
+}
+
+bool TypeTable::isTypeArr(Id t) const {
+    return !types[t].first.decors.empty() && types[t].first.decors.back().type == TypeDescr::Decor::D_ARR;
 }
 
 bool TypeTable::isTypeArrP(Id t) const {
-    return !types[t].first.decors.empty() && types[t].first.decors.back() == TypeDescr::D_ARR_PTR;
+    return !types[t].first.decors.empty() && types[t].first.decors.back().type == TypeDescr::Decor::D_ARR_PTR;
 }

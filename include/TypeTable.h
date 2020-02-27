@@ -11,10 +11,20 @@ public:
     typedef unsigned Id;
 
     struct TypeDescr {
-        enum Decor {
-            D_PTR,
-            D_ARR_PTR,
-            D_INVALID
+        struct Decor {
+            enum Type {
+                D_PTR,
+                D_ARR,
+                D_ARR_PTR,
+                D_INVALID
+            };
+
+            Type type;
+            unsigned long len;
+            
+            bool eq(const Decor &other) const {
+                return type == other.type && len == other.len;
+            }
         };
 
         Id base;
@@ -31,7 +41,7 @@ public:
 
         void addDecor(Decor d) { decors.push_back(d); }
 
-        bool operator==(const TypeDescr &other) const;
+        bool eq(const TypeDescr &other) const;
     };
 
     enum PrimIds {
@@ -110,5 +120,6 @@ public:
 
     bool isTypeAnyP(Id t) const;
     bool isTypeP(Id t) const;
+    bool isTypeArr(Id t) const;
     bool isTypeArrP(Id t) const;
 };

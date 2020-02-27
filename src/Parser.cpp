@@ -210,12 +210,20 @@ std::unique_ptr<TypeAST> Parser::type() {
 
     while (true) {
         if (peek().type == Token::T_OPER && peek().op == Token::O_MUL) {
-            typeDescr.addDecor(TypeTable::TypeDescr::D_PTR);
+            typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_PTR});
             next();
         } else if (peek().type == Token::T_BRACE_L_SQR) {
             next();
-            if (mismatch(Token::T_BRACE_R_SQR)) return nullptr;
-            typeDescr.addDecor(TypeTable::TypeDescr::D_ARR_PTR);
+            if (peek().type == Token::T_BRACE_R_SQR) {
+                next();
+                typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_ARR_PTR});
+            } else {
+                Token ind = next();
+                if (ind.type != Token::T_NUM || ind.num <= 0) return nullptr;
+                if (mismatch(Token::T_BRACE_R_SQR)) return nullptr;
+
+                typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_ARR, (unsigned long) ind.num});
+            }
         } else {
             break;
         }

@@ -47,6 +47,10 @@ CodeGen::ExprGenPayload CodeGen::codegen(const IndExprAST *ast) {
 
     ExprGenPayload indExprPay = codegenExpr(ast->getInd());
     if (valueBroken(indExprPay)) return {};
+    if (!TypeTable::isTypeI(indExprPay.type) && indExprPay.litVal.type != LiteralVal::T_SINT) {
+        panic = true;
+        return {};
+    }
 
     pair<bool, TypeTable::Id> typeId = symbolTable->getTypeTable()->addTypeIndex(baseExprPay.type);
     if (typeId.first == false) return {};
@@ -55,12 +59,31 @@ CodeGen::ExprGenPayload CodeGen::codegen(const IndExprAST *ast) {
     retPay.type = typeId.second;
 
     if (indExprPay.isLitVal()) {
+        // TODO warning if oob index on sized array
         if (indExprPay.litVal.type != LiteralVal::T_SINT) return {};
         if (!promoteLiteral(indExprPay, TypeTable::shortestFittingTypeI(indExprPay.litVal.val_si))) return {};
     }
 
-    retPay.ref = llvmBuilder.CreateGEP(baseExprPay.val, indExprPay.val);
-    retPay.val = llvmBuilder.CreateLoad(retPay.ref, "index_tmp");
+    if (symbolTable->getTypeTable()->isTypeArrP(baseExprPay.type)) {
+        retPay.ref = llvmBuilder.CreateGEP(baseExprPay.val, indExprPay.val);
+        retPay.val = llvmBuilder.CreateLoad(retPay.ref, "index_tmp");
+    } else if (symbolTable->getTypeTable()->isTypeArr(baseExprPay.type)) {
+        if (baseExprPay.ref != nullptr) {
+            retPay.ref = llvmBuilder.CreateGEP(baseExprPay.ref,
+                {llvm::ConstantInt::get(getType(indExprPay.type), 0), indExprPay.val});
+            retPay.val = llvmBuilder.CreateLoad(retPay.ref, "index_tmp");
+        } else {
+            // extractvalue requires compile-time known indices
+            llvm::Value *tmp = createAlloca(getType(baseExprPay.type), "tmp");
+            llvmBuilder.CreateStore(baseExprPay.val, tmp);
+            tmp = llvmBuilder.CreateGEP(tmp,
+                {llvm::ConstantInt::get(getType(indExprPay.type), 0), indExprPay.val});
+            retPay.val = llvmBuilder.CreateLoad(tmp, "index_tmp");
+        }
+    } else {
+        panic = true;
+        return {};
+    }
 
     return retPay;
 }
@@ -648,6 +671,7 @@ CodeGen::ExprGenPayload CodeGen::codegenLiteralBin(Token::Oper op, LiteralVal li
 }
 
 CodeGen::ExprGenPayload CodeGen::codegen(const TernCondExprAST *ast) {
+    // TODO see if you can use llvm's select instr
     if (isGlobalScope()) {
         return codegenGlobalScope(ast);
     }

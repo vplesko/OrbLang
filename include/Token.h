@@ -75,7 +75,7 @@ struct Token {
 
     Type type;
     union {
-        int num;
+        long int num;
         double fnum;
         bool bval;
         Oper op;
