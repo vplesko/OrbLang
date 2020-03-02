@@ -64,14 +64,18 @@ void Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
             val = nullptr;
         }
     } else if (symbolTable->getTypeTable()->isTypeAnyP(srcTypeId)) {
-        // TODO! ptr to bool
         if (getTypeTable()->isTypeI(dstTypeId))
             val = llvmBuilder.CreatePtrToInt(val, type, "p2i_cast");
         else if (getTypeTable()->isTypeU(dstTypeId))
             val = llvmBuilder.CreatePtrToInt(val, type, "p2u_cast");
         else if (symbolTable->getTypeTable()->isTypeAnyP(dstTypeId))
             val = llvmBuilder.CreatePointerCast(val, type, "p2p_cast");
-        else {
+        else if (getTypeTable()->isTypeB(dstTypeId)) {
+            val = llvmBuilder.CreateICmpNE(
+                llvmBuilder.CreatePtrToInt(val, getType(TypeTable::WIDEST_I)),
+                llvm::ConstantInt::get(getType(TypeTable::WIDEST_I), 0),
+                "p2b_cast");
+        } else {
             panic = true;
             val = nullptr;
         }

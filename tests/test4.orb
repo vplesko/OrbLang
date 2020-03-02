@@ -115,32 +115,35 @@ fnc main() {
     if (null != a) println_i32(3);
     if (null == null) println_i32(4);
     if (null != null) println_i32(5);
+    if (; bool(a)) println_i32(6);
 
     a = i32*(malloc(4));
-    if (a == null) println_i32(6);
-    if (null == a) println_i32(7);
-    if (a != null) println_i32(8);
-    if (null != a) println_i32(9);
-    if (null == null) println_i32(10);
-    if (null != null) println_i32(11);
+    if (a == null) println_i32(7);
+    if (null == a) println_i32(8);
+    if (a != null) println_i32(9);
+    if (null != a) println_i32(10);
+    if (null == null) println_i32(11);
+    if (null != null) println_i32(12);
+    if (; bool(a)) println_i32(13);
     free(ptr(a));
 
     b = true ? null : null;
-    if (b == null) println_i32(12);
+    if (b == null) println_i32(14);
     b = false ? null : null;
-    if (b == null) println_i32(13);
+    if (b == null) println_i32(15);
 
-    if (glob == null) println_i32(14);
+    if (glob == null) println_i32(16);
 
     c = i32*(null);
-    if (c == null) println_i32(15);
+    if (c == null) println_i32(17);
 
     e = null;
     (i8*(e));
     (i32*(e));
 
-    if (e == f) println_i32(16);
-    if (e != f) println_i32(17);
+    if (e == f) println_i32(18);
+    if (e != f) println_i32(19);
+    if (; bool(e)) println_i32(20);
 
     if (&d != null) println_i32(100);
     if (&d == null) println_i32(101);
@@ -236,6 +239,12 @@ fnc main() {
     println_i32(s1[0]);
     j = 1004;
     println_i32(pass(j));
+    if (; bool(r1)) println_i32(1005);
+    if (; bool(r2)) println_i32(1006);
+    if (; bool(r3)) println_i32(1007);
+    if (; bool(s1)) println_i32(1008);
+    if (; bool(s2)) println_i32(1009);
+    if (; bool(s3)) println_i32(1010);
     free(ptr cn(s3));
     free(ptr(s2));
     free(ptr cn(s1));
