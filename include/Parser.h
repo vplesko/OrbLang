@@ -21,28 +21,28 @@ class Parser {
     bool mismatch(Token::Type type);
     template<typename T> bool broken(const T &x);
 
-    std::unique_ptr<ExprAST> prim();
-    std::unique_ptr<ExprAST> expr(std::unique_ptr<ExprAST> lhs, OperPrec min_prec);
-    std::unique_ptr<ExprAST> expr();
-    std::unique_ptr<TypeAST> type();
-    std::unique_ptr<DeclAST> decl();
-    std::unique_ptr<StmntAST> simple();
-    std::unique_ptr<StmntAST> if_stmnt();
-    std::unique_ptr<StmntAST> for_stmnt();
-    std::unique_ptr<StmntAST> while_stmnt();
-    std::unique_ptr<StmntAST> do_while_stmnt();
-    std::unique_ptr<StmntAST> break_stmnt();
-    std::unique_ptr<StmntAST> continue_stmnt();
-    std::unique_ptr<StmntAST> switch_stmnt();
-    std::unique_ptr<StmntAST> ret();
-    std::unique_ptr<StmntAST> stmnt();
-    std::unique_ptr<BlockAST> block();
-    std::unique_ptr<BaseAST> func();
+    std::unique_ptr<ExprAst> prim();
+    std::unique_ptr<ExprAst> expr(std::unique_ptr<ExprAst> lhs, OperPrec min_prec);
+    std::unique_ptr<ExprAst> expr();
+    std::unique_ptr<TypeAst> type();
+    std::unique_ptr<DeclAst> decl();
+    std::unique_ptr<StmntAst> simple();
+    std::unique_ptr<StmntAst> if_stmnt();
+    std::unique_ptr<StmntAst> for_stmnt();
+    std::unique_ptr<StmntAst> while_stmnt();
+    std::unique_ptr<StmntAst> do_while_stmnt();
+    std::unique_ptr<StmntAst> break_stmnt();
+    std::unique_ptr<StmntAst> continue_stmnt();
+    std::unique_ptr<StmntAst> switch_stmnt();
+    std::unique_ptr<StmntAst> ret();
+    std::unique_ptr<StmntAst> stmnt();
+    std::unique_ptr<BlockAst> block();
+    std::unique_ptr<BaseAst> func();
 
 public:
     Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer);
 
-    std::unique_ptr<BaseAST> parseNode();
+    std::unique_ptr<BaseAst> parseNode();
 
     bool isOver() const { return peek().type == Token::T_END; }
     bool isPanic() const { return panic; }

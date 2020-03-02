@@ -9,12 +9,12 @@
 #include "llvm/Target/TargetOptions.h"
 using namespace std;
 
-CodeGen::CodeGen(NamePool *namePool, SymbolTable *symbolTable) : namePool(namePool), symbolTable(symbolTable), 
+Codegen::Codegen(NamePool *namePool, SymbolTable *symbolTable) : namePool(namePool), symbolTable(symbolTable), 
         llvmBuilder(llvmContext), llvmBuilderAlloca(llvmContext), panic(false) {
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("test"), llvmContext);
 }
 
-llvm::Type* CodeGen::getType(TypeTable::Id typeId) {
+llvm::Type* Codegen::getType(TypeTable::Id typeId) {
     llvm::Type *llvmType = symbolTable->getTypeTable()->getType(typeId);
 
     if (llvmType == nullptr) {
@@ -46,22 +46,22 @@ llvm::Type* CodeGen::getType(TypeTable::Id typeId) {
     return llvmType;
 }
 
-bool CodeGen::valueBroken(const ExprGenPayload &e) {
+bool Codegen::valueBroken(const ExprGenPayload &e) {
     if (e.val == nullptr && !e.isLitVal()) panic = true;
     return panic;
 }
 
-bool CodeGen::valBroken(const ExprGenPayload &e) {
+bool Codegen::valBroken(const ExprGenPayload &e) {
     if (e.val == nullptr) panic = true;
     return panic;
 }
 
-bool CodeGen::refBroken(const ExprGenPayload &e) {
+bool Codegen::refBroken(const ExprGenPayload &e) {
     if (e.ref == nullptr) panic = true;
     return panic;
 }
 
-bool CodeGen::promoteLiteral(ExprGenPayload &e, TypeTable::Id t) {
+bool Codegen::promoteLiteral(ExprGenPayload &e, TypeTable::Id t) {
     if (!e.isLitVal()) {
         panic = true;
         return false;
@@ -106,53 +106,53 @@ bool CodeGen::promoteLiteral(ExprGenPayload &e, TypeTable::Id t) {
     return !panic;
 }
 
-llvm::Value* CodeGen::getConstB(bool val) {
+llvm::Value* Codegen::getConstB(bool val) {
     if (val) return llvm::ConstantInt::getTrue(llvmContext);
     else return llvm::ConstantInt::getFalse(llvmContext);
 }
 
-llvm::Type* CodeGen::genPrimTypeBool() {
+llvm::Type* Codegen::genPrimTypeBool() {
     return llvm::IntegerType::get(llvmContext, 1);
 }
 
-llvm::Type* CodeGen::genPrimTypeI(unsigned bits) {
+llvm::Type* Codegen::genPrimTypeI(unsigned bits) {
     return llvm::IntegerType::get(llvmContext, bits);
 }
 
-llvm::Type* CodeGen::genPrimTypeU(unsigned bits) {
+llvm::Type* Codegen::genPrimTypeU(unsigned bits) {
     // LLVM makes no distinction between signed and unsigned int
     return llvm::IntegerType::get(llvmContext, bits);
 }
 
-llvm::Type* CodeGen::genPrimTypeF16() {
+llvm::Type* Codegen::genPrimTypeF16() {
     return llvm::Type::getHalfTy(llvmContext);
 }
 
-llvm::Type* CodeGen::genPrimTypeF32() {
+llvm::Type* Codegen::genPrimTypeF32() {
     return llvm::Type::getFloatTy(llvmContext);
 }
 
-llvm::Type* CodeGen::genPrimTypeF64() {
+llvm::Type* Codegen::genPrimTypeF64() {
     return llvm::Type::getDoubleTy(llvmContext);
 }
 
-llvm::Type* CodeGen::genPrimTypePtr() {
+llvm::Type* Codegen::genPrimTypePtr() {
     return llvm::Type::getInt8PtrTy(llvmContext);
 }
 
-llvm::AllocaInst* CodeGen::createAlloca(llvm::Type *type, const string &name) {
+llvm::AllocaInst* Codegen::createAlloca(llvm::Type *type, const string &name) {
     return llvmBuilderAlloca.CreateAlloca(type, 0, name);
 }
 
-bool CodeGen::isGlobalScope() const {
+bool Codegen::isGlobalScope() const {
     return symbolTable->inGlobalScope();
 }
 
-bool CodeGen::isBlockTerminated() const {
+bool Codegen::isBlockTerminated() const {
     return !llvmBuilder.GetInsertBlock()->empty() && llvmBuilder.GetInsertBlock()->back().isTerminator();
 }
 
-llvm::GlobalValue* CodeGen::createGlobal(llvm::Type *type, llvm::Constant *init, const std::string &name) {
+llvm::GlobalValue* Codegen::createGlobal(llvm::Type *type, llvm::Constant *init, const std::string &name) {
     if (init == nullptr) {
         // llvm demands global vars be initialized, but by deafult we don't init them
         // TODO this is very hacky
@@ -169,11 +169,11 @@ llvm::GlobalValue* CodeGen::createGlobal(llvm::Type *type, llvm::Constant *init,
         name);
 }
 
-void CodeGen::printout() const {
+void Codegen::printout() const {
     llvmModule->print(llvm::outs(), nullptr);
 }
 
-bool CodeGen::binary(const std::string &filename) {
+bool Codegen::binary(const std::string &filename) {
     // TODO add optimizer passes
     
     llvm::InitializeAllTargetInfos();

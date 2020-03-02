@@ -7,8 +7,7 @@
 #include "llvm/IR/Module.h"
 #include <stack>
 
-// TODO! change to Codegen
-class CodeGen {
+class Codegen {
     NamePool *namePool;
     SymbolTable *symbolTable;
 
@@ -60,38 +59,38 @@ class CodeGen {
 
     bool promoteLiteral(ExprGenPayload &e, TypeTable::Id t);
 
-    ExprGenPayload codegen(const LiteralExprAST *ast);
-    ExprGenPayload codegen(const VarExprAST *ast);
-    ExprGenPayload codegen(const IndExprAST *ast);
-    ExprGenPayload codegen(const UnExprAST *ast);
+    ExprGenPayload codegen(const LiteralExprAst *ast);
+    ExprGenPayload codegen(const VarExprAst *ast);
+    ExprGenPayload codegen(const IndExprAst *ast);
+    ExprGenPayload codegen(const UnExprAst *ast);
     ExprGenPayload codegenLiteralUn(Token::Oper op, LiteralVal lit);
-    ExprGenPayload codegen(const BinExprAST *ast);
+    ExprGenPayload codegen(const BinExprAst *ast);
     // helper function for short-circuit evaluation of boolean AND and OR
-    ExprGenPayload codegenLogicAndOr(const BinExprAST *ast);
-    ExprGenPayload codegenLogicAndOrGlobalScope(const BinExprAST *ast);
+    ExprGenPayload codegenLogicAndOr(const BinExprAst *ast);
+    ExprGenPayload codegenLogicAndOrGlobalScope(const BinExprAst *ast);
     ExprGenPayload codegenLiteralBin(Token::Oper op, LiteralVal litL, LiteralVal litR);
-    ExprGenPayload codegen(const TernCondExprAST *ast);
-    ExprGenPayload codegenGlobalScope(const TernCondExprAST *ast);
-    ExprGenPayload codegen(const CallExprAST *ast);
-    ExprGenPayload codegen(const CastExprAST *ast);
-    void codegen(const DeclAST *ast);
-    void codegen(const IfAST *ast);
-    void codegen(const ForAST *ast);
-    void codegen(const WhileAST *ast);
-    void codegen(const DoWhileAST *ast);
-    void codegen(const BreakAST *ast);
-    void codegen(const ContinueAST *ast);
-    void codegen(const SwitchAST *ast);
-    void codegen(const RetAST *ast);
-    void codegen(const BlockAST *ast, bool makeScope);
-    std::pair<FuncValue, bool> codegen(const FuncProtoAST *ast, bool definition);
-    void codegen(const FuncAST *ast);
+    ExprGenPayload codegen(const TernCondExprAst *ast);
+    ExprGenPayload codegenGlobalScope(const TernCondExprAst *ast);
+    ExprGenPayload codegen(const CallExprAst *ast);
+    ExprGenPayload codegen(const CastExprAst *ast);
+    void codegen(const DeclAst *ast);
+    void codegen(const IfAst *ast);
+    void codegen(const ForAst *ast);
+    void codegen(const WhileAst *ast);
+    void codegen(const DoWhileAst *ast);
+    void codegen(const BreakAst *ast);
+    void codegen(const ContinueAst *ast);
+    void codegen(const SwitchAst *ast);
+    void codegen(const RetAst *ast);
+    void codegen(const BlockAst *ast, bool makeScope);
+    std::pair<FuncValue, bool> codegen(const FuncProtoAst *ast, bool definition);
+    void codegen(const FuncAst *ast);
 
-    llvm::Type* codegenType(const TypeAST *ast);
-    ExprGenPayload codegenExpr(const ExprAST *ast);
+    llvm::Type* codegenType(const TypeAst *ast);
+    ExprGenPayload codegenExpr(const ExprAst *ast);
 
 public:
-    CodeGen(NamePool *namePool, SymbolTable *symbolTable);
+    Codegen(NamePool *namePool, SymbolTable *symbolTable);
 
     llvm::Type* genPrimTypeBool();
     llvm::Type* genPrimTypeI(unsigned bits);
@@ -101,7 +100,7 @@ public:
     llvm::Type* genPrimTypeF64();
     llvm::Type* genPrimTypePtr();
 
-    void codegenNode(const BaseAST *ast, bool blockMakeScope = true);
+    void codegenNode(const BaseAst *ast, bool blockMakeScope = true);
 
     bool isPanic() const { return panic; }
 
@@ -112,7 +111,7 @@ public:
 
 // panics if pointer x is null; returns panic
 template<typename T>
-bool CodeGen::broken(const T &x) {
+bool Codegen::broken(const T &x) {
     if (x == nullptr) panic = true;
     return panic;
 }

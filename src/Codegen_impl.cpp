@@ -2,7 +2,7 @@
 #include "llvm/IR/Verifier.h"
 using namespace std;
 
-void CodeGen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId) {
+void Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId) {
     if (srcTypeId == dstTypeId) return;
 
     if (val == nullptr || type == nullptr) {
@@ -81,69 +81,69 @@ void CodeGen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
     }
 }
 
-void CodeGen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId) {
+void Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId) {
     createCast(val, srcTypeId, getType(dstTypeId), dstTypeId);
 }
 
-void CodeGen::createCast(ExprGenPayload &e, TypeTable::Id t) {
+void Codegen::createCast(ExprGenPayload &e, TypeTable::Id t) {
     createCast(e.val, e.type, t);
     if (panic) return;
     e.type = t;
 }
 
-void CodeGen::codegenNode(const BaseAST *ast, bool blockMakeScope) {
+void Codegen::codegenNode(const BaseAst *ast, bool blockMakeScope) {
     switch (ast->type()) {
     case AST_EmptyExpr:
         return;
     case AST_Decl:
-        codegen((const DeclAST*)ast);
+        codegen((const DeclAst*)ast);
         return;
     case AST_If:
-        codegen((const IfAST*)ast);
+        codegen((const IfAst*)ast);
         return;
     case AST_For:
-        codegen((const ForAST*) ast);
+        codegen((const ForAst*) ast);
         return;
     case AST_While:
-        codegen((const WhileAST*) ast);
+        codegen((const WhileAst*) ast);
         return;
     case AST_DoWhile:
-        codegen((const DoWhileAST*) ast);
+        codegen((const DoWhileAst*) ast);
         return;
     case AST_Break:
-        codegen((const BreakAST*) ast);
+        codegen((const BreakAst*) ast);
         return;
     case AST_Continue:
-        codegen((const ContinueAST*) ast);
+        codegen((const ContinueAst*) ast);
         return;
     case AST_Switch:
-        codegen ((const SwitchAST*) ast);
+        codegen ((const SwitchAst*) ast);
         return;
     case AST_Ret:
-        codegen((const RetAST*)ast);
+        codegen((const RetAst*)ast);
         return;
     case AST_Block:
-        codegen((const BlockAST*)ast, blockMakeScope);
+        codegen((const BlockAst*)ast, blockMakeScope);
         return;
     case AST_FuncProto:
-        codegen((const FuncProtoAST*)ast, false);
+        codegen((const FuncProtoAst*)ast, false);
         return;
     case AST_Func:
-        codegen((const FuncAST*)ast);
+        codegen((const FuncAst*)ast);
         return;
     default:
-        codegenExpr((const ExprAST*)ast);
+        codegenExpr((const ExprAst*)ast);
     }
 }
 
-llvm::Type* CodeGen::codegenType(const TypeAST *ast) {
+llvm::Type* Codegen::codegenType(const TypeAst *ast) {
     llvm::Type *type = getType(ast->getTypeId());
     if (broken(type)) return nullptr;
 
     return type;
 }
 
-void CodeGen::codegen(const DeclAST *ast) {
+void Codegen::codegen(const DeclAst *ast) {
     TypeTable::Id typeId = ast->getType()->getTypeId();
     llvm::Type *type = codegenType(ast->getType());
     if (broken(type)) return;
@@ -160,7 +160,7 @@ void CodeGen::codegen(const DeclAST *ast) {
         if (isGlobalScope()) {
             llvm::Constant *initConst = nullptr;
 
-            const ExprAST *init = it.second.get();
+            const ExprAst *init = it.second.get();
             if (init != nullptr) {
                 ExprGenPayload initPay = codegenExpr(init);
                 if (valueBroken(initPay) || !initPay.isLitVal() || !promoteLiteral(initPay, typeId)) {
@@ -174,7 +174,7 @@ void CodeGen::codegen(const DeclAST *ast) {
         } else {
             val = createAlloca(type, name);
 
-            const ExprAST *init = it.second.get();
+            const ExprAst *init = it.second.get();
             if (init != nullptr) {
                 ExprGenPayload initPay = codegenExpr(init);
                 if (valueBroken(initPay)) return;
@@ -202,7 +202,7 @@ void CodeGen::codegen(const DeclAST *ast) {
     }
 }
 
-void CodeGen::codegen(const IfAST *ast) {
+void Codegen::codegen(const IfAst *ast) {
     // unlike C++, then and else may eclipse vars declared in if's init
     ScopeControl scope(ast->hasInit() ? symbolTable : nullptr);
 
@@ -250,7 +250,7 @@ void CodeGen::codegen(const IfAST *ast) {
     llvmBuilder.SetInsertPoint(afterBlock);
 }
 
-void CodeGen::codegen(const ForAST *ast) {
+void Codegen::codegen(const ForAst *ast) {
     ScopeControl scope(ast->getInit()->type() == AST_Decl ? symbolTable : nullptr);
 
     codegenNode(ast->getInit());
@@ -317,7 +317,7 @@ void CodeGen::codegen(const ForAST *ast) {
     continueStack.pop();
 }
 
-void CodeGen::codegen(const WhileAST *ast) {
+void Codegen::codegen(const WhileAst *ast) {
     llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
 
     llvm::BasicBlock *condBlock = llvm::BasicBlock::Create(llvmContext, "cond", func);
@@ -360,7 +360,7 @@ void CodeGen::codegen(const WhileAST *ast) {
     continueStack.pop();
 }
 
-void CodeGen::codegen(const DoWhileAST *ast) {
+void Codegen::codegen(const DoWhileAst *ast) {
     llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
 
     llvm::BasicBlock *bodyBlock = llvm::BasicBlock::Create(llvmContext, "body", func);
@@ -404,7 +404,7 @@ void CodeGen::codegen(const DoWhileAST *ast) {
     continueStack.pop();
 }
 
-void CodeGen::codegen(const BreakAST *ast) {
+void Codegen::codegen(const BreakAst *ast) {
     if (breakStack.empty()) {
         panic = true;
         return;
@@ -413,7 +413,7 @@ void CodeGen::codegen(const BreakAST *ast) {
     llvmBuilder.CreateBr(breakStack.top());
 }
 
-void CodeGen::codegen(const ContinueAST *ast) {
+void Codegen::codegen(const ContinueAst *ast) {
     if (continueStack.empty()) {
         panic = true;
         return;
@@ -423,7 +423,7 @@ void CodeGen::codegen(const ContinueAST *ast) {
 }
 
 // TODO get rid of llvm::SwitchInst, allow other types
-void CodeGen::codegen(const SwitchAST *ast) {
+void Codegen::codegen(const SwitchAst *ast) {
     ExprGenPayload valExprPay = codegenExpr(ast->getValue());
 
     // literals get cast to the widest sint type, along with comparison values
@@ -486,7 +486,7 @@ void CodeGen::codegen(const SwitchAST *ast) {
     llvmBuilder.SetInsertPoint(afterBlock);
 }
 
-void CodeGen::codegen(const RetAST *ast) {
+void Codegen::codegen(const RetAst *ast) {
     pair<FuncValue, bool> currFunc = symbolTable->getCurrFunc();
     if (currFunc.second == false) {
         panic = true;
@@ -518,13 +518,13 @@ void CodeGen::codegen(const RetAST *ast) {
     llvmBuilder.CreateRet(retVal);
 }
 
-void CodeGen::codegen(const BlockAST *ast, bool makeScope) {
+void Codegen::codegen(const BlockAst *ast, bool makeScope) {
     ScopeControl scope(makeScope ? symbolTable : nullptr);
 
     for (const auto &it : ast->getBody()) codegenNode(it.get());
 }
 
-std::pair<FuncValue, bool> CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
+std::pair<FuncValue, bool> Codegen::codegen(const FuncProtoAst *ast, bool definition) {
     if (symbolTable->funcNameTaken(ast->getName())) {
         panic = true;
         return make_pair(FuncValue(), false);
@@ -574,7 +574,7 @@ std::pair<FuncValue, bool> CodeGen::codegen(const FuncProtoAST *ast, bool defini
     return make_pair(symbolTable->registerFunc(val), true);
 }
 
-void CodeGen::codegen(const FuncAST *ast) {
+void Codegen::codegen(const FuncAst *ast) {
     std::pair<FuncValue, bool> funcValRet = codegen(ast->getProto(), true);
     if (funcValRet.second == false) {
         panic = true;
@@ -592,7 +592,7 @@ void CodeGen::codegen(const FuncAST *ast) {
 
     size_t i = 0;
     for (auto &arg : funcVal->func->args()) {
-        const TypeAST *astArgType = ast->getProto()->getArgType(i);
+        const TypeAst *astArgType = ast->getProto()->getArgType(i);
         NamePool::Id astArgName = ast->getProto()->getArgName(i);
         const string &name = namePool->get(astArgName);
         llvm::AllocaInst *alloca = createAlloca(arg.getType(), name);

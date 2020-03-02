@@ -1,31 +1,31 @@
 #include "Codegen.h"
 using namespace std;
 
-CodeGen::ExprGenPayload CodeGen::codegenExpr(const ExprAST *ast) {
+Codegen::ExprGenPayload Codegen::codegenExpr(const ExprAst *ast) {
     switch (ast->type()) {
     case AST_LiteralExpr:
-        return codegen((const LiteralExprAST*)ast);
+        return codegen((const LiteralExprAst*)ast);
     case AST_VarExpr:
-        return codegen((const VarExprAST*)ast);
+        return codegen((const VarExprAst*)ast);
     case AST_IndExpr:
-        return codegen((const IndExprAST*)ast);
+        return codegen((const IndExprAst*)ast);
     case AST_UnExpr:
-        return codegen((const UnExprAST*)ast);
+        return codegen((const UnExprAst*)ast);
     case AST_BinExpr:
-        return codegen((const BinExprAST*)ast);
+        return codegen((const BinExprAst*)ast);
     case AST_TernCondExpr:
-        return codegen((const TernCondExprAST*)ast);
+        return codegen((const TernCondExprAst*)ast);
     case AST_CallExpr:
-        return codegen((const CallExprAST*)ast);
+        return codegen((const CallExprAst*)ast);
     case AST_CastExpr:
-        return codegen((const CastExprAST*)ast);
+        return codegen((const CastExprAst*)ast);
     default:
         panic = true;
         return {};
     }
 }
 
-CodeGen::ExprGenPayload CodeGen::codegen(const LiteralExprAST *ast) {
+Codegen::ExprGenPayload Codegen::codegen(const LiteralExprAst *ast) {
     if (ast->getVal().type == LiteralVal::T_NONE) {
         panic = true;
         return {};
@@ -34,7 +34,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const LiteralExprAST *ast) {
     return { .litVal = ast->getVal() };
 }
 
-CodeGen::ExprGenPayload CodeGen::codegen(const VarExprAST *ast) {
+Codegen::ExprGenPayload Codegen::codegen(const VarExprAst *ast) {
     pair<SymbolTable::VarPayload, bool> var = symbolTable->getVar(ast->getNameId());
     if (!var.second) {
         panic = true;
@@ -43,7 +43,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const VarExprAST *ast) {
     return {var.first.type, llvmBuilder.CreateLoad(var.first.val, namePool->get(ast->getNameId())), var.first.val};
 }
 
-CodeGen::ExprGenPayload CodeGen::codegen(const IndExprAST *ast) {
+Codegen::ExprGenPayload Codegen::codegen(const IndExprAst *ast) {
     ExprGenPayload baseExprPay = codegenExpr(ast->getBase());
     // no literal can indexed (no indexing on null)
     if (valBroken(baseExprPay)) return {};
@@ -91,7 +91,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const IndExprAST *ast) {
     return retPay;
 }
 
-CodeGen::ExprGenPayload CodeGen::codegen(const UnExprAST *ast) {
+Codegen::ExprGenPayload Codegen::codegen(const UnExprAst *ast) {
     ExprGenPayload exprPay = codegenExpr(ast->getExpr());
     if (valueBroken(exprPay)) return {};
 
@@ -174,7 +174,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const UnExprAST *ast) {
     return exprRet;
 }
 
-CodeGen::ExprGenPayload CodeGen::codegenLiteralUn(Token::Oper op, LiteralVal lit) {
+Codegen::ExprGenPayload Codegen::codegenLiteralUn(Token::Oper op, LiteralVal lit) {
     ExprGenPayload exprRet;
     exprRet.litVal.type = lit.type;
     if (op == Token::O_ADD) {
@@ -214,7 +214,7 @@ CodeGen::ExprGenPayload CodeGen::codegenLiteralUn(Token::Oper op, LiteralVal lit
     return exprRet;
 }
 
-CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
+Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
     if (ast->getOp() == Token::O_AND || ast->getOp() == Token::O_OR) {
         return codegenLogicAndOr(ast);
     }
@@ -426,7 +426,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const BinExprAST *ast) {
     return exprPayRet;
 }
 
-CodeGen::ExprGenPayload CodeGen::codegenLogicAndOr(const BinExprAST *ast) {
+Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const BinExprAst *ast) {
     if (isGlobalScope()) {
         return codegenLogicAndOrGlobalScope(ast);
     }
@@ -509,7 +509,7 @@ CodeGen::ExprGenPayload CodeGen::codegenLogicAndOr(const BinExprAST *ast) {
     return ret;
 }
 
-CodeGen::ExprGenPayload CodeGen::codegenLogicAndOrGlobalScope(const BinExprAST *ast) {
+Codegen::ExprGenPayload Codegen::codegenLogicAndOrGlobalScope(const BinExprAst *ast) {
     ExprGenPayload exprPayL = codegenExpr(ast->getL());
     if (!exprPayL.isLitVal() || !isBool(exprPayL)) {
         panic = true;
@@ -532,7 +532,7 @@ CodeGen::ExprGenPayload CodeGen::codegenLogicAndOrGlobalScope(const BinExprAST *
     return exprPayRet;
 }
 
-CodeGen::ExprGenPayload CodeGen::codegenLiteralBin(Token::Oper op, LiteralVal litL, LiteralVal litR) {
+Codegen::ExprGenPayload Codegen::codegenLiteralBin(Token::Oper op, LiteralVal litL, LiteralVal litR) {
     if (litL.type != litR.type || litL.type == LiteralVal::T_NONE) {
         panic = true;
         return {};
@@ -685,7 +685,7 @@ CodeGen::ExprGenPayload CodeGen::codegenLiteralBin(Token::Oper op, LiteralVal li
     return { .litVal = litValRet };
 }
 
-CodeGen::ExprGenPayload CodeGen::codegen(const TernCondExprAST *ast) {
+Codegen::ExprGenPayload Codegen::codegen(const TernCondExprAst *ast) {
     // TODO see if you can use llvm's select instr
     if (isGlobalScope()) {
         return codegenGlobalScope(ast);
@@ -832,7 +832,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const TernCondExprAST *ast) {
     return ret;
 }
 
-CodeGen::ExprGenPayload CodeGen::codegenGlobalScope(const TernCondExprAST *ast) {
+Codegen::ExprGenPayload Codegen::codegenGlobalScope(const TernCondExprAst *ast) {
     ExprGenPayload condExpr = codegenExpr(ast->getCond());
     if (!condExpr.isLitVal() || !isBool(condExpr)) {
         panic = true;
@@ -868,7 +868,7 @@ CodeGen::ExprGenPayload CodeGen::codegenGlobalScope(const TernCondExprAST *ast) 
     return ret;
 }
 
-CodeGen::ExprGenPayload CodeGen::codegen(const CallExprAST *ast) {
+Codegen::ExprGenPayload Codegen::codegen(const CallExprAst *ast) {
     FuncCallSite call(ast->getArgs().size());
     call.name = ast->getName();
 
@@ -906,7 +906,7 @@ CodeGen::ExprGenPayload CodeGen::codegen(const CallExprAST *ast) {
         func.first.hasRet ? "call_tmp" : ""), nullptr};
 }
 
-CodeGen::ExprGenPayload CodeGen::codegen(const CastExprAST *ast) {
+Codegen::ExprGenPayload Codegen::codegen(const CastExprAst *ast) {
     llvm::Type *type = codegenType(ast->getType());
     if (broken(type)) return {};
 

@@ -1,4 +1,3 @@
-// TODO! change AST to Ast
 #pragma once
 
 #include <memory>
@@ -6,7 +5,7 @@
 #include "Lexer.h"
 #include "SymbolTable.h"
 
-enum ASTType {
+enum AstType {
     AST_Type,
     AST_EmptyExpr,
     AST_LiteralExpr,
@@ -31,330 +30,330 @@ enum ASTType {
     AST_Ret
 };
 
-class BaseAST {
+class BaseAst {
 public:
 
-    virtual ASTType type() const =0;
+    virtual AstType type() const =0;
 
-    virtual ~BaseAST() {}
+    virtual ~BaseAst() {}
 };
 
-class TypeAST : public BaseAST {
+class TypeAst : public BaseAst {
     TypeTable::Id id;
 
 public:
-    explicit TypeAST(TypeTable::Id id) : id(id) {}
+    explicit TypeAst(TypeTable::Id id) : id(id) {}
 
     TypeTable::Id getTypeId() const { return id; }
 
-    ASTType type() const override { return AST_Type; }
+    AstType type() const override { return AST_Type; }
 };
 
-class StmntAST : public BaseAST {
+class StmntAst : public BaseAst {
 public:
 
-    virtual ~StmntAST() {}
+    virtual ~StmntAst() {}
 };
 
-class ExprAST : public StmntAST {
+class ExprAst : public StmntAst {
 public:
 
-    virtual ~ExprAST() {}
+    virtual ~ExprAst() {}
 };
 
-class LiteralExprAST : public ExprAST {
+class LiteralExprAst : public ExprAst {
     LiteralVal val;
 
 public:
-    explicit LiteralExprAST(LiteralVal v) : val(v) {}
-    explicit LiteralExprAST(bool bb);
+    explicit LiteralExprAst(LiteralVal v) : val(v) {}
+    explicit LiteralExprAst(bool bb);
 
-    ASTType type() const override { return AST_LiteralExpr; }
+    AstType type() const override { return AST_LiteralExpr; }
 
     LiteralVal getVal() const { return val; }
 };
 
-class VarExprAST : public ExprAST {
+class VarExprAst : public ExprAst {
     NamePool::Id nameId;
 
 public:
-    explicit VarExprAST(NamePool::Id id) : nameId(id) {}
+    explicit VarExprAst(NamePool::Id id) : nameId(id) {}
 
-    ASTType type() const override { return AST_VarExpr; }
+    AstType type() const override { return AST_VarExpr; }
 
     NamePool::Id getNameId() const { return nameId; }
 };
 
-class IndExprAST : public ExprAST {
-    std::unique_ptr<ExprAST> base, ind;
+class IndExprAst : public ExprAst {
+    std::unique_ptr<ExprAst> base, ind;
 
 public:
-    IndExprAST(std::unique_ptr<ExprAST> base, std::unique_ptr<ExprAST> ind);
+    IndExprAst(std::unique_ptr<ExprAst> base, std::unique_ptr<ExprAst> ind);
 
-    ASTType type() const override { return AST_IndExpr; }
+    AstType type() const override { return AST_IndExpr; }
 
-    const ExprAST* getBase() const { return base.get(); }
-    const ExprAST* getInd() const { return ind.get(); }
+    const ExprAst* getBase() const { return base.get(); }
+    const ExprAst* getInd() const { return ind.get(); }
 };
 
-class UnExprAST : public ExprAST {
-    std::unique_ptr<ExprAST> expr;
+class UnExprAst : public ExprAst {
+    std::unique_ptr<ExprAst> expr;
     Token::Oper op;
 
 public:
-    UnExprAST(std::unique_ptr<ExprAST> e, Token::Oper o);
+    UnExprAst(std::unique_ptr<ExprAst> e, Token::Oper o);
 
-    ASTType type() const override { return AST_UnExpr; }
+    AstType type() const override { return AST_UnExpr; }
 
-    const ExprAST* getExpr() const { return expr.get(); }
+    const ExprAst* getExpr() const { return expr.get(); }
     Token::Oper getOp() const { return op; }
 };
 
-class BinExprAST : public ExprAST {
-    std::unique_ptr<ExprAST> lhs, rhs;
+class BinExprAst : public ExprAst {
+    std::unique_ptr<ExprAst> lhs, rhs;
     Token::Oper op;
 
 public:
-    BinExprAST(
-        std::unique_ptr<ExprAST> _lhs, 
-        std::unique_ptr<ExprAST>  _rhs, 
+    BinExprAst(
+        std::unique_ptr<ExprAst> _lhs, 
+        std::unique_ptr<ExprAst>  _rhs, 
         Token::Oper _op);
 
-    ASTType type() const override { return AST_BinExpr; }
+    AstType type() const override { return AST_BinExpr; }
 
-    const ExprAST* getL() const { return lhs.get(); }
-    const ExprAST* getR() const { return rhs.get(); }
+    const ExprAst* getL() const { return lhs.get(); }
+    const ExprAst* getR() const { return rhs.get(); }
     Token::Oper getOp() const { return op; }
 
     // needed when parsing ternary conditional oper
-    std::unique_ptr<ExprAST> resetR() { return move(rhs); }
-    void setR(std::unique_ptr<ExprAST> _rhs);
+    std::unique_ptr<ExprAst> resetR() { return move(rhs); }
+    void setR(std::unique_ptr<ExprAst> _rhs);
 };
 
-class TernCondExprAST : public ExprAST {
-    std::unique_ptr<ExprAST> cond, op1, op2;
+class TernCondExprAst : public ExprAst {
+    std::unique_ptr<ExprAst> cond, op1, op2;
 
 public:
-    TernCondExprAST(
-        std::unique_ptr<ExprAST> _cond,
-        std::unique_ptr<ExprAST> _op1,
-        std::unique_ptr<ExprAST> _op2);
+    TernCondExprAst(
+        std::unique_ptr<ExprAst> _cond,
+        std::unique_ptr<ExprAst> _op1,
+        std::unique_ptr<ExprAst> _op2);
 
-    ASTType type() const override { return AST_TernCondExpr; }
+    AstType type() const override { return AST_TernCondExpr; }
 
-    const ExprAST* getCond() const { return cond.get(); }
-    const ExprAST* getOp1() const { return op1.get(); }
-    const ExprAST* getOp2() const { return op2.get(); }
+    const ExprAst* getCond() const { return cond.get(); }
+    const ExprAst* getOp1() const { return op1.get(); }
+    const ExprAst* getOp2() const { return op2.get(); }
 };
 
-class CallExprAST : public ExprAST {
+class CallExprAst : public ExprAst {
     NamePool::Id func;
-    std::vector<std::unique_ptr<ExprAST>> args;
+    std::vector<std::unique_ptr<ExprAst>> args;
 
 public:
-    explicit CallExprAST(NamePool::Id funcName) : func(funcName) {}
+    explicit CallExprAst(NamePool::Id funcName) : func(funcName) {}
 
     NamePool::Id getName() const { return func; }
-    const std::vector<std::unique_ptr<ExprAST>>& getArgs() const { return args; }
+    const std::vector<std::unique_ptr<ExprAst>>& getArgs() const { return args; }
 
-    void addArg(std::unique_ptr<ExprAST> arg) { args.push_back(std::move(arg)); }
+    void addArg(std::unique_ptr<ExprAst> arg) { args.push_back(std::move(arg)); }
 
-    ASTType type() const override { return AST_CallExpr; }
+    AstType type() const override { return AST_CallExpr; }
 };
 
-class CastExprAST : public ExprAST {
-    std::unique_ptr<TypeAST> t;
-    std::unique_ptr<ExprAST> v;
+class CastExprAst : public ExprAst {
+    std::unique_ptr<TypeAst> t;
+    std::unique_ptr<ExprAst> v;
 
 public:
-    CastExprAST(std::unique_ptr<TypeAST> ty, std::unique_ptr<ExprAST> val);
+    CastExprAst(std::unique_ptr<TypeAst> ty, std::unique_ptr<ExprAst> val);
 
-    const TypeAST* getType() const { return t.get(); }
-    const ExprAST* getVal() const { return v.get(); }
+    const TypeAst* getType() const { return t.get(); }
+    const ExprAst* getVal() const { return v.get(); }
 
-    ASTType type() const override { return AST_CastExpr; }
+    AstType type() const override { return AST_CastExpr; }
 };
 
-class EmptyStmntAST : public StmntAST {
+class EmptyStmntAst : public StmntAst {
 public:
 
-    ASTType type() const override { return AST_EmptyExpr; }
+    AstType type() const override { return AST_EmptyExpr; }
 };
 
-class DeclAST : public StmntAST {
-    std::unique_ptr<TypeAST> varType;
-    std::vector<std::pair<NamePool::Id, std::unique_ptr<ExprAST>>> decls;
+class DeclAst : public StmntAst {
+    std::unique_ptr<TypeAst> varType;
+    std::vector<std::pair<NamePool::Id, std::unique_ptr<ExprAst>>> decls;
 
 public:
-    explicit DeclAST(std::unique_ptr<TypeAST> type);
+    explicit DeclAst(std::unique_ptr<TypeAst> type);
 
-    const TypeAST* getType() const { return varType.get(); }
+    const TypeAst* getType() const { return varType.get(); }
 
-    void add(std::pair<NamePool::Id, std::unique_ptr<ExprAST>> decl);
-    const std::vector<std::pair<NamePool::Id, std::unique_ptr<ExprAST>>>& getDecls() const { return decls; }
+    void add(std::pair<NamePool::Id, std::unique_ptr<ExprAst>> decl);
+    const std::vector<std::pair<NamePool::Id, std::unique_ptr<ExprAst>>>& getDecls() const { return decls; }
 
-    ASTType type() const override { return AST_Decl; }
+    AstType type() const override { return AST_Decl; }
 };
 
-class IfAST : public StmntAST {
-    std::unique_ptr<StmntAST> init;
-    std::unique_ptr<ExprAST> cond;
-    std::unique_ptr<StmntAST> thenBody, elseBody;
+class IfAst : public StmntAst {
+    std::unique_ptr<StmntAst> init;
+    std::unique_ptr<ExprAst> cond;
+    std::unique_ptr<StmntAst> thenBody, elseBody;
 
 public:
-    IfAST(std::unique_ptr<StmntAST> init, std::unique_ptr<ExprAST> cond, 
-        std::unique_ptr<StmntAST> thenBody, std::unique_ptr<StmntAST> elseBody);
+    IfAst(std::unique_ptr<StmntAst> init, std::unique_ptr<ExprAst> cond, 
+        std::unique_ptr<StmntAst> thenBody, std::unique_ptr<StmntAst> elseBody);
     
-    const StmntAST* getInit() const { return init.get(); }
-    const ExprAST* getCond() const { return cond.get(); }
-    const StmntAST* getThen() const { return thenBody.get(); }
-    const StmntAST* getElse() const { return elseBody.get(); }
+    const StmntAst* getInit() const { return init.get(); }
+    const ExprAst* getCond() const { return cond.get(); }
+    const StmntAst* getThen() const { return thenBody.get(); }
+    const StmntAst* getElse() const { return elseBody.get(); }
 
     bool hasInit() const { return init != nullptr; }
     bool hasElse() const { return elseBody != nullptr; }
 
-    ASTType type() const override { return AST_If; }
+    AstType type() const override { return AST_If; }
 };
 
-class ForAST : public StmntAST {
-    std::unique_ptr<StmntAST> init;
-    std::unique_ptr<ExprAST> cond, iter;
-    std::unique_ptr<StmntAST> body;
+class ForAst : public StmntAst {
+    std::unique_ptr<StmntAst> init;
+    std::unique_ptr<ExprAst> cond, iter;
+    std::unique_ptr<StmntAst> body;
 
 public:
-    ForAST(std::unique_ptr<StmntAST> init, std::unique_ptr<ExprAST> cond,
-        std::unique_ptr<ExprAST> iter, std::unique_ptr<StmntAST> body);
+    ForAst(std::unique_ptr<StmntAst> init, std::unique_ptr<ExprAst> cond,
+        std::unique_ptr<ExprAst> iter, std::unique_ptr<StmntAst> body);
 
-    const StmntAST* getInit() const { return init.get(); }
-    const ExprAST* getCond() const { return cond.get(); }
-    const ExprAST* getIter() const { return iter.get(); }
-    const StmntAST* getBody() const { return body.get(); }
+    const StmntAst* getInit() const { return init.get(); }
+    const ExprAst* getCond() const { return cond.get(); }
+    const ExprAst* getIter() const { return iter.get(); }
+    const StmntAst* getBody() const { return body.get(); }
 
     bool hasCond() const { return cond != nullptr; }
     bool hasIter() const { return iter != nullptr; }
 
-    ASTType type() const override { return AST_For; }
+    AstType type() const override { return AST_For; }
 };
 
-class WhileAST : public StmntAST {
-    std::unique_ptr<ExprAST> cond;
-    std::unique_ptr<StmntAST> body;
+class WhileAst : public StmntAst {
+    std::unique_ptr<ExprAst> cond;
+    std::unique_ptr<StmntAst> body;
 
 public:
-    WhileAST(std::unique_ptr<ExprAST> cond, std::unique_ptr<StmntAST> body);
+    WhileAst(std::unique_ptr<ExprAst> cond, std::unique_ptr<StmntAst> body);
 
-    const ExprAST* getCond() const { return cond.get(); }
-    const StmntAST* getBody() const { return body.get(); }
+    const ExprAst* getCond() const { return cond.get(); }
+    const StmntAst* getBody() const { return body.get(); }
 
-    ASTType type() const override { return AST_While; }
+    AstType type() const override { return AST_While; }
 };
 
-class DoWhileAST : public StmntAST {
-    std::unique_ptr<StmntAST> body;
-    std::unique_ptr<ExprAST> cond;
+class DoWhileAst : public StmntAst {
+    std::unique_ptr<StmntAst> body;
+    std::unique_ptr<ExprAst> cond;
 
 public:
-    DoWhileAST(std::unique_ptr<StmntAST> body, std::unique_ptr<ExprAST> cond);
+    DoWhileAst(std::unique_ptr<StmntAst> body, std::unique_ptr<ExprAst> cond);
 
-    const StmntAST* getBody() const { return body.get(); }
-    const ExprAST* getCond() const { return cond.get(); }
+    const StmntAst* getBody() const { return body.get(); }
+    const ExprAst* getCond() const { return cond.get(); }
 
-    ASTType type() const override { return AST_DoWhile; }
+    AstType type() const override { return AST_DoWhile; }
 };
 
-class BreakAST : public StmntAST {
+class BreakAst : public StmntAst {
 public:
 
-    ASTType type() const override { return AST_Break; }
+    AstType type() const override { return AST_Break; }
 };
 
-class ContinueAST : public StmntAST {
+class ContinueAst : public StmntAst {
 public:
 
-    ASTType type() const override { return AST_Continue; }
+    AstType type() const override { return AST_Continue; }
 };
 
-class BlockAST : public StmntAST {
-    std::vector<std::unique_ptr<StmntAST>> body;
+class BlockAst : public StmntAst {
+    std::vector<std::unique_ptr<StmntAst>> body;
 
 public:
 
-    void add(std::unique_ptr<StmntAST> st) { body.push_back(std::move(st)); }
-    const std::vector<std::unique_ptr<StmntAST>>& getBody() const { return body; }
+    void add(std::unique_ptr<StmntAst> st) { body.push_back(std::move(st)); }
+    const std::vector<std::unique_ptr<StmntAst>>& getBody() const { return body; }
 
-    ASTType type() const override { return AST_Block; }
+    AstType type() const override { return AST_Block; }
 };
 
-class SwitchAST : public StmntAST {
+class SwitchAst : public StmntAst {
 public:
     struct Case {
-        std::vector<std::unique_ptr<ExprAST>> comparisons;
-        std::unique_ptr<BlockAST> body;
+        std::vector<std::unique_ptr<ExprAst>> comparisons;
+        std::unique_ptr<BlockAst> body;
 
-        Case(std::vector<std::unique_ptr<ExprAST>> comparisons, std::unique_ptr<BlockAST> body);
+        Case(std::vector<std::unique_ptr<ExprAst>> comparisons, std::unique_ptr<BlockAst> body);
 
         bool isDefault() const { return comparisons.empty(); }
     };
 
 private:
-    std::unique_ptr<ExprAST> value;
+    std::unique_ptr<ExprAst> value;
     std::vector<Case> cases;
 
 public:
-    SwitchAST(std::unique_ptr<ExprAST> value, std::vector<Case> cases);
+    SwitchAst(std::unique_ptr<ExprAst> value, std::vector<Case> cases);
     
-    const ExprAST* getValue() const { return value.get(); }
+    const ExprAst* getValue() const { return value.get(); }
     const std::vector<Case>& getCases() const { return cases; }
     std::pair<bool, std::size_t> getDefault() const;
 
-    ASTType type() const override { return AST_Switch; }
+    AstType type() const override { return AST_Switch; }
 };
 
-class FuncProtoAST : public BaseAST {
+class FuncProtoAst : public BaseAst {
     NamePool::Id name;
-    std::vector<std::pair<std::unique_ptr<TypeAST>, NamePool::Id>> args;
-    std::unique_ptr<TypeAST> retType;
+    std::vector<std::pair<std::unique_ptr<TypeAst>, NamePool::Id>> args;
+    std::unique_ptr<TypeAst> retType;
 
 public:
-    explicit FuncProtoAST(NamePool::Id name) : name(name) {}
+    explicit FuncProtoAst(NamePool::Id name) : name(name) {}
 
-    ASTType type() const override { return AST_FuncProto; }
+    AstType type() const override { return AST_FuncProto; }
 
     NamePool::Id getName() const { return name; }
 
-    void addArg(std::pair<std::unique_ptr<TypeAST>, NamePool::Id> arg) { args.push_back(std::move(arg)); }
+    void addArg(std::pair<std::unique_ptr<TypeAst>, NamePool::Id> arg) { args.push_back(std::move(arg)); }
 
     std::size_t getArgCnt() const { return args.size(); }
-    const TypeAST* getArgType(std::size_t index) const { return args[index].first.get(); }
+    const TypeAst* getArgType(std::size_t index) const { return args[index].first.get(); }
     NamePool::Id getArgName(std::size_t index) const { return args[index].second; }
 
-    void setRetType(std::unique_ptr<TypeAST> t) { retType = std::move(t); }
-    const TypeAST* getRetType() const { return retType.get(); }
+    void setRetType(std::unique_ptr<TypeAst> t) { retType = std::move(t); }
+    const TypeAst* getRetType() const { return retType.get(); }
     bool hasRetVal() const { return retType != nullptr; }
 };
 
-class FuncAST : public BaseAST {
-    std::unique_ptr<FuncProtoAST> proto;
-    std::unique_ptr<BlockAST> body;
+class FuncAst : public BaseAst {
+    std::unique_ptr<FuncProtoAst> proto;
+    std::unique_ptr<BlockAst> body;
 
 public:
-    FuncAST(
-        std::unique_ptr<FuncProtoAST> proto,
-        std::unique_ptr<BlockAST> body);
+    FuncAst(
+        std::unique_ptr<FuncProtoAst> proto,
+        std::unique_ptr<BlockAst> body);
 
-    ASTType type() const override { return AST_Func; }
+    AstType type() const override { return AST_Func; }
 
-    const FuncProtoAST* getProto() const { return proto.get(); }
-    const BlockAST* getBody() const { return body.get(); }
+    const FuncProtoAst* getProto() const { return proto.get(); }
+    const BlockAst* getBody() const { return body.get(); }
 };
 
-class RetAST : public StmntAST {
-    std::unique_ptr<ExprAST> val;
+class RetAst : public StmntAst {
+    std::unique_ptr<ExprAst> val;
 
 public:
-    explicit RetAST(std::unique_ptr<ExprAST> v) : val(std::move(v)) {}
+    explicit RetAst(std::unique_ptr<ExprAst> v) : val(std::move(v)) {}
 
-    const ExprAST* getVal() const { return val.get(); }
+    const ExprAst* getVal() const { return val.get(); }
 
-    ASTType type() const override { return AST_Ret; }
+    AstType type() const override { return AST_Ret; }
 };

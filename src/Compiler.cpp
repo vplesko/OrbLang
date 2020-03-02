@@ -9,7 +9,7 @@ Compiler::Compiler() {
     namePool = make_unique<NamePool>();
     typeTable = make_unique<TypeTable>();
     symbolTable = make_unique<SymbolTable>(typeTable.get());
-    codegen = make_unique<CodeGen>(namePool.get(), symbolTable.get());
+    codegen = make_unique<Codegen>(namePool.get(), symbolTable.get());
 
     genPrimTypes();
 }
@@ -95,7 +95,7 @@ bool Compiler::parse(const std::string &filename) {
 
     Parser par(namePool.get(), symbolTable.get(), &lex);
     while (!par.isOver()) {
-        unique_ptr<BaseAST> node = par.parseNode();
+        unique_ptr<BaseAst> node = par.parseNode();
         if (par.isPanic()) return false;
         codegen->codegenNode(node.get());
         if (codegen->isPanic()) return false;
