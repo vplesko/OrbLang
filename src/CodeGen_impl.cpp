@@ -10,14 +10,15 @@ void CodeGen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
         return;
     }
 
-    if (TypeTable::isTypeI(srcTypeId)) {
-        if (TypeTable::isTypeI(dstTypeId))
+    // TODO warn if removing cn, may give undefined behaviour
+    if (getTypeTable()->isTypeI(srcTypeId)) {
+        if (getTypeTable()->isTypeI(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, true, "i2i_cast");
-        else if (TypeTable::isTypeU(dstTypeId))
+        else if (getTypeTable()->isTypeU(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, false, "i2u_cast");
-        else if (TypeTable::isTypeF(dstTypeId))
+        else if (getTypeTable()->isTypeF(dstTypeId))
             val = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::SIToFP, val, type, "i2f_cast"));
-        else if (TypeTable::isTypeB(dstTypeId)) {
+        else if (getTypeTable()->isTypeB(dstTypeId)) {
             llvm::Value *z = llvmBuilder.CreateIntCast(getConstB(false), val->getType(), true);
             val = llvmBuilder.CreateICmpNE(val, z, "i2b_cast");
         } else if (symbolTable->getTypeTable()->isTypeAnyP(dstTypeId)) {
@@ -26,14 +27,14 @@ void CodeGen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
             panic = true;
             val = nullptr;
         }
-    } else if (TypeTable::isTypeU(srcTypeId)) {
-        if (TypeTable::isTypeI(dstTypeId))
+    } else if (getTypeTable()->isTypeU(srcTypeId)) {
+        if (getTypeTable()->isTypeI(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, true, "u2i_cast");
-        else if (TypeTable::isTypeU(dstTypeId))
+        else if (getTypeTable()->isTypeU(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, false, "u2u_cast");
-        else if (TypeTable::isTypeF(dstTypeId))
+        else if (getTypeTable()->isTypeF(dstTypeId))
             val = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::UIToFP, val, type, "u2f_cast"));
-        else if (TypeTable::isTypeB(dstTypeId)) {
+        else if (getTypeTable()->isTypeB(dstTypeId)) {
             llvm::Value *z = llvmBuilder.CreateIntCast(getConstB(false), val->getType(), false);
             val = llvmBuilder.CreateICmpNE(val, z, "i2b_cast");
         } else if (symbolTable->getTypeTable()->isTypeAnyP(dstTypeId)) {
@@ -42,30 +43,31 @@ void CodeGen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
             panic = true;
             val = nullptr;
         }
-    } else if (TypeTable::isTypeF(srcTypeId)) {
-        if (TypeTable::isTypeI(dstTypeId))
+    } else if (getTypeTable()->isTypeF(srcTypeId)) {
+        if (getTypeTable()->isTypeI(dstTypeId))
             val = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::FPToSI, val, type, "f2i_cast"));
-        else if (TypeTable::isTypeU(dstTypeId))
+        else if (getTypeTable()->isTypeU(dstTypeId))
             val = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::FPToUI, val, type, "f2u_cast"));
-        else if (TypeTable::isTypeF(dstTypeId))
+        else if (getTypeTable()->isTypeF(dstTypeId))
             val = llvmBuilder.CreateFPCast(val, type, "f2f_cast");
         else {
             panic = true;
             val = nullptr;
         }
-    } else if (TypeTable::isTypeB(srcTypeId)) {
-        if (TypeTable::isTypeI(dstTypeId))
+    } else if (getTypeTable()->isTypeB(srcTypeId)) {
+        if (getTypeTable()->isTypeI(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, false, "b2i_cast");
-        else if (TypeTable::isTypeU(dstTypeId))
+        else if (getTypeTable()->isTypeU(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, false, "b2u_cast");
         else {
             panic = true;
             val = nullptr;
         }
     } else if (symbolTable->getTypeTable()->isTypeAnyP(srcTypeId)) {
-        if (TypeTable::isTypeI(dstTypeId))
+        // TODO! ptr to bool
+        if (getTypeTable()->isTypeI(dstTypeId))
             val = llvmBuilder.CreatePtrToInt(val, type, "p2i_cast");
-        else if (TypeTable::isTypeU(dstTypeId))
+        else if (getTypeTable()->isTypeU(dstTypeId))
             val = llvmBuilder.CreatePtrToInt(val, type, "p2u_cast");
         else if (symbolTable->getTypeTable()->isTypeAnyP(dstTypeId))
             val = llvmBuilder.CreatePointerCast(val, type, "p2p_cast");
@@ -184,7 +186,7 @@ void CodeGen::codegen(const DeclAST *ast) {
                 llvm::Value *src = initPay.val;
 
                 if (initPay.type != typeId) {
-                    if (!TypeTable::isImplicitCastable(initPay.type, typeId)) {
+                    if (!getTypeTable()->isImplicitCastable(initPay.type, typeId)) {
                         panic = true;
                         return;
                     }
@@ -214,7 +216,7 @@ void CodeGen::codegen(const IfAST *ast) {
         panic = true;
         return;
     }
-    if (valBroken(condExpr) || !TypeTable::isTypeB(condExpr.type)) {
+    if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
         panic = true;
         return;
     }
@@ -275,7 +277,7 @@ void CodeGen::codegen(const ForAST *ast) {
                 panic = true;
                 return;
             }
-            if (valBroken(condExpr) || !TypeTable::isTypeB(condExpr.type)) {
+            if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
                 panic = true;
                 return;
             }
@@ -334,7 +336,7 @@ void CodeGen::codegen(const WhileAST *ast) {
             panic = true;
             return;
         }
-        if (valBroken(condExpr) || !TypeTable::isTypeB(condExpr.type)) {
+        if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
             panic = true;
             return;
         }
@@ -387,7 +389,7 @@ void CodeGen::codegen(const DoWhileAST *ast) {
             panic = true;
             return;
         }
-        if (valBroken(condExpr) || !TypeTable::isTypeB(condExpr.type)) {
+        if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
             panic = true;
             return;
         }
@@ -430,7 +432,7 @@ void CodeGen::codegen(const SwitchAST *ast) {
         return;
     }
     if (valBroken(valExprPay) ||
-        !(TypeTable::isTypeI(valExprPay.type) || TypeTable::isTypeU(valExprPay.type))) {
+        !(getTypeTable()->isTypeI(valExprPay.type) || getTypeTable()->isTypeU(valExprPay.type))) {
         panic = true;
         return;
     }
@@ -485,14 +487,14 @@ void CodeGen::codegen(const SwitchAST *ast) {
 }
 
 void CodeGen::codegen(const RetAST *ast) {
-    const FuncValue *currFunc = symbolTable->getCurrFunc();
-    if (currFunc == nullptr) {
+    pair<FuncValue, bool> currFunc = symbolTable->getCurrFunc();
+    if (currFunc.second == false) {
         panic = true;
         return;
     }
 
     if (!ast->getVal()) {
-        if (currFunc->hasRet) {
+        if (currFunc.first.hasRet) {
             panic = true;
             return;
         }
@@ -501,16 +503,16 @@ void CodeGen::codegen(const RetAST *ast) {
     }
 
     ExprGenPayload retExpr = codegenExpr(ast->getVal());
-    if (retExpr.isLitVal() && !promoteLiteral(retExpr, currFunc->retType)) return;
+    if (retExpr.isLitVal() && !promoteLiteral(retExpr, currFunc.first.retType)) return;
     if (valBroken(retExpr)) return;
 
     llvm::Value *retVal = retExpr.val;
-    if (retExpr.type != currFunc->retType) {
-        if (!TypeTable::isImplicitCastable(retExpr.type, currFunc->retType)) {
+    if (retExpr.type != currFunc.first.retType) {
+        if (!getTypeTable()->isImplicitCastable(retExpr.type, currFunc.first.retType)) {
             panic = true;
             return;
         }
-        createCast(retVal, retExpr.type, currFunc->retType);
+        createCast(retVal, retExpr.type, currFunc.first.retType);
     }
 
     llvmBuilder.CreateRet(retVal);
@@ -522,33 +524,23 @@ void CodeGen::codegen(const BlockAST *ast, bool makeScope) {
     for (const auto &it : ast->getBody()) codegenNode(it.get());
 }
 
-FuncValue* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
+std::pair<FuncValue, bool> CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
     if (symbolTable->funcNameTaken(ast->getName())) {
         panic = true;
-        return nullptr;
+        return make_pair(FuncValue(), false);
     }
 
-    FuncSignature sig;
-    sig.name = ast->getName();
-    sig.argTypes = vector<TypeTable::Id>(ast->getArgCnt());
-    for (size_t i = 0; i < ast->getArgCnt(); ++i) sig.argTypes[i] = ast->getArgType(i)->getTypeId();
+    FuncValue val;
+    val.name = ast->getName();
+    val.argTypes = vector<TypeTable::Id>(ast->getArgCnt());
+    for (size_t i = 0; i < ast->getArgCnt(); ++i) val.argTypes[i] = ast->getArgType(i)->getTypeId();
+    val.hasRet = ast->hasRetVal();
+    if (val.hasRet) val.retType = ast->getRetType()->getTypeId();
+    val.defined = definition;
 
-    FuncValue *prev = symbolTable->getFunc(sig);
-
-    // check for definition clashes with existing functions
-    if (prev != nullptr) {
-        if ((prev->defined && definition) ||
-            (prev->hasRet != ast->hasRetVal()) ||
-            (prev->hasRet && prev->retType != ast->getRetType()->getTypeId())) {
-            panic = true;
-            return nullptr;
-        }
-
-        if (definition) {
-            prev->defined = true;
-        }
-
-        return prev;
+    if (!symbolTable->canRegisterFunc(val)) {
+        panic = true;
+        return make_pair(FuncValue(), false);
     }
 
     // can't have args with same name
@@ -556,7 +548,7 @@ FuncValue* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
         for (size_t j = i+1; j < ast->getArgCnt(); ++j) {
             if (ast->getArgName(i) == ast->getArgName(j)) {
                 panic = true;
-                return nullptr;
+                return make_pair(FuncValue(), false);
             }
         }
     }
@@ -567,6 +559,7 @@ FuncValue* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
     llvm::Type *retType = ast->hasRetVal() ? getType(ast->getRetType()->getTypeId()) : llvm::Type::getVoidTy(llvmContext);
     llvm::FunctionType *funcType = llvm::FunctionType::get(retType, argTypes, false);
 
+    // TODO optimize on const args
     llvm::Function *func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, 
             namePool->get(ast->getName()), llvmModule.get());
     
@@ -576,22 +569,19 @@ FuncValue* CodeGen::codegen(const FuncProtoAST *ast, bool definition) {
         ++i;
     }
 
-    FuncValue val;
     val.func = func;
-    val.hasRet = ast->hasRetVal();
-    if (ast->hasRetVal()) val.retType = ast->getRetType()->getTypeId();
-    val.defined = definition;
 
-    symbolTable->addFunc(sig, val);
-    // cannot return &val, as it is a local var
-    return symbolTable->getFunc(sig);
+    return make_pair(symbolTable->registerFunc(val), true);
 }
 
 void CodeGen::codegen(const FuncAST *ast) {
-    FuncValue *funcVal = codegen(ast->getProto(), true);
-    if (broken(funcVal)) {
+    std::pair<FuncValue, bool> funcValRet = codegen(ast->getProto(), true);
+    if (funcValRet.second == false) {
+        panic = true;
         return;
     }
+
+    const FuncValue *funcVal = &funcValRet.first;
 
     ScopeControl scope(*symbolTable, *funcVal);
 

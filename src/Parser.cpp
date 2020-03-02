@@ -224,6 +224,9 @@ std::unique_ptr<TypeAST> Parser::type() {
 
                 typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_ARR, (unsigned long) ind.num});
             }
+        } else if (peek().type == Token::T_CN) {
+            next();
+            typeDescr.setLastCn();
         } else {
             break;
         }

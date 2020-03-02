@@ -29,9 +29,11 @@ public:
 
         Id base;
         std::vector<Decor> decors;
+        bool cn;
+        std::vector<bool> cns;
 
         TypeDescr() {}
-        TypeDescr(Id base) : base(base) {}
+        TypeDescr(Id base, bool cn_ = false) : base(base), cn(cn_) {}
 
         TypeDescr(TypeDescr&&) = default;
         TypeDescr& operator=(TypeDescr&&) = default;
@@ -39,7 +41,8 @@ public:
         TypeDescr(const TypeDescr&) = delete;
         void operator=(const TypeDescr&) = delete;
 
-        void addDecor(Decor d) { decors.push_back(d); }
+        void addDecor(Decor d, bool cn_ = false);
+        void setLastCn();
 
         bool eq(const TypeDescr &other) const;
     };
@@ -65,35 +68,7 @@ public:
     static const PrimIds WIDEST_U = P_U64;
     static const PrimIds WIDEST_F = P_F64;
 
-    static bool isTypeI(Id t) {
-        if (t >= P_ENUM_END) return false;
-        return between((PrimIds) t, P_I8, P_I64);
-    }
-
-    static bool isTypeU(Id t) {
-        if (t >= P_ENUM_END) return false;
-        return between((PrimIds) t, P_U8, P_U64);
-    }
-
-    static bool isTypeF(Id t) {
-        if (t >= P_ENUM_END) return false;
-        return between((PrimIds) t, P_F16, P_F64);
-    }
-
-    static bool isTypeB(Id t) {
-        return t == P_BOOL;
-    }
-
-    static bool fitsType(int64_t x, Id t);
     static Id shortestFittingTypeI(int64_t x);
-
-    static bool isImplicitCastable(Id from, Id into) {
-        PrimIds s = (PrimIds) from, d = (PrimIds) into;
-        return s == d ||
-            (isTypeI(s) && between(d, s, P_I64)) ||
-            (isTypeU(s) && between(d, s, P_U64)) ||
-            (isTypeF(s) && between(d, s, P_F64));
-    }
 
 private:
     Id next;
@@ -118,8 +93,19 @@ public:
     bool isType(NamePool::Id name) const;
     TypeTable::Id getTypeId(NamePool::Id name) const { return typeIds.at(name); }
 
+    bool isTypeI(Id t) const;
+    bool isTypeU(Id t) const;
+    bool isTypeF(Id t) const;
+    bool isTypeB(Id t) const;
     bool isTypeAnyP(Id t) const;
     bool isTypeP(Id t) const;
     bool isTypeArr(Id t) const;
     bool isTypeArrP(Id t) const;
+    bool isTypeCn(Id t) const;
+
+    bool fitsType(int64_t x, Id t) const;
+    bool isImplicitCastable(Id from, Id into) const;
+    TypeTable::Id getTypeDropCns(Id t);
+    TypeTable::Id getTypeFuncSigParam(Id t) { return getTypeDropCns(t); }
+    bool isArgTypeProper(Id callArg, Id fncParam) const { return isImplicitCastable(callArg, fncParam); }
 };

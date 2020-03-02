@@ -69,22 +69,22 @@ bool CodeGen::promoteLiteral(ExprGenPayload &e, TypeTable::Id t) {
 
     switch (e.litVal.type) {
     case LiteralVal::T_BOOL:
-        if (!TypeTable::isTypeB(t)) {
+        if (!getTypeTable()->isTypeB(t)) {
             panic = true;
         } else {
             e.val = getConstB(e.litVal.val_b);
         }
         break;
     case LiteralVal::T_SINT:
-        if ((!TypeTable::isTypeI(t) && !TypeTable::isTypeU(t)) || !TypeTable::fitsType(e.litVal.val_si, t)) {
+        if ((!getTypeTable()->isTypeI(t) && !getTypeTable()->isTypeU(t)) || !getTypeTable()->fitsType(e.litVal.val_si, t)) {
             panic = true;
         } else {
-            e.val = llvm::ConstantInt::get(getType(t), e.litVal.val_si, TypeTable::isTypeI(t));
+            e.val = llvm::ConstantInt::get(getType(t), e.litVal.val_si, getTypeTable()->isTypeI(t));
         }
         break;
     case LiteralVal::T_FLOAT:
         // no precision checks for float types, this makes float literals somewhat unsafe
-        if (!TypeTable::isTypeF(t)) {
+        if (!getTypeTable()->isTypeF(t)) {
             panic = true;
         } else {
             e.val = llvm::ConstantFP::get(getType(t), e.litVal.val_f);

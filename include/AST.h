@@ -1,3 +1,4 @@
+// TODO! change AST to Ast
 #pragma once
 
 #include <memory>
@@ -221,7 +222,8 @@ class ForAST : public StmntAST {
     std::unique_ptr<StmntAST> body;
 
 public:
-    ForAST(std::unique_ptr<StmntAST> init, std::unique_ptr<ExprAST> cond, std::unique_ptr<ExprAST> iter, std::unique_ptr<StmntAST> body);
+    ForAST(std::unique_ptr<StmntAST> init, std::unique_ptr<ExprAST> cond,
+        std::unique_ptr<ExprAST> iter, std::unique_ptr<StmntAST> body);
 
     const StmntAST* getInit() const { return init.get(); }
     const ExprAST* getCond() const { return cond.get(); }

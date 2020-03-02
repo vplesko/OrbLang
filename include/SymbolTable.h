@@ -1,18 +1,19 @@
 #pragma once
 
 #include <unordered_map>
+#include <vector>
 #include "llvm/IR/Instructions.h"
 #include "NamePool.h"
 #include "TypeTable.h"
 
 /*
-LiteralVal is needed to represent a literal value who's exact type is yet unknown.
+LiteralVal is needed to represent a literal value whose exact type is yet unknown.
 
 Let's say we interpret an integer literal as i32.
 Then the user couldn't do this: i8 i = 0;
 
 Let's say we interpret it as the shortest type it can fit.
-Then this would underflow: i32 i = 250 + 10;
+Then this would overflow: i32 i = 250 + 10;
 
 Therefore, we need this intermediate value holder.
 
@@ -30,16 +31,34 @@ struct LiteralVal {
 
     Type type;
     union {
-        std::int64_t val_si;
+        int64_t val_si;
         double val_f;
         bool val_b;
     };
 };
 
+struct FuncCallSite {
+    NamePool::Id name;
+    std::vector<TypeTable::Id> argTypes;
+    std::vector<LiteralVal> literalVals;
+
+    FuncCallSite() {}
+    FuncCallSite(std::size_t sz) : argTypes(sz), literalVals(sz) {}
+
+    void set(std::size_t ind, TypeTable::Id t) {
+        argTypes[ind] = t;
+        literalVals[ind] = {LiteralVal::T_NONE};
+    }
+
+    void set(std::size_t ind, LiteralVal l) {
+        literalVals[ind] = l;
+    }
+};
+
 struct FuncSignature {
     NamePool::Id name;
     std::vector<TypeTable::Id> argTypes;
-
+    
     bool operator==(const FuncSignature &other) const;
 
     struct Hasher {
@@ -48,10 +67,12 @@ struct FuncSignature {
 };
 
 struct FuncValue {
-    llvm::Function *func;
+    NamePool::Id name;
+    std::vector<TypeTable::Id> argTypes;
     bool hasRet;
     TypeTable::Id retType;
     bool defined;
+    llvm::Function *func;
 };
 
 class SymbolTable {
@@ -75,26 +96,31 @@ private:
 
     Scope *last, *glob;
 
-    FuncValue *currFunc;
+    bool inFunc;
+    FuncValue currFunc;
 
-    void setCurrFunc(FuncValue *func) { currFunc = func; }
+    void setCurrFunc(const FuncValue &func) { inFunc = true; currFunc = func; }
+    void clearCurrFunc() { inFunc = false; }
 
     void newScope();
     void endScope();
+
+    FuncSignature makeFuncSignature(NamePool::Id name, const std::vector<TypeTable::Id> &argTypes) const;
+    std::pair<FuncSignature, bool> makeFuncSignature(const FuncCallSite &call) const;
 
 public:
     SymbolTable(TypeTable *typeTable);
 
     void addVar(NamePool::Id name, const VarPayload &var);
-    const VarPayload* getVar(NamePool::Id name) const;
+    std::pair<VarPayload, bool> getVar(NamePool::Id name) const;
 
-    void addFunc(const FuncSignature &sig, const FuncValue &val);
-    FuncValue* getFunc(const FuncSignature &sig);
-    std::pair<const FuncSignature*, FuncValue*> getFuncCastsAllowed(const FuncSignature &sig, const LiteralVal *litVals);
-    
+    bool canRegisterFunc(const FuncValue &val) const;
+    FuncValue registerFunc(const FuncValue &val);
+    std::pair<FuncValue, bool> getFuncForCall(const FuncCallSite &call);
+
     bool inGlobalScope() const { return last == glob; }
 
-    const FuncValue* getCurrFunc() const { return currFunc; }
+    std::pair<FuncValue, bool> getCurrFunc() const { return std::make_pair(currFunc, inFunc); }
 
     bool varNameTaken(NamePool::Id name) const;
     bool funcNameTaken(NamePool::Id name) const;
@@ -113,8 +139,8 @@ public:
         if (symTable != nullptr) symTable->newScope();
     }
     // ref cuz must not be null
-    ScopeControl(SymbolTable &symTable, FuncValue &func) : symTable(&symTable), funcOpen(true) {
-        this->symTable->setCurrFunc(&func);
+    ScopeControl(SymbolTable &symTable, const FuncValue &func) : symTable(&symTable), funcOpen(true) {
+        this->symTable->setCurrFunc(func);
         this->symTable->newScope();
     }
 
@@ -126,6 +152,6 @@ public:
 
     ~ScopeControl() {
         if (symTable) symTable->endScope();
-        if (funcOpen) symTable->setCurrFunc(nullptr);
+        if (funcOpen) symTable->clearCurrFunc();
     }
 };

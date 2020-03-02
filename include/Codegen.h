@@ -7,6 +7,7 @@
 #include "llvm/IR/Module.h"
 #include <stack>
 
+// TODO! change to Codegen
 class CodeGen {
     NamePool *namePool;
     SymbolTable *symbolTable;
@@ -29,8 +30,13 @@ class CodeGen {
 
         bool isLitVal() const { return litVal.type != LiteralVal::T_NONE; }
         void resetLitVal() { litVal.type = LiteralVal::T_NONE; }
-        bool isBool() const { return isLitVal() ? litVal.type == LiteralVal::T_BOOL : TypeTable::isTypeB(type); }
     };
+
+    bool isBool(const ExprGenPayload &e) {
+        return e.isLitVal() ? e.litVal.type == LiteralVal::T_BOOL : getTypeTable()->isTypeB(e.type);
+    }
+
+    TypeTable* getTypeTable() { return symbolTable->getTypeTable(); }
 
     llvm::Value* getConstB(bool val);
 
@@ -78,7 +84,7 @@ class CodeGen {
     void codegen(const SwitchAST *ast);
     void codegen(const RetAST *ast);
     void codegen(const BlockAST *ast, bool makeScope);
-    FuncValue* codegen(const FuncProtoAST *ast, bool definition);
+    std::pair<FuncValue, bool> codegen(const FuncProtoAST *ast, bool definition);
     void codegen(const FuncAST *ast);
 
     llvm::Type* codegenType(const TypeAST *ast);

@@ -1,3 +1,4 @@
+// TODO replace this with scanf and printf calls in Orb after string literals
 #ifdef _WIN32
 #define DLLEXPORT __declspec(dllexport)
 #else
