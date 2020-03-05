@@ -37,6 +37,12 @@ fnc println_f64(f64 x);
 fnc scan_f32() f32;
 fnc scan_f64() f64;
 
+fnc print_c8(c8 x);
+
+fnc println_c8(c8 x);
+
+fnc scan_c8() c8;
+
 f32 glob1 = true ? 1.0 : -1.0;
 f64 glob2 = 1>3 ? 1.0/5. : -1.0;
 
@@ -73,4 +79,24 @@ fnc main() {
 
     println_f64(t ? glob1+1. : glob2+1.);
     println_f64(t ? glob2+1. : glob1+1.);
+
+    {
+        c8 c = 'a';
+        println_c8(c);
+        c = c8(65);
+        println_c8(c);
+        i32 x = 66;
+        c = c8(x);
+        println_c8(c);
+        println_u8(u8(c));
+        println_i32(i32('C'));
+        println_i32(i16('A')-i16('a'));
+        println_c8(true ? 'D' : 'E');
+        println_c8(t ? 'F' : 'G');
+        println_c8(' ');
+        println_c8('\n');
+        println_c8('\'');
+        println_c8('\x48');
+        println_c8('\\');
+    }
 }

@@ -95,6 +95,7 @@ public:
     llvm::Type* genPrimTypeBool();
     llvm::Type* genPrimTypeI(unsigned bits);
     llvm::Type* genPrimTypeU(unsigned bits);
+    llvm::Type* genPrimTypeC(unsigned bits);
     llvm::Type* genPrimTypeF16();
     llvm::Type* genPrimTypeF32();
     llvm::Type* genPrimTypeF64();

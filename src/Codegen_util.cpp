@@ -82,6 +82,13 @@ bool Codegen::promoteLiteral(ExprGenPayload &e, TypeTable::Id t) {
             e.val = llvm::ConstantInt::get(getType(t), e.litVal.val_si, getTypeTable()->isTypeI(t));
         }
         break;
+    case LiteralVal::T_CHAR:
+        if (!getTypeTable()->isTypeC(t)) {
+            panic = true;
+        } else {
+            e.val = llvm::ConstantInt::get(getType(t), (uint8_t) e.litVal.val_c, false);
+        }
+        break;
     case LiteralVal::T_FLOAT:
         // no precision checks for float types, this makes float literals somewhat unsafe
         if (!getTypeTable()->isTypeF(t)) {
@@ -121,6 +128,10 @@ llvm::Type* Codegen::genPrimTypeI(unsigned bits) {
 
 llvm::Type* Codegen::genPrimTypeU(unsigned bits) {
     // LLVM makes no distinction between signed and unsigned int
+    return llvm::IntegerType::get(llvmContext, bits);
+}
+
+llvm::Type* Codegen::genPrimTypeC(unsigned bits) {
     return llvm::IntegerType::get(llvmContext, bits);
 }
 

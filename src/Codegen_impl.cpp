@@ -18,6 +18,8 @@ void Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
             val = llvmBuilder.CreateIntCast(val, type, false, "i2u_cast");
         else if (getTypeTable()->isTypeF(dstTypeId))
             val = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::SIToFP, val, type, "i2f_cast"));
+        else if (getTypeTable()->isTypeC(dstTypeId))
+            val = llvmBuilder.CreateIntCast(val, type, false, "i2c_cast");
         else if (getTypeTable()->isTypeB(dstTypeId)) {
             llvm::Value *z = llvmBuilder.CreateIntCast(getConstB(false), val->getType(), true);
             val = llvmBuilder.CreateICmpNE(val, z, "i2b_cast");
@@ -34,9 +36,11 @@ void Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
             val = llvmBuilder.CreateIntCast(val, type, false, "u2u_cast");
         else if (getTypeTable()->isTypeF(dstTypeId))
             val = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::UIToFP, val, type, "u2f_cast"));
+        else if (getTypeTable()->isTypeC(dstTypeId))
+            val = llvmBuilder.CreateIntCast(val, type, false, "u2c_cast");
         else if (getTypeTable()->isTypeB(dstTypeId)) {
             llvm::Value *z = llvmBuilder.CreateIntCast(getConstB(false), val->getType(), false);
-            val = llvmBuilder.CreateICmpNE(val, z, "i2b_cast");
+            val = llvmBuilder.CreateICmpNE(val, z, "u2b_cast");
         } else if (symbolTable->getTypeTable()->isTypeAnyP(dstTypeId)) {
             val = llvmBuilder.CreatePointerCast(val, type, "u2p_cast");
         } else {
@@ -51,6 +55,20 @@ void Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
         else if (getTypeTable()->isTypeF(dstTypeId))
             val = llvmBuilder.CreateFPCast(val, type, "f2f_cast");
         else {
+            panic = true;
+            val = nullptr;
+        }
+    } else if (getTypeTable()->isTypeC(srcTypeId)) {
+        if (getTypeTable()->isTypeI(dstTypeId))
+            val = llvmBuilder.CreateIntCast(val, type, true, "c2i_cast");
+        else if (getTypeTable()->isTypeU(dstTypeId))
+            val = llvmBuilder.CreateIntCast(val, type, false, "c2u_cast");
+        else if (getTypeTable()->isTypeC(dstTypeId))
+            val = llvmBuilder.CreateIntCast(val, type, false, "c2c_cast");
+        else if (getTypeTable()->isTypeB(dstTypeId)) {
+            llvm::Value *z = llvmBuilder.CreateIntCast(getConstB(false), val->getType(), false);
+            val = llvmBuilder.CreateICmpNE(val, z, "c2b_cast");
+        } else {
             panic = true;
             val = nullptr;
         }
@@ -427,6 +445,7 @@ void Codegen::codegen(const ContinueAst *ast) {
 }
 
 // TODO get rid of llvm::SwitchInst, allow other types
+// TODO! make sure case vals are unique
 void Codegen::codegen(const SwitchAst *ast) {
     ExprGenPayload valExprPay = codegenExpr(ast->getValue());
 

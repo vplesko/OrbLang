@@ -126,6 +126,9 @@ std::pair<FuncValue, bool> SymbolTable::getFuncForCall(const FuncCallSite &call)
                     argTypeOk = typeTable->isTypeI(it.first.argTypes[i]) ||
                         (typeTable->isTypeU(it.first.argTypes[i]) && call.literalVals[i].val_si >= 0);
                     break;
+                case LiteralVal::T_CHAR:
+                    argTypeOk = typeTable->isTypeC(it.first.argTypes[i]);
+                    break;
                 case LiteralVal::T_FLOAT:
                     argTypeOk = typeTable->isTypeF(it.first.argTypes[i]);
                     break;

@@ -60,6 +60,7 @@ public:
         P_F16,
         P_F32,
         P_F64,
+        P_C8,
         P_PTR,
         P_ENUM_END // length marker, do not reference
     };
@@ -96,6 +97,7 @@ public:
     bool isTypeI(Id t) const;
     bool isTypeU(Id t) const;
     bool isTypeF(Id t) const;
+    bool isTypeC(Id t) const;
     bool isTypeB(Id t) const;
     bool isTypeAnyP(Id t) const;
     bool isTypeP(Id t) const;

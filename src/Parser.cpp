@@ -47,6 +47,14 @@ unique_ptr<ExprAst> Parser::prim() {
         val.val_f = tok.fnum;
 
         ret = make_unique<LiteralExprAst>(val);
+    } else if (peek().type == Token::T_CHAR) {
+        Token tok = next();
+
+        LiteralVal val;
+        val.type = LiteralVal::T_CHAR;
+        val.val_c = tok.ch;
+
+        ret = make_unique<LiteralExprAst>(val);
     } else if (peek().type == Token::T_BVAL) {
         Token tok = next();
 

@@ -22,6 +22,19 @@ extern "C" DLLEXPORT void println_##keyword(type x) {\
     std::printf("%" print_format "\n", x);\
 }
 
+extern "C" DLLEXPORT char scan_c8(char x) {
+    return getchar();
+}
+
+extern "C" DLLEXPORT void print_c8(char x) {
+    putchar(x);
+}
+
+extern "C" DLLEXPORT void println_c8(char x) {
+    putchar(x);
+    putchar('\n');
+}
+
 extern "C" DLLEXPORT void println() {
     std::printf("\n");
 }

@@ -7,6 +7,7 @@ struct Token {
     enum Type {
         T_NUM,
         T_FNUM,
+        T_CHAR,
         T_BVAL,
         T_NULL,
         T_OPER,
@@ -78,6 +79,7 @@ struct Token {
     union {
         long int num;
         double fnum;
+        char ch;
         bool bval;
         Oper op;
         NamePool::Id nameId;

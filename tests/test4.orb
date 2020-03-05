@@ -1,3 +1,20 @@
+/* TODO
+strings:
+for now c8 only
+join consecutive literals
+escaping chars
+\0 at the end
+
+c8 cn[] str = "hello"; // global, immutable
+
+c8[6] str = "hello"; // local, mutable
+str[1] = 'a';
+
+"hello"[0]; // 'h', no string generated
+
+llvm::ConstantDataArray::getString
+*/
+
 fnc print_i8(i8 x);
 fnc print_i16(i16 x);
 fnc print_i32(i32 x);
@@ -36,6 +53,12 @@ fnc println_f64(f64 x);
 
 fnc scan_f32() f32;
 fnc scan_f64() f64;
+
+fnc print_c8(c8 x);
+
+fnc println_c8(c8 x);
+
+fnc scan_c8() c8;
 
 fnc malloc(u64 size) ptr;
 fnc free(ptr addr);

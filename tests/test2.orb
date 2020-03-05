@@ -37,6 +37,12 @@ fnc println_f64(f64 x);
 fnc scan_f32() f32;
 fnc scan_f64() f64;
 
+fnc print_c8(c8 x);
+
+fnc println_c8(c8 x);
+
+fnc scan_c8() c8;
+
 fnc foo() {
     println_i64(10);
 }

@@ -1,6 +1,7 @@
 #include "Lexer.h"
 #include <cstdlib>
 #include <algorithm>
+#include <sstream>
 using namespace std;
 
 const string numLitChars = "0123456789abcdefABCDEF.xXeEpP_";
@@ -265,6 +266,19 @@ Token Lexer::next() {
             tok = {Token::T_BRACE_L_SQR};
         } else if (ch == ']') {
             tok = {Token::T_BRACE_R_SQR};
+        } else if (ch == '\'') {
+            UnescapePayload unesc = unescape(line, col-1, true);
+
+            if (unesc.success == false || unesc.unescaped.size() != 1) {
+                tok.type = Token::T_UNKNOWN;
+            } else {
+                tok.type = Token::T_CHAR;
+                tok.ch = unesc.unescaped[0];
+            }
+
+            col = unesc.nextIndex-1;
+            ch = line[col];
+            nextCh();
         } else if (isalpha(ch) || ch == '_') {
             int l = col-1;
             int firstAlnum = ch == '_' ? -1 : 0;

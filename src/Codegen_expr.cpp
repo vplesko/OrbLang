@@ -281,6 +281,7 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
         bool isTypeI = getTypeTable()->isTypeI(exprPayRet.type);
         bool isTypeU = getTypeTable()->isTypeU(exprPayRet.type);
         bool isTypeF = getTypeTable()->isTypeF(exprPayRet.type);
+        bool isTypeC = getTypeTable()->isTypeC(exprPayRet.type);
         bool isTypeP = symbolTable->getTypeTable()->isTypeP(exprPayRet.type);
 
         switch (ast->getOp()) {
@@ -356,7 +357,7 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
             case Token::O_EQ:
                 if (isTypeF)
                     exprPayRet.val = llvmBuilder.CreateFCmpOEQ(valL, valR, "fcmp_eq_tmp");
-                else if (isTypeI || isTypeU)
+                else if (isTypeI || isTypeU || isTypeC)
                     exprPayRet.val = llvmBuilder.CreateICmpEQ(valL, valR, "cmp_eq_tmp");
                 else if (isTypeP) {
                     exprPayRet.val = llvmBuilder.CreateICmpEQ(llvmBuilder.CreatePtrToInt(valL, getType(TypeTable::WIDEST_I)), 
@@ -367,7 +368,7 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
             case Token::O_NEQ:
                 if (isTypeF)
                     exprPayRet.val = llvmBuilder.CreateFCmpONE(valL, valR, "fcmp_neq_tmp");
-                else if (isTypeI || isTypeU)
+                else if (isTypeI || isTypeU || isTypeC)
                     exprPayRet.val = llvmBuilder.CreateICmpNE(valL, valR, "cmp_neq_tmp");
                 else if (isTypeP) {
                     exprPayRet.val = llvmBuilder.CreateICmpNE(llvmBuilder.CreatePtrToInt(valL, getType(TypeTable::WIDEST_I)), 
@@ -380,7 +381,7 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
                     exprPayRet.val = llvmBuilder.CreateFCmpOLT(valL, valR, "fcmp_lt_tmp");
                 else if (isTypeI)
                     exprPayRet.val = llvmBuilder.CreateICmpSLT(valL, valR, "scmp_lt_tmp");
-                else if (isTypeU)
+                else if (isTypeU || isTypeC)
                     exprPayRet.val = llvmBuilder.CreateICmpULT(valL, valR, "ucmp_lt_tmp");
                 exprPayRet.type = TypeTable::P_BOOL;
                 break;
@@ -389,7 +390,7 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
                     exprPayRet.val = llvmBuilder.CreateFCmpOLE(valL, valR, "fcmp_lteq_tmp");
                 else if (isTypeI)
                     exprPayRet.val = llvmBuilder.CreateICmpSLE(valL, valR, "scmp_lteq_tmp");
-                else if (isTypeU)
+                else if (isTypeU || isTypeC)
                     exprPayRet.val = llvmBuilder.CreateICmpULE(valL, valR, "ucmp_lteq_tmp");
                 exprPayRet.type = TypeTable::P_BOOL;
                 break;
@@ -398,7 +399,7 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
                     exprPayRet.val = llvmBuilder.CreateFCmpOGT(valL, valR, "fcmp_gt_tmp");
                 else if (isTypeI)
                     exprPayRet.val = llvmBuilder.CreateICmpSGT(valL, valR, "scmp_gt_tmp");
-                else if (isTypeU)
+                else if (isTypeU || isTypeC)
                     exprPayRet.val = llvmBuilder.CreateICmpUGT(valL, valR, "ucmp_gt_tmp");
                 exprPayRet.type = TypeTable::P_BOOL;
                 break;
@@ -407,7 +408,7 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
                     exprPayRet.val = llvmBuilder.CreateFCmpOGE(valL, valR, "fcmp_gteq_tmp");
                 else if (isTypeI)
                     exprPayRet.val = llvmBuilder.CreateICmpSGE(valL, valR, "scmp_gteq_tmp");
-                else if (isTypeU)
+                else if (isTypeU || isTypeC)
                     exprPayRet.val = llvmBuilder.CreateICmpUGE(valL, valR, "ucmp_gteq_tmp");
                 exprPayRet.type = TypeTable::P_BOOL;
                 break;
@@ -571,6 +572,7 @@ Codegen::ExprGenPayload Codegen::codegenLiteralBin(Token::Oper op, LiteralVal li
         }
     } else {
         bool isTypeI = litValRet.type == LiteralVal::T_SINT;
+        bool isTypeC = litValRet.type == LiteralVal::T_CHAR;
         bool isTypeF = litValRet.type == LiteralVal::T_FLOAT;
 
         switch (op) {
@@ -640,6 +642,8 @@ Codegen::ExprGenPayload Codegen::codegenLiteralBin(Token::Oper op, LiteralVal li
                     litValRet.val_b = litL.val_f == litR.val_f;
                 else if (isTypeI)
                     litValRet.val_b = litL.val_si == litR.val_si;
+                else if (isTypeC)
+                    litValRet.val_b = litL.val_c == litR.val_c;
                 break;
             case Token::O_NEQ:
                 litValRet.type = LiteralVal::T_BOOL;
@@ -647,6 +651,8 @@ Codegen::ExprGenPayload Codegen::codegenLiteralBin(Token::Oper op, LiteralVal li
                     litValRet.val_b = litL.val_f != litR.val_f;
                 else if (isTypeI)
                     litValRet.val_b = litL.val_si != litR.val_si;
+                else if (isTypeC)
+                    litValRet.val_b = litL.val_c != litR.val_c;
                 break;
             case Token::O_LT:
                 litValRet.type = LiteralVal::T_BOOL;
@@ -654,6 +660,8 @@ Codegen::ExprGenPayload Codegen::codegenLiteralBin(Token::Oper op, LiteralVal li
                     litValRet.val_b = litL.val_f < litR.val_f;
                 else if (isTypeI)
                     litValRet.val_b = litL.val_si < litR.val_si;
+                else if (isTypeC)
+                    litValRet.val_b = litL.val_c < litR.val_c;
                 break;
             case Token::O_LTEQ:
                 litValRet.type = LiteralVal::T_BOOL;
@@ -661,6 +669,8 @@ Codegen::ExprGenPayload Codegen::codegenLiteralBin(Token::Oper op, LiteralVal li
                     litValRet.val_b = litL.val_f <= litR.val_f;
                 else if (isTypeI)
                     litValRet.val_b = litL.val_si <= litR.val_si;
+                else if (isTypeC)
+                    litValRet.val_b = litL.val_c <= litR.val_c;
                 break;
             case Token::O_GT:
                 litValRet.type = LiteralVal::T_BOOL;
@@ -668,6 +678,8 @@ Codegen::ExprGenPayload Codegen::codegenLiteralBin(Token::Oper op, LiteralVal li
                     litValRet.val_b = litL.val_f > litR.val_f;
                 else if (isTypeI)
                     litValRet.val_b = litL.val_si > litR.val_si;
+                else if (isTypeC)
+                    litValRet.val_b = litL.val_c > litR.val_c;
                 break;
             case Token::O_GTEQ:
                 litValRet.type = LiteralVal::T_BOOL;
@@ -675,6 +687,8 @@ Codegen::ExprGenPayload Codegen::codegenLiteralBin(Token::Oper op, LiteralVal li
                     litValRet.val_b = litL.val_f >= litR.val_f;
                 else if (isTypeI)
                     litValRet.val_b = litL.val_si >= litR.val_si;
+                else if (isTypeC)
+                    litValRet.val_b = litL.val_c >= litR.val_c;
                 break;
             default:
                 panic = true;
@@ -764,6 +778,10 @@ Codegen::ExprGenPayload Codegen::codegen(const TernCondExprAst *ast) {
                         !promoteLiteral(falseExpr, trueT))
                         return {};
                 }
+            } else if (trueExpr.litVal.type == LiteralVal::T_CHAR) {
+                if (!promoteLiteral(trueExpr, TypeTable::P_C8) ||
+                    !promoteLiteral(falseExpr, TypeTable::P_C8))
+                    return {};
             } else if (trueExpr.litVal.type == LiteralVal::T_FLOAT) {
                 /*
                 REM
@@ -809,6 +827,8 @@ Codegen::ExprGenPayload Codegen::codegen(const TernCondExprAst *ast) {
                 ret.litVal.val_b = condExpr.litVal.val_b ? trueExpr.litVal.val_b : falseExpr.litVal.val_b;
             else if (ret.litVal.type == LiteralVal::T_SINT)
                 ret.litVal.val_si = condExpr.litVal.val_b ? trueExpr.litVal.val_si : falseExpr.litVal.val_si;
+            else if (ret.litVal.type == LiteralVal::T_CHAR)
+                ret.litVal.val_c = condExpr.litVal.val_b ? trueExpr.litVal.val_c : falseExpr.litVal.val_c;
             else if (ret.litVal.type == LiteralVal::T_FLOAT)
                 ret.litVal.val_f = condExpr.litVal.val_b ? trueExpr.litVal.val_f : falseExpr.litVal.val_f;
             else if (ret.litVal.type == LiteralVal::T_NULL)
@@ -856,6 +876,8 @@ Codegen::ExprGenPayload Codegen::codegenGlobalScope(const TernCondExprAst *ast) 
         ret.litVal.val_b = condExpr.litVal.val_b ? trueExpr.litVal.val_b : falseExpr.litVal.val_b;
     else if (ret.litVal.type == LiteralVal::T_SINT)
         ret.litVal.val_si = condExpr.litVal.val_b ? trueExpr.litVal.val_si : falseExpr.litVal.val_si;
+    else if (ret.litVal.type == LiteralVal::T_CHAR)
+        ret.litVal.val_si = condExpr.litVal.val_b ? trueExpr.litVal.val_c : falseExpr.litVal.val_c;
     else if (ret.litVal.type == LiteralVal::T_FLOAT)
         ret.litVal.val_f = condExpr.litVal.val_b ? trueExpr.litVal.val_f : falseExpr.litVal.val_f;
     else if (ret.litVal.type == LiteralVal::T_NULL)
@@ -921,6 +943,9 @@ Codegen::ExprGenPayload Codegen::codegen(const CastExprAst *ast) {
             break;
         case LiteralVal::T_SINT:
             promoType = TypeTable::shortestFittingTypeI(exprVal.litVal.val_si);
+            break;
+        case LiteralVal::T_CHAR:
+            promoType = TypeTable::P_C8;
             break;
         case LiteralVal::T_FLOAT:
             // cast to widest float type

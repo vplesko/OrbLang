@@ -84,6 +84,12 @@ void Compiler::genPrimTypes() {
         TypeTable::P_PTR,
         codegen->genPrimTypePtr()
     );
+    // c
+    symbolTable->getTypeTable()->addPrimType(
+        namePool->add("c8"),
+        TypeTable::P_C8,
+        codegen->genPrimTypeC(8)
+    );
 }
 
 bool Compiler::parse(const std::string &filename) {

@@ -149,6 +149,12 @@ bool TypeTable::isTypeF(Id t) const {
     return ty.decors.empty() && between((PrimIds) ty.base, P_F16, P_F64);
 }
 
+bool TypeTable::isTypeC(Id t) const {
+    if (t >= types.size()) return false;
+    const TypeDescr &ty = types[t].first;
+    return ty.decors.empty() && (PrimIds) ty.base == P_C8;
+}
+
 bool TypeTable::isTypeB(Id t) const {
     if (t >= types.size()) return false;
     const TypeDescr &ty = types[t].first;

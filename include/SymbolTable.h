@@ -25,6 +25,7 @@ struct LiteralVal {
         T_NONE,
         T_SINT,
         T_FLOAT,
+        T_CHAR,
         T_BOOL,
         T_NULL
     };
@@ -33,6 +34,7 @@ struct LiteralVal {
     union {
         int64_t val_si;
         double val_f;
+        char val_c;
         bool val_b;
     };
 };
