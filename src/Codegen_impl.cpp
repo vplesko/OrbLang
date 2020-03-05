@@ -1,5 +1,6 @@
 #include "Codegen.h"
 #include "llvm/IR/Verifier.h"
+#include <unordered_set>
 using namespace std;
 
 void Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId) {
@@ -445,7 +446,6 @@ void Codegen::codegen(const ContinueAst *ast) {
 }
 
 // TODO get rid of llvm::SwitchInst, allow other types
-// TODO! make sure case vals are unique
 void Codegen::codegen(const SwitchAst *ast) {
     ExprGenPayload valExprPay = codegenExpr(ast->getValue());
 
@@ -470,16 +470,19 @@ void Codegen::codegen(const SwitchAst *ast) {
     llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
 
     vector<vector<llvm::ConstantInt*>> caseComps(caseBlockNum);
+    unordered_set<int64_t> caseVals;
     for (size_t i = 0; i < caseBlockNum; ++i) {
         for (const auto &comp_ : ast->getCases()[i].comparisons) {
             ExprGenPayload compExprPay = codegenExpr(comp_.get());
             if (!compExprPay.isLitVal() ||
-                compExprPay.litVal.type != LiteralVal::T_SINT || !promoteLiteral(compExprPay, valExprPay.type)) {
+                compExprPay.litVal.type != LiteralVal::T_SINT || !promoteLiteral(compExprPay, valExprPay.type) ||
+                caseVals.find(compExprPay.litVal.val_si) != caseVals.end()) {
                 panic = true;
                 return;
             }
 
             caseComps[i].push_back((llvm::ConstantInt*) compExprPay.val);
+            caseVals.insert(compExprPay.litVal.val_si);
             ++caseCompNum;
         }
     }
