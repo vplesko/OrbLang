@@ -57,8 +57,8 @@ FuncSignature SymbolTable::makeFuncSignature(NamePool::Id name, const std::vecto
 }
 
 pair<FuncSignature, bool> SymbolTable::makeFuncSignature(const FuncCallSite &call) const {
-    for (const LiteralVal &it : call.literalVals) {
-        if (it.type != LiteralVal::T_NONE)
+    for (const UntypedVal &it : call.untypedVals) {
+        if (it.type != UntypedVal::T_NONE)
             return {FuncSignature(), false};
     }
     return {makeFuncSignature(call.name, call.argTypes), true};
@@ -89,7 +89,7 @@ FuncValue SymbolTable::registerFunc(const FuncValue &val) {
 }
 
 std::pair<FuncValue, bool> SymbolTable::getFuncForCall(const FuncCallSite &call) {
-    // if there are any literalVal args, we don't know their types in advance
+    // if there are any untypedVal args, we don't know their types in advance
     pair<FuncSignature, bool> sig = makeFuncSignature(call);
     if (sig.second) {
         auto loc = funcs.find(sig.first);
@@ -113,23 +113,23 @@ std::pair<FuncValue, bool> SymbolTable::getFuncForCall(const FuncCallSite &call)
 
         for (size_t i = 0; i < it.first.argTypes.size(); ++i) {
             // if arg of same or implicitly castable type, we're good
-            bool argTypeOk = call.literalVals[i].type == LiteralVal::T_NONE &&
+            bool argTypeOk = call.untypedVals[i].type == UntypedVal::T_NONE &&
                 typeTable->isArgTypeProper(call.argTypes[i], it.first.argTypes[i]);
 
-            // otherwise, if literal val which can be used for this func, we're also good
-            if (!argTypeOk && call.literalVals[i].type != LiteralVal::T_NONE) {
-                switch (call.literalVals[i].type) {
-                case LiteralVal::T_BOOL:
+            // otherwise, if untyped val which can be used for this func, we're also good
+            if (!argTypeOk && call.untypedVals[i].type != UntypedVal::T_NONE) {
+                switch (call.untypedVals[i].type) {
+                case UntypedVal::T_BOOL:
                     argTypeOk = typeTable->isTypeB(it.first.argTypes[i]);
                     break;
-                case LiteralVal::T_SINT:
+                case UntypedVal::T_SINT:
                     argTypeOk = typeTable->isTypeI(it.first.argTypes[i]) ||
-                        (typeTable->isTypeU(it.first.argTypes[i]) && call.literalVals[i].val_si >= 0);
+                        (typeTable->isTypeU(it.first.argTypes[i]) && call.untypedVals[i].val_si >= 0);
                     break;
-                case LiteralVal::T_CHAR:
+                case UntypedVal::T_CHAR:
                     argTypeOk = typeTable->isTypeC(it.first.argTypes[i]);
                     break;
-                case LiteralVal::T_FLOAT:
+                case UntypedVal::T_FLOAT:
                     argTypeOk = typeTable->isTypeF(it.first.argTypes[i]);
                     break;
                 default:

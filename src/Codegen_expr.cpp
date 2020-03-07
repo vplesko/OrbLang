@@ -3,8 +3,8 @@ using namespace std;
 
 Codegen::ExprGenPayload Codegen::codegenExpr(const ExprAst *ast) {
     switch (ast->type()) {
-    case AST_LiteralExpr:
-        return codegen((const LiteralExprAst*)ast);
+    case AST_UntypedExpr:
+        return codegen((const UntypedExprAst*)ast);
     case AST_VarExpr:
         return codegen((const VarExprAst*)ast);
     case AST_IndExpr:
@@ -25,13 +25,13 @@ Codegen::ExprGenPayload Codegen::codegenExpr(const ExprAst *ast) {
     }
 }
 
-Codegen::ExprGenPayload Codegen::codegen(const LiteralExprAst *ast) {
-    if (ast->getVal().type == LiteralVal::T_NONE) {
+Codegen::ExprGenPayload Codegen::codegen(const UntypedExprAst *ast) {
+    if (ast->getVal().type == UntypedVal::T_NONE) {
         panic = true;
         return {};
     }
 
-    return { .litVal = ast->getVal() };
+    return { .untyVal = ast->getVal() };
 }
 
 Codegen::ExprGenPayload Codegen::codegen(const VarExprAst *ast) {
@@ -50,7 +50,7 @@ Codegen::ExprGenPayload Codegen::codegen(const IndExprAst *ast) {
 
     ExprGenPayload indExprPay = codegenExpr(ast->getInd());
     if (valueBroken(indExprPay)) return {};
-    if (!getTypeTable()->isTypeI(indExprPay.type) && !getTypeTable()->isTypeU(indExprPay.type) && indExprPay.litVal.type != LiteralVal::T_SINT) {
+    if (!getTypeTable()->isTypeI(indExprPay.type) && !getTypeTable()->isTypeU(indExprPay.type) && indExprPay.untyVal.type != UntypedVal::T_SINT) {
         panic = true;
         return {};
     }
@@ -61,10 +61,10 @@ Codegen::ExprGenPayload Codegen::codegen(const IndExprAst *ast) {
     ExprGenPayload retPay;
     retPay.type = typeId.second;
 
-    if (indExprPay.isLitVal()) {
+    if (indExprPay.isUntyVal()) {
         // TODO warning if oob index on sized array
-        if (indExprPay.litVal.type != LiteralVal::T_SINT) return {};
-        if (!promoteLiteral(indExprPay, TypeTable::shortestFittingTypeI(indExprPay.litVal.val_si))) return {};
+        if (indExprPay.untyVal.type != UntypedVal::T_SINT) return {};
+        if (!promoteUntyped(indExprPay, TypeTable::shortestFittingTypeI(indExprPay.untyVal.val_si))) return {};
     }
 
     if (symbolTable->getTypeTable()->isTypeArrP(baseExprPay.type)) {
@@ -95,7 +95,7 @@ Codegen::ExprGenPayload Codegen::codegen(const UnExprAst *ast) {
     ExprGenPayload exprPay = codegenExpr(ast->getExpr());
     if (valueBroken(exprPay)) return {};
 
-    if (exprPay.isLitVal()) return codegenLiteralUn(ast->getOp(), exprPay.litVal);
+    if (exprPay.isUntyVal()) return codegenUntypedUn(ast->getOp(), exprPay.untyVal);
 
     ExprGenPayload exprRet;
     exprRet.type = exprPay.type;
@@ -174,34 +174,34 @@ Codegen::ExprGenPayload Codegen::codegen(const UnExprAst *ast) {
     return exprRet;
 }
 
-Codegen::ExprGenPayload Codegen::codegenLiteralUn(Token::Oper op, LiteralVal lit) {
+Codegen::ExprGenPayload Codegen::codegenUntypedUn(Token::Oper op, UntypedVal unty) {
     ExprGenPayload exprRet;
-    exprRet.litVal.type = lit.type;
+    exprRet.untyVal.type = unty.type;
     if (op == Token::O_ADD) {
-        if (lit.type != LiteralVal::T_SINT && lit.type != LiteralVal::T_FLOAT) {
+        if (unty.type != UntypedVal::T_SINT && unty.type != UntypedVal::T_FLOAT) {
             panic = true;
             return {};
         }
-        exprRet.litVal = lit;
+        exprRet.untyVal = unty;
     } else if (op == Token::O_SUB) {
-        if (lit.type == LiteralVal::T_SINT) {
-            exprRet.litVal.val_si = -lit.val_si;
-        } else if (lit.type == LiteralVal::T_FLOAT) {
-            exprRet.litVal.val_f = -lit.val_f;
+        if (unty.type == UntypedVal::T_SINT) {
+            exprRet.untyVal.val_si = -unty.val_si;
+        } else if (unty.type == UntypedVal::T_FLOAT) {
+            exprRet.untyVal.val_f = -unty.val_f;
         } else {
             panic = true;
             return {};
         }
     } else if (op == Token::O_BIT_NOT) {
-        if (lit.type == LiteralVal::T_SINT) {
-            exprRet.litVal.val_si = ~lit.val_si;
+        if (unty.type == UntypedVal::T_SINT) {
+            exprRet.untyVal.val_si = ~unty.val_si;
         } else {
             panic = true;
             return {};
         }
     } else if (op == Token::O_NOT) {
-        if (lit.type == LiteralVal::T_BOOL) {
-            exprRet.litVal.val_b = !lit.val_b;
+        if (unty.type == UntypedVal::T_BOOL) {
+            exprRet.untyVal.val_b = !unty.val_b;
         } else {
             panic = true;
             return {};
@@ -237,12 +237,12 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
     exprPayR = codegenExpr(ast->getR());
     if (valueBroken(exprPayR)) return {};
 
-    if (exprPayL.isLitVal() && !exprPayR.isLitVal()) {
-        if (!promoteLiteral(exprPayL, exprPayR.type)) return {};
-    } else if (!exprPayL.isLitVal() && exprPayR.isLitVal()) {
-        if (!promoteLiteral(exprPayR, exprPayL.type)) return {};
-    } else if (exprPayL.isLitVal() && exprPayR.isLitVal()) {
-        return codegenLiteralBin(ast->getOp(), exprPayL.litVal, exprPayR.litVal);
+    if (exprPayL.isUntyVal() && !exprPayR.isUntyVal()) {
+        if (!promoteUntyped(exprPayL, exprPayR.type)) return {};
+    } else if (!exprPayL.isUntyVal() && exprPayR.isUntyVal()) {
+        if (!promoteUntyped(exprPayR, exprPayL.type)) return {};
+    } else if (exprPayL.isUntyVal() && exprPayR.isUntyVal()) {
+        return codegenUntypedBin(ast->getOp(), exprPayL.untyVal, exprPayR.untyVal);
     }
 
     llvm::Value *valL = exprPayL.val, *valR = exprPayR.val;
@@ -450,14 +450,14 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const BinExprAst *ast) {
     }
 
     if (ast->getOp() == Token::O_AND) {
-        if (exprPayL.isLitVal()) {
-            llvmBuilder.CreateBr(exprPayL.litVal.val_b ? otherBlock : afterBlock);
+        if (exprPayL.isUntyVal()) {
+            llvmBuilder.CreateBr(exprPayL.untyVal.val_b ? otherBlock : afterBlock);
         } else {
             llvmBuilder.CreateCondBr(exprPayL.val, otherBlock, afterBlock);
         }
     } else if (ast->getOp() == Token::O_OR) {
-        if (exprPayL.isLitVal()) {
-            llvmBuilder.CreateBr(exprPayL.litVal.val_b ? afterBlock : otherBlock);
+        if (exprPayL.isUntyVal()) {
+            llvmBuilder.CreateBr(exprPayL.untyVal.val_b ? afterBlock : otherBlock);
         } else {
             llvmBuilder.CreateCondBr(exprPayL.val, afterBlock, otherBlock);
         }
@@ -480,15 +480,15 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const BinExprAst *ast) {
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);
     ExprGenPayload ret;
-    if (exprPayL.isLitVal() && exprPayR.isLitVal()) {
+    if (exprPayL.isUntyVal() && exprPayR.isUntyVal()) {
         // this cannot be moved to other codegen methods,
-        // as we don't know whether exprs are litVals until we call codegenExpr,
+        // as we don't know whether exprs are untyVals until we call codegenExpr,
         // but calling it emits code to LLVM at that point
-        ret.litVal.type = LiteralVal::T_BOOL;
+        ret.untyVal.type = UntypedVal::T_BOOL;
         if (ast->getOp() == Token::O_AND)
-            ret.litVal.val_b = exprPayL.litVal.val_b && exprPayR.litVal.val_b;
+            ret.untyVal.val_b = exprPayL.untyVal.val_b && exprPayR.untyVal.val_b;
         else
-            ret.litVal.val_b = exprPayL.litVal.val_b || exprPayR.litVal.val_b;
+            ret.untyVal.val_b = exprPayL.untyVal.val_b || exprPayR.untyVal.val_b;
     } else {
         llvm::PHINode *phi = llvmBuilder.CreatePHI(getType(TypeTable::P_BOOL), 2, "logic_tmp");
 
@@ -497,8 +497,8 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const BinExprAst *ast) {
         else
             phi->addIncoming(getConstB(true), firstBlock);
         
-        if (exprPayR.isLitVal()) {
-            phi->addIncoming(getConstB(exprPayR.litVal.val_b), otherBlock);
+        if (exprPayR.isUntyVal()) {
+            phi->addIncoming(getConstB(exprPayR.untyVal.val_b), otherBlock);
         } else {
             phi->addIncoming(exprPayR.val, otherBlock);
         }
@@ -512,183 +512,183 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const BinExprAst *ast) {
 
 Codegen::ExprGenPayload Codegen::codegenLogicAndOrGlobalScope(const BinExprAst *ast) {
     ExprGenPayload exprPayL = codegenExpr(ast->getL());
-    if (!exprPayL.isLitVal() || !isBool(exprPayL)) {
+    if (!exprPayL.isUntyVal() || !isBool(exprPayL)) {
         panic = true;
         return {};
     }
 
     ExprGenPayload exprPayR = codegenExpr(ast->getR());
-    if (!exprPayR.isLitVal() || !isBool(exprPayR)) {
+    if (!exprPayR.isUntyVal() || !isBool(exprPayR)) {
         panic = true;
         return {};
     }
 
     ExprGenPayload exprPayRet;
-    exprPayRet.litVal.type = LiteralVal::T_BOOL;
+    exprPayRet.untyVal.type = UntypedVal::T_BOOL;
     if (ast->getOp() == Token::O_AND)
-        exprPayRet.litVal.val_b = exprPayL.litVal.val_b && exprPayR.litVal.val_b;
+        exprPayRet.untyVal.val_b = exprPayL.untyVal.val_b && exprPayR.untyVal.val_b;
     else
-        exprPayRet.litVal.val_b = exprPayL.litVal.val_b || exprPayR.litVal.val_b;
+        exprPayRet.untyVal.val_b = exprPayL.untyVal.val_b || exprPayR.untyVal.val_b;
 
     return exprPayRet;
 }
 
-Codegen::ExprGenPayload Codegen::codegenLiteralBin(Token::Oper op, LiteralVal litL, LiteralVal litR) {
-    if (litL.type != litR.type || litL.type == LiteralVal::T_NONE) {
+Codegen::ExprGenPayload Codegen::codegenUntypedBin(Token::Oper op, UntypedVal untyL, UntypedVal untyR) {
+    if (untyL.type != untyR.type || untyL.type == UntypedVal::T_NONE) {
         panic = true;
         return {};
     }
 
-    LiteralVal litValRet;
-    litValRet.type = litL.type;
+    UntypedVal untyValRet;
+    untyValRet.type = untyL.type;
 
-    if (litValRet.type == LiteralVal::T_BOOL) {
+    if (untyValRet.type == UntypedVal::T_BOOL) {
         switch (op) {
         case Token::O_EQ:
-            litValRet.val_b = litL.val_b == litR.val_b;
+            untyValRet.val_b = untyL.val_b == untyR.val_b;
             break;
         case Token::O_NEQ:
-            litValRet.val_b = litL.val_b != litR.val_b;
+            untyValRet.val_b = untyL.val_b != untyR.val_b;
             break;
-        // AND and OR handled with the non-litVal cases
+        // AND and OR handled with the non-untyVal cases
         default:
             panic = true;
             break;
         }
-    } else if (litValRet.type == LiteralVal::T_NULL) {
+    } else if (untyValRet.type == UntypedVal::T_NULL) {
         // both are null
         switch (op) {
         case Token::O_EQ:
-            litValRet.type = LiteralVal::T_BOOL;
-            litValRet.val_b = true;
+            untyValRet.type = UntypedVal::T_BOOL;
+            untyValRet.val_b = true;
             break;
         case Token::O_NEQ:
-            litValRet.type = LiteralVal::T_BOOL;
-            litValRet.val_b = false;
+            untyValRet.type = UntypedVal::T_BOOL;
+            untyValRet.val_b = false;
             break;
         default:
             panic = true;
             break;
         }
     } else {
-        bool isTypeI = litValRet.type == LiteralVal::T_SINT;
-        bool isTypeC = litValRet.type == LiteralVal::T_CHAR;
-        bool isTypeF = litValRet.type == LiteralVal::T_FLOAT;
+        bool isTypeI = untyValRet.type == UntypedVal::T_SINT;
+        bool isTypeC = untyValRet.type == UntypedVal::T_CHAR;
+        bool isTypeF = untyValRet.type == UntypedVal::T_FLOAT;
 
         switch (op) {
             case Token::O_ADD:
                 if (isTypeF)
-                    litValRet.val_f = litL.val_f+litR.val_f;
+                    untyValRet.val_f = untyL.val_f+untyR.val_f;
                 else if (isTypeI)
-                    litValRet.val_si = litL.val_si+litR.val_si;
+                    untyValRet.val_si = untyL.val_si+untyR.val_si;
                 break;
             case Token::O_SUB:
                 if (isTypeF)
-                    litValRet.val_f = litL.val_f-litR.val_f;
+                    untyValRet.val_f = untyL.val_f-untyR.val_f;
                 else if (isTypeI)
-                    litValRet.val_si = litL.val_si-litR.val_si;
+                    untyValRet.val_si = untyL.val_si-untyR.val_si;
                 break;
             case Token::O_SHL:
                 if (isTypeI)
-                    litValRet.val_si = litL.val_si<<litR.val_si;
+                    untyValRet.val_si = untyL.val_si<<untyR.val_si;
                 else
                     panic = true;
                 break;
             case Token::O_SHR:
                 if (isTypeI)
-                    litValRet.val_si = litL.val_si>>litR.val_si;
+                    untyValRet.val_si = untyL.val_si>>untyR.val_si;
                 else
                     panic = true;
                 break;
             case Token::O_BIT_AND:
                 if (isTypeI)
-                    litValRet.val_si = litL.val_si&litR.val_si;
+                    untyValRet.val_si = untyL.val_si&untyR.val_si;
                 else
                     panic = true;
                 break;
             case Token::O_BIT_XOR:
                 if (isTypeI)
-                    litValRet.val_si = litL.val_si^litR.val_si;
+                    untyValRet.val_si = untyL.val_si^untyR.val_si;
                 else
                     panic = true;
                 break;
             case Token::O_BIT_OR:
                 if (isTypeI)
-                    litValRet.val_si = litL.val_si|litR.val_si;
+                    untyValRet.val_si = untyL.val_si|untyR.val_si;
                 else
                     panic = true;
                 break;
             case Token::O_MUL:
                 if (isTypeF)
-                    litValRet.val_f = litL.val_f*litR.val_f;
+                    untyValRet.val_f = untyL.val_f*untyR.val_f;
                 else if (isTypeI)
-                    litValRet.val_si = litL.val_si*litR.val_si;
+                    untyValRet.val_si = untyL.val_si*untyR.val_si;
                 break;
             case Token::O_DIV:
                 if (isTypeF)
-                    litValRet.val_f = litL.val_f/litR.val_f;
+                    untyValRet.val_f = untyL.val_f/untyR.val_f;
                 else if (isTypeI)
-                    litValRet.val_si = litL.val_si/litR.val_si;
+                    untyValRet.val_si = untyL.val_si/untyR.val_si;
                 break;
             case Token::O_REM:
                 if (isTypeF)
-                    litValRet.val_f = fmod(litL.val_f, litR.val_f);
+                    untyValRet.val_f = fmod(untyL.val_f, untyR.val_f);
                 else if (isTypeI)
-                    litValRet.val_si = litL.val_si%litR.val_si;
+                    untyValRet.val_si = untyL.val_si%untyR.val_si;
                 break;
             case Token::O_EQ:
-                litValRet.type = LiteralVal::T_BOOL;
+                untyValRet.type = UntypedVal::T_BOOL;
                 if (isTypeF)
-                    litValRet.val_b = litL.val_f == litR.val_f;
+                    untyValRet.val_b = untyL.val_f == untyR.val_f;
                 else if (isTypeI)
-                    litValRet.val_b = litL.val_si == litR.val_si;
+                    untyValRet.val_b = untyL.val_si == untyR.val_si;
                 else if (isTypeC)
-                    litValRet.val_b = litL.val_c == litR.val_c;
+                    untyValRet.val_b = untyL.val_c == untyR.val_c;
                 break;
             case Token::O_NEQ:
-                litValRet.type = LiteralVal::T_BOOL;
+                untyValRet.type = UntypedVal::T_BOOL;
                 if (isTypeF)
-                    litValRet.val_b = litL.val_f != litR.val_f;
+                    untyValRet.val_b = untyL.val_f != untyR.val_f;
                 else if (isTypeI)
-                    litValRet.val_b = litL.val_si != litR.val_si;
+                    untyValRet.val_b = untyL.val_si != untyR.val_si;
                 else if (isTypeC)
-                    litValRet.val_b = litL.val_c != litR.val_c;
+                    untyValRet.val_b = untyL.val_c != untyR.val_c;
                 break;
             case Token::O_LT:
-                litValRet.type = LiteralVal::T_BOOL;
+                untyValRet.type = UntypedVal::T_BOOL;
                 if (isTypeF)
-                    litValRet.val_b = litL.val_f < litR.val_f;
+                    untyValRet.val_b = untyL.val_f < untyR.val_f;
                 else if (isTypeI)
-                    litValRet.val_b = litL.val_si < litR.val_si;
+                    untyValRet.val_b = untyL.val_si < untyR.val_si;
                 else if (isTypeC)
-                    litValRet.val_b = litL.val_c < litR.val_c;
+                    untyValRet.val_b = untyL.val_c < untyR.val_c;
                 break;
             case Token::O_LTEQ:
-                litValRet.type = LiteralVal::T_BOOL;
+                untyValRet.type = UntypedVal::T_BOOL;
                 if (isTypeF)
-                    litValRet.val_b = litL.val_f <= litR.val_f;
+                    untyValRet.val_b = untyL.val_f <= untyR.val_f;
                 else if (isTypeI)
-                    litValRet.val_b = litL.val_si <= litR.val_si;
+                    untyValRet.val_b = untyL.val_si <= untyR.val_si;
                 else if (isTypeC)
-                    litValRet.val_b = litL.val_c <= litR.val_c;
+                    untyValRet.val_b = untyL.val_c <= untyR.val_c;
                 break;
             case Token::O_GT:
-                litValRet.type = LiteralVal::T_BOOL;
+                untyValRet.type = UntypedVal::T_BOOL;
                 if (isTypeF)
-                    litValRet.val_b = litL.val_f > litR.val_f;
+                    untyValRet.val_b = untyL.val_f > untyR.val_f;
                 else if (isTypeI)
-                    litValRet.val_b = litL.val_si > litR.val_si;
+                    untyValRet.val_b = untyL.val_si > untyR.val_si;
                 else if (isTypeC)
-                    litValRet.val_b = litL.val_c > litR.val_c;
+                    untyValRet.val_b = untyL.val_c > untyR.val_c;
                 break;
             case Token::O_GTEQ:
-                litValRet.type = LiteralVal::T_BOOL;
+                untyValRet.type = UntypedVal::T_BOOL;
                 if (isTypeF)
-                    litValRet.val_b = litL.val_f >= litR.val_f;
+                    untyValRet.val_b = untyL.val_f >= untyR.val_f;
                 else if (isTypeI)
-                    litValRet.val_b = litL.val_si >= litR.val_si;
+                    untyValRet.val_b = untyL.val_si >= untyR.val_si;
                 else if (isTypeC)
-                    litValRet.val_b = litL.val_c >= litR.val_c;
+                    untyValRet.val_b = untyL.val_c >= untyR.val_c;
                 break;
             default:
                 panic = true;
@@ -696,7 +696,7 @@ Codegen::ExprGenPayload Codegen::codegenLiteralBin(Token::Oper op, LiteralVal li
     }
 
     if (panic) return {};
-    return { .litVal = litValRet };
+    return { .untyVal = untyValRet };
 }
 
 Codegen::ExprGenPayload Codegen::codegen(const TernCondExprAst *ast) {
@@ -717,8 +717,8 @@ Codegen::ExprGenPayload Codegen::codegen(const TernCondExprAst *ast) {
     llvm::BasicBlock *falseBlock = llvm::BasicBlock::Create(llvmContext, "else");
     llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
 
-    if (condExpr.isLitVal()) {
-        llvmBuilder.CreateBr(condExpr.litVal.val_b ? trueBlock : falseBlock);
+    if (condExpr.isUntyVal()) {
+        llvmBuilder.CreateBr(condExpr.untyVal.val_b ? trueBlock : falseBlock);
     } else {
         llvmBuilder.CreateCondBr(condExpr.val, trueBlock, falseBlock);
     }
@@ -734,7 +734,7 @@ Codegen::ExprGenPayload Codegen::codegen(const TernCondExprAst *ast) {
     if (valueBroken(falseExpr)) return {};
     falseBlock = llvmBuilder.GetInsertBlock();
 
-    if (!trueExpr.isLitVal() && !falseExpr.isLitVal()) {
+    if (!trueExpr.isUntyVal() && !falseExpr.isUntyVal()) {
         if (trueExpr.type != falseExpr.type) {
             if (getTypeTable()->isImplicitCastable(trueExpr.type, falseExpr.type)) {
                 llvmBuilder.SetInsertPoint(trueBlock);
@@ -749,40 +749,40 @@ Codegen::ExprGenPayload Codegen::codegen(const TernCondExprAst *ast) {
                 return {};
             }
         }
-    } else if (trueExpr.isLitVal() && !falseExpr.isLitVal()) {
-        if (!promoteLiteral(trueExpr, falseExpr.type)) return {};
-    } else if (!trueExpr.isLitVal() && falseExpr.isLitVal()) {
-        if (!promoteLiteral(falseExpr, trueExpr.type)) return {};
-    } else if (trueExpr.isLitVal() && falseExpr.isLitVal()) {
-        if (trueExpr.litVal.type != falseExpr.litVal.type) {
+    } else if (trueExpr.isUntyVal() && !falseExpr.isUntyVal()) {
+        if (!promoteUntyped(trueExpr, falseExpr.type)) return {};
+    } else if (!trueExpr.isUntyVal() && falseExpr.isUntyVal()) {
+        if (!promoteUntyped(falseExpr, trueExpr.type)) return {};
+    } else if (trueExpr.isUntyVal() && falseExpr.isUntyVal()) {
+        if (trueExpr.untyVal.type != falseExpr.untyVal.type) {
             panic = true;
             return {};
         }
 
-        // if all three litVals, we will return a litVal, handled below in function
-        if (!condExpr.isLitVal()) {
-            if (trueExpr.litVal.type == LiteralVal::T_BOOL) {
-                if (!promoteLiteral(trueExpr, TypeTable::P_BOOL) ||
-                    !promoteLiteral(falseExpr, TypeTable::P_BOOL))
+        // if all three untyVals, we will return a untyVal, handled below in function
+        if (!condExpr.isUntyVal()) {
+            if (trueExpr.untyVal.type == UntypedVal::T_BOOL) {
+                if (!promoteUntyped(trueExpr, TypeTable::P_BOOL) ||
+                    !promoteUntyped(falseExpr, TypeTable::P_BOOL))
                     return {};
-            } else if (trueExpr.litVal.type == LiteralVal::T_SINT) {
-                TypeTable::Id trueT = TypeTable::shortestFittingTypeI(trueExpr.litVal.val_si);
-                TypeTable::Id falseT = TypeTable::shortestFittingTypeI(falseExpr.litVal.val_si);
+            } else if (trueExpr.untyVal.type == UntypedVal::T_SINT) {
+                TypeTable::Id trueT = TypeTable::shortestFittingTypeI(trueExpr.untyVal.val_si);
+                TypeTable::Id falseT = TypeTable::shortestFittingTypeI(falseExpr.untyVal.val_si);
 
                 if (getTypeTable()->isImplicitCastable(trueT, falseT)) {
-                    if (!promoteLiteral(trueExpr, falseT) ||
-                        !promoteLiteral(falseExpr, falseT))
+                    if (!promoteUntyped(trueExpr, falseT) ||
+                        !promoteUntyped(falseExpr, falseT))
                         return {};
                 } else {
-                    if (!promoteLiteral(trueExpr, trueT) ||
-                        !promoteLiteral(falseExpr, trueT))
+                    if (!promoteUntyped(trueExpr, trueT) ||
+                        !promoteUntyped(falseExpr, trueT))
                         return {};
                 }
-            } else if (trueExpr.litVal.type == LiteralVal::T_CHAR) {
-                if (!promoteLiteral(trueExpr, TypeTable::P_C8) ||
-                    !promoteLiteral(falseExpr, TypeTable::P_C8))
+            } else if (trueExpr.untyVal.type == UntypedVal::T_CHAR) {
+                if (!promoteUntyped(trueExpr, TypeTable::P_C8) ||
+                    !promoteUntyped(falseExpr, TypeTable::P_C8))
                     return {};
-            } else if (trueExpr.litVal.type == LiteralVal::T_FLOAT) {
+            } else if (trueExpr.untyVal.type == UntypedVal::T_FLOAT) {
                 /*
                 REM
                 Here, we have two floats and need to decide whether to cast them to f32 or f64.
@@ -793,7 +793,7 @@ Codegen::ExprGenPayload Codegen::codegen(const TernCondExprAst *ast) {
                 */
                 panic = true;
                 return {};
-            } else if (trueExpr.litVal.type == LiteralVal::T_NULL) {
+            } else if (trueExpr.untyVal.type == UntypedVal::T_NULL) {
                 /*
                 REM
                 Similarily, don't know into which type to cast this null.
@@ -820,26 +820,26 @@ Codegen::ExprGenPayload Codegen::codegen(const TernCondExprAst *ast) {
 
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);
-    if (condExpr.isLitVal()) {
-        if (trueExpr.isLitVal()/* && falseExpr.isLitVal()*/) {
-            ret.litVal.type = trueExpr.litVal.type;
-            if (ret.litVal.type == LiteralVal::T_BOOL)
-                ret.litVal.val_b = condExpr.litVal.val_b ? trueExpr.litVal.val_b : falseExpr.litVal.val_b;
-            else if (ret.litVal.type == LiteralVal::T_SINT)
-                ret.litVal.val_si = condExpr.litVal.val_b ? trueExpr.litVal.val_si : falseExpr.litVal.val_si;
-            else if (ret.litVal.type == LiteralVal::T_CHAR)
-                ret.litVal.val_c = condExpr.litVal.val_b ? trueExpr.litVal.val_c : falseExpr.litVal.val_c;
-            else if (ret.litVal.type == LiteralVal::T_FLOAT)
-                ret.litVal.val_f = condExpr.litVal.val_b ? trueExpr.litVal.val_f : falseExpr.litVal.val_f;
-            else if (ret.litVal.type == LiteralVal::T_NULL)
-                ; //ret.litVal.type = LiteralVal::T_NULL;
+    if (condExpr.isUntyVal()) {
+        if (trueExpr.isUntyVal()/* && falseExpr.isUntyVal()*/) {
+            ret.untyVal.type = trueExpr.untyVal.type;
+            if (ret.untyVal.type == UntypedVal::T_BOOL)
+                ret.untyVal.val_b = condExpr.untyVal.val_b ? trueExpr.untyVal.val_b : falseExpr.untyVal.val_b;
+            else if (ret.untyVal.type == UntypedVal::T_SINT)
+                ret.untyVal.val_si = condExpr.untyVal.val_b ? trueExpr.untyVal.val_si : falseExpr.untyVal.val_si;
+            else if (ret.untyVal.type == UntypedVal::T_CHAR)
+                ret.untyVal.val_c = condExpr.untyVal.val_b ? trueExpr.untyVal.val_c : falseExpr.untyVal.val_c;
+            else if (ret.untyVal.type == UntypedVal::T_FLOAT)
+                ret.untyVal.val_f = condExpr.untyVal.val_b ? trueExpr.untyVal.val_f : falseExpr.untyVal.val_f;
+            else if (ret.untyVal.type == UntypedVal::T_NULL)
+                ; //ret.untyVal.type = UntypedVal::T_NULL;
             else {
                 panic = true;
                 return {};
             }
-        } else/* both not litVals */ {
+        } else/* both not untyVals */ {
             ret.type = trueExpr.type;
-            ret.val = condExpr.litVal.val_b ? trueExpr.val : falseExpr.val;
+            ret.val = condExpr.untyVal.val_b ? trueExpr.val : falseExpr.val;
         }
     } else {
         llvm::PHINode *phi = llvmBuilder.CreatePHI(getType(trueExpr.type), 2, "tern_tmp");
@@ -854,34 +854,34 @@ Codegen::ExprGenPayload Codegen::codegen(const TernCondExprAst *ast) {
 
 Codegen::ExprGenPayload Codegen::codegenGlobalScope(const TernCondExprAst *ast) {
     ExprGenPayload condExpr = codegenExpr(ast->getCond());
-    if (!condExpr.isLitVal() || !isBool(condExpr)) {
+    if (!condExpr.isUntyVal() || !isBool(condExpr)) {
         panic = true;
         return {};
     }
 
     ExprGenPayload trueExpr = codegenExpr(ast->getOp1());
-    if (!trueExpr.isLitVal()) return {};
+    if (!trueExpr.isUntyVal()) return {};
 
     ExprGenPayload falseExpr = codegenExpr(ast->getOp2());
-    if (!falseExpr.isLitVal()) return {};
+    if (!falseExpr.isUntyVal()) return {};
 
-    if (trueExpr.litVal.type != falseExpr.litVal.type) {
+    if (trueExpr.untyVal.type != falseExpr.untyVal.type) {
         panic = true;
         return {};
     }
 
     ExprGenPayload ret;
-    ret.litVal.type = trueExpr.litVal.type;
-    if (ret.litVal.type == LiteralVal::T_BOOL)
-        ret.litVal.val_b = condExpr.litVal.val_b ? trueExpr.litVal.val_b : falseExpr.litVal.val_b;
-    else if (ret.litVal.type == LiteralVal::T_SINT)
-        ret.litVal.val_si = condExpr.litVal.val_b ? trueExpr.litVal.val_si : falseExpr.litVal.val_si;
-    else if (ret.litVal.type == LiteralVal::T_CHAR)
-        ret.litVal.val_si = condExpr.litVal.val_b ? trueExpr.litVal.val_c : falseExpr.litVal.val_c;
-    else if (ret.litVal.type == LiteralVal::T_FLOAT)
-        ret.litVal.val_f = condExpr.litVal.val_b ? trueExpr.litVal.val_f : falseExpr.litVal.val_f;
-    else if (ret.litVal.type == LiteralVal::T_NULL)
-        ; //ret.litVal.type = LiteralVal::T_NULL;
+    ret.untyVal.type = trueExpr.untyVal.type;
+    if (ret.untyVal.type == UntypedVal::T_BOOL)
+        ret.untyVal.val_b = condExpr.untyVal.val_b ? trueExpr.untyVal.val_b : falseExpr.untyVal.val_b;
+    else if (ret.untyVal.type == UntypedVal::T_SINT)
+        ret.untyVal.val_si = condExpr.untyVal.val_b ? trueExpr.untyVal.val_si : falseExpr.untyVal.val_si;
+    else if (ret.untyVal.type == UntypedVal::T_CHAR)
+        ret.untyVal.val_si = condExpr.untyVal.val_b ? trueExpr.untyVal.val_c : falseExpr.untyVal.val_c;
+    else if (ret.untyVal.type == UntypedVal::T_FLOAT)
+        ret.untyVal.val_f = condExpr.untyVal.val_b ? trueExpr.untyVal.val_f : falseExpr.untyVal.val_f;
+    else if (ret.untyVal.type == UntypedVal::T_NULL)
+        ; //ret.untyVal.type = UntypedVal::T_NULL;
     else {
         panic = true;
         return {};
@@ -903,7 +903,7 @@ Codegen::ExprGenPayload Codegen::codegen(const CallExprAst *ast) {
 
         call.set(i, exprs[i].type);
         args[i] = exprs[i].val;
-        call.set(i, exprs[i].litVal);
+        call.set(i, exprs[i].untyVal);
     }
 
     pair<FuncValue, bool> func = symbolTable->getFuncForCall(call);
@@ -913,9 +913,9 @@ Codegen::ExprGenPayload Codegen::codegen(const CallExprAst *ast) {
     }
 
     for (size_t i = 0; i < ast->getArgs().size(); ++i) {
-        if (exprs[i].isLitVal()) {
+        if (exprs[i].isUntyVal()) {
             // this also checks whether sint/uint literals fit into the arg type size
-            if (!promoteLiteral(exprs[i], func.first.argTypes[i])) return {};
+            if (!promoteUntyped(exprs[i], func.first.argTypes[i])) return {};
             args[i] = exprs[i].val;
         } else if (call.argTypes[i] != func.first.argTypes[i]) {
             createCast(args[i], call.argTypes[i], func.first.argTypes[i]);
@@ -935,30 +935,30 @@ Codegen::ExprGenPayload Codegen::codegen(const CastExprAst *ast) {
     ExprGenPayload exprVal = codegenExpr(ast->getVal());
     if (valueBroken(exprVal)) return {};
 
-    if (exprVal.isLitVal()) {
+    if (exprVal.isUntyVal()) {
         TypeTable::Id promoType;
-        switch (exprVal.litVal.type) {
-        case LiteralVal::T_BOOL:
+        switch (exprVal.untyVal.type) {
+        case UntypedVal::T_BOOL:
             promoType = TypeTable::P_BOOL;
             break;
-        case LiteralVal::T_SINT:
-            promoType = TypeTable::shortestFittingTypeI(exprVal.litVal.val_si);
+        case UntypedVal::T_SINT:
+            promoType = TypeTable::shortestFittingTypeI(exprVal.untyVal.val_si);
             break;
-        case LiteralVal::T_CHAR:
+        case UntypedVal::T_CHAR:
             promoType = TypeTable::P_C8;
             break;
-        case LiteralVal::T_FLOAT:
+        case UntypedVal::T_FLOAT:
             // cast to widest float type
             promoType = TypeTable::WIDEST_F;
             break;
-        case LiteralVal::T_NULL:
+        case UntypedVal::T_NULL:
             promoType = TypeTable::P_PTR;
             break;
         default:
             panic = true;
             return {};
         }
-        if (!promoteLiteral(exprVal, promoType)) return {};
+        if (!promoteUntyped(exprVal, promoType)) return {};
     }
     
     llvm::Value *val = exprVal.val;

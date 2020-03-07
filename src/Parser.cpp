@@ -28,44 +28,43 @@ bool Parser::mismatch(Token::Type type) {
 }
 
 unique_ptr<ExprAst> Parser::prim() {
-    // remember, string literal is lvalue
     unique_ptr<ExprAst> ret;
 
     if (peek().type == Token::T_NUM) {
         Token tok = next();
 
-        LiteralVal val;
-        val.type = LiteralVal::T_SINT;
+        UntypedVal val;
+        val.type = UntypedVal::T_SINT;
         val.val_si = tok.num;
 
-        ret = make_unique<LiteralExprAst>(val);
+        ret = make_unique<UntypedExprAst>(val);
     } else if (peek().type == Token::T_FNUM) {
         Token tok = next();
 
-        LiteralVal val;
-        val.type = LiteralVal::T_FLOAT;
+        UntypedVal val;
+        val.type = UntypedVal::T_FLOAT;
         val.val_f = tok.fnum;
 
-        ret = make_unique<LiteralExprAst>(val);
+        ret = make_unique<UntypedExprAst>(val);
     } else if (peek().type == Token::T_CHAR) {
         Token tok = next();
 
-        LiteralVal val;
-        val.type = LiteralVal::T_CHAR;
+        UntypedVal val;
+        val.type = UntypedVal::T_CHAR;
         val.val_c = tok.ch;
 
-        ret = make_unique<LiteralExprAst>(val);
+        ret = make_unique<UntypedExprAst>(val);
     } else if (peek().type == Token::T_BVAL) {
         Token tok = next();
 
-        ret = make_unique<LiteralExprAst>(tok.bval);
+        ret = make_unique<UntypedExprAst>(tok.bval);
     } else if (peek().type == Token::T_NULL) {
         next();
 
-        LiteralVal val;
-        val.type = LiteralVal::T_NULL;
+        UntypedVal val;
+        val.type = UntypedVal::T_NULL;
 
-        ret = make_unique<LiteralExprAst>(val);
+        ret = make_unique<UntypedExprAst>(val);
     } else if (peek().type == Token::T_ID) {
         if (symbolTable->getTypeTable()->isType(peek().nameId)) {
             unique_ptr<TypeAst> t = type();

@@ -8,7 +8,7 @@
 enum AstType {
     AST_Type,
     AST_EmptyExpr,
-    AST_LiteralExpr,
+    AST_UntypedExpr,
     AST_VarExpr,
     AST_IndExpr,
     AST_UnExpr,
@@ -61,16 +61,16 @@ public:
     virtual ~ExprAst() {}
 };
 
-class LiteralExprAst : public ExprAst {
-    LiteralVal val;
+class UntypedExprAst : public ExprAst {
+    UntypedVal val;
 
 public:
-    explicit LiteralExprAst(LiteralVal v) : val(v) {}
-    explicit LiteralExprAst(bool bb);
+    explicit UntypedExprAst(UntypedVal v) : val(v) {}
+    explicit UntypedExprAst(bool bb);
 
-    AstType type() const override { return AST_LiteralExpr; }
+    AstType type() const override { return AST_UntypedExpr; }
 
-    LiteralVal getVal() const { return val; }
+    UntypedVal getVal() const { return val; }
 };
 
 class VarExprAst : public ExprAst {

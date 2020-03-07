@@ -47,7 +47,7 @@ llvm::Type* Codegen::getType(TypeTable::Id typeId) {
 }
 
 bool Codegen::valueBroken(const ExprGenPayload &e) {
-    if (e.val == nullptr && !e.isLitVal()) panic = true;
+    if (e.val == nullptr && !e.isUntyVal()) panic = true;
     return panic;
 }
 
@@ -61,43 +61,43 @@ bool Codegen::refBroken(const ExprGenPayload &e) {
     return panic;
 }
 
-bool Codegen::promoteLiteral(ExprGenPayload &e, TypeTable::Id t) {
-    if (!e.isLitVal()) {
+bool Codegen::promoteUntyped(ExprGenPayload &e, TypeTable::Id t) {
+    if (!e.isUntyVal()) {
         panic = true;
         return false;
     }
 
-    switch (e.litVal.type) {
-    case LiteralVal::T_BOOL:
+    switch (e.untyVal.type) {
+    case UntypedVal::T_BOOL:
         if (!getTypeTable()->isTypeB(t)) {
             panic = true;
         } else {
-            e.val = getConstB(e.litVal.val_b);
+            e.val = getConstB(e.untyVal.val_b);
         }
         break;
-    case LiteralVal::T_SINT:
-        if ((!getTypeTable()->isTypeI(t) && !getTypeTable()->isTypeU(t)) || !getTypeTable()->fitsType(e.litVal.val_si, t)) {
+    case UntypedVal::T_SINT:
+        if ((!getTypeTable()->isTypeI(t) && !getTypeTable()->isTypeU(t)) || !getTypeTable()->fitsType(e.untyVal.val_si, t)) {
             panic = true;
         } else {
-            e.val = llvm::ConstantInt::get(getType(t), e.litVal.val_si, getTypeTable()->isTypeI(t));
+            e.val = llvm::ConstantInt::get(getType(t), e.untyVal.val_si, getTypeTable()->isTypeI(t));
         }
         break;
-    case LiteralVal::T_CHAR:
+    case UntypedVal::T_CHAR:
         if (!getTypeTable()->isTypeC(t)) {
             panic = true;
         } else {
-            e.val = llvm::ConstantInt::get(getType(t), (uint8_t) e.litVal.val_c, false);
+            e.val = llvm::ConstantInt::get(getType(t), (uint8_t) e.untyVal.val_c, false);
         }
         break;
-    case LiteralVal::T_FLOAT:
+    case UntypedVal::T_FLOAT:
         // no precision checks for float types, this makes float literals somewhat unsafe
         if (!getTypeTable()->isTypeF(t)) {
             panic = true;
         } else {
-            e.val = llvm::ConstantFP::get(getType(t), e.litVal.val_f);
+            e.val = llvm::ConstantFP::get(getType(t), e.untyVal.val_f);
         }
         break;
-    case LiteralVal::T_NULL:
+    case UntypedVal::T_NULL:
         if (!symbolTable->getTypeTable()->isTypeAnyP(t)) {
             panic = true;
         } else {
@@ -108,7 +108,7 @@ bool Codegen::promoteLiteral(ExprGenPayload &e, TypeTable::Id t) {
         panic = true;
     }
 
-    e.resetLitVal();
+    e.resetUntyVal();
     e.type = t;
     return !panic;
 }

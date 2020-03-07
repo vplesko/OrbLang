@@ -7,7 +7,7 @@
 #include "TypeTable.h"
 
 /*
-LiteralVal is needed to represent a literal value whose exact type is yet unknown.
+UntypedVal is needed to represent a literal value whose exact type is yet unknown.
 
 Let's say we interpret an integer literal as i32.
 Then the user couldn't do this: i8 i = 0;
@@ -20,7 +20,7 @@ Therefore, we need this intermediate value holder.
 REM
 Does not hold uint values. Users can overcome this by casting.
 */
-struct LiteralVal {
+struct UntypedVal {
     enum Type {
         T_NONE,
         T_SINT,
@@ -42,18 +42,18 @@ struct LiteralVal {
 struct FuncCallSite {
     NamePool::Id name;
     std::vector<TypeTable::Id> argTypes;
-    std::vector<LiteralVal> literalVals;
+    std::vector<UntypedVal> untypedVals;
 
     FuncCallSite() {}
-    FuncCallSite(std::size_t sz) : argTypes(sz), literalVals(sz) {}
+    FuncCallSite(std::size_t sz) : argTypes(sz), untypedVals(sz) {}
 
     void set(std::size_t ind, TypeTable::Id t) {
         argTypes[ind] = t;
-        literalVals[ind] = {LiteralVal::T_NONE};
+        untypedVals[ind] = {UntypedVal::T_NONE};
     }
 
-    void set(std::size_t ind, LiteralVal l) {
-        literalVals[ind] = l;
+    void set(std::size_t ind, UntypedVal l) {
+        untypedVals[ind] = l;
     }
 };
 

@@ -4,6 +4,7 @@ for now c8 only
 join consecutive literals
 escaping chars
 \0 at the end
+strings are l-vals
 
 c8 cn[] str = "hello"; // global, immutable
 
@@ -11,6 +12,7 @@ c8[6] str = "hello"; // local, mutable
 str[1] = 'a';
 
 "hello"[0]; // 'h', no string generated
+"hello"[i]; // global
 
 llvm::ConstantDataArray::getString
 */
@@ -113,6 +115,7 @@ fnc main() {
     i32 cn*cn r3 = i32 cn*cn(malloc(4));
     i32[]cn s1 = i32[]cn(malloc(4));
     // TODO test these after making array literals
+    // TODO test assigning from var of diff cn-ness without cast (same type otherwise)
     i32 cn[] s2 = i32 cn[](malloc(4));
     i32 cn[]cn s3 = i32 cn[]cn(malloc(4));
     i32 cn[4] t1;
@@ -251,6 +254,19 @@ fnc main() {
     n = retAll(508);
     println_i32(n[0]);
     println_i32(retAll(509)[0]);
+    println_i32(i32 cn[4](retAll(510))[0]);
+    println_i32(i32[4]cn(retAll(511))[0]);
+    println_i32(i32 cn[4]cn(retAll(512))[0]);
+
+    n = retAll(600);
+    i32 cn[4] p1 = n;
+    println_i32(p1[0]);
+    n = retAll(601);
+    i32 [4]cn p2 = n;
+    println_i32(p2[0]);
+    n = retAll(602);
+    i32 cn[4]cn p3 = n;
+    println_i32(p3[0]);
 
     println_i32(p);
     println_i32(q);

@@ -1,8 +1,8 @@
 #include "AST.h"
 using namespace std;
 
-LiteralExprAst::LiteralExprAst(bool bb) {
-    val.type = LiteralVal::T_BOOL;
+UntypedExprAst::UntypedExprAst(bool bb) {
+    val.type = UntypedVal::T_BOOL;
     val.val_b = bb;
 }
 

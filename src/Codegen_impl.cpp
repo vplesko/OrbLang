@@ -82,7 +82,7 @@ void Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
             panic = true;
             val = nullptr;
         }
-    } else if (symbolTable->getTypeTable()->isTypeAnyP(srcTypeId)) {
+    } else if (getTypeTable()->isTypeAnyP(srcTypeId)) {
         if (getTypeTable()->isTypeI(dstTypeId))
             val = llvmBuilder.CreatePtrToInt(val, type, "p2i_cast");
         else if (getTypeTable()->isTypeU(dstTypeId))
@@ -95,6 +95,13 @@ void Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
                 llvm::ConstantInt::get(getType(TypeTable::WIDEST_I), 0),
                 "p2b_cast");
         } else {
+            panic = true;
+            val = nullptr;
+        }
+    } else if (getTypeTable()->isTypeArr(srcTypeId)) {
+        // REM arrs are only castable when changing constness
+        if (!getTypeTable()->isImplicitCastable(srcTypeId, dstTypeId)) {
+            // no action is needed in case of a cast
             panic = true;
             val = nullptr;
         }
@@ -186,7 +193,7 @@ void Codegen::codegen(const DeclAst *ast) {
             const ExprAst *init = it.second.get();
             if (init != nullptr) {
                 ExprGenPayload initPay = codegenExpr(init);
-                if (valueBroken(initPay) || !initPay.isLitVal() || !promoteLiteral(initPay, typeId)) {
+                if (valueBroken(initPay) || !initPay.isUntyVal() || !promoteUntyped(initPay, typeId)) {
                     panic = true;
                     return;
                 }
@@ -202,8 +209,8 @@ void Codegen::codegen(const DeclAst *ast) {
                 ExprGenPayload initPay = codegenExpr(init);
                 if (valueBroken(initPay)) return;
 
-                if (initPay.isLitVal()) {
-                    if (!promoteLiteral(initPay, typeId)) return;
+                if (initPay.isUntyVal()) {
+                    if (!promoteUntyped(initPay, typeId)) return;
                 }
 
                 llvm::Value *src = initPay.val;
@@ -235,7 +242,7 @@ void Codegen::codegen(const IfAst *ast) {
     }
 
     ExprGenPayload condExpr = codegenExpr(ast->getCond());
-    if (condExpr.isLitVal() && !promoteLiteral(condExpr, TypeTable::P_BOOL)) {
+    if (condExpr.isUntyVal() && !promoteUntyped(condExpr, TypeTable::P_BOOL)) {
         panic = true;
         return;
     }
@@ -296,7 +303,7 @@ void Codegen::codegen(const ForAst *ast) {
         ExprGenPayload condExpr;
         if (ast->hasCond()) {
             condExpr = codegenExpr(ast->getCond());
-            if (condExpr.isLitVal() && !promoteLiteral(condExpr, TypeTable::P_BOOL)) {
+            if (condExpr.isUntyVal() && !promoteUntyped(condExpr, TypeTable::P_BOOL)) {
                 panic = true;
                 return;
             }
@@ -355,7 +362,7 @@ void Codegen::codegen(const WhileAst *ast) {
 
     {
         ExprGenPayload condExpr = codegenExpr(ast->getCond());
-        if (condExpr.isLitVal() && !promoteLiteral(condExpr, TypeTable::P_BOOL)) {
+        if (condExpr.isUntyVal() && !promoteUntyped(condExpr, TypeTable::P_BOOL)) {
             panic = true;
             return;
         }
@@ -408,7 +415,7 @@ void Codegen::codegen(const DoWhileAst *ast) {
         llvmBuilder.SetInsertPoint(condBlock);
 
         ExprGenPayload condExpr = codegenExpr(ast->getCond());
-        if (condExpr.isLitVal() && !promoteLiteral(condExpr, TypeTable::P_BOOL)) {
+        if (condExpr.isUntyVal() && !promoteUntyped(condExpr, TypeTable::P_BOOL)) {
             panic = true;
             return;
         }
@@ -450,7 +457,7 @@ void Codegen::codegen(const SwitchAst *ast) {
     ExprGenPayload valExprPay = codegenExpr(ast->getValue());
 
     // literals get cast to the widest sint type, along with comparison values
-    if (valExprPay.isLitVal() && !promoteLiteral(valExprPay, TypeTable::WIDEST_I)) {
+    if (valExprPay.isUntyVal() && !promoteUntyped(valExprPay, TypeTable::WIDEST_I)) {
         panic = true;
         return;
     }
@@ -474,15 +481,15 @@ void Codegen::codegen(const SwitchAst *ast) {
     for (size_t i = 0; i < caseBlockNum; ++i) {
         for (const auto &comp_ : ast->getCases()[i].comparisons) {
             ExprGenPayload compExprPay = codegenExpr(comp_.get());
-            if (!compExprPay.isLitVal() ||
-                compExprPay.litVal.type != LiteralVal::T_SINT || !promoteLiteral(compExprPay, valExprPay.type) ||
-                caseVals.find(compExprPay.litVal.val_si) != caseVals.end()) {
+            if (!compExprPay.isUntyVal() ||
+                compExprPay.untyVal.type != UntypedVal::T_SINT || !promoteUntyped(compExprPay, valExprPay.type) ||
+                caseVals.find(compExprPay.untyVal.val_si) != caseVals.end()) {
                 panic = true;
                 return;
             }
 
             caseComps[i].push_back((llvm::ConstantInt*) compExprPay.val);
-            caseVals.insert(compExprPay.litVal.val_si);
+            caseVals.insert(compExprPay.untyVal.val_si);
             ++caseCompNum;
         }
     }
@@ -529,7 +536,7 @@ void Codegen::codegen(const RetAst *ast) {
     }
 
     ExprGenPayload retExpr = codegenExpr(ast->getVal());
-    if (retExpr.isLitVal() && !promoteLiteral(retExpr, currFunc.first.retType)) return;
+    if (retExpr.isUntyVal() && !promoteUntyped(retExpr, currFunc.first.retType)) return;
     if (valBroken(retExpr)) return;
 
     llvm::Value *retVal = retExpr.val;

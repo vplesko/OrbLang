@@ -25,14 +25,14 @@ class Codegen {
         TypeTable::Id type;
         llvm::Value *val = nullptr;
         llvm::Value *ref = nullptr;
-        LiteralVal litVal = { .type = LiteralVal::T_NONE };
+        UntypedVal untyVal = { .type = UntypedVal::T_NONE };
 
-        bool isLitVal() const { return litVal.type != LiteralVal::T_NONE; }
-        void resetLitVal() { litVal.type = LiteralVal::T_NONE; }
+        bool isUntyVal() const { return untyVal.type != UntypedVal::T_NONE; }
+        void resetUntyVal() { untyVal.type = UntypedVal::T_NONE; }
     };
 
     bool isBool(const ExprGenPayload &e) {
-        return e.isLitVal() ? e.litVal.type == LiteralVal::T_BOOL : getTypeTable()->isTypeB(e.type);
+        return e.isUntyVal() ? e.untyVal.type == UntypedVal::T_BOOL : getTypeTable()->isTypeB(e.type);
     }
 
     TypeTable* getTypeTable() { return symbolTable->getTypeTable(); }
@@ -50,25 +50,25 @@ class Codegen {
     bool isGlobalScope() const;
     bool isBlockTerminated() const;
 
-    // panics if both val and lit val are invalid, returns panic
+    // panics if both val and unty val are invalid, returns panic
     bool valueBroken(const ExprGenPayload &e);
     // panics if val is invalid, returns panic
     bool valBroken(const ExprGenPayload &e);
     // panics if ref is invalid, returns panic
     bool refBroken(const ExprGenPayload &e);
 
-    bool promoteLiteral(ExprGenPayload &e, TypeTable::Id t);
+    bool promoteUntyped(ExprGenPayload &e, TypeTable::Id t);
 
-    ExprGenPayload codegen(const LiteralExprAst *ast);
+    ExprGenPayload codegen(const UntypedExprAst *ast);
     ExprGenPayload codegen(const VarExprAst *ast);
     ExprGenPayload codegen(const IndExprAst *ast);
     ExprGenPayload codegen(const UnExprAst *ast);
-    ExprGenPayload codegenLiteralUn(Token::Oper op, LiteralVal lit);
+    ExprGenPayload codegenUntypedUn(Token::Oper op, UntypedVal unty);
     ExprGenPayload codegen(const BinExprAst *ast);
     // helper function for short-circuit evaluation of boolean AND and OR
     ExprGenPayload codegenLogicAndOr(const BinExprAst *ast);
     ExprGenPayload codegenLogicAndOrGlobalScope(const BinExprAst *ast);
-    ExprGenPayload codegenLiteralBin(Token::Oper op, LiteralVal litL, LiteralVal litR);
+    ExprGenPayload codegenUntypedBin(Token::Oper op, UntypedVal untyL, UntypedVal untyR);
     ExprGenPayload codegen(const TernCondExprAst *ast);
     ExprGenPayload codegenGlobalScope(const TernCondExprAst *ast);
     ExprGenPayload codegen(const CallExprAst *ast);
