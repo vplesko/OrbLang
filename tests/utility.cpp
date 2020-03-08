@@ -1,4 +1,4 @@
-// TODO replace this with scanf and printf calls in Orb after string literals
+// TODO! replace this with scanf and printf calls in Orb after string literals
 #ifdef _WIN32
 #define DLLEXPORT __declspec(dllexport)
 #else
@@ -32,11 +32,19 @@ extern "C" DLLEXPORT void print_c8(char x) {
 
 extern "C" DLLEXPORT void println_c8(char x) {
     putchar(x);
-    putchar('\n');
+    std::printf("\n");
 }
 
-extern "C" DLLEXPORT void println() {
+extern "C" DLLEXPORT void println(void) {
     std::printf("\n");
+}
+
+extern "C" DLLEXPORT void print_str(const char *str) {
+    std::printf("%s", str);
+}
+
+extern "C" DLLEXPORT void println_str(const char *str) {
+    std::printf("%s\n", str);
 }
 
 IO_FUNCS(std::int8_t, i8, PRId8, SCNd8)

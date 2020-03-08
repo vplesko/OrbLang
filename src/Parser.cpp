@@ -1,6 +1,7 @@
 #include "Parser.h"
 #include "AST.h"
 #include <iostream>
+#include <sstream>
 #include <cstdint>
 using namespace std;
 
@@ -8,7 +9,7 @@ Parser::Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer)
     : namePool(namePool), symbolTable(symbolTable), lex(lexer), panic(false) {
 }
 
-Token Parser::peek() const {
+const Token& Parser::peek() const {
     return lex->peek();
 }
 
@@ -58,6 +59,17 @@ unique_ptr<ExprAst> Parser::prim() {
         Token tok = next();
 
         ret = make_unique<UntypedExprAst>(tok.bval);
+    } else if (peek().type == Token::T_STRING) {
+        stringstream ss;
+        while (peek().type == Token::T_STRING) {
+            ss << next().str;
+        }
+
+        UntypedVal val;
+        val.type = UntypedVal::T_STRING;
+        val.val_str = ss.str();
+
+        ret = make_unique<UntypedExprAst>(move(val));
     } else if (peek().type == Token::T_NULL) {
         next();
 

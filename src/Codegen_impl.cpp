@@ -200,7 +200,7 @@ void Codegen::codegen(const DeclAst *ast) {
                 initConst = (llvm::Constant*) initPay.val;
             }
 
-            val = createGlobal(type, initConst, name);
+            val = createGlobal(type, initConst, getTypeTable()->isTypeCn(typeId), name);
         } else {
             val = createAlloca(type, name);
 

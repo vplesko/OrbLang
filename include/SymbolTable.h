@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 #include <vector>
+#include <string>
 #include "llvm/IR/Instructions.h"
 #include "NamePool.h"
 #include "TypeTable.h"
@@ -26,6 +27,7 @@ struct UntypedVal {
         T_SINT,
         T_FLOAT,
         T_CHAR,
+        T_STRING,
         T_BOOL,
         T_NULL
     };
@@ -37,6 +39,10 @@ struct UntypedVal {
         char val_c;
         bool val_b;
     };
+    std::string val_str;
+
+    static std::size_t getStringLen(const std::string &str) { return str.size()+1; }
+    std::size_t getStringLen() const { return getStringLen(val_str); }
 };
 
 struct FuncCallSite {
@@ -57,6 +63,7 @@ struct FuncCallSite {
     }
 };
 
+// TODO make cn part of fnc sig
 struct FuncSignature {
     NamePool::Id name;
     std::vector<TypeTable::Id> argTypes;

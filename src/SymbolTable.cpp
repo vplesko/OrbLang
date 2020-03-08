@@ -111,26 +111,33 @@ std::pair<FuncValue, bool> SymbolTable::getFuncForCall(const FuncCallSite &call)
         const FuncSignature *candSig = &it.first;
         FuncValue *candVal = &it.second;
 
-        for (size_t i = 0; i < it.first.argTypes.size(); ++i) {
+        for (size_t i = 0; i < it.second.argTypes.size(); ++i) {
             // if arg of same or implicitly castable type, we're good
             bool argTypeOk = call.untypedVals[i].type == UntypedVal::T_NONE &&
-                typeTable->isArgTypeProper(call.argTypes[i], it.first.argTypes[i]);
+                typeTable->isArgTypeProper(call.argTypes[i], it.second.argTypes[i]);
 
             // otherwise, if untyped val which can be used for this func, we're also good
             if (!argTypeOk && call.untypedVals[i].type != UntypedVal::T_NONE) {
                 switch (call.untypedVals[i].type) {
                 case UntypedVal::T_BOOL:
-                    argTypeOk = typeTable->isTypeB(it.first.argTypes[i]);
+                    argTypeOk = typeTable->isTypeB(it.second.argTypes[i]);
                     break;
                 case UntypedVal::T_SINT:
-                    argTypeOk = typeTable->isTypeI(it.first.argTypes[i]) ||
-                        (typeTable->isTypeU(it.first.argTypes[i]) && call.untypedVals[i].val_si >= 0);
+                    argTypeOk = typeTable->isTypeI(it.second.argTypes[i]) ||
+                        (typeTable->isTypeU(it.second.argTypes[i]) && call.untypedVals[i].val_si >= 0);
                     break;
                 case UntypedVal::T_CHAR:
-                    argTypeOk = typeTable->isTypeC(it.first.argTypes[i]);
+                    argTypeOk = typeTable->isTypeC(it.second.argTypes[i]);
                     break;
                 case UntypedVal::T_FLOAT:
-                    argTypeOk = typeTable->isTypeF(it.first.argTypes[i]);
+                    argTypeOk = typeTable->isTypeF(it.second.argTypes[i]);
+                    break;
+                case UntypedVal::T_NULL:
+                    argTypeOk = typeTable->isTypeAnyP(it.second.argTypes[i]);
+                    break;
+                case UntypedVal::T_STRING:
+                    argTypeOk = typeTable->isTypeStr(it.second.argTypes[i]) ||
+                        typeTable->isTypeCharArrOfLen(it.second.argTypes[i], call.untypedVals[i].getStringLen());
                     break;
                 default:
                     argTypeOk = false;

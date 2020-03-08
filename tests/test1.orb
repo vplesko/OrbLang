@@ -44,14 +44,22 @@ fnc println_c8(c8 x);
 
 fnc scan_c8() c8;
 
+fnc print_str(c8 cn[] str);
+
+fnc println_str(c8 cn[] str);
+
 i32 glob1;
 i32 glob2 = 1;
 i32 glob3 = 1+2*3, glob4 = 1, glob5;
 i32 glob6 = 1>2?3:4;
 bool glob7 = true or false;
 c8 glob8 = false ? 'D' : 'E';
+c8 cn[] glob9 = true ? "hello" : "xyz";
+c8[4] glob10 = false ? "abc" : "ola";
 
 fnc main() {
+    println_str("Hello, world!");
+
     println_i64(0);
     println_i64(1);
     println_i64(+1);
@@ -261,6 +269,17 @@ fnc main() {
     if ('A' != 'B') println_c8('B');
     if ('A' >= 'C') println_c8('C');
     println_c8(glob8);
+
+    println_str(glob9);
+    glob9 = "ciao";
+    println_str(glob9);
+    println_str(c8 cn[](&glob10));
+    glob10 = "yes";
+    println_str(c8 cn[](&glob10));
+    println_str(
+        "String that spans \n"
+        "two lines in code\x21"
+    );
 
     //println_i64(0);
     /* println_i64(0); */

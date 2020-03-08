@@ -70,7 +70,7 @@ public:
 
     AstType type() const override { return AST_UntypedExpr; }
 
-    UntypedVal getVal() const { return val; }
+    const UntypedVal& getVal() const { return val; }
 };
 
 class VarExprAst : public ExprAst {

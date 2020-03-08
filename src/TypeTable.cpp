@@ -48,6 +48,8 @@ TypeTable::TypeTable() : next(P_ENUM_END), types(P_ENUM_END) {
         types[i].first = TypeDescr(i);
         types[i].second = nullptr;
     }
+
+    addTypeStr();
 }
 
 TypeTable::Id TypeTable::addType(TypeDescr typeDescr) {
@@ -109,6 +111,12 @@ TypeTable::Id TypeTable::addTypeAddr(Id typeId) {
     return addType(move(typeAddrDescr));
 }
 
+void TypeTable::addTypeStr() {
+    TypeDescr typeDescr(P_C8, true);
+    typeDescr.addDecor({TypeDescr::Decor::D_ARR_PTR}, false);
+    strType = addType(move(typeDescr));
+}
+
 void TypeTable::addPrimType(NamePool::Id name, PrimIds id, llvm::Type *type) {
     typeIds.insert(make_pair(name, id));
     types[id].first.base = id;
@@ -125,6 +133,12 @@ void TypeTable::setType(Id id, llvm::Type *type) {
 
 const TypeTable::TypeDescr& TypeTable::getTypeDescr(Id id) {
     return types[id].first;
+}
+
+TypeTable::Id TypeTable::getTypeCharArrOfLenId(std::size_t len) {
+    TypeDescr typeDescr(P_C8, true);
+    typeDescr.addDecor({TypeDescr::Decor::D_ARR, len});
+    return addType(move(typeDescr));
 }
 
 bool TypeTable::isType(NamePool::Id name) const {
@@ -182,6 +196,20 @@ bool TypeTable::isTypeArrP(Id t) const {
     if (t >= types.size()) return false;
     const TypeDescr &ty = types[t].first;
     return !ty.decors.empty() && ty.decors.back().type == TypeDescr::Decor::D_ARR_PTR;
+}
+
+bool TypeTable::isTypeStr(Id t) const {
+    if (t >= types.size()) return false;
+    const TypeDescr &ty = types[t].first;
+    return ty.decors.size() == 1 && ty.decors[0].type == TypeDescr::Decor::D_ARR_PTR &&
+        ty.base == P_C8 && ty.cn;
+}
+
+bool TypeTable::isTypeCharArrOfLen(Id t, size_t len) const {
+    if (t >= types.size()) return false;
+    const TypeDescr &ty = types[t].first;
+    return ty.decors.size() == 1 &&
+        ty.decors[0].type == TypeDescr::Decor::D_ARR && ty.decors[0].len == len;
 }
 
 bool TypeTable::isTypeCn(Id t) const {

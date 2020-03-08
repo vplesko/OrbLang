@@ -97,6 +97,15 @@ bool Codegen::promoteUntyped(ExprGenPayload &e, TypeTable::Id t) {
             e.val = llvm::ConstantFP::get(getType(t), e.untyVal.val_f);
         }
         break;
+    case UntypedVal::T_STRING:
+        if (getTypeTable()->isTypeStr(t)) {
+            e.val = createString(e.untyVal.val_str);
+        } else if (getTypeTable()->isTypeCharArrOfLen(t, e.untyVal.getStringLen())) {
+            e.val = llvm::ConstantDataArray::getString(llvmContext, e.untyVal.val_str, true);
+        } else {
+            panic = true;
+        }
+        break;
     case UntypedVal::T_NULL:
         if (!symbolTable->getTypeTable()->isTypeAnyP(t)) {
             panic = true;
@@ -163,9 +172,9 @@ bool Codegen::isBlockTerminated() const {
     return !llvmBuilder.GetInsertBlock()->empty() && llvmBuilder.GetInsertBlock()->back().isTerminator();
 }
 
-llvm::GlobalValue* Codegen::createGlobal(llvm::Type *type, llvm::Constant *init, const std::string &name) {
+llvm::GlobalValue* Codegen::createGlobal(llvm::Type *type, llvm::Constant *init, bool isConstant, const std::string &name) {
     if (init == nullptr) {
-        // llvm demands global vars be initialized, but by deafult we don't init them
+        // llvm demands global vars be initialized, but by default we don't init them
         // TODO this is very hacky
         init = llvm::ConstantInt::get(type, 0);
     }
@@ -173,11 +182,26 @@ llvm::GlobalValue* Codegen::createGlobal(llvm::Type *type, llvm::Constant *init,
     return new llvm::GlobalVariable(
         *llvmModule,
         type,
-        false,
+        isConstant,
         // TODO revise when implementing multi-file compilation
         llvm::GlobalValue::PrivateLinkage,
         init,
         name);
+}
+
+llvm::Constant* Codegen::createString(const std::string &str) {
+    llvm::GlobalVariable *glob = new llvm::GlobalVariable(
+        *llvmModule,
+        getType(getTypeTable()->getTypeCharArrOfLenId(UntypedVal::getStringLen(str))),
+        true,
+        llvm::GlobalValue::PrivateLinkage,
+        nullptr,
+        "str_lit"
+    );
+
+    llvm::Constant *arr = llvm::ConstantDataArray::getString(llvmContext, str, true);
+    glob->setInitializer(arr);
+    return llvm::ConstantExpr::getPointerCast(glob, getType(getTypeTable()->getTypeIdStr()));
 }
 
 void Codegen::printout() const {

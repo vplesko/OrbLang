@@ -43,6 +43,10 @@ fnc println_c8(c8 x);
 
 fnc scan_c8() c8;
 
+fnc print_str(c8 cn[] str);
+
+fnc println_str(c8 cn[] str);
+
 fnc foo() {
     println_i64(10);
 }

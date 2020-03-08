@@ -15,7 +15,7 @@ class Parser {
 
     bool panic;
 
-    Token peek() const;
+    const Token& peek() const;
     Token next();
     bool match(Token::Type type);
     bool mismatch(Token::Type type);

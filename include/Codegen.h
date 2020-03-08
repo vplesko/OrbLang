@@ -40,7 +40,8 @@ class Codegen {
     llvm::Value* getConstB(bool val);
 
     llvm::AllocaInst* createAlloca(llvm::Type *type, const std::string &name);
-    llvm::GlobalValue* createGlobal(llvm::Type *type, llvm::Constant *init, const std::string &name);
+    llvm::GlobalValue* createGlobal(llvm::Type *type, llvm::Constant *init, bool isConstant, const std::string &name);
+    llvm::Constant* createString(const std::string &str);
 
     llvm::Type* getType(TypeTable::Id typeId);
     void createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId);

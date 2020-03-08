@@ -20,7 +20,7 @@ public:
             };
 
             Type type;
-            unsigned long len;
+            std::size_t len;
             
             bool eq(const Decor &other) const {
                 return type == other.type && len == other.len;
@@ -73,9 +73,12 @@ public:
 
 private:
     Id next;
+    Id strType;
 
     std::unordered_map<NamePool::Id, Id> typeIds;
     std::vector<std::pair<TypeDescr, llvm::Type*>> types;
+
+    void addTypeStr();
 
 public:
     TypeTable();
@@ -91,6 +94,9 @@ public:
     void setType(Id id, llvm::Type *type);
     const TypeDescr& getTypeDescr(Id id);
 
+    TypeTable::Id getTypeIdStr() { return strType; }
+    TypeTable::Id getTypeCharArrOfLenId(std::size_t len);
+
     bool isType(NamePool::Id name) const;
     TypeTable::Id getTypeId(NamePool::Id name) const { return typeIds.at(name); }
 
@@ -103,6 +109,8 @@ public:
     bool isTypeP(Id t) const;
     bool isTypeArr(Id t) const;
     bool isTypeArrP(Id t) const;
+    bool isTypeStr(Id t) const;
+    bool isTypeCharArrOfLen(Id t, std::size_t len) const;
     bool isTypeCn(Id t) const;
 
     bool fitsType(int64_t x, Id t) const;

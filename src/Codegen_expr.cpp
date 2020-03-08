@@ -45,12 +45,35 @@ Codegen::ExprGenPayload Codegen::codegen(const VarExprAst *ast) {
 
 Codegen::ExprGenPayload Codegen::codegen(const IndExprAst *ast) {
     ExprGenPayload baseExprPay = codegenExpr(ast->getBase());
-    // no literal can indexed (no indexing on null)
-    if (valBroken(baseExprPay)) return {};
+
+    if (baseExprPay.isUntyVal()) {
+        if (baseExprPay.untyVal.type == UntypedVal::T_STRING) {
+            if (!promoteUntyped(baseExprPay, getTypeTable()->getTypeIdStr())) {
+                panic = true;
+                return {};
+            }
+        } else {
+            panic = true;
+            return {};
+        }
+    }
 
     ExprGenPayload indExprPay = codegenExpr(ast->getInd());
-    if (valueBroken(indExprPay)) return {};
-    if (!getTypeTable()->isTypeI(indExprPay.type) && !getTypeTable()->isTypeU(indExprPay.type) && indExprPay.untyVal.type != UntypedVal::T_SINT) {
+
+    if (indExprPay.isUntyVal()) {
+        if (indExprPay.untyVal.type == UntypedVal::T_SINT) {
+            // TODO warning if oob index on sized array
+            if (!promoteUntyped(indExprPay, TypeTable::shortestFittingTypeI(indExprPay.untyVal.val_si))) {
+                panic = true;
+                return {};
+            }
+        } else {
+            panic = true;
+            return {};
+        }
+    }
+
+    if (!getTypeTable()->isTypeI(indExprPay.type) && !getTypeTable()->isTypeU(indExprPay.type)) {
         panic = true;
         return {};
     }
@@ -61,12 +84,6 @@ Codegen::ExprGenPayload Codegen::codegen(const IndExprAst *ast) {
     ExprGenPayload retPay;
     retPay.type = typeId.second;
 
-    if (indExprPay.isUntyVal()) {
-        // TODO warning if oob index on sized array
-        if (indExprPay.untyVal.type != UntypedVal::T_SINT) return {};
-        if (!promoteUntyped(indExprPay, TypeTable::shortestFittingTypeI(indExprPay.untyVal.val_si))) return {};
-    }
-
     if (symbolTable->getTypeTable()->isTypeArrP(baseExprPay.type)) {
         retPay.ref = llvmBuilder.CreateGEP(baseExprPay.val, indExprPay.val);
         retPay.val = llvmBuilder.CreateLoad(retPay.ref, "index_tmp");
@@ -76,7 +93,7 @@ Codegen::ExprGenPayload Codegen::codegen(const IndExprAst *ast) {
                 {llvm::ConstantInt::get(getType(indExprPay.type), 0), indExprPay.val});
             retPay.val = llvmBuilder.CreateLoad(retPay.ref, "index_tmp");
         } else {
-            // extractvalue requires compile-time known indices
+            // llvm's extractvalue requires compile-time known indices
             llvm::Value *tmp = createAlloca(getType(baseExprPay.type), "tmp");
             llvmBuilder.CreateStore(baseExprPay.val, tmp);
             tmp = llvmBuilder.CreateGEP(tmp,
@@ -282,7 +299,7 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
         bool isTypeU = getTypeTable()->isTypeU(exprPayRet.type);
         bool isTypeF = getTypeTable()->isTypeF(exprPayRet.type);
         bool isTypeC = getTypeTable()->isTypeC(exprPayRet.type);
-        bool isTypeP = symbolTable->getTypeTable()->isTypeP(exprPayRet.type);
+        bool isTypeP = symbolTable->getTypeTable()->isTypeAnyP(exprPayRet.type);
 
         switch (ast->getOp()) {
             case Token::O_ASGN:
@@ -575,123 +592,128 @@ Codegen::ExprGenPayload Codegen::codegenUntypedBin(Token::Oper op, UntypedVal un
         bool isTypeC = untyValRet.type == UntypedVal::T_CHAR;
         bool isTypeF = untyValRet.type == UntypedVal::T_FLOAT;
 
-        switch (op) {
-            case Token::O_ADD:
-                if (isTypeF)
-                    untyValRet.val_f = untyL.val_f+untyR.val_f;
-                else if (isTypeI)
-                    untyValRet.val_si = untyL.val_si+untyR.val_si;
-                break;
-            case Token::O_SUB:
-                if (isTypeF)
-                    untyValRet.val_f = untyL.val_f-untyR.val_f;
-                else if (isTypeI)
-                    untyValRet.val_si = untyL.val_si-untyR.val_si;
-                break;
-            case Token::O_SHL:
-                if (isTypeI)
-                    untyValRet.val_si = untyL.val_si<<untyR.val_si;
-                else
+        if (!isTypeI && !isTypeC && !isTypeF) {
+            // REM cannot == nor != on two string literals
+            panic = true;
+        } else {
+            switch (op) {
+                case Token::O_ADD:
+                    if (isTypeF)
+                        untyValRet.val_f = untyL.val_f+untyR.val_f;
+                    else if (isTypeI)
+                        untyValRet.val_si = untyL.val_si+untyR.val_si;
+                    break;
+                case Token::O_SUB:
+                    if (isTypeF)
+                        untyValRet.val_f = untyL.val_f-untyR.val_f;
+                    else if (isTypeI)
+                        untyValRet.val_si = untyL.val_si-untyR.val_si;
+                    break;
+                case Token::O_SHL:
+                    if (isTypeI)
+                        untyValRet.val_si = untyL.val_si<<untyR.val_si;
+                    else
+                        panic = true;
+                    break;
+                case Token::O_SHR:
+                    if (isTypeI)
+                        untyValRet.val_si = untyL.val_si>>untyR.val_si;
+                    else
+                        panic = true;
+                    break;
+                case Token::O_BIT_AND:
+                    if (isTypeI)
+                        untyValRet.val_si = untyL.val_si&untyR.val_si;
+                    else
+                        panic = true;
+                    break;
+                case Token::O_BIT_XOR:
+                    if (isTypeI)
+                        untyValRet.val_si = untyL.val_si^untyR.val_si;
+                    else
+                        panic = true;
+                    break;
+                case Token::O_BIT_OR:
+                    if (isTypeI)
+                        untyValRet.val_si = untyL.val_si|untyR.val_si;
+                    else
+                        panic = true;
+                    break;
+                case Token::O_MUL:
+                    if (isTypeF)
+                        untyValRet.val_f = untyL.val_f*untyR.val_f;
+                    else if (isTypeI)
+                        untyValRet.val_si = untyL.val_si*untyR.val_si;
+                    break;
+                case Token::O_DIV:
+                    if (isTypeF)
+                        untyValRet.val_f = untyL.val_f/untyR.val_f;
+                    else if (isTypeI)
+                        untyValRet.val_si = untyL.val_si/untyR.val_si;
+                    break;
+                case Token::O_REM:
+                    if (isTypeF)
+                        untyValRet.val_f = fmod(untyL.val_f, untyR.val_f);
+                    else if (isTypeI)
+                        untyValRet.val_si = untyL.val_si%untyR.val_si;
+                    break;
+                case Token::O_EQ:
+                    untyValRet.type = UntypedVal::T_BOOL;
+                    if (isTypeF)
+                        untyValRet.val_b = untyL.val_f == untyR.val_f;
+                    else if (isTypeI)
+                        untyValRet.val_b = untyL.val_si == untyR.val_si;
+                    else if (isTypeC)
+                        untyValRet.val_b = untyL.val_c == untyR.val_c;
+                    break;
+                case Token::O_NEQ:
+                    untyValRet.type = UntypedVal::T_BOOL;
+                    if (isTypeF)
+                        untyValRet.val_b = untyL.val_f != untyR.val_f;
+                    else if (isTypeI)
+                        untyValRet.val_b = untyL.val_si != untyR.val_si;
+                    else if (isTypeC)
+                        untyValRet.val_b = untyL.val_c != untyR.val_c;
+                    break;
+                case Token::O_LT:
+                    untyValRet.type = UntypedVal::T_BOOL;
+                    if (isTypeF)
+                        untyValRet.val_b = untyL.val_f < untyR.val_f;
+                    else if (isTypeI)
+                        untyValRet.val_b = untyL.val_si < untyR.val_si;
+                    else if (isTypeC)
+                        untyValRet.val_b = untyL.val_c < untyR.val_c;
+                    break;
+                case Token::O_LTEQ:
+                    untyValRet.type = UntypedVal::T_BOOL;
+                    if (isTypeF)
+                        untyValRet.val_b = untyL.val_f <= untyR.val_f;
+                    else if (isTypeI)
+                        untyValRet.val_b = untyL.val_si <= untyR.val_si;
+                    else if (isTypeC)
+                        untyValRet.val_b = untyL.val_c <= untyR.val_c;
+                    break;
+                case Token::O_GT:
+                    untyValRet.type = UntypedVal::T_BOOL;
+                    if (isTypeF)
+                        untyValRet.val_b = untyL.val_f > untyR.val_f;
+                    else if (isTypeI)
+                        untyValRet.val_b = untyL.val_si > untyR.val_si;
+                    else if (isTypeC)
+                        untyValRet.val_b = untyL.val_c > untyR.val_c;
+                    break;
+                case Token::O_GTEQ:
+                    untyValRet.type = UntypedVal::T_BOOL;
+                    if (isTypeF)
+                        untyValRet.val_b = untyL.val_f >= untyR.val_f;
+                    else if (isTypeI)
+                        untyValRet.val_b = untyL.val_si >= untyR.val_si;
+                    else if (isTypeC)
+                        untyValRet.val_b = untyL.val_c >= untyR.val_c;
+                    break;
+                default:
                     panic = true;
-                break;
-            case Token::O_SHR:
-                if (isTypeI)
-                    untyValRet.val_si = untyL.val_si>>untyR.val_si;
-                else
-                    panic = true;
-                break;
-            case Token::O_BIT_AND:
-                if (isTypeI)
-                    untyValRet.val_si = untyL.val_si&untyR.val_si;
-                else
-                    panic = true;
-                break;
-            case Token::O_BIT_XOR:
-                if (isTypeI)
-                    untyValRet.val_si = untyL.val_si^untyR.val_si;
-                else
-                    panic = true;
-                break;
-            case Token::O_BIT_OR:
-                if (isTypeI)
-                    untyValRet.val_si = untyL.val_si|untyR.val_si;
-                else
-                    panic = true;
-                break;
-            case Token::O_MUL:
-                if (isTypeF)
-                    untyValRet.val_f = untyL.val_f*untyR.val_f;
-                else if (isTypeI)
-                    untyValRet.val_si = untyL.val_si*untyR.val_si;
-                break;
-            case Token::O_DIV:
-                if (isTypeF)
-                    untyValRet.val_f = untyL.val_f/untyR.val_f;
-                else if (isTypeI)
-                    untyValRet.val_si = untyL.val_si/untyR.val_si;
-                break;
-            case Token::O_REM:
-                if (isTypeF)
-                    untyValRet.val_f = fmod(untyL.val_f, untyR.val_f);
-                else if (isTypeI)
-                    untyValRet.val_si = untyL.val_si%untyR.val_si;
-                break;
-            case Token::O_EQ:
-                untyValRet.type = UntypedVal::T_BOOL;
-                if (isTypeF)
-                    untyValRet.val_b = untyL.val_f == untyR.val_f;
-                else if (isTypeI)
-                    untyValRet.val_b = untyL.val_si == untyR.val_si;
-                else if (isTypeC)
-                    untyValRet.val_b = untyL.val_c == untyR.val_c;
-                break;
-            case Token::O_NEQ:
-                untyValRet.type = UntypedVal::T_BOOL;
-                if (isTypeF)
-                    untyValRet.val_b = untyL.val_f != untyR.val_f;
-                else if (isTypeI)
-                    untyValRet.val_b = untyL.val_si != untyR.val_si;
-                else if (isTypeC)
-                    untyValRet.val_b = untyL.val_c != untyR.val_c;
-                break;
-            case Token::O_LT:
-                untyValRet.type = UntypedVal::T_BOOL;
-                if (isTypeF)
-                    untyValRet.val_b = untyL.val_f < untyR.val_f;
-                else if (isTypeI)
-                    untyValRet.val_b = untyL.val_si < untyR.val_si;
-                else if (isTypeC)
-                    untyValRet.val_b = untyL.val_c < untyR.val_c;
-                break;
-            case Token::O_LTEQ:
-                untyValRet.type = UntypedVal::T_BOOL;
-                if (isTypeF)
-                    untyValRet.val_b = untyL.val_f <= untyR.val_f;
-                else if (isTypeI)
-                    untyValRet.val_b = untyL.val_si <= untyR.val_si;
-                else if (isTypeC)
-                    untyValRet.val_b = untyL.val_c <= untyR.val_c;
-                break;
-            case Token::O_GT:
-                untyValRet.type = UntypedVal::T_BOOL;
-                if (isTypeF)
-                    untyValRet.val_b = untyL.val_f > untyR.val_f;
-                else if (isTypeI)
-                    untyValRet.val_b = untyL.val_si > untyR.val_si;
-                else if (isTypeC)
-                    untyValRet.val_b = untyL.val_c > untyR.val_c;
-                break;
-            case Token::O_GTEQ:
-                untyValRet.type = UntypedVal::T_BOOL;
-                if (isTypeF)
-                    untyValRet.val_b = untyL.val_f >= untyR.val_f;
-                else if (isTypeI)
-                    untyValRet.val_b = untyL.val_si >= untyR.val_si;
-                else if (isTypeC)
-                    untyValRet.val_b = untyL.val_c >= untyR.val_c;
-                break;
-            default:
-                panic = true;
+            }
         }
     }
 
@@ -782,6 +804,10 @@ Codegen::ExprGenPayload Codegen::codegen(const TernCondExprAst *ast) {
                 if (!promoteUntyped(trueExpr, TypeTable::P_C8) ||
                     !promoteUntyped(falseExpr, TypeTable::P_C8))
                     return {};
+            } else if (trueExpr.untyVal.type == UntypedVal::T_STRING) {
+                if (!promoteUntyped(trueExpr, getTypeTable()->getTypeIdStr()) ||
+                    !promoteUntyped(falseExpr, getTypeTable()->getTypeIdStr()))
+                    return {};
             } else if (trueExpr.untyVal.type == UntypedVal::T_FLOAT) {
                 /*
                 REM
@@ -831,6 +857,8 @@ Codegen::ExprGenPayload Codegen::codegen(const TernCondExprAst *ast) {
                 ret.untyVal.val_c = condExpr.untyVal.val_b ? trueExpr.untyVal.val_c : falseExpr.untyVal.val_c;
             else if (ret.untyVal.type == UntypedVal::T_FLOAT)
                 ret.untyVal.val_f = condExpr.untyVal.val_b ? trueExpr.untyVal.val_f : falseExpr.untyVal.val_f;
+            else if (ret.untyVal.type == UntypedVal::T_STRING)
+                ret.untyVal.val_str = condExpr.untyVal.val_b ? move(trueExpr.untyVal.val_str) : move(falseExpr.untyVal.val_str);
             else if (ret.untyVal.type == UntypedVal::T_NULL)
                 ; //ret.untyVal.type = UntypedVal::T_NULL;
             else {
@@ -880,6 +908,8 @@ Codegen::ExprGenPayload Codegen::codegenGlobalScope(const TernCondExprAst *ast) 
         ret.untyVal.val_si = condExpr.untyVal.val_b ? trueExpr.untyVal.val_c : falseExpr.untyVal.val_c;
     else if (ret.untyVal.type == UntypedVal::T_FLOAT)
         ret.untyVal.val_f = condExpr.untyVal.val_b ? trueExpr.untyVal.val_f : falseExpr.untyVal.val_f;
+    else if (ret.untyVal.type == UntypedVal::T_STRING)
+        ret.untyVal.val_str = condExpr.untyVal.val_b ? move(trueExpr.untyVal.val_str) : move(falseExpr.untyVal.val_str);
     else if (ret.untyVal.type == UntypedVal::T_NULL)
         ; //ret.untyVal.type = UntypedVal::T_NULL;
     else {
@@ -950,6 +980,9 @@ Codegen::ExprGenPayload Codegen::codegen(const CastExprAst *ast) {
         case UntypedVal::T_FLOAT:
             // cast to widest float type
             promoType = TypeTable::WIDEST_F;
+            break;
+        case UntypedVal::T_STRING:
+            promoType = getTypeTable()->getTypeIdStr();
             break;
         case UntypedVal::T_NULL:
             promoType = TypeTable::P_PTR;

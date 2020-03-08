@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <unordered_map>
 #include "NamePool.h"
 
@@ -9,6 +10,7 @@ struct Token {
         T_FNUM,
         T_CHAR,
         T_BVAL,
+        T_STRING,
         T_NULL,
         T_OPER,
         T_COMMA,
@@ -84,6 +86,7 @@ struct Token {
         Oper op;
         NamePool::Id nameId;
     };
+    std::string str;
 };
 
 typedef int OperPrec;

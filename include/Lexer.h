@@ -26,7 +26,7 @@ public:
 
     void start(std::istream &istr);
 
-    Token peek() const { return tok; }
+    const Token& peek() const { return tok; }
     Token next();
     bool match(Token::Type type);
 };

@@ -56,7 +56,7 @@ void Lexer::skipLine() {
 Token Lexer::next() {
     if (tok.type == Token::T_END) return tok;
 
-    Token old = tok;
+    Token old = move(tok);
 
     while (true) {
         char ch;
@@ -274,6 +274,19 @@ Token Lexer::next() {
             } else {
                 tok.type = Token::T_CHAR;
                 tok.ch = unesc.unescaped[0];
+            }
+
+            col = unesc.nextIndex-1;
+            ch = line[col];
+            nextCh();
+        } else if (ch == '\"') {
+            UnescapePayload unesc = unescape(line, col-1, false);
+
+            if (unesc.success == false) {
+                tok.type = Token::T_UNKNOWN;
+            } else {
+                tok.type = Token::T_STRING;
+                tok.str = move(unesc.unescaped);
             }
 
             col = unesc.nextIndex-1;
