@@ -83,22 +83,22 @@ private:
 public:
     TypeTable();
 
-    TypeTable::Id addType(TypeDescr typeDescr);
-    std::pair<bool, TypeTable::Id> addTypeDeref(Id typeId);
-    std::pair<bool, TypeTable::Id> addTypeIndex(Id typeId);
-    TypeTable::Id addTypeAddr(Id typeId);
-    TypeTable::Id addType(TypeDescr typeDescr, llvm::Type *type);
+    Id addType(TypeDescr typeDescr);
+    std::pair<bool, Id> addTypeDeref(Id typeId);
+    std::pair<bool, Id> addTypeIndex(Id typeId);
+    Id addTypeAddr(Id typeId);
+    Id addType(TypeDescr typeDescr, llvm::Type *type);
     void addPrimType(NamePool::Id name, PrimIds id, llvm::Type *type);
 
     llvm::Type* getType(Id id);
     void setType(Id id, llvm::Type *type);
     const TypeDescr& getTypeDescr(Id id);
 
-    TypeTable::Id getTypeIdStr() { return strType; }
-    TypeTable::Id getTypeCharArrOfLenId(std::size_t len);
+    Id getTypeIdStr() { return strType; }
+    Id getTypeCharArrOfLenId(std::size_t len);
 
     bool isType(NamePool::Id name) const;
-    TypeTable::Id getTypeId(NamePool::Id name) const { return typeIds.at(name); }
+    Id getTypeId(NamePool::Id name) const { return typeIds.at(name); }
 
     bool isTypeI(Id t) const;
     bool isTypeU(Id t) const;
@@ -115,7 +115,7 @@ public:
 
     bool fitsType(int64_t x, Id t) const;
     bool isImplicitCastable(Id from, Id into) const;
-    TypeTable::Id getTypeDropCns(Id t);
-    TypeTable::Id getTypeFuncSigParam(Id t) { return getTypeDropCns(t); }
+    Id getTypeDropCns(Id t);
+    Id getTypeFuncSigParam(Id t) { return getTypeDropCns(t); }
     bool isArgTypeProper(Id callArg, Id fncParam) const { return isImplicitCastable(callArg, fncParam); }
 };

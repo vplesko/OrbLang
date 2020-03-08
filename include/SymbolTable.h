@@ -63,7 +63,6 @@ struct FuncCallSite {
     }
 };
 
-// TODO make cn part of fnc sig
 struct FuncSignature {
     NamePool::Id name;
     std::vector<TypeTable::Id> argTypes;
