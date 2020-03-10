@@ -593,6 +593,7 @@ std::pair<FuncValue, bool> Codegen::codegen(const FuncProtoAst *ast, bool defini
     llvm::FunctionType *funcType = llvm::FunctionType::get(retType, argTypes, false);
 
     // TODO optimize on const args
+    // TODO function name mangling; __cname
     llvm::Function *func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, 
             namePool->get(ast->getName()), llvmModule.get());
     

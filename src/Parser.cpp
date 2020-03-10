@@ -271,9 +271,11 @@ unique_ptr<DeclAst> Parser::decl() {
 
         unique_ptr<ExprAst> init;
         Token look = next();
-        if (look.type == Token::T_OPER && look.op == Token::O_ASGN) {
+        if ((look.type == Token::T_OPER && look.op == Token::O_ASGN) ||
+            look.type == Token::T_BRACE_L_REG) {
             init = expr();
             if (broken(init)) return nullptr;
+            if (look.type == Token::T_BRACE_L_REG && mismatch(Token::T_BRACE_R_REG)) return nullptr;
             look = next();
         }
         ret->add(make_pair(id.nameId, move(init)));

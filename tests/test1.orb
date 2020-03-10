@@ -50,10 +50,10 @@ fnc println_str(c8 cn[] str);
 
 i32 glob1;
 i32 glob2 = 1;
-i32 glob3 = 1+2*3, glob4 = 1, glob5;
+i32 glob3 = 1+2*3, glob4(1), glob5;
 i32 glob6 = 1>2?3:4;
 bool glob7 = true or false;
-c8 glob8 = false ? 'D' : 'E';
+c8 glob8(false ? 'D' : 'E');
 c8 cn[] glob9 = true ? "hello" : "xyz";
 c8[4] glob10 = false ? "abc" : "ola";
 
@@ -111,7 +111,7 @@ fnc main() {
     println_i64(a ^= 5);
     println_i64(a);
 
-    i64 b=1;
+    i64 b(1);
     println_i64(a-b);
 
     {
