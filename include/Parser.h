@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include <queue>
+#include <vector>
 #include "Lexer.h"
 #include "AST.h"
 #include "llvm/IR/LLVMContext.h"
@@ -21,6 +21,7 @@ class Parser {
     bool mismatch(Token::Type type);
     template<typename T> bool broken(const T &x);
 
+    std::unique_ptr<ArrayExprAst> array(std::unique_ptr<TypeAst> ty);
     std::unique_ptr<ExprAst> prim();
     std::unique_ptr<ExprAst> expr(std::unique_ptr<ExprAst> lhs, OperPrec min_prec);
     std::unique_ptr<ExprAst> expr();

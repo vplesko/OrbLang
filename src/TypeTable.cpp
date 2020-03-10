@@ -111,6 +111,19 @@ TypeTable::Id TypeTable::addTypeAddr(Id typeId) {
     return addType(move(typeAddrDescr));
 }
 
+TypeTable::Id TypeTable::addTypeArrOfLenId(Id typeId, std::size_t len) {
+    const TypeDescr &typeDescr = types[typeId].first;
+    
+    TypeDescr typeArrDescr(typeDescr.base, typeDescr.cn);
+    typeArrDescr.decors = vector<TypeDescr::Decor>(typeDescr.decors.begin(), typeDescr.decors.end());
+    typeArrDescr.cns = vector<bool>(typeDescr.cns.begin(), typeDescr.cns.end());
+
+    typeArrDescr.addDecor({TypeDescr::Decor::D_ARR, len}, false);
+    typeArrDescr.setLastCn();
+    
+    return addType(move(typeArrDescr));
+}
+
 void TypeTable::addTypeStr() {
     TypeDescr typeDescr(P_C8, true);
     typeDescr.addDecor({TypeDescr::Decor::D_ARR_PTR}, false);
@@ -136,9 +149,7 @@ const TypeTable::TypeDescr& TypeTable::getTypeDescr(Id id) {
 }
 
 TypeTable::Id TypeTable::getTypeCharArrOfLenId(std::size_t len) {
-    TypeDescr typeDescr(P_C8, true);
-    typeDescr.addDecor({TypeDescr::Decor::D_ARR, len});
-    return addType(move(typeDescr));
+    return addTypeArrOfLenId(P_C8, len);
 }
 
 bool TypeTable::isType(NamePool::Id name) const {

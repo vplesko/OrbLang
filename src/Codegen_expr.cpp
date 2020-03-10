@@ -19,6 +19,8 @@ Codegen::ExprGenPayload Codegen::codegenExpr(const ExprAst *ast) {
         return codegen((const CallExprAst*)ast);
     case AST_CastExpr:
         return codegen((const CastExprAst*)ast);
+    case AST_ArrayExpr:
+        return codegen((const ArrayExprAst*)ast);
     default:
         panic = true;
         return {};
@@ -999,4 +1001,39 @@ Codegen::ExprGenPayload Codegen::codegen(const CastExprAst *ast) {
 
     if (val == nullptr) panic = true;
     return {ast->getType()->getTypeId(), val, nullptr};
+}
+
+Codegen::ExprGenPayload Codegen::codegen(const ArrayExprAst *ast) {
+    llvm::Type *elemType = codegenType(ast->getElemType());
+    if (broken(elemType)) return {};
+
+    TypeTable::Id elemTypeId = ast->getElemType()->getTypeId();
+
+    TypeTable::Id arrTypeId = getTypeTable()->addTypeArrOfLenId(
+        elemTypeId, ast->getVals().size());
+    
+    llvm::Value *arrRef = createAlloca(getType(arrTypeId), "tmp_arr");
+
+    for (size_t i = 0; i < ast->getVals().size(); ++i) {
+        ExprGenPayload exprPay = codegenExpr(ast->getVals()[i].get());
+        if (exprPay.isUntyVal() && !promoteUntyped(exprPay, elemTypeId)) return {};
+        if (valBroken(exprPay)) return {};
+        if (!getTypeTable()->isImplicitCastable(exprPay.type, elemTypeId)) {
+            panic = true;
+            return {};
+        }
+        createCast(exprPay, elemTypeId);
+
+        llvm::Value *elemRef = llvmBuilder.CreateGEP(arrRef, 
+            {llvm::ConstantInt::get(getType(TypeTable::WIDEST_I), 0),
+            llvm::ConstantInt::get(getType(TypeTable::WIDEST_I), i)});
+        llvmBuilder.CreateStore(exprPay.val, elemRef);
+    }
+
+    llvm::Value *arrVal = llvmBuilder.CreateLoad(arrRef);
+
+    ExprGenPayload retPay;
+    retPay.type = arrTypeId;
+    retPay.val = arrVal;
+    return retPay;
 }

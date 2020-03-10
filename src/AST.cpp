@@ -28,6 +28,13 @@ TernCondExprAst::TernCondExprAst(
     unique_ptr<ExprAst> _op2) : cond(move(_cond)), op1(move(_op1)), op2(move(_op2)) {
 }
 
+CastExprAst::CastExprAst(unique_ptr<TypeAst> ty, unique_ptr<ExprAst> val) : t(move(ty)), v(move(val)) {
+}
+
+ArrayExprAst::ArrayExprAst(unique_ptr<TypeAst> elemType, vector<unique_ptr<ExprAst>> vals)
+    : t(move(elemType)), v(move(vals)) {
+}
+
 IfAst::IfAst(unique_ptr<StmntAst> init, unique_ptr<ExprAst> cond, 
         unique_ptr<StmntAst> thenBody, unique_ptr<StmntAst> elseBody)
         : init(move(init)), cond(move(cond)), thenBody(move(thenBody)), elseBody(move(elseBody)) {
@@ -59,9 +66,6 @@ pair<bool, size_t> SwitchAst::getDefault() const {
     }
 
     return {false, 0};
-}
-
-CastExprAst::CastExprAst(unique_ptr<TypeAst> ty, unique_ptr<ExprAst> val) : t(move(ty)), v(move(val)) {
 }
 
 DeclAst::DeclAst(unique_ptr<TypeAst> type) : varType(move(type)) {

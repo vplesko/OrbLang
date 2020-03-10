@@ -16,6 +16,7 @@ enum AstType {
     AST_TernCondExpr,
     AST_CallExpr,
     AST_CastExpr,
+    AST_ArrayExpr,
     AST_Decl,
     AST_If,
     AST_For,
@@ -172,6 +173,19 @@ public:
     const ExprAst* getVal() const { return v.get(); }
 
     AstType type() const override { return AST_CastExpr; }
+};
+
+class ArrayExprAst : public ExprAst {
+    std::unique_ptr<TypeAst> t;
+    std::vector<std::unique_ptr<ExprAst>> v;
+
+public:
+    ArrayExprAst(std::unique_ptr<TypeAst> elemType, std::vector<std::unique_ptr<ExprAst>> vals);
+
+    const TypeAst* getElemType() const { return t.get(); }
+    const std::vector<std::unique_ptr<ExprAst>>& getVals() const { return v; }
+
+    AstType type() const override { return AST_ArrayExpr; }
 };
 
 class EmptyStmntAst : public StmntAst {

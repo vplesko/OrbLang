@@ -1,4 +1,4 @@
-// TODO! replace this with scanf and printf calls in Orb after variadic functions
+// TODO replace this with scanf and printf calls in Orb after variadic functions
 #ifdef _WIN32
 #define DLLEXPORT __declspec(dllexport)
 #else

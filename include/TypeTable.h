@@ -87,6 +87,7 @@ public:
     std::pair<bool, Id> addTypeDeref(Id typeId);
     std::pair<bool, Id> addTypeIndex(Id typeId);
     Id addTypeAddr(Id typeId);
+    Id addTypeArrOfLenId(Id typeId, std::size_t len);
     Id addType(TypeDescr typeDescr, llvm::Type *type);
     void addPrimType(NamePool::Id name, PrimIds id, llvm::Type *type);
 

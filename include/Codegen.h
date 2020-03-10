@@ -74,6 +74,7 @@ class Codegen {
     ExprGenPayload codegenGlobalScope(const TernCondExprAst *ast);
     ExprGenPayload codegen(const CallExprAst *ast);
     ExprGenPayload codegen(const CastExprAst *ast);
+    ExprGenPayload codegen(const ArrayExprAst *ast);
     void codegen(const DeclAst *ast);
     void codegen(const IfAst *ast);
     void codegen(const ForAst *ast);

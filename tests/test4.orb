@@ -106,7 +106,8 @@ fnc main() {
     // TODO test these after making array literals
     i32 cn[] s2 = i32 cn[](malloc(4));
     i32 cn[]cn s3 = i32 cn[]cn(malloc(4));
-    i32 cn[4] t1;
+    j = 3;
+    i32 cn[4] t1[0, i8(1), i32(2.0), +j];
     i32[4]cn t2;
     i32 cn[4]cn t3;
 
@@ -288,4 +289,7 @@ fnc main() {
     glob3[0] = 1101;
     println_i32(glob3[0]);
     free(ptr(glob3));
+
+    for (i32 i = 0; i < 4; ++i)
+        println_i32(1200+t1[i]);
 }

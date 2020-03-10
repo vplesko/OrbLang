@@ -28,6 +28,37 @@ bool Parser::mismatch(Token::Type type) {
     return panic;
 }
 
+unique_ptr<ArrayExprAst> Parser::array(unique_ptr<TypeAst> ty) {
+    vector<unique_ptr<ExprAst>> vals;
+
+    if (mismatch(Token::T_BRACE_L_SQR)) return nullptr;
+
+    if (peek().type == Token::T_BRACE_R_SQR) {
+        // REM empty arrays not allowed
+        panic = true;
+        return nullptr;
+    }
+
+    while (true) {
+        unique_ptr<ExprAst> ex = expr();
+        if (broken(ex)) return nullptr;
+
+        vals.push_back(move(ex));
+
+        Token tok = next();
+        if (tok.type != Token::T_COMMA) {
+            if (tok.type == Token::T_BRACE_R_SQR) {
+                break;
+            } else {
+                panic = true;
+                return nullptr;
+            }
+        }
+    }
+
+    return make_unique<ArrayExprAst>(move(ty), move(vals));
+}
+
 unique_ptr<ExprAst> Parser::prim() {
     unique_ptr<ExprAst> ret;
 
@@ -270,15 +301,28 @@ unique_ptr<DeclAst> Parser::decl() {
         }
 
         unique_ptr<ExprAst> init;
-        Token look = next();
+        Token look = peek();
         if ((look.type == Token::T_OPER && look.op == Token::O_ASGN) ||
             look.type == Token::T_BRACE_L_REG) {
+            look = next();
+
             init = expr();
             if (broken(init)) return nullptr;
+
             if (look.type == Token::T_BRACE_L_REG && mismatch(Token::T_BRACE_R_REG)) return nullptr;
-            look = next();
+        } else if (look.type == Token::T_BRACE_L_SQR) {
+            pair<bool, TypeTable::Id> elemType = symbolTable->getTypeTable()->addTypeIndex(ret->getType()->getTypeId());
+            if (elemType.first == false) {
+                panic = true;
+                return nullptr;
+            }
+
+            init = array(make_unique<TypeAst>(elemType.second));
+            if (broken(init)) return nullptr;
         }
         ret->add(make_pair(id.nameId, move(init)));
+
+        look = next();
 
         if (look.type == Token::T_SEMICOLON) {
             return ret;
