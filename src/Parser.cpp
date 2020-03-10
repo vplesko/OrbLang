@@ -31,9 +31,9 @@ bool Parser::mismatch(Token::Type type) {
 unique_ptr<ArrayExprAst> Parser::array(unique_ptr<TypeAst> ty) {
     vector<unique_ptr<ExprAst>> vals;
 
-    if (mismatch(Token::T_BRACE_L_SQR)) return nullptr;
+    if (mismatch(Token::T_BRACE_L_CUR)) return nullptr;
 
-    if (peek().type == Token::T_BRACE_R_SQR) {
+    if (peek().type == Token::T_BRACE_R_CUR) {
         // REM empty arrays not allowed
         panic = true;
         return nullptr;
@@ -47,7 +47,7 @@ unique_ptr<ArrayExprAst> Parser::array(unique_ptr<TypeAst> ty) {
 
         Token tok = next();
         if (tok.type != Token::T_COMMA) {
-            if (tok.type == Token::T_BRACE_R_SQR) {
+            if (tok.type == Token::T_BRACE_R_CUR) {
                 break;
             } else {
                 panic = true;
@@ -113,12 +113,23 @@ unique_ptr<ExprAst> Parser::prim() {
             unique_ptr<TypeAst> t = type();
             if (broken(t)) return nullptr;
 
-            if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
-            unique_ptr<ExprAst> e = expr();
-            if (broken(e)) return nullptr;
-            if (mismatch(Token::T_BRACE_R_REG)) return nullptr;
+            if (peek().type == Token::T_BRACE_L_REG) {
+                next();
 
-            ret = make_unique<CastExprAst>(move(t), move(e));
+                unique_ptr<ExprAst> e = expr();
+                if (broken(e)) return nullptr;
+                if (mismatch(Token::T_BRACE_R_REG)) return nullptr;
+
+                ret = make_unique<CastExprAst>(move(t), move(e));
+            } else if (peek().type == Token::T_BRACE_L_CUR) {
+                unique_ptr<ArrayExprAst> e = array(move(t));
+                if (broken(e)) return nullptr;
+
+                ret = move(e);
+            } else {
+                panic = true;
+                return nullptr;
+            }
         } else {
             Token tok = next();
 
@@ -310,7 +321,7 @@ unique_ptr<DeclAst> Parser::decl() {
             if (broken(init)) return nullptr;
 
             if (look.type == Token::T_BRACE_L_REG && mismatch(Token::T_BRACE_R_REG)) return nullptr;
-        } else if (look.type == Token::T_BRACE_L_SQR) {
+        } else if (look.type == Token::T_BRACE_L_CUR) {
             pair<bool, TypeTable::Id> elemType = symbolTable->getTypeTable()->addTypeIndex(ret->getType()->getTypeId());
             if (elemType.first == false) {
                 panic = true;
