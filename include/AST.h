@@ -47,6 +47,8 @@ public:
 
     TypeTable::Id getTypeId() const { return id; }
 
+    std::unique_ptr<TypeAst> clone() const { return std::make_unique<TypeAst>(id); }
+
     AstType type() const override { return AST_Type; }
 };
 
@@ -176,14 +178,14 @@ public:
 };
 
 class ArrayExprAst : public ExprAst {
-    std::unique_ptr<TypeAst> t;
-    std::vector<std::unique_ptr<ExprAst>> v;
+    std::unique_ptr<TypeAst> arrTy;
+    std::vector<std::unique_ptr<ExprAst>> vals;
 
 public:
-    ArrayExprAst(std::unique_ptr<TypeAst> elemType, std::vector<std::unique_ptr<ExprAst>> vals);
+    ArrayExprAst(std::unique_ptr<TypeAst> arrTy, std::vector<std::unique_ptr<ExprAst>> vals);
 
-    const TypeAst* getElemType() const { return t.get(); }
-    const std::vector<std::unique_ptr<ExprAst>>& getVals() const { return v; }
+    const TypeAst* getArrayType() const { return arrTy.get(); }
+    const std::vector<std::unique_ptr<ExprAst>>& getVals() const { return vals; }
 
     AstType type() const override { return AST_ArrayExpr; }
 };

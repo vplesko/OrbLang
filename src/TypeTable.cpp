@@ -203,6 +203,12 @@ bool TypeTable::isTypeArr(Id t) const {
     return !ty.decors.empty() && ty.decors.back().type == TypeDescr::Decor::D_ARR;
 }
 
+bool TypeTable::isTypeArrOfLen(Id t, std::size_t len) const {
+    if (t >= types.size()) return false;
+    const TypeDescr &ty = types[t].first;
+    return !ty.decors.empty() && ty.decors.back().type == TypeDescr::Decor::D_ARR && ty.decors.back().len == len;
+}
+
 bool TypeTable::isTypeArrP(Id t) const {
     if (t >= types.size()) return false;
     const TypeDescr &ty = types[t].first;
@@ -219,7 +225,7 @@ bool TypeTable::isTypeStr(Id t) const {
 bool TypeTable::isTypeCharArrOfLen(Id t, size_t len) const {
     if (t >= types.size()) return false;
     const TypeDescr &ty = types[t].first;
-    return ty.decors.size() == 1 &&
+    return ty.decors.size() == 1 && ty.base == P_C8 &&
         ty.decors[0].type == TypeDescr::Decor::D_ARR && ty.decors[0].len == len;
 }
 

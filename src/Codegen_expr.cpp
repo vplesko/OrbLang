@@ -1004,10 +1004,23 @@ Codegen::ExprGenPayload Codegen::codegen(const CastExprAst *ast) {
 }
 
 Codegen::ExprGenPayload Codegen::codegen(const ArrayExprAst *ast) {
-    llvm::Type *elemType = codegenType(ast->getElemType());
-    if (broken(elemType)) return {};
+    TypeTable::Id arrDeclTypeId = ast->getArrayType()->getTypeId();
+    if (!getTypeTable()->isTypeArrP(arrDeclTypeId) &&
+        !getTypeTable()->isTypeArrOfLen(arrDeclTypeId, ast->getVals().size())) {
+        panic = true;
+        return {};
+    }
 
-    TypeTable::Id elemTypeId = ast->getElemType()->getTypeId();
+    pair<bool, TypeTable::Id> elemTypeIdFind = getTypeTable()->addTypeIndex(arrDeclTypeId);
+    if (elemTypeIdFind.first == false) {
+        panic = true;
+        return {};
+    }
+
+    TypeTable::Id elemTypeId = elemTypeIdFind.second;
+
+    llvm::Type *elemType = getType(elemTypeId);
+    if (broken(elemType)) return {};
 
     TypeTable::Id arrTypeId = getTypeTable()->addTypeArrOfLenId(
         elemTypeId, ast->getVals().size());

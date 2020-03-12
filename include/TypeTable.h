@@ -109,6 +109,7 @@ public:
     bool isTypeAnyP(Id t) const;
     bool isTypeP(Id t) const;
     bool isTypeArr(Id t) const;
+    bool isTypeArrOfLen(Id t, std::size_t len) const;
     bool isTypeArrP(Id t) const;
     bool isTypeStr(Id t) const;
     bool isTypeCharArrOfLen(Id t, std::size_t len) const;

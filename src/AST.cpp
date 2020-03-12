@@ -31,8 +31,8 @@ TernCondExprAst::TernCondExprAst(
 CastExprAst::CastExprAst(unique_ptr<TypeAst> ty, unique_ptr<ExprAst> val) : t(move(ty)), v(move(val)) {
 }
 
-ArrayExprAst::ArrayExprAst(unique_ptr<TypeAst> elemType, vector<unique_ptr<ExprAst>> vals)
-    : t(move(elemType)), v(move(vals)) {
+ArrayExprAst::ArrayExprAst(unique_ptr<TypeAst> arrTy, vector<unique_ptr<ExprAst>> vals)
+    : arrTy(move(arrTy)), vals(move(vals)) {
 }
 
 IfAst::IfAst(unique_ptr<StmntAst> init, unique_ptr<ExprAst> cond, 

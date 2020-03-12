@@ -21,7 +21,7 @@ class Parser {
     bool mismatch(Token::Type type);
     template<typename T> bool broken(const T &x);
 
-    std::unique_ptr<ArrayExprAst> array(std::unique_ptr<TypeAst> ty);
+    std::unique_ptr<ArrayExprAst> array_list(std::unique_ptr<TypeAst> arrTy);
     std::unique_ptr<ExprAst> prim();
     std::unique_ptr<ExprAst> expr(std::unique_ptr<ExprAst> lhs, OperPrec min_prec);
     std::unique_ptr<ExprAst> expr();

@@ -28,7 +28,7 @@ bool Parser::mismatch(Token::Type type) {
     return panic;
 }
 
-unique_ptr<ArrayExprAst> Parser::array(unique_ptr<TypeAst> ty) {
+unique_ptr<ArrayExprAst> Parser::array_list(unique_ptr<TypeAst> arrTy) {
     vector<unique_ptr<ExprAst>> vals;
 
     if (mismatch(Token::T_BRACE_L_CUR)) return nullptr;
@@ -56,7 +56,7 @@ unique_ptr<ArrayExprAst> Parser::array(unique_ptr<TypeAst> ty) {
         }
     }
 
-    return make_unique<ArrayExprAst>(move(ty), move(vals));
+    return make_unique<ArrayExprAst>(move(arrTy), move(vals));
 }
 
 unique_ptr<ExprAst> Parser::prim() {
@@ -122,7 +122,7 @@ unique_ptr<ExprAst> Parser::prim() {
 
                 ret = make_unique<CastExprAst>(move(t), move(e));
             } else if (peek().type == Token::T_BRACE_L_CUR) {
-                unique_ptr<ArrayExprAst> e = array(move(t));
+                unique_ptr<ArrayExprAst> e = array_list(move(t));
                 if (broken(e)) return nullptr;
 
                 ret = move(e);
@@ -302,7 +302,7 @@ unique_ptr<DeclAst> Parser::decl() {
     unique_ptr<TypeAst> ty = type();
     if (broken(ty)) return nullptr;
 
-    unique_ptr<DeclAst> ret = make_unique<DeclAst>(move(ty));
+    unique_ptr<DeclAst> ret = make_unique<DeclAst>(ty->clone());
 
     while (true) {
         Token id = next();
@@ -322,13 +322,7 @@ unique_ptr<DeclAst> Parser::decl() {
 
             if (look.type == Token::T_BRACE_L_REG && mismatch(Token::T_BRACE_R_REG)) return nullptr;
         } else if (look.type == Token::T_BRACE_L_CUR) {
-            pair<bool, TypeTable::Id> elemType = symbolTable->getTypeTable()->addTypeIndex(ret->getType()->getTypeId());
-            if (elemType.first == false) {
-                panic = true;
-                return nullptr;
-            }
-
-            init = array(make_unique<TypeAst>(elemType.second));
+            init = array_list(ty->clone());
             if (broken(init)) return nullptr;
         }
         ret->add(make_pair(id.nameId, move(init)));
