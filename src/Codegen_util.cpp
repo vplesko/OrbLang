@@ -1,4 +1,5 @@
 #include "Codegen.h"
+#include <sstream>
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Host.h"
@@ -12,6 +13,43 @@ using namespace std;
 Codegen::Codegen(NamePool *namePool, SymbolTable *symbolTable) : namePool(namePool), symbolTable(symbolTable), 
         llvmBuilder(llvmContext), llvmBuilderAlloca(llvmContext), panic(false) {
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("test"), llvmContext);
+}
+
+pair<bool, NamePool::Id> Codegen::mangleName(const FuncValue &f) {
+    stringstream mangle;
+    mangle << namePool->get(f.name);
+
+    mangle << "$Args";
+
+    for (TypeTable::Id ty : f.argTypes) {
+        const TypeTable::TypeDescr &typeDescr = getTypeTable()->getTypeDescr(ty);
+        
+        pair<bool, NamePool::Id> name = getTypeTable()->getTypeName(typeDescr.base);
+        if (name.first == false) {
+            panic = true;
+            return make_pair(false, 0);
+        }
+
+        mangle << "$" << namePool->get(name.second);
+
+        for (TypeTable::TypeDescr::Decor d : typeDescr.decors) {
+            switch (d.type) {
+                case TypeTable::TypeDescr::Decor::D_ARR:
+                    mangle << "$Arr" << d.len;
+                    break;
+                case TypeTable::TypeDescr::Decor::D_ARR_PTR:
+                    mangle << "$ArrPtr";
+                    break;
+                case TypeTable::TypeDescr::Decor::D_PTR:
+                    mangle << "$Ptr";
+                    break;
+                default:
+                    return make_pair(false, 0);
+            }
+        }
+    }
+
+    return make_pair(true, namePool->add(mangle.str()));
 }
 
 llvm::Type* Codegen::getType(TypeTable::Id typeId) {

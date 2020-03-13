@@ -3,6 +3,7 @@ using namespace std;
 
 NamePool::NamePool() {
     next = 0;
+    main = add("main");
 }
 
 NamePool::Id NamePool::add(const string &name) {

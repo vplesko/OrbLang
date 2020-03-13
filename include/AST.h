@@ -329,9 +329,10 @@ class FuncProtoAst : public BaseAst {
     NamePool::Id name;
     std::vector<std::pair<std::unique_ptr<TypeAst>, NamePool::Id>> args;
     std::unique_ptr<TypeAst> retType;
+    bool noNameMangle;
 
 public:
-    explicit FuncProtoAst(NamePool::Id name) : name(name) {}
+    explicit FuncProtoAst(NamePool::Id name) : name(name), noNameMangle(false) {}
 
     AstType type() const override { return AST_FuncProto; }
 
@@ -346,6 +347,9 @@ public:
     void setRetType(std::unique_ptr<TypeAst> t) { retType = std::move(t); }
     const TypeAst* getRetType() const { return retType.get(); }
     bool hasRetVal() const { return retType != nullptr; }
+
+    bool isNoNameMangle() const { return noNameMangle; }
+    void setNoNameMangle(bool b) { noNameMangle = b; }
 };
 
 class FuncAst : public BaseAst {

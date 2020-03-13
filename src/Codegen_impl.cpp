@@ -570,6 +570,7 @@ std::pair<FuncValue, bool> Codegen::codegen(const FuncProtoAst *ast, bool defini
     val.hasRet = ast->hasRetVal();
     if (val.hasRet) val.retType = ast->getRetType()->getTypeId();
     val.defined = definition;
+    val.noNameMangle = ast->isNoNameMangle();
 
     if (!symbolTable->canRegisterFunc(val)) {
         panic = true;
@@ -586,21 +587,33 @@ std::pair<FuncValue, bool> Codegen::codegen(const FuncProtoAst *ast, bool defini
         }
     }
 
-    vector<llvm::Type*> argTypes(ast->getArgCnt());
-    for (size_t i = 0; i < argTypes.size(); ++i)
-        argTypes[i] = getType(ast->getArgType(i)->getTypeId());
-    llvm::Type *retType = ast->hasRetVal() ? getType(ast->getRetType()->getTypeId()) : llvm::Type::getVoidTy(llvmContext);
-    llvm::FunctionType *funcType = llvm::FunctionType::get(retType, argTypes, false);
+    NamePool::Id funcName = ast->getName();
+    if (!val.noNameMangle) {
+        pair<bool, NamePool::Id> mangled = mangleName(val);
+        if (mangled.first == false) {
+            panic = true;
+            return make_pair(FuncValue(), false);
+        }
+        funcName = mangled.second;
+    }
 
-    // TODO optimize on const args
-    // TODO function name mangling; __cname
-    llvm::Function *func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, 
-            namePool->get(ast->getName()), llvmModule.get());
-    
-    size_t i = 0;
-    for (auto &arg : func->args()) {
-        arg.setName(namePool->get(ast->getArgName(i)));
-        ++i;
+    llvm::Function *func = symbolTable->getFunction(val);
+    if (func == nullptr) {
+        vector<llvm::Type*> argTypes(ast->getArgCnt());
+        for (size_t i = 0; i < argTypes.size(); ++i)
+            argTypes[i] = getType(ast->getArgType(i)->getTypeId());
+        llvm::Type *retType = ast->hasRetVal() ? getType(ast->getRetType()->getTypeId()) : llvm::Type::getVoidTy(llvmContext);
+        llvm::FunctionType *funcType = llvm::FunctionType::get(retType, argTypes, false);
+
+        // TODO optimize on const args
+        func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, 
+                namePool->get(funcName), llvmModule.get());
+        
+        size_t i = 0;
+        for (auto &arg : func->args()) {
+            arg.setName(namePool->get(ast->getArgName(i)));
+            ++i;
+        }
     }
 
     val.func = func;

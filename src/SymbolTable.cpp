@@ -64,20 +64,36 @@ pair<FuncSignature, bool> SymbolTable::makeFuncSignature(const FuncCallSite &cal
     return {makeFuncSignature(call.name, call.argTypes), true};
 }
 
+bool nonConflicting(const FuncValue &f1, const FuncValue &f2) {
+    if (f1.name != f2.name) return true;
+
+    if (f1.defined && f2.defined) return false;
+    if (f1.hasRet != f2.hasRet) return false;
+    if (f1.hasRet && f1.retType != f2.retType) return false;
+    if (f1.noNameMangle != f2.noNameMangle) return false;
+
+    if (f1.argTypes.size() != f2.argTypes.size()) return false;
+    // cn is not part of func sig, but all decls and def must agree on this
+    for (size_t i = 0; i < f1.argTypes.size(); ++i) {
+        if (f1.argTypes[i] != f2.argTypes[i]) return false;
+    }
+
+    return true;
+}
+
 bool SymbolTable::canRegisterFunc(const FuncValue &val) const {
+    if (val.noNameMangle) {
+        auto loc = funcsNoNameMangle.find(val.name);
+        if (loc != funcsNoNameMangle.end() && !nonConflicting(val, loc->second))
+            return false;
+    }
+
     FuncSignature sig = makeFuncSignature(val.name, val.argTypes);
     auto loc = funcs.find(sig);
 
     if (loc == funcs.end()) return true;
 
-    if (val.defined && loc->second.defined) return false;
-    if (val.hasRet != loc->second.hasRet) return false;
-    if (val.hasRet && val.retType != loc->second.retType) return false;
-
-    // cn is not part of func sig, but all decls and def must agree on this
-    for (size_t i = 0; i < val.argTypes.size(); ++i) {
-        if (val.argTypes[i] != loc->second.argTypes[i]) return false;
-    }
+    if (!nonConflicting(val, loc->second)) return false;
 
     return true;
 }
@@ -85,7 +101,15 @@ bool SymbolTable::canRegisterFunc(const FuncValue &val) const {
 FuncValue SymbolTable::registerFunc(const FuncValue &val) {
     FuncSignature sig = makeFuncSignature(val.name, val.argTypes);
     funcs[sig] = val;
+    if (val.noNameMangle) funcsNoNameMangle[val.name] = val;
     return funcs[sig];
+}
+
+llvm::Function* SymbolTable::getFunction(const FuncValue &val) const {
+    FuncSignature sig = makeFuncSignature(val.name, val.argTypes);
+    auto loc = funcs.find(sig);
+    if (loc == funcs.end()) return nullptr;
+    return loc->second.func;
 }
 
 std::pair<FuncValue, bool> SymbolTable::getFuncForCall(const FuncCallSite &call) {

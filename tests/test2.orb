@@ -1,51 +1,51 @@
-fnc print_i8(i8 x);
-fnc print_i16(i16 x);
-fnc print_i32(i32 x);
-fnc print_i64(i64 x);
+fnc print_i8(i8 x) no_name_mangle;
+fnc print_i16(i16 x) no_name_mangle;
+fnc print_i32(i32 x) no_name_mangle;
+fnc print_i64(i64 x) no_name_mangle;
 
-fnc println_i8(i8 x);
-fnc println_i16(i16 x);
-fnc println_i32(i32 x);
-fnc println_i64(i64 x);
+fnc println_i8(i8 x) no_name_mangle;
+fnc println_i16(i16 x) no_name_mangle;
+fnc println_i32(i32 x) no_name_mangle;
+fnc println_i64(i64 x) no_name_mangle;
 
-fnc scan_i8() i8;
-fnc scan_i16() i16;
-fnc scan_i32() i32;
-fnc scan_i64() i64;
+fnc scan_i8() i8 no_name_mangle;
+fnc scan_i16() i16 no_name_mangle;
+fnc scan_i32() i32 no_name_mangle;
+fnc scan_i64() i64 no_name_mangle;
 
-fnc print_u8(u8 x);
-fnc print_u16(u16 x);
-fnc print_u32(u32 x);
-fnc print_u64(u64 x);
+fnc print_u8(u8 x) no_name_mangle;
+fnc print_u16(u16 x) no_name_mangle;
+fnc print_u32(u32 x) no_name_mangle;
+fnc print_u64(u64 x) no_name_mangle;
 
-fnc println_u8(u8 x);
-fnc println_u16(u16 x);
-fnc println_u32(u32 x);
-fnc println_u64(u64 x);
+fnc println_u8(u8 x) no_name_mangle;
+fnc println_u16(u16 x) no_name_mangle;
+fnc println_u32(u32 x) no_name_mangle;
+fnc println_u64(u64 x) no_name_mangle;
 
-fnc scan_u8() u8;
-fnc scan_u16() u16;
-fnc scan_u32() u32;
-fnc scan_u64() u64;
+fnc scan_u8() u8 no_name_mangle;
+fnc scan_u16() u16 no_name_mangle;
+fnc scan_u32() u32 no_name_mangle;
+fnc scan_u64() u64 no_name_mangle;
 
-fnc print_f32(f32 x);
-fnc print_f64(f64 x);
+fnc print_f32(f32 x) no_name_mangle;
+fnc print_f64(f64 x) no_name_mangle;
 
-fnc println_f32(f32 x);
-fnc println_f64(f64 x);
+fnc println_f32(f32 x) no_name_mangle;
+fnc println_f64(f64 x) no_name_mangle;
 
-fnc scan_f32() f32;
-fnc scan_f64() f64;
+fnc scan_f32() f32 no_name_mangle;
+fnc scan_f64() f64 no_name_mangle;
 
-fnc print_c8(c8 x);
+fnc print_c8(c8 x) no_name_mangle;
 
-fnc println_c8(c8 x);
+fnc println_c8(c8 x) no_name_mangle;
 
-fnc scan_c8() c8;
+fnc scan_c8() c8 no_name_mangle;
 
-fnc print_str(c8 cn[] str);
+fnc print_str(c8 cn[] str) no_name_mangle;
 
-fnc println_str(c8 cn[] str);
+fnc println_str(c8 cn[] str) no_name_mangle;
 
 fnc foo() {
     println_i64(10);

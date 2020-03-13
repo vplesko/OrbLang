@@ -132,6 +132,7 @@ void TypeTable::addTypeStr() {
 
 void TypeTable::addPrimType(NamePool::Id name, PrimIds id, llvm::Type *type) {
     typeIds.insert(make_pair(name, id));
+    typeNames.insert(make_pair(id, name));
     types[id].first.base = id;
     types[id].second = type;
 }
@@ -154,6 +155,12 @@ TypeTable::Id TypeTable::getTypeCharArrOfLenId(std::size_t len) {
 
 bool TypeTable::isType(NamePool::Id name) const {
     return typeIds.find(name) != typeIds.end();
+}
+
+pair<bool, NamePool::Id> TypeTable::getTypeName(Id t) const {
+    auto loc = typeNames.find(t);
+    if (loc == typeNames.end()) return make_pair(false, 0);
+    return make_pair(true, loc->first);
 }
 
 bool TypeTable::isTypeI(Id t) const {

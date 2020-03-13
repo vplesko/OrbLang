@@ -42,6 +42,8 @@ class Codegen {
     llvm::AllocaInst* createAlloca(llvm::Type *type, const std::string &name);
     llvm::GlobalValue* createGlobal(llvm::Type *type, llvm::Constant *init, bool isConstant, const std::string &name);
     llvm::Constant* createString(const std::string &str);
+    
+    std::pair<bool, NamePool::Id> mangleName(const FuncValue &f);
 
     llvm::Type* getType(TypeTable::Id typeId);
     void createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId);

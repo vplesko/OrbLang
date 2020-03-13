@@ -610,6 +610,7 @@ unique_ptr<BaseAst> Parser::func() {
     }
 
     unique_ptr<FuncProtoAst> proto = make_unique<FuncProtoAst>(name.nameId);
+    proto->setNoNameMangle(name.nameId == namePool->getMain());
 
     if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
 
@@ -638,22 +639,24 @@ unique_ptr<BaseAst> Parser::func() {
     }
 
     // ret type
-    Token look = peek();
-    if (look.type != Token::T_BRACE_L_CUR && look.type != Token::T_SEMICOLON) {
+    if (peek().type == Token::T_ID && symbolTable->getTypeTable()->isType(peek().nameId)) {
         unique_ptr<TypeAst> retType = type();
         if (broken(retType)) return nullptr;
         proto->setRetType(move(retType));
-
-        look = peek();
     }
 
-    if (look.type == Token::T_BRACE_L_CUR) {
+    if (peek().type == Token::T_NO_NAME_MANGLE) {
+        next();
+        proto->setNoNameMangle(true);
+    }
+
+    if (peek().type == Token::T_BRACE_L_CUR) {
         //body
         unique_ptr<BlockAst> body = block();
         if (broken(body)) return nullptr;
 
         return make_unique<FuncAst>(move(proto), move(body));
-    } else if (look.type == Token::T_SEMICOLON) {
+    } else if (peek().type == Token::T_SEMICOLON) {
         next();
         return proto;
     } else {

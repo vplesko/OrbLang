@@ -76,6 +76,7 @@ struct FuncSignature {
 
 struct FuncValue {
     NamePool::Id name;
+    bool noNameMangle;
     std::vector<TypeTable::Id> argTypes;
     bool hasRet;
     TypeTable::Id retType;
@@ -101,6 +102,7 @@ private:
     TypeTable *typeTable;
 
     std::unordered_map<FuncSignature, FuncValue, FuncSignature::Hasher> funcs;
+    std::unordered_map<NamePool::Id, FuncValue> funcsNoNameMangle;
 
     Scope *last, *glob;
 
@@ -124,6 +126,7 @@ public:
 
     bool canRegisterFunc(const FuncValue &val) const;
     FuncValue registerFunc(const FuncValue &val);
+    llvm::Function* getFunction(const FuncValue &val) const;
     std::pair<FuncValue, bool> getFuncForCall(const FuncCallSite &call);
 
     bool inGlobalScope() const { return last == glob; }

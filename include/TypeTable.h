@@ -76,6 +76,7 @@ private:
     Id strType;
 
     std::unordered_map<NamePool::Id, Id> typeIds;
+    std::unordered_map<Id, NamePool::Id> typeNames;
     std::vector<std::pair<TypeDescr, llvm::Type*>> types;
 
     void addTypeStr();
@@ -100,6 +101,7 @@ public:
 
     bool isType(NamePool::Id name) const;
     Id getTypeId(NamePool::Id name) const { return typeIds.at(name); }
+    std::pair<bool, NamePool::Id> getTypeName(Id t) const;
 
     bool isTypeI(Id t) const;
     bool isTypeU(Id t) const;

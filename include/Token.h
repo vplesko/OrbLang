@@ -37,6 +37,7 @@ struct Token {
         T_CASE,
         T_DEFAULT,
         T_RET,
+        T_NO_NAME_MANGLE,
         T_END,
         T_UNKNOWN
     };
