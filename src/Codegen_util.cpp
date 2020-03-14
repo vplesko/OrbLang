@@ -49,6 +49,8 @@ pair<bool, NamePool::Id> Codegen::mangleName(const FuncValue &f) {
         }
     }
 
+    if (f.variadic) mangle << "$Variadic";
+
     return make_pair(true, namePool->add(mangle.str()));
 }
 

@@ -70,6 +70,7 @@ bool nonConflicting(const FuncValue &f1, const FuncValue &f2) {
     if (f1.defined && f2.defined) return false;
     if (f1.hasRet != f2.hasRet) return false;
     if (f1.hasRet && f1.retType != f2.retType) return false;
+    if (f1.variadic != f2.variadic) return false;
     if (f1.noNameMangle != f2.noNameMangle) return false;
 
     if (f1.argTypes.size() != f2.argTypes.size()) return false;
@@ -119,8 +120,6 @@ std::pair<FuncValue, bool> SymbolTable::getFuncForCall(const FuncCallSite &call)
         auto loc = funcs.find(sig.first);
         // if there's a single function and doesn't need casting, return it
         if (loc != funcs.end()) return {loc->second, true};
-        // if func with no args and not found, fail (no casting can be applied since no args)
-        if (call.argTypes.empty()) return {FuncValue(), false};
     }
 
     const FuncSignature *foundSig = nullptr;
@@ -128,9 +127,10 @@ std::pair<FuncValue, bool> SymbolTable::getFuncForCall(const FuncCallSite &call)
 
     for (auto &it : funcs) {
         // need func with that name
-        if (it.first.name != call.name) continue;
-        // and that num of args
-        if (it.first.argTypes.size() != call.argTypes.size()) continue;
+        if (it.second.name != call.name) continue;
+        // and that num of args, unless variadic
+        if (it.second.argTypes.size() != call.argTypes.size() &&
+            (!it.second.variadic || it.second.argTypes.size() > call.argTypes.size())) continue;
 
         const FuncSignature *candSig = &it.first;
         FuncValue *candVal = &it.second;

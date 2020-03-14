@@ -76,6 +76,7 @@ struct FuncSignature {
 
 struct FuncValue {
     NamePool::Id name;
+    bool variadic;
     bool noNameMangle;
     std::vector<TypeTable::Id> argTypes;
     bool hasRet;

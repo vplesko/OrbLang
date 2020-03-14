@@ -329,10 +329,11 @@ class FuncProtoAst : public BaseAst {
     NamePool::Id name;
     std::vector<std::pair<std::unique_ptr<TypeAst>, NamePool::Id>> args;
     std::unique_ptr<TypeAst> retType;
+    bool variadic;
     bool noNameMangle;
 
 public:
-    explicit FuncProtoAst(NamePool::Id name) : name(name), noNameMangle(false) {}
+    explicit FuncProtoAst(NamePool::Id name) : name(name), variadic(false), noNameMangle(false) {}
 
     AstType type() const override { return AST_FuncProto; }
 
@@ -347,6 +348,9 @@ public:
     void setRetType(std::unique_ptr<TypeAst> t) { retType = std::move(t); }
     const TypeAst* getRetType() const { return retType.get(); }
     bool hasRetVal() const { return retType != nullptr; }
+
+    bool isVariadic() const { return variadic; }
+    void setVariadic(bool b) { variadic = b; }
 
     bool isNoNameMangle() const { return noNameMangle; }
     void setNoNameMangle(bool b) { noNameMangle = b; }

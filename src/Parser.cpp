@@ -615,25 +615,35 @@ unique_ptr<BaseAst> Parser::func() {
     if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
 
     // args
-    bool first = true;
+    bool first = true, last = false;
     while (true) {
         if (peek().type == Token::T_BRACE_R_REG) {
             next();
             break;
         }
-
-        if (!first && mismatch(Token::T_COMMA)) return nullptr;
-
-        unique_ptr<TypeAst> argType = type();
-        if (broken(argType)) return nullptr;
-
-        Token arg = next();
-        if (arg.type != Token::T_ID) {
+        if (last && peek().type != Token::T_BRACE_R_REG) {
             panic = true;
             return nullptr;
         }
 
-        proto->addArg(make_pair(move(argType), arg.nameId));
+        if (!first && mismatch(Token::T_COMMA)) return nullptr;
+
+        if (peek().type == Token::T_ELLIPSIS) {
+            next();
+            proto->setVariadic(true);
+            last = true;
+        } else {
+            unique_ptr<TypeAst> argType = type();
+            if (broken(argType)) return nullptr;
+
+            Token arg = next();
+            if (arg.type != Token::T_ID) {
+                panic = true;
+                return nullptr;
+            }
+
+            proto->addArg(make_pair(move(argType), arg.nameId));
+        }
 
         first = false;
     }

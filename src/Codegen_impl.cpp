@@ -570,6 +570,7 @@ std::pair<FuncValue, bool> Codegen::codegen(const FuncProtoAst *ast, bool defini
     val.hasRet = ast->hasRetVal();
     if (val.hasRet) val.retType = ast->getRetType()->getTypeId();
     val.defined = definition;
+    val.variadic = ast->isVariadic();
     val.noNameMangle = ast->isNoNameMangle();
 
     if (!symbolTable->canRegisterFunc(val)) {
@@ -603,7 +604,7 @@ std::pair<FuncValue, bool> Codegen::codegen(const FuncProtoAst *ast, bool defini
         for (size_t i = 0; i < argTypes.size(); ++i)
             argTypes[i] = getType(ast->getArgType(i)->getTypeId());
         llvm::Type *retType = ast->hasRetVal() ? getType(ast->getRetType()->getTypeId()) : llvm::Type::getVoidTy(llvmContext);
-        llvm::FunctionType *funcType = llvm::FunctionType::get(retType, argTypes, false);
+        llvm::FunctionType *funcType = llvm::FunctionType::get(retType, argTypes, val.variadic);
 
         // TODO optimize on const args
         func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, 
