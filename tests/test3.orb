@@ -1,51 +1,60 @@
-fnc print_i8(i8 x) no_name_mangle;
-fnc print_i16(i16 x) no_name_mangle;
-fnc print_i32(i32 x) no_name_mangle;
-fnc print_i64(i64 x) no_name_mangle;
+fnc putchar(c8 x) no_name_mangle;
+fnc getchar() c8 no_name_mangle;
 
-fnc println_i8(i8 x) no_name_mangle;
-fnc println_i16(i16 x) no_name_mangle;
-fnc println_i32(i32 x) no_name_mangle;
-fnc println_i64(i64 x) no_name_mangle;
+fnc printf(c8 cn[] fmt, ...) no_name_mangle;
+fnc scanf(c8 cn[] fmt, ...) no_name_mangle;
 
-fnc scan_i8() i8 no_name_mangle;
-fnc scan_i16() i16 no_name_mangle;
-fnc scan_i32() i32 no_name_mangle;
-fnc scan_i64() i64 no_name_mangle;
+fnc malloc(u64 size) ptr no_name_mangle;
+fnc free(ptr addr) no_name_mangle;
 
-fnc print_u8(u8 x) no_name_mangle;
-fnc print_u16(u16 x) no_name_mangle;
-fnc print_u32(u32 x) no_name_mangle;
-fnc print_u64(u64 x) no_name_mangle;
+fnc println() { putchar('\n'); }
 
-fnc println_u8(u8 x) no_name_mangle;
-fnc println_u16(u16 x) no_name_mangle;
-fnc println_u32(u32 x) no_name_mangle;
-fnc println_u64(u64 x) no_name_mangle;
+fnc print_i8(i8 x) { printf("%d", x); }
+fnc println_i8(i8 x) { printf("%d\n", x); }
+fnc scan_i8() i8 { i8 x; scanf("%hhd", &x); ret x; }
 
-fnc scan_u8() u8 no_name_mangle;
-fnc scan_u16() u16 no_name_mangle;
-fnc scan_u32() u32 no_name_mangle;
-fnc scan_u64() u64 no_name_mangle;
+fnc print_i16(i16 x) { printf("%d", x); }
+fnc println_i16(i16 x) { printf("%d\n", x); }
+fnc scan_i16() i16 { i16 x; scanf("%hd", &x); ret x; }
 
-fnc print_f32(f32 x) no_name_mangle;
-fnc print_f64(f64 x) no_name_mangle;
+fnc print_i32(i32 x) { printf("%d", x); }
+fnc println_i32(i32 x) { printf("%d\n", x); }
+fnc scan_i32() i32 { i32 x; scanf("%d", &x); ret x; }
 
-fnc println_f32(f32 x) no_name_mangle;
-fnc println_f64(f64 x) no_name_mangle;
+fnc print_i64(i64 x) { printf("%d", x); }
+fnc println_i64(i64 x) { printf("%d\n", x); }
+fnc scan_i64() i64 { i64 x; scanf("%d", &x); ret x; }
 
-fnc scan_f32() f32 no_name_mangle;
-fnc scan_f64() f64 no_name_mangle;
+fnc print_u8(u8 x) { printf("%u", x); }
+fnc println_u8(u8 x) { printf("%u\n", x); }
+fnc scan_u8() u8 { u8 x; scanf("%hhu", &x); ret x; }
 
-fnc print_c8(c8 x) no_name_mangle;
+fnc print_u16(u16 x) { printf("%u", x); }
+fnc println_u16(u16 x) { printf("%u\n", x); }
+fnc scan_u16() u16 { u16 x; scanf("%hu", &x); ret x; }
 
-fnc println_c8(c8 x) no_name_mangle;
+fnc print_u32(u32 x) { printf("%u", x); }
+fnc println_u32(u32 x) { printf("%u\n", x); }
+fnc scan_u32() u32 { u32 x; scanf("%u", &x); ret x; }
 
-fnc scan_c8() c8 no_name_mangle;
+fnc print_u64(u64 x) { printf("%u", x); }
+fnc println_u64(u64 x) { printf("%u\n", x); }
+fnc scan_u64() u64 { u64 x; scanf("%u", &x); ret x; }
 
-fnc print_str(c8 cn[] str) no_name_mangle;
+fnc print_f32(f32 x) { printf("%.4f", f64(x)); }
+fnc println_f32(f32 x) { printf("%.4f\n", f64(x)); }
+fnc scan_f32() f32 { f32 x; scanf("%f", &x); ret x; }
 
-fnc println_str(c8 cn[] str) no_name_mangle;
+fnc print_f64(f64 x) { printf("%.4lf", x); }
+fnc println_f64(f64 x) { printf("%.4lf\n", x); }
+fnc scan_f64() f64 { f64 x; scanf("%lf", &x); ret x; }
+
+fnc print_c8(c8 x) { putchar(x); }
+fnc println_c8(c8 x) { putchar(x); println(); }
+fnc scan_c8() c8 { ret getchar(); }
+
+fnc print_str(c8 cn[] str) no_name_mangle { printf(str); }
+fnc println_str(c8 cn[] str) no_name_mangle { printf(str); println(); }
 
 f32 glob1 = true ? 1.0 : -1.0;
 f64 glob2 = 1>3 ? 1.0/5. : -1.0;

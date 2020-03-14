@@ -26,7 +26,6 @@ OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 TESTS = $(wildcard $(TEST_DIR)/*.orb)
 TEST_BINS = $(TESTS:$(TEST_DIR)/%.orb=$(BIN_DIR)/$(TEST_DIR)/%)
-TEST_UTIL = $(OBJ_DIR)/$(TEST_DIR)/utility.o
 
 build: $(BIN_DIR)/$(APP_NAME)
 
@@ -40,9 +39,9 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HDRS)
 
 test: $(TEST_BINS)
 
-$(BIN_DIR)/$(TEST_DIR)/%: $(OBJ_DIR)/$(TEST_DIR)/%.o $(TEST_UTIL) $(TEST_DIR)/%.txt
+$(BIN_DIR)/$(TEST_DIR)/%: $(OBJ_DIR)/$(TEST_DIR)/%.o $(TEST_DIR)/%.txt
 	@mkdir -p $(BIN_DIR)/$(TEST_DIR)
-	@$(CC) -o $@ $< $(TEST_UTIL)
+	@$(CC) -o $@ $<
 # run the binary and verify output
 # continue other tests even on fail
 	@-$@ | diff $(TEST_DIR)/$*.txt -
@@ -50,10 +49,6 @@ $(BIN_DIR)/$(TEST_DIR)/%: $(OBJ_DIR)/$(TEST_DIR)/%.o $(TEST_UTIL) $(TEST_DIR)/%.
 $(OBJ_DIR)/$(TEST_DIR)/%.o: $(TEST_DIR)/%.orb build
 	@mkdir -p $(OBJ_DIR)/$(TEST_DIR)
 	@$(BIN_DIR)/$(APP_NAME) $< $@
-
-$(TEST_UTIL): $(TEST_DIR)/utility.cpp
-	@mkdir -p $(OBJ_DIR)/$(TEST_DIR)
-	@$(CC) -c -o $(OBJ_DIR)/$(TEST_DIR)/utility.o $(TEST_DIR)/utility.cpp
 
 clean_test:
 	rm -rf $(OBJ_DIR)/$(TEST_DIR) $(BIN_DIR)/$(TEST_DIR)

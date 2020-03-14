@@ -945,19 +945,22 @@ Codegen::ExprGenPayload Codegen::codegen(const CallExprAst *ast) {
     }
 
     for (size_t i = 0; i < ast->getArgs().size(); ++i) {
-        if (exprs[i].isUntyVal()) {
-            // this check is important for variadic functions
-            if (i >= func.first.argTypes.size()) {
+        if (i >= func.first.argTypes.size()) {
+            // variadic arguments
+            if (exprs[i].isUntyVal()) {
                 panic = true;
                 return {};
             }
-
-            // this also checks whether sint/uint literals fit into the arg type size
-            if (!promoteUntyped(exprs[i], func.first.argTypes[i])) return {};
-            args[i] = exprs[i].val;
-        } else if (call.argTypes[i] != func.first.argTypes[i]) {
-            createCast(args[i], call.argTypes[i], func.first.argTypes[i]);
-            if (panic) return {};
+            // don't need to do anything in else case
+        } else {
+            if (exprs[i].isUntyVal()) {
+                // this also checks whether sint/uint literals fit into the arg type size
+                if (!promoteUntyped(exprs[i], func.first.argTypes[i])) return {};
+                args[i] = exprs[i].val;
+            } else if (call.argTypes[i] != func.first.argTypes[i]) {
+                createCast(args[i], call.argTypes[i], func.first.argTypes[i]);
+                if (panic) return {};
+            }
         }
     }
 
