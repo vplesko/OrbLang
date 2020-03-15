@@ -2,6 +2,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 #include "SymbolTable.h"
 #include "Codegen.h"
 
@@ -16,9 +17,9 @@ class Compiler {
 public:
     Compiler();
 
-    bool parse(const std::string &filename);
+    bool parse(const std::vector<std::string> &inputs);
     void printout() const;
-    bool compile(const std::string &filename);
+    bool compile(const std::string &output);
 
     ~Compiler();
 };

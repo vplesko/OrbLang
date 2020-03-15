@@ -24,8 +24,9 @@ HDRS = $(wildcard $(HDR_DIR)/*.h)
 SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
-TESTS = $(wildcard $(TEST_DIR)/*.orb)
+TESTS = $(wildcard $(TEST_DIR)/test*.orb)
 TEST_BINS = $(TESTS:$(TEST_DIR)/%.orb=$(BIN_DIR)/$(TEST_DIR)/%)
+TEST_UTILS = $(TEST_DIR)/clib.orb $(TEST_DIR)/io.orb
 
 build: $(BIN_DIR)/$(APP_NAME)
 
@@ -46,7 +47,7 @@ $(BIN_DIR)/$(TEST_DIR)/%: $(OBJ_DIR)/$(TEST_DIR)/%.o $(TEST_DIR)/%.txt
 # continue other tests even on fail
 	@-$@ | diff $(TEST_DIR)/$*.txt -
 
-$(OBJ_DIR)/$(TEST_DIR)/%.o: $(TEST_DIR)/%.orb build
+$(OBJ_DIR)/$(TEST_DIR)/%.o: $(TEST_DIR)/%.orb $(TEST_UTILS) build
 	@mkdir -p $(OBJ_DIR)/$(TEST_DIR)
 	@$(BIN_DIR)/$(APP_NAME) $< $@
 

@@ -92,8 +92,10 @@ void Compiler::genPrimTypes() {
     );
 }
 
-bool Compiler::parse(const std::string &filename) {
-    ifstream file(filename);
+bool Compiler::parse(const std::vector<std::string> &inputs) {
+    if (inputs.empty()) return false;
+
+    ifstream file(inputs[0]);
     if (!file.is_open()) return false;
 
     Lexer lex(namePool.get());
@@ -114,8 +116,8 @@ void Compiler::printout() const {
     codegen->printout();
 }
 
-bool Compiler::compile(const std::string &filename) {
-    return codegen->binary(filename);
+bool Compiler::compile(const std::string &output) {
+    return codegen->binary(output);
 }
 
 Compiler::~Compiler() {

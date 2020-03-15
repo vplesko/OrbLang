@@ -3,15 +3,26 @@
 using namespace std;
 
 int main(int argc,  char** argv) {
-    if (argc < 2) {
-        cout << "Specify input file name" << endl;
+    if (argc < 3) {
+        cout << "Not enough arguments when calling orbc." << endl;
         return -1;
     }
 
-    cout << "File: " << argv[1] << endl;
+    vector<string> inputs;
+    string output;
+
+    for (int i = 1; i + 1 < argc; ++i) {
+        string in(argv[i]);
+        inputs.push_back(in);
+    }
+
+    cout << "Files:";
+    for (const std::string &f : inputs)
+        cout << " " << f;
+    cout << endl;
 
     Compiler compiler;
-    if (!compiler.parse(argv[1])) {
+    if (!compiler.parse(inputs)) {
         cout << "Something went wrong when parsing!" << endl;
         return -2;
     }
@@ -19,11 +30,9 @@ int main(int argc,  char** argv) {
     /*cout << "Code printout:" << endl;
     compiler.printout();*/
 
-    if (argc >= 3) {
-        if (!compiler.compile(argv[2])) {
-            cout << "Something went wrong when compiling!" << endl;
-            return -3;
-        }
+    if (!compiler.compile(argv[argc-1])) {
+        cout << "Something went wrong when compiling!" << endl;
+        return -3;
     }
 
     return 0;
