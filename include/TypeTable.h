@@ -2,9 +2,10 @@
 
 #include <vector>
 #include <unordered_map>
-#include "llvm/IR/Instructions.h"
+#include <optional>
 #include "utils.h"
 #include "NamePool.h"
+#include "llvm/IR/Instructions.h"
 
 class TypeTable {
 public:
@@ -85,8 +86,8 @@ public:
     TypeTable();
 
     Id addType(TypeDescr typeDescr);
-    std::pair<bool, Id> addTypeDeref(Id typeId);
-    std::pair<bool, Id> addTypeIndex(Id typeId);
+    std::optional<Id> addTypeDeref(Id typeId);
+    std::optional<Id> addTypeIndex(Id typeId);
     Id addTypeAddr(Id typeId);
     Id addTypeArrOfLenId(Id typeId, std::size_t len);
     Id addType(TypeDescr typeDescr, llvm::Type *type);
@@ -101,7 +102,7 @@ public:
 
     bool isType(NamePool::Id name) const;
     Id getTypeId(NamePool::Id name) const { return typeIds.at(name); }
-    std::pair<bool, NamePool::Id> getTypeName(Id t) const;
+    std::optional<NamePool::Id> getTypeName(Id t) const;
 
     bool isTypeI(Id t) const;
     bool isTypeU(Id t) const;

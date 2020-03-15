@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <optional>
 #include "Lexer.h"
 #include "SymbolTable.h"
 
@@ -320,7 +321,7 @@ public:
     
     const ExprAst* getValue() const { return value.get(); }
     const std::vector<Case>& getCases() const { return cases; }
-    std::pair<bool, std::size_t> getDefault() const;
+    std::optional<std::size_t> getDefault() const;
 
     AstType type() const override { return AST_Switch; }
 };

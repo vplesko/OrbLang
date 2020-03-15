@@ -1,6 +1,6 @@
 #include "Codegen.h"
-#include "llvm/IR/Verifier.h"
 #include <unordered_set>
+#include "llvm/IR/Verifier.h"
 using namespace std;
 
 void Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId) {
@@ -494,8 +494,8 @@ void Codegen::codegen(const SwitchAst *ast) {
         }
     }
 
-    pair<bool, size_t> def = ast->getDefault();
-    llvm::BasicBlock *defBlock = def.first ? blocks[def.second] : afterBlock;
+    optional<size_t> def = ast->getDefault();
+    llvm::BasicBlock *defBlock = def ? blocks[def.value()] : afterBlock;
 
     llvm::SwitchInst *switchInst = llvmBuilder.CreateSwitch(valExprPay.val, defBlock, caseCompNum);
     for (size_t i = 0; i < caseBlockNum; ++i) {
@@ -590,12 +590,12 @@ std::pair<FuncValue, bool> Codegen::codegen(const FuncProtoAst *ast, bool defini
 
     NamePool::Id funcName = ast->getName();
     if (!val.noNameMangle) {
-        pair<bool, NamePool::Id> mangled = mangleName(val);
-        if (mangled.first == false) {
+        optional<NamePool::Id> mangled = mangleName(val);
+        if (!mangled) {
             panic = true;
             return make_pair(FuncValue(), false);
         }
-        funcName = mangled.second;
+        funcName = mangled.value();
     }
 
     llvm::Function *func = symbolTable->getFunction(val);

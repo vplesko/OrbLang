@@ -12,7 +12,7 @@ APP_NAME = orbc
 CC = clang++
 INC_DIR = include
 # TODO: separate release and debug builds
-CFLAGS = -g -I$(INC_DIR) `llvm-config --cxxflags --ldflags --system-libs --libs core` -std=c++14
+CFLAGS = -g -I$(INC_DIR) `llvm-config --cxxflags --ldflags --system-libs --libs core` -std=c++17
 
 HDR_DIR = include
 SRC_DIR = src
