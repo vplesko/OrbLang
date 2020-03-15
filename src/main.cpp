@@ -1,19 +1,34 @@
 #include <iostream>
+#include <filesystem>
 #include "Compiler.h"
 using namespace std;
 
+const int BAD_ARGS = -1;
+const int MULTI_OUT = -2;
+const int PARSE_FAIL = -3;
+const int COMPILE_FAIL = -4;
+
 int main(int argc,  char** argv) {
-    if (argc < 3) {
+    if (argc < 2) {
         cout << "Not enough arguments when calling orbc." << endl;
-        return -1;
+        return BAD_ARGS;
     }
 
     vector<string> inputs;
     string output;
 
-    for (int i = 1; i + 1 < argc; ++i) {
+    for (int i = 1; i < argc; ++i) {
         string in(argv[i]);
-        inputs.push_back(in);
+        if (filesystem::path(in).extension().string() == ".orb") {
+            inputs.push_back(in);
+        } else {
+            if (!output.empty()) {
+                cout << "Cannot have multiple outputs." << endl;
+                return MULTI_OUT;
+            } else {
+                output = in;
+            }
+        }
     }
 
     cout << "Files:";
@@ -24,15 +39,15 @@ int main(int argc,  char** argv) {
     Compiler compiler;
     if (!compiler.parse(inputs)) {
         cout << "Something went wrong when parsing!" << endl;
-        return -2;
+        return PARSE_FAIL;
     }
     
     /*cout << "Code printout:" << endl;
     compiler.printout();*/
 
-    if (!compiler.compile(argv[argc-1])) {
+    if (!output.empty() && !compiler.compile(argv[argc-1])) {
         cout << "Something went wrong when compiling!" << endl;
-        return -3;
+        return COMPILE_FAIL;
     }
 
     return 0;
