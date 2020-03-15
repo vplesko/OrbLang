@@ -60,12 +60,12 @@ SwitchAst::SwitchAst(unique_ptr<ExprAst> value, vector<Case> cases)
     : value(move(value)), cases(move(cases)) {
 }
 
-pair<bool, size_t> SwitchAst::getDefault() const {
+optional<size_t> SwitchAst::getDefault() const {
     for (size_t i = 0; i < cases.size(); ++i) {
-        if (cases[i].isDefault()) return {true, i};
+        if (cases[i].isDefault()) return i;
     }
 
-    return {false, 0};
+    return nullopt;
 }
 
 DeclAst::DeclAst(unique_ptr<TypeAst> type) : varType(move(type)) {

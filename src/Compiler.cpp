@@ -1,8 +1,8 @@
 #include "Compiler.h"
+#include <fstream>
 #include "SymbolTable.h"
 #include "Lexer.h"
 #include "Parser.h"
-#include <fstream>
 using namespace std;
 
 Compiler::Compiler() {

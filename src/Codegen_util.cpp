@@ -15,7 +15,7 @@ Codegen::Codegen(NamePool *namePool, SymbolTable *symbolTable) : namePool(namePo
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("test"), llvmContext);
 }
 
-pair<bool, NamePool::Id> Codegen::mangleName(const FuncValue &f) {
+optional<NamePool::Id> Codegen::mangleName(const FuncValue &f) {
     stringstream mangle;
     mangle << namePool->get(f.name);
 
@@ -24,13 +24,13 @@ pair<bool, NamePool::Id> Codegen::mangleName(const FuncValue &f) {
     for (TypeTable::Id ty : f.argTypes) {
         const TypeTable::TypeDescr &typeDescr = getTypeTable()->getTypeDescr(ty);
         
-        pair<bool, NamePool::Id> name = getTypeTable()->getTypeName(typeDescr.base);
-        if (name.first == false) {
+        optional<NamePool::Id> name = getTypeTable()->getTypeName(typeDescr.base);
+        if (!name) {
             panic = true;
-            return make_pair(false, 0);
+            return nullopt;
         }
 
-        mangle << "$" << namePool->get(name.second);
+        mangle << "$" << namePool->get(name.value());
 
         for (TypeTable::TypeDescr::Decor d : typeDescr.decors) {
             switch (d.type) {
@@ -44,14 +44,14 @@ pair<bool, NamePool::Id> Codegen::mangleName(const FuncValue &f) {
                     mangle << "$Ptr";
                     break;
                 default:
-                    return make_pair(false, 0);
+                    return nullopt;
             }
         }
     }
 
     if (f.variadic) mangle << "$Variadic";
 
-    return make_pair(true, namePool->add(mangle.str()));
+    return namePool->add(mangle.str());
 }
 
 llvm::Type* Codegen::getType(TypeTable::Id typeId) {

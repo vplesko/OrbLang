@@ -1,11 +1,12 @@
 #pragma once
 
+#include <stack>
+#include <optional>
 #include "SymbolTable.h"
 #include "AST.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
-#include <stack>
 
 class Codegen {
     NamePool *namePool;
@@ -43,7 +44,7 @@ class Codegen {
     llvm::GlobalValue* createGlobal(llvm::Type *type, llvm::Constant *init, bool isConstant, const std::string &name);
     llvm::Constant* createString(const std::string &str);
     
-    std::pair<bool, NamePool::Id> mangleName(const FuncValue &f);
+    std::optional<NamePool::Id> mangleName(const FuncValue &f);
 
     llvm::Type* getType(TypeTable::Id typeId);
     void createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId);

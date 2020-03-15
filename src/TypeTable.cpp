@@ -69,31 +69,31 @@ TypeTable::Id TypeTable::addType(TypeDescr typeDescr, llvm::Type *type) {
     return id;
 }
 
-pair<bool, TypeTable::Id> TypeTable::addTypeDeref(Id typeId) {
+optional<TypeTable::Id> TypeTable::addTypeDeref(Id typeId) {
     const TypeDescr &typeDescr = types[typeId].first;
     
     // ptr cannot be dereferenced
     if (typeId == TypeTable::P_PTR || !isTypeP(typeId))
-        return make_pair(false, 0);
+        return nullopt;
     
     TypeDescr typeDerefDescr(typeDescr.base, typeDescr.cn);
     typeDerefDescr.decors = vector<TypeDescr::Decor>(typeDescr.decors.begin(), typeDescr.decors.end()-1);
     typeDerefDescr.cns = vector<bool>(typeDescr.cns.begin(), typeDescr.cns.end()-1);
     
-    return make_pair(true, addType(move(typeDerefDescr)));
+    return addType(move(typeDerefDescr));
 }
 
-pair<bool, TypeTable::Id> TypeTable::addTypeIndex(Id typeId) {
+optional<TypeTable::Id> TypeTable::addTypeIndex(Id typeId) {
     const TypeDescr &typeDescr = types[typeId].first;
     
     if (!isTypeArrP(typeId) && !isTypeArr(typeId))
-        return make_pair(false, 0);
+        return nullopt;
     
     TypeDescr typeIndexDescr(typeDescr.base, typeDescr.cn);
     typeIndexDescr.decors = vector<TypeDescr::Decor>(typeDescr.decors.begin(), typeDescr.decors.end()-1);
     typeIndexDescr.cns = vector<bool>(typeDescr.cns.begin(), typeDescr.cns.end()-1);
     
-    return make_pair(true, addType(move(typeIndexDescr)));
+    return addType(move(typeIndexDescr));
 }
 
 TypeTable::Id TypeTable::addTypeAddr(Id typeId) {
@@ -157,10 +157,10 @@ bool TypeTable::isType(NamePool::Id name) const {
     return typeIds.find(name) != typeIds.end();
 }
 
-pair<bool, NamePool::Id> TypeTable::getTypeName(Id t) const {
+optional<NamePool::Id> TypeTable::getTypeName(Id t) const {
     auto loc = typeNames.find(t);
-    if (loc == typeNames.end()) return make_pair(false, 0);
-    return make_pair(true, loc->first);
+    if (loc == typeNames.end()) return nullopt;
+    return loc->first;
 }
 
 bool TypeTable::isTypeI(Id t) const {

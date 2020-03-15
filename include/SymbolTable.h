@@ -3,9 +3,9 @@
 #include <unordered_map>
 #include <vector>
 #include <string>
-#include "llvm/IR/Instructions.h"
 #include "NamePool.h"
 #include "TypeTable.h"
+#include "llvm/IR/Instructions.h"
 
 /*
 UntypedVal is needed to represent a literal value whose exact type is yet unknown.

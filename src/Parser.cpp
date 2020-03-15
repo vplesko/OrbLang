@@ -1,8 +1,8 @@
 #include "Parser.h"
-#include "AST.h"
 #include <iostream>
 #include <sstream>
 #include <cstdint>
+#include "AST.h"
 using namespace std;
 
 Parser::Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer) 
