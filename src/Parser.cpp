@@ -655,9 +655,14 @@ unique_ptr<BaseAst> Parser::func() {
         proto->setRetType(move(retType));
     }
 
-    if (peek().type == Token::T_NO_NAME_MANGLE) {
+    if (peek().type == Token::T_ATTRIBUTE) {
+        if (namePool->get(peek().nameId) == "__no_name_mangle") {
+            proto->setNoNameMangle(true);
+        } else {
+            panic = true;
+            return nullptr;
+        }
         next();
-        proto->setNoNameMangle(true);
     }
 
     if (peek().type == Token::T_BRACE_L_CUR) {

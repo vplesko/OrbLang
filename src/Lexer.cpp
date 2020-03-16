@@ -306,12 +306,15 @@ Token Lexer::next() {
                 nextCh();
             }
 
+            string id = line.substr(l, col-l);
+
             if (firstAlnum < 0) {
                 // all _ is not allowed
                 tok.type = Token::T_UNKNOWN;
-            } else {            
-                string id = line.substr(l, col-l);
-
+            } else if (firstAlnum >= 2) {
+                tok.type = Token::T_ATTRIBUTE;
+                tok.nameId = namePool->add(id);
+            } else {
                 auto loc = keywords.find(id);
                 if (loc != keywords.end()) {
                     tok = loc->second;

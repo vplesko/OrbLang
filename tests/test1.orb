@@ -1,12 +1,12 @@
 // TODO put these in a shared file, after importing is implemented
-fnc putchar(c8 x) no_name_mangle;
-fnc getchar() c8 no_name_mangle;
+fnc putchar(c8 x) __no_name_mangle;
+fnc getchar() c8 __no_name_mangle;
 
-fnc printf(c8 cn[] fmt, ...) no_name_mangle;
-fnc scanf(c8 cn[] fmt, ...) no_name_mangle;
+fnc printf(c8 cn[] fmt, ...) __no_name_mangle;
+fnc scanf(c8 cn[] fmt, ...) __no_name_mangle;
 
-fnc malloc(u64 size) ptr no_name_mangle;
-fnc free(ptr addr) no_name_mangle;
+fnc malloc(u64 size) ptr __no_name_mangle;
+fnc free(ptr addr) __no_name_mangle;
 
 fnc println() { putchar('\n'); }
 
@@ -54,8 +54,8 @@ fnc print_c8(c8 x) { putchar(x); }
 fnc println_c8(c8 x) { putchar(x); println(); }
 fnc scan_c8() c8 { ret getchar(); }
 
-fnc print_str(c8 cn[] str) no_name_mangle { printf(str); }
-fnc println_str(c8 cn[] str) no_name_mangle { printf(str); println(); }
+fnc print_str(c8 cn[] str) __no_name_mangle { printf(str); }
+fnc println_str(c8 cn[] str) __no_name_mangle { printf(str); println(); }
 
 i32 glob1;
 i32 glob2 = 1;
