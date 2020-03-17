@@ -1,6 +1,7 @@
 #include "Compiler.h"
 #include <unordered_map>
 #include <stack>
+#include <filesystem>
 #include "SymbolTable.h"
 #include "Lexer.h"
 #include "Parser.h"
@@ -103,14 +104,14 @@ enum ImportTransRes {
 ImportTransRes followImport(
     const string &file, Parser &par, NamePool *names,
     unordered_map<string, unique_ptr<Lexer>> &lexers) {
-    // TODO! path normalization
-    auto loc = lexers.find(file);
+    string path = filesystem::canonical(file).string();
+    auto loc = lexers.find(path);
     if (loc == lexers.end()) {
-        unique_ptr<Lexer> lex = make_unique<Lexer>(names, file);
+        unique_ptr<Lexer> lex = make_unique<Lexer>(names, path);
         if (!lex->start()) return ITR_FAIL;
 
         par.setLexer(lex.get());
-        lexers.insert(make_pair(file, move(lex)));
+        lexers.insert(make_pair(path, move(lex)));
         return ITR_STARTED;
     } else {
         par.setLexer(loc->second.get());
