@@ -39,9 +39,13 @@ class Parser {
     std::unique_ptr<StmntAst> stmnt();
     std::unique_ptr<BlockAst> block();
     std::unique_ptr<BaseAst> func();
+    std::unique_ptr<ImportAst> import();
 
 public:
-    Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer);
+    Parser(NamePool *namePool, SymbolTable *symbolTable);
+
+    void setLexer(Lexer *lex_) { lex = lex_; }
+    Lexer* getLexer() const { return lex; }
 
     std::unique_ptr<BaseAst> parseNode();
 

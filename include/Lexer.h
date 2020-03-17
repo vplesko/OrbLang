@@ -4,12 +4,13 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
+#include <fstream>
 #include "SymbolTable.h"
 #include "Token.h"
 
 class Lexer {
     NamePool *namePool;
-    std::istream *in;
+    std::ifstream in;
     std::string line;
     int ln, col;
     char ch;
@@ -22,9 +23,9 @@ class Lexer {
     void skipLine();
 
 public:
-    Lexer(NamePool *namePool);
+    Lexer(NamePool *namePool, const std::string &file);
 
-    void start(std::istream &istr);
+    bool start();
 
     const Token& peek() const { return tok; }
     Token next();

@@ -5,8 +5,8 @@
 #include "AST.h"
 using namespace std;
 
-Parser::Parser(NamePool *namePool, SymbolTable *symbolTable, Lexer *lexer) 
-    : namePool(namePool), symbolTable(symbolTable), lex(lexer), panic(false) {
+Parser::Parser(NamePool *namePool, SymbolTable *symbolTable) 
+    : namePool(namePool), symbolTable(symbolTable), lex(nullptr), panic(false) {
 }
 
 const Token& Parser::peek() const {
@@ -675,10 +675,31 @@ unique_ptr<BaseAst> Parser::func() {
     }
 }
 
+unique_ptr<ImportAst> Parser::import() {
+    if (mismatch(Token::T_IMPORT)) return nullptr;
+
+    if (peek().type != Token::T_STRING) {
+        panic = true;
+        return nullptr;
+    }
+
+    unique_ptr<ImportAst> ret = make_unique<ImportAst>(next().str);
+
+    if (mismatch(Token::T_SEMICOLON)) return nullptr;
+
+    return ret;
+}
+
 unique_ptr<BaseAst> Parser::parseNode() {
+    if (lex == nullptr) {
+        panic = true;
+        return nullptr;
+    }
+
     unique_ptr<BaseAst> next;
 
-    if (peek().type == Token::T_FNC) next = func();
+    if (peek().type == Token::T_IMPORT) next = import();
+    else if (peek().type == Token::T_FNC) next = func();
     else next = decl();
 
     if (panic || !next) {

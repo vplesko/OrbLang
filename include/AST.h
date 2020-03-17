@@ -7,6 +7,7 @@
 #include "SymbolTable.h"
 
 enum AstType {
+    AST_Import,
     AST_Type,
     AST_EmptyExpr,
     AST_UntypedExpr,
@@ -38,6 +39,17 @@ public:
     virtual AstType type() const =0;
 
     virtual ~BaseAst() {}
+};
+
+class ImportAst : public BaseAst {
+    std::string file;
+
+public:
+    ImportAst(const std::string &file) : file(file) {}
+
+    const std::string& getFile() const { return file; }
+
+    AstType type() const override { return AST_Import; }
 };
 
 class TypeAst : public BaseAst {

@@ -1,5 +1,6 @@
 #include "Compiler.h"
-#include <fstream>
+#include <unordered_map>
+#include <stack>
 #include "SymbolTable.h"
 #include "Lexer.h"
 #include "Parser.h"
@@ -92,21 +93,82 @@ void Compiler::genPrimTypes() {
     );
 }
 
-bool Compiler::parse(const std::vector<std::string> &inputs) {
+enum ImportTransRes {
+    ITR_STARTED,
+    ITR_CYCLICAL,
+    ITR_COMPLETED,
+    ITR_FAIL
+};
+
+ImportTransRes followImport(
+    const string &file, Parser &par, NamePool *names,
+    unordered_map<string, unique_ptr<Lexer>> &lexers) {
+    // TODO! path normalization
+    auto loc = lexers.find(file);
+    if (loc == lexers.end()) {
+        unique_ptr<Lexer> lex = make_unique<Lexer>(names, file);
+        if (!lex->start()) return ITR_FAIL;
+
+        par.setLexer(lex.get());
+        lexers.insert(make_pair(file, move(lex)));
+        return ITR_STARTED;
+    } else {
+        par.setLexer(loc->second.get());
+
+        if (par.isOver()) return ITR_COMPLETED;
+        else return ITR_CYCLICAL;
+    }
+}
+
+bool Compiler::parse(const vector<string> &inputs) {
     if (inputs.empty()) return false;
 
-    ifstream file(inputs[0]);
-    if (!file.is_open()) return false;
+    Parser par(namePool.get(), symbolTable.get());
 
-    Lexer lex(namePool.get());
-    lex.start(file);
+    unordered_map<string, unique_ptr<Lexer>> lexers;
+    stack<Lexer*> trace;
 
-    Parser par(namePool.get(), symbolTable.get(), &lex);
-    while (!par.isOver()) {
-        unique_ptr<BaseAst> node = par.parseNode();
-        if (par.isPanic()) return false;
-        codegen->codegenNode(node.get());
-        if (codegen->isPanic()) return false;
+    for (const string &in : inputs) {
+        ImportTransRes imres = followImport(in, par, namePool.get(), lexers);
+        if (imres == ITR_CYCLICAL || imres == ITR_FAIL) {
+            // cyclical should logically not happen here
+            return false;
+        } else if (imres == ITR_COMPLETED) {
+            continue;
+        } else {
+            trace.push(par.getLexer());
+        }
+
+        while (!trace.empty()) {
+            par.setLexer(trace.top());
+
+            while (true) {
+                if (par.isOver()) {
+                    trace.pop();
+                    break;
+                }
+
+                unique_ptr<BaseAst> node = par.parseNode();
+                if (par.isPanic()) return false;
+                
+                if (node->type() == AST_Import) {
+                    const string &import = ((ImportAst*)node.get())->getFile();
+                    ImportTransRes imres = followImport(import, par, namePool.get(), lexers);
+                    if (imres == ITR_CYCLICAL || imres == ITR_FAIL) {
+                        return false;
+                    }
+                    
+                    if (imres == ITR_STARTED) {
+                        trace.push(par.getLexer());
+                    }
+                    break;
+                } else {
+                    // TODO! scan vs compile
+                    codegen->codegenNode(node.get());
+                    if (codegen->isPanic()) return false;
+                }
+            }
+        }
     }
 
     return true;

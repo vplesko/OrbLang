@@ -6,18 +6,19 @@ using namespace std;
 
 const string numLitChars = "0123456789abcdefABCDEF.xXeEpP_";
 
-Lexer::Lexer(NamePool *namePool) : namePool(namePool) {
-}
-
-void Lexer::start(std::istream &istr) {
-    in = &istr;
+Lexer::Lexer(NamePool *namePool, const std::string &file) : namePool(namePool), in(file) {
     ln = 0;
     col = 0;
     ch = 0; // not EOF
     tok.type = Token::T_NUM; // not END
+}
+
+bool Lexer::start() {
+    if (!in.is_open()) return false;
 
     nextCh();
     next();
+    return true;
 }
 
 char Lexer::nextCh() {
@@ -28,7 +29,7 @@ char Lexer::nextCh() {
     ++col;
 
     if (col > line.size()) {
-        if (!getline(*in, line)) ch = EOF;
+        if (!getline(in, line)) ch = EOF;
         else ++ln;
         col = 0;
     }
@@ -43,7 +44,7 @@ char Lexer::nextCh() {
 void Lexer::skipLine() {
     if (over()) return;
 
-    if (!getline(*in, line)) {
+    if (!getline(in, line)) {
         ch = EOF;
         return;
     }
