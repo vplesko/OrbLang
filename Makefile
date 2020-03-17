@@ -49,8 +49,7 @@ $(BIN_DIR)/$(TEST_DIR)/%: $(OBJ_DIR)/$(TEST_DIR)/%.o $(TEST_DIR)/%.txt
 
 $(OBJ_DIR)/$(TEST_DIR)/%.o: $(TEST_DIR)/%.orb $(TEST_UTILS) build
 	@mkdir -p $(OBJ_DIR)/$(TEST_DIR)
-	@$(BIN_DIR)/$(APP_NAME) $< $(TEST_UTILS) $@
-# TODO! only compile io.orb
+	@$(BIN_DIR)/$(APP_NAME) $< $@
 # TODO! use llvm as linker
 
 clean_test:

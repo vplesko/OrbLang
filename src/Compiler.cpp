@@ -164,7 +164,6 @@ bool Compiler::parse(const vector<string> &inputs) {
                     }
                     break;
                 } else {
-                    // TODO! scan vs compile
                     codegen->codegenNode(node.get());
                     if (codegen->isPanic()) return false;
                 }
