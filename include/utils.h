@@ -1,6 +1,13 @@
 #pragma once
 
 #include <string>
+#include <functional>
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+constexpr bool isOsWindows = true;
+#else
+constexpr bool isOsWindows = false;
+#endif
 
 template<typename T>
 bool between(T x, T lo, T hi) {
@@ -27,3 +34,15 @@ struct UnescapePayload {
 // Unescape sequences are: \', \", \?, \\, \a, \b, \f, \n, \r, \t, \v,
 // and \xNN (where N is a hex digit in [0-9a-fA-F]).
 UnescapePayload unescape(const std::string &str, std::size_t indexStartingQuote, bool isSingleQuote);
+
+class DeferredFallback {
+    std::function<void(void)> func;
+
+public:
+    DeferredFallback(std::function<void(void)> func_) : func(func_) {}
+
+    DeferredFallback(const DeferredFallback&) = delete;
+    void operator=(const DeferredFallback&) = delete;
+
+    virtual ~DeferredFallback() { func(); }
+};

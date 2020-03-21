@@ -5,6 +5,7 @@
 #include "SymbolTable.h"
 #include "Lexer.h"
 #include "Parser.h"
+#include "ClangAdapter.h"
 using namespace std;
 
 Compiler::Compiler() {
@@ -178,9 +179,15 @@ void Compiler::printout() const {
     codegen->printout();
 }
 
-bool Compiler::compile(const std::string &output) {
-    return codegen->binary(output);
-}
+bool Compiler::compile(const std::string &output, bool exe) {
+    if (!exe) {
+        return codegen->binary(output);
+    } else {
+        const static string tempObjName = isOsWindows ? "a.obj" : "a.o";
+        DeferredFallback delObjTemp([&] { remove(tempObjName.c_str()); });
 
-Compiler::~Compiler() {
+        if (!codegen->binary(tempObjName)) return false;
+        
+        return buildExecutable(tempObjName, output);
+    }
 }

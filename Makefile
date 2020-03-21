@@ -12,7 +12,8 @@ APP_NAME = orbc
 CC = clang++
 INC_DIR = include
 # TODO: separate release and debug builds
-CFLAGS = -g -I$(INC_DIR) `llvm-config --cxxflags --ldflags --system-libs --libs core` -std=c++17 -lstdc++fs
+COMPILE_FLAGS = -g -I$(INC_DIR) `llvm-config --cxxflags` -std=c++17
+LINK_FLAGS = `llvm-config --ldflags --system-libs --libs core` -lstdc++fs -lclangDriver -lclangBasic -std=c++17
 
 HDR_DIR = include
 SRC_DIR = src
@@ -32,25 +33,20 @@ build: $(BIN_DIR)/$(APP_NAME)
 
 $(BIN_DIR)/$(APP_NAME): $(OBJS)
 	@mkdir -p $(BIN_DIR)
-	$(CC) -o $@ $^ $(CFLAGS)
+	$(CC) -o $@ $^ $(LINK_FLAGS)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HDRS)
 	@mkdir -p $(OBJ_DIR)
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) -c -o $@ $< $(COMPILE_FLAGS)
 
 test: $(TEST_BINS)
 
-$(BIN_DIR)/$(TEST_DIR)/%: $(OBJ_DIR)/$(TEST_DIR)/%.o $(TEST_DIR)/%.txt
+$(BIN_DIR)/$(TEST_DIR)/%: $(TEST_DIR)/%.orb $(TEST_UTILS) $(TEST_DIR)/%.txt build
 	@mkdir -p $(BIN_DIR)/$(TEST_DIR)
-	@$(CC) -o $@ $<
+	@$(BIN_DIR)/$(APP_NAME) $< $@
 # run the binary and verify output
 # continue other tests even on fail
 	@-$@ | diff $(TEST_DIR)/$*.txt -
-
-$(OBJ_DIR)/$(TEST_DIR)/%.o: $(TEST_DIR)/%.orb $(TEST_UTILS) build
-	@mkdir -p $(OBJ_DIR)/$(TEST_DIR)
-	@$(BIN_DIR)/$(APP_NAME) $< $@
-# TODO! use llvm as linker
 
 clean_test:
 	rm -rf $(OBJ_DIR)/$(TEST_DIR) $(BIN_DIR)/$(TEST_DIR)

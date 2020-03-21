@@ -19,7 +19,5 @@ public:
 
     bool parse(const std::vector<std::string> &inputs);
     void printout() const;
-    bool compile(const std::string &output);
-
-    ~Compiler();
+    bool compile(const std::string &output, bool exe);
 };

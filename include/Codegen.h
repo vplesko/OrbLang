@@ -106,6 +106,7 @@ public:
     llvm::Type* genPrimTypeF64();
     llvm::Type* genPrimTypePtr();
 
+    // TODO! scanNode
     void codegenNode(const BaseAst *ast, bool blockMakeScope = true);
 
     bool isPanic() const { return panic; }

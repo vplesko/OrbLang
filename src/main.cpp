@@ -45,9 +45,16 @@ int main(int argc,  char** argv) {
     /*cout << "Code printout:" << endl;
     compiler.printout();*/
 
-    if (!output.empty() && !compiler.compile(argv[argc-1])) {
-        cout << "Something went wrong when compiling!" << endl;
-        return COMPILE_FAIL;
+    if (!output.empty()) {
+        // TODO link object files
+        // TODO pass flags to clang
+        string out = argv[argc-1];
+        string ext = filesystem::path(out).extension().string();
+        bool obj = ext == ".o" || ext == ".obj";
+        if (!compiler.compile(out, !obj)) {
+            cout << "Something went wrong when compiling!" << endl;
+            return COMPILE_FAIL;
+        }
     }
 
     return 0;
