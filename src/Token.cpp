@@ -59,6 +59,5 @@ const unordered_map<string, Token> keywords = {
     {"switch", {Token::T_SWITCH}},
     {"case", {Token::T_CASE}},
     {"ret", {Token::T_RET}},
-    {"import", {Token::T_IMPORT}},
-    {"no_name_mangle", {Token::T_NO_NAME_MANGLE}}
+    {"import", {Token::T_IMPORT}}
 };

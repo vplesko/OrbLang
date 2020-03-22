@@ -39,7 +39,7 @@ struct Token {
         T_DEFAULT,
         T_RET,
         T_IMPORT,
-        T_NO_NAME_MANGLE,
+        T_ATTRIBUTE,
         T_END,
         T_UNKNOWN
     };

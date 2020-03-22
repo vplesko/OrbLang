@@ -1,11 +1,11 @@
 import "tests/io.orb";
 
 // func decls test
-fnc free(ptr addr) no_name_mangle;
+fnc free(ptr addr) __no_name_mangle;
 fnc free();
 fnc foo_var(...);
 fnc free(i32 x, i32 y, ...);
-fnc foo_var(f32 x, ...) no_name_mangle;
+fnc foo_var(f32 x, ...) __no_name_mangle;
 
 i32 * glob1 = true ? null : null;
 i32[4] glob2;

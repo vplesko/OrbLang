@@ -2,8 +2,8 @@ import "tests/clib.orb";
 
 import "tests/empty.orb";
 
-fnc putchar(c8 x) no_name_mangle;
-fnc putchar(c8 x) no_name_mangle;
+fnc putchar(c8 x) __no_name_mangle;
+fnc putchar(c8 x) __no_name_mangle;
 
 import "tests/clib.orb";
 
