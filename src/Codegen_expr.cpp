@@ -964,7 +964,7 @@ Codegen::ExprGenPayload Codegen::codegen(const CallExprAst *ast) {
         }
     }
 
-    // reminder, it's lvalue if returning a lvalue (by ref)
+    // REM it's lvalue if returning a lvalue (by ref)
     return {func.first.retType, llvmBuilder.CreateCall(func.first.func, args, 
         func.first.hasRet ? "call_tmp" : ""), nullptr};
 }

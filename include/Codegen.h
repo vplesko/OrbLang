@@ -41,7 +41,8 @@ class Codegen {
     llvm::Value* getConstB(bool val);
 
     llvm::AllocaInst* createAlloca(llvm::Type *type, const std::string &name);
-    llvm::GlobalValue* createGlobal(llvm::Type *type, llvm::Constant *init, bool isConstant, const std::string &name);
+    llvm::GlobalValue* defineGlobal(llvm::Type *type, llvm::Constant *init, bool isConstant, const std::string &name);
+    llvm::GlobalValue* declareGlobal(llvm::Type *type, bool isConstant, const std::string &name);
     llvm::Constant* createString(const std::string &str);
     
     std::optional<NamePool::Id> mangleName(const FuncValue &f);
@@ -78,7 +79,7 @@ class Codegen {
     ExprGenPayload codegen(const CallExprAst *ast);
     ExprGenPayload codegen(const CastExprAst *ast);
     ExprGenPayload codegen(const ArrayExprAst *ast);
-    void codegen(const DeclAst *ast);
+    void codegen(const DeclAst *ast, bool scanning = false);
     void codegen(const IfAst *ast);
     void codegen(const ForAst *ast);
     void codegen(const WhileAst *ast);
@@ -106,8 +107,8 @@ public:
     llvm::Type* genPrimTypeF64();
     llvm::Type* genPrimTypePtr();
 
-    // TODO! scanNode
     void codegenNode(const BaseAst *ast, bool blockMakeScope = true);
+    void scanNode(const BaseAst *ast);
 
     bool isPanic() const { return panic; }
 

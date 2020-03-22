@@ -43,7 +43,7 @@ test: $(TEST_BINS)
 
 $(BIN_DIR)/$(TEST_DIR)/%: $(TEST_DIR)/%.orb $(TEST_UTILS) $(TEST_DIR)/%.txt build
 	@mkdir -p $(BIN_DIR)/$(TEST_DIR)
-	@$(BIN_DIR)/$(APP_NAME) $< $@
+	@$(BIN_DIR)/$(APP_NAME) $< $@ $(TEST_DIR)/io.orb
 # run the binary and verify output
 # continue other tests even on fail
 	@-$@ | diff $(TEST_DIR)/$*.txt -

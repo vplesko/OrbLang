@@ -48,10 +48,9 @@ int main(int argc,  char** argv) {
     if (!output.empty()) {
         // TODO link object files
         // TODO pass flags to clang
-        string out = argv[argc-1];
-        string ext = filesystem::path(out).extension().string();
+        string ext = filesystem::path(output).extension().string();
         bool obj = ext == ".o" || ext == ".obj";
-        if (!compiler.compile(out, !obj)) {
+        if (!compiler.compile(output, !obj)) {
             cout << "Something went wrong when compiling!" << endl;
             return COMPILE_FAIL;
         }

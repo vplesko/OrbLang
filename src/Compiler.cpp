@@ -1,5 +1,6 @@
 #include "Compiler.h"
 #include <unordered_map>
+#include <unordered_set>
 #include <stack>
 #include <filesystem>
 #include "SymbolTable.h"
@@ -102,10 +103,13 @@ enum ImportTransRes {
     ITR_FAIL
 };
 
+string canonical(const string &file) {
+    return filesystem::canonical(file).string();
+}
+
 ImportTransRes followImport(
-    const string &file, Parser &par, NamePool *names,
+    const string &path, Parser &par, NamePool *names,
     unordered_map<string, unique_ptr<Lexer>> &lexers) {
-    string path = filesystem::canonical(file).string();
     auto loc = lexers.find(path);
     if (loc == lexers.end()) {
         unique_ptr<Lexer> lex = make_unique<Lexer>(names, path);
@@ -127,22 +131,29 @@ bool Compiler::parse(const vector<string> &inputs) {
 
     Parser par(namePool.get(), symbolTable.get());
 
+    unordered_set<string> canonicalInputs;
+    for (size_t i = 0; i < inputs.size(); ++i)
+        canonicalInputs.insert(canonical(inputs[i]));
+
     unordered_map<string, unique_ptr<Lexer>> lexers;
-    stack<Lexer*> trace;
+    stack<pair<Lexer*, bool>> trace;
+    bool scanning;
 
     for (const string &in : inputs) {
-        ImportTransRes imres = followImport(in, par, namePool.get(), lexers);
+        string path = canonical(in);
+        ImportTransRes imres = followImport(path, par, namePool.get(), lexers);
         if (imres == ITR_CYCLICAL || imres == ITR_FAIL) {
             // cyclical should logically not happen here
             return false;
         } else if (imres == ITR_COMPLETED) {
             continue;
         } else {
-            trace.push(par.getLexer());
+            trace.push(make_pair(par.getLexer(), false));
         }
 
         while (!trace.empty()) {
-            par.setLexer(trace.top());
+            par.setLexer(trace.top().first);
+            scanning = trace.top().second;
 
             while (true) {
                 if (par.isOver()) {
@@ -154,18 +165,21 @@ bool Compiler::parse(const vector<string> &inputs) {
                 if (par.isPanic()) return false;
                 
                 if (node->type() == AST_Import) {
-                    const string &import = ((ImportAst*)node.get())->getFile();
-                    ImportTransRes imres = followImport(import, par, namePool.get(), lexers);
+                    string path = canonical(((ImportAst*)node.get())->getFile());
+                    ImportTransRes imres = followImport(path, par, namePool.get(), lexers);
                     if (imres == ITR_CYCLICAL || imres == ITR_FAIL) {
                         return false;
                     }
                     
                     if (imres == ITR_STARTED) {
-                        trace.push(par.getLexer());
+                        trace.push(make_pair(par.getLexer(),
+                            canonicalInputs.find(path) == canonicalInputs.end()));
                     }
                     break;
                 } else {
-                    codegen->codegenNode(node.get());
+                    if (scanning) codegen->scanNode(node.get());
+                    else codegen->codegenNode(node.get());
+
                     if (codegen->isPanic()) return false;
                 }
             }
