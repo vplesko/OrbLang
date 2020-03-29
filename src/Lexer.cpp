@@ -63,9 +63,8 @@ Token Lexer::next() {
     while (true) {
         char ch;
         do {
-            // text editors are 1-indexed
-            codeLoc.ln = ln+1;
-            codeLoc.col = col+1;
+            codeLoc.ln = ln;
+            codeLoc.col = col+1; // text editors are 1-indexed
             ch = nextCh();
         } while (isspace(ch));
         

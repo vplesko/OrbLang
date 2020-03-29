@@ -1,3 +1,4 @@
+// TODO use std::optional
 #pragma once
 
 #include <unordered_map>
@@ -18,7 +19,7 @@ Then this would overflow: i32 i = 250 + 10;
 
 Therefore, we need this intermediate value holder.
 
-REM
+NOTE
 Does not hold uint values. Users can overcome this by casting.
 */
 struct UntypedVal {

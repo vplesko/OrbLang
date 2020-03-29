@@ -10,8 +10,9 @@
 #include "llvm/Target/TargetOptions.h"
 using namespace std;
 
-Codegen::Codegen(NamePool *namePool, SymbolTable *symbolTable) : namePool(namePool), symbolTable(symbolTable), 
-        llvmBuilder(llvmContext), llvmBuilderAlloca(llvmContext), panic(false) {
+Codegen::Codegen(NamePool *namePool, SymbolTable *symbolTable, CompileMessages *msgs)
+    : namePool(namePool), symbolTable(symbolTable), msgs(msgs),
+    llvmBuilder(llvmContext), llvmBuilderAlloca(llvmContext) {
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("test"), llvmContext);
 }
 
@@ -26,7 +27,6 @@ optional<NamePool::Id> Codegen::mangleName(const FuncValue &f) {
         
         optional<NamePool::Id> name = getTypeTable()->getTypeName(typeDescr.base);
         if (!name) {
-            panic = true;
             return nullopt;
         }
 
@@ -61,7 +61,7 @@ llvm::Type* Codegen::getType(TypeTable::Id typeId) {
         const TypeTable::TypeDescr &descr = symbolTable->getTypeTable()->getTypeDescr(typeId);
 
         llvmType = symbolTable->getTypeTable()->getType(descr.base);
-        if (broken(llvmType)) return nullptr;
+        if (llvmType == nullptr) return nullptr;
 
         for (const TypeTable::TypeDescr::Decor &decor : descr.decors) {
             switch (decor.type) {
@@ -73,11 +73,10 @@ llvm::Type* Codegen::getType(TypeTable::Id typeId) {
                 llvmType = llvm::ArrayType::get(llvmType, decor.len);
                 break;
             default:
-                panic = true;
                 return nullptr;
             }
 
-            if (broken(llvmType)) return nullptr;
+            if (llvmType == nullptr) return nullptr;
         }
 
         symbolTable->getTypeTable()->setType(typeId, llvmType);
@@ -87,44 +86,42 @@ llvm::Type* Codegen::getType(TypeTable::Id typeId) {
 }
 
 bool Codegen::valueBroken(const ExprGenPayload &e) {
-    if (e.val == nullptr && !e.isUntyVal()) panic = true;
-    return panic;
+    return e.val == nullptr && !e.isUntyVal();
 }
 
 bool Codegen::valBroken(const ExprGenPayload &e) {
-    if (e.val == nullptr) panic = true;
-    return panic;
+    return e.val == nullptr;
 }
 
 bool Codegen::refBroken(const ExprGenPayload &e) {
-    if (e.ref == nullptr) panic = true;
-    return panic;
+    return e.ref == nullptr;
 }
 
 bool Codegen::promoteUntyped(ExprGenPayload &e, TypeTable::Id t) {
     if (!e.isUntyVal()) {
-        panic = true;
         return false;
     }
+
+    bool success = true;
 
     switch (e.untyVal.type) {
     case UntypedVal::T_BOOL:
         if (!getTypeTable()->isTypeB(t)) {
-            panic = true;
+            success = false;
         } else {
             e.val = getConstB(e.untyVal.val_b);
         }
         break;
     case UntypedVal::T_SINT:
         if ((!getTypeTable()->isTypeI(t) && !getTypeTable()->isTypeU(t)) || !getTypeTable()->fitsType(e.untyVal.val_si, t)) {
-            panic = true;
+            success = false;
         } else {
             e.val = llvm::ConstantInt::get(getType(t), e.untyVal.val_si, getTypeTable()->isTypeI(t));
         }
         break;
     case UntypedVal::T_CHAR:
         if (!getTypeTable()->isTypeC(t)) {
-            panic = true;
+            success = false;
         } else {
             e.val = llvm::ConstantInt::get(getType(t), (uint8_t) e.untyVal.val_c, false);
         }
@@ -132,7 +129,7 @@ bool Codegen::promoteUntyped(ExprGenPayload &e, TypeTable::Id t) {
     case UntypedVal::T_FLOAT:
         // no precision checks for float types, this makes float literals somewhat unsafe
         if (!getTypeTable()->isTypeF(t)) {
-            panic = true;
+            success = false;
         } else {
             e.val = llvm::ConstantFP::get(getType(t), e.untyVal.val_f);
         }
@@ -143,23 +140,23 @@ bool Codegen::promoteUntyped(ExprGenPayload &e, TypeTable::Id t) {
         } else if (getTypeTable()->isTypeCharArrOfLen(t, e.untyVal.getStringLen())) {
             e.val = llvm::ConstantDataArray::getString(llvmContext, e.untyVal.val_str, true);
         } else {
-            panic = true;
+            success = false;
         }
         break;
     case UntypedVal::T_NULL:
         if (!symbolTable->getTypeTable()->isTypeAnyP(t)) {
-            panic = true;
+            success = false;
         } else {
             e.val = llvm::ConstantPointerNull::get((llvm::PointerType*)getType(t));
         }
         break;
     default:
-        panic = true;
+        success = false;
     }
 
     e.resetUntyVal();
     e.type = t;
-    return !panic;
+    return success;
 }
 
 llvm::Value* Codegen::getConstB(bool val) {

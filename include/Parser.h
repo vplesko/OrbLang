@@ -4,6 +4,7 @@
 #include <vector>
 #include "Lexer.h"
 #include "AST.h"
+#include "CompileMessages.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
@@ -12,14 +13,11 @@ class Parser {
     NamePool *namePool;
     SymbolTable *symbolTable;
     Lexer *lex;
-
-    bool panic;
+    CompileMessages *msgs;
 
     const Token& peek() const;
     Token next();
     bool match(Token::Type type);
-    bool mismatch(Token::Type type);
-    template<typename T> bool broken(const T &x);
     CodeLoc loc() const;
 
     std::unique_ptr<ArrayExprAst> array_list(std::unique_ptr<TypeAst> arrTy);
@@ -43,7 +41,7 @@ class Parser {
     std::unique_ptr<ImportAst> import();
 
 public:
-    Parser(NamePool *namePool, SymbolTable *symbolTable);
+    Parser(NamePool *namePool, SymbolTable *symbolTable, CompileMessages *msgs);
 
     void setLexer(Lexer *lex_) { lex = lex_; }
     Lexer* getLexer() const { return lex; }
@@ -51,12 +49,4 @@ public:
     std::unique_ptr<BaseAst> parseNode();
 
     bool isOver() const { return peek().type == Token::T_END; }
-    bool isPanic() const { return panic; }
 };
-
-// panics if pointer x is null; returns panic
-template<typename T>
-bool Parser::broken(const T &x) {
-    if (x == nullptr) panic = true;
-    return panic;
-}

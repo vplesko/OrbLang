@@ -38,7 +38,7 @@ int main(int argc,  char** argv) {
 
     Compiler compiler;
     if (!compiler.parse(inputs)) {
-        cerr << "Something went wrong when parsing!" << endl;
+        compiler.dumpMsgs(cerr);
         return PARSE_FAIL;
     }
     

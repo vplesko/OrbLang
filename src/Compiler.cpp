@@ -13,7 +13,8 @@ Compiler::Compiler() {
     namePool = make_unique<NamePool>();
     typeTable = make_unique<TypeTable>();
     symbolTable = make_unique<SymbolTable>(typeTable.get());
-    codegen = make_unique<Codegen>(namePool.get(), symbolTable.get());
+    msgs = make_unique<CompileMessages>();
+    codegen = make_unique<Codegen>(namePool.get(), symbolTable.get(), msgs.get());
 
     genPrimTypes();
 }
@@ -96,6 +97,12 @@ void Compiler::genPrimTypes() {
     );
 }
 
+void Compiler::dumpMsgs(ostream &out) {
+    for (const string &m : msgs->getErrors()) {
+        out << m << endl;
+    }
+}
+
 enum ImportTransRes {
     ITR_STARTED,
     ITR_CYCLICAL,
@@ -129,7 +136,7 @@ ImportTransRes followImport(
 bool Compiler::parse(const vector<string> &inputs) {
     if (inputs.empty()) return false;
 
-    Parser par(namePool.get(), symbolTable.get());
+    Parser par(namePool.get(), symbolTable.get(), msgs.get());
 
     unordered_set<string> canonicalInputs;
     for (size_t i = 0; i < inputs.size(); ++i)
@@ -162,7 +169,7 @@ bool Compiler::parse(const vector<string> &inputs) {
                 }
 
                 unique_ptr<BaseAst> node = par.parseNode();
-                if (par.isPanic()) return false;
+                if (msgs->isPanic()) return false;
                 
                 if (node->type() == AST_Import) {
                     string path = canonical(((ImportAst*)node.get())->getFile());
@@ -180,7 +187,7 @@ bool Compiler::parse(const vector<string> &inputs) {
                     if (scanning) codegen->scanNode(node.get());
                     else codegen->codegenNode(node.get());
 
-                    if (codegen->isPanic()) return false;
+                    if (msgs->isPanic()) return false;
                 }
             }
         }

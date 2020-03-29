@@ -4,6 +4,7 @@
 #include <optional>
 #include "SymbolTable.h"
 #include "AST.h"
+#include "CompileMessages.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
@@ -11,16 +12,13 @@
 class Codegen {
     NamePool *namePool;
     SymbolTable *symbolTable;
+    CompileMessages *msgs;
 
     llvm::LLVMContext llvmContext;
     llvm::IRBuilder<> llvmBuilder, llvmBuilderAlloca;
     std::unique_ptr<llvm::Module> llvmModule;
 
     std::stack<llvm::BasicBlock*> breakStack, continueStack;
-
-    bool panic;
-
-    template<typename T> bool broken(const T &x);
 
     struct ExprGenPayload {
         TypeTable::Id type;
@@ -48,18 +46,18 @@ class Codegen {
     std::optional<NamePool::Id> mangleName(const FuncValue &f);
 
     llvm::Type* getType(TypeTable::Id typeId);
-    void createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId);
-    void createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
-    void createCast(ExprGenPayload &e, TypeTable::Id t);
+    bool createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId);
+    bool createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
+    bool createCast(ExprGenPayload &e, TypeTable::Id t);
 
     bool isGlobalScope() const;
     bool isBlockTerminated() const;
 
-    // panics if both val and unty val are invalid, returns panic
+    // checks if both val and unty val are invalid
     bool valueBroken(const ExprGenPayload &e);
-    // panics if val is invalid, returns panic
+    // checks if val is invalid
     bool valBroken(const ExprGenPayload &e);
-    // panics if ref is invalid, returns panic
+    // checks if ref is invalid
     bool refBroken(const ExprGenPayload &e);
 
     bool promoteUntyped(ExprGenPayload &e, TypeTable::Id t);
@@ -68,12 +66,12 @@ class Codegen {
     ExprGenPayload codegen(const VarExprAst *ast);
     ExprGenPayload codegen(const IndExprAst *ast);
     ExprGenPayload codegen(const UnExprAst *ast);
-    ExprGenPayload codegenUntypedUn(Token::Oper op, UntypedVal unty);
+    ExprGenPayload codegenUntypedUn(CodeLoc codeLoc, Token::Oper op, UntypedVal unty);
     ExprGenPayload codegen(const BinExprAst *ast);
     // helper function for short-circuit evaluation of boolean AND and OR
     ExprGenPayload codegenLogicAndOr(const BinExprAst *ast);
     ExprGenPayload codegenLogicAndOrGlobalScope(const BinExprAst *ast);
-    ExprGenPayload codegenUntypedBin(Token::Oper op, UntypedVal untyL, UntypedVal untyR);
+    ExprGenPayload codegenUntypedBin(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR);
     ExprGenPayload codegen(const TernCondExprAst *ast);
     ExprGenPayload codegenGlobalScope(const TernCondExprAst *ast);
     ExprGenPayload codegen(const CallExprAst *ast);
@@ -96,7 +94,7 @@ class Codegen {
     ExprGenPayload codegenExpr(const ExprAst *ast);
 
 public:
-    Codegen(NamePool *namePool, SymbolTable *symbolTable);
+    Codegen(NamePool *namePool, SymbolTable *symbolTable, CompileMessages *msgs);
 
     llvm::Type* genPrimTypeBool();
     llvm::Type* genPrimTypeI(unsigned bits);
@@ -110,16 +108,7 @@ public:
     void codegenNode(const BaseAst *ast, bool blockMakeScope = true);
     void scanNode(const BaseAst *ast);
 
-    bool isPanic() const { return panic; }
-
     void printout() const;
 
     bool binary(const std::string &filename);
 };
-
-// panics if pointer x is null; returns panic
-template<typename T>
-bool Codegen::broken(const T &x) {
-    if (x == nullptr) panic = true;
-    return panic;
-}
