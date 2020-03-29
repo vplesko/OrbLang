@@ -22,6 +22,10 @@ bool Parser::match(Token::Type type) {
     return next().type == type;
 }
 
+CodeLoc Parser::loc() const {
+    return lex->loc();
+}
+
 // Eats the next token and panics if it doesn't match the expected type.
 bool Parser::mismatch(Token::Type type) {
     if (!match(type)) panic = true;
@@ -56,10 +60,11 @@ unique_ptr<ArrayExprAst> Parser::array_list(unique_ptr<TypeAst> arrTy) {
         }
     }
 
-    return make_unique<ArrayExprAst>(move(arrTy), move(vals));
+    return make_unique<ArrayExprAst>(arrTy->loc(), move(arrTy), move(vals));
 }
 
 unique_ptr<ExprAst> Parser::prim() {
+    CodeLoc codeLoc = loc();
     unique_ptr<ExprAst> ret;
 
     if (peek().type == Token::T_NUM) {
@@ -69,7 +74,7 @@ unique_ptr<ExprAst> Parser::prim() {
         val.type = UntypedVal::T_SINT;
         val.val_si = tok.num;
 
-        ret = make_unique<UntypedExprAst>(val);
+        ret = make_unique<UntypedExprAst>(codeLoc, val);
     } else if (peek().type == Token::T_FNUM) {
         Token tok = next();
 
@@ -77,7 +82,7 @@ unique_ptr<ExprAst> Parser::prim() {
         val.type = UntypedVal::T_FLOAT;
         val.val_f = tok.fnum;
 
-        ret = make_unique<UntypedExprAst>(val);
+        ret = make_unique<UntypedExprAst>(codeLoc, val);
     } else if (peek().type == Token::T_CHAR) {
         Token tok = next();
 
@@ -85,11 +90,11 @@ unique_ptr<ExprAst> Parser::prim() {
         val.type = UntypedVal::T_CHAR;
         val.val_c = tok.ch;
 
-        ret = make_unique<UntypedExprAst>(val);
+        ret = make_unique<UntypedExprAst>(codeLoc, val);
     } else if (peek().type == Token::T_BVAL) {
         Token tok = next();
 
-        ret = make_unique<UntypedExprAst>(tok.bval);
+        ret = make_unique<UntypedExprAst>(codeLoc, tok.bval);
     } else if (peek().type == Token::T_STRING) {
         stringstream ss;
         while (peek().type == Token::T_STRING) {
@@ -100,14 +105,14 @@ unique_ptr<ExprAst> Parser::prim() {
         val.type = UntypedVal::T_STRING;
         val.val_str = ss.str();
 
-        ret = make_unique<UntypedExprAst>(move(val));
+        ret = make_unique<UntypedExprAst>(codeLoc, move(val));
     } else if (peek().type == Token::T_NULL) {
         next();
 
         UntypedVal val;
         val.type = UntypedVal::T_NULL;
 
-        ret = make_unique<UntypedExprAst>(val);
+        ret = make_unique<UntypedExprAst>(codeLoc, val);
     } else if (peek().type == Token::T_ID) {
         if (symbolTable->getTypeTable()->isType(peek().nameId)) {
             unique_ptr<TypeAst> t = type();
@@ -120,7 +125,7 @@ unique_ptr<ExprAst> Parser::prim() {
                 if (broken(e)) return nullptr;
                 if (mismatch(Token::T_BRACE_R_REG)) return nullptr;
 
-                ret = make_unique<CastExprAst>(move(t), move(e));
+                ret = make_unique<CastExprAst>(codeLoc, move(t), move(e));
             } else if (peek().type == Token::T_BRACE_L_CUR) {
                 unique_ptr<ArrayExprAst> e = array_list(move(t));
                 if (broken(e)) return nullptr;
@@ -136,7 +141,7 @@ unique_ptr<ExprAst> Parser::prim() {
             if (peek().type == Token::T_BRACE_L_REG) {
                 next();
 
-                unique_ptr<CallExprAst> call = make_unique<CallExprAst>(tok.nameId);
+                unique_ptr<CallExprAst> call = make_unique<CallExprAst>(codeLoc, tok.nameId);
 
                 bool first = true;
                 while (true) {
@@ -157,7 +162,7 @@ unique_ptr<ExprAst> Parser::prim() {
 
                 ret = move(call);
             } else {
-                ret = make_unique<VarExprAst>(tok.nameId);
+                ret = make_unique<VarExprAst>(codeLoc, tok.nameId);
             }
         }
     } else if (peek().type == Token::T_OPER) {
@@ -171,7 +176,7 @@ unique_ptr<ExprAst> Parser::prim() {
         unique_ptr<ExprAst> e = prim();
         if (broken(e)) return nullptr;
 
-        ret = make_unique<UnExprAst>(move(e), tok.op);
+        ret = make_unique<UnExprAst>(codeLoc, move(e), tok.op);
     } else if (peek().type == Token::T_BRACE_L_REG) {
         next();
 
@@ -187,11 +192,14 @@ unique_ptr<ExprAst> Parser::prim() {
     }
 
     while (peek().type == Token::T_BRACE_L_SQR) {
+        CodeLoc codeLocInd = loc();
         next();
+
         unique_ptr<ExprAst> ind = expr();
         if (broken(ind)) return nullptr;
         if (mismatch(Token::T_BRACE_R_SQR)) return nullptr;
-        ret = make_unique<IndExprAst>(move(ret), move(ind));
+
+        ret = make_unique<IndExprAst>(codeLocInd, move(ret), move(ind));
     }
 
     return ret;
@@ -200,6 +208,7 @@ unique_ptr<ExprAst> Parser::prim() {
 unique_ptr<ExprAst> Parser::expr(unique_ptr<ExprAst> lhs, OperPrec min_prec) {
     Token lookOp = peek();
     while (lookOp.type == Token::T_OPER && operInfos.at(lookOp.op).prec >= min_prec) {
+        CodeLoc codeLocOp = loc();
         Token op = next();
 
         if (!operInfos.at(op.op).binary) {
@@ -218,7 +227,7 @@ unique_ptr<ExprAst> Parser::expr(unique_ptr<ExprAst> lhs, OperPrec min_prec) {
             lookOp = peek();
         }
 
-        lhs = make_unique<BinExprAst>(move(lhs), move(rhs), op.op);
+        lhs = make_unique<BinExprAst>(codeLocOp, move(lhs), move(rhs), op.op);
     }
     return lhs;
 }
@@ -231,6 +240,8 @@ unique_ptr<ExprAst> Parser::expr() {
     if (broken(e)) return nullptr;
 
     if (peek().type == Token::T_QUESTION) {
+        CodeLoc codeLoc = loc();
+
         next();
 
         unique_ptr<ExprAst> t = expr();
@@ -245,10 +256,10 @@ unique_ptr<ExprAst> Parser::expr() {
             // assignment has the same precedence as ternary cond, but they're right-to-left assoc
             // beware, move labyrinth ahead
             BinExprAst *binE = (BinExprAst*)e.get();
-            binE->setR(make_unique<TernCondExprAst>(move(binE->resetR()), move(t), move(f)));
+            binE->setR(make_unique<TernCondExprAst>(codeLoc, move(binE->resetR()), move(t), move(f)));
             return e;
         } else {
-            return make_unique<TernCondExprAst>(move(e), move(t), move(f));
+            return make_unique<TernCondExprAst>(codeLoc, move(e), move(t), move(f));
         }
     } else {
         return e;
@@ -256,6 +267,8 @@ unique_ptr<ExprAst> Parser::expr() {
 }
 
 std::unique_ptr<TypeAst> Parser::type() {
+    CodeLoc codeLoc = loc();
+
     if (peek().type != Token::T_ID) {
         panic = true;
         return nullptr;
@@ -295,14 +308,16 @@ std::unique_ptr<TypeAst> Parser::type() {
 
     TypeTable::Id typeId = symbolTable->getTypeTable()->addType(move(typeDescr));
 
-    return make_unique<TypeAst>(typeId);
+    return make_unique<TypeAst>(codeLoc, typeId);
 }
 
 unique_ptr<DeclAst> Parser::decl() {
+    CodeLoc codeLoc = loc();
+    
     unique_ptr<TypeAst> ty = type();
     if (broken(ty)) return nullptr;
 
-    unique_ptr<DeclAst> ret = make_unique<DeclAst>(ty->clone());
+    unique_ptr<DeclAst> ret = make_unique<DeclAst>(codeLoc, ty->clone());
 
     while (true) {
         Token id = next();
@@ -340,8 +355,9 @@ unique_ptr<DeclAst> Parser::decl() {
 
 std::unique_ptr<StmntAst> Parser::simple() {
     if (peek().type == Token::T_SEMICOLON) {
+        CodeLoc codeLoc = loc();
         next();
-        return make_unique<EmptyStmntAst>();
+        return make_unique<EmptyStmntAst>(codeLoc);
     } else if (peek().type == Token::T_ID && symbolTable->getTypeTable()->isType(peek().nameId)) {
         // if a statement begins with a type, it has to be a declaration
         // to begin an expression with a cast, put it inside brackets
@@ -352,6 +368,8 @@ std::unique_ptr<StmntAst> Parser::simple() {
 }
 
 std::unique_ptr<StmntAst> Parser::if_stmnt() {
+    CodeLoc codeLoc = loc();
+    
     if (mismatch(Token::T_IF)) return nullptr;
     if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
 
@@ -391,10 +409,12 @@ std::unique_ptr<StmntAst> Parser::if_stmnt() {
         if (broken(elseBody)) return nullptr;
     }
 
-    return make_unique<IfAst>(move(init), move(cond), move(thenBody), move(elseBody));
+    return make_unique<IfAst>(codeLoc, move(init), move(cond), move(thenBody), move(elseBody));
 }
 
 std::unique_ptr<StmntAst> Parser::for_stmnt() {
+    CodeLoc codeLoc = loc();
+
     if (mismatch(Token::T_FOR)) return nullptr;
     if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
 
@@ -423,10 +443,12 @@ std::unique_ptr<StmntAst> Parser::for_stmnt() {
     unique_ptr<StmntAst> body = stmnt();
     if (broken(body)) return nullptr;
 
-    return make_unique<ForAst>(move(init), move(cond), move(iter), move(body));
+    return make_unique<ForAst>(codeLoc, move(init), move(cond), move(iter), move(body));
 }
 
 std::unique_ptr<StmntAst> Parser::while_stmnt() {
+    CodeLoc codeLoc = loc();
+
     if (mismatch(Token::T_WHILE)) return nullptr;
     if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
 
@@ -438,10 +460,12 @@ std::unique_ptr<StmntAst> Parser::while_stmnt() {
     unique_ptr<StmntAst> body = stmnt();
     if (broken(body)) return nullptr;
 
-    return make_unique<WhileAst>(move(cond), move(body));
+    return make_unique<WhileAst>(codeLoc, move(cond), move(body));
 }
 
 std::unique_ptr<StmntAst> Parser::do_while_stmnt() {
+    CodeLoc codeLoc = loc();
+
     if (mismatch(Token::T_DO)) return nullptr;
 
     unique_ptr<StmntAst> body = stmnt();
@@ -454,22 +478,28 @@ std::unique_ptr<StmntAst> Parser::do_while_stmnt() {
     if (mismatch(Token::T_BRACE_R_REG)) return nullptr;
     if (mismatch(Token::T_SEMICOLON)) return nullptr;
 
-    return make_unique<DoWhileAst>(move(body), move(cond));
+    return make_unique<DoWhileAst>(codeLoc, move(body), move(cond));
 }
 
 std::unique_ptr<StmntAst> Parser::break_stmnt() {
+    CodeLoc codeLoc = loc();
+
     if (mismatch(Token::T_BREAK) || mismatch(Token::T_SEMICOLON)) return nullptr;
 
-    return make_unique<BreakAst>();
+    return make_unique<BreakAst>(codeLoc);
 }
 
 std::unique_ptr<StmntAst> Parser::continue_stmnt() {
+    CodeLoc codeLoc = loc();
+
     if (mismatch(Token::T_CONTINUE) || mismatch(Token::T_SEMICOLON)) return nullptr;
 
-    return make_unique<ContinueAst>();
+    return make_unique<ContinueAst>(codeLoc);
 }
 
 std::unique_ptr<StmntAst> Parser::switch_stmnt() {
+    CodeLoc codeLoc = loc();
+
     if (mismatch(Token::T_SWITCH) || mismatch(Token::T_BRACE_L_REG)) return nullptr;
 
     unique_ptr<ExprAst> value = expr();
@@ -520,7 +550,8 @@ std::unique_ptr<StmntAst> Parser::switch_stmnt() {
 
         if (mismatch(Token::T_COLON)) return nullptr;
 
-        unique_ptr<BlockAst> body = make_unique<BlockAst>();
+        CodeLoc codeLocBlock = loc();
+        unique_ptr<BlockAst> body = make_unique<BlockAst>(codeLocBlock);
         while (peek().type != Token::T_CASE && peek().type != Token::T_ELSE && peek().type != Token::T_BRACE_R_CUR) {
             unique_ptr<StmntAst> st = stmnt();
             if (broken(st)) return nullptr;
@@ -539,10 +570,12 @@ std::unique_ptr<StmntAst> Parser::switch_stmnt() {
         return nullptr;
     }
 
-    return make_unique<SwitchAst>(move(value), move(cases));
+    return make_unique<SwitchAst>(codeLoc, move(value), move(cases));
 }
 
 std::unique_ptr<StmntAst> Parser::ret() {
+    CodeLoc codeLoc = loc();
+
     if (mismatch(Token::T_RET)) return nullptr;
 
     unique_ptr<ExprAst> val;
@@ -553,7 +586,7 @@ std::unique_ptr<StmntAst> Parser::ret() {
 
     if (mismatch(Token::T_SEMICOLON)) return nullptr;
 
-    return make_unique<RetAst>(move(val));
+    return make_unique<RetAst>(codeLoc, move(val));
 }
 
 unique_ptr<StmntAst> Parser::stmnt() {
@@ -585,9 +618,11 @@ unique_ptr<StmntAst> Parser::stmnt() {
 }
 
 unique_ptr<BlockAst> Parser::block() {
+    CodeLoc codeLoc = loc();
+
     if (mismatch(Token::T_BRACE_L_CUR)) return nullptr;
 
-    unique_ptr<BlockAst> ret = make_unique<BlockAst>();
+    unique_ptr<BlockAst> ret = make_unique<BlockAst>(codeLoc);
 
     while (peek().type != Token::T_BRACE_R_CUR) {
         unique_ptr<StmntAst> st = stmnt();
@@ -601,6 +636,8 @@ unique_ptr<BlockAst> Parser::block() {
 }
 
 unique_ptr<BaseAst> Parser::func() {
+    CodeLoc codeLoc = loc();
+
     if (mismatch(Token::T_FNC)) return nullptr;
 
     Token name = next();
@@ -609,7 +646,7 @@ unique_ptr<BaseAst> Parser::func() {
         return nullptr;
     }
 
-    unique_ptr<FuncProtoAst> proto = make_unique<FuncProtoAst>(name.nameId);
+    unique_ptr<FuncProtoAst> proto = make_unique<FuncProtoAst>(codeLoc, name.nameId);
     proto->setNoNameMangle(name.nameId == namePool->getMain());
 
     if (mismatch(Token::T_BRACE_L_REG)) return nullptr;
@@ -670,7 +707,7 @@ unique_ptr<BaseAst> Parser::func() {
         unique_ptr<BlockAst> body = block();
         if (broken(body)) return nullptr;
 
-        return make_unique<FuncAst>(move(proto), move(body));
+        return make_unique<FuncAst>(codeLoc, move(proto), move(body));
     } else if (peek().type == Token::T_SEMICOLON) {
         next();
         return proto;
@@ -681,6 +718,8 @@ unique_ptr<BaseAst> Parser::func() {
 }
 
 unique_ptr<ImportAst> Parser::import() {
+    CodeLoc codeLoc = loc();
+
     if (mismatch(Token::T_IMPORT)) return nullptr;
 
     if (peek().type != Token::T_STRING) {
@@ -688,7 +727,7 @@ unique_ptr<ImportAst> Parser::import() {
         return nullptr;
     }
 
-    unique_ptr<ImportAst> ret = make_unique<ImportAst>(next().str);
+    unique_ptr<ImportAst> ret = make_unique<ImportAst>(codeLoc, next().str);
 
     if (mismatch(Token::T_SEMICOLON)) return nullptr;
 

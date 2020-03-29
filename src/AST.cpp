@@ -1,21 +1,25 @@
 #include "AST.h"
 using namespace std;
 
-UntypedExprAst::UntypedExprAst(bool bb) {
+UntypedExprAst::UntypedExprAst(CodeLoc loc, bool bb) : ExprAst(loc) {
     val.type = UntypedVal::T_BOOL;
     val.val_b = bb;
 }
 
-IndExprAst::IndExprAst(unique_ptr<ExprAst> base, unique_ptr<ExprAst> ind) : base(move(base)), ind(move(ind)) {
+IndExprAst::IndExprAst(CodeLoc loc, unique_ptr<ExprAst> base, unique_ptr<ExprAst> ind)
+    : ExprAst(loc), base(move(base)), ind(move(ind)) {
 }
 
-UnExprAst::UnExprAst(unique_ptr<ExprAst> e, Token::Oper o) : expr(move(e)), op(o) {
+UnExprAst::UnExprAst(CodeLoc loc, unique_ptr<ExprAst> e, Token::Oper o)
+    : ExprAst(loc), expr(move(e)), op(o) {
 }
 
 BinExprAst::BinExprAst(
+    CodeLoc loc,
     unique_ptr<ExprAst> _lhs, 
     unique_ptr<ExprAst>  _rhs, 
-    Token::Oper _op) : lhs(move(_lhs)), rhs(move(_rhs)), op(_op) {
+    Token::Oper _op)
+    : ExprAst(loc), lhs(move(_lhs)), rhs(move(_rhs)), op(_op) {
 }
 
 void BinExprAst::setR(std::unique_ptr<ExprAst> _rhs) {
@@ -23,41 +27,46 @@ void BinExprAst::setR(std::unique_ptr<ExprAst> _rhs) {
 }
 
 TernCondExprAst::TernCondExprAst(
+    CodeLoc loc,
     unique_ptr<ExprAst> _cond,
     unique_ptr<ExprAst> _op1,
-    unique_ptr<ExprAst> _op2) : cond(move(_cond)), op1(move(_op1)), op2(move(_op2)) {
+    unique_ptr<ExprAst> _op2)
+    : ExprAst(loc), cond(move(_cond)), op1(move(_op1)), op2(move(_op2)) {
 }
 
-CastExprAst::CastExprAst(unique_ptr<TypeAst> ty, unique_ptr<ExprAst> val) : t(move(ty)), v(move(val)) {
+CastExprAst::CastExprAst(CodeLoc loc, unique_ptr<TypeAst> ty, unique_ptr<ExprAst> val)
+    : ExprAst(loc), t(move(ty)), v(move(val)) {
 }
 
-ArrayExprAst::ArrayExprAst(unique_ptr<TypeAst> arrTy, vector<unique_ptr<ExprAst>> vals)
-    : arrTy(move(arrTy)), vals(move(vals)) {
+ArrayExprAst::ArrayExprAst(CodeLoc loc, unique_ptr<TypeAst> arrTy, vector<unique_ptr<ExprAst>> vals)
+    : ExprAst(loc), arrTy(move(arrTy)), vals(move(vals)) {
 }
 
-IfAst::IfAst(unique_ptr<StmntAst> init, unique_ptr<ExprAst> cond, 
-        unique_ptr<StmntAst> thenBody, unique_ptr<StmntAst> elseBody)
-        : init(move(init)), cond(move(cond)), thenBody(move(thenBody)), elseBody(move(elseBody)) {
+IfAst::IfAst(CodeLoc loc,
+    unique_ptr<StmntAst> init, unique_ptr<ExprAst> cond, 
+    unique_ptr<StmntAst> thenBody, unique_ptr<StmntAst> elseBody)
+    : StmntAst(loc), init(move(init)), cond(move(cond)), thenBody(move(thenBody)), elseBody(move(elseBody)) {
 }
 
-ForAst::ForAst(unique_ptr<StmntAst> init, unique_ptr<ExprAst> cond, unique_ptr<ExprAst> iter, std::unique_ptr<StmntAst> body)
-    : init(move(init)), cond(move(cond)), iter(move(iter)), body(move(body)) {
+ForAst::ForAst(CodeLoc loc,
+    unique_ptr<StmntAst> init, unique_ptr<ExprAst> cond, unique_ptr<ExprAst> iter, std::unique_ptr<StmntAst> body)
+    : StmntAst(loc), init(move(init)), cond(move(cond)), iter(move(iter)), body(move(body)) {
 }
 
-WhileAst::WhileAst(unique_ptr<ExprAst> cond, unique_ptr<StmntAst> body)
-    : cond(move(cond)), body(move(body)) {
+WhileAst::WhileAst(CodeLoc loc, unique_ptr<ExprAst> cond, unique_ptr<StmntAst> body)
+    : StmntAst(loc), cond(move(cond)), body(move(body)) {
 }
 
-DoWhileAst::DoWhileAst(unique_ptr<StmntAst> body, unique_ptr<ExprAst> cond)
-    : body(move(body)), cond(move(cond)) {
+DoWhileAst::DoWhileAst(CodeLoc loc, unique_ptr<StmntAst> body, unique_ptr<ExprAst> cond)
+    : StmntAst(loc), body(move(body)), cond(move(cond)) {
 }
 
 SwitchAst::Case::Case(std::vector<std::unique_ptr<ExprAst>> comparisons, std::unique_ptr<BlockAst> body)
     : comparisons(move(comparisons)), body(move(body)) {
 }
 
-SwitchAst::SwitchAst(unique_ptr<ExprAst> value, vector<Case> cases)
-    : value(move(value)), cases(move(cases)) {
+SwitchAst::SwitchAst(CodeLoc loc, unique_ptr<ExprAst> value, vector<Case> cases)
+    : StmntAst(loc), value(move(value)), cases(move(cases)) {
 }
 
 optional<size_t> SwitchAst::getDefault() const {
@@ -68,13 +77,13 @@ optional<size_t> SwitchAst::getDefault() const {
     return nullopt;
 }
 
-DeclAst::DeclAst(unique_ptr<TypeAst> type) : varType(move(type)) {
+DeclAst::DeclAst(CodeLoc loc, unique_ptr<TypeAst> type) : StmntAst(loc), varType(move(type)) {
 }
 
 void DeclAst::add(pair<NamePool::Id, unique_ptr<ExprAst>> decl) {
     decls.push_back(move(decl));
 }
 
-FuncAst::FuncAst(unique_ptr<FuncProtoAst> proto, unique_ptr<BlockAst> body)
-        : proto(move(proto)), body(move(body)) {
+FuncAst::FuncAst(CodeLoc loc, unique_ptr<FuncProtoAst> proto, unique_ptr<BlockAst> body)
+    : BaseAst(loc), proto(move(proto)), body(move(body)) {
 }

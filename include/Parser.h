@@ -20,6 +20,7 @@ class Parser {
     bool match(Token::Type type);
     bool mismatch(Token::Type type);
     template<typename T> bool broken(const T &x);
+    CodeLoc loc() const;
 
     std::unique_ptr<ArrayExprAst> array_list(std::unique_ptr<TypeAst> arrTy);
     std::unique_ptr<ExprAst> prim();

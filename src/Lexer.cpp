@@ -11,6 +11,7 @@ Lexer::Lexer(NamePool *namePool, const std::string &file) : namePool(namePool), 
     col = 0;
     ch = 0; // not EOF
     tok.type = Token::T_NUM; // not END
+    codeLoc.file = &file;
 }
 
 bool Lexer::start() {
@@ -62,6 +63,9 @@ Token Lexer::next() {
     while (true) {
         char ch;
         do {
+            // text editors are 1-indexed
+            codeLoc.ln = ln+1;
+            codeLoc.col = col+1;
             ch = nextCh();
         } while (isspace(ch));
         
@@ -97,9 +101,9 @@ Token Lexer::next() {
                 if (nextCh() == '.') tok = {Token::T_ELLIPSIS};
                 else tok = {Token::T_UNKNOWN};
             } else {  
-                int l = col-1;
+                CodeIndex l = col-1;
                 while (numLitChars.find(peekCh()) != numLitChars.npos) nextCh();
-                int r = col-1;
+                CodeIndex r = col-1;
 
                 size_t dotIndex = line.find(".", l);
                 if (dotIndex != line.npos && dotIndex <= r) {

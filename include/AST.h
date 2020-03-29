@@ -34,7 +34,11 @@ enum AstType {
 };
 
 class BaseAst {
+    const CodeLoc codeLoc;
 public:
+    explicit BaseAst(CodeLoc loc) : codeLoc(loc) {}
+
+    CodeLoc loc() const { return codeLoc; }
 
     virtual AstType type() const =0;
 
@@ -45,7 +49,7 @@ class ImportAst : public BaseAst {
     std::string file;
 
 public:
-    ImportAst(const std::string &file) : file(file) {}
+    ImportAst(CodeLoc loc, const std::string &file) : BaseAst(loc), file(file) {}
 
     const std::string& getFile() const { return file; }
 
@@ -56,23 +60,25 @@ class TypeAst : public BaseAst {
     TypeTable::Id id;
 
 public:
-    explicit TypeAst(TypeTable::Id id) : id(id) {}
+    TypeAst(CodeLoc loc, TypeTable::Id id) : BaseAst(loc), id(id) {}
 
     TypeTable::Id getTypeId() const { return id; }
 
-    std::unique_ptr<TypeAst> clone() const { return std::make_unique<TypeAst>(id); }
+    std::unique_ptr<TypeAst> clone() const { return std::make_unique<TypeAst>(loc(), id); }
 
     AstType type() const override { return AST_Type; }
 };
 
 class StmntAst : public BaseAst {
 public:
+    explicit StmntAst(CodeLoc loc) : BaseAst(loc) {}
 
     virtual ~StmntAst() {}
 };
 
 class ExprAst : public StmntAst {
 public:
+    explicit ExprAst(CodeLoc loc) : StmntAst(loc) {}
 
     virtual ~ExprAst() {}
 };
@@ -81,8 +87,8 @@ class UntypedExprAst : public ExprAst {
     UntypedVal val;
 
 public:
-    explicit UntypedExprAst(UntypedVal v) : val(v) {}
-    explicit UntypedExprAst(bool bb);
+    UntypedExprAst(CodeLoc loc, UntypedVal v) : ExprAst(loc), val(v) {}
+    UntypedExprAst(CodeLoc loc, bool bb);
 
     AstType type() const override { return AST_UntypedExpr; }
 
@@ -93,7 +99,7 @@ class VarExprAst : public ExprAst {
     NamePool::Id nameId;
 
 public:
-    explicit VarExprAst(NamePool::Id id) : nameId(id) {}
+    VarExprAst(CodeLoc loc, NamePool::Id id) : ExprAst(loc), nameId(id) {}
 
     AstType type() const override { return AST_VarExpr; }
 
@@ -104,7 +110,7 @@ class IndExprAst : public ExprAst {
     std::unique_ptr<ExprAst> base, ind;
 
 public:
-    IndExprAst(std::unique_ptr<ExprAst> base, std::unique_ptr<ExprAst> ind);
+    IndExprAst(CodeLoc loc, std::unique_ptr<ExprAst> base, std::unique_ptr<ExprAst> ind);
 
     AstType type() const override { return AST_IndExpr; }
 
@@ -117,7 +123,7 @@ class UnExprAst : public ExprAst {
     Token::Oper op;
 
 public:
-    UnExprAst(std::unique_ptr<ExprAst> e, Token::Oper o);
+    UnExprAst(CodeLoc loc, std::unique_ptr<ExprAst> e, Token::Oper o);
 
     AstType type() const override { return AST_UnExpr; }
 
@@ -131,6 +137,7 @@ class BinExprAst : public ExprAst {
 
 public:
     BinExprAst(
+        CodeLoc loc,
         std::unique_ptr<ExprAst> _lhs, 
         std::unique_ptr<ExprAst>  _rhs, 
         Token::Oper _op);
@@ -151,6 +158,7 @@ class TernCondExprAst : public ExprAst {
 
 public:
     TernCondExprAst(
+        CodeLoc loc,
         std::unique_ptr<ExprAst> _cond,
         std::unique_ptr<ExprAst> _op1,
         std::unique_ptr<ExprAst> _op2);
@@ -167,7 +175,7 @@ class CallExprAst : public ExprAst {
     std::vector<std::unique_ptr<ExprAst>> args;
 
 public:
-    explicit CallExprAst(NamePool::Id funcName) : func(funcName) {}
+    CallExprAst(CodeLoc loc, NamePool::Id funcName) : ExprAst(loc), func(funcName) {}
 
     NamePool::Id getName() const { return func; }
     const std::vector<std::unique_ptr<ExprAst>>& getArgs() const { return args; }
@@ -182,7 +190,7 @@ class CastExprAst : public ExprAst {
     std::unique_ptr<ExprAst> v;
 
 public:
-    CastExprAst(std::unique_ptr<TypeAst> ty, std::unique_ptr<ExprAst> val);
+    CastExprAst(CodeLoc loc, std::unique_ptr<TypeAst> ty, std::unique_ptr<ExprAst> val);
 
     const TypeAst* getType() const { return t.get(); }
     const ExprAst* getVal() const { return v.get(); }
@@ -199,7 +207,7 @@ class ArrayExprAst : public ExprAst {
     std::vector<std::unique_ptr<ExprAst>> vals;
 
 public:
-    ArrayExprAst(std::unique_ptr<TypeAst> arrTy, std::vector<std::unique_ptr<ExprAst>> vals);
+    ArrayExprAst(CodeLoc loc, std::unique_ptr<TypeAst> arrTy, std::vector<std::unique_ptr<ExprAst>> vals);
 
     const TypeAst* getArrayType() const { return arrTy.get(); }
     const std::vector<std::unique_ptr<ExprAst>>& getVals() const { return vals; }
@@ -209,6 +217,7 @@ public:
 
 class EmptyStmntAst : public StmntAst {
 public:
+    explicit EmptyStmntAst(CodeLoc loc) : StmntAst(loc) {}
 
     AstType type() const override { return AST_EmptyExpr; }
 };
@@ -218,7 +227,7 @@ class DeclAst : public StmntAst {
     std::vector<std::pair<NamePool::Id, std::unique_ptr<ExprAst>>> decls;
 
 public:
-    explicit DeclAst(std::unique_ptr<TypeAst> type);
+    DeclAst(CodeLoc loc, std::unique_ptr<TypeAst> type);
 
     const TypeAst* getType() const { return varType.get(); }
 
@@ -234,7 +243,8 @@ class IfAst : public StmntAst {
     std::unique_ptr<StmntAst> thenBody, elseBody;
 
 public:
-    IfAst(std::unique_ptr<StmntAst> init, std::unique_ptr<ExprAst> cond, 
+    IfAst(CodeLoc loc,
+        std::unique_ptr<StmntAst> init, std::unique_ptr<ExprAst> cond, 
         std::unique_ptr<StmntAst> thenBody, std::unique_ptr<StmntAst> elseBody);
     
     const StmntAst* getInit() const { return init.get(); }
@@ -254,7 +264,8 @@ class ForAst : public StmntAst {
     std::unique_ptr<StmntAst> body;
 
 public:
-    ForAst(std::unique_ptr<StmntAst> init, std::unique_ptr<ExprAst> cond,
+    ForAst(CodeLoc loc,
+        std::unique_ptr<StmntAst> init, std::unique_ptr<ExprAst> cond,
         std::unique_ptr<ExprAst> iter, std::unique_ptr<StmntAst> body);
 
     const StmntAst* getInit() const { return init.get(); }
@@ -273,7 +284,7 @@ class WhileAst : public StmntAst {
     std::unique_ptr<StmntAst> body;
 
 public:
-    WhileAst(std::unique_ptr<ExprAst> cond, std::unique_ptr<StmntAst> body);
+    WhileAst(CodeLoc loc, std::unique_ptr<ExprAst> cond, std::unique_ptr<StmntAst> body);
 
     const ExprAst* getCond() const { return cond.get(); }
     const StmntAst* getBody() const { return body.get(); }
@@ -286,7 +297,7 @@ class DoWhileAst : public StmntAst {
     std::unique_ptr<ExprAst> cond;
 
 public:
-    DoWhileAst(std::unique_ptr<StmntAst> body, std::unique_ptr<ExprAst> cond);
+    DoWhileAst(CodeLoc loc, std::unique_ptr<StmntAst> body, std::unique_ptr<ExprAst> cond);
 
     const StmntAst* getBody() const { return body.get(); }
     const ExprAst* getCond() const { return cond.get(); }
@@ -296,12 +307,14 @@ public:
 
 class BreakAst : public StmntAst {
 public:
+    explicit BreakAst(CodeLoc loc) : StmntAst(loc) {}
 
     AstType type() const override { return AST_Break; }
 };
 
 class ContinueAst : public StmntAst {
 public:
+    explicit ContinueAst(CodeLoc loc) : StmntAst(loc) {}
 
     AstType type() const override { return AST_Continue; }
 };
@@ -310,6 +323,7 @@ class BlockAst : public StmntAst {
     std::vector<std::unique_ptr<StmntAst>> body;
 
 public:
+    explicit BlockAst(CodeLoc loc) : StmntAst(loc) {}
 
     void add(std::unique_ptr<StmntAst> st) { body.push_back(std::move(st)); }
     const std::vector<std::unique_ptr<StmntAst>>& getBody() const { return body; }
@@ -333,7 +347,7 @@ private:
     std::vector<Case> cases;
 
 public:
-    SwitchAst(std::unique_ptr<ExprAst> value, std::vector<Case> cases);
+    SwitchAst(CodeLoc loc, std::unique_ptr<ExprAst> value, std::vector<Case> cases);
     
     const ExprAst* getValue() const { return value.get(); }
     const std::vector<Case>& getCases() const { return cases; }
@@ -350,7 +364,8 @@ class FuncProtoAst : public BaseAst {
     bool noNameMangle;
 
 public:
-    explicit FuncProtoAst(NamePool::Id name) : name(name), variadic(false), noNameMangle(false) {}
+    FuncProtoAst(CodeLoc loc, NamePool::Id name)
+        : BaseAst(loc), name(name), variadic(false), noNameMangle(false) {}
 
     AstType type() const override { return AST_FuncProto; }
 
@@ -379,6 +394,7 @@ class FuncAst : public BaseAst {
 
 public:
     FuncAst(
+        CodeLoc loc,
         std::unique_ptr<FuncProtoAst> proto,
         std::unique_ptr<BlockAst> body);
 
@@ -392,7 +408,7 @@ class RetAst : public StmntAst {
     std::unique_ptr<ExprAst> val;
 
 public:
-    explicit RetAst(std::unique_ptr<ExprAst> v) : val(std::move(v)) {}
+    RetAst(CodeLoc loc, std::unique_ptr<ExprAst> v) : StmntAst(loc), val(std::move(v)) {}
 
     const ExprAst* getVal() const { return val.get(); }
 

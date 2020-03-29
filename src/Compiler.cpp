@@ -198,6 +198,7 @@ bool Compiler::compile(const std::string &output, bool exe) {
         return codegen->binary(output);
     } else {
         const static string tempObjName = isOsWindows ? "a.obj" : "a.o";
+        // TODO doesn't get called on linker failure
         DeferredFallback delObjTemp([&] { remove(tempObjName.c_str()); });
 
         if (!codegen->binary(tempObjName)) return false;
