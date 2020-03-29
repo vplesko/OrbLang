@@ -190,6 +190,10 @@ public:
     AstType type() const override { return AST_CastExpr; }
 };
 
+// TODO []{i, 100, j-1}
+//   at least one typed
+//   all typed same type
+//   all untyped impl castable to type
 class ArrayExprAst : public ExprAst {
     std::unique_ptr<TypeAst> arrTy;
     std::vector<std::unique_ptr<ExprAst>> vals;

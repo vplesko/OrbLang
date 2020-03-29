@@ -20,6 +20,7 @@ SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
 TEST_DIR = tests
+NEG_DIR = negative
 
 HDRS = $(wildcard $(HDR_DIR)/*.h)
 SRCS = $(wildcard $(SRC_DIR)/*.cpp)
@@ -28,6 +29,8 @@ OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 TESTS = $(wildcard $(TEST_DIR)/test*.orb)
 TEST_BINS = $(TESTS:$(TEST_DIR)/%.orb=$(BIN_DIR)/$(TEST_DIR)/%)
 TEST_UTILS = $(TEST_DIR)/clib.orb $(TEST_DIR)/io.orb
+TESTS_NEG = $(wildcard $(TEST_DIR)/$(NEG_DIR)/test*.orb)
+TEST_NEG_BINS = $(TESTS_NEG:$(TEST_DIR)/$(NEG_DIR)/%.orb=$(BIN_DIR)/$(TEST_DIR)/$(NEG_DIR)/%)
 
 build: $(BIN_DIR)/$(APP_NAME)
 
@@ -39,7 +42,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HDRS)
 	@mkdir -p $(OBJ_DIR)
 	$(CC) -c -o $@ $< $(COMPILE_FLAGS)
 
-test: $(TEST_BINS)
+test: $(TEST_BINS) $(TEST_NEG_BINS)
 
 $(BIN_DIR)/$(TEST_DIR)/%: $(TEST_DIR)/%.orb $(TEST_UTILS) $(TEST_DIR)/%.txt build
 	@mkdir -p $(BIN_DIR)/$(TEST_DIR)
@@ -47,6 +50,10 @@ $(BIN_DIR)/$(TEST_DIR)/%: $(TEST_DIR)/%.orb $(TEST_UTILS) $(TEST_DIR)/%.txt buil
 # run the binary and verify output
 # continue other tests even on fail
 	@-$@ | diff $(TEST_DIR)/$*.txt -
+
+$(BIN_DIR)/$(TEST_DIR)/$(NEG_DIR)/%: $(TEST_DIR)/$(NEG_DIR)/%.orb $(TEST_UTILS) build
+	@mkdir -p $(BIN_DIR)/$(TEST_DIR)/$(NEG_DIR)
+	@! $(BIN_DIR)/$(APP_NAME) $< $@ $(TEST_DIR)/io.orb 2>/dev/null
 
 clean_test:
 	rm -rf $(OBJ_DIR)/$(TEST_DIR) $(BIN_DIR)/$(TEST_DIR)

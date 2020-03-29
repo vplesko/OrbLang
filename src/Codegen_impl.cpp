@@ -686,5 +686,5 @@ void Codegen::codegen(const FuncAst *ast) {
     if (!ast->getProto()->hasRetVal() && !isBlockTerminated())
             llvmBuilder.CreateRetVoid();
 
-    if (llvm::verifyFunction(*funcVal->func, &llvm::errs())) cout << endl;
+    if (llvm::verifyFunction(*funcVal->func, &llvm::errs())) cerr << endl;
 }

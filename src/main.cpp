@@ -10,7 +10,7 @@ const int COMPILE_FAIL = -4;
 
 int main(int argc,  char** argv) {
     if (argc < 2) {
-        cout << "Not enough arguments when calling orbc." << endl;
+        cerr << "Not enough arguments when calling orbc." << endl;
         return BAD_ARGS;
     }
 
@@ -23,7 +23,7 @@ int main(int argc,  char** argv) {
             inputs.push_back(in);
         } else {
             if (!output.empty()) {
-                cout << "Cannot have multiple outputs." << endl;
+                cerr << "Cannot have multiple outputs." << endl;
                 return MULTI_OUT;
             } else {
                 output = in;
@@ -38,7 +38,7 @@ int main(int argc,  char** argv) {
 
     Compiler compiler;
     if (!compiler.parse(inputs)) {
-        cout << "Something went wrong when parsing!" << endl;
+        cerr << "Something went wrong when parsing!" << endl;
         return PARSE_FAIL;
     }
     
@@ -51,7 +51,7 @@ int main(int argc,  char** argv) {
         string ext = filesystem::path(output).extension().string();
         bool obj = ext == ".o" || ext == ".obj";
         if (!compiler.compile(output, !obj)) {
-            cout << "Something went wrong when compiling!" << endl;
+            cerr << "Something went wrong when compiling!" << endl;
             return COMPILE_FAIL;
         }
     }
