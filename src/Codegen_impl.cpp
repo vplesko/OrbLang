@@ -167,22 +167,6 @@ void Codegen::codegenNode(const BaseAst *ast, bool blockMakeScope) {
     }
 }
 
-void Codegen::scanNode(const BaseAst *ast) {
-    switch (ast->type()) {
-    case AST_Decl:
-        codegen((const DeclAst*)ast, true);
-        return;
-    case AST_FuncProto:
-        codegen((const FuncProtoAst*)ast, false);
-        return;
-    case AST_Func:
-        codegen(((const FuncAst*)ast)->getProto(), false);
-        return;
-    default:
-        msgs->errorUnknown(ast->loc());
-    }
-}
-
 llvm::Type* Codegen::codegenType(const TypeAst *ast) {
     llvm::Type *type = getType(ast->getTypeId());
     if (type == nullptr) {
@@ -193,7 +177,7 @@ llvm::Type* Codegen::codegenType(const TypeAst *ast) {
     return type;
 }
 
-void Codegen::codegen(const DeclAst *ast, bool scanning) {
+void Codegen::codegen(const DeclAst *ast) {
     TypeTable::Id typeId = ast->getType()->getTypeId();
     llvm::Type *type = codegenType(ast->getType());
     if (type == nullptr) return;
@@ -208,28 +192,19 @@ void Codegen::codegen(const DeclAst *ast, bool scanning) {
 
         llvm::Value *val;
         if (isGlobalScope()) {
-            if (scanning) {
-                val = declareGlobal(type, getTypeTable()->isTypeCn(typeId), name);
-            } else {
-                llvm::Constant *initConst = nullptr;
+            llvm::Constant *initConst = nullptr;
 
-                const ExprAst *init = it.second.get();
-                if (init != nullptr) {
-                    ExprGenPayload initPay = codegenExpr(init);
-                    if (valueBroken(initPay) || !initPay.isUntyVal() || !promoteUntyped(initPay, typeId)) {
-                        return;
-                    }
-                    initConst = (llvm::Constant*) initPay.val;
+            const ExprAst *init = it.second.get();
+            if (init != nullptr) {
+                ExprGenPayload initPay = codegenExpr(init);
+                if (valueBroken(initPay) || !initPay.isUntyVal() || !promoteUntyped(initPay, typeId)) {
+                    return;
                 }
-
-                val = defineGlobal(type, initConst, getTypeTable()->isTypeCn(typeId), name);
+                initConst = (llvm::Constant*) initPay.val;
             }
+
+            val = createGlobal(type, initConst, getTypeTable()->isTypeCn(typeId), name);
         } else {
-            if (scanning) {
-                msgs->errorUnknown(ast->loc());
-                return;
-            }
-
             val = createAlloca(type, name);
 
             const ExprAst *init = it.second.get();

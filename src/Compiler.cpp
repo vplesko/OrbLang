@@ -1,6 +1,5 @@
 #include "Compiler.h"
 #include <unordered_map>
-#include <unordered_set>
 #include <stack>
 #include <filesystem>
 #include "SymbolTable.h"
@@ -138,13 +137,8 @@ bool Compiler::parse(const vector<string> &inputs) {
 
     Parser par(namePool.get(), symbolTable.get(), msgs.get());
 
-    unordered_set<string> canonicalInputs;
-    for (size_t i = 0; i < inputs.size(); ++i)
-        canonicalInputs.insert(canonical(inputs[i]));
-
     unordered_map<string, unique_ptr<Lexer>> lexers;
-    stack<pair<Lexer*, bool>> trace;
-    bool scanning;
+    stack<Lexer*> trace;
 
     for (const string &in : inputs) {
         string path = canonical(in);
@@ -155,12 +149,11 @@ bool Compiler::parse(const vector<string> &inputs) {
         } else if (imres == ITR_COMPLETED) {
             continue;
         } else {
-            trace.push(make_pair(par.getLexer(), false));
+            trace.push(par.getLexer());
         }
 
         while (!trace.empty()) {
-            par.setLexer(trace.top().first);
-            scanning = trace.top().second;
+            par.setLexer(trace.top());
 
             while (true) {
                 if (par.isOver()) {
@@ -179,14 +172,11 @@ bool Compiler::parse(const vector<string> &inputs) {
                     }
                     
                     if (imres == ITR_STARTED) {
-                        trace.push(make_pair(par.getLexer(),
-                            canonicalInputs.find(path) == canonicalInputs.end()));
+                        trace.push(par.getLexer());
                     }
                     break;
                 } else {
-                    if (scanning) codegen->scanNode(node.get());
-                    else codegen->codegenNode(node.get());
-
+                    codegen->codegenNode(node.get());
                     if (msgs->isPanic()) return false;
                 }
             }

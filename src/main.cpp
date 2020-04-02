@@ -31,7 +31,7 @@ int main(int argc,  char** argv) {
         }
     }
 
-    cout << "Files:";
+    cout << "File(s):";
     for (const std::string &f : inputs)
         cout << " " << f;
     cout << endl;

@@ -209,7 +209,7 @@ bool Codegen::isBlockTerminated() const {
     return !llvmBuilder.GetInsertBlock()->empty() && llvmBuilder.GetInsertBlock()->back().isTerminator();
 }
 
-llvm::GlobalValue* Codegen::defineGlobal(llvm::Type *type, llvm::Constant *init, bool isConstant, const std::string &name) {
+llvm::GlobalValue* Codegen::createGlobal(llvm::Type *type, llvm::Constant *init, bool isConstant, const std::string &name) {
     if (init == nullptr) {
         // llvm demands global vars be initialized, but by default we don't init them
         init = llvm::Constant::getNullValue(type);
@@ -219,20 +219,9 @@ llvm::GlobalValue* Codegen::defineGlobal(llvm::Type *type, llvm::Constant *init,
         *llvmModule,
         type,
         isConstant,
-        llvm::GlobalValue::ExternalLinkage,
+        llvm::GlobalValue::PrivateLinkage,
         init,
         name);
-}
-
-llvm::GlobalValue* Codegen::declareGlobal(llvm::Type *type, bool isConstant, const std::string &name) {
-    return new llvm::GlobalVariable(
-        *llvmModule,
-        type,
-        isConstant,
-        llvm::GlobalVariable::AvailableExternallyLinkage,
-        nullptr,
-        name
-    );
 }
 
 llvm::Constant* Codegen::createString(const std::string &str) {

@@ -46,14 +46,14 @@ test: $(TEST_BINS) $(TEST_NEG_BINS)
 
 $(BIN_DIR)/$(TEST_DIR)/%: $(TEST_DIR)/%.orb $(TEST_UTILS) $(TEST_DIR)/%.txt build
 	@mkdir -p $(BIN_DIR)/$(TEST_DIR)
-	@$(BIN_DIR)/$(APP_NAME) $< $@ $(TEST_DIR)/io.orb
+	@$(BIN_DIR)/$(APP_NAME) $< $@
 # run the binary and verify output
 # continue other tests even on fail
 	@-$@ | diff $(TEST_DIR)/$*.txt -
 
 $(BIN_DIR)/$(TEST_DIR)/$(NEG_DIR)/%: $(TEST_DIR)/$(NEG_DIR)/%.orb $(TEST_UTILS) build
 	@mkdir -p $(BIN_DIR)/$(TEST_DIR)/$(NEG_DIR)
-	@! $(BIN_DIR)/$(APP_NAME) $< $@ $(TEST_DIR)/io.orb 2>/dev/null
+	@! $(BIN_DIR)/$(APP_NAME) $< $@ 2>/dev/null
 
 clean_test:
 	rm -rf $(OBJ_DIR)/$(TEST_DIR) $(BIN_DIR)/$(TEST_DIR)
