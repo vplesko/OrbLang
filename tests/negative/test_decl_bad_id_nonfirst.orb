@@ -1,0 +1,3 @@
+fnc main() {
+    i32 x = 100, switch = 200;
+}

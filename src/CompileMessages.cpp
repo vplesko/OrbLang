@@ -19,10 +19,10 @@ inline void CompileMessages::error(CodeLoc loc, const string &str) {
 
 void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token::Type see) {
     stringstream ss;
-    ss << "Unexpected symbol found. Expected '" << getStringFor(exp) << "', instead found '" << getStringFor(see) << "'";
+    ss << "Unexpected symbol found. Expected '" << getStringFor(exp) << "', instead found '" << getStringFor(see) << "'.";
     error(loc, ss.str());
 }
 
 void CompileMessages::errorUnknown(CodeLoc loc) {
-    error(loc, "Unknown error occured");
+    error(loc, "Unknown error occured.");
 }
