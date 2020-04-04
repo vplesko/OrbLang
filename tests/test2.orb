@@ -159,8 +159,8 @@ fnc main() {
     println_i64(inc(b));
     println_i64(inc(b)+1);
 
-    println_i64(1>0?i64(0):blocker());
-    println_i64(1<0?blocker():i64(0));
+    if (1>0) println_i64(0); else println_i64(blocker());
+    if (1<0) println_i64(blocker()); else println_i64(0);
 
     if (false and blocker()==0) println_i32(0);
     if (true or blocker()==0) println_i32(0);

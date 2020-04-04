@@ -71,8 +71,6 @@ class Codegen {
     ExprGenPayload codegenLogicAndOr(const BinExprAst *ast);
     ExprGenPayload codegenLogicAndOrGlobalScope(const BinExprAst *ast);
     ExprGenPayload codegenUntypedBin(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR);
-    ExprGenPayload codegen(const TernCondExprAst *ast);
-    ExprGenPayload codegenGlobalScope(const TernCondExprAst *ast);
     ExprGenPayload codegen(const CallExprAst *ast);
     ExprGenPayload codegen(const CastExprAst *ast);
     ExprGenPayload codegen(const ArrayExprAst *ast);

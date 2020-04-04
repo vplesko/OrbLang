@@ -15,7 +15,6 @@ enum AstType {
     AST_IndExpr,
     AST_UnExpr,
     AST_BinExpr,
-    AST_TernCondExpr,
     AST_CallExpr,
     AST_CastExpr,
     AST_ArrayExpr,
@@ -147,27 +146,6 @@ public:
     const ExprAst* getL() const { return lhs.get(); }
     const ExprAst* getR() const { return rhs.get(); }
     Token::Oper getOp() const { return op; }
-
-    // needed when parsing ternary conditional oper
-    std::unique_ptr<ExprAst> resetR() { return move(rhs); }
-    void setR(std::unique_ptr<ExprAst> _rhs);
-};
-
-class TernCondExprAst : public ExprAst {
-    std::unique_ptr<ExprAst> cond, op1, op2;
-
-public:
-    TernCondExprAst(
-        CodeLoc loc,
-        std::unique_ptr<ExprAst> _cond,
-        std::unique_ptr<ExprAst> _op1,
-        std::unique_ptr<ExprAst> _op2);
-
-    AstType type() const override { return AST_TernCondExpr; }
-
-    const ExprAst* getCond() const { return cond.get(); }
-    const ExprAst* getOp1() const { return op1.get(); }
-    const ExprAst* getOp2() const { return op2.get(); }
 };
 
 class CallExprAst : public ExprAst {

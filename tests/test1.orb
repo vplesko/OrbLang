@@ -3,11 +3,10 @@ import "tests/io.orb";
 i32 glob1;
 i32 glob2 = 1;
 i32 glob3 = 1+2*3, glob4(1), glob5;
-i32 glob6 = 1>2?3:4;
 bool glob7 = true or false;
-c8 glob8(false ? 'D' : 'E');
-c8 cn[] glob9 = true ? "hello" : "xyz";
-c8[4] glob10 = false ? "abc" : "ola";
+c8 glob8 = 'E';
+c8 cn[] glob9 = "hello";
+c8[4] glob10 = "ola";
 
 fnc main() {
     println_str("Hello, world!");
@@ -83,8 +82,7 @@ fnc main() {
     println_i32(glob3);
     println_i32(glob4);
     println_i32(glob5);
-    println_i32(glob6);
-    println_i32(glob7 ? 1 : 0);
+    if (glob7) println_i32(1); else println_i32(0);
 
     bool d = false;
     if (!d) println_i32(0);
@@ -119,14 +117,6 @@ fnc main() {
     println_i32(12 | i32(-8));
     println_i32(12 | i32(-6));
     println_u32(u32(11) | u32(7));
-
-    println_i32(1>0?100:101);
-    println_i32(1<0?100:101);
-    println_i32(1<0?2>1?100:101:2==2?100+2:100+3);
-    println_i32(3+3>0?1:2);
-    println_i32(3+(3>0?1:2));
-    println_i64(a=1>0?100:101);
-    println_i64(a+=1>0?100:101);
 
     if (true and true) println_i32(1);
     if (false and true) println_i32(1);

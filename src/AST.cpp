@@ -22,18 +22,6 @@ BinExprAst::BinExprAst(
     : ExprAst(loc), lhs(move(_lhs)), rhs(move(_rhs)), op(_op) {
 }
 
-void BinExprAst::setR(std::unique_ptr<ExprAst> _rhs) {
-    rhs = move(_rhs);
-}
-
-TernCondExprAst::TernCondExprAst(
-    CodeLoc loc,
-    unique_ptr<ExprAst> _cond,
-    unique_ptr<ExprAst> _op1,
-    unique_ptr<ExprAst> _op2)
-    : ExprAst(loc), cond(move(_cond)), op1(move(_op1)), op2(move(_op2)) {
-}
-
 CastExprAst::CastExprAst(CodeLoc loc, unique_ptr<TypeAst> ty, unique_ptr<ExprAst> val)
     : ExprAst(loc), t(move(ty)), v(move(val)) {
 }

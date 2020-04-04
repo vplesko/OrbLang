@@ -7,7 +7,7 @@ fnc foo_var(...);
 fnc free(i32 x, i32 y, ...);
 fnc foo_var(f32 x, ...) __no_name_mangle;
 
-i32 * glob1 = true ? null : null;
+i32 * glob1 = null;
 i32[4] glob2;
 i32[] glob3;
 
@@ -65,7 +65,7 @@ fnc main() {
     i32[4]cn t2;
     i32 cn[4]cn t3;
 
-    b = true ? a : c;
+    b = a;
 
     a = null;
     println_i32(i32(null));
@@ -95,11 +95,6 @@ fnc main() {
     if (null != null) println_i32(12);
     if (; bool(a)) println_i32(13);
     free(ptr(a));
-
-    b = true ? null : null;
-    if (b == null) println_i32(14);
-    b = false ? null : null;
-    if (b == null) println_i32(15);
 
     if (glob1 == null) println_i32(16);
 
@@ -189,10 +184,7 @@ fnc main() {
     println_i32((i32[](&o))[3]);
     println_i32((i32[](&o))[4]);
     println_i32(o[1][0]);
-    n = true ? o[0] : o[1];
-    println_i32(n[0]);
-    j = 0;
-    n = j < 0 ? o[0] : o[1];
+    n = o[0];
     println_i32(n[0]);
     n = retAll(508);
     println_i32(n[0]);

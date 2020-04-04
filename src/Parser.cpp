@@ -249,37 +249,7 @@ unique_ptr<ExprAst> Parser::expr() {
     unique_ptr<ExprAst> e = prim();
     if (e == nullptr) return nullptr;
 
-    e = expr(move(e), minOperPrec);
-    if (e == nullptr) return nullptr;
-
-    if (peek().type == Token::T_QUESTION) {
-        CodeLoc codeLoc = loc();
-
-        next();
-
-        unique_ptr<ExprAst> t = expr();
-        if (t == nullptr) return nullptr;
-
-        if (!match(Token::T_COLON)) {
-            msgs->errorUnknown(loc());
-            return nullptr;
-        }
-
-        unique_ptr<ExprAst> f = expr();
-        if (f == nullptr) return nullptr;
-
-        if (e->type() == AST_BinExpr && operInfos.at(((BinExprAst*)e.get())->getOp()).assignment) {
-            // assignment has the same precedence as ternary cond, but they're right-to-left assoc
-            // beware, move labyrinth ahead
-            BinExprAst *binE = (BinExprAst*)e.get();
-            binE->setR(make_unique<TernCondExprAst>(codeLoc, move(binE->resetR()), move(t), move(f)));
-            return e;
-        } else {
-            return make_unique<TernCondExprAst>(codeLoc, move(e), move(t), move(f));
-        }
-    } else {
-        return e;
-    }
+    return expr(move(e), minOperPrec);
 }
 
 std::unique_ptr<TypeAst> Parser::type() {

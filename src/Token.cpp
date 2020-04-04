@@ -85,8 +85,6 @@ string getStringFor(Token::Type tok) {
         return ",";
     case Token::T_SEMICOLON:
         return ";";
-    case Token::T_QUESTION:
-        return "?";
     case Token::T_COLON:
         return ":";
     case Token::T_ELLIPSIS:

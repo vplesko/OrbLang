@@ -15,7 +15,6 @@ struct Token {
         T_OPER,
         T_COMMA,
         T_SEMICOLON,
-        T_QUESTION,
         T_COLON,
         T_ELLIPSIS,
         T_CN,
