@@ -2,7 +2,7 @@ import "tests/io.orb";
 
 i32 glob1;
 i32 glob2 = 1;
-i32 glob3 = 1+2*3, glob4(1), glob5;
+i32 glob3 = 1+2*3, glob4 = 1, glob5;
 bool glob7 = true or false;
 c8 glob8 = 'E';
 c8 cn[] glob9 = "hello";
@@ -62,7 +62,7 @@ fnc main() {
     println_i64(a ^= 5);
     println_i64(a);
 
-    i64 b(1);
+    i64 b = 1;
     println_i64(a-b);
 
     {

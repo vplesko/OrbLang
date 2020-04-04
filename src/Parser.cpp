@@ -318,17 +318,11 @@ unique_ptr<DeclAst> Parser::decl() {
 
         unique_ptr<ExprAst> init;
         Token look = peek();
-        if ((look.type == Token::T_OPER && look.op == Token::O_ASGN) ||
-            look.type == Token::T_BRACE_L_REG) {
+        if (look.type == Token::T_OPER && look.op == Token::O_ASGN) {
             look = next();
 
             init = expr();
             if (init == nullptr) return nullptr;
-
-            if (look.type == Token::T_BRACE_L_REG && !match(Token::T_BRACE_R_REG)) {
-                msgs->errorUnknown(loc());
-                return nullptr;
-            }
         } else if (look.type == Token::T_BRACE_L_CUR) {
             init = array_list(ty->clone());
             if (init == nullptr) return nullptr;
