@@ -61,3 +61,56 @@ const unordered_map<string, Token> keywords = {
     {"ret", {Token::T_RET}},
     {"import", {Token::T_IMPORT}}
 };
+
+// TODO optimize
+string getStringFor(Token::Type tok) {
+    switch (tok) {
+    case Token::T_NUM:
+        return "num val";
+    case Token::T_FNUM:
+        return "float val";
+    case Token::T_CHAR:
+        return "char val";
+    case Token::T_BVAL:
+        return "bool val";
+    case Token::T_STRING:
+        return "string val";
+    case Token::T_OPER:
+        return "operator";
+    case Token::T_ID:
+        return "identifier";
+    case Token::T_ATTRIBUTE:
+        return "attribute";
+    case Token::T_COMMA:
+        return ",";
+    case Token::T_SEMICOLON:
+        return ";";
+    case Token::T_QUESTION:
+        return "?";
+    case Token::T_COLON:
+        return ":";
+    case Token::T_ELLIPSIS:
+        return "...";
+    case Token::T_BRACE_L_REG:
+        return "(";
+    case Token::T_BRACE_R_REG:
+        return ")";
+    case Token::T_BRACE_L_CUR:
+        return "{";
+    case Token::T_BRACE_R_CUR:
+        return "}";
+    case Token::T_BRACE_L_SQR:
+        return "[";
+    case Token::T_BRACE_R_SQR:
+        return "]";
+    default:
+        // do nothing
+        break;
+    }
+
+    for (const auto &it : keywords) {
+        if (tok == it.second.type) return it.first;
+    }
+
+    return "<forbidden>";
+}

@@ -36,7 +36,6 @@ struct Token {
         T_CONTINUE,
         T_SWITCH,
         T_CASE,
-        T_DEFAULT,
         T_RET,
         T_IMPORT,
         T_ATTRIBUTE,
@@ -104,3 +103,5 @@ struct OperInfo {
 extern const OperPrec minOperPrec;
 extern const std::unordered_map<Token::Oper, OperInfo> operInfos;
 extern const std::unordered_map<std::string, Token> keywords;
+
+std::string getStringFor(Token::Type tok);

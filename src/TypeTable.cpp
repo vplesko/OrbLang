@@ -288,6 +288,7 @@ bool TypeTable::fitsType(int64_t x, Id t) const {
     return between(x, lo, hi);
 }
 
+// TODO make ptr implicit castable to/from other pointer types?
 bool TypeTable::isImplicitCastable(Id from, Id into) const {
     if (from == into) return true;
 
