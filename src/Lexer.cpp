@@ -315,6 +315,7 @@ Token Lexer::next() {
                 tok.type = Token::T_UNKNOWN;
             } else if (firstAlnum >= 2) {
                 tok.type = Token::T_ATTRIBUTE;
+                // TODO make an enum for attributes and pass that val in token
                 tok.nameId = namePool->add(id);
             } else {
                 auto loc = keywords.find(id);

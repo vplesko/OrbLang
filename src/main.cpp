@@ -3,10 +3,13 @@
 #include "Compiler.h"
 using namespace std;
 
-const int BAD_ARGS = -1;
-const int MULTI_OUT = -2;
-const int PARSE_FAIL = -3;
-const int COMPILE_FAIL = -4;
+enum Error {
+    BAD_ARGS = 1,
+    MULTI_OUT,
+    NO_IN,
+    PARSE_FAIL,
+    COMPILE_FAIL
+};
 
 int main(int argc,  char** argv) {
     if (argc < 2) {
@@ -31,6 +34,11 @@ int main(int argc,  char** argv) {
         }
     }
 
+    if (inputs.empty()) {
+        cerr << "No input files specified." << endl;
+        return NO_IN;
+    }
+
     cout << "File(s):";
     for (const std::string &f : inputs)
         cout << " " << f;
@@ -46,8 +54,6 @@ int main(int argc,  char** argv) {
     compiler.printout();*/
 
     if (!output.empty()) {
-        // TODO link object files
-        // TODO pass flags to clang
         string ext = filesystem::path(output).extension().string();
         bool obj = ext == ".o" || ext == ".obj";
         if (!compiler.compile(output, !obj)) {

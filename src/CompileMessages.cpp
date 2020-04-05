@@ -17,9 +17,9 @@ inline void CompileMessages::error(CodeLoc loc, const string &str) {
     errors.push_back(ss.str());
 }
 
-void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token::Type see) {
+void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token see) {
     stringstream ss;
-    ss << "Unexpected symbol found. Expected '" << getStringFor(exp) << "', instead found '" << getStringFor(see) << "'.";
+    ss << "Unexpected symbol found. Expected '" << errorString(exp) << "', instead found '" << errorString(see) << "'.";
     error(loc, ss.str());
 }
 

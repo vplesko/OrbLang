@@ -20,6 +20,6 @@ public:
 
     const std::vector<std::string>& getErrors() const { return errors; }
 
-    void errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token::Type see);
+    void errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token see);
     void errorUnknown(CodeLoc loc);
 };

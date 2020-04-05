@@ -103,4 +103,5 @@ extern const OperPrec minOperPrec;
 extern const std::unordered_map<Token::Oper, OperInfo> operInfos;
 extern const std::unordered_map<std::string, Token> keywords;
 
-std::string getStringFor(Token::Type tok);
+std::string errorString(Token tok);
+std::string errorString(Token::Type tok);

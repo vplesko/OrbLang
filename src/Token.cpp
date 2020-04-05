@@ -62,19 +62,36 @@ const unordered_map<string, Token> keywords = {
     {"import", {Token::T_IMPORT}}
 };
 
+std::string errorString(Token tok) {
+    switch (tok.type) {
+    case Token::T_NUM:
+        return to_string(tok.num);
+    case Token::T_FNUM:
+        return to_string(tok.fnum);
+    case Token::T_CHAR:
+        return string(1, tok.ch);
+    case Token::T_BVAL:
+        return tok.bval ? "true" : "false";
+    case Token::T_STRING:
+        return string(1, '"') + tok.str + string(1, '"');
+    default:
+        return errorString(tok.type);
+    }
+}
+
 // TODO optimize
-string getStringFor(Token::Type tok) {
+string errorString(Token::Type tok) {
     switch (tok) {
     case Token::T_NUM:
-        return "num val";
+        return "integer value";
     case Token::T_FNUM:
-        return "float val";
+        return "float value";
     case Token::T_CHAR:
-        return "char val";
+        return "char value";
     case Token::T_BVAL:
-        return "bool val";
+        return "boolean value";
     case Token::T_STRING:
-        return "string val";
+        return "string literal";
     case Token::T_OPER:
         return "operator";
     case Token::T_ID:

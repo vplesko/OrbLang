@@ -312,7 +312,7 @@ unique_ptr<DeclAst> Parser::decl() {
         CodeLoc codeLocId = loc();
         Token id = next();
         if (id.type != Token::T_ID) {
-            msgs->errorUnexpectedTokenType(codeLocId, Token::T_ID, id.type);
+            msgs->errorUnexpectedTokenType(codeLocId, Token::T_ID, id);
             return nullptr;
         }
 
@@ -335,7 +335,7 @@ unique_ptr<DeclAst> Parser::decl() {
         if (look.type == Token::T_SEMICOLON) {
             return ret;
         } else if (look.type != Token::T_COMMA) {
-            msgs->errorUnexpectedTokenType(codeLocNext, Token::T_COMMA, look.type);
+            msgs->errorUnexpectedTokenType(codeLocNext, Token::T_COMMA, look);
             return nullptr;
         }
     }
