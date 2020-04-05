@@ -768,7 +768,7 @@ unique_ptr<BaseAst> Parser::func() {
     }
 
     if (peek().type == Token::T_ATTRIBUTE) {
-        if (namePool->get(peek().nameId) == "__no_name_mangle") {
+        if (peek().attr == Token::A_NO_NAME_MANGLE) {
             proto->setNoNameMangle(true);
         } else {
             msgs->errorUnknown(loc());

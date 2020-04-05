@@ -314,9 +314,13 @@ Token Lexer::next() {
                 // all _ is not allowed
                 tok.type = Token::T_UNKNOWN;
             } else if (firstAlnum >= 2) {
-                tok.type = Token::T_ATTRIBUTE;
-                // TODO make an enum for attributes and pass that val in token
-                tok.nameId = namePool->add(id);
+                auto loc = attributes.find(id);
+                if (loc != attributes.end()) {
+                    tok.type = Token::T_ATTRIBUTE;
+                    tok.attr = loc->second;
+                } else {
+                    tok.type = Token::T_UNKNOWN;
+                }
             } else {
                 auto loc = keywords.find(id);
                 if (loc != keywords.end()) {

@@ -39,6 +39,10 @@ const unordered_map<Token::Oper, OperInfo> operInfos = {
     {Token::O_BIT_NOT, {12, .l_assoc=false, .unary=true, .binary=false}}
 };
 
+const std::unordered_map<std::string, Token::Attr> attributes = {
+    {"__no_name_mangle", Token::A_NO_NAME_MANGLE}
+};
+
 const unordered_map<string, Token> keywords = {
     {"true", {.type=Token::T_BVAL, .bval=true}},
     {"false", {.type=Token::T_BVAL, .bval=false}},

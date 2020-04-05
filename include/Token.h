@@ -78,6 +78,10 @@ struct Token {
         O_BIT_NOT
     };
 
+    enum Attr {
+        A_NO_NAME_MANGLE
+    };
+
     Type type;
     union {
         long int num;
@@ -85,6 +89,7 @@ struct Token {
         char ch;
         bool bval;
         Oper op;
+        Attr attr;
         NamePool::Id nameId;
     };
     std::string str;
@@ -101,6 +106,7 @@ struct OperInfo {
 
 extern const OperPrec minOperPrec;
 extern const std::unordered_map<Token::Oper, OperInfo> operInfos;
+extern const std::unordered_map<std::string, Token::Attr> attributes;
 extern const std::unordered_map<std::string, Token> keywords;
 
 std::string errorString(Token tok);
