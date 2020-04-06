@@ -16,7 +16,7 @@ class CompileMessages {
 public:
     explicit CompileMessages(NamePool *namePool) : namePool(namePool) {}
 
-    bool isPanic() const { return !errors.empty(); }
+    bool isAbort() const { return !errors.empty(); }
 
     const std::vector<std::string>& getErrors() const { return errors; }
 

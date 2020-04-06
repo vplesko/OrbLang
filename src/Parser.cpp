@@ -356,14 +356,14 @@ std::unique_ptr<StmntAst> Parser::simple() {
 }
 
 std::unique_ptr<StmntAst> Parser::if_stmnt() {
-    CodeLoc codeLoc = loc();
+    CodeLoc codeLocIf = loc();
     
     if (!match(Token::T_IF)) {
-        msgs->errorUnknown(codeLoc);
+        msgs->errorUnexpectedTokenType(codeLocIf, Token::T_IF, peek());
         return nullptr;
     }
     if (!match(Token::T_BRACE_L_REG)) {
-        msgs->errorUnknown(codeLoc);
+        msgs->errorUnexpectedTokenType(loc(), Token::T_BRACE_L_REG, peek());
         return nullptr;
     }
 
@@ -391,7 +391,7 @@ std::unique_ptr<StmntAst> Parser::if_stmnt() {
     }
 
     if (!match(Token::T_BRACE_R_REG)) {
-        msgs->errorUnknown(loc());
+        msgs->errorUnexpectedTokenType(loc(), Token::T_BRACE_R_REG, peek());
         return nullptr;
     }
 
@@ -406,7 +406,7 @@ std::unique_ptr<StmntAst> Parser::if_stmnt() {
         if (elseBody == nullptr) return nullptr;
     }
 
-    return make_unique<IfAst>(codeLoc, move(init), move(cond), move(thenBody), move(elseBody));
+    return make_unique<IfAst>(codeLocIf, move(init), move(cond), move(thenBody), move(elseBody));
 }
 
 std::unique_ptr<StmntAst> Parser::for_stmnt() {
@@ -459,14 +459,14 @@ std::unique_ptr<StmntAst> Parser::for_stmnt() {
 }
 
 std::unique_ptr<StmntAst> Parser::while_stmnt() {
-    CodeLoc codeLoc = loc();
+    CodeLoc codeLocWhile = loc();
 
     if (!match(Token::T_WHILE)) {
-        msgs->errorUnknown(loc());
+        msgs->errorUnexpectedTokenType(codeLocWhile, Token::T_WHILE, peek());
         return nullptr;
     }
     if (!match(Token::T_BRACE_L_REG)) {
-        msgs->errorUnknown(loc());
+        msgs->errorUnexpectedTokenType(loc(), Token::T_BRACE_L_REG, peek());
         return nullptr;
     }
 
@@ -474,14 +474,14 @@ std::unique_ptr<StmntAst> Parser::while_stmnt() {
     if (cond == nullptr) return nullptr;
 
     if (!match(Token::T_BRACE_R_REG)) {
-        msgs->errorUnknown(loc());
+        msgs->errorUnexpectedTokenType(loc(), Token::T_BRACE_R_REG, peek());
         return nullptr;
     }
 
     unique_ptr<StmntAst> body = stmnt();
     if (body == nullptr) return nullptr;
 
-    return make_unique<WhileAst>(codeLoc, move(cond), move(body));
+    return make_unique<WhileAst>(codeLocWhile, move(cond), move(body));
 }
 
 std::unique_ptr<StmntAst> Parser::do_while_stmnt() {

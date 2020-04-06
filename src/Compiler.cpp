@@ -162,7 +162,7 @@ bool Compiler::parse(const vector<string> &inputs) {
                 }
 
                 unique_ptr<BaseAst> node = par.parseNode();
-                if (msgs->isPanic()) return false;
+                if (msgs->isAbort()) return false;
                 
                 if (node->type() == AST_Import) {
                     string path = canonical(((ImportAst*)node.get())->getFile());
@@ -177,7 +177,7 @@ bool Compiler::parse(const vector<string> &inputs) {
                     break;
                 } else {
                     codegen->codegenNode(node.get());
-                    if (msgs->isPanic()) return false;
+                    if (msgs->isAbort()) return false;
                 }
             }
         }
@@ -194,6 +194,7 @@ bool Compiler::compile(const std::string &output, bool exe) {
     if (!exe) {
         return codegen->binary(output);
     } else {
+        // TODO see if lld::elf::link can be used
         // TODO error when no main, multi mains
 
         const static string tempObjName = isOsWindows ? "a.obj" : "a.o";

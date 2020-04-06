@@ -241,7 +241,7 @@ void Codegen::codegen(const IfAst *ast) {
 
     if (ast->hasInit()) {
         codegenNode(ast->getInit());
-        if (msgs->isPanic()) return;
+        if (msgs->isAbort()) return;
     }
 
     ExprGenPayload condExpr = codegenExpr(ast->getCond());
@@ -266,7 +266,7 @@ void Codegen::codegen(const IfAst *ast) {
         ScopeControl thenScope(symbolTable);
         llvmBuilder.SetInsertPoint(thenBlock);
         codegenNode(ast->getThen(), false);
-        if (msgs->isPanic()) return;
+        if (msgs->isAbort()) return;
         if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
     }
 
@@ -275,7 +275,7 @@ void Codegen::codegen(const IfAst *ast) {
         func->getBasicBlockList().push_back(elseBlock);
         llvmBuilder.SetInsertPoint(elseBlock);
         codegenNode(ast->getElse(), false);
-        if (msgs->isPanic()) return;
+        if (msgs->isAbort()) return;
         if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
     }
 
@@ -287,7 +287,7 @@ void Codegen::codegen(const ForAst *ast) {
     ScopeControl scope(ast->getInit()->type() == AST_Decl ? symbolTable : nullptr);
 
     codegenNode(ast->getInit());
-    if (msgs->isPanic()) return;
+    if (msgs->isAbort()) return;
 
     llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
 
@@ -327,7 +327,7 @@ void Codegen::codegen(const ForAst *ast) {
         func->getBasicBlockList().push_back(bodyBlock);
         llvmBuilder.SetInsertPoint(bodyBlock);
         codegenNode(ast->getBody(), false);
-        if (msgs->isPanic()) return;
+        if (msgs->isAbort()) return;
         if (!isBlockTerminated()) llvmBuilder.CreateBr(iterBlock);
     }
     
@@ -337,7 +337,7 @@ void Codegen::codegen(const ForAst *ast) {
 
         if (ast->hasIter()) {
             codegenNode(ast->getIter());
-            if (msgs->isPanic()) return;
+            if (msgs->isAbort()) return;
         }
 
         if (!isBlockTerminated()) llvmBuilder.CreateBr(condBlock);
@@ -382,7 +382,7 @@ void Codegen::codegen(const WhileAst *ast) {
         func->getBasicBlockList().push_back(bodyBlock);
         llvmBuilder.SetInsertPoint(bodyBlock);
         codegenNode(ast->getBody(), false);
-        if (msgs->isPanic()) return;
+        if (msgs->isAbort()) return;
         if (!isBlockTerminated()) llvmBuilder.CreateBr(condBlock);
     }
 
@@ -409,7 +409,7 @@ void Codegen::codegen(const DoWhileAst *ast) {
     {
         ScopeControl scope(symbolTable);
         codegenNode(ast->getBody(), false);
-        if (msgs->isPanic()) return;
+        if (msgs->isAbort()) return;
         if (!isBlockTerminated()) llvmBuilder.CreateBr(condBlock);
     }
 
@@ -513,7 +513,7 @@ void Codegen::codegen(const SwitchAst *ast) {
         llvmBuilder.SetInsertPoint(blocks[i]);
 
         codegen(ast->getCases()[i].body.get(), true);
-        if (msgs->isPanic()) return;
+        if (msgs->isAbort()) return;
 
         if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
     }
@@ -654,7 +654,7 @@ void Codegen::codegen(const FuncAst *ast) {
     }
 
     codegen(ast->getBody(), false);
-    if (msgs->isPanic()) {
+    if (msgs->isAbort()) {
         funcVal->func->eraseFromParent();
         return;
     }
