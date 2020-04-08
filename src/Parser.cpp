@@ -25,6 +25,16 @@ bool Parser::match(Token::Type type) {
     return true;
 }
 
+// If the next token matches the type, eats it and returns true.
+// Otherwise, files an error and returns false.
+bool Parser::matchOrError(Token::Type type) {
+    if (!match(type)) {
+        msgs->errorUnexpectedTokenType(loc(), type, peek());
+        return false;
+    }
+    return true;
+}
+
 CodeLoc Parser::loc() const {
     return lex->loc();
 }
@@ -197,7 +207,7 @@ unique_ptr<ExprAst> Parser::prim() {
 
         ret = move(e);
     } else {
-        msgs->errorUnknown(codeLoc);
+        msgs->errorNotPrim(codeLoc);
         return nullptr;
     }
 
@@ -358,22 +368,19 @@ std::unique_ptr<StmntAst> Parser::simple() {
 std::unique_ptr<StmntAst> Parser::if_stmnt() {
     CodeLoc codeLocIf = loc();
     
-    if (!match(Token::T_IF)) {
-        msgs->errorUnexpectedTokenType(codeLocIf, Token::T_IF, peek());
+    if (!matchOrError(Token::T_IF) || !matchOrError(Token::T_BRACE_L_REG))
         return nullptr;
-    }
-    if (!match(Token::T_BRACE_L_REG)) {
-        msgs->errorUnexpectedTokenType(loc(), Token::T_BRACE_L_REG, peek());
-        return nullptr;
-    }
 
     unique_ptr<StmntAst> init;
     unique_ptr<ExprAst> cond;
 
     init = simple();
-    if (init == nullptr) return nullptr;
+    if (init == nullptr) {
+        msgs->errorNotSimple(loc());
+        return nullptr;
+    }
 
-    if (init->type() == AST_Decl || init->type() == AST_EmptyExpr) {
+    if (init->type() == AST_Decl || init->type() == AST_Empty) {
         // semicolon was eaten, parse condition
         cond = expr();
         if (cond == nullptr) return nullptr;
@@ -390,10 +397,8 @@ std::unique_ptr<StmntAst> Parser::if_stmnt() {
         }
     }
 
-    if (!match(Token::T_BRACE_R_REG)) {
-        msgs->errorUnexpectedTokenType(loc(), Token::T_BRACE_R_REG, peek());
+    if (!matchOrError(Token::T_BRACE_R_REG))
         return nullptr;
-    }
 
     unique_ptr<StmntAst> thenBody = stmnt();
     if (thenBody == nullptr) return nullptr;
@@ -422,7 +427,11 @@ std::unique_ptr<StmntAst> Parser::for_stmnt() {
     }
 
     unique_ptr<StmntAst> init = simple();
-    if (init->type() != AST_Decl && init->type() != AST_EmptyExpr) {
+    if (init == nullptr) {
+        msgs->errorNotSimple(loc());
+        return nullptr;
+    }
+    if (init->type() != AST_Decl && init->type() != AST_Empty) {
         // init was expression, need to eat semicolon
         if (!match(Token::T_SEMICOLON)) {
             msgs->errorUnknown(loc());
@@ -461,22 +470,14 @@ std::unique_ptr<StmntAst> Parser::for_stmnt() {
 std::unique_ptr<StmntAst> Parser::while_stmnt() {
     CodeLoc codeLocWhile = loc();
 
-    if (!match(Token::T_WHILE)) {
-        msgs->errorUnexpectedTokenType(codeLocWhile, Token::T_WHILE, peek());
+    if (!matchOrError(Token::T_WHILE) || !match(Token::T_BRACE_L_REG))
         return nullptr;
-    }
-    if (!match(Token::T_BRACE_L_REG)) {
-        msgs->errorUnexpectedTokenType(loc(), Token::T_BRACE_L_REG, peek());
-        return nullptr;
-    }
 
     unique_ptr<ExprAst> cond = expr();
     if (cond == nullptr) return nullptr;
 
-    if (!match(Token::T_BRACE_R_REG)) {
-        msgs->errorUnexpectedTokenType(loc(), Token::T_BRACE_R_REG, peek());
+    if (!matchOrError(Token::T_BRACE_R_REG))
         return nullptr;
-    }
 
     unique_ptr<StmntAst> body = stmnt();
     if (body == nullptr) return nullptr;
@@ -485,45 +486,31 @@ std::unique_ptr<StmntAst> Parser::while_stmnt() {
 }
 
 std::unique_ptr<StmntAst> Parser::do_while_stmnt() {
-    CodeLoc codeLoc = loc();
+    CodeLoc codeLocDo = loc();
 
-    if (!match(Token::T_DO)) {
-        msgs->errorUnknown(loc());
+    if (!matchOrError(Token::T_DO))
         return nullptr;
-    }
 
     unique_ptr<StmntAst> body = stmnt();
     if (body == nullptr) return nullptr;
 
-    if (!match(Token::T_WHILE)) {
-        msgs->errorUnknown(loc());
+    if (!matchOrError(Token::T_WHILE) || !matchOrError(Token::T_BRACE_L_REG))
         return nullptr;
-    }
-    if (!match(Token::T_BRACE_L_REG)) {
-        msgs->errorUnknown(loc());
-        return nullptr;
-    }
+    
     unique_ptr<ExprAst> cond = expr();
     if (cond == nullptr) return nullptr;
-    if (!match(Token::T_BRACE_R_REG)) {
-        msgs->errorUnknown(loc());
-        return nullptr;
-    }
-    if (!match(Token::T_SEMICOLON)) {
-        msgs->errorUnknown(loc());
-        return nullptr;
-    }
 
-    return make_unique<DoWhileAst>(codeLoc, move(body), move(cond));
+    if (!matchOrError(Token::T_BRACE_R_REG) || !matchOrError(Token::T_SEMICOLON))
+        return nullptr;
+
+    return make_unique<DoWhileAst>(codeLocDo, move(body), move(cond));
 }
 
 std::unique_ptr<StmntAst> Parser::break_stmnt() {
     CodeLoc codeLoc = loc();
 
-    if (!match(Token::T_BREAK) || !match(Token::T_SEMICOLON)) {
-        msgs->errorUnknown(loc());
+    if (!matchOrError(Token::T_BREAK) || !matchOrError(Token::T_SEMICOLON))
         return nullptr;
-    }
 
     return make_unique<BreakAst>(codeLoc);
 }
@@ -531,10 +518,8 @@ std::unique_ptr<StmntAst> Parser::break_stmnt() {
 std::unique_ptr<StmntAst> Parser::continue_stmnt() {
     CodeLoc codeLoc = loc();
 
-    if (!match(Token::T_CONTINUE) || !match(Token::T_SEMICOLON)) {
-        msgs->errorUnknown(loc());
+    if (!matchOrError(Token::T_CONTINUE) || !matchOrError(Token::T_SEMICOLON))
         return nullptr;
-    }
 
     return make_unique<ContinueAst>(codeLoc);
 }
@@ -668,7 +653,7 @@ unique_ptr<StmntAst> Parser::stmnt() {
     
     unique_ptr<StmntAst> st = simple();
     if (st == nullptr) return nullptr;
-    if (st->type() != AST_EmptyExpr && st->type() != AST_Decl) {
+    if (st->type() != AST_Empty && st->type() != AST_Decl) {
         if (!match(Token::T_SEMICOLON)) {
             msgs->errorUnknown(loc());
             return nullptr;
@@ -681,10 +666,8 @@ unique_ptr<StmntAst> Parser::stmnt() {
 unique_ptr<BlockAst> Parser::block() {
     CodeLoc codeLoc = loc();
 
-    if (!match(Token::T_BRACE_L_CUR)) {
-        msgs->errorUnknown(codeLoc);
+    if (!matchOrError(Token::T_BRACE_L_CUR))
         return nullptr;
-    }
 
     unique_ptr<BlockAst> ret = make_unique<BlockAst>(codeLoc);
 
@@ -793,24 +776,20 @@ unique_ptr<BaseAst> Parser::func() {
 }
 
 unique_ptr<ImportAst> Parser::import() {
-    CodeLoc codeLoc = loc();
+    CodeLoc codeLocImport = loc();
 
-    if (!match(Token::T_IMPORT)) {
-        msgs->errorUnknown(codeLoc);
+    if (!matchOrError(Token::T_IMPORT))
         return nullptr;
-    }
 
     if (peek().type != Token::T_STRING) {
-        msgs->errorUnknown(loc());
+        msgs->errorUnexpectedTokenType(loc(), Token::T_STRING, peek());
         return nullptr;
     }
 
-    unique_ptr<ImportAst> ret = make_unique<ImportAst>(codeLoc, next().str);
+    unique_ptr<ImportAst> ret = make_unique<ImportAst>(codeLocImport, next().str);
 
-    if (!match(Token::T_SEMICOLON)) {
-        msgs->errorUnknown(loc());
+    if (!matchOrError(Token::T_SEMICOLON))
         return nullptr;
-    }
 
     return ret;
 }

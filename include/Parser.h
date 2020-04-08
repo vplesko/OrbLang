@@ -18,6 +18,7 @@ class Parser {
     const Token& peek() const;
     Token next();
     bool match(Token::Type type);
+    bool matchOrError(Token::Type type);
     CodeLoc loc() const;
 
     std::unique_ptr<ArrayExprAst> array_list(std::unique_ptr<TypeAst> arrTy);

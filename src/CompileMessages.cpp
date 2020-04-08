@@ -23,6 +23,14 @@ void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Tok
     error(loc, ss.str());
 }
 
+void CompileMessages::errorNotSimple(CodeLoc loc) {
+    error(loc, "Statement not one of: declaration, expression, empty.");
+}
+
+void CompileMessages::errorNotPrim(CodeLoc loc) {
+    error(loc, "Expected an expression, could not parse one.");
+}
+
 void CompileMessages::errorUnknown(CodeLoc loc) {
     error(loc, "Unknown error occured.");
 }

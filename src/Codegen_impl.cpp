@@ -124,7 +124,7 @@ bool Codegen::createCast(ExprGenPayload &e, TypeTable::Id t) {
 
 void Codegen::codegenNode(const BaseAst *ast, bool blockMakeScope) {
     switch (ast->type()) {
-    case AST_EmptyExpr:
+    case AST_Empty:
         return;
     case AST_Decl:
         codegen((const DeclAst*)ast);

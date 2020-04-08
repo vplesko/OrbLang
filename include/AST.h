@@ -9,7 +9,7 @@
 enum AstType {
     AST_Import,
     AST_Type,
-    AST_EmptyExpr,
+    AST_Empty,
     AST_UntypedExpr,
     AST_VarExpr,
     AST_IndExpr,
@@ -197,7 +197,7 @@ class EmptyStmntAst : public StmntAst {
 public:
     explicit EmptyStmntAst(CodeLoc loc) : StmntAst(loc) {}
 
-    AstType type() const override { return AST_EmptyExpr; }
+    AstType type() const override { return AST_Empty; }
 };
 
 class DeclAst : public StmntAst {
