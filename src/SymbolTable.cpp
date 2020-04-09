@@ -38,13 +38,13 @@ void SymbolTable::addVar(NamePool::Id name, const VarPayload &var) {
     last->vars.insert(make_pair(name, var));
 }
 
-pair<SymbolTable::VarPayload, bool> SymbolTable::getVar(NamePool::Id name) const {
+optional<SymbolTable::VarPayload> SymbolTable::getVar(NamePool::Id name) const {
     for (Scope *s = last; s != nullptr; s = s->prev) {
         auto loc = s->vars.find(name);
-        if (loc != s->vars.end()) return {loc->second, true};
+        if (loc != s->vars.end()) return loc->second;
     }
 
-    return {VarPayload(), false};
+    return nullopt;
 }
 
 FuncSignature SymbolTable::makeFuncSignature(NamePool::Id name, const std::vector<TypeTable::Id> &argTypes) const {
@@ -56,12 +56,12 @@ FuncSignature SymbolTable::makeFuncSignature(NamePool::Id name, const std::vecto
     return sig;
 }
 
-pair<FuncSignature, bool> SymbolTable::makeFuncSignature(const FuncCallSite &call) const {
+optional<FuncSignature> SymbolTable::makeFuncSignature(const FuncCallSite &call) const {
     for (const UntypedVal &it : call.untypedVals) {
         if (it.type != UntypedVal::T_NONE)
-            return {FuncSignature(), false};
+            return nullopt;
     }
-    return {makeFuncSignature(call.name, call.argTypes), true};
+    return makeFuncSignature(call.name, call.argTypes);
 }
 
 bool nonConflicting(const FuncValue &f1, const FuncValue &f2) {
@@ -113,13 +113,13 @@ llvm::Function* SymbolTable::getFunction(const FuncValue &val) const {
     return loc->second.func;
 }
 
-std::pair<FuncValue, bool> SymbolTable::getFuncForCall(const FuncCallSite &call) {
+optional<FuncValue> SymbolTable::getFuncForCall(const FuncCallSite &call) {
     // if there are any untypedVal args, we don't know their types in advance
-    pair<FuncSignature, bool> sig = makeFuncSignature(call);
-    if (sig.second) {
-        auto loc = funcs.find(sig.first);
+    optional<FuncSignature> sig = makeFuncSignature(call);
+    if (sig.has_value()) {
+        auto loc = funcs.find(sig.value());
         // if there's a single function and doesn't need casting, return it
-        if (loc != funcs.end()) return {loc->second, true};
+        if (loc != funcs.end()) return loc->second;
     }
 
     const FuncSignature *foundSig = nullptr;
@@ -181,15 +181,20 @@ std::pair<FuncValue, bool> SymbolTable::getFuncForCall(const FuncCallSite &call)
 
         // in case of multiple possible funcs, error due to ambiguity
         // TODO ret what the exact error was in ret val
-        if (foundVal != nullptr) return {FuncValue(), false};
+        if (foundVal != nullptr) return nullopt;
         
         // found a function that fits this description (which may or may not require casts)
         foundSig = candSig;
         foundVal = candVal;
     }
 
-    if (foundVal) return {*foundVal, true};
-    else return {FuncValue(), false};
+    if (foundVal) return *foundVal;
+    else return nullopt;
+}
+
+optional<FuncValue> SymbolTable::getCurrFunc() const {
+    if (inFunc) return currFunc;
+    else return nullopt;
 }
 
 bool SymbolTable::varNameTaken(NamePool::Id name) const {

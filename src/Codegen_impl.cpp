@@ -523,14 +523,14 @@ void Codegen::codegen(const SwitchAst *ast) {
 }
 
 void Codegen::codegen(const RetAst *ast) {
-    pair<FuncValue, bool> currFunc = symbolTable->getCurrFunc();
-    if (currFunc.second == false) {
+    optional<FuncValue> currFunc = symbolTable->getCurrFunc();
+    if (!currFunc.has_value()) {
         msgs->errorUnknown(ast->loc());
         return;
     }
 
     if (!ast->getVal()) {
-        if (currFunc.first.hasRet) {
+        if (currFunc.value().hasRet) {
             msgs->errorUnknown(ast->loc());
             return;
         }
@@ -539,19 +539,19 @@ void Codegen::codegen(const RetAst *ast) {
     }
 
     ExprGenPayload retExpr = codegenExpr(ast->getVal());
-    if (retExpr.isUntyVal() && !promoteUntyped(retExpr, currFunc.first.retType)) {
+    if (retExpr.isUntyVal() && !promoteUntyped(retExpr, currFunc.value().retType)) {
         msgs->errorUnknown(ast->getVal()->loc());
         return;
     }
     if (valBroken(retExpr)) return;
 
     llvm::Value *retVal = retExpr.val;
-    if (retExpr.type != currFunc.first.retType) {
-        if (!getTypeTable()->isImplicitCastable(retExpr.type, currFunc.first.retType)) {
+    if (retExpr.type != currFunc.value().retType) {
+        if (!getTypeTable()->isImplicitCastable(retExpr.type, currFunc.value().retType)) {
             msgs->errorUnknown(ast->getVal()->loc());
             return;
         }
-        createCast(retVal, retExpr.type, currFunc.first.retType);
+        createCast(retVal, retExpr.type, currFunc.value().retType);
     }
 
     llvmBuilder.CreateRet(retVal);

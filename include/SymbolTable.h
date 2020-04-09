@@ -1,4 +1,3 @@
-// TODO use std::optional
 #pragma once
 
 #include <unordered_map>
@@ -118,22 +117,22 @@ private:
     void endScope();
 
     FuncSignature makeFuncSignature(NamePool::Id name, const std::vector<TypeTable::Id> &argTypes) const;
-    std::pair<FuncSignature, bool> makeFuncSignature(const FuncCallSite &call) const;
+    std::optional<FuncSignature> makeFuncSignature(const FuncCallSite &call) const;
 
 public:
     SymbolTable(TypeTable *typeTable);
 
     void addVar(NamePool::Id name, const VarPayload &var);
-    std::pair<VarPayload, bool> getVar(NamePool::Id name) const;
+    std::optional<VarPayload> getVar(NamePool::Id name) const;
 
     bool canRegisterFunc(const FuncValue &val) const;
     FuncValue registerFunc(const FuncValue &val);
     llvm::Function* getFunction(const FuncValue &val) const;
-    std::pair<FuncValue, bool> getFuncForCall(const FuncCallSite &call);
+    std::optional<FuncValue> getFuncForCall(const FuncCallSite &call);
 
     bool inGlobalScope() const { return last == glob; }
 
-    std::pair<FuncValue, bool> getCurrFunc() const { return std::make_pair(currFunc, inFunc); }
+    std::optional<FuncValue> getCurrFunc() const;
 
     bool varNameTaken(NamePool::Id name) const;
     bool funcNameTaken(NamePool::Id name) const;

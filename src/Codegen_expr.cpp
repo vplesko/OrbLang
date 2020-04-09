@@ -35,12 +35,15 @@ Codegen::ExprGenPayload Codegen::codegen(const UntypedExprAst *ast) {
 }
 
 Codegen::ExprGenPayload Codegen::codegen(const VarExprAst *ast) {
-    pair<SymbolTable::VarPayload, bool> var = symbolTable->getVar(ast->getNameId());
-    if (!var.second) {
+    optional<SymbolTable::VarPayload> var = symbolTable->getVar(ast->getNameId());
+    if (!var.has_value()) {
         msgs->errorUnknown(ast->loc());
         return {};
     }
-    return {var.first.type, llvmBuilder.CreateLoad(var.first.val, namePool->get(ast->getNameId())), var.first.val};
+    return {var.value().type,
+        llvmBuilder.CreateLoad(var.value().val,
+        namePool->get(ast->getNameId())),
+        var.value().val};
 }
 
 Codegen::ExprGenPayload Codegen::codegen(const IndExprAst *ast) {
@@ -763,14 +766,14 @@ Codegen::ExprGenPayload Codegen::codegen(const CallExprAst *ast) {
         call.set(i, exprs[i].untyVal);
     }
 
-    pair<FuncValue, bool> func = symbolTable->getFuncForCall(call);
-    if (func.second == false) {
+    optional<FuncValue> func = symbolTable->getFuncForCall(call);
+    if (!func.has_value()) {
         msgs->errorUnknown(ast->loc());
         return {};
     }
 
     for (size_t i = 0; i < ast->getArgs().size(); ++i) {
-        if (i >= func.first.argTypes.size()) {
+        if (i >= func.value().argTypes.size()) {
             // variadic arguments
             if (exprs[i].isUntyVal()) {
                 msgs->errorUnknown(ast->getArgs()[i]->loc());
@@ -780,13 +783,13 @@ Codegen::ExprGenPayload Codegen::codegen(const CallExprAst *ast) {
         } else {
             if (exprs[i].isUntyVal()) {
                 // this also checks whether sint/uint literals fit into the arg type size
-                if (!promoteUntyped(exprs[i], func.first.argTypes[i])) {
+                if (!promoteUntyped(exprs[i], func.value().argTypes[i])) {
                     msgs->errorUnknown(ast->loc());
                     return {};
                 }
                 args[i] = exprs[i].val;
-            } else if (call.argTypes[i] != func.first.argTypes[i]) {
-                if (!createCast(args[i], call.argTypes[i], func.first.argTypes[i])) {
+            } else if (call.argTypes[i] != func.value().argTypes[i]) {
+                if (!createCast(args[i], call.argTypes[i], func.value().argTypes[i])) {
                     msgs->errorUnknown(ast->getArgs()[i]->loc());
                     return {};
                 }
@@ -795,8 +798,8 @@ Codegen::ExprGenPayload Codegen::codegen(const CallExprAst *ast) {
     }
 
     // NOTE it's lvalue if returning a lvalue (by ref)
-    return {func.first.retType, llvmBuilder.CreateCall(func.first.func, args, 
-        func.first.hasRet ? "call_tmp" : ""), nullptr};
+    return {func.value().retType, llvmBuilder.CreateCall(func.value().func, args, 
+        func.value().hasRet ? "call_tmp" : ""), nullptr};
 }
 
 Codegen::ExprGenPayload Codegen::codegen(const CastExprAst *ast) {

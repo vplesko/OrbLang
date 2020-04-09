@@ -55,6 +55,7 @@ void Lexer::skipLine() {
     ch = col == line.size() ? '\n' : line[col];
 }
 
+// TODO report error when T_UNKNOWN
 Token Lexer::next() {
     if (tok.type == Token::T_END) return tok;
 
