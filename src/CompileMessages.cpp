@@ -31,6 +31,18 @@ void CompileMessages::errorNotPrim(CodeLoc loc) {
     error(loc, "Expected an expression, could not parse one.");
 }
 
+void CompileMessages::errorNotTypeId(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Expected a type identifier, instead found '" << namePool->get(name) << "'.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorBadArraySize(CodeLoc loc, long int size) {
+    stringstream ss;
+    ss << "Array size must be a non-negative integer. Size " << size << " is invalid.";
+    error(loc, ss.str());
+}
+
 void CompileMessages::errorUnknown(CodeLoc loc) {
     error(loc, "Unknown error occured.");
 }

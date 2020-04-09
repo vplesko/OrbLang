@@ -23,5 +23,7 @@ public:
     void errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token see);
     void errorNotSimple(CodeLoc loc);
     void errorNotPrim(CodeLoc loc);
+    void errorNotTypeId(CodeLoc loc, NamePool::Id name);
+    void errorBadArraySize(CodeLoc loc, long int size);
     void errorUnknown(CodeLoc loc);
 };
