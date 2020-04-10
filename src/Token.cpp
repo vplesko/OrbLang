@@ -133,3 +133,11 @@ string errorString(Token::Type tok) {
 
     return "<forbidden>";
 }
+
+std::string errorString(Token::Attr attr) {
+    for (const auto &it : attributes) {
+        if (attr == it.second) return it.first;
+    }
+
+    return "<unknown>";
+}

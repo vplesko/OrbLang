@@ -23,6 +23,17 @@ void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Tok
     error(loc, ss.str());
 }
 
+void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, vector<Token::Type> exp, Token see) {
+    stringstream ss;
+    ss << "Unexpected symbol found. Expected ";
+    for (size_t i = 0; i < exp.size(); ++i) {
+        if (i > 0) ss << " or ";
+        ss << "'" << errorString(exp[i]) << "'";
+    }
+    ss << ", instead found '" << errorString(see) << "'.";
+    error(loc, ss.str());
+}
+
 void CompileMessages::errorNotSimple(CodeLoc loc) {
     error(loc, "Statement not one of: declaration, expression, empty.");
 }
@@ -41,6 +52,36 @@ void CompileMessages::errorBadArraySize(CodeLoc loc, long int size) {
     stringstream ss;
     ss << "Array size must be a non-negative integer. Size " << size << " is invalid.";
     error(loc, ss.str());
+}
+
+void CompileMessages::errorSwitchNoBranches(CodeLoc loc) {
+    error(loc, "Switch statements must contain at least one branch.");
+}
+
+void CompileMessages::errorSwitchMultiElse(CodeLoc loc) {
+    error(loc, "Switch statements may have at most one else branch.");
+}
+
+void CompileMessages::errorNotLastParam(CodeLoc loc) {
+    error(loc, "No further parameters are allowed in this function signature.");
+}
+
+void CompileMessages::errorBadAttr(CodeLoc loc, Token::Attr attr) {
+    stringstream ss;
+    ss << "Attribute '" << errorString(attr) << "' is not recognized in this context.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorEmptyArr(CodeLoc loc) {
+    error(loc, "Empty arrays are not allowed.");
+}
+
+void CompileMessages::errorNonUnOp(CodeLoc loc, Token op) {
+    error(loc, "Expected a unary operation.");
+}
+
+void CompileMessages::errorNonBinOp(CodeLoc loc, Token op) {
+    error(loc, "Expected a binary operation.");
 }
 
 void CompileMessages::errorUnknown(CodeLoc loc) {

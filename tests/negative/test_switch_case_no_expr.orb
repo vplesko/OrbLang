@@ -1,0 +1,5 @@
+fnc main() {
+    switch (1) {
+    case: ret;
+    }
+}

@@ -111,3 +111,4 @@ extern const std::unordered_map<std::string, Token> keywords;
 
 std::string errorString(Token tok);
 std::string errorString(Token::Type tok);
+std::string errorString(Token::Attr attr);

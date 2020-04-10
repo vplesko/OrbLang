@@ -100,6 +100,9 @@ void Compiler::dumpMsgs(ostream &out) {
     for (const string &m : msgs->getErrors()) {
         out << m << endl;
     }
+    if (msgs->isAbort()) {
+        out << "Compilation failed!" << endl;
+    }
 }
 
 enum ImportTransRes {
