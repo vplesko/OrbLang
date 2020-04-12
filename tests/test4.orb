@@ -198,6 +198,11 @@ fnc main() {
     println_i32(i32[]{515}[0]);
     println_i32(i32[1]{516}[0]);
 
+    i32[2]{0, 1};
+    (i32[2]{0, 1});
+    if (i32[2]{0, 1}; false);
+    if ((i32[2]{0, 1}); false);
+
     n = retAll(600);
     i32 cn[4] p1 = n;
     println_i32(p1[0]);

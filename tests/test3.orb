@@ -3,6 +3,7 @@ import "tests/io.orb";
 fnc main() {
     -10;
     (i64(0));
+    i64(0);
     
     { println_i32(i32(-10)); println_i32(i16(10)); println_i8(i8(i64(1027))); }
     { println_u32(u32(-10)); }
@@ -56,6 +57,7 @@ fnc main() {
         println_c8(*&("hello"[1]));
         i = 2;
         println_c8(*&("hello"[i]));
+        ptr("ciao");
         (ptr("ciao"));
         c8 cn[] str2 = "abcd";
         if (str2 != "pqrs") println_i32(0);

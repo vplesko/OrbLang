@@ -74,6 +74,8 @@ fnc main() {
         }
     }
 
+    if (i32(0); true) println_i64(117);
+
     for (i64 i = 0, j = -1; i < 10; ++i) println_i64(i+j);
     for (a = 0; a < 3; ++a) println_i64(a);
     for (; a >= 0; --a) println_i64(a);

@@ -71,6 +71,27 @@ unique_ptr<ArrayExprAst> Parser::array_list(unique_ptr<TypeAst> arrTy) {
     return make_unique<ArrayExprAst>(arrTy->loc(), move(arrTy), move(vals));
 }
 
+unique_ptr<ExprAst> Parser::prim(std::unique_ptr<TypeAst> ty) {
+    if (peek().type == Token::T_BRACE_L_REG) {
+        next();
+
+        unique_ptr<ExprAst> e = expr();
+        if (e == nullptr) return nullptr;
+        if (!matchOrError(Token::T_BRACE_R_REG))
+            return nullptr;
+
+        return make_unique<CastExprAst>(ty->loc(), move(ty), move(e));
+    } else if (peek().type == Token::T_BRACE_L_CUR) {
+        unique_ptr<ArrayExprAst> e = array_list(move(ty));
+        if (e == nullptr) return nullptr;
+
+        return move(e);
+    } else {
+        msgs->errorUnexpectedTokenType(ty->loc(), {Token::T_BRACE_L_REG, Token::T_BRACE_L_CUR}, peek());
+        return nullptr;
+    }
+}
+
 unique_ptr<ExprAst> Parser::prim() {
     CodeLoc codeLoc = loc();
     unique_ptr<ExprAst> ret;
@@ -126,24 +147,7 @@ unique_ptr<ExprAst> Parser::prim() {
             unique_ptr<TypeAst> t = type();
             if (t == nullptr) return nullptr;
 
-            if (peek().type == Token::T_BRACE_L_REG) {
-                next();
-
-                unique_ptr<ExprAst> e = expr();
-                if (e == nullptr) return nullptr;
-                if (!matchOrError(Token::T_BRACE_R_REG))
-                    return nullptr;
-
-                ret = make_unique<CastExprAst>(codeLoc, move(t), move(e));
-            } else if (peek().type == Token::T_BRACE_L_CUR) {
-                unique_ptr<ArrayExprAst> e = array_list(move(t));
-                if (e == nullptr) return nullptr;
-
-                ret = move(e);
-            } else {
-                msgs->errorUnexpectedTokenType(codeLoc, {Token::T_BRACE_L_REG, Token::T_BRACE_L_CUR}, peek());
-                return nullptr;
-            }
+            ret = prim(move(t));
         } else {
             Token tok = next();
 
@@ -308,13 +312,8 @@ std::unique_ptr<TypeAst> Parser::type() {
     return make_unique<TypeAst>(codeLocType, typeId);
 }
 
-unique_ptr<DeclAst> Parser::decl() {
-    CodeLoc codeLoc = loc();
-    
-    unique_ptr<TypeAst> ty = type();
-    if (ty == nullptr) return nullptr;
-
-    unique_ptr<DeclAst> ret = make_unique<DeclAst>(codeLoc, ty->clone());
+unique_ptr<DeclAst> Parser::decl(unique_ptr<TypeAst> ty) {
+    unique_ptr<DeclAst> ret = make_unique<DeclAst>(ty->loc(), ty->clone());
 
     while (true) {
         CodeLoc codeLocId = loc();
@@ -349,15 +348,30 @@ unique_ptr<DeclAst> Parser::decl() {
     }
 }
 
+unique_ptr<DeclAst> Parser::decl() {
+    unique_ptr<TypeAst> ty = type();
+    if (ty == nullptr) return nullptr;
+
+    return decl(move(ty));
+}
+
 std::unique_ptr<StmntAst> Parser::simple() {
     if (peek().type == Token::T_SEMICOLON) {
         CodeLoc codeLoc = loc();
         next();
         return make_unique<EmptyStmntAst>(codeLoc);
     } else if (peek().type == Token::T_ID && symbolTable->getTypeTable()->isType(peek().nameId)) {
-        // if a statement begins with a type, it has to be a declaration
-        // to begin an expression with a cast, put it inside brackets
-        return decl();
+        unique_ptr<TypeAst> ty = type();
+        if (ty == nullptr) return nullptr;
+
+        if (peek().type == Token::T_ID) {
+            return decl(move(ty));
+        } else {
+            unique_ptr<ExprAst> e = prim(move(ty));
+            if (e == nullptr) return nullptr;
+
+            return expr(move(e), minOperPrec);
+        }
     } else {
         return expr();
     }
