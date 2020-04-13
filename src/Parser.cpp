@@ -312,6 +312,7 @@ std::unique_ptr<TypeAst> Parser::type() {
     return make_unique<TypeAst>(codeLocType, typeId);
 }
 
+// TODO zero init? with __no_zero to disable
 unique_ptr<DeclAst> Parser::decl(unique_ptr<TypeAst> ty) {
     unique_ptr<DeclAst> ret = make_unique<DeclAst>(ty->loc(), ty->clone());
 
@@ -322,6 +323,7 @@ unique_ptr<DeclAst> Parser::decl(unique_ptr<TypeAst> ty) {
             msgs->errorUnexpectedTokenType(codeLocId, Token::T_ID, id);
             return nullptr;
         }
+        unique_ptr<VarExprAst> var = make_unique<VarExprAst>(codeLocId, id.nameId);
 
         unique_ptr<ExprAst> init;
         Token look = peek();
@@ -334,7 +336,7 @@ unique_ptr<DeclAst> Parser::decl(unique_ptr<TypeAst> ty) {
             init = array_list(ty->clone());
             if (init == nullptr) return nullptr;
         }
-        ret->add(make_pair(id.nameId, move(init)));
+        ret->add(make_pair(move(var), move(init)));
 
         CodeLoc codeLocNext = loc();
         look = next();

@@ -68,7 +68,7 @@ optional<size_t> SwitchAst::getDefault() const {
 DeclAst::DeclAst(CodeLoc loc, unique_ptr<TypeAst> type) : StmntAst(loc), varType(move(type)) {
 }
 
-void DeclAst::add(pair<NamePool::Id, unique_ptr<ExprAst>> decl) {
+void DeclAst::add(pair<unique_ptr<VarExprAst>, unique_ptr<ExprAst>> decl) {
     decls.push_back(move(decl));
 }
 

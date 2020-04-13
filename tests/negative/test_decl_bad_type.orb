@@ -1,0 +1,4 @@
+fnc main() {
+    i32 cn x = 500;
+    u16 y = x;
+}

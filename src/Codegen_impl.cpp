@@ -170,6 +170,7 @@ void Codegen::codegenNode(const BaseAst *ast, bool blockMakeScope) {
 llvm::Type* Codegen::codegenType(const TypeAst *ast) {
     llvm::Type *type = getType(ast->getTypeId());
     if (type == nullptr) {
+        // should not happen, verified during parsing
         msgs->errorUnknown(ast->loc());
         return nullptr;
     }
@@ -183,12 +184,12 @@ void Codegen::codegen(const DeclAst *ast) {
     if (type == nullptr) return;
 
     for (const auto &it : ast->getDecls()) {
-        if (symbolTable->varNameTaken(it.first)) {
-            msgs->errorUnknown(ast->loc());
+        if (symbolTable->varNameTaken(it.first->getNameId())) {
+            msgs->errorVarNameTaken(it.first->loc(), it.first->getNameId());
             return;
         }
 
-        const string &name = namePool->get(it.first);
+        const string &name = namePool->get(it.first->getNameId());
 
         llvm::Value *val;
         if (isGlobalScope()) {
@@ -197,10 +198,23 @@ void Codegen::codegen(const DeclAst *ast) {
             const ExprAst *init = it.second.get();
             if (init != nullptr) {
                 ExprGenPayload initPay = codegenExpr(init);
-                if (valueBroken(initPay) || !initPay.isUntyVal() || !promoteUntyped(initPay, typeId)) {
+                if (valueBroken(initPay)) {
+                    return;
+                }
+                if (!initPay.isUntyVal()) {
+                    msgs->errorExprNotBaked(init->loc());
+                    return;
+                }
+                if (!promoteUntyped(initPay, typeId)) {
+                    msgs->errorExprCannotPromote(init->loc(), typeId);
                     return;
                 }
                 initConst = (llvm::Constant*) initPay.val;
+            } else {
+                if (getTypeTable()->isTypeCn(typeId)) {
+                    msgs->errorCnNoInit(it.first->loc(), it.first->getNameId());
+                    return;
+                }
             }
 
             val = createGlobal(type, initConst, getTypeTable()->isTypeCn(typeId), name);
@@ -210,17 +224,21 @@ void Codegen::codegen(const DeclAst *ast) {
             const ExprAst *init = it.second.get();
             if (init != nullptr) {
                 ExprGenPayload initPay = codegenExpr(init);
-                if (valueBroken(initPay)) return;
+                if (valueBroken(initPay))
+                    return;
 
                 if (initPay.isUntyVal()) {
-                    if (!promoteUntyped(initPay, typeId)) return;
+                    if (!promoteUntyped(initPay, typeId)) {
+                        msgs->errorExprCannotPromote(init->loc(), typeId);
+                        return;
+                    }
                 }
 
                 llvm::Value *src = initPay.val;
 
                 if (initPay.type != typeId) {
                     if (!getTypeTable()->isImplicitCastable(initPay.type, typeId)) {
-                        msgs->errorUnknown(init->loc());
+                        msgs->errorExprCannotCast(init->loc(), initPay.type, typeId);
                         return;
                     }
 
@@ -228,10 +246,15 @@ void Codegen::codegen(const DeclAst *ast) {
                 }
 
                 llvmBuilder.CreateStore(src, val);
+            } else {
+                if (getTypeTable()->isTypeCn(typeId)) {
+                    msgs->errorCnNoInit(it.first->loc(), it.first->getNameId());
+                    return;
+                }
             }
         }
 
-        symbolTable->addVar(it.first, {typeId, val});
+        symbolTable->addVar(it.first->getNameId(), {typeId, val});
     }
 }
 

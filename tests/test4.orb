@@ -62,8 +62,8 @@ fnc main() {
     i32 cn[]cn s3 = i32 cn[]cn(malloc(4));
     j = 3;
     i32 cn[4] t1{0, i8(1), i32(2.0), +j};
-    i32[4]cn t2;
-    i32 cn[4]cn t3;
+    i32[4]cn t2 = t1;
+    i32 cn[4]cn t3{0, 1, 2, 3};
 
     b = a;
 

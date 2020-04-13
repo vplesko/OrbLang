@@ -160,7 +160,7 @@ bool TypeTable::isType(NamePool::Id name) const {
 optional<NamePool::Id> TypeTable::getTypeName(Id t) const {
     auto loc = typeNames.find(t);
     if (loc == typeNames.end()) return nullopt;
-    return loc->first;
+    return loc->second;
 }
 
 bool TypeTable::isTypeI(Id t) const {

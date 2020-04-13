@@ -12,7 +12,7 @@ Compiler::Compiler() {
     namePool = make_unique<NamePool>();
     typeTable = make_unique<TypeTable>();
     symbolTable = make_unique<SymbolTable>(typeTable.get());
-    msgs = make_unique<CompileMessages>(namePool.get());
+    msgs = make_unique<CompileMessages>(namePool.get(), symbolTable.get());
     codegen = make_unique<Codegen>(namePool.get(), symbolTable.get(), msgs.get());
 
     genPrimTypes();

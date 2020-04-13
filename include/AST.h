@@ -202,15 +202,16 @@ public:
 
 class DeclAst : public StmntAst {
     std::unique_ptr<TypeAst> varType;
-    std::vector<std::pair<NamePool::Id, std::unique_ptr<ExprAst>>> decls;
+    std::vector<std::pair<std::unique_ptr<VarExprAst>, std::unique_ptr<ExprAst>>> decls;
 
 public:
     DeclAst(CodeLoc loc, std::unique_ptr<TypeAst> type);
 
     const TypeAst* getType() const { return varType.get(); }
 
-    void add(std::pair<NamePool::Id, std::unique_ptr<ExprAst>> decl);
-    const std::vector<std::pair<NamePool::Id, std::unique_ptr<ExprAst>>>& getDecls() const { return decls; }
+    void add(std::pair<std::unique_ptr<VarExprAst>, std::unique_ptr<ExprAst>> decl);
+    const std::vector<std::pair<std::unique_ptr<VarExprAst>, std::unique_ptr<ExprAst>>>& getDecls() const
+    { return decls; }
 
     AstType type() const override { return AST_Decl; }
 };

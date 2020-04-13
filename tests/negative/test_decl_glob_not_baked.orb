@@ -1,0 +1,5 @@
+import "tests/io.orb";
+
+i32 x = scan_i32();
+
+fnc main() {}

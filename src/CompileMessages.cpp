@@ -4,6 +4,38 @@
 #include "NamePool.h"
 using namespace std;
 
+string CompileMessages::errorStringOfType(TypeTable::Id ty) const {
+    string fallback("<unknown>");
+
+    stringstream ss;
+
+    const TypeTable::TypeDescr &descr = symbolTable->getTypeTable()->getTypeDescr(ty);
+
+    optional<NamePool::Id> base = symbolTable->getTypeTable()->getTypeName(descr.base);
+    if (!base.has_value()) return fallback;
+
+    ss << namePool->get(base.value());
+    if (descr.cn) ss << " cn";
+    for (size_t i = 0; i < descr.decors.size(); ++i) {
+        switch (descr.decors[i].type) {
+        case TypeTable::TypeDescr::Decor::D_ARR:
+            ss << "[" << descr.decors[i].len << "]";
+            break;
+        case TypeTable::TypeDescr::Decor::D_ARR_PTR:
+            ss << "[]";
+            break;
+        case TypeTable::TypeDescr::Decor::D_PTR:
+            ss << "*";
+            break;
+        default:
+            return fallback;
+        }
+        if (descr.cns[i]) ss << "cn";
+    }
+
+    return ss.str();
+}
+
 inline string toString(CodeLoc loc) {
     stringstream ss;
     ss << filesystem::relative(*loc.file);
@@ -82,6 +114,35 @@ void CompileMessages::errorNonUnOp(CodeLoc loc, Token op) {
 
 void CompileMessages::errorNonBinOp(CodeLoc loc, Token op) {
     error(loc, "Expected a binary operation.");
+}
+
+void CompileMessages::errorVarNameTaken(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Variable with name '" << namePool->get(name) << "' already exists in this scope.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorCnNoInit(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Constant with name '" << namePool->get(name) << "' is not initialized.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorExprNotBaked(CodeLoc loc) {
+    error(loc, "Expression cannot be evaluated at compile time.");
+}
+
+void CompileMessages::errorExprCannotPromote(CodeLoc loc, TypeTable::Id ty) {
+    stringstream ss;
+    ss << "Expression cannot be promoted to expected type '" << errorStringOfType(ty) << "'.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorExprCannotCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into) {
+    stringstream ss;
+    ss << "Expression of type '" << errorStringOfType(from) <<
+        "' cannot be implicitly cast into type '" << errorStringOfType(into) << "'.";
+    error(loc, ss.str());
 }
 
 void CompileMessages::errorUnknown(CodeLoc loc) {

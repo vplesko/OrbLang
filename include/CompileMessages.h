@@ -4,17 +4,22 @@
 #include <string>
 #include "CodeLoc.h"
 #include "Token.h"
+#include "SymbolTable.h"
 
 class NamePool;
 
 class CompileMessages {
     NamePool *namePool;
+    SymbolTable *symbolTable;
     std::vector<std::string> errors;
 
     void error(CodeLoc loc, const std::string &str);
 
+    std::string errorStringOfType(TypeTable::Id ty) const;
+
 public:
-    explicit CompileMessages(NamePool *namePool) : namePool(namePool) {}
+    explicit CompileMessages(NamePool *namePool, SymbolTable *symbolTable)
+        : namePool(namePool), symbolTable(symbolTable) {}
 
     bool isAbort() const { return !errors.empty(); }
 
@@ -33,5 +38,10 @@ public:
     void errorEmptyArr(CodeLoc loc);
     void errorNonUnOp(CodeLoc loc, Token op);
     void errorNonBinOp(CodeLoc loc, Token op);
+    void errorVarNameTaken(CodeLoc loc, NamePool::Id name);
+    void errorCnNoInit(CodeLoc loc, NamePool::Id name);
+    void errorExprNotBaked(CodeLoc loc);
+    void errorExprCannotPromote(CodeLoc loc, TypeTable::Id ty);
+    void errorExprCannotCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into);
     void errorUnknown(CodeLoc loc);
 };
