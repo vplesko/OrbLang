@@ -33,6 +33,8 @@ public:
     void errorBadArraySize(CodeLoc loc, long int size);
     void errorSwitchNoBranches(CodeLoc loc);
     void errorSwitchMultiElse(CodeLoc loc);
+    void errorSwitchNotIntegral(CodeLoc loc);
+    void errorSwitchMatchDuplicate(CodeLoc loc);
     void errorNotLastParam(CodeLoc loc);
     void errorBadAttr(CodeLoc loc, Token::Attr attr);
     void errorEmptyArr(CodeLoc loc);
@@ -41,7 +43,13 @@ public:
     void errorVarNameTaken(CodeLoc loc, NamePool::Id name);
     void errorCnNoInit(CodeLoc loc, NamePool::Id name);
     void errorExprNotBaked(CodeLoc loc);
-    void errorExprCannotPromote(CodeLoc loc, TypeTable::Id ty);
+    void errorExprCannotPromote(CodeLoc loc, TypeTable::Id into);
     void errorExprCannotCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into);
+    void errorBreakNowhere(CodeLoc loc);
+    void errorContinueNowhere(CodeLoc loc);
+    void errorRetNoValue(CodeLoc loc, TypeTable::Id shouldRet);
+    void errorFuncNameTaken(CodeLoc loc, NamePool::Id name);
+    void errorFuncSigConflict(CodeLoc loc);
+    void errorFuncArgNameDuplicate(CodeLoc loc, NamePool::Id name);
     void errorUnknown(CodeLoc loc);
 };

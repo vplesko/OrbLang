@@ -1,0 +1,4 @@
+fnc foo(i32 x) {}
+fnc foo(i32 x) i32 { ret 0; }
+
+fnc main() {}

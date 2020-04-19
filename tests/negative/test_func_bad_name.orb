@@ -1,0 +1,5 @@
+i32 foo = 100;
+
+fnc foo() {}
+
+fnc main() {}

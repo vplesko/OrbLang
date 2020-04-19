@@ -184,7 +184,7 @@ void Codegen::codegen(const DeclAst *ast) {
     if (type == nullptr) return;
 
     for (const auto &it : ast->getDecls()) {
-        if (symbolTable->varNameTaken(it.first->getNameId())) {
+        if (!symbolTable->varMayTakeName(it.first->getNameId())) {
             msgs->errorVarNameTaken(it.first->loc(), it.first->getNameId());
             return;
         }
@@ -269,11 +269,11 @@ void Codegen::codegen(const IfAst *ast) {
 
     ExprGenPayload condExpr = codegenExpr(ast->getCond());
     if (condExpr.isUntyVal() && !promoteUntyped(condExpr, TypeTable::P_BOOL)) {
-        msgs->errorUnknown(ast->getCond()->loc());
+        msgs->errorExprCannotPromote(ast->getCond()->loc(), TypeTable::P_BOOL);
         return;
     }
     if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
-        msgs->errorUnknown(ast->getCond()->loc());
+        msgs->errorExprCannotCast(ast->getCond()->loc(), condExpr.type, TypeTable::P_BOOL);
         return;
     }
 
@@ -330,11 +330,11 @@ void Codegen::codegen(const ForAst *ast) {
         if (ast->hasCond()) {
             condExpr = codegenExpr(ast->getCond());
             if (condExpr.isUntyVal() && !promoteUntyped(condExpr, TypeTable::P_BOOL)) {
-                msgs->errorUnknown(ast->getCond()->loc());
+                msgs->errorExprCannotPromote(ast->getCond()->loc(), TypeTable::P_BOOL);
                 return;
             }
             if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
-                msgs->errorUnknown(ast->getCond()->loc());
+                msgs->errorExprCannotCast(ast->getCond()->loc(), condExpr.type, TypeTable::P_BOOL);
                 return;
             }
         } else {
@@ -389,11 +389,11 @@ void Codegen::codegen(const WhileAst *ast) {
     {
         ExprGenPayload condExpr = codegenExpr(ast->getCond());
         if (condExpr.isUntyVal() && !promoteUntyped(condExpr, TypeTable::P_BOOL)) {
-            msgs->errorUnknown(ast->getCond()->loc());
+            msgs->errorExprCannotPromote(ast->getCond()->loc(), TypeTable::P_BOOL);
             return;
         }
         if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
-            msgs->errorUnknown(ast->getCond()->loc());
+            msgs->errorExprCannotCast(ast->getCond()->loc(), condExpr.type, TypeTable::P_BOOL);
             return;
         }
 
@@ -442,11 +442,11 @@ void Codegen::codegen(const DoWhileAst *ast) {
 
         ExprGenPayload condExpr = codegenExpr(ast->getCond());
         if (condExpr.isUntyVal() && !promoteUntyped(condExpr, TypeTable::P_BOOL)) {
-            msgs->errorUnknown(ast->getCond()->loc());
+            msgs->errorExprCannotPromote(ast->getCond()->loc(), TypeTable::P_BOOL);
             return;
         }
         if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
-            msgs->errorUnknown(ast->getCond()->loc());
+            msgs->errorExprCannotCast(ast->getCond()->loc(), condExpr.type, TypeTable::P_BOOL);
             return;
         }
 
@@ -462,7 +462,7 @@ void Codegen::codegen(const DoWhileAst *ast) {
 
 void Codegen::codegen(const BreakAst *ast) {
     if (breakStack.empty()) {
-        msgs->errorUnknown(ast->loc());
+        msgs->errorBreakNowhere(ast->loc());
         return;
     }
 
@@ -471,7 +471,7 @@ void Codegen::codegen(const BreakAst *ast) {
 
 void Codegen::codegen(const ContinueAst *ast) {
     if (continueStack.empty()) {
-        msgs->errorUnknown(ast->loc());
+        msgs->errorContinueNowhere(ast->loc());
         return;
     }
 
@@ -484,16 +484,18 @@ void Codegen::codegen(const SwitchAst *ast) {
 
     // literals get cast to the widest sint type, along with comparison values
     if (valExprPay.isUntyVal() && !promoteUntyped(valExprPay, TypeTable::WIDEST_I)) {
-        msgs->errorUnknown(ast->getValue()->loc());
+        msgs->errorSwitchNotIntegral(ast->getValue()->loc());
         return;
     }
     if (valBroken(valExprPay) ||
         !(getTypeTable()->isTypeI(valExprPay.type) || getTypeTable()->isTypeU(valExprPay.type))) {
-        msgs->errorUnknown(ast->getValue()->loc());
+        msgs->errorSwitchNotIntegral(ast->getValue()->loc());
         return;
     }
 
+    // num of blocks of execution (one for each case)
     size_t caseBlockNum = ast->getCases().size();
+    // total num of comparison expressions among cases
     size_t caseCompNum = 0;
 
     vector<llvm::BasicBlock*> blocks(caseBlockNum);
@@ -507,10 +509,16 @@ void Codegen::codegen(const SwitchAst *ast) {
     for (size_t i = 0; i < caseBlockNum; ++i) {
         for (const auto &comp_ : ast->getCases()[i].comparisons) {
             ExprGenPayload compExprPay = codegenExpr(comp_.get());
-            if (!compExprPay.isUntyVal() ||
-                compExprPay.untyVal.type != UntypedVal::T_SINT || !promoteUntyped(compExprPay, valExprPay.type) ||
-                caseVals.find(compExprPay.untyVal.val_si) != caseVals.end()) {
-                msgs->errorUnknown(comp_->loc());
+            if (!compExprPay.isUntyVal()) {
+                msgs->errorExprNotBaked(comp_->loc());
+                return;
+            }
+            if (compExprPay.untyVal.type != UntypedVal::T_SINT || !promoteUntyped(compExprPay, valExprPay.type)) {
+                msgs->errorExprCannotPromote(comp_->loc(), valExprPay.type);
+                return;
+            }
+            if (caseVals.find(compExprPay.untyVal.val_si) != caseVals.end()) {
+                msgs->errorSwitchMatchDuplicate(comp_->loc());
                 return;
             }
 
@@ -548,13 +556,14 @@ void Codegen::codegen(const SwitchAst *ast) {
 void Codegen::codegen(const RetAst *ast) {
     optional<FuncValue> currFunc = symbolTable->getCurrFunc();
     if (!currFunc.has_value()) {
+        // should not happen, cannot parse stmnt outside of functions
         msgs->errorUnknown(ast->loc());
         return;
     }
 
     if (!ast->getVal()) {
         if (currFunc.value().hasRet) {
-            msgs->errorUnknown(ast->loc());
+            msgs->errorRetNoValue(ast->loc(), currFunc.value().retType);
             return;
         }
         llvmBuilder.CreateRetVoid();
@@ -563,7 +572,7 @@ void Codegen::codegen(const RetAst *ast) {
 
     ExprGenPayload retExpr = codegenExpr(ast->getVal());
     if (retExpr.isUntyVal() && !promoteUntyped(retExpr, currFunc.value().retType)) {
-        msgs->errorUnknown(ast->getVal()->loc());
+        msgs->errorExprCannotPromote(ast->getVal()->loc(), currFunc.value().retType);
         return;
     }
     if (valBroken(retExpr)) return;
@@ -571,7 +580,7 @@ void Codegen::codegen(const RetAst *ast) {
     llvm::Value *retVal = retExpr.val;
     if (retExpr.type != currFunc.value().retType) {
         if (!getTypeTable()->isImplicitCastable(retExpr.type, currFunc.value().retType)) {
-            msgs->errorUnknown(ast->getVal()->loc());
+            msgs->errorExprCannotCast(ast->getVal()->loc(), retExpr.type, currFunc.value().retType);
             return;
         }
         createCast(retVal, retExpr.type, currFunc.value().retType);
@@ -587,8 +596,8 @@ void Codegen::codegen(const BlockAst *ast, bool makeScope) {
 }
 
 std::pair<FuncValue, bool> Codegen::codegen(const FuncProtoAst *ast, bool definition) {
-    if (symbolTable->funcNameTaken(ast->getName())) {
-        msgs->errorUnknown(ast->loc());
+    if (!symbolTable->funcMayTakeName(ast->getName())) {
+        msgs->errorFuncNameTaken(ast->loc(), ast->getName());
         return make_pair(FuncValue(), false);
     }
 
@@ -603,7 +612,7 @@ std::pair<FuncValue, bool> Codegen::codegen(const FuncProtoAst *ast, bool defini
     val.noNameMangle = ast->isNoNameMangle();
 
     if (!symbolTable->canRegisterFunc(val)) {
-        msgs->errorUnknown(ast->loc());
+        msgs->errorFuncSigConflict(ast->loc());
         return make_pair(FuncValue(), false);
     }
 
@@ -611,7 +620,7 @@ std::pair<FuncValue, bool> Codegen::codegen(const FuncProtoAst *ast, bool defini
     for (size_t i = 0; i+1 < ast->getArgCnt(); ++i) {
         for (size_t j = i+1; j < ast->getArgCnt(); ++j) {
             if (ast->getArgName(i) == ast->getArgName(j)) {
-                msgs->errorUnknown(ast->loc());
+                msgs->errorFuncArgNameDuplicate(ast->loc(), ast->getArgName(j));
                 return make_pair(FuncValue(), false);
             }
         }
@@ -621,6 +630,7 @@ std::pair<FuncValue, bool> Codegen::codegen(const FuncProtoAst *ast, bool defini
     if (!val.noNameMangle) {
         optional<NamePool::Id> mangled = mangleName(val);
         if (!mangled) {
+            // should not happen
             msgs->errorUnknown(ast->loc());
             return make_pair(FuncValue(), false);
         }

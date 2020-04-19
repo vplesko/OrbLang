@@ -1,0 +1,3 @@
+fnc foo(i32 x, u32 y, f32 x) {}
+
+fnc main() {}

@@ -1,0 +1,5 @@
+fnc main() {
+    switch("abcd") {
+    else: ret;
+    }
+}

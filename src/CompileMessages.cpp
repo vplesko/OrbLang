@@ -94,6 +94,14 @@ void CompileMessages::errorSwitchMultiElse(CodeLoc loc) {
     error(loc, "Switch statements may have at most one else branch.");
 }
 
+void CompileMessages::errorSwitchNotIntegral(CodeLoc loc) {
+    error(loc, "Switch statement can only match on integer and unsigned types.");
+}
+
+void CompileMessages::errorSwitchMatchDuplicate(CodeLoc loc) {
+    error(loc, "Duplicate matching value in a switch statement.");
+}
+
 void CompileMessages::errorNotLastParam(CodeLoc loc) {
     error(loc, "No further parameters are allowed in this function signature.");
 }
@@ -118,7 +126,7 @@ void CompileMessages::errorNonBinOp(CodeLoc loc, Token op) {
 
 void CompileMessages::errorVarNameTaken(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
-    ss << "Variable with name '" << namePool->get(name) << "' already exists in this scope.";
+    ss << "Variable (or other entity) with name '" << namePool->get(name) << "' already exists in this scope.";
     error(loc, ss.str());
 }
 
@@ -132,9 +140,9 @@ void CompileMessages::errorExprNotBaked(CodeLoc loc) {
     error(loc, "Expression cannot be evaluated at compile time.");
 }
 
-void CompileMessages::errorExprCannotPromote(CodeLoc loc, TypeTable::Id ty) {
+void CompileMessages::errorExprCannotPromote(CodeLoc loc, TypeTable::Id into) {
     stringstream ss;
-    ss << "Expression cannot be promoted to expected type '" << errorStringOfType(ty) << "'.";
+    ss << "Expression cannot be promoted to expected type '" << errorStringOfType(into) << "'.";
     error(loc, ss.str());
 }
 
@@ -142,6 +150,37 @@ void CompileMessages::errorExprCannotCast(CodeLoc loc, TypeTable::Id from, TypeT
     stringstream ss;
     ss << "Expression of type '" << errorStringOfType(from) <<
         "' cannot be implicitly cast into type '" << errorStringOfType(into) << "'.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorBreakNowhere(CodeLoc loc) {
+    error(loc, "Break statement has no enclosing loop to break from.");
+}
+
+void CompileMessages::errorContinueNowhere(CodeLoc loc) {
+    error(loc, "Continue statement has no enclosing loop to continue into.");
+}
+
+void CompileMessages::errorRetNoValue(CodeLoc loc, TypeTable::Id shouldRet) {
+    stringstream ss;
+    ss << "Ret statement has no return value, but should return value of type '" <<
+        errorStringOfType(shouldRet) << "'.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorFuncNameTaken(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Name '" << namePool->get(name) << "' is already taken and cannot be used for a function.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorFuncSigConflict(CodeLoc loc) {
+    error(loc, "Function's signature conflicts with a previously defined function.");
+}
+
+void CompileMessages::errorFuncArgNameDuplicate(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Argument name '" << namePool->get(name) << "' used more than once in function proto.";
     error(loc, ss.str());
 }
 

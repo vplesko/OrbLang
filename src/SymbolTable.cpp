@@ -197,22 +197,21 @@ optional<FuncValue> SymbolTable::getCurrFunc() const {
     else return nullopt;
 }
 
-bool SymbolTable::varNameTaken(NamePool::Id name) const {
-    if (typeTable->isType(name)) return true;
+bool SymbolTable::varMayTakeName(NamePool::Id name) const {
+    if (typeTable->isType(name)) return false;
 
     if (last == glob) {
         // you can have vars with same name as funcs, except in global
         for (const auto &p : funcs)
             if (p.first.name == name)
-                return true;
+                return false;
     }
 
-    return last->vars.find(name) != last->vars.end();
+    return last->vars.find(name) == last->vars.end();
 }
 
-// only checks for name collisions with global vars, NOT with funcs of same sig!
-bool SymbolTable::funcNameTaken(NamePool::Id name) const {
-    return typeTable->isType(name) || last->vars.find(name) != last->vars.end();
+bool SymbolTable::funcMayTakeName(NamePool::Id name) const {
+    return !typeTable->isType(name) && last->vars.find(name) == last->vars.end();
 }
 
 SymbolTable::~SymbolTable() {
