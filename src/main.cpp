@@ -45,9 +45,9 @@ int main(int argc,  char** argv) {
         cout << " " << f;
     cout << endl;
 
-    Compiler compiler;
+    Compiler compiler(cerr);
     if (!compiler.parse(inputs)) {
-        compiler.dumpMsgs(cerr);
+        cerr << "Compilation failed." << endl;
         return PARSE_FAIL;
     }
     

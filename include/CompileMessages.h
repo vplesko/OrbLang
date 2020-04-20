@@ -9,21 +9,29 @@
 class NamePool;
 
 class CompileMessages {
+    enum Status {
+        S_OK,
+        S_WARN,
+        S_ERROR
+    };
+
     NamePool *namePool;
     SymbolTable *symbolTable;
-    std::vector<std::string> errors;
+    std::ostream *out;
+    Status status;
 
+    void warn(CodeLoc loc, const std::string &str);
     void error(CodeLoc loc, const std::string &str);
 
     std::string errorStringOfType(TypeTable::Id ty) const;
 
 public:
-    explicit CompileMessages(NamePool *namePool, SymbolTable *symbolTable)
-        : namePool(namePool), symbolTable(symbolTable) {}
+    explicit CompileMessages(NamePool *namePool, SymbolTable *symbolTable, std::ostream &out)
+        : namePool(namePool), symbolTable(symbolTable), out(&out), status(S_OK) {}
+    
+    bool isAbort() const { return status >= S_ERROR; }
 
-    bool isAbort() const { return !errors.empty(); }
-
-    const std::vector<std::string>& getErrors() const { return errors; }
+    void warnExprIndexOutOfBounds(CodeLoc loc);
 
     void errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token see);
     void errorUnexpectedTokenType(CodeLoc loc, std::vector<Token::Type> exp, Token see);

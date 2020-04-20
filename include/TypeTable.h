@@ -99,6 +99,7 @@ public:
 
     Id getTypeIdStr() { return strType; }
     Id getTypeCharArrOfLenId(std::size_t len);
+    std::optional<std::size_t> getArrLen(Id arrTypeId) const;
 
     bool isType(NamePool::Id name) const;
     Id getTypeId(NamePool::Id name) const { return typeIds.at(name); }

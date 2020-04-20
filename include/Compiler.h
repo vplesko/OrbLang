@@ -18,10 +18,9 @@ class Compiler {
     void genPrimTypes();
 
 public:
-    Compiler();
+    Compiler(std::ostream &out);
 
     bool parse(const std::vector<std::string> &inputs);
     void printout() const;
-    void dumpMsgs(std::ostream &out);
     bool compile(const std::string &output, bool exe);
 };

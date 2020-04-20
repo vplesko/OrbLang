@@ -153,6 +153,14 @@ TypeTable::Id TypeTable::getTypeCharArrOfLenId(std::size_t len) {
     return addTypeArrOfLenId(P_C8, len);
 }
 
+optional<size_t> TypeTable::getArrLen(Id arrTypeId) const {
+    if (arrTypeId >= types.size()) return nullopt;
+    const TypeDescr &ty = types[arrTypeId].first;
+    if (!ty.decors.empty() && ty.decors.back().type == TypeDescr::Decor::D_ARR)
+        return ty.decors.back().len;
+    return nullopt;
+}
+
 bool TypeTable::isType(NamePool::Id name) const {
     return typeIds.find(name) != typeIds.end();
 }

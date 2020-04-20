@@ -70,11 +70,16 @@ Codegen::ExprGenPayload Codegen::codegen(const IndExprAst *ast) {
 
     if (indExprPay.isUntyVal()) {
         if (indExprPay.untyVal.type == UntypedVal::T_SINT) {
-            // TODO warning if oob index on sized array
             if (!promoteUntyped(indExprPay, TypeTable::shortestFittingTypeI(indExprPay.untyVal.val_si))) {
                 // should not happen
                 msgs->errorUnknown(ast->getInd()->loc());
                 return {};
+            }
+            if (getTypeTable()->isTypeArr(baseExprPay.type)) {
+                size_t len = getTypeTable()->getArrLen(baseExprPay.type).value();
+                if (indExprPay.untyVal.val_si < 0 || ((size_t) indExprPay.untyVal.val_si) >= len) {
+                    msgs->warnExprIndexOutOfBounds(ast->getInd()->loc());
+                }
             }
         } else {
             msgs->errorExprIndexNotIntegral(ast->getInd()->loc());

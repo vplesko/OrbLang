@@ -10,7 +10,6 @@ bool Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
         return false;
     }
 
-    // TODO warn that if removing cn, may give undefined behaviour
     if (getTypeTable()->isTypeI(srcTypeId)) {
         if (getTypeTable()->isTypeI(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, true, "i2i_cast");

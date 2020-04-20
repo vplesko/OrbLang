@@ -8,11 +8,11 @@
 #include "ClangAdapter.h"
 using namespace std;
 
-Compiler::Compiler() {
+Compiler::Compiler(ostream &out) {
     namePool = make_unique<NamePool>();
     typeTable = make_unique<TypeTable>();
     symbolTable = make_unique<SymbolTable>(typeTable.get());
-    msgs = make_unique<CompileMessages>(namePool.get(), symbolTable.get());
+    msgs = make_unique<CompileMessages>(namePool.get(), symbolTable.get(), out);
     codegen = make_unique<Codegen>(namePool.get(), symbolTable.get(), msgs.get());
 
     genPrimTypes();
@@ -96,15 +96,6 @@ void Compiler::genPrimTypes() {
     );
 }
 
-void Compiler::dumpMsgs(ostream &out) {
-    for (const string &m : msgs->getErrors()) {
-        out << m << endl;
-    }
-    if (msgs->isAbort()) {
-        out << "Compilation failed!" << endl;
-    }
-}
-
 enum ImportTransRes {
     ITR_STARTED,
     ITR_CYCLICAL,
@@ -135,6 +126,7 @@ ImportTransRes followImport(
     }
 }
 
+// TODO report errors for file imports
 bool Compiler::parse(const vector<string> &inputs) {
     if (inputs.empty()) return false;
 

@@ -43,10 +43,18 @@ inline string toString(CodeLoc loc) {
     return ss.str();
 }
 
+inline void CompileMessages::warn(CodeLoc loc, const std::string &str) {
+    status = max(status, S_WARN);
+    (*out) << "warn: " << toString(loc) << ' ' << str << endl;
+}
+
+void CompileMessages::warnExprIndexOutOfBounds(CodeLoc loc) {
+    warn(loc, "Attempting to index out of bounds of the array.");
+}
+
 inline void CompileMessages::error(CodeLoc loc, const string &str) {
-    stringstream ss;
-    ss << toString(loc) << ' ' << str;
-    errors.push_back(ss.str());
+    status = max(status, S_ERROR);
+    (*out) << "error: " << toString(loc) << ' ' << str << endl;
 }
 
 void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token see) {
