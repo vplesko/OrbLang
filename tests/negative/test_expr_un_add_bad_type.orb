@@ -1,0 +1,4 @@
+fnc main() {
+    ptr x = null;
+    +x;
+}

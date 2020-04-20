@@ -1,0 +1,5 @@
+fnc foo(...) {}
+
+fnc main() {
+    foo(1);
+}

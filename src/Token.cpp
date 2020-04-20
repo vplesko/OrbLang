@@ -78,6 +78,8 @@ std::string errorString(Token tok) {
         return tok.bval ? "true" : "false";
     case Token::T_STRING:
         return string(1, '"') + tok.str + string(1, '"');
+    case Token::T_OPER:
+        return errorString(tok.op);
     default:
         return errorString(tok.type);
     }
@@ -132,6 +134,45 @@ string errorString(Token::Type tok) {
     }
 
     return "<forbidden>";
+}
+
+std::string errorString(Token::Oper op) {
+    switch (op) {
+    case Token::O_ASGN: return "=";
+    case Token::O_ADD_ASGN: return "+=";
+    case Token::O_SUB_ASGN: return "-=";
+    case Token::O_MUL_ASGN: return "*=";
+    case Token::O_DIV_ASGN: return "/=";
+    case Token::O_REM_ASGN: return "%=";
+    case Token::O_SHL_ASGN: return "<<=";
+    case Token::O_SHR_ASGN: return ">>=";
+    case Token::O_BIT_AND_ASGN: return "&=";
+    case Token::O_BIT_XOR_ASGN: return "^=";
+    case Token::O_BIT_OR_ASGN: return "|=";
+    case Token::O_OR: return "or";
+    case Token::O_AND: return "and";
+    case Token::O_BIT_OR: return "|";
+    case Token::O_BIT_XOR: return "^";
+    case Token::O_BIT_AND: return "&";
+    case Token::O_EQ: return "==";
+    case Token::O_NEQ: return "!=";
+    case Token::O_LT: return "<";
+    case Token::O_LTEQ: return "<=";
+    case Token::O_GT: return ">";
+    case Token::O_GTEQ: return ">=";
+    case Token::O_SHL: return "<<";
+    case Token::O_SHR: return ">>";
+    case Token::O_ADD: return "+";
+    case Token::O_SUB: return "-";
+    case Token::O_MUL: return "*";
+    case Token::O_DIV: return "/";
+    case Token::O_REM: return "%";
+    case Token::O_INC: return "++";
+    case Token::O_DEC: return "--";
+    case Token::O_NOT: return "!";
+    case Token::O_BIT_NOT: return "~";
+    default: return "<unknown>";
+    }
 }
 
 std::string errorString(Token::Attr attr) {

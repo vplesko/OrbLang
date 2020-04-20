@@ -130,6 +130,12 @@ void CompileMessages::errorVarNameTaken(CodeLoc loc, NamePool::Id name) {
     error(loc, ss.str());
 }
 
+void CompileMessages::errorVarNotFound(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Variable with name '" << namePool->get(name) << "' not found.";
+    error(loc, ss.str());
+}
+
 void CompileMessages::errorCnNoInit(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Constant with name '" << namePool->get(name) << "' is not initialized.";
@@ -146,10 +152,31 @@ void CompileMessages::errorExprCannotPromote(CodeLoc loc, TypeTable::Id into) {
     error(loc, ss.str());
 }
 
+void CompileMessages::errorExprUntyMismatch(CodeLoc loc) {
+    error(loc, "Binary operations cannot be performed on untyped operands of mismatching types.");
+}
+
+void CompileMessages::errorExprUntyBinBadOp(CodeLoc loc, Token::Oper op) {
+    stringstream ss;
+    ss << "Binary operation '" << errorString(op) << "' is not defined for untyped values of this type.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorExprCompareStringLits(CodeLoc loc) {
+    error(loc, "String literals cannot directly be compared for pointer (in)equality.");
+}
+
 void CompileMessages::errorExprCannotCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into) {
     stringstream ss;
     ss << "Expression of type '" << errorStringOfType(from) <<
         "' cannot be implicitly cast into type '" << errorStringOfType(into) << "'.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorExprCannotCastEither(CodeLoc loc, TypeTable::Id ty1, TypeTable::Id ty2) {
+    stringstream ss;
+    ss << "Expressions of type '" << errorStringOfType(ty1) << "' and '" << errorStringOfType(ty2) <<
+        "' cannot both be implicitly cast to one of the two types.";
     error(loc, ss.str());
 }
 
@@ -181,6 +208,79 @@ void CompileMessages::errorFuncSigConflict(CodeLoc loc) {
 void CompileMessages::errorFuncArgNameDuplicate(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Argument name '" << namePool->get(name) << "' used more than once in function proto.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorFuncNotFound(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "No function with name '" << namePool->get(name) << "' satisfying the call signature has been found.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorExprCallVariadUnty(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Attempting to call variadic function '" << namePool->get(name) << "' with an untyped value as variadic argument.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorExprIndexOnBadType(CodeLoc loc) {
+    error(loc, "Cannot index on this value.");
+}
+
+void CompileMessages::errorExprIndexOnBadType(CodeLoc loc, TypeTable::Id ty) {
+    stringstream ss;
+    ss << "Cannot index on type '" << errorStringOfType(ty) << "'.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorExprDerefOnBadType(CodeLoc loc, TypeTable::Id ty) {
+    stringstream ss;
+    ss << "Cannot dereference on type '" << errorStringOfType(ty) << "'.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorExprAddressOfNoRef(CodeLoc loc) {
+    error(loc, "Cannot take address of non ref values.");
+}
+
+void CompileMessages::errorExprIndexNotIntegral(CodeLoc loc) {
+    error(loc, "Index must be of integer or unsigned type.");
+}
+
+void CompileMessages::errorExprUnBadType(CodeLoc loc, Token::Oper op) {
+    stringstream ss;
+    ss << "Unary operation '" << errorString(op) << "' is not allowed on this value.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorExprUnBadType(CodeLoc loc, Token::Oper op, TypeTable::Id ty) {
+    stringstream ss;
+    ss << "Unary operation '" << errorString(op) << "' is not allowed on type '"
+        << errorStringOfType(ty) << "'.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorExprUnOnCn(CodeLoc loc, Token::Oper op) {
+    stringstream ss;
+    ss << "Operation '" << errorString(op) << "' modifies its operand and cannot be called on a constant type.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorExprUnOnNull(CodeLoc loc, Token::Oper op) {
+    stringstream ss;
+    ss << "Operation '" << errorString(op) << "' is not allowed on null literal.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorExprAsgnNonRef(CodeLoc loc, Token::Oper op) {
+    stringstream ss;
+    ss << "Operation '" << errorString(op) << "' and other assignment operations must assign to ref values.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorExprAsgnOnCn(CodeLoc loc, Token::Oper op) {
+    stringstream ss;
+    ss << "Operation '" << errorString(op) << "' and other assignment operations cannot assign to constant types.";
     error(loc, ss.str());
 }
 
