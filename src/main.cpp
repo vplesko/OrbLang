@@ -11,7 +11,6 @@ enum Error {
     COMPILE_FAIL
 };
 
-// TODO print error if input file invalid
 int main(int argc,  char** argv) {
     if (argc < 2) {
         cerr << "Not enough arguments when calling orbc." << endl;

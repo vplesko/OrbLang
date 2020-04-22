@@ -162,7 +162,10 @@ bool Compiler::parse(const vector<string> &inputs) {
                 if (node->type() == AST_Import) {
                     string path = canonical(((ImportAst*)node.get())->getFile());
                     ImportTransRes imres = followImport(path, par, namePool.get(), lexers);
-                    if (imres == ITR_CYCLICAL || imres == ITR_FAIL) {
+                    if (imres == ITR_FAIL) {
+                        return false;
+                    } else if (imres == ITR_CYCLICAL) {
+                        msgs->errorImportCyclical(node->loc(), path);
                         return false;
                     }
                     
@@ -190,7 +193,6 @@ bool Compiler::compile(const std::string &output, bool exe) {
         return codegen->binary(output);
     } else {
         // TODO see if lld::elf::link can be used
-        // TODO error when no main, multi mains
 
         const static string tempObjName = isOsWindows ? "a.obj" : "a.o";
         // TODO doesn't get called on linker failure

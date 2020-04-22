@@ -20,7 +20,9 @@ class CompileMessages {
     std::ostream *out;
     Status status;
 
+    void warn(const std::string &str);
     void warn(CodeLoc loc, const std::string &str);
+    void error(const std::string &str);
     void error(CodeLoc loc, const std::string &str);
 
     std::string errorStringOfType(TypeTable::Id ty) const;
@@ -33,6 +35,8 @@ public:
 
     void warnExprIndexOutOfBounds(CodeLoc loc);
 
+    void errorImportNotFound(CodeLoc loc, std::string &path);
+    void errorImportCyclical(CodeLoc loc, std::string &path);
     void errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token see);
     void errorUnexpectedTokenType(CodeLoc loc, std::vector<Token::Type> exp, Token see);
     void errorNotSimple(CodeLoc loc);

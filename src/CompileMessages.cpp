@@ -43,18 +43,40 @@ inline string toString(CodeLoc loc) {
     return ss.str();
 }
 
-inline void CompileMessages::warn(CodeLoc loc, const std::string &str) {
+inline void CompileMessages::warn(const std::string &str) {
     status = max(status, S_WARN);
-    (*out) << "warn: " << toString(loc) << ' ' << str << endl;
+    (*out) << "warn: " << str << endl;
+}
+
+inline void CompileMessages::warn(CodeLoc loc, const std::string &str) {
+    (*out) << toString(loc) << ' ';
+    warn(str);
 }
 
 void CompileMessages::warnExprIndexOutOfBounds(CodeLoc loc) {
     warn(loc, "Attempting to index out of bounds of the array.");
 }
 
-inline void CompileMessages::error(CodeLoc loc, const string &str) {
+inline void CompileMessages::error(const string &str) {
     status = max(status, S_ERROR);
-    (*out) << "error: " << toString(loc) << ' ' << str << endl;
+    (*out) << "error: " << str << endl;
+}
+
+inline void CompileMessages::error(CodeLoc loc, const string &str) {
+    (*out) << toString(loc) << ' ';
+    error(str);
+}
+
+void CompileMessages::errorImportNotFound(CodeLoc loc, std::string &path) {
+    stringstream ss;
+    ss << "Importing nonexistent file '" << path << "'.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorImportCyclical(CodeLoc loc, std::string &path) {
+    stringstream ss;
+    ss << "Importing the file '" << path << "' at this point introduced a cyclical dependency.";
+    error(loc, ss.str());
 }
 
 void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token see) {
