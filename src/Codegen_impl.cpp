@@ -561,8 +561,8 @@ void Codegen::codegen(const RetAst *ast) {
     }
 
     if (!ast->getVal()) {
-        if (currFunc.value().hasRet) {
-            msgs->errorRetNoValue(ast->loc(), currFunc.value().retType);
+        if (currFunc.value().hasRet()) {
+            msgs->errorRetNoValue(ast->loc(), currFunc.value().retType.value());
             return;
         }
         llvmBuilder.CreateRetVoid();
@@ -570,19 +570,19 @@ void Codegen::codegen(const RetAst *ast) {
     }
 
     ExprGenPayload retExpr = codegenExpr(ast->getVal());
-    if (retExpr.isUntyVal() && !promoteUntyped(retExpr, currFunc.value().retType)) {
-        msgs->errorExprCannotPromote(ast->getVal()->loc(), currFunc.value().retType);
+    if (retExpr.isUntyVal() && !promoteUntyped(retExpr, currFunc.value().retType.value())) {
+        msgs->errorExprCannotPromote(ast->getVal()->loc(), currFunc.value().retType.value());
         return;
     }
     if (valBroken(retExpr)) return;
 
     llvm::Value *retVal = retExpr.val;
-    if (retExpr.type != currFunc.value().retType) {
-        if (!getTypeTable()->isImplicitCastable(retExpr.type, currFunc.value().retType)) {
-            msgs->errorExprCannotCast(ast->getVal()->loc(), retExpr.type, currFunc.value().retType);
+    if (retExpr.type != currFunc.value().retType.value()) {
+        if (!getTypeTable()->isImplicitCastable(retExpr.type, currFunc.value().retType.value())) {
+            msgs->errorExprCannotCast(ast->getVal()->loc(), retExpr.type, currFunc.value().retType.value());
             return;
         }
-        createCast(retVal, retExpr.type, currFunc.value().retType);
+        createCast(retVal, retExpr.type, currFunc.value().retType.value());
     }
 
     llvmBuilder.CreateRet(retVal);
@@ -594,25 +594,24 @@ void Codegen::codegen(const BlockAst *ast, bool makeScope) {
     for (const auto &it : ast->getBody()) codegenNode(it.get());
 }
 
-std::pair<FuncValue, bool> Codegen::codegen(const FuncProtoAst *ast, bool definition) {
+optional<FuncValue> Codegen::codegen(const FuncProtoAst *ast, bool definition) {
     if (!symbolTable->funcMayTakeName(ast->getName())) {
         msgs->errorFuncNameTaken(ast->loc(), ast->getName());
-        return make_pair(FuncValue(), false);
+        return nullopt;
     }
 
     FuncValue val;
     val.name = ast->getName();
     val.argTypes = vector<TypeTable::Id>(ast->getArgCnt());
     for (size_t i = 0; i < ast->getArgCnt(); ++i) val.argTypes[i] = ast->getArgType(i)->getTypeId();
-    val.hasRet = ast->hasRetVal();
-    if (val.hasRet) val.retType = ast->getRetType()->getTypeId();
+    if (ast->hasRetVal()) val.retType = ast->getRetType()->getTypeId();
     val.defined = definition;
     val.variadic = ast->isVariadic();
     val.noNameMangle = ast->isNoNameMangle();
 
     if (!symbolTable->canRegisterFunc(val)) {
         msgs->errorFuncSigConflict(ast->loc());
-        return make_pair(FuncValue(), false);
+        return nullopt;
     }
 
     // can't have args with same name
@@ -620,7 +619,7 @@ std::pair<FuncValue, bool> Codegen::codegen(const FuncProtoAst *ast, bool defini
         for (size_t j = i+1; j < ast->getArgCnt(); ++j) {
             if (ast->getArgName(i) == ast->getArgName(j)) {
                 msgs->errorFuncArgNameDuplicate(ast->loc(), ast->getArgName(j));
-                return make_pair(FuncValue(), false);
+                return nullopt;
             }
         }
     }
@@ -631,7 +630,7 @@ std::pair<FuncValue, bool> Codegen::codegen(const FuncProtoAst *ast, bool defini
         if (!mangled) {
             // should not happen
             msgs->errorUnknown(ast->loc());
-            return make_pair(FuncValue(), false);
+            return nullopt;
         }
         funcName = mangled.value();
     }
@@ -657,14 +656,14 @@ std::pair<FuncValue, bool> Codegen::codegen(const FuncProtoAst *ast, bool defini
 
     val.func = func;
 
-    return make_pair(symbolTable->registerFunc(val), true);
+    return symbolTable->registerFunc(val);
 }
 
 void Codegen::codegen(const FuncAst *ast) {
-    std::pair<FuncValue, bool> funcValRet = codegen(ast->getProto(), true);
-    if (funcValRet.second == false) return;
+    optional<FuncValue> funcValRet = codegen(ast->getProto(), true);
+    if (!funcValRet.has_value()) return;
 
-    const FuncValue *funcVal = &funcValRet.first;
+    const FuncValue *funcVal = &funcValRet.value();
 
     ScopeControl scope(*symbolTable, *funcVal);
 

@@ -126,7 +126,6 @@ ImportTransRes followImport(
     }
 }
 
-// TODO report errors for file imports
 bool Compiler::parse(const vector<string> &inputs) {
     if (inputs.empty()) return false;
 

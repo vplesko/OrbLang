@@ -842,8 +842,12 @@ Codegen::ExprGenPayload Codegen::codegen(const CallExprAst *ast) {
     }
 
     // NOTE it's lvalue if returning a lvalue (by ref)
-    return {func.value().retType, llvmBuilder.CreateCall(func.value().func, args, 
-        func.value().hasRet ? "call_tmp" : ""), nullptr};
+    ExprGenPayload ret;
+    ret.val = llvmBuilder.CreateCall(func.value().func, args, func.value().hasRet() ? "call_tmp" : "");
+    if (func.value().hasRet()) {
+        ret.type = func.value().retType.value();
+    }
+    return ret;
 }
 
 Codegen::ExprGenPayload Codegen::codegen(const CastExprAst *ast) {

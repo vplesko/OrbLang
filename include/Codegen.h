@@ -84,8 +84,7 @@ class Codegen {
     void codegen(const SwitchAst *ast);
     void codegen(const RetAst *ast);
     void codegen(const BlockAst *ast, bool makeScope);
-    // TODO return as std::optional
-    std::pair<FuncValue, bool> codegen(const FuncProtoAst *ast, bool definition);
+    std::optional<FuncValue> codegen(const FuncProtoAst *ast, bool definition);
     void codegen(const FuncAst *ast);
 
     llvm::Type* codegenType(const TypeAst *ast);

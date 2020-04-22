@@ -79,11 +79,11 @@ struct FuncValue {
     bool variadic;
     bool noNameMangle;
     std::vector<TypeTable::Id> argTypes;
-    // TODO make retType std::optional
-    bool hasRet;
-    TypeTable::Id retType;
+    std::optional<TypeTable::Id> retType;
     bool defined;
     llvm::Function *func;
+
+    bool hasRet() const { return retType.has_value(); }
 };
 
 class SymbolTable {

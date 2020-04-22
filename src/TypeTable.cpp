@@ -15,14 +15,16 @@ void TypeTable::TypeDescr::addDecor(Decor d, bool cn_) {
     decors.push_back(d);
     cns.push_back(false);
 
+    // if all of the elems are cn, the entire arr is cn
     if (cn_ || (prevIsCn && d.type == Decor::D_ARR))
         setLastCn();
 }
 
+// marks the last type descriptor as cn
+// in case of D_ARR, propagates further
 void TypeTable::TypeDescr::setLastCn() {
     if (cns.empty()) cn = true;
     else {
-        // TODO write negative tests for this clusterfudge
         bool setBaseCn = false;
         for (size_t i = cns.size()-1;; --i) {
             if (cns[i]) break;

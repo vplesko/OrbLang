@@ -312,7 +312,6 @@ std::unique_ptr<TypeAst> Parser::type() {
     return make_unique<TypeAst>(codeLocType, typeId);
 }
 
-// TODO zero init? with __no_zero to disable
 unique_ptr<DeclAst> Parser::decl(unique_ptr<TypeAst> ty) {
     unique_ptr<DeclAst> ret = make_unique<DeclAst>(ty->loc(), ty->clone());
 

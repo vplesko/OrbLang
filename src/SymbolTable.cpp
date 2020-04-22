@@ -68,8 +68,8 @@ bool nonConflicting(const FuncValue &f1, const FuncValue &f2) {
     if (f1.name != f2.name) return true;
 
     if (f1.defined && f2.defined) return false;
-    if (f1.hasRet != f2.hasRet) return false;
-    if (f1.hasRet && f1.retType != f2.retType) return false;
+    if (f1.hasRet() != f2.hasRet()) return false;
+    if (f1.hasRet() && f1.retType.value() != f2.retType.value()) return false;
     if (f1.variadic != f2.variadic) return false;
     if (f1.noNameMangle != f2.noNameMangle) return false;
 
@@ -180,7 +180,6 @@ optional<FuncValue> SymbolTable::getFuncForCall(const FuncCallSite &call) {
         if (candVal == nullptr) continue;
 
         // in case of multiple possible funcs, error due to ambiguity
-        // TODO ret what the exact error was in ret val
         if (foundVal != nullptr) return nullopt;
         
         // found a function that fits this description (which may or may not require casts)
