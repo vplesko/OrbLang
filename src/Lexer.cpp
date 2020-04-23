@@ -6,7 +6,7 @@ using namespace std;
 
 const string numLitChars = "0123456789abcdefABCDEF.xXeEpP_";
 
-Lexer::Lexer(NamePool *namePool, const std::string &file) : namePool(namePool), in(file) {
+Lexer::Lexer(NamePool *namePool, CompileMessages *msgs, const std::string &file) : namePool(namePool), msgs(msgs), in(file) {
     ln = 0;
     col = 0;
     ch = 0; // not EOF
@@ -87,6 +87,7 @@ Token Lexer::next() {
 
             if (over()) {
                 tok.type = Token::T_UNKNOWN;
+                msgs->errorUnclosedMultilineComment(codeLoc);
                 return tok; // unclosed comment error, so skip old token
             }
 
@@ -332,6 +333,10 @@ Token Lexer::next() {
             }
         } else {
             tok.type = Token::T_UNKNOWN;
+        }
+
+        if (tok.type == Token::T_UNKNOWN) {
+            msgs->errorBadToken(codeLoc);
         }
 
         return old;

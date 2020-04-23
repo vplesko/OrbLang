@@ -8,9 +8,11 @@
 #include "CodeLoc.h"
 #include "SymbolTable.h"
 #include "Token.h"
+#include "CompileMessages.h"
 
 class Lexer {
     NamePool *namePool;
+    CompileMessages *msgs;
     std::ifstream in;
     std::string line;
     CodeIndex ln, col;
@@ -25,7 +27,7 @@ class Lexer {
     void skipLine();
 
 public:
-    Lexer(NamePool *namePool, const std::string &file);
+    Lexer(NamePool *namePool, CompileMessages *msgs, const std::string &file);
 
     bool start();
 

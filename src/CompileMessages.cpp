@@ -67,6 +67,14 @@ inline void CompileMessages::error(CodeLoc loc, const string &str) {
     error(str);
 }
 
+void CompileMessages::errorBadToken(CodeLoc loc) {
+    error(loc, "Could not parse token at this location.");
+}
+
+void CompileMessages::errorUnclosedMultilineComment(CodeLoc loc) {
+    error(loc, "End of file reached, but a multiline comment was not closed.");
+}
+
 void CompileMessages::errorImportNotFound(CodeLoc loc, std::string &path) {
     stringstream ss;
     ss << "Importing nonexistent file '" << path << "'.";

@@ -108,11 +108,11 @@ string canonical(const string &file) {
 }
 
 ImportTransRes followImport(
-    const string &path, Parser &par, NamePool *names,
+    const string &path, Parser &par, NamePool *names, CompileMessages *msgs,
     unordered_map<string, unique_ptr<Lexer>> &lexers) {
     auto loc = lexers.find(path);
     if (loc == lexers.end()) {
-        unique_ptr<Lexer> lex = make_unique<Lexer>(names, path);
+        unique_ptr<Lexer> lex = make_unique<Lexer>(names, msgs, path);
         if (!lex->start()) return ITR_FAIL;
 
         par.setLexer(lex.get());
@@ -136,7 +136,7 @@ bool Compiler::parse(const vector<string> &inputs) {
 
     for (const string &in : inputs) {
         string path = canonical(in);
-        ImportTransRes imres = followImport(path, par, namePool.get(), lexers);
+        ImportTransRes imres = followImport(path, par, namePool.get(), msgs.get(), lexers);
         if (imres == ITR_CYCLICAL || imres == ITR_FAIL) {
             // cyclical should logically not happen here
             return false;
@@ -160,7 +160,7 @@ bool Compiler::parse(const vector<string> &inputs) {
                 
                 if (node->type() == AST_Import) {
                     string path = canonical(((ImportAst*)node.get())->getFile());
-                    ImportTransRes imres = followImport(path, par, namePool.get(), lexers);
+                    ImportTransRes imres = followImport(path, par, namePool.get(), msgs.get(), lexers);
                     if (imres == ITR_FAIL) {
                         return false;
                     } else if (imres == ITR_CYCLICAL) {
