@@ -1,0 +1,9 @@
+import "tests/io.orb";
+
+data Point {
+    i32 x, y;
+    bool v;
+}
+
+fnc main() {
+}

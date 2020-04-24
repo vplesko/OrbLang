@@ -161,6 +161,9 @@ void Codegen::codegenNode(const BaseAst *ast, bool blockMakeScope) {
     case AST_Func:
         codegen((const FuncAst*)ast);
         return;
+    case AST_Data:
+        codegen((const DataAst*)ast);
+        return;
     default:
         codegenExpr((const ExprAst*)ast);
     }
@@ -586,6 +589,10 @@ void Codegen::codegen(const RetAst *ast) {
     }
 
     llvmBuilder.CreateRet(retVal);
+}
+
+void Codegen::codegen(const DataAst *ast) {
+    // TODO!
 }
 
 void Codegen::codegen(const BlockAst *ast, bool makeScope) {

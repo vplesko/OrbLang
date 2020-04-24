@@ -1,0 +1,10 @@
+data Foo { i32 x; }
+
+fnc foo() Foo {
+    Foo f;
+    ret f;
+}
+
+fnc main() {
+    &foo();
+}

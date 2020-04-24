@@ -41,6 +41,7 @@ class Parser {
     std::unique_ptr<StmntAst> stmnt();
     std::unique_ptr<BlockAst> block();
     std::unique_ptr<BaseAst> func();
+    std::unique_ptr<DataAst> data();
     std::unique_ptr<ImportAst> import();
 
 public:

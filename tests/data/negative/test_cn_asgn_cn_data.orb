@@ -1,0 +1,14 @@
+data Foo {
+    i32 x;
+}
+
+fnc makeFoo() Foo {
+    Foo f;
+    ret f;
+}
+
+fnc main() {
+    Foo cn f1 = makeFoo();
+    Foo f2;
+    f1 = f2;
+}

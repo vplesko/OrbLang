@@ -1,0 +1,7 @@
+fnc foo() {}
+
+data foo {
+    i32 x;
+}
+
+fnc main() {}

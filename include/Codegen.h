@@ -83,6 +83,7 @@ class Codegen {
     void codegen(const ContinueAst *ast);
     void codegen(const SwitchAst *ast);
     void codegen(const RetAst *ast);
+    void codegen(const DataAst *ast);
     void codegen(const BlockAst *ast, bool makeScope);
     std::optional<FuncValue> codegen(const FuncProtoAst *ast, bool definition);
     void codegen(const FuncAst *ast);

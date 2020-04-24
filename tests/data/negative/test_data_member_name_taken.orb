@@ -1,0 +1,6 @@
+data Foo {
+    i32 x;
+    bool x;
+}
+
+fnc main() {}

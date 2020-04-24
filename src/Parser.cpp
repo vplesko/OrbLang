@@ -760,6 +760,33 @@ unique_ptr<BaseAst> Parser::func() {
     }
 }
 
+unique_ptr<DataAst> Parser::data() {
+    CodeLoc codeLocData = loc();
+
+    if (!matchOrError(Token::T_DATA))
+        return nullptr;
+    
+    if (peek().type != Token::T_ID) {
+        msgs->errorUnexpectedTokenType(loc(), Token::T_ID, peek());
+        return nullptr;
+    }
+
+    unique_ptr<DataAst> ret = make_unique<DataAst>(codeLocData, next().nameId);
+
+    if (!matchOrError(Token::T_BRACE_L_CUR))
+        return nullptr;
+
+    while (peek().type != Token::T_BRACE_R_CUR) {
+        unique_ptr<DeclAst> declAst = decl();
+        if (declAst == nullptr) return nullptr;
+
+        ret->addMember(move(declAst));
+    }
+    next();
+
+    return ret;
+}
+
 unique_ptr<ImportAst> Parser::import() {
     CodeLoc codeLocImport = loc();
 
@@ -788,6 +815,7 @@ unique_ptr<BaseAst> Parser::parseNode() {
 
     if (peek().type == Token::T_IMPORT) next = import();
     else if (peek().type == Token::T_FNC) next = func();
+    else if (peek().type == Token::T_DATA) next = data();
     else next = decl();
 
     return next;

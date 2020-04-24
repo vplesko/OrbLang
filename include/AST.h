@@ -28,6 +28,7 @@ enum AstType {
     AST_Switch,
     AST_FuncProto,
     AST_Func,
+    AST_Data,
     AST_Block,
     AST_Ret
 };
@@ -392,4 +393,19 @@ public:
     const ExprAst* getVal() const { return val.get(); }
 
     AstType type() const override { return AST_Ret; }
+};
+
+class DataAst : public BaseAst {
+    NamePool::Id name;
+    std::vector<std::unique_ptr<DeclAst>> members;
+
+public:
+    DataAst(CodeLoc loc, NamePool::Id name) : BaseAst(loc), name(name) {}
+
+    AstType type() const override { return AST_Data; }
+
+    NamePool::Id getName() const { return name; }
+
+    const std::vector<std::unique_ptr<DeclAst>>& getMembers() const { return members; }
+    void addMember(std::unique_ptr<DeclAst> d) { members.push_back(std::move(d)); }
 };
