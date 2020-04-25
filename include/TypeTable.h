@@ -10,6 +10,7 @@
 class TypeTable {
 public:
     typedef unsigned Id;
+    typedef unsigned IdBase;
 
     struct DataType {
         struct Member {
@@ -20,6 +21,9 @@ public:
 
         NamePool::Id name;
         std::vector<Member> members;
+
+        DataType() {}
+        explicit DataType(NamePool::Id name) : name(name) {}
 
         bool isDecl() const { return members.empty(); }
 
@@ -115,10 +119,11 @@ public:
     Id addTypeArrOfLenId(Id typeId, std::size_t len);
     Id addType(TypeDescr typeDescr, llvm::Type *type);
     void addPrimType(NamePool::Id name, PrimIds id, llvm::Type *type);
+    std::pair<Id, IdBase> addDataType(NamePool::Id name);
 
     llvm::Type* getType(Id id);
     void setType(Id id, llvm::Type *type);
-    const TypeDescr& getTypeDescr(Id id);
+    const TypeDescr& getTypeDescr(Id id) const;
 
     Id getTypeIdStr() { return strType; }
     Id getTypeCharArrOfLenId(std::size_t len);

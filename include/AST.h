@@ -396,16 +396,21 @@ public:
 };
 
 class DataAst : public BaseAst {
-    NamePool::Id name;
+    TypeTable::Id typeId;
+    TypeTable::IdBase dataTypeId;
     std::vector<std::unique_ptr<DeclAst>> members;
 
 public:
-    DataAst(CodeLoc loc, NamePool::Id name) : BaseAst(loc), name(name) {}
+    DataAst(CodeLoc loc, TypeTable::Id typeId, TypeTable::IdBase dataTypeId)
+        : BaseAst(loc), typeId(typeId), dataTypeId(dataTypeId) {}
 
     AstType type() const override { return AST_Data; }
 
-    NamePool::Id getName() const { return name; }
+    TypeTable::Id getTypeId() const { return typeId; }
+    TypeTable::IdBase getDataTypeId() const { return dataTypeId; }
 
     const std::vector<std::unique_ptr<DeclAst>>& getMembers() const { return members; }
     void addMember(std::unique_ptr<DeclAst> d) { members.push_back(std::move(d)); }
+
+    bool isDecl() const { return members.empty(); }
 };

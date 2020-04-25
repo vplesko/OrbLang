@@ -5,5 +5,36 @@ data Point {
     bool v;
 }
 
+data Node {
+    i32 val;
+    Node* l, r;
+}
+
+data Tree {
+    Node root;
+}
+
+data PtrI32Cn {
+    i32 cn* p;
+}
+
+data ArrI32 {
+    i32[4] a{0, 1, 2, 3};
+}
+
+data Zero {
+    i32 cn x = 0;
+}
+
+data Opaq;
+
+data WithOpaq {
+    Opaq* o;
+}
+
+data Opaq {
+    u32 u;
+}
+
 fnc main() {
 }

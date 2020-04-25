@@ -762,7 +762,6 @@ unique_ptr<BaseAst> Parser::func() {
 }
 
 unique_ptr<DataAst> Parser::data() {
-    // TODO! add to TypeTable to be able to have nested
     CodeLoc codeLocData = loc();
 
     if (!matchOrError(Token::T_DATA))
@@ -774,15 +773,20 @@ unique_ptr<DataAst> Parser::data() {
     }
 
     NamePool::Id dataName = next().nameId;
-    if (!symbolTable->dataMayTakeName(dataName)) {
-        msgs->errorDataNameTaken(codeLocData, dataName);
-        return nullptr;
+
+    pair<TypeTable::Id, TypeTable::IdBase> ids = symbolTable->getTypeTable()->addDataType(dataName);
+
+    unique_ptr<DataAst> ret = make_unique<DataAst>(codeLocData, ids.first, ids.second);
+
+    if (peek().type == Token::T_SEMICOLON) {
+        next();
+        return ret;
     }
 
-    unique_ptr<DataAst> ret = make_unique<DataAst>(codeLocData, dataName);
-
-    if (!matchOrError(Token::T_BRACE_L_CUR))
+    if (!match(Token::T_BRACE_L_CUR)) {
+        msgs->errorUnexpectedTokenType(loc(), {Token::T_BRACE_L_CUR, Token::T_SEMICOLON}, peek());
         return nullptr;
+    }
     
     unordered_set<NamePool::Id> memberNames;
 
@@ -802,6 +806,11 @@ unique_ptr<DataAst> Parser::data() {
         ret->addMember(move(declAst));
     }
     next();
+
+    if (memberNames.empty()) {
+        msgs->errorDataNoMembers(codeLocData, dataName);
+        return nullptr;
+    }
 
     return ret;
 }

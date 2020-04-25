@@ -85,5 +85,6 @@ public:
     void errorFuncNotFound(CodeLoc loc, NamePool::Id name);
     void errorDataNameTaken(CodeLoc loc, NamePool::Id name);
     void errorDataMemberNameDuplicate(CodeLoc loc, NamePool::Id name);
+    void errorDataNoMembers(CodeLoc loc, NamePool::Id name);
     void errorUnknown(CodeLoc loc);
 };

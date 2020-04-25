@@ -74,6 +74,31 @@ TypeTable::Id TypeTable::addType(TypeDescr typeDescr, llvm::Type *type) {
     return id;
 }
 
+void TypeTable::addPrimType(NamePool::Id name, PrimIds id, llvm::Type *type) {
+    typeIds.insert(make_pair(name, id));
+    typeNames.insert(make_pair(id, name));
+    types[id].first.base = id;
+    types[id].second = type;
+}
+
+pair<TypeTable::Id, TypeTable::IdBase> TypeTable::addDataType(NamePool::Id name) {
+    auto loc = typeNames.find(name);
+    if (loc != typeNames.end()) {
+        return make_pair(loc->second, types[loc->second].first.base);
+    }
+
+    IdBase dataTypeId = dataTypes.size();
+    DataType dataType(name);
+    dataTypes.push_back(move(dataType));
+
+    Id typeId = addType(TypeDescr(dataTypeId));
+
+    typeIds.insert(make_pair(name, typeId));
+    typeNames.insert(make_pair(typeId, name));
+
+    return make_pair(typeId, dataTypeId);
+}
+
 optional<TypeTable::Id> TypeTable::addTypeDeref(Id typeId) {
     const TypeDescr &typeDescr = types[typeId].first;
     
@@ -135,13 +160,6 @@ void TypeTable::addTypeStr() {
     strType = addType(move(typeDescr));
 }
 
-void TypeTable::addPrimType(NamePool::Id name, PrimIds id, llvm::Type *type) {
-    typeIds.insert(make_pair(name, id));
-    typeNames.insert(make_pair(id, name));
-    types[id].first.base = id;
-    types[id].second = type;
-}
-
 llvm::Type* TypeTable::getType(Id id) {
     return types[id].second;
 }
@@ -150,7 +168,7 @@ void TypeTable::setType(Id id, llvm::Type *type) {
     types[id].second = type;
 }
 
-const TypeTable::TypeDescr& TypeTable::getTypeDescr(Id id) {
+const TypeTable::TypeDescr& TypeTable::getTypeDescr(Id id) const {
     return types[id].first;
 }
 

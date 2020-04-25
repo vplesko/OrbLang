@@ -268,6 +268,12 @@ void CompileMessages::errorDataMemberNameDuplicate(CodeLoc loc, NamePool::Id nam
     error(loc, ss.str());
 }
 
+void CompileMessages::errorDataNoMembers(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Data type '" << namePool->get(name) << "' has no members, but must have at least one.";
+    error(loc, ss.str());
+}
+
 void CompileMessages::errorExprCallVariadUnty(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Attempting to call variadic function '" << namePool->get(name) << "' with an untyped value as variadic argument.";
