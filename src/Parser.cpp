@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sstream>
 #include <cstdint>
+#include <unordered_set>
 #include "AST.h"
 using namespace std;
 
@@ -761,6 +762,7 @@ unique_ptr<BaseAst> Parser::func() {
 }
 
 unique_ptr<DataAst> Parser::data() {
+    // TODO! add to TypeTable to be able to have nested
     CodeLoc codeLocData = loc();
 
     if (!matchOrError(Token::T_DATA))
@@ -771,14 +773,31 @@ unique_ptr<DataAst> Parser::data() {
         return nullptr;
     }
 
-    unique_ptr<DataAst> ret = make_unique<DataAst>(codeLocData, next().nameId);
+    NamePool::Id dataName = next().nameId;
+    if (!symbolTable->dataMayTakeName(dataName)) {
+        msgs->errorDataNameTaken(codeLocData, dataName);
+        return nullptr;
+    }
+
+    unique_ptr<DataAst> ret = make_unique<DataAst>(codeLocData, dataName);
 
     if (!matchOrError(Token::T_BRACE_L_CUR))
         return nullptr;
+    
+    unordered_set<NamePool::Id> memberNames;
 
     while (peek().type != Token::T_BRACE_R_CUR) {
         unique_ptr<DeclAst> declAst = decl();
         if (declAst == nullptr) return nullptr;
+
+        for (const auto &it : declAst->getDecls()) {
+            NamePool::Id memberName = it.first->getNameId();
+            if (memberNames.find(memberName) != memberNames.end()) {
+                msgs->errorDataMemberNameDuplicate(it.first->loc(), memberName);
+                return nullptr;
+            }
+            memberNames.insert(memberName);
+        }
 
         ret->addMember(move(declAst));
     }

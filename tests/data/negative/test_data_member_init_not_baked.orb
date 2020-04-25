@@ -1,0 +1,7 @@
+import "tests/io.orb";
+
+data Foo {
+    i32 x = scan_i32();
+}
+
+fnc main() {}

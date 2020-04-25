@@ -1,0 +1,7 @@
+data Foo;
+
+data Bar {
+    Foo f;
+}
+
+fnc main() {}

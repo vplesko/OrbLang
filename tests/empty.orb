@@ -1,0 +1,13 @@
+/*
+abstract for correctness first, convenience second
+
+if abstracting for convenience, start no sooner then after you wrote the third occurence
+
+avoid maintaining separate, but equivalent representations of data or behaviour
+
+clean architecture is paramount, clean code is helpful
+
+let theoretical principles underline the meaning of your code, but not its actual structure
+
+don't fear for complexity, it will come on its own
+*/

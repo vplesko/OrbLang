@@ -136,7 +136,8 @@ public:
     std::optional<FuncValue> getCurrFunc() const;
 
     bool varMayTakeName(NamePool::Id name) const;
-    // only checks for name collisions with global vars, NOT with funcs of same sig!
+    bool dataMayTakeName(NamePool::Id name) const;
+    // only checks for name collisions with global vars and datas, NOT with funcs of same sig!
     bool funcMayTakeName(NamePool::Id name) const;
 
     TypeTable* getTypeTable() { return typeTable; }

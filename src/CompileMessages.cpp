@@ -256,6 +256,18 @@ void CompileMessages::errorFuncNotFound(CodeLoc loc, NamePool::Id name) {
     error(loc, ss.str());
 }
 
+void CompileMessages::errorDataNameTaken(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Name '" << namePool->get(name) << "' is already taken and cannot be used for a data type.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorDataMemberNameDuplicate(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Name '" << namePool->get(name) << "' was already used for another member of this data type.";
+    error(loc, ss.str());
+}
+
 void CompileMessages::errorExprCallVariadUnty(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Attempting to call variadic function '" << namePool->get(name) << "' with an untyped value as variadic argument.";

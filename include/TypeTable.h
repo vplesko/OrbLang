@@ -11,6 +11,23 @@ class TypeTable {
 public:
     typedef unsigned Id;
 
+    struct DataType {
+        struct Member {
+            Id type;
+            NamePool::Id name;
+            llvm::Value *init;
+        };
+
+        NamePool::Id name;
+        std::vector<Member> members;
+
+        bool isDecl() const { return members.empty(); }
+
+        bool eq(const DataType &other) const {
+            return name == other.name;
+        }
+    };
+
     struct TypeDescr {
         struct Decor {
             enum Type {
@@ -76,9 +93,15 @@ private:
     Id next;
     Id strType;
 
+    std::vector<DataType> dataTypes;
+    
     std::unordered_map<NamePool::Id, Id> typeIds;
     std::unordered_map<Id, NamePool::Id> typeNames;
     std::vector<std::pair<TypeDescr, llvm::Type*>> types;
+
+    bool canWorkAsPrimitive(Id t) const;
+    bool canWorkAsPrimitive(Id t, PrimIds p) const;
+    bool canWorkAsPrimitive(Id t, PrimIds lo, PrimIds hi) const;
 
     void addTypeStr();
 
@@ -105,11 +128,13 @@ public:
     Id getTypeId(NamePool::Id name) const { return typeIds.at(name); }
     std::optional<NamePool::Id> getTypeName(Id t) const;
 
-    bool isTypeI(Id t) const;
-    bool isTypeU(Id t) const;
-    bool isTypeF(Id t) const;
-    bool isTypeC(Id t) const;
-    bool isTypeB(Id t) const;
+    bool isValidType(Id t) const { return t < types.size(); }
+    bool isPrimitive(Id t) const { return t < P_ENUM_END; }
+    bool isTypeI(Id t) const { return canWorkAsPrimitive(t, P_I8, P_I64); }
+    bool isTypeU(Id t) const { return canWorkAsPrimitive(t, P_U8, P_U64); }
+    bool isTypeF(Id t) const { return canWorkAsPrimitive(t, P_F16, P_F64); }
+    bool isTypeC(Id t) const { return canWorkAsPrimitive(t, P_C8); }
+    bool isTypeB(Id t) const { return canWorkAsPrimitive(t, P_BOOL); }
     bool isTypeAnyP(Id t) const;
     bool isTypeP(Id t) const;
     bool isTypeArr(Id t) const;

@@ -45,7 +45,10 @@ TypeTable::Id TypeTable::shortestFittingTypeI(int64_t x) {
     return P_I64;
 }
 
-TypeTable::TypeTable() : next(P_ENUM_END), types(P_ENUM_END) {
+// first P_ENUM_END places in dataTypes are left free to simulate primitive types
+// TODO this memory wasting can be overcome by index arithmetics/manipulations
+TypeTable::TypeTable() : next(P_ENUM_END), dataTypes(P_ENUM_END), types(P_ENUM_END) {
+    // fill with primitive types
     for (size_t i = 0; i < types.size(); ++i) {
         types[i].first = TypeDescr(i);
         types[i].second = nullptr;
@@ -156,11 +159,8 @@ TypeTable::Id TypeTable::getTypeCharArrOfLenId(std::size_t len) {
 }
 
 optional<size_t> TypeTable::getArrLen(Id arrTypeId) const {
-    if (arrTypeId >= types.size()) return nullopt;
-    const TypeDescr &ty = types[arrTypeId].first;
-    if (!ty.decors.empty() && ty.decors.back().type == TypeDescr::Decor::D_ARR)
-        return ty.decors.back().len;
-    return nullopt;
+    if (!isTypeArr(arrTypeId)) return nullopt;
+    return types[arrTypeId].first.decors.back().len;
 }
 
 bool TypeTable::isType(NamePool::Id name) const {
@@ -173,34 +173,22 @@ optional<NamePool::Id> TypeTable::getTypeName(Id t) const {
     return loc->second;
 }
 
-bool TypeTable::isTypeI(Id t) const {
-    if (t >= types.size()) return false;
-    const TypeDescr &ty = types[t].first;
-    return ty.decors.empty() && between((PrimIds) ty.base, P_I8, P_I64);
+bool TypeTable::canWorkAsPrimitive(Id t) const {
+    if (!isValidType(t)) return false;
+
+    const TypeDescr &descr = types[t].first;
+    if (!descr.decors.empty()) return false;
+    return isPrimitive(descr.base);
 }
 
-bool TypeTable::isTypeU(Id t) const {
-    if (t >= types.size()) return false;
-    const TypeDescr &ty = types[t].first;
-    return ty.decors.empty() && between((PrimIds) ty.base, P_U8, P_U64);
+bool TypeTable::canWorkAsPrimitive(Id t, PrimIds p) const {
+    if (!canWorkAsPrimitive(t)) return false;
+    return types[t].first.base == p;
 }
 
-bool TypeTable::isTypeF(Id t) const {
-    if (t >= types.size()) return false;
-    const TypeDescr &ty = types[t].first;
-    return ty.decors.empty() && between((PrimIds) ty.base, P_F16, P_F64);
-}
-
-bool TypeTable::isTypeC(Id t) const {
-    if (t >= types.size()) return false;
-    const TypeDescr &ty = types[t].first;
-    return ty.decors.empty() && (PrimIds) ty.base == P_C8;
-}
-
-bool TypeTable::isTypeB(Id t) const {
-    if (t >= types.size()) return false;
-    const TypeDescr &ty = types[t].first;
-    return ty.decors.empty() && ty.base == P_BOOL;
+bool TypeTable::canWorkAsPrimitive(Id t, PrimIds lo, PrimIds hi) const {
+    if (!canWorkAsPrimitive(t)) return false;
+    return between((PrimIds) types[t].first.base, lo, hi);
 }
 
 bool TypeTable::isTypeAnyP(Id t) const {
@@ -208,53 +196,54 @@ bool TypeTable::isTypeAnyP(Id t) const {
 }
 
 bool TypeTable::isTypeP(Id t) const {
-    if (t >= types.size()) return false;
+    if (!isValidType(t)) return false;
     const TypeDescr &ty = types[t].first;
     return (ty.decors.empty() && ty.base == P_PTR) ||
         (!ty.decors.empty() && ty.decors.back().type == TypeDescr::Decor::D_PTR);
 }
 
 bool TypeTable::isTypeArr(Id t) const {
-    if (t >= types.size()) return false;
+    if (!isValidType(t)) return false;
     const TypeDescr &ty = types[t].first;
     return !ty.decors.empty() && ty.decors.back().type == TypeDescr::Decor::D_ARR;
 }
 
 bool TypeTable::isTypeArrOfLen(Id t, std::size_t len) const {
-    if (t >= types.size()) return false;
+    if (!isValidType(t)) return false;
     const TypeDescr &ty = types[t].first;
     return !ty.decors.empty() && ty.decors.back().type == TypeDescr::Decor::D_ARR && ty.decors.back().len == len;
 }
 
 bool TypeTable::isTypeArrP(Id t) const {
-    if (t >= types.size()) return false;
+    if (!isValidType(t)) return false;
     const TypeDescr &ty = types[t].first;
     return !ty.decors.empty() && ty.decors.back().type == TypeDescr::Decor::D_ARR_PTR;
 }
 
 bool TypeTable::isTypeStr(Id t) const {
-    if (t >= types.size()) return false;
+    if (!isValidType(t)) return false;
     const TypeDescr &ty = types[t].first;
     return ty.decors.size() == 1 && ty.decors[0].type == TypeDescr::Decor::D_ARR_PTR &&
         ty.base == P_C8 && ty.cn;
 }
 
 bool TypeTable::isTypeCharArrOfLen(Id t, size_t len) const {
-    if (t >= types.size()) return false;
+    if (!isValidType(t)) return false;
     const TypeDescr &ty = types[t].first;
     return ty.decors.size() == 1 && ty.base == P_C8 &&
         ty.decors[0].type == TypeDescr::Decor::D_ARR && ty.decors[0].len == len;
 }
 
 bool TypeTable::isTypeCn(Id t) const {
+    if (!isValidType(t)) return false;
     const TypeDescr &ty = types[t].first;
     if (ty.cns.empty()) return ty.cn;
     else return ty.cns.back();
 }
 
 bool TypeTable::fitsType(int64_t x, Id t) const {
-    if (t >= types.size() || !types[t].first.decors.empty())
-        return false;
+    if (!isValidType(t)) return false;
+    if (!types[t].first.decors.empty()) return false;
     
     int64_t lo, hi;
     switch (types[t].first.base) {

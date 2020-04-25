@@ -83,5 +83,7 @@ public:
     void errorFuncSigConflict(CodeLoc loc);
     void errorFuncArgNameDuplicate(CodeLoc loc, NamePool::Id name);
     void errorFuncNotFound(CodeLoc loc, NamePool::Id name);
+    void errorDataNameTaken(CodeLoc loc, NamePool::Id name);
+    void errorDataMemberNameDuplicate(CodeLoc loc, NamePool::Id name);
     void errorUnknown(CodeLoc loc);
 };

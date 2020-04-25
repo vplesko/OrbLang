@@ -26,6 +26,16 @@ data Zero {
     i32 cn x = 0;
 }
 
+data Opaq;
+
+data WithOpaq {
+    Opaq* o;
+}
+
+data Opaq {
+    u32 u;
+}
+
 fnc makePoint(i32 x, i32 y, bool v) Point {
     Point p;
     p.x = x;
@@ -86,5 +96,12 @@ fnc main() {
         Tree t;
         t.root = makeNode(700, null, null);
         println_i32(t.root.val);
+    }
+    {
+        Opaq o;
+        o.u = 800;
+        WithOpaq w;
+        w.o = &o;
+        println_u32(w.o.u);
     }
 }
