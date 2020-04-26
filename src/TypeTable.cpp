@@ -99,6 +99,15 @@ pair<TypeTable::Id, TypeTable::IdBase> TypeTable::addDataType(NamePool::Id name)
     return make_pair(typeId, dataTypeId);
 }
 
+bool TypeTable::dataMayTakeName(NamePool::Id name) const {
+    auto loc = typeNames.find(name);
+    if (loc != typeNames.end()) {
+        if (isPrimitive(types[loc->second].first.base)) return false;
+    }
+
+    return true;
+}
+
 optional<TypeTable::Id> TypeTable::addTypeDeref(Id typeId) {
     const TypeDescr &typeDescr = types[typeId].first;
     
@@ -166,6 +175,10 @@ llvm::Type* TypeTable::getType(Id id) {
 
 void TypeTable::setType(Id id, llvm::Type *type) {
     types[id].second = type;
+}
+
+TypeTable::DataType& TypeTable::getDataType(Id id) {
+    return dataTypes[id];
 }
 
 const TypeTable::TypeDescr& TypeTable::getTypeDescr(Id id) const {

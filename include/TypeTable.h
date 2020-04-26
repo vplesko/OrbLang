@@ -121,8 +121,11 @@ public:
     void addPrimType(NamePool::Id name, PrimIds id, llvm::Type *type);
     std::pair<Id, IdBase> addDataType(NamePool::Id name);
 
+    bool dataMayTakeName(NamePool::Id name) const;
+
     llvm::Type* getType(Id id);
     void setType(Id id, llvm::Type *type);
+    DataType& getDataType(Id id);
     const TypeDescr& getTypeDescr(Id id) const;
 
     Id getTypeIdStr() { return strType; }

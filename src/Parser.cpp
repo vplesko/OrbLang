@@ -774,6 +774,11 @@ unique_ptr<DataAst> Parser::data() {
 
     NamePool::Id dataName = next().nameId;
 
+    if (!symbolTable->dataMayTakeName(dataName)) {
+        msgs->errorDataNameTaken(codeLocData, dataName);
+        return nullptr;
+    }
+
     pair<TypeTable::Id, TypeTable::IdBase> ids = symbolTable->getTypeTable()->addDataType(dataName);
 
     unique_ptr<DataAst> ret = make_unique<DataAst>(codeLocData, ids.first, ids.second);

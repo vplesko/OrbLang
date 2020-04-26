@@ -1,7 +1,13 @@
 /*
+notes to self:
+
+if you feel fatigued, start making stupid mistakes or your back hurts STOP AND TAKE A BREAK!
+
+code in small chunks for small individual goals
+
 abstract for correctness first, convenience second
 
-if abstracting for convenience, start no sooner then after you wrote the third occurence
+if abstracting for convenience, start no sooner then after you wrote the third occurrence
 
 avoid maintaining separate, but equivalent representations of data or behaviour
 

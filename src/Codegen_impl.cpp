@@ -592,7 +592,19 @@ void Codegen::codegen(const RetAst *ast) {
 }
 
 void Codegen::codegen(const DataAst *ast) {
+    TypeTable::DataType &dataType = getTypeTable()->getDataType(ast->getDataTypeId());
+    
+    // declaration part
+    if (getTypeTable()->getType(ast->getTypeId()) == nullptr) {
+        llvm::StructType *structType = llvm::StructType::create(llvmContext, namePool->get(dataType.name));
+        getTypeTable()->setType(ast->getTypeId(), structType);
+    }
+
+    if (ast->isDecl()) return;
+    // definition part
     // TODO!
+    // + check not double definition, member types not opaque, cn members initialized
+    // TODO! check opaque types never initialized
 }
 
 void Codegen::codegen(const BlockAst *ast, bool makeScope) {

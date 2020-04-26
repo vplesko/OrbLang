@@ -37,4 +37,5 @@ data Opaq {
 }
 
 fnc main() {
+    Point* p;
 }
