@@ -41,7 +41,4 @@ fnc main() {
 
     Point p2;
     p1 = &p2;
-
-    Zero[4] z1;
-    Zero cn[4] z2 = z1;
 }

@@ -21,11 +21,15 @@ public:
 
         NamePool::Id name;
         std::vector<Member> members;
+        bool cn = false;
 
         DataType() {}
         explicit DataType(NamePool::Id name) : name(name) {}
 
         bool isDecl() const { return members.empty(); }
+        bool isCn() const { return cn; }
+
+        void addMember(Member m, bool cn);
 
         bool eq(const DataType &other) const {
             return name == other.name;
@@ -152,7 +156,7 @@ public:
     bool isTypeArrP(Id t) const;
     bool isTypeStr(Id t) const;
     bool isTypeCharArrOfLen(Id t, std::size_t len) const;
-    bool isTypeCn(Id t) const;
+    bool isTypeCn(Id t);
 
     bool fitsType(int64_t x, Id t) const;
     bool isImplicitCastable(Id from, Id into) const;

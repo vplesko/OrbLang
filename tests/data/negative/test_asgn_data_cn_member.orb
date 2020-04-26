@@ -1,0 +1,9 @@
+data Foo {
+    i32 cn x = 10;
+}
+
+fnc main() {
+    Foo f1;
+    Foo f2;
+    f2 = f1;
+}

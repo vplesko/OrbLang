@@ -1,0 +1,6 @@
+data Foo;
+
+Foo f;
+
+fnc main() {
+}

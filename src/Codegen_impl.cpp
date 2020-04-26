@@ -651,7 +651,7 @@ void Codegen::codegen(const DataAst *ast) {
                 member.name = memberName;
                 member.type = memberTypeId;
                 member.init = memberInit;
-                dataType.members.push_back(member);
+                dataType.addMember(member, getTypeTable()->isTypeCn(memberTypeId));
 
                 memberTypes.push_back(memberType);
             }

@@ -1,0 +1,6 @@
+data Foo;
+
+fnc main() {
+    Foo* f;
+    *f;
+}
