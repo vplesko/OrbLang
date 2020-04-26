@@ -16,7 +16,7 @@ public:
         struct Member {
             Id type;
             NamePool::Id name;
-            llvm::Value *init;
+            llvm::Constant *init;
         };
 
         NamePool::Id name;
@@ -122,6 +122,7 @@ public:
     std::pair<Id, IdBase> addDataType(NamePool::Id name);
 
     bool dataMayTakeName(NamePool::Id name) const;
+    bool isNonOpaqueType(Id t) const;
 
     llvm::Type* getType(Id id);
     void setType(Id id, llvm::Type *type);
@@ -138,6 +139,7 @@ public:
 
     bool isValidType(Id t) const { return t < types.size(); }
     bool isPrimitive(Id t) const { return t < P_ENUM_END; }
+    bool isDataType(Id t) const;
     bool isTypeI(Id t) const { return canWorkAsPrimitive(t, P_I8, P_I64); }
     bool isTypeU(Id t) const { return canWorkAsPrimitive(t, P_U8, P_U64); }
     bool isTypeF(Id t) const { return canWorkAsPrimitive(t, P_F16, P_F64); }

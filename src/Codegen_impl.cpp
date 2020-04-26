@@ -96,8 +96,8 @@ bool Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
             val = nullptr;
             return false;
         }
-    } else if (getTypeTable()->isTypeArr(srcTypeId)) {
-        // NOTE arrs are only castable when changing constness
+    } else if (getTypeTable()->isTypeArr(srcTypeId) || getTypeTable()->isDataType(srcTypeId)) {
+        // NOTE data types and arrs are only castable when changing constness
         if (!getTypeTable()->isImplicitCastable(srcTypeId, dstTypeId)) {
             // no action is needed in case of a cast
             val = nullptr;
@@ -172,8 +172,7 @@ void Codegen::codegenNode(const BaseAst *ast, bool blockMakeScope) {
 llvm::Type* Codegen::codegenType(const TypeAst *ast) {
     llvm::Type *type = getType(ast->getTypeId());
     if (type == nullptr) {
-        // should not happen, verified during parsing
-        msgs->errorUnknown(ast->loc());
+        msgs->errorUndefinedType(ast->loc());
         return nullptr;
     }
 
@@ -192,6 +191,11 @@ void Codegen::codegen(const DeclAst *ast) {
         }
 
         const string &name = namePool->get(it.first->getNameId());
+
+        // TODO! decl of data types
+        //  init data type members
+        //  check not opaque type
+        //  check all cn data type members have init
 
         llvm::Value *val;
         if (isGlobalScope()) {
@@ -240,7 +244,7 @@ void Codegen::codegen(const DeclAst *ast) {
 
                 if (initPay.type != typeId) {
                     if (!getTypeTable()->isImplicitCastable(initPay.type, typeId)) {
-                        msgs->errorExprCannotCast(init->loc(), initPay.type, typeId);
+                        msgs->errorExprCannotImplicitCast(init->loc(), initPay.type, typeId);
                         return;
                     }
 
@@ -275,7 +279,7 @@ void Codegen::codegen(const IfAst *ast) {
         return;
     }
     if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
-        msgs->errorExprCannotCast(ast->getCond()->loc(), condExpr.type, TypeTable::P_BOOL);
+        msgs->errorExprCannotImplicitCast(ast->getCond()->loc(), condExpr.type, TypeTable::P_BOOL);
         return;
     }
 
@@ -336,7 +340,7 @@ void Codegen::codegen(const ForAst *ast) {
                 return;
             }
             if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
-                msgs->errorExprCannotCast(ast->getCond()->loc(), condExpr.type, TypeTable::P_BOOL);
+                msgs->errorExprCannotImplicitCast(ast->getCond()->loc(), condExpr.type, TypeTable::P_BOOL);
                 return;
             }
         } else {
@@ -395,7 +399,7 @@ void Codegen::codegen(const WhileAst *ast) {
             return;
         }
         if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
-            msgs->errorExprCannotCast(ast->getCond()->loc(), condExpr.type, TypeTable::P_BOOL);
+            msgs->errorExprCannotImplicitCast(ast->getCond()->loc(), condExpr.type, TypeTable::P_BOOL);
             return;
         }
 
@@ -448,7 +452,7 @@ void Codegen::codegen(const DoWhileAst *ast) {
             return;
         }
         if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
-            msgs->errorExprCannotCast(ast->getCond()->loc(), condExpr.type, TypeTable::P_BOOL);
+            msgs->errorExprCannotImplicitCast(ast->getCond()->loc(), condExpr.type, TypeTable::P_BOOL);
             return;
         }
 
@@ -582,7 +586,7 @@ void Codegen::codegen(const RetAst *ast) {
     llvm::Value *retVal = retExpr.val;
     if (retExpr.type != currFunc.value().retType.value()) {
         if (!getTypeTable()->isImplicitCastable(retExpr.type, currFunc.value().retType.value())) {
-            msgs->errorExprCannotCast(ast->getVal()->loc(), retExpr.type, currFunc.value().retType.value());
+            msgs->errorExprCannotImplicitCast(ast->getVal()->loc(), retExpr.type, currFunc.value().retType.value());
             return;
         }
         createCast(retVal, retExpr.type, currFunc.value().retType.value());
@@ -600,11 +604,61 @@ void Codegen::codegen(const DataAst *ast) {
         getTypeTable()->setType(ast->getTypeId(), structType);
     }
 
-    if (ast->isDecl()) return;
     // definition part
-    // TODO!
-    // + check not double definition, member types not opaque, cn members initialized
-    // TODO! check opaque types never initialized
+    if (!ast->isDecl()) {
+        if (!dataType.isDecl()) {
+            msgs->errorDataRedefinition(ast->loc(), dataType.name);
+            return;
+        }
+
+        llvm::StructType *structType = ((llvm::StructType*) getTypeTable()->getType(ast->getTypeId()));
+
+        vector<llvm::Type*> memberTypes;
+        for (const auto &decl : ast->getMembers()) {
+            TypeTable::Id memberTypeId = decl->getType()->getTypeId();
+            if (!getTypeTable()->isNonOpaqueType(memberTypeId)) {
+                msgs->errorUndefinedType(decl->loc());
+                return;
+            }
+
+            llvm::Type *memberType = codegenType(decl->getType());
+            if (memberType == nullptr) return;
+
+            for (const auto &var : decl->getDecls()) {
+               NamePool::Id memberName = var.first->getNameId();
+
+               llvm::Constant *memberInit = nullptr;
+               if (var.second != nullptr) {
+                   ExprGenPayload expr = codegenExpr(var.second.get());
+                   if (valueBroken(expr)) return;
+                   if (!expr.isUntyVal()) {
+                       msgs->errorExprNotBaked(var.second->loc());
+                       return;
+                   }
+                   if (!promoteUntyped(expr, memberTypeId)) {
+                       msgs->errorExprCannotPromote(var.second->loc(), memberTypeId);
+                       return;
+                   }
+                   memberInit = ((llvm::Constant*) expr.val);
+               } else {
+                   if (getTypeTable()->isTypeCn(memberTypeId)) {
+                       msgs->errorCnNoInit(var.first->loc(), var.first->getNameId());
+                       return;
+                   }
+               }
+
+                TypeTable::DataType::Member member;
+                member.name = memberName;
+                member.type = memberTypeId;
+                member.init = memberInit;
+                dataType.members.push_back(member);
+
+                memberTypes.push_back(memberType);
+            }
+        }
+
+        structType->setBody(memberTypes);
+    }
 }
 
 void Codegen::codegen(const BlockAst *ast, bool makeScope) {

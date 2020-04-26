@@ -207,11 +207,18 @@ void CompileMessages::errorExprCompareStringLits(CodeLoc loc) {
 void CompileMessages::errorExprCannotCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into) {
     stringstream ss;
     ss << "Expression of type '" << errorStringOfType(from) <<
+        "' cannot be cast into type '" << errorStringOfType(into) << "'.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorExprCannotImplicitCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into) {
+    stringstream ss;
+    ss << "Expression of type '" << errorStringOfType(from) <<
         "' cannot be implicitly cast into type '" << errorStringOfType(into) << "'.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorExprCannotCastEither(CodeLoc loc, TypeTable::Id ty1, TypeTable::Id ty2) {
+void CompileMessages::errorExprCannotImplicitCastEither(CodeLoc loc, TypeTable::Id ty1, TypeTable::Id ty2) {
     stringstream ss;
     ss << "Expressions of type '" << errorStringOfType(ty1) << "' and '" << errorStringOfType(ty2) <<
         "' cannot both be implicitly cast to one of the two types.";
@@ -271,6 +278,12 @@ void CompileMessages::errorDataMemberNameDuplicate(CodeLoc loc, NamePool::Id nam
 void CompileMessages::errorDataNoMembers(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Data type '" << namePool->get(name) << "' has no members, but must have at least one.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorDataRedefinition(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Data type '" << namePool->get(name) << "' has already been defined.";
     error(loc, ss.str());
 }
 
@@ -339,6 +352,10 @@ void CompileMessages::errorExprAsgnOnCn(CodeLoc loc, Token::Oper op) {
     stringstream ss;
     ss << "Operation '" << errorString(op) << "' and other assignment operations cannot assign to constant types.";
     error(loc, ss.str());
+}
+
+void CompileMessages::errorUndefinedType(CodeLoc loc) {
+    error(loc, "Referencing undefined type.");
 }
 
 void CompileMessages::errorUnknown(CodeLoc loc) {

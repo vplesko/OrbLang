@@ -308,7 +308,7 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
             createCast(valL, exprPayL.type, exprPayR.type);
             exprPayRet.type = exprPayR.type;
         } else {
-            msgs->errorExprCannotCastEither(ast->loc(), exprPayL.type, exprPayR.type);
+            msgs->errorExprCannotImplicitCastEither(ast->loc(), exprPayL.type, exprPayR.type);
             return {};
         }
     }
@@ -503,7 +503,7 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const BinExprAst *ast) {
         return {};
     }
     if (!isBool(exprPayL)) {
-        msgs->errorExprCannotCast(ast->getL()->loc(), exprPayL.type, TypeTable::P_BOOL);
+        msgs->errorExprCannotImplicitCast(ast->getL()->loc(), exprPayL.type, TypeTable::P_BOOL);
         return {};
     }
 
@@ -533,7 +533,7 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const BinExprAst *ast) {
         return {};
     }
     if (!isBool(exprPayR)) {
-        msgs->errorExprCannotCast(ast->getR()->loc(), exprPayR.type, TypeTable::P_BOOL);
+        msgs->errorExprCannotImplicitCast(ast->getR()->loc(), exprPayR.type, TypeTable::P_BOOL);
         return {};
     }
     llvmBuilder.CreateBr(afterBlock);
@@ -579,7 +579,7 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOrGlobalScope(const BinExprAst *
         return {};
     }
     if (!isBool(exprPayL)) {
-        msgs->errorExprCannotCast(ast->getL()->loc(), exprPayL.type, TypeTable::P_BOOL);
+        msgs->errorExprCannotImplicitCast(ast->getL()->loc(), exprPayL.type, TypeTable::P_BOOL);
         return {};
     }
 
@@ -589,7 +589,7 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOrGlobalScope(const BinExprAst *
         return {};
     }
     if (!isBool(exprPayR)) {
-        msgs->errorExprCannotCast(ast->getR()->loc(), exprPayR.type, TypeTable::P_BOOL);
+        msgs->errorExprCannotImplicitCast(ast->getR()->loc(), exprPayR.type, TypeTable::P_BOOL);
         return {};
     }
 
@@ -834,7 +834,7 @@ Codegen::ExprGenPayload Codegen::codegen(const CallExprAst *ast) {
                 args[i] = exprs[i].val;
             } else if (call.argTypes[i] != func.value().argTypes[i]) {
                 if (!createCast(args[i], call.argTypes[i], func.value().argTypes[i])) {
-                    msgs->errorExprCannotCast(ast->getArgs()[i]->loc(), call.argTypes[i], func.value().argTypes[i]);
+                    msgs->errorExprCannotImplicitCast(ast->getArgs()[i]->loc(), call.argTypes[i], func.value().argTypes[i]);
                     return {};
                 }
             }
@@ -936,7 +936,7 @@ Codegen::ExprGenPayload Codegen::codegen(const ArrayExprAst *ast) {
         }
         if (valBroken(exprPay)) return {};
         if (!getTypeTable()->isImplicitCastable(exprPay.type, elemTypeId)) {
-            msgs->errorExprCannotCast(ast->getVals()[i]->loc(), exprPay.type, elemTypeId);
+            msgs->errorExprCannotImplicitCast(ast->getVals()[i]->loc(), exprPay.type, elemTypeId);
             return {};
         }
         createCast(exprPay, elemTypeId);

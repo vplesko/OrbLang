@@ -63,7 +63,8 @@ public:
     void errorExprUntyBinBadOp(CodeLoc loc, Token::Oper op);
     void errorExprCompareStringLits(CodeLoc loc);
     void errorExprCannotCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into);
-    void errorExprCannotCastEither(CodeLoc loc, TypeTable::Id ty1, TypeTable::Id ty2);
+    void errorExprCannotImplicitCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into);
+    void errorExprCannotImplicitCastEither(CodeLoc loc, TypeTable::Id ty1, TypeTable::Id ty2);
     void errorExprCallVariadUnty(CodeLoc loc, NamePool::Id name);
     void errorExprIndexOnBadType(CodeLoc loc);
     void errorExprIndexOnBadType(CodeLoc loc, TypeTable::Id ty);
@@ -86,5 +87,7 @@ public:
     void errorDataNameTaken(CodeLoc loc, NamePool::Id name);
     void errorDataMemberNameDuplicate(CodeLoc loc, NamePool::Id name);
     void errorDataNoMembers(CodeLoc loc, NamePool::Id name);
+    void errorDataRedefinition(CodeLoc loc, NamePool::Id name);
+    void errorUndefinedType(CodeLoc loc);
     void errorUnknown(CodeLoc loc);
 };

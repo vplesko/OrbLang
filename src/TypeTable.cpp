@@ -108,6 +108,21 @@ bool TypeTable::dataMayTakeName(NamePool::Id name) const {
     return true;
 }
 
+bool TypeTable::isNonOpaqueType(Id t) const {
+    if (!isValidType(t)) return false;
+
+    const TypeDescr &descr = types[t].first;
+    if (!isDataType(descr.base)) return true;
+
+    for (const TypeDescr::Decor &decor : descr.decors) {
+        if (decor.type == TypeDescr::Decor::D_PTR ||
+            decor.type == TypeDescr::Decor::D_ARR_PTR)
+            return true;
+    }
+
+    return !dataTypes[descr.base].isDecl();
+}
+
 optional<TypeTable::Id> TypeTable::addTypeDeref(Id typeId) {
     const TypeDescr &typeDescr = types[typeId].first;
     
@@ -220,6 +235,12 @@ bool TypeTable::canWorkAsPrimitive(Id t, PrimIds p) const {
 bool TypeTable::canWorkAsPrimitive(Id t, PrimIds lo, PrimIds hi) const {
     if (!canWorkAsPrimitive(t)) return false;
     return between((PrimIds) types[t].first.base, lo, hi);
+}
+
+bool TypeTable::isDataType(Id t) const {
+    if (!isValidType(t)) return false;
+    const TypeDescr &ty = types[t].first;
+    return ty.decors.empty() && !isPrimitive(ty.base);
 }
 
 bool TypeTable::isTypeAnyP(Id t) const {

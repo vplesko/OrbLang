@@ -15,11 +15,11 @@ data Tree {
 }
 
 data PtrI32Cn {
-    i32 cn* p;
+    i32 cn* p = null;
 }
 
 data ArrI32 {
-    i32[4] a{0, 1, 2, 3};
+    i32[4] a;
 }
 
 data Zero {
@@ -37,5 +37,11 @@ data Opaq {
 }
 
 fnc main() {
-    Point* p;
+    Point* p1;
+
+    Point p2;
+    p1 = &p2;
+
+    Zero[4] z1;
+    Zero cn[4] z2 = z1;
 }

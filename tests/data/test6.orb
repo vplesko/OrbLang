@@ -15,11 +15,11 @@ data Tree {
 }
 
 data PtrI32Cn {
-    i32 cn* p;
+    i32 cn* p = null;
 }
 
 data ArrI32 {
-    i32[4] a{0, 1, 2, 3};
+    i32[4] a;
 }
 
 data Zero {
@@ -57,6 +57,7 @@ fnc main() {
         Zero z;
         println_i32(z.x);
         ArrI32 a;
+        a[1] = 1;
         println_i32(a.a[1]);
     }
     {
@@ -79,8 +80,8 @@ fnc main() {
     }
     {
         ArrI32 a;
-        a.a[2] = makePoint(400, 401, false);
-        println_i32(a.a[2].x);
+        a.a[2] = makePoint(400, 401, false).x;
+        println_i32(a.a[2]);
     }
     {
         println_i32(makePoint(500, 501, true).x);
@@ -103,5 +104,10 @@ fnc main() {
         WithOpaq w;
         w.o = &o;
         println_u32(w.o.u);
+    }
+    {
+        Zero[4] z1;
+        Zero cn[4] z2 = z1;
+        println_u32(900+z2[0]);
     }
 }
