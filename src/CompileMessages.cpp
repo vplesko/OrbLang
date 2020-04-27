@@ -291,10 +291,8 @@ void CompileMessages::errorDataRedefinition(CodeLoc loc, NamePool::Id name) {
     error(loc, ss.str());
 }
 
-void CompileMessages::errorDataOpaqueInit(CodeLoc loc, NamePool::Id name) {
-    stringstream ss;
-    ss << "Attempting to initialize undefined data type '" << namePool->get(name) << "'.";
-    error(loc, ss.str());
+void CompileMessages::errorDataOpaqueInit(CodeLoc loc) {
+    error(loc, "Attempting to initialize undefined data type.");
 }
 
 void CompileMessages::errorExprCallVariadUnty(CodeLoc loc, NamePool::Id name) {

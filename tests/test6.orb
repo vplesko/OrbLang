@@ -36,9 +36,34 @@ data Opaq {
     u32 u;
 }
 
-fnc main() {
-    Point* p1;
+Int glob1;
 
-    Point p2;
-    p1 = &p2;
+fnc main() {
+    {
+        Int z;
+        ArrI32 a;
+    }
+    {
+        Point p;
+    }
+    {
+        Point[4] p;
+    }
+    {
+        ArrI32 a;
+    }
+    {
+        Node n1;
+    }
+    {
+        Tree t;
+    }
+    {
+        Opaq o;
+        WithOpaq w;
+    }
+    {
+        Int[4] z1;
+        Int cn[4] z2 = z1;
+    }
 }

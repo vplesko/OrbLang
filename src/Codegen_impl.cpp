@@ -181,6 +181,16 @@ llvm::Type* Codegen::codegenType(const TypeAst *ast) {
 
 void Codegen::codegen(const DeclAst *ast) {
     TypeTable::Id typeId = ast->getType()->getTypeId();
+    // TODO! check not opaque type
+    /*if (!getTypeTable()->isNonOpaqueType(typeId)) {
+        if (getTypeTable()->isDataType(typeId)) {
+            msgs->errorDataOpaqueInit(ast->getType()->loc());
+        } else {
+            msgs->errorUndefinedType(ast->getType()->loc());
+        }
+        return;
+    }*/
+
     llvm::Type *type = codegenType(ast->getType());
     if (type == nullptr) return;
 
@@ -191,11 +201,6 @@ void Codegen::codegen(const DeclAst *ast) {
         }
 
         const string &name = namePool->get(it.first->getNameId());
-
-        // TODO! decl of data types
-        //  init data type members
-        //  check not opaque type
-        //  check all cn data type members have init
 
         llvm::Value *val;
         if (isGlobalScope()) {

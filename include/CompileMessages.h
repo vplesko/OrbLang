@@ -89,7 +89,7 @@ public:
     void errorDataMemberInit(CodeLoc loc);
     void errorDataNoMembers(CodeLoc loc, NamePool::Id name);
     void errorDataRedefinition(CodeLoc loc, NamePool::Id name);
-    void errorDataOpaqueInit(CodeLoc loc, NamePool::Id name);
+    void errorDataOpaqueInit(CodeLoc loc);
     void errorUndefinedType(CodeLoc loc);
     void errorUnknown(CodeLoc loc);
 };

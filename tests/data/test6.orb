@@ -52,14 +52,18 @@ fnc makeNode(i32 val, Node* l, Node* r) Node {
     ret n;
 }
 
+Int glob1;
+
 fnc main() {
     {
         Int z;
         z.x = 0;
         println_i32(z.x);
         ArrI32 a;
-        a[1] = 1;
+        a.a[1] = 1;
         println_i32(a.a[1]);
+        glob1.x = 2;
+        println_i32(glob2.x);
     }
     {
         Point p;
@@ -108,7 +112,7 @@ fnc main() {
     }
     {
         Int[4] z1;
-        z1[0] = 0;
+        z1[0].x = 0;
         Int cn[4] z2 = z1;
         println_u32(900+z2[0]);
     }
