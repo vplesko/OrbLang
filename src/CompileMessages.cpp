@@ -275,6 +275,10 @@ void CompileMessages::errorDataMemberNameDuplicate(CodeLoc loc, NamePool::Id nam
     error(loc, ss.str());
 }
 
+void CompileMessages::errorDataMemberInit(CodeLoc loc) {
+    error(loc, "Cannot init data type members within data type definitions.");
+}
+
 void CompileMessages::errorDataNoMembers(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Data type '" << namePool->get(name) << "' has no members, but must have at least one.";
@@ -284,6 +288,12 @@ void CompileMessages::errorDataNoMembers(CodeLoc loc, NamePool::Id name) {
 void CompileMessages::errorDataRedefinition(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Data type '" << namePool->get(name) << "' has already been defined.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorDataOpaqueInit(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Attempting to initialize undefined data type '" << namePool->get(name) << "'.";
     error(loc, ss.str());
 }
 

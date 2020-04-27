@@ -15,15 +15,15 @@ data Tree {
 }
 
 data PtrI32Cn {
-    i32 cn* p = null;
+    i32 cn* p;
 }
 
 data ArrI32 {
     i32[4] a;
 }
 
-data Zero {
-    i32 cn x = 0;
+data Int {
+    i32 x;
 }
 
 data Opaq;

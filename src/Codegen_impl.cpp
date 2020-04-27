@@ -625,33 +625,17 @@ void Codegen::codegen(const DataAst *ast) {
             if (memberType == nullptr) return;
 
             for (const auto &var : decl->getDecls()) {
-               NamePool::Id memberName = var.first->getNameId();
-
-               llvm::Constant *memberInit = nullptr;
-               if (var.second != nullptr) {
-                   ExprGenPayload expr = codegenExpr(var.second.get());
-                   if (valueBroken(expr)) return;
-                   if (!expr.isUntyVal()) {
-                       msgs->errorExprNotBaked(var.second->loc());
-                       return;
-                   }
-                   if (!promoteUntyped(expr, memberTypeId)) {
-                       msgs->errorExprCannotPromote(var.second->loc(), memberTypeId);
-                       return;
-                   }
-                   memberInit = ((llvm::Constant*) expr.val);
-               } else {
-                   if (getTypeTable()->isTypeCn(memberTypeId)) {
-                       msgs->errorCnNoInit(var.first->loc(), var.first->getNameId());
-                       return;
-                   }
-               }
-
+                NamePool::Id memberName = var.first->getNameId();
+                
+                if (getTypeTable()->isTypeCn(memberTypeId)) {
+                    msgs->errorCnNoInit(var.first->loc(), var.first->getNameId());
+                    return;
+                }
+                
                 TypeTable::DataType::Member member;
                 member.name = memberName;
                 member.type = memberTypeId;
-                member.init = memberInit;
-                dataType.addMember(member, getTypeTable()->isTypeCn(memberTypeId));
+                dataType.addMember(member);
 
                 memberTypes.push_back(memberType);
             }

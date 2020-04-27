@@ -1,9 +1,8 @@
 #include "TypeTable.h"
 using namespace std;
 
-void TypeTable::DataType::addMember(Member m, bool cn) {
+void TypeTable::DataType::addMember(Member m) {
     members.push_back(m);
-    if (cn) this->cn = true;
 }
 
 bool TypeTable::TypeDescr::eq(const TypeDescr &other) const {
@@ -291,28 +290,9 @@ bool TypeTable::isTypeCharArrOfLen(Id t, size_t len) const {
         ty.decors[0].type == TypeDescr::Decor::D_ARR && ty.decors[0].len == len;
 }
 
-bool TypeTable::isTypeCn(Id t) {
+bool TypeTable::isTypeCn(Id t) const {
     if (!isValidType(t)) return false;
-
-    TypeDescr &ty = types[t].first;
-
-    // in case of primitives, cn is propagated to outer decors
-    // in case of data types, it is not
-    // (would be hard due to forward data type decls)
-    // so, here is a sort-of mnemoization for that
-    // TODO organize cn tracking a little better
-    if (isDataType(ty.base) && dataTypes[ty.base].isCn()) {
-        ty.cn = true;
-        for (size_t i = 0; i < ty.cns.size(); ++i) {
-            if (ty.decors[i].type == TypeDescr::Decor::D_ARR) {
-                if (ty.cns[i]) break; // we've been here before (play InitialD)
-                ty.cns[i] = true;
-            } else {
-                break;
-            }
-        }
-    }
-
+    const TypeDescr &ty = types[t].first;
     return ty.cns.empty() ? ty.cn : ty.cns.back();
 }
 

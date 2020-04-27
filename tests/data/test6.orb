@@ -15,15 +15,15 @@ data Tree {
 }
 
 data PtrI32Cn {
-    i32 cn* p = null;
+    i32 cn* p;
 }
 
 data ArrI32 {
     i32[4] a;
 }
 
-data Zero {
-    i32 cn x = 0;
+data Int {
+    i32 x;
 }
 
 data Opaq;
@@ -54,7 +54,8 @@ fnc makeNode(i32 val, Node* l, Node* r) Node {
 
 fnc main() {
     {
-        Zero z;
+        Int z;
+        z.x = 0;
         println_i32(z.x);
         ArrI32 a;
         a[1] = 1;
@@ -106,8 +107,9 @@ fnc main() {
         println_u32(w.o.u);
     }
     {
-        Zero[4] z1;
-        Zero cn[4] z2 = z1;
+        Int[4] z1;
+        z1[0] = 0;
+        Int cn[4] z2 = z1;
         println_u32(900+z2[0]);
     }
 }

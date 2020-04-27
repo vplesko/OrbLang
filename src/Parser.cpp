@@ -800,6 +800,11 @@ unique_ptr<DataAst> Parser::data() {
         if (declAst == nullptr) return nullptr;
 
         for (const auto &it : declAst->getDecls()) {
+            if (it.second != nullptr) {
+                msgs->errorDataMemberInit(it.second->loc());
+                return nullptr;
+            }
+
             NamePool::Id memberName = it.first->getNameId();
             if (memberNames.find(memberName) != memberNames.end()) {
                 msgs->errorDataMemberNameDuplicate(it.first->loc(), memberName);
