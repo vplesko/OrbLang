@@ -15,6 +15,9 @@ class Parser {
     Lexer *lex;
     CompileMessages *msgs;
 
+    TypeTable* getTypeTable() { return symbolTable->getTypeTable(); }
+    const TypeTable* getTypeTable() const { return symbolTable->getTypeTable(); }
+
     const Token& peek() const;
     Token next();
     bool match(Token::Type type);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <vector>
 #include <unordered_map>
 #include <optional>
@@ -9,8 +10,28 @@
 
 class TypeTable {
 public:
-    typedef unsigned Id;
-    typedef unsigned IdBase;
+    struct Id {
+        enum Kind {
+            kPrim,
+            kData,
+            kDescr
+        };
+
+        Kind kind;
+        std::size_t index;
+
+        friend bool operator==(const Id &l, const Id &r)
+        { return l.kind == r.kind && l.index == r.index; }
+
+        friend bool operator!=(const Id &l, const Id &r)
+        { return !(l == r); }
+
+        struct Hasher {
+            std::size_t operator()(const Id &id) const {
+                return leNiceHasheFunctione(id.kind, id.index);
+            }
+        };
+    };
 
     struct DataType {
         struct Member {
@@ -42,7 +63,7 @@ public:
                 D_INVALID
             };
 
-            Type type;
+            Type type = D_INVALID;
             std::size_t len;
             
             bool eq(const Decor &other) const {
@@ -92,41 +113,48 @@ public:
     static const PrimIds WIDEST_U = P_U64;
     static const PrimIds WIDEST_F = P_F64;
 
-    static Id shortestFittingTypeI(int64_t x);
+    static PrimIds shortestFittingPrimTypeI(int64_t x);
 
 private:
-    Id next;
     Id strType;
 
-    std::vector<DataType> dataTypes;
+    std::array<llvm::Type*, P_ENUM_END> primTypes;
+    std::vector<std::pair<DataType, llvm::Type*>> dataTypes;
+    std::vector<std::pair<TypeDescr, llvm::Type*>> typeDescrs;
     
     std::unordered_map<NamePool::Id, Id> typeIds;
-    std::unordered_map<Id, NamePool::Id> typeNames;
-    std::vector<std::pair<TypeDescr, llvm::Type*>> types;
+    std::unordered_map<Id, NamePool::Id, Id::Hasher> typeNames;
 
     bool canWorkAsPrimitive(Id t) const;
     bool canWorkAsPrimitive(Id t, PrimIds p) const;
     bool canWorkAsPrimitive(Id t, PrimIds lo, PrimIds hi) const;
+
+    template <typename T>
+    bool isTypeDescrSatisfyingCondition(Id t, T cond) const;
 
     void addTypeStr();
 
 public:
     TypeTable();
 
-    Id addType(TypeDescr typeDescr);
+    void addPrimType(NamePool::Id name, PrimIds primId, llvm::Type *type);
+    Id addDataType(NamePool::Id name);
+
+    // if typeDescr is secretly a prim/data, that type's Id is returned instead
+    Id addTypeDescr(TypeDescr typeDescr);
+    // if typeDescr is secretly a prim/data, that type's Id is returned instead
+    Id addTypeDescr(TypeDescr typeDescr, llvm::Type *type);
+
     std::optional<Id> addTypeDeref(Id typeId);
     std::optional<Id> addTypeIndex(Id typeId);
     Id addTypeAddr(Id typeId);
     Id addTypeArrOfLenId(Id typeId, std::size_t len);
-    Id addType(TypeDescr typeDescr, llvm::Type *type);
-    void addPrimType(NamePool::Id name, PrimIds id, llvm::Type *type);
-    std::pair<Id, IdBase> addDataType(NamePool::Id name);
-
-    bool dataMayTakeName(NamePool::Id name) const;
-    bool isNonOpaqueType(Id t) const;
 
     llvm::Type* getType(Id id);
     void setType(Id id, llvm::Type *type);
+    
+    llvm::Type* getPrimType(PrimIds id) const;
+    Id getPrimTypeId(PrimIds id) const;
     DataType& getDataType(Id id);
     const TypeDescr& getTypeDescr(Id id) const;
 
@@ -134,13 +162,15 @@ public:
     Id getTypeCharArrOfLenId(std::size_t len);
     std::optional<std::size_t> getArrLen(Id arrTypeId) const;
 
+    bool isValidType(Id t) const;
     bool isType(NamePool::Id name) const;
-    Id getTypeId(NamePool::Id name) const { return typeIds.at(name); }
+    std::optional<Id> getTypeId(NamePool::Id name) const;
     std::optional<NamePool::Id> getTypeName(Id t) const;
 
-    bool isValidType(Id t) const { return t < types.size(); }
-    bool isPrimitive(Id t) const { return t < P_ENUM_END; }
+    bool isPrimitive(Id t) const;
     bool isDataType(Id t) const;
+    bool isTypeDescr(Id t) const;
+    bool isNonOpaqueType(Id t) const;
     bool isTypeI(Id t) const { return canWorkAsPrimitive(t, P_I8, P_I64); }
     bool isTypeU(Id t) const { return canWorkAsPrimitive(t, P_U8, P_U64); }
     bool isTypeF(Id t) const { return canWorkAsPrimitive(t, P_F16, P_F64); }
@@ -148,6 +178,8 @@ public:
     bool isTypeB(Id t) const { return canWorkAsPrimitive(t, P_BOOL); }
     bool isTypeAnyP(Id t) const;
     bool isTypeP(Id t) const;
+    // specifically, P_PTR
+    bool isTypePtr(Id t) const;
     bool isTypeArr(Id t) const;
     bool isTypeArrOfLen(Id t, std::size_t len) const;
     bool isTypeArrP(Id t) const;
@@ -155,9 +187,19 @@ public:
     bool isTypeCharArrOfLen(Id t, std::size_t len) const;
     bool isTypeCn(Id t) const;
 
+    bool dataMayTakeName(NamePool::Id name) const;
     bool fitsType(int64_t x, Id t) const;
+    Id shortestFittingTypeIId(int64_t x) const;
     bool isImplicitCastable(Id from, Id into) const;
     Id getTypeDropCns(Id t);
     Id getTypeFuncSigParam(Id t) { return getTypeDropCns(t); }
     bool isArgTypeProper(Id callArg, Id fncParam) const { return isImplicitCastable(callArg, fncParam); }
 };
+
+template <typename T>
+bool TypeTable::isTypeDescrSatisfyingCondition(Id t, T cond) const {
+    if (!isTypeDescr(t)) return false;
+
+    const TypeDescr &ty = typeDescrs[t.index].first;
+    return cond(ty);
+}

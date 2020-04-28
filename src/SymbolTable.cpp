@@ -1,4 +1,5 @@
 #include "SymbolTable.h"
+#include "utils.h"
 using namespace std;
 
 bool FuncSignature::operator==(const FuncSignature &other) const {
@@ -11,10 +12,9 @@ bool FuncSignature::operator==(const FuncSignature &other) const {
 }
 
 std::size_t FuncSignature::Hasher::operator()(const FuncSignature &k) const {
-    // le nice hashe functione
     std::size_t sum = k.argTypes.size();
-    for (const auto &it : k.argTypes) sum += it;
-    return (17*31+k.name)*31+sum;
+    for (const auto &it : k.argTypes) sum += TypeTable::Id::Hasher()(it);
+    return leNiceHasheFunctione(k.name, sum);
 }
 
 SymbolTable::SymbolTable(TypeTable *typeTable) : typeTable(typeTable), inFunc(false) {

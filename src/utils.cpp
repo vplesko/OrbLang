@@ -108,3 +108,8 @@ UnescapePayload unescape(const string &str, std::size_t indexStartingQuote, bool
     }
     return UnescapePayload(afterLastSuccessful);
 }
+
+std::size_t leNiceHasheFunctione(std::size_t x, std::size_t y) {
+    // with apologies to Donald Knuth
+    return (17*31+x)*31+y;
+}

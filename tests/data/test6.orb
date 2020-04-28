@@ -26,15 +26,17 @@ data Int {
     i32 x;
 }
 
-data Opaq;
+data Fwd;
 
-data WithOpaq {
-    Opaq* o;
+data WithFwd {
+    Fwd* o;
 }
 
-data Opaq {
+data Fwd {
     u32 u;
 }
+
+data Opaq;
 
 fnc makePoint(i32 x, i32 y, bool v) Point {
     Point p;
@@ -104,9 +106,9 @@ fnc main() {
         println_i32(t.root.val);
     }
     {
-        Opaq o;
+        Fwd o;
         o.u = 800;
-        WithOpaq w;
+        WithFwd w;
         w.o = &o;
         println_u32(w.o.u);
     }
@@ -115,5 +117,15 @@ fnc main() {
         z1[0].x = 0;
         Int cn[4] z2 = z1;
         println_u32(900+z2[0]);
+    }
+    {
+        Int x;
+        (Int(x));
+        (Int cn(x));
+    }
+    {
+        Opaq* o1;
+        Opaq** o2;
+        *o2;
     }
 }

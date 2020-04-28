@@ -267,12 +267,14 @@ std::unique_ptr<TypeAst> Parser::type() {
     }
 
     Token typeTok = next();
-    if (!symbolTable->getTypeTable()->isType(typeTok.nameId)) {
+    optional<TypeTable::Id> baseTypeId = symbolTable->getTypeTable()->getTypeId(typeTok.nameId);
+
+    if (!baseTypeId.has_value()) {
         msgs->errorNotTypeId(codeLocType, typeTok.nameId);
         return nullptr;
     }
 
-    TypeTable::TypeDescr typeDescr(symbolTable->getTypeTable()->getTypeId(typeTok.nameId));
+    TypeTable::TypeDescr typeDescr(baseTypeId.value());
 
     while (true) {
         if (peek().type == Token::T_OPER && peek().op == Token::O_MUL) {
@@ -308,7 +310,7 @@ std::unique_ptr<TypeAst> Parser::type() {
         }
     }
 
-    TypeTable::Id typeId = symbolTable->getTypeTable()->addType(move(typeDescr));
+    TypeTable::Id typeId = symbolTable->getTypeTable()->addTypeDescr(move(typeDescr));
 
     return make_unique<TypeAst>(codeLocType, typeId);
 }
@@ -779,9 +781,9 @@ unique_ptr<DataAst> Parser::data() {
         return nullptr;
     }
 
-    pair<TypeTable::Id, TypeTable::IdBase> ids = symbolTable->getTypeTable()->addDataType(dataName);
+    TypeTable::Id dataTypeId = symbolTable->getTypeTable()->addDataType(dataName);
 
-    unique_ptr<DataAst> ret = make_unique<DataAst>(codeLocData, ids.first, ids.second);
+    unique_ptr<DataAst> ret = make_unique<DataAst>(codeLocData, dataTypeId);
 
     if (peek().type == Token::T_SEMICOLON) {
         next();
@@ -798,6 +800,17 @@ unique_ptr<DataAst> Parser::data() {
     while (peek().type != Token::T_BRACE_R_CUR) {
         unique_ptr<DeclAst> declAst = decl();
         if (declAst == nullptr) return nullptr;
+
+        TypeTable::Id declTypeId = declAst->getType()->getTypeId();
+
+        if (!getTypeTable()->isNonOpaqueType(declTypeId)) {
+            if (getTypeTable()->isDataType(declTypeId)) {
+                msgs->errorDataOpaqueInit(declAst->getType()->loc());
+            } else {
+                msgs->errorUndefinedType(declAst->getType()->loc());
+            }
+            return nullptr;
+        }
 
         for (const auto &it : declAst->getDecls()) {
             if (it.second != nullptr) {

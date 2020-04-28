@@ -35,6 +35,7 @@ class Codegen {
     }
 
     TypeTable* getTypeTable() { return symbolTable->getTypeTable(); }
+    const TypeTable* getTypeTable() const { return symbolTable->getTypeTable(); }
 
     llvm::Value* getConstB(bool val);
 
@@ -45,6 +46,7 @@ class Codegen {
     std::optional<NamePool::Id> mangleName(const FuncValue &f);
 
     llvm::Type* getType(TypeTable::Id typeId);
+    TypeTable::Id getPrimTypeId(TypeTable::PrimIds primId) const { return getTypeTable()->getPrimTypeId(primId); }
     bool createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId);
     bool createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
     bool createCast(ExprGenPayload &e, TypeTable::Id t);

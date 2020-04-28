@@ -26,15 +26,17 @@ data Int {
     i32 x;
 }
 
-data Opaq;
+data Fwd;
 
-data WithOpaq {
-    Opaq* o;
+data WithFwd {
+    Fwd* o;
 }
 
-data Opaq {
+data Fwd {
     u32 u;
 }
+
+data Opaq;
 
 Int glob1;
 
@@ -59,11 +61,21 @@ fnc main() {
         Tree t;
     }
     {
-        Opaq o;
-        WithOpaq w;
+        Fwd o;
+        WithFwd w;
     }
     {
         Int[4] z1;
         Int cn[4] z2 = z1;
+    }
+    {
+        Int x;
+        (Int(x));
+        (Int cn(x));
+    }
+    {
+        Opaq* o1;
+        Opaq** o2;
+        *o2;
     }
 }

@@ -89,8 +89,8 @@ bool Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
             val = llvmBuilder.CreatePointerCast(val, type, "p2p_cast");
         else if (getTypeTable()->isTypeB(dstTypeId)) {
             val = llvmBuilder.CreateICmpNE(
-                llvmBuilder.CreatePtrToInt(val, getType(TypeTable::WIDEST_I)),
-                llvm::ConstantInt::get(getType(TypeTable::WIDEST_I), 0),
+                llvmBuilder.CreatePtrToInt(val, getType(getPrimTypeId(TypeTable::WIDEST_I))),
+                llvm::ConstantInt::get(getType(getPrimTypeId(TypeTable::WIDEST_I)), 0),
                 "p2b_cast");
         } else {
             val = nullptr;
@@ -181,15 +181,14 @@ llvm::Type* Codegen::codegenType(const TypeAst *ast) {
 
 void Codegen::codegen(const DeclAst *ast) {
     TypeTable::Id typeId = ast->getType()->getTypeId();
-    // TODO! check not opaque type
-    /*if (!getTypeTable()->isNonOpaqueType(typeId)) {
+    if (!getTypeTable()->isNonOpaqueType(typeId)) {
         if (getTypeTable()->isDataType(typeId)) {
             msgs->errorDataOpaqueInit(ast->getType()->loc());
         } else {
             msgs->errorUndefinedType(ast->getType()->loc());
         }
         return;
-    }*/
+    }
 
     llvm::Type *type = codegenType(ast->getType());
     if (type == nullptr) return;
@@ -279,12 +278,12 @@ void Codegen::codegen(const IfAst *ast) {
     }
 
     ExprGenPayload condExpr = codegenExpr(ast->getCond());
-    if (condExpr.isUntyVal() && !promoteUntyped(condExpr, TypeTable::P_BOOL)) {
-        msgs->errorExprCannotPromote(ast->getCond()->loc(), TypeTable::P_BOOL);
+    if (condExpr.isUntyVal() && !promoteUntyped(condExpr, getPrimTypeId(TypeTable::P_BOOL))) {
+        msgs->errorExprCannotPromote(ast->getCond()->loc(), getPrimTypeId(TypeTable::P_BOOL));
         return;
     }
     if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
-        msgs->errorExprCannotImplicitCast(ast->getCond()->loc(), condExpr.type, TypeTable::P_BOOL);
+        msgs->errorExprCannotImplicitCast(ast->getCond()->loc(), condExpr.type, getPrimTypeId(TypeTable::P_BOOL));
         return;
     }
 
@@ -340,16 +339,16 @@ void Codegen::codegen(const ForAst *ast) {
         ExprGenPayload condExpr;
         if (ast->hasCond()) {
             condExpr = codegenExpr(ast->getCond());
-            if (condExpr.isUntyVal() && !promoteUntyped(condExpr, TypeTable::P_BOOL)) {
-                msgs->errorExprCannotPromote(ast->getCond()->loc(), TypeTable::P_BOOL);
+            if (condExpr.isUntyVal() && !promoteUntyped(condExpr, getPrimTypeId(TypeTable::P_BOOL))) {
+                msgs->errorExprCannotPromote(ast->getCond()->loc(), getPrimTypeId(TypeTable::P_BOOL));
                 return;
             }
             if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
-                msgs->errorExprCannotImplicitCast(ast->getCond()->loc(), condExpr.type, TypeTable::P_BOOL);
+                msgs->errorExprCannotImplicitCast(ast->getCond()->loc(), condExpr.type, getPrimTypeId(TypeTable::P_BOOL));
                 return;
             }
         } else {
-            condExpr.type = TypeTable::P_BOOL;
+            condExpr.type = getPrimTypeId(TypeTable::P_BOOL);
             condExpr.val = getConstB(true);
         }
 
@@ -399,12 +398,12 @@ void Codegen::codegen(const WhileAst *ast) {
 
     {
         ExprGenPayload condExpr = codegenExpr(ast->getCond());
-        if (condExpr.isUntyVal() && !promoteUntyped(condExpr, TypeTable::P_BOOL)) {
-            msgs->errorExprCannotPromote(ast->getCond()->loc(), TypeTable::P_BOOL);
+        if (condExpr.isUntyVal() && !promoteUntyped(condExpr, getPrimTypeId(TypeTable::P_BOOL))) {
+            msgs->errorExprCannotPromote(ast->getCond()->loc(), getPrimTypeId(TypeTable::P_BOOL));
             return;
         }
         if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
-            msgs->errorExprCannotImplicitCast(ast->getCond()->loc(), condExpr.type, TypeTable::P_BOOL);
+            msgs->errorExprCannotImplicitCast(ast->getCond()->loc(), condExpr.type, getPrimTypeId(TypeTable::P_BOOL));
             return;
         }
 
@@ -452,12 +451,12 @@ void Codegen::codegen(const DoWhileAst *ast) {
         llvmBuilder.SetInsertPoint(condBlock);
 
         ExprGenPayload condExpr = codegenExpr(ast->getCond());
-        if (condExpr.isUntyVal() && !promoteUntyped(condExpr, TypeTable::P_BOOL)) {
-            msgs->errorExprCannotPromote(ast->getCond()->loc(), TypeTable::P_BOOL);
+        if (condExpr.isUntyVal() && !promoteUntyped(condExpr, getPrimTypeId(TypeTable::P_BOOL))) {
+            msgs->errorExprCannotPromote(ast->getCond()->loc(), getPrimTypeId(TypeTable::P_BOOL));
             return;
         }
         if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
-            msgs->errorExprCannotImplicitCast(ast->getCond()->loc(), condExpr.type, TypeTable::P_BOOL);
+            msgs->errorExprCannotImplicitCast(ast->getCond()->loc(), condExpr.type, getPrimTypeId(TypeTable::P_BOOL));
             return;
         }
 
@@ -494,7 +493,7 @@ void Codegen::codegen(const SwitchAst *ast) {
     ExprGenPayload valExprPay = codegenExpr(ast->getValue());
 
     // literals get cast to the widest sint type, along with comparison values
-    if (valExprPay.isUntyVal() && !promoteUntyped(valExprPay, TypeTable::WIDEST_I)) {
+    if (valExprPay.isUntyVal() && !promoteUntyped(valExprPay, getPrimTypeId(TypeTable::WIDEST_I))) {
         msgs->errorSwitchNotIntegral(ast->getValue()->loc());
         return;
     }
@@ -601,7 +600,7 @@ void Codegen::codegen(const RetAst *ast) {
 }
 
 void Codegen::codegen(const DataAst *ast) {
-    TypeTable::DataType &dataType = getTypeTable()->getDataType(ast->getDataTypeId());
+    TypeTable::DataType &dataType = getTypeTable()->getDataType(ast->getTypeId());
     
     // declaration part
     if (getTypeTable()->getType(ast->getTypeId()) == nullptr) {
@@ -621,10 +620,6 @@ void Codegen::codegen(const DataAst *ast) {
         vector<llvm::Type*> memberTypes;
         for (const auto &decl : ast->getMembers()) {
             TypeTable::Id memberTypeId = decl->getType()->getTypeId();
-            if (!getTypeTable()->isNonOpaqueType(memberTypeId)) {
-                msgs->errorUndefinedType(decl->loc());
-                return;
-            }
 
             llvm::Type *memberType = codegenType(decl->getType());
             if (memberType == nullptr) return;

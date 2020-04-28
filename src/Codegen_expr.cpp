@@ -70,7 +70,7 @@ Codegen::ExprGenPayload Codegen::codegen(const IndExprAst *ast) {
 
     if (indExprPay.isUntyVal()) {
         if (indExprPay.untyVal.type == UntypedVal::T_SINT) {
-            if (!promoteUntyped(indExprPay, TypeTable::shortestFittingTypeI(indExprPay.untyVal.val_si))) {
+            if (!promoteUntyped(indExprPay, getTypeTable()->shortestFittingTypeIId(indExprPay.untyVal.val_si))) {
                 // should not happen
                 msgs->errorUnknown(ast->getInd()->loc());
                 return {};
@@ -187,7 +187,7 @@ Codegen::ExprGenPayload Codegen::codegen(const UnExprAst *ast) {
         exprRet.val = llvmBuilder.CreateNot(exprPay.val, "not_tmp");
     } else if (ast->getOp() == Token::O_MUL) {
         optional<TypeTable::Id> typeId = symbolTable->getTypeTable()->addTypeDeref(exprPay.type);
-        if (!typeId) {
+        if (!typeId || !getTypeTable()->isNonOpaqueType(typeId.value())) {
             msgs->errorExprDerefOnBadType(ast->loc(), exprPay.type);
             return {};
         }
@@ -410,10 +410,11 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
                 else if (isTypeI || isTypeU || isTypeC)
                     exprPayRet.val = llvmBuilder.CreateICmpEQ(valL, valR, "cmp_eq_tmp");
                 else if (isTypeP) {
-                    exprPayRet.val = llvmBuilder.CreateICmpEQ(llvmBuilder.CreatePtrToInt(valL, getType(TypeTable::WIDEST_I)), 
-                        llvmBuilder.CreatePtrToInt(valR, getType(TypeTable::WIDEST_I)), "pcmp_eq_tmp");
+                    exprPayRet.val =
+                        llvmBuilder.CreateICmpEQ(llvmBuilder.CreatePtrToInt(valL, getType(getPrimTypeId(TypeTable::WIDEST_I))),
+                        llvmBuilder.CreatePtrToInt(valR, getType(getPrimTypeId(TypeTable::WIDEST_I))), "pcmp_eq_tmp");
                 }
-                exprPayRet.type = TypeTable::P_BOOL;
+                exprPayRet.type = getPrimTypeId(TypeTable::P_BOOL);
                 break;
             case Token::O_NEQ:
                 if (isTypeF)
@@ -421,10 +422,11 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
                 else if (isTypeI || isTypeU || isTypeC)
                     exprPayRet.val = llvmBuilder.CreateICmpNE(valL, valR, "cmp_neq_tmp");
                 else if (isTypeP) {
-                    exprPayRet.val = llvmBuilder.CreateICmpNE(llvmBuilder.CreatePtrToInt(valL, getType(TypeTable::WIDEST_I)), 
-                        llvmBuilder.CreatePtrToInt(valR, getType(TypeTable::WIDEST_I)), "pcmp_eq_tmp");
+                    exprPayRet.val =
+                        llvmBuilder.CreateICmpNE(llvmBuilder.CreatePtrToInt(valL, getType(getPrimTypeId(TypeTable::WIDEST_I))),
+                        llvmBuilder.CreatePtrToInt(valR, getType(getPrimTypeId(TypeTable::WIDEST_I))), "pcmp_eq_tmp");
                 }
-                exprPayRet.type = TypeTable::P_BOOL;
+                exprPayRet.type = getPrimTypeId(TypeTable::P_BOOL);
                 break;
             case Token::O_LT:
                 if (isTypeF)
@@ -433,7 +435,7 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
                     exprPayRet.val = llvmBuilder.CreateICmpSLT(valL, valR, "scmp_lt_tmp");
                 else if (isTypeU || isTypeC)
                     exprPayRet.val = llvmBuilder.CreateICmpULT(valL, valR, "ucmp_lt_tmp");
-                exprPayRet.type = TypeTable::P_BOOL;
+                exprPayRet.type = getPrimTypeId(TypeTable::P_BOOL);
                 break;
             case Token::O_LTEQ:
                 if (isTypeF)
@@ -442,7 +444,7 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
                     exprPayRet.val = llvmBuilder.CreateICmpSLE(valL, valR, "scmp_lteq_tmp");
                 else if (isTypeU || isTypeC)
                     exprPayRet.val = llvmBuilder.CreateICmpULE(valL, valR, "ucmp_lteq_tmp");
-                exprPayRet.type = TypeTable::P_BOOL;
+                exprPayRet.type = getPrimTypeId(TypeTable::P_BOOL);
                 break;
             case Token::O_GT:
                 if (isTypeF)
@@ -451,7 +453,7 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
                     exprPayRet.val = llvmBuilder.CreateICmpSGT(valL, valR, "scmp_gt_tmp");
                 else if (isTypeU || isTypeC)
                     exprPayRet.val = llvmBuilder.CreateICmpUGT(valL, valR, "ucmp_gt_tmp");
-                exprPayRet.type = TypeTable::P_BOOL;
+                exprPayRet.type = getPrimTypeId(TypeTable::P_BOOL);
                 break;
             case Token::O_GTEQ:
                 if (isTypeF)
@@ -460,7 +462,7 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
                     exprPayRet.val = llvmBuilder.CreateICmpSGE(valL, valR, "scmp_gteq_tmp");
                 else if (isTypeU || isTypeC)
                     exprPayRet.val = llvmBuilder.CreateICmpUGE(valL, valR, "ucmp_gteq_tmp");
-                exprPayRet.type = TypeTable::P_BOOL;
+                exprPayRet.type = getPrimTypeId(TypeTable::P_BOOL);
                 break;
             default:
                 // should not happen
@@ -503,7 +505,7 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const BinExprAst *ast) {
         return {};
     }
     if (!isBool(exprPayL)) {
-        msgs->errorExprCannotImplicitCast(ast->getL()->loc(), exprPayL.type, TypeTable::P_BOOL);
+        msgs->errorExprCannotImplicitCast(ast->getL()->loc(), exprPayL.type, getPrimTypeId(TypeTable::P_BOOL));
         return {};
     }
 
@@ -533,7 +535,7 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const BinExprAst *ast) {
         return {};
     }
     if (!isBool(exprPayR)) {
-        msgs->errorExprCannotImplicitCast(ast->getR()->loc(), exprPayR.type, TypeTable::P_BOOL);
+        msgs->errorExprCannotImplicitCast(ast->getR()->loc(), exprPayR.type, getPrimTypeId(TypeTable::P_BOOL));
         return {};
     }
     llvmBuilder.CreateBr(afterBlock);
@@ -552,7 +554,7 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const BinExprAst *ast) {
         else
             ret.untyVal.val_b = exprPayL.untyVal.val_b || exprPayR.untyVal.val_b;
     } else {
-        llvm::PHINode *phi = llvmBuilder.CreatePHI(getType(TypeTable::P_BOOL), 2, "logic_tmp");
+        llvm::PHINode *phi = llvmBuilder.CreatePHI(getType(getPrimTypeId(TypeTable::P_BOOL)), 2, "logic_tmp");
 
         if (ast->getOp() == Token::O_AND)
             phi->addIncoming(getConstB(false), firstBlock);
@@ -565,7 +567,7 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const BinExprAst *ast) {
             phi->addIncoming(exprPayR.val, otherBlock);
         }
 
-        ret.type = TypeTable::P_BOOL;
+        ret.type = getPrimTypeId(TypeTable::P_BOOL);
         ret.val = phi;
     }
 
@@ -579,7 +581,7 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOrGlobalScope(const BinExprAst *
         return {};
     }
     if (!isBool(exprPayL)) {
-        msgs->errorExprCannotImplicitCast(ast->getL()->loc(), exprPayL.type, TypeTable::P_BOOL);
+        msgs->errorExprCannotImplicitCast(ast->getL()->loc(), exprPayL.type, getPrimTypeId(TypeTable::P_BOOL));
         return {};
     }
 
@@ -589,7 +591,7 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOrGlobalScope(const BinExprAst *
         return {};
     }
     if (!isBool(exprPayR)) {
-        msgs->errorExprCannotImplicitCast(ast->getR()->loc(), exprPayR.type, TypeTable::P_BOOL);
+        msgs->errorExprCannotImplicitCast(ast->getR()->loc(), exprPayR.type, getPrimTypeId(TypeTable::P_BOOL));
         return {};
     }
 
@@ -861,23 +863,23 @@ Codegen::ExprGenPayload Codegen::codegen(const CastExprAst *ast) {
         TypeTable::Id promoType;
         switch (exprVal.untyVal.type) {
         case UntypedVal::T_BOOL:
-            promoType = TypeTable::P_BOOL;
+            promoType = getPrimTypeId(TypeTable::P_BOOL);
             break;
         case UntypedVal::T_SINT:
-            promoType = TypeTable::shortestFittingTypeI(exprVal.untyVal.val_si);
+            promoType = getTypeTable()->shortestFittingTypeIId(exprVal.untyVal.val_si);
             break;
         case UntypedVal::T_CHAR:
-            promoType = TypeTable::P_C8;
+            promoType = getPrimTypeId(TypeTable::P_C8);
             break;
         case UntypedVal::T_FLOAT:
             // cast to widest float type
-            promoType = TypeTable::WIDEST_F;
+            promoType = getPrimTypeId(TypeTable::WIDEST_F);
             break;
         case UntypedVal::T_STRING:
             promoType = getTypeTable()->getTypeIdStr();
             break;
         case UntypedVal::T_NULL:
-            promoType = TypeTable::P_PTR;
+            promoType = getPrimTypeId(TypeTable::P_PTR);
             break;
         default:
             // should not happen
@@ -942,8 +944,8 @@ Codegen::ExprGenPayload Codegen::codegen(const ArrayExprAst *ast) {
         createCast(exprPay, elemTypeId);
 
         llvm::Value *elemRef = llvmBuilder.CreateGEP(arrRef, 
-            {llvm::ConstantInt::get(getType(TypeTable::WIDEST_I), 0),
-            llvm::ConstantInt::get(getType(TypeTable::WIDEST_I), i)});
+            {llvm::ConstantInt::get(getType(getPrimTypeId(TypeTable::WIDEST_I)), 0),
+            llvm::ConstantInt::get(getType(getPrimTypeId(TypeTable::WIDEST_I)), i)});
         llvmBuilder.CreateStore(exprPay.val, elemRef);
     }
 

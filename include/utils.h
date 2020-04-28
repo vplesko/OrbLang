@@ -46,3 +46,5 @@ public:
 
     virtual ~DeferredFallback() { func(); }
 };
+
+std::size_t leNiceHasheFunctione(std::size_t x, std::size_t y);
