@@ -384,8 +384,16 @@ bool TypeTable::isTypeP(Id t) const {
 }
 
 bool TypeTable::isTypePtr(Id t) const {
-    // TODO! fix: ptr cn also should say true
-    return t.kind == Id::kPrim && t.index == P_PTR;
+    if (isPrimitive(t)) {
+        return t.index == P_PTR;
+    } else if (isTypeDescr(t)) {
+        const TypeDescr &descr = getTypeDescr(t);
+
+        return descr.decors.empty() &&
+            isPrimitive(descr.base) && descr.base.index == P_PTR;
+    }
+    
+    return false;
 }
 
 bool TypeTable::isTypeArr(Id t) const {

@@ -54,6 +54,16 @@ fnc makeNode(i32 val, Node* l, Node* r) Node {
     ret n;
 }
 
+fnc sum(ArrI32 a) i32 {
+    i32 s = 0;
+    for (i32 i = 0; i < 4; ++i) s += a.a[i];
+    ret s;
+}
+
+fnc setAll(ArrI32* a, i32 t) {
+    for (i32 i = 0; i < 4; ++i) (*a).a[i] = t; // TODO! use dot on pointer
+}
+
 Int glob1;
 
 fnc main() {
@@ -134,5 +144,14 @@ fnc main() {
         println_i32(a[0].a[0]);
         a[0].a[1] = 1001;
         println_i32(*&a[0].a[1]);
+    }
+    {
+        ArrI32 a;
+        a.a[0] = 1100;
+        a.a[1] = a.a[2] = 1;
+        a.a[3] = -2;
+        println_i32(sum(a));
+        setAll(&a, 1101);
+        println_i32(a.a[1]);
     }
 }

@@ -9,28 +9,35 @@ string CompileMessages::errorStringOfType(TypeTable::Id ty) const {
 
     stringstream ss;
 
-    const TypeTable::TypeDescr &descr = symbolTable->getTypeTable()->getTypeDescr(ty);
+    if (symbolTable->getTypeTable()->isTypeDescr(ty)) {
+        const TypeTable::TypeDescr &descr = symbolTable->getTypeTable()->getTypeDescr(ty);
 
-    optional<NamePool::Id> base = symbolTable->getTypeTable()->getTypeName(descr.base);
-    if (!base.has_value()) return fallback;
+        optional<NamePool::Id> base = symbolTable->getTypeTable()->getTypeName(descr.base);
+        if (!base.has_value()) return fallback;
 
-    ss << namePool->get(base.value());
-    if (descr.cn) ss << " cn";
-    for (size_t i = 0; i < descr.decors.size(); ++i) {
-        switch (descr.decors[i].type) {
-        case TypeTable::TypeDescr::Decor::D_ARR:
-            ss << "[" << descr.decors[i].len << "]";
-            break;
-        case TypeTable::TypeDescr::Decor::D_ARR_PTR:
-            ss << "[]";
-            break;
-        case TypeTable::TypeDescr::Decor::D_PTR:
-            ss << "*";
-            break;
-        default:
-            return fallback;
+        ss << namePool->get(base.value());
+        if (descr.cn) ss << " cn";
+        for (size_t i = 0; i < descr.decors.size(); ++i) {
+            switch (descr.decors[i].type) {
+            case TypeTable::TypeDescr::Decor::D_ARR:
+                ss << "[" << descr.decors[i].len << "]";
+                break;
+            case TypeTable::TypeDescr::Decor::D_ARR_PTR:
+                ss << "[]";
+                break;
+            case TypeTable::TypeDescr::Decor::D_PTR:
+                ss << "*";
+                break;
+            default:
+                return fallback;
+            }
+            if (descr.cns[i]) ss << "cn";
         }
-        if (descr.cns[i]) ss << "cn";
+    } else {
+        optional<NamePool::Id> name = symbolTable->getTypeTable()->getTypeName(ty);
+        if (!name.has_value()) return fallback;
+
+        ss << namePool->get(name.value());
     }
 
     return ss.str();
