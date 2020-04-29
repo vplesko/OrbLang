@@ -135,8 +135,22 @@ Codegen::ExprGenPayload Codegen::codegen(const DotExprAst *ast) {
         return {};
     }
     if (valueBroken(baseExpr)) return {};
+
+    ExprGenPayload leftExpr = baseExpr;
+
+    if (getTypeTable()->worksAsTypeP(leftExpr.type)) {
+        optional<TypeTable::Id> derefType = symbolTable->getTypeTable()->addTypeDerefOf(leftExpr.type);
+        if (!derefType.has_value()) {
+            // should not happen
+            msgs->errorUnknown(ast->getBase()->loc());
+            return {};
+        }
+        leftExpr.type = derefType.value();
+        leftExpr.ref = leftExpr.val;
+        leftExpr.val = llvmBuilder.CreateLoad(leftExpr.val, "deref_tmp");
+    }
     
-    optional<const TypeTable::DataType*> dataTypeOpt = getTypeTable()->extractDataType(baseExpr.type);
+    optional<const TypeTable::DataType*> dataTypeOpt = getTypeTable()->extractDataType(leftExpr.type);
     if (!dataTypeOpt.has_value()) {
         msgs->errorExprDotInvalidBase(ast->getBase()->loc());
         return {};
@@ -158,18 +172,18 @@ Codegen::ExprGenPayload Codegen::codegen(const DotExprAst *ast) {
 
     ExprGenPayload exprRet;
 
-    if (baseExpr.ref != nullptr) {
-        exprRet.ref = llvmBuilder.CreateStructGEP(baseExpr.ref, memberInd);
+    if (leftExpr.ref != nullptr) {
+        exprRet.ref = llvmBuilder.CreateStructGEP(leftExpr.ref, memberInd);
         exprRet.val = llvmBuilder.CreateLoad(exprRet.ref, "dot_tmp");
     } else {
-        llvm::Value *tmp = createAlloca(getType(baseExpr.type), "tmp");
-        llvmBuilder.CreateStore(baseExpr.val, tmp);
+        llvm::Value *tmp = createAlloca(getType(leftExpr.type), "tmp");
+        llvmBuilder.CreateStore(leftExpr.val, tmp);
         tmp = llvmBuilder.CreateStructGEP(tmp, memberInd);
         exprRet.val = llvmBuilder.CreateLoad(tmp, "dot_tmp");
     }
 
     exprRet.type = dataType.members[memberInd].type;
-    if (getTypeTable()->worksAsTypeCn(baseExpr.type)) {
+    if (getTypeTable()->worksAsTypeCn(leftExpr.type)) {
         exprRet.type = getTypeTable()->addTypeCnOf(exprRet.type);
     }
 

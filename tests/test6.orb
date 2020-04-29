@@ -61,7 +61,7 @@ fnc sum(ArrI32 a) i32 {
 }
 
 fnc setAll(ArrI32* a, i32 t) {
-    for (i32 i = 0; i < 4; ++i) (*a).a[i] = t; // TODO! use dot on pointer
+    for (i32 i = 0; i < 4; ++i) a.a[i] = t;
 }
 
 Int glob1;
@@ -116,11 +116,11 @@ fnc main() {
         println_i32(t.root.val);
     }
     {
-        /*Fwd o;
+        Fwd o;
         o.u = 800;
         WithFwd w;
         w.o = &o;
-        println_u32(w.o.u);*/
+        println_u32(w.o.u);
     }
     {
         Int[4] z1;
@@ -153,5 +153,10 @@ fnc main() {
         println_i32(sum(a));
         setAll(&a, 1101);
         println_i32(a.a[1]);
+    }
+    {
+        Int x;
+        (&x).x = 1200;
+        println_i32((&x).x);
     }
 }
