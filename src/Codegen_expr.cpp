@@ -9,6 +9,8 @@ Codegen::ExprGenPayload Codegen::codegenExpr(const ExprAst *ast) {
         return codegen((const VarExprAst*)ast);
     case AST_IndExpr:
         return codegen((const IndExprAst*)ast);
+    case AST_DotExpr:
+        return codegen((const DotExprAst*)ast);
     case AST_UnExpr:
         return codegen((const UnExprAst*)ast);
     case AST_BinExpr:
@@ -124,6 +126,54 @@ Codegen::ExprGenPayload Codegen::codegen(const IndExprAst *ast) {
     }
 
     return retPay;
+}
+
+Codegen::ExprGenPayload Codegen::codegen(const DotExprAst *ast) {
+    ExprGenPayload baseExpr = codegenExpr(ast->getBase());
+    if (baseExpr.isUntyVal()) {
+        msgs->errorExprDotInvalidBase(ast->getBase()->loc());
+        return {};
+    }
+    if (valueBroken(baseExpr)) return {};
+    
+    optional<const TypeTable::DataType*> dataTypeOpt = getTypeTable()->getDataTypeWithin(baseExpr.type);
+    if (!dataTypeOpt.has_value()) {
+        msgs->errorExprDotInvalidBase(ast->getBase()->loc());
+        return {};
+    }
+    const TypeTable::DataType &dataType = *(dataTypeOpt.value());
+
+    optional<size_t> memberIndOpt;
+    for (size_t i = 0; i < dataType.members.size(); ++i) {
+        if (dataType.members[i].name == ast->getMember()->getNameId()) {
+            memberIndOpt = i;
+            break;
+        }
+    }
+    if (!memberIndOpt.has_value()) {
+        msgs->errorDataUnknownMember(ast->getMember()->loc(), ast->getMember()->getNameId());
+        return {};
+    }
+    size_t memberInd = memberIndOpt.value();
+
+    ExprGenPayload exprRet;
+
+    if (baseExpr.ref != nullptr) {
+        exprRet.ref = llvmBuilder.CreateStructGEP(baseExpr.ref, memberInd);
+        exprRet.val = llvmBuilder.CreateLoad(exprRet.ref, "dot_tmp");
+    } else {
+        llvm::Value *tmp = createAlloca(getType(baseExpr.type), "tmp");
+        llvmBuilder.CreateStore(baseExpr.val, tmp);
+        tmp = llvmBuilder.CreateStructGEP(tmp, memberInd);
+        exprRet.val = llvmBuilder.CreateLoad(tmp, "dot_tmp");
+    }
+
+    exprRet.type = dataType.members[memberInd].type;
+    if (getTypeTable()->isTypeCn(baseExpr.type)) {
+        exprRet.type = getTypeTable()->addTypeCn(exprRet.type);
+    }
+
+    return exprRet;
 }
 
 Codegen::ExprGenPayload Codegen::codegen(const UnExprAst *ast) {

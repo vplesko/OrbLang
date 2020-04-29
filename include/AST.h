@@ -13,6 +13,7 @@ enum AstType {
     AST_UntypedExpr,
     AST_VarExpr,
     AST_IndExpr,
+    AST_DotExpr,
     AST_UnExpr,
     AST_BinExpr,
     AST_CallExpr,
@@ -116,6 +117,19 @@ public:
 
     const ExprAst* getBase() const { return base.get(); }
     const ExprAst* getInd() const { return ind.get(); }
+};
+
+class DotExprAst : public ExprAst {
+    std::unique_ptr<ExprAst> base;
+    std::unique_ptr<VarExprAst> member;
+
+public:
+    DotExprAst(CodeLoc loc, std::unique_ptr<ExprAst> base, std::unique_ptr<VarExprAst> member);
+
+    AstType type() const override { return AST_DotExpr; }
+
+    const ExprAst* getBase() const { return base.get(); }
+    const VarExprAst* getMember() const { return member.get(); }
 };
 
 class UnExprAst : public ExprAst {

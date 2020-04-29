@@ -77,6 +77,7 @@ public:
     void errorExprUnOnNull(CodeLoc loc, Token::Oper op);
     void errorExprAsgnNonRef(CodeLoc loc, Token::Oper op);
     void errorExprAsgnOnCn(CodeLoc loc, Token::Oper op);
+    void errorExprDotInvalidBase(CodeLoc loc);
     void errorBreakNowhere(CodeLoc loc);
     void errorContinueNowhere(CodeLoc loc);
     void errorRetNoValue(CodeLoc loc, TypeTable::Id shouldRet);
@@ -90,6 +91,7 @@ public:
     void errorDataNoMembers(CodeLoc loc, NamePool::Id name);
     void errorDataRedefinition(CodeLoc loc, NamePool::Id name);
     void errorDataOpaqueInit(CodeLoc loc);
+    void errorDataUnknownMember(CodeLoc loc, NamePool::Id name);
     void errorUndefinedType(CodeLoc loc);
     void errorUnknown(CodeLoc loc);
 };

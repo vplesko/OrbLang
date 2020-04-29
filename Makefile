@@ -48,8 +48,7 @@ $(BIN_DIR)/$(TEST_DIR)/%: $(TEST_DIR)/%.orb $(TEST_UTILS) $(TEST_DIR)/%.txt buil
 	@mkdir -p $(BIN_DIR)/$(TEST_DIR)
 	@$(BIN_DIR)/$(APP_NAME) $< $@
 # run the binary and verify output
-# continue other tests even on fail
-	@-$@ | diff $(TEST_DIR)/$*.txt -
+	@$@ | diff $(TEST_DIR)/$*.txt -
 
 $(BIN_DIR)/$(TEST_DIR)/$(NEG_DIR)/%: $(TEST_DIR)/$(NEG_DIR)/%.orb $(TEST_UTILS) build
 	@mkdir -p $(BIN_DIR)/$(TEST_DIR)/$(NEG_DIR)

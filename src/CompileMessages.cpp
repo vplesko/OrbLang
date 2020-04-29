@@ -295,6 +295,12 @@ void CompileMessages::errorDataOpaqueInit(CodeLoc loc) {
     error(loc, "Attempting to initialize undefined data type.");
 }
 
+void CompileMessages::errorDataUnknownMember(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Member with name '" << namePool->get(name) << "' does not exist for this data type.";
+    error(loc, ss.str());
+}
+
 void CompileMessages::errorExprCallVariadUnty(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Attempting to call variadic function '" << namePool->get(name) << "' with an untyped value as variadic argument.";
@@ -360,6 +366,10 @@ void CompileMessages::errorExprAsgnOnCn(CodeLoc loc, Token::Oper op) {
     stringstream ss;
     ss << "Operation '" << errorString(op) << "' and other assignment operations cannot assign to constant types.";
     error(loc, ss.str());
+}
+
+void CompileMessages::errorExprDotInvalidBase(CodeLoc loc) {
+    error(loc, "Invalid expression on left side of dot operator.");
 }
 
 void CompileMessages::errorUndefinedType(CodeLoc loc) {

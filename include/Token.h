@@ -16,6 +16,7 @@ struct Token {
         T_COMMA,
         T_SEMICOLON,
         T_COLON,
+        T_DOT,
         T_ELLIPSIS,
         T_CN,
         T_FNC,

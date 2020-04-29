@@ -66,6 +66,7 @@ class Codegen {
     ExprGenPayload codegen(const UntypedExprAst *ast);
     ExprGenPayload codegen(const VarExprAst *ast);
     ExprGenPayload codegen(const IndExprAst *ast);
+    ExprGenPayload codegen(const DotExprAst *ast);
     ExprGenPayload codegen(const UnExprAst *ast);
     ExprGenPayload codegenUntypedUn(CodeLoc codeLoc, Token::Oper op, UntypedVal unty);
     ExprGenPayload codegen(const BinExprAst *ast);

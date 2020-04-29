@@ -174,6 +174,26 @@ TypeTable::Id TypeTable::addTypeArrOfLenId(Id typeId, std::size_t len) {
     }
 }
 
+TypeTable::Id TypeTable::addTypeCn(Id typeId) {
+    if (isTypeDescr(typeId)) {
+        const TypeDescr &typeDescr = typeDescrs[typeId.index].first;
+        
+        TypeDescr typeCnDescr(typeDescr.base, typeDescr.cn);
+        typeCnDescr.decors = vector<TypeDescr::Decor>(typeDescr.decors.begin(), typeDescr.decors.end());
+        typeCnDescr.cns = vector<bool>(typeDescr.cns.begin(), typeDescr.cns.end());
+
+        typeCnDescr.setLastCn();
+        
+        return addTypeDescr(move(typeCnDescr));
+    } else {
+        TypeDescr typeCnDescr(typeId);
+
+        typeCnDescr.setLastCn();
+        
+        return addTypeDescr(move(typeCnDescr));
+    }
+}
+
 void TypeTable::addTypeStr() {
     Id c8Id{Id::kPrim, P_C8};
 
@@ -208,6 +228,10 @@ TypeTable::Id TypeTable::getPrimTypeId(PrimIds id) const {
 }
 
 TypeTable::DataType& TypeTable::getDataType(Id id) {
+    return dataTypes[id.index].first;
+}
+
+const TypeTable::DataType& TypeTable::getDataType(Id id) const {
     return dataTypes[id.index].first;
 }
 
@@ -326,6 +350,21 @@ bool TypeTable::isNonOpaqueType(Id t) const {
     }
 }
 
+optional<const TypeTable::DataType*> TypeTable::getDataTypeWithin(Id t) const {
+    if (!isValidType(t)) return nullopt;
+
+    if (isDataType(t)) return &(getDataType(t));
+
+    if (isTypeDescr(t)) {
+        const TypeDescr &descr = getTypeDescr(t);
+
+        if (descr.decors.empty() && isDataType(descr.base))
+            return &(getDataType(descr.base));
+    }
+
+    return nullopt;
+}
+
 bool TypeTable::isTypeAnyP(Id t) const {
     return isTypeP(t) || isTypeArrP(t);
 }
@@ -345,6 +384,7 @@ bool TypeTable::isTypeP(Id t) const {
 }
 
 bool TypeTable::isTypePtr(Id t) const {
+    // TODO! fix: ptr cn also should say true
     return t.kind == Id::kPrim && t.index == P_PTR;
 }
 

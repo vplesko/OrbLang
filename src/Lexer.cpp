@@ -96,10 +96,18 @@ Token Lexer::next() {
         }
         
         if ((ch >= '0' && ch <= '9') || ch == '.') {
-            if (ch == '.' && peekCh() == '.') {
-                nextCh();
-                if (nextCh() == '.') tok = {Token::T_ELLIPSIS};
-                else tok = {Token::T_UNKNOWN};
+            if (ch == '.') {
+                if (peekCh() == '.') {
+                    nextCh();
+                    if (peekCh() == '.') {
+                        nextCh();
+                        tok = {Token::T_ELLIPSIS};
+                    } else {
+                        tok = {Token::T_UNKNOWN};
+                    }
+                } else {
+                    tok = {Token::T_DOT};
+                }
             } else {  
                 CodeIndex l = col-1;
                 while (numLitChars.find(peekCh()) != numLitChars.npos) nextCh();

@@ -23,29 +23,38 @@ optional<NamePool::Id> Codegen::mangleName(const FuncValue &f) {
     mangle << "$Args";
 
     for (TypeTable::Id ty : f.argTypes) {
-        const TypeTable::TypeDescr &typeDescr = getTypeTable()->getTypeDescr(ty);
-        
-        optional<NamePool::Id> name = getTypeTable()->getTypeName(typeDescr.base);
-        if (!name) {
-            return nullopt;
-        }
-
-        mangle << "$" << namePool->get(name.value());
-
-        for (TypeTable::TypeDescr::Decor d : typeDescr.decors) {
-            switch (d.type) {
-                case TypeTable::TypeDescr::Decor::D_ARR:
-                    mangle << "$Arr" << d.len;
-                    break;
-                case TypeTable::TypeDescr::Decor::D_ARR_PTR:
-                    mangle << "$ArrPtr";
-                    break;
-                case TypeTable::TypeDescr::Decor::D_PTR:
-                    mangle << "$Ptr";
-                    break;
-                default:
-                    return nullopt;
+        if (getTypeTable()->isTypeDescr(ty)) {
+            const TypeTable::TypeDescr &typeDescr = getTypeTable()->getTypeDescr(ty);
+            
+            optional<NamePool::Id> name = getTypeTable()->getTypeName(typeDescr.base);
+            if (!name) {
+                return nullopt;
             }
+
+            mangle << "$" << namePool->get(name.value());
+
+            for (TypeTable::TypeDescr::Decor d : typeDescr.decors) {
+                switch (d.type) {
+                    case TypeTable::TypeDescr::Decor::D_ARR:
+                        mangle << "$Arr" << d.len;
+                        break;
+                    case TypeTable::TypeDescr::Decor::D_ARR_PTR:
+                        mangle << "$ArrPtr";
+                        break;
+                    case TypeTable::TypeDescr::Decor::D_PTR:
+                        mangle << "$Ptr";
+                        break;
+                    default:
+                        return nullopt;
+                }
+            }
+        } else {
+            optional<NamePool::Id> name = getTypeTable()->getTypeName(ty);
+            if (!name) {
+                return nullopt;
+            }
+
+            mangle << "$" << namePool->get(name.value());
         }
     }
 

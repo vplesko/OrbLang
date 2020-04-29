@@ -209,16 +209,31 @@ unique_ptr<ExprAst> Parser::prim() {
         return nullptr;
     }
 
-    while (peek().type == Token::T_BRACE_L_SQR) {
-        CodeLoc codeLocInd = loc();
-        next();
+    while (peek().type == Token::T_BRACE_L_SQR || peek().type == Token::T_DOT) {
+        if (peek().type == Token::T_BRACE_L_SQR) {
+            CodeLoc codeLocInd = loc();
+            next();
 
-        unique_ptr<ExprAst> ind = expr();
-        if (ind == nullptr) return nullptr;
-        if (!matchOrError(Token::T_BRACE_R_SQR))
-            return nullptr;
+            unique_ptr<ExprAst> ind = expr();
+            if (ind == nullptr) return nullptr;
+            if (!matchOrError(Token::T_BRACE_R_SQR))
+                return nullptr;
 
-        ret = make_unique<IndExprAst>(codeLocInd, move(ret), move(ind));
+            ret = make_unique<IndExprAst>(codeLocInd, move(ret), move(ind));
+        } else {
+            CodeLoc codeLocDot = loc();
+            next();
+
+            CodeLoc codeLocMember = loc();
+            Token member = next();
+            if (member.type != Token::T_ID) {
+                msgs->errorUnexpectedTokenType(codeLocMember, Token::T_ID, member);
+                return nullptr;
+            }
+            unique_ptr<VarExprAst> var = make_unique<VarExprAst>(codeLocMember, member.nameId);
+
+            ret = make_unique<DotExprAst>(codeLocDot, move(ret), move(var));
+        }
     }
 
     return ret;

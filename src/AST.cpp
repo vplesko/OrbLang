@@ -10,6 +10,10 @@ IndExprAst::IndExprAst(CodeLoc loc, unique_ptr<ExprAst> base, unique_ptr<ExprAst
     : ExprAst(loc), base(move(base)), ind(move(ind)) {
 }
 
+DotExprAst::DotExprAst(CodeLoc loc, std::unique_ptr<ExprAst> base, std::unique_ptr<VarExprAst> member) 
+    : ExprAst(loc), base(move(base)), member(move(member)) {    
+}
+
 UnExprAst::UnExprAst(CodeLoc loc, unique_ptr<ExprAst> e, Token::Oper o)
     : ExprAst(loc), expr(move(e)), op(o) {
 }

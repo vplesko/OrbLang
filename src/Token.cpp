@@ -111,6 +111,8 @@ string errorString(Token::Type tok) {
         return ";";
     case Token::T_COLON:
         return ":";
+    case Token::T_DOT:
+        return ".";
     case Token::T_ELLIPSIS:
         return "...";
     case Token::T_BRACE_L_REG:

@@ -8,6 +8,7 @@
 #include "NamePool.h"
 #include "llvm/IR/Instructions.h"
 
+// TODO! tidy up the API
 class TypeTable {
 public:
     struct Id {
@@ -149,6 +150,7 @@ public:
     std::optional<Id> addTypeIndex(Id typeId);
     Id addTypeAddr(Id typeId);
     Id addTypeArrOfLenId(Id typeId, std::size_t len);
+    Id addTypeCn(Id typeId);
 
     llvm::Type* getType(Id id);
     void setType(Id id, llvm::Type *type);
@@ -156,6 +158,7 @@ public:
     llvm::Type* getPrimType(PrimIds id) const;
     Id getPrimTypeId(PrimIds id) const;
     DataType& getDataType(Id id);
+    const DataType& getDataType(Id id) const;
     const TypeDescr& getTypeDescr(Id id) const;
 
     Id getTypeIdStr() { return strType; }
@@ -171,6 +174,10 @@ public:
     bool isDataType(Id t) const;
     bool isTypeDescr(Id t) const;
     bool isNonOpaqueType(Id t) const;
+
+    std::optional<const DataType*> getDataTypeWithin(Id t) const;
+    
+    // TODO! rename to canType*
     bool isTypeI(Id t) const { return canWorkAsPrimitive(t, P_I8, P_I64); }
     bool isTypeU(Id t) const { return canWorkAsPrimitive(t, P_U8, P_U64); }
     bool isTypeF(Id t) const { return canWorkAsPrimitive(t, P_F16, P_F64); }
