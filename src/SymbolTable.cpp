@@ -144,24 +144,24 @@ optional<FuncValue> SymbolTable::getFuncForCall(const FuncCallSite &call) {
             if (!argTypeOk && call.untypedVals[i].type != UntypedVal::T_NONE) {
                 switch (call.untypedVals[i].type) {
                 case UntypedVal::T_BOOL:
-                    argTypeOk = typeTable->isTypeB(it.second.argTypes[i]);
+                    argTypeOk = typeTable->worksAsTypeB(it.second.argTypes[i]);
                     break;
                 case UntypedVal::T_SINT:
-                    argTypeOk = typeTable->isTypeI(it.second.argTypes[i]) ||
-                        (typeTable->isTypeU(it.second.argTypes[i]) && call.untypedVals[i].val_si >= 0);
+                    argTypeOk = typeTable->worksAsTypeI(it.second.argTypes[i]) ||
+                        (typeTable->worksAsTypeU(it.second.argTypes[i]) && call.untypedVals[i].val_si >= 0);
                     break;
                 case UntypedVal::T_CHAR:
-                    argTypeOk = typeTable->isTypeC(it.second.argTypes[i]);
+                    argTypeOk = typeTable->worksAsTypeC(it.second.argTypes[i]);
                     break;
                 case UntypedVal::T_FLOAT:
-                    argTypeOk = typeTable->isTypeF(it.second.argTypes[i]);
+                    argTypeOk = typeTable->worksAsTypeF(it.second.argTypes[i]);
                     break;
                 case UntypedVal::T_NULL:
-                    argTypeOk = typeTable->isTypeAnyP(it.second.argTypes[i]);
+                    argTypeOk = typeTable->worksAsTypeAnyP(it.second.argTypes[i]);
                     break;
                 case UntypedVal::T_STRING:
-                    argTypeOk = typeTable->isTypeStr(it.second.argTypes[i]) ||
-                        typeTable->isTypeCharArrOfLen(it.second.argTypes[i], call.untypedVals[i].getStringLen());
+                    argTypeOk = typeTable->worksAsTypeStr(it.second.argTypes[i]) ||
+                        typeTable->worksAsTypeCharArrOfLen(it.second.argTypes[i], call.untypedVals[i].getStringLen());
                     break;
                 default:
                     argTypeOk = false;

@@ -115,21 +115,21 @@ bool Codegen::promoteUntyped(ExprGenPayload &e, TypeTable::Id t) {
 
     switch (e.untyVal.type) {
     case UntypedVal::T_BOOL:
-        if (!getTypeTable()->isTypeB(t)) {
+        if (!getTypeTable()->worksAsTypeB(t)) {
             success = false;
         } else {
             e.val = getConstB(e.untyVal.val_b);
         }
         break;
     case UntypedVal::T_SINT:
-        if ((!getTypeTable()->isTypeI(t) && !getTypeTable()->isTypeU(t)) || !getTypeTable()->fitsType(e.untyVal.val_si, t)) {
+        if ((!getTypeTable()->worksAsTypeI(t) && !getTypeTable()->worksAsTypeU(t)) || !getTypeTable()->fitsType(e.untyVal.val_si, t)) {
             success = false;
         } else {
-            e.val = llvm::ConstantInt::get(getType(t), e.untyVal.val_si, getTypeTable()->isTypeI(t));
+            e.val = llvm::ConstantInt::get(getType(t), e.untyVal.val_si, getTypeTable()->worksAsTypeI(t));
         }
         break;
     case UntypedVal::T_CHAR:
-        if (!getTypeTable()->isTypeC(t)) {
+        if (!getTypeTable()->worksAsTypeC(t)) {
             success = false;
         } else {
             e.val = llvm::ConstantInt::get(getType(t), (uint8_t) e.untyVal.val_c, false);
@@ -137,23 +137,23 @@ bool Codegen::promoteUntyped(ExprGenPayload &e, TypeTable::Id t) {
         break;
     case UntypedVal::T_FLOAT:
         // no precision checks for float types, this makes float literals somewhat unsafe
-        if (!getTypeTable()->isTypeF(t)) {
+        if (!getTypeTable()->worksAsTypeF(t)) {
             success = false;
         } else {
             e.val = llvm::ConstantFP::get(getType(t), e.untyVal.val_f);
         }
         break;
     case UntypedVal::T_STRING:
-        if (getTypeTable()->isTypeStr(t)) {
+        if (getTypeTable()->worksAsTypeStr(t)) {
             e.val = createString(e.untyVal.val_str);
-        } else if (getTypeTable()->isTypeCharArrOfLen(t, e.untyVal.getStringLen())) {
+        } else if (getTypeTable()->worksAsTypeCharArrOfLen(t, e.untyVal.getStringLen())) {
             e.val = llvm::ConstantDataArray::getString(llvmContext, e.untyVal.val_str, true);
         } else {
             success = false;
         }
         break;
     case UntypedVal::T_NULL:
-        if (!symbolTable->getTypeTable()->isTypeAnyP(t)) {
+        if (!symbolTable->getTypeTable()->worksAsTypeAnyP(t)) {
             success = false;
         } else {
             e.val = llvm::ConstantPointerNull::get((llvm::PointerType*)getType(t));

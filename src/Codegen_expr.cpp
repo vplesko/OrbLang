@@ -77,8 +77,8 @@ Codegen::ExprGenPayload Codegen::codegen(const IndExprAst *ast) {
                 msgs->errorUnknown(ast->getInd()->loc());
                 return {};
             }
-            if (getTypeTable()->isTypeArr(baseExprPay.type)) {
-                size_t len = getTypeTable()->getArrLen(baseExprPay.type).value();
+            if (getTypeTable()->worksAsTypeArr(baseExprPay.type)) {
+                size_t len = getTypeTable()->extractLenOfArr(baseExprPay.type).value();
                 if (indExprPay.untyVal.val_si < 0 || ((size_t) indExprPay.untyVal.val_si) >= len) {
                     msgs->warnExprIndexOutOfBounds(ast->getInd()->loc());
                 }
@@ -89,12 +89,12 @@ Codegen::ExprGenPayload Codegen::codegen(const IndExprAst *ast) {
         }
     }
 
-    if (!getTypeTable()->isTypeI(indExprPay.type) && !getTypeTable()->isTypeU(indExprPay.type)) {
+    if (!getTypeTable()->worksAsTypeI(indExprPay.type) && !getTypeTable()->worksAsTypeU(indExprPay.type)) {
         msgs->errorExprIndexNotIntegral(ast->getInd()->loc());
         return {};
     }
 
-    optional<TypeTable::Id> typeId = symbolTable->getTypeTable()->addTypeIndex(baseExprPay.type);
+    optional<TypeTable::Id> typeId = symbolTable->getTypeTable()->addTypeIndexOf(baseExprPay.type);
     if (!typeId) {
         msgs->errorExprIndexOnBadType(ast->loc(), baseExprPay.type);
         return {};
@@ -103,10 +103,10 @@ Codegen::ExprGenPayload Codegen::codegen(const IndExprAst *ast) {
     ExprGenPayload retPay;
     retPay.type = typeId.value();
 
-    if (symbolTable->getTypeTable()->isTypeArrP(baseExprPay.type)) {
+    if (symbolTable->getTypeTable()->worksAsTypeArrP(baseExprPay.type)) {
         retPay.ref = llvmBuilder.CreateGEP(baseExprPay.val, indExprPay.val);
         retPay.val = llvmBuilder.CreateLoad(retPay.ref, "index_tmp");
-    } else if (symbolTable->getTypeTable()->isTypeArr(baseExprPay.type)) {
+    } else if (symbolTable->getTypeTable()->worksAsTypeArr(baseExprPay.type)) {
         if (baseExprPay.ref != nullptr) {
             retPay.ref = llvmBuilder.CreateGEP(baseExprPay.ref,
                 {llvm::ConstantInt::get(getType(indExprPay.type), 0), indExprPay.val});
@@ -136,7 +136,7 @@ Codegen::ExprGenPayload Codegen::codegen(const DotExprAst *ast) {
     }
     if (valueBroken(baseExpr)) return {};
     
-    optional<const TypeTable::DataType*> dataTypeOpt = getTypeTable()->getDataTypeWithin(baseExpr.type);
+    optional<const TypeTable::DataType*> dataTypeOpt = getTypeTable()->extractDataType(baseExpr.type);
     if (!dataTypeOpt.has_value()) {
         msgs->errorExprDotInvalidBase(ast->getBase()->loc());
         return {};
@@ -169,8 +169,8 @@ Codegen::ExprGenPayload Codegen::codegen(const DotExprAst *ast) {
     }
 
     exprRet.type = dataType.members[memberInd].type;
-    if (getTypeTable()->isTypeCn(baseExpr.type)) {
-        exprRet.type = getTypeTable()->addTypeCn(exprRet.type);
+    if (getTypeTable()->worksAsTypeCn(baseExpr.type)) {
+        exprRet.type = getTypeTable()->addTypeCnOf(exprRet.type);
     }
 
     return exprRet;
@@ -185,26 +185,26 @@ Codegen::ExprGenPayload Codegen::codegen(const UnExprAst *ast) {
     ExprGenPayload exprRet;
     exprRet.type = exprPay.type;
     if (ast->getOp() == Token::O_ADD) {
-        if (!(getTypeTable()->isTypeI(exprPay.type) || getTypeTable()->isTypeU(exprPay.type) || getTypeTable()->isTypeF(exprPay.type))) {
+        if (!(getTypeTable()->worksAsTypeI(exprPay.type) || getTypeTable()->worksAsTypeU(exprPay.type) || getTypeTable()->worksAsTypeF(exprPay.type))) {
             msgs->errorExprUnBadType(ast->loc(), ast->getOp(), exprPay.type);
             return {};
         }
         exprRet.val = exprPay.val;
     } else if (ast->getOp() == Token::O_SUB) {
-        if (getTypeTable()->isTypeI(exprPay.type)) {
+        if (getTypeTable()->worksAsTypeI(exprPay.type)) {
             exprRet.val = llvmBuilder.CreateNeg(exprPay.val, "sneg_tmp");
-        } else if (getTypeTable()->isTypeF(exprPay.type)) {
+        } else if (getTypeTable()->worksAsTypeF(exprPay.type)) {
             exprRet.val = llvmBuilder.CreateFNeg(exprPay.val, "fneg_tmp");
         } else {
             msgs->errorExprUnBadType(ast->loc(), ast->getOp(), exprPay.type);
             return {};
         }
     } else if (ast->getOp() == Token::O_INC) {
-        if (getTypeTable()->isTypeCn(exprPay.type)) {
+        if (getTypeTable()->worksAsTypeCn(exprPay.type)) {
             msgs->errorExprUnOnCn(ast->loc(), ast->getOp());
             return {};
         }
-        if (!(getTypeTable()->isTypeI(exprPay.type) || getTypeTable()->isTypeU(exprPay.type)) || refBroken(exprPay)) {
+        if (!(getTypeTable()->worksAsTypeI(exprPay.type) || getTypeTable()->worksAsTypeU(exprPay.type)) || refBroken(exprPay)) {
             msgs->errorExprUnBadType(ast->loc(), ast->getOp(), exprPay.type);
             return {};
         }
@@ -212,11 +212,11 @@ Codegen::ExprGenPayload Codegen::codegen(const UnExprAst *ast) {
         exprRet.ref = exprPay.ref;
         llvmBuilder.CreateStore(exprRet.val, exprRet.ref);
     } else if (ast->getOp() == Token::O_DEC) {
-        if (getTypeTable()->isTypeCn(exprPay.type)) {
+        if (getTypeTable()->worksAsTypeCn(exprPay.type)) {
             msgs->errorExprUnOnCn(ast->loc(), ast->getOp());
             return {};
         }
-        if (!(getTypeTable()->isTypeI(exprPay.type) || getTypeTable()->isTypeU(exprPay.type)) || refBroken(exprPay)) {
+        if (!(getTypeTable()->worksAsTypeI(exprPay.type) || getTypeTable()->worksAsTypeU(exprPay.type)) || refBroken(exprPay)) {
             msgs->errorExprUnBadType(ast->loc(), ast->getOp(), exprPay.type);
             return {};
         }
@@ -224,19 +224,19 @@ Codegen::ExprGenPayload Codegen::codegen(const UnExprAst *ast) {
         exprRet.ref = exprPay.ref;
         llvmBuilder.CreateStore(exprRet.val, exprRet.ref);
     } else if (ast->getOp() == Token::O_BIT_NOT) {
-        if (!(getTypeTable()->isTypeI(exprPay.type) || getTypeTable()->isTypeU(exprPay.type))) {
+        if (!(getTypeTable()->worksAsTypeI(exprPay.type) || getTypeTable()->worksAsTypeU(exprPay.type))) {
             msgs->errorExprUnBadType(ast->loc(), ast->getOp(), exprPay.type);
             return {};
         }
         exprRet.val = llvmBuilder.CreateNot(exprPay.val, "bit_not_tmp");
     } else if (ast->getOp() == Token::O_NOT) {
-        if (!getTypeTable()->isTypeB(exprPay.type)) {
+        if (!getTypeTable()->worksAsTypeB(exprPay.type)) {
             msgs->errorExprUnBadType(ast->loc(), ast->getOp(), exprPay.type);
             return {};
         }
         exprRet.val = llvmBuilder.CreateNot(exprPay.val, "not_tmp");
     } else if (ast->getOp() == Token::O_MUL) {
-        optional<TypeTable::Id> typeId = symbolTable->getTypeTable()->addTypeDeref(exprPay.type);
+        optional<TypeTable::Id> typeId = symbolTable->getTypeTable()->addTypeDerefOf(exprPay.type);
         if (!typeId || !getTypeTable()->isNonOpaqueType(typeId.value())) {
             msgs->errorExprDerefOnBadType(ast->loc(), exprPay.type);
             return {};
@@ -249,7 +249,7 @@ Codegen::ExprGenPayload Codegen::codegen(const UnExprAst *ast) {
             msgs->errorExprAddressOfNoRef(ast->loc());
             return {};
         }
-        TypeTable::Id typeId = symbolTable->getTypeTable()->addTypeAddr(exprPay.type);
+        TypeTable::Id typeId = symbolTable->getTypeTable()->addTypeAddrOf(exprPay.type);
         exprRet.type = typeId;
         exprRet.val = exprPay.ref;
     } else {
@@ -320,7 +320,7 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
             msgs->errorExprAsgnNonRef(ast->loc(), ast->getOp());
             return {};
         }
-        if (getTypeTable()->isTypeCn(exprPayL.type)) {
+        if (getTypeTable()->worksAsTypeCn(exprPayL.type)) {
             msgs->errorExprAsgnOnCn(ast->loc(), ast->getOp());
             return {};
         }
@@ -363,7 +363,7 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
         }
     }
 
-    if (getTypeTable()->isTypeB(exprPayRet.type)) {
+    if (getTypeTable()->worksAsTypeB(exprPayRet.type)) {
         switch (ast->getOp()) {
         case Token::O_ASGN:
             exprPayRet.val = valR;
@@ -378,11 +378,11 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
             break;
         }
     } else {
-        bool isTypeI = getTypeTable()->isTypeI(exprPayRet.type);
-        bool isTypeU = getTypeTable()->isTypeU(exprPayRet.type);
-        bool isTypeF = getTypeTable()->isTypeF(exprPayRet.type);
-        bool isTypeC = getTypeTable()->isTypeC(exprPayRet.type);
-        bool isTypeP = symbolTable->getTypeTable()->isTypeAnyP(exprPayRet.type);
+        bool isTypeI = getTypeTable()->worksAsTypeI(exprPayRet.type);
+        bool isTypeU = getTypeTable()->worksAsTypeU(exprPayRet.type);
+        bool isTypeF = getTypeTable()->worksAsTypeF(exprPayRet.type);
+        bool isTypeC = getTypeTable()->worksAsTypeC(exprPayRet.type);
+        bool isTypeP = symbolTable->getTypeTable()->worksAsTypeAnyP(exprPayRet.type);
 
         switch (ast->getOp()) {
             case Token::O_ASGN:
@@ -954,13 +954,13 @@ Codegen::ExprGenPayload Codegen::codegen(const CastExprAst *ast) {
 
 Codegen::ExprGenPayload Codegen::codegen(const ArrayExprAst *ast) {
     TypeTable::Id arrDeclTypeId = ast->getArrayType()->getTypeId();
-    if (!getTypeTable()->isTypeArrP(arrDeclTypeId) &&
-        !getTypeTable()->isTypeArrOfLen(arrDeclTypeId, ast->getVals().size())) {
+    if (!getTypeTable()->worksAsTypeArrP(arrDeclTypeId) &&
+        !getTypeTable()->worksAsTypeArrOfLen(arrDeclTypeId, ast->getVals().size())) {
         msgs->errorExprIndexOnBadType(ast->loc(), arrDeclTypeId);
         return {};
     }
 
-    optional<TypeTable::Id> elemTypeIdFind = getTypeTable()->addTypeIndex(arrDeclTypeId);
+    optional<TypeTable::Id> elemTypeIdFind = getTypeTable()->addTypeIndexOf(arrDeclTypeId);
     if (!elemTypeIdFind) {
         msgs->errorExprIndexOnBadType(ast->loc(), arrDeclTypeId);
         return {};
@@ -975,7 +975,7 @@ Codegen::ExprGenPayload Codegen::codegen(const ArrayExprAst *ast) {
         return {};
     }
 
-    TypeTable::Id arrTypeId = getTypeTable()->addTypeArrOfLenId(
+    TypeTable::Id arrTypeId = getTypeTable()->addTypeArrOfLenIdOf(
         elemTypeId, ast->getVals().size());
     
     llvm::Value *arrRef = createAlloca(getType(arrTypeId), "tmp_arr");

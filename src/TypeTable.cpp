@@ -105,9 +105,9 @@ TypeTable::Id TypeTable::addDataType(NamePool::Id name) {
     return id;
 }
 
-optional<TypeTable::Id> TypeTable::addTypeDeref(Id typeId) {
+optional<TypeTable::Id> TypeTable::addTypeDerefOf(Id typeId) {
     // ptr cannot be dereferenced
-    if (isTypePtr(typeId) || !isTypeP(typeId)) return nullopt;
+    if (worksAsTypePtr(typeId) || !worksAsTypeP(typeId)) return nullopt;
 
     const TypeDescr &typeDescr = typeDescrs[typeId.index].first;
     
@@ -118,8 +118,8 @@ optional<TypeTable::Id> TypeTable::addTypeDeref(Id typeId) {
     return addTypeDescr(move(typeDerefDescr));
 }
 
-optional<TypeTable::Id> TypeTable::addTypeIndex(Id typeId) {
-    if (!isTypeArrP(typeId) && !isTypeArr(typeId)) return nullopt;
+optional<TypeTable::Id> TypeTable::addTypeIndexOf(Id typeId) {
+    if (!worksAsTypeArrP(typeId) && !worksAsTypeArr(typeId)) return nullopt;
 
     const TypeDescr &typeDescr = typeDescrs[typeId.index].first;
     
@@ -130,7 +130,7 @@ optional<TypeTable::Id> TypeTable::addTypeIndex(Id typeId) {
     return addTypeDescr(move(typeIndexDescr));
 }
 
-TypeTable::Id TypeTable::addTypeAddr(Id typeId) {
+TypeTable::Id TypeTable::addTypeAddrOf(Id typeId) {
     if (isTypeDescr(typeId)) {
         const TypeDescr &typeDescr = typeDescrs[typeId.index].first;
 
@@ -152,7 +152,7 @@ TypeTable::Id TypeTable::addTypeAddr(Id typeId) {
     }
 }
 
-TypeTable::Id TypeTable::addTypeArrOfLenId(Id typeId, std::size_t len) {
+TypeTable::Id TypeTable::addTypeArrOfLenIdOf(Id typeId, std::size_t len) {
     if (isTypeDescr(typeId)) {
         const TypeDescr &typeDescr = typeDescrs[typeId.index].first;
         
@@ -174,7 +174,7 @@ TypeTable::Id TypeTable::addTypeArrOfLenId(Id typeId, std::size_t len) {
     }
 }
 
-TypeTable::Id TypeTable::addTypeCn(Id typeId) {
+TypeTable::Id TypeTable::addTypeCnOf(Id typeId) {
     if (isTypeDescr(typeId)) {
         const TypeDescr &typeDescr = typeDescrs[typeId.index].first;
         
@@ -241,11 +241,11 @@ const TypeTable::TypeDescr& TypeTable::getTypeDescr(Id id) const {
 
 TypeTable::Id TypeTable::getTypeCharArrOfLenId(std::size_t len) {
     Id c8Id{Id::kPrim, P_C8};
-    return addTypeArrOfLenId(c8Id, len);
+    return addTypeArrOfLenIdOf(c8Id, len);
 }
 
-optional<size_t> TypeTable::getArrLen(Id arrTypeId) const {
-    if (!isTypeArr(arrTypeId)) return nullopt;
+optional<size_t> TypeTable::extractLenOfArr(Id arrTypeId) const {
+    if (!worksAsTypeArr(arrTypeId)) return nullopt;
     return typeDescrs[arrTypeId.index].first.decors.back().len;
 }
 
@@ -273,7 +273,7 @@ optional<NamePool::Id> TypeTable::getTypeName(Id t) const {
     return loc->second;
 }
 
-bool TypeTable::canWorkAsPrimitive(Id t) const {
+bool TypeTable::worksAsPrimitive(Id t) const {
     if (!isValidType(t)) return false;
 
     if (isPrimitive(t)) {
@@ -287,7 +287,7 @@ bool TypeTable::canWorkAsPrimitive(Id t) const {
     }
 }
 
-bool TypeTable::canWorkAsPrimitive(Id t, PrimIds p) const {
+bool TypeTable::worksAsPrimitive(Id t, PrimIds p) const {
     if (!isValidType(t)) return false;
 
     if (isPrimitive(t)) {
@@ -302,7 +302,7 @@ bool TypeTable::canWorkAsPrimitive(Id t, PrimIds p) const {
     }
 }
 
-bool TypeTable::canWorkAsPrimitive(Id t, PrimIds lo, PrimIds hi) const {
+bool TypeTable::worksAsPrimitive(Id t, PrimIds lo, PrimIds hi) const {
     if (!isValidType(t)) return false;
 
     if (isPrimitive(t)) {
@@ -350,7 +350,7 @@ bool TypeTable::isNonOpaqueType(Id t) const {
     }
 }
 
-optional<const TypeTable::DataType*> TypeTable::getDataTypeWithin(Id t) const {
+optional<const TypeTable::DataType*> TypeTable::extractDataType(Id t) const {
     if (!isValidType(t)) return nullopt;
 
     if (isDataType(t)) return &(getDataType(t));
@@ -365,25 +365,25 @@ optional<const TypeTable::DataType*> TypeTable::getDataTypeWithin(Id t) const {
     return nullopt;
 }
 
-bool TypeTable::isTypeAnyP(Id t) const {
-    return isTypeP(t) || isTypeArrP(t);
+bool TypeTable::worksAsTypeAnyP(Id t) const {
+    return worksAsTypeP(t) || worksAsTypeArrP(t);
 }
 
-bool TypeTable::isTypeP(Id t) const {
+bool TypeTable::worksAsTypeP(Id t) const {
     if (!isValidType(t)) return false;
 
-    if (isTypePtr(t)) return true;
+    if (worksAsTypePtr(t)) return true;
 
     if (isTypeDescr(t)) {
         const TypeDescr &ty = typeDescrs[t.index].first;
-        return (ty.decors.empty() && isTypePtr(ty.base)) ||
+        return (ty.decors.empty() && worksAsTypePtr(ty.base)) ||
             (!ty.decors.empty() && ty.decors.back().type == TypeDescr::Decor::D_PTR);
     }
 
     return false;
 }
 
-bool TypeTable::isTypePtr(Id t) const {
+bool TypeTable::worksAsTypePtr(Id t) const {
     if (isPrimitive(t)) {
         return t.index == P_PTR;
     } else if (isTypeDescr(t)) {
@@ -396,40 +396,40 @@ bool TypeTable::isTypePtr(Id t) const {
     return false;
 }
 
-bool TypeTable::isTypeArr(Id t) const {
+bool TypeTable::worksAsTypeArr(Id t) const {
     return isTypeDescrSatisfyingCondition(t, [](const TypeDescr &ty) {
         return !ty.decors.empty() && ty.decors.back().type == TypeDescr::Decor::D_ARR;
     });
 }
 
-bool TypeTable::isTypeArrOfLen(Id t, std::size_t len) const {
+bool TypeTable::worksAsTypeArrOfLen(Id t, std::size_t len) const {
     return isTypeDescrSatisfyingCondition(t, [=](const TypeDescr &ty) {
         return !ty.decors.empty() && ty.decors.back().type == TypeDescr::Decor::D_ARR &&
             ty.decors.back().len == len;
     });
 }
 
-bool TypeTable::isTypeArrP(Id t) const {
+bool TypeTable::worksAsTypeArrP(Id t) const {
     return isTypeDescrSatisfyingCondition(t, [](const TypeDescr &ty) {
         return !ty.decors.empty() && ty.decors.back().type == TypeDescr::Decor::D_ARR_PTR;
     });
 }
 
-bool TypeTable::isTypeStr(Id t) const {
+bool TypeTable::worksAsTypeStr(Id t) const {
     return isTypeDescrSatisfyingCondition(t, [this](const TypeDescr &ty) {
         return ty.decors.size() == 1 && ty.decors[0].type == TypeDescr::Decor::D_ARR_PTR &&
-            isTypeC(ty.base) && ty.cn;
+            worksAsTypeC(ty.base) && ty.cn;
     });
 }
 
-bool TypeTable::isTypeCharArrOfLen(Id t, size_t len) const {
+bool TypeTable::worksAsTypeCharArrOfLen(Id t, size_t len) const {
     return isTypeDescrSatisfyingCondition(t, [=](const TypeDescr &ty) {
-        return ty.decors.size() == 1 && isTypeC(ty.base) &&
+        return ty.decors.size() == 1 && worksAsTypeC(ty.base) &&
             ty.decors[0].type == TypeDescr::Decor::D_ARR && ty.decors[0].len == len;
     });
 }
 
-bool TypeTable::isTypeCn(Id t) const {
+bool TypeTable::worksAsTypeCn(Id t) const {
     return isTypeDescrSatisfyingCondition(t, [](const TypeDescr &ty) {
         return ty.cns.empty() ? ty.cn : ty.cns.back();
     });
@@ -445,7 +445,7 @@ bool TypeTable::dataMayTakeName(NamePool::Id name) const {
 }
 
 bool TypeTable::fitsType(int64_t x, Id t) const {
-    if (!canWorkAsPrimitive(t)) return false;
+    if (!worksAsPrimitive(t)) return false;
 
     PrimIds primId;
     if (isPrimitive(t)) primId = (PrimIds) t.index;
@@ -513,9 +513,9 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
         PrimIds d = (PrimIds) into.index;
 
         return (s == d ||
-            (isTypeI(from) && between(d, s, P_I64)) ||
-            (isTypeU(from) && between(d, s, P_U64)) ||
-            (isTypeF(from) && between(d, s, P_F64)));
+            (worksAsTypeI(from) && between(d, s, P_I64)) ||
+            (worksAsTypeU(from) && between(d, s, P_U64)) ||
+            (worksAsTypeF(from) && between(d, s, P_F64)));
     } else if (isDataType(from)) {
         if (!isDataType(into)) return false;
 
@@ -545,7 +545,7 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
     }
 }
 
-TypeTable::Id TypeTable::getTypeDropCns(Id t) {
+TypeTable::Id TypeTable::addTypeDropCnsOf(Id t) {
     if (!isTypeDescr(t)) return t;
 
     TypeDescr &old = typeDescrs[t.index].first;

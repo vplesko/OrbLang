@@ -8,7 +8,6 @@
 #include "NamePool.h"
 #include "llvm/IR/Instructions.h"
 
-// TODO! tidy up the API
 class TypeTable {
 public:
     struct Id {
@@ -126,9 +125,8 @@ private:
     std::unordered_map<NamePool::Id, Id> typeIds;
     std::unordered_map<Id, NamePool::Id, Id::Hasher> typeNames;
 
-    bool canWorkAsPrimitive(Id t) const;
-    bool canWorkAsPrimitive(Id t, PrimIds p) const;
-    bool canWorkAsPrimitive(Id t, PrimIds lo, PrimIds hi) const;
+    bool worksAsPrimitive(Id t, PrimIds p) const;
+    bool worksAsPrimitive(Id t, PrimIds lo, PrimIds hi) const;
 
     template <typename T>
     bool isTypeDescrSatisfyingCondition(Id t, T cond) const;
@@ -146,11 +144,12 @@ public:
     // if typeDescr is secretly a prim/data, that type's Id is returned instead
     Id addTypeDescr(TypeDescr typeDescr, llvm::Type *type);
 
-    std::optional<Id> addTypeDeref(Id typeId);
-    std::optional<Id> addTypeIndex(Id typeId);
-    Id addTypeAddr(Id typeId);
-    Id addTypeArrOfLenId(Id typeId, std::size_t len);
-    Id addTypeCn(Id typeId);
+    std::optional<Id> addTypeDerefOf(Id typeId);
+    std::optional<Id> addTypeIndexOf(Id typeId);
+    Id addTypeAddrOf(Id typeId);
+    Id addTypeArrOfLenIdOf(Id typeId, std::size_t len);
+    Id addTypeCnOf(Id typeId);
+    Id addTypeDropCnsOf(Id t);
 
     llvm::Type* getType(Id id);
     void setType(Id id, llvm::Type *type);
@@ -163,7 +162,6 @@ public:
 
     Id getTypeIdStr() { return strType; }
     Id getTypeCharArrOfLenId(std::size_t len);
-    std::optional<std::size_t> getArrLen(Id arrTypeId) const;
 
     bool isValidType(Id t) const;
     bool isType(NamePool::Id name) const;
@@ -174,32 +172,32 @@ public:
     bool isDataType(Id t) const;
     bool isTypeDescr(Id t) const;
     bool isNonOpaqueType(Id t) const;
-
-    std::optional<const DataType*> getDataTypeWithin(Id t) const;
     
-    // TODO! rename to canType*
-    bool isTypeI(Id t) const { return canWorkAsPrimitive(t, P_I8, P_I64); }
-    bool isTypeU(Id t) const { return canWorkAsPrimitive(t, P_U8, P_U64); }
-    bool isTypeF(Id t) const { return canWorkAsPrimitive(t, P_F16, P_F64); }
-    bool isTypeC(Id t) const { return canWorkAsPrimitive(t, P_C8); }
-    bool isTypeB(Id t) const { return canWorkAsPrimitive(t, P_BOOL); }
-    bool isTypeAnyP(Id t) const;
-    bool isTypeP(Id t) const;
+    bool worksAsPrimitive(Id t) const;
+    bool worksAsTypeI(Id t) const { return worksAsPrimitive(t, P_I8, P_I64); }
+    bool worksAsTypeU(Id t) const { return worksAsPrimitive(t, P_U8, P_U64); }
+    bool worksAsTypeF(Id t) const { return worksAsPrimitive(t, P_F16, P_F64); }
+    bool worksAsTypeC(Id t) const { return worksAsPrimitive(t, P_C8); }
+    bool worksAsTypeB(Id t) const { return worksAsPrimitive(t, P_BOOL); }
     // specifically, P_PTR
-    bool isTypePtr(Id t) const;
-    bool isTypeArr(Id t) const;
-    bool isTypeArrOfLen(Id t, std::size_t len) const;
-    bool isTypeArrP(Id t) const;
-    bool isTypeStr(Id t) const;
-    bool isTypeCharArrOfLen(Id t, std::size_t len) const;
-    bool isTypeCn(Id t) const;
+    bool worksAsTypePtr(Id t) const;
+    bool worksAsTypeAnyP(Id t) const;
+    bool worksAsTypeP(Id t) const;
+    bool worksAsTypeArr(Id t) const;
+    bool worksAsTypeArrOfLen(Id t, std::size_t len) const;
+    bool worksAsTypeArrP(Id t) const;
+    bool worksAsTypeStr(Id t) const;
+    bool worksAsTypeCharArrOfLen(Id t, std::size_t len) const;
+    bool worksAsTypeCn(Id t) const;
+
+    std::optional<const DataType*> extractDataType(Id t) const;
+    std::optional<std::size_t> extractLenOfArr(Id arrTypeId) const;
 
     bool dataMayTakeName(NamePool::Id name) const;
     bool fitsType(int64_t x, Id t) const;
     Id shortestFittingTypeIId(int64_t x) const;
     bool isImplicitCastable(Id from, Id into) const;
-    Id getTypeDropCns(Id t);
-    Id getTypeFuncSigParam(Id t) { return getTypeDropCns(t); }
+    Id getTypeFuncSigParam(Id t) { return addTypeDropCnsOf(t); }
     bool isArgTypeProper(Id callArg, Id fncParam) const { return isImplicitCastable(callArg, fncParam); }
 };
 

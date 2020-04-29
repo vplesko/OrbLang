@@ -10,84 +10,84 @@ bool Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
         return false;
     }
 
-    if (getTypeTable()->isTypeI(srcTypeId)) {
-        if (getTypeTable()->isTypeI(dstTypeId))
+    if (getTypeTable()->worksAsTypeI(srcTypeId)) {
+        if (getTypeTable()->worksAsTypeI(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, true, "i2i_cast");
-        else if (getTypeTable()->isTypeU(dstTypeId))
+        else if (getTypeTable()->worksAsTypeU(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, false, "i2u_cast");
-        else if (getTypeTable()->isTypeF(dstTypeId))
+        else if (getTypeTable()->worksAsTypeF(dstTypeId))
             val = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::SIToFP, val, type, "i2f_cast"));
-        else if (getTypeTable()->isTypeC(dstTypeId))
+        else if (getTypeTable()->worksAsTypeC(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, false, "i2c_cast");
-        else if (getTypeTable()->isTypeB(dstTypeId)) {
+        else if (getTypeTable()->worksAsTypeB(dstTypeId)) {
             llvm::Value *z = llvmBuilder.CreateIntCast(getConstB(false), val->getType(), true);
             val = llvmBuilder.CreateICmpNE(val, z, "i2b_cast");
-        } else if (symbolTable->getTypeTable()->isTypeAnyP(dstTypeId)) {
+        } else if (symbolTable->getTypeTable()->worksAsTypeAnyP(dstTypeId)) {
             val = llvmBuilder.CreatePointerCast(val, type, "i2p_cast");
         } else {
             val = nullptr;
             return false;
         }
-    } else if (getTypeTable()->isTypeU(srcTypeId)) {
-        if (getTypeTable()->isTypeI(dstTypeId))
+    } else if (getTypeTable()->worksAsTypeU(srcTypeId)) {
+        if (getTypeTable()->worksAsTypeI(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, true, "u2i_cast");
-        else if (getTypeTable()->isTypeU(dstTypeId))
+        else if (getTypeTable()->worksAsTypeU(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, false, "u2u_cast");
-        else if (getTypeTable()->isTypeF(dstTypeId))
+        else if (getTypeTable()->worksAsTypeF(dstTypeId))
             val = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::UIToFP, val, type, "u2f_cast"));
-        else if (getTypeTable()->isTypeC(dstTypeId))
+        else if (getTypeTable()->worksAsTypeC(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, false, "u2c_cast");
-        else if (getTypeTable()->isTypeB(dstTypeId)) {
+        else if (getTypeTable()->worksAsTypeB(dstTypeId)) {
             llvm::Value *z = llvmBuilder.CreateIntCast(getConstB(false), val->getType(), false);
             val = llvmBuilder.CreateICmpNE(val, z, "u2b_cast");
-        } else if (symbolTable->getTypeTable()->isTypeAnyP(dstTypeId)) {
+        } else if (symbolTable->getTypeTable()->worksAsTypeAnyP(dstTypeId)) {
             val = llvmBuilder.CreatePointerCast(val, type, "u2p_cast");
         } else {
             val = nullptr;
             return false;
         }
-    } else if (getTypeTable()->isTypeF(srcTypeId)) {
-        if (getTypeTable()->isTypeI(dstTypeId))
+    } else if (getTypeTable()->worksAsTypeF(srcTypeId)) {
+        if (getTypeTable()->worksAsTypeI(dstTypeId))
             val = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::FPToSI, val, type, "f2i_cast"));
-        else if (getTypeTable()->isTypeU(dstTypeId))
+        else if (getTypeTable()->worksAsTypeU(dstTypeId))
             val = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::FPToUI, val, type, "f2u_cast"));
-        else if (getTypeTable()->isTypeF(dstTypeId))
+        else if (getTypeTable()->worksAsTypeF(dstTypeId))
             val = llvmBuilder.CreateFPCast(val, type, "f2f_cast");
         else {
             val = nullptr;
             return false;
         }
-    } else if (getTypeTable()->isTypeC(srcTypeId)) {
-        if (getTypeTable()->isTypeI(dstTypeId))
+    } else if (getTypeTable()->worksAsTypeC(srcTypeId)) {
+        if (getTypeTable()->worksAsTypeI(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, true, "c2i_cast");
-        else if (getTypeTable()->isTypeU(dstTypeId))
+        else if (getTypeTable()->worksAsTypeU(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, false, "c2u_cast");
-        else if (getTypeTable()->isTypeC(dstTypeId))
+        else if (getTypeTable()->worksAsTypeC(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, false, "c2c_cast");
-        else if (getTypeTable()->isTypeB(dstTypeId)) {
+        else if (getTypeTable()->worksAsTypeB(dstTypeId)) {
             llvm::Value *z = llvmBuilder.CreateIntCast(getConstB(false), val->getType(), false);
             val = llvmBuilder.CreateICmpNE(val, z, "c2b_cast");
         } else {
             val = nullptr;
             return false;
         }
-    } else if (getTypeTable()->isTypeB(srcTypeId)) {
-        if (getTypeTable()->isTypeI(dstTypeId))
+    } else if (getTypeTable()->worksAsTypeB(srcTypeId)) {
+        if (getTypeTable()->worksAsTypeI(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, false, "b2i_cast");
-        else if (getTypeTable()->isTypeU(dstTypeId))
+        else if (getTypeTable()->worksAsTypeU(dstTypeId))
             val = llvmBuilder.CreateIntCast(val, type, false, "b2u_cast");
         else {
             val = nullptr;
             return false;
         }
-    } else if (getTypeTable()->isTypeAnyP(srcTypeId)) {
-        if (getTypeTable()->isTypeI(dstTypeId))
+    } else if (getTypeTable()->worksAsTypeAnyP(srcTypeId)) {
+        if (getTypeTable()->worksAsTypeI(dstTypeId))
             val = llvmBuilder.CreatePtrToInt(val, type, "p2i_cast");
-        else if (getTypeTable()->isTypeU(dstTypeId))
+        else if (getTypeTable()->worksAsTypeU(dstTypeId))
             val = llvmBuilder.CreatePtrToInt(val, type, "p2u_cast");
-        else if (symbolTable->getTypeTable()->isTypeAnyP(dstTypeId))
+        else if (symbolTable->getTypeTable()->worksAsTypeAnyP(dstTypeId))
             val = llvmBuilder.CreatePointerCast(val, type, "p2p_cast");
-        else if (getTypeTable()->isTypeB(dstTypeId)) {
+        else if (getTypeTable()->worksAsTypeB(dstTypeId)) {
             val = llvmBuilder.CreateICmpNE(
                 llvmBuilder.CreatePtrToInt(val, getType(getPrimTypeId(TypeTable::WIDEST_I))),
                 llvm::ConstantInt::get(getType(getPrimTypeId(TypeTable::WIDEST_I)), 0),
@@ -96,7 +96,7 @@ bool Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
             val = nullptr;
             return false;
         }
-    } else if (getTypeTable()->isTypeArr(srcTypeId) || getTypeTable()->isDataType(srcTypeId)) {
+    } else if (getTypeTable()->worksAsTypeArr(srcTypeId) || getTypeTable()->isDataType(srcTypeId)) {
         // NOTE data types and arrs are only castable when changing constness
         if (!getTypeTable()->isImplicitCastable(srcTypeId, dstTypeId)) {
             // no action is needed in case of a cast
@@ -221,13 +221,13 @@ void Codegen::codegen(const DeclAst *ast) {
                 }
                 initConst = (llvm::Constant*) initPay.val;
             } else {
-                if (getTypeTable()->isTypeCn(typeId)) {
+                if (getTypeTable()->worksAsTypeCn(typeId)) {
                     msgs->errorCnNoInit(it.first->loc(), it.first->getNameId());
                     return;
                 }
             }
 
-            val = createGlobal(type, initConst, getTypeTable()->isTypeCn(typeId), name);
+            val = createGlobal(type, initConst, getTypeTable()->worksAsTypeCn(typeId), name);
         } else {
             val = createAlloca(type, name);
 
@@ -257,7 +257,7 @@ void Codegen::codegen(const DeclAst *ast) {
 
                 llvmBuilder.CreateStore(src, val);
             } else {
-                if (getTypeTable()->isTypeCn(typeId)) {
+                if (getTypeTable()->worksAsTypeCn(typeId)) {
                     msgs->errorCnNoInit(it.first->loc(), it.first->getNameId());
                     return;
                 }
@@ -282,7 +282,7 @@ void Codegen::codegen(const IfAst *ast) {
         msgs->errorExprCannotPromote(ast->getCond()->loc(), getPrimTypeId(TypeTable::P_BOOL));
         return;
     }
-    if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
+    if (valBroken(condExpr) || !getTypeTable()->worksAsTypeB(condExpr.type)) {
         msgs->errorExprCannotImplicitCast(ast->getCond()->loc(), condExpr.type, getPrimTypeId(TypeTable::P_BOOL));
         return;
     }
@@ -343,7 +343,7 @@ void Codegen::codegen(const ForAst *ast) {
                 msgs->errorExprCannotPromote(ast->getCond()->loc(), getPrimTypeId(TypeTable::P_BOOL));
                 return;
             }
-            if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
+            if (valBroken(condExpr) || !getTypeTable()->worksAsTypeB(condExpr.type)) {
                 msgs->errorExprCannotImplicitCast(ast->getCond()->loc(), condExpr.type, getPrimTypeId(TypeTable::P_BOOL));
                 return;
             }
@@ -402,7 +402,7 @@ void Codegen::codegen(const WhileAst *ast) {
             msgs->errorExprCannotPromote(ast->getCond()->loc(), getPrimTypeId(TypeTable::P_BOOL));
             return;
         }
-        if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
+        if (valBroken(condExpr) || !getTypeTable()->worksAsTypeB(condExpr.type)) {
             msgs->errorExprCannotImplicitCast(ast->getCond()->loc(), condExpr.type, getPrimTypeId(TypeTable::P_BOOL));
             return;
         }
@@ -455,7 +455,7 @@ void Codegen::codegen(const DoWhileAst *ast) {
             msgs->errorExprCannotPromote(ast->getCond()->loc(), getPrimTypeId(TypeTable::P_BOOL));
             return;
         }
-        if (valBroken(condExpr) || !getTypeTable()->isTypeB(condExpr.type)) {
+        if (valBroken(condExpr) || !getTypeTable()->worksAsTypeB(condExpr.type)) {
             msgs->errorExprCannotImplicitCast(ast->getCond()->loc(), condExpr.type, getPrimTypeId(TypeTable::P_BOOL));
             return;
         }
@@ -498,7 +498,7 @@ void Codegen::codegen(const SwitchAst *ast) {
         return;
     }
     if (valBroken(valExprPay) ||
-        !(getTypeTable()->isTypeI(valExprPay.type) || getTypeTable()->isTypeU(valExprPay.type))) {
+        !(getTypeTable()->worksAsTypeI(valExprPay.type) || getTypeTable()->worksAsTypeU(valExprPay.type))) {
         msgs->errorSwitchNotIntegral(ast->getValue()->loc());
         return;
     }
@@ -627,7 +627,7 @@ void Codegen::codegen(const DataAst *ast) {
             for (const auto &var : decl->getDecls()) {
                 NamePool::Id memberName = var.first->getNameId();
                 
-                if (getTypeTable()->isTypeCn(memberTypeId)) {
+                if (getTypeTable()->worksAsTypeCn(memberTypeId)) {
                     msgs->errorCnNoInit(var.first->loc(), var.first->getNameId());
                     return;
                 }

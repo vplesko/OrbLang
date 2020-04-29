@@ -31,7 +31,7 @@ class Codegen {
     };
 
     bool isBool(const ExprGenPayload &e) {
-        return e.isUntyVal() ? e.untyVal.type == UntypedVal::T_BOOL : getTypeTable()->isTypeB(e.type);
+        return e.isUntyVal() ? e.untyVal.type == UntypedVal::T_BOOL : getTypeTable()->worksAsTypeB(e.type);
     }
 
     TypeTable* getTypeTable() { return symbolTable->getTypeTable(); }
