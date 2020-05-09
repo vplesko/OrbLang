@@ -1,4 +1,4 @@
-i32 foo = 100;
+let i32 foo = 100;
 
 fnc foo() {}
 

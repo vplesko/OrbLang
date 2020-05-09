@@ -368,6 +368,10 @@ unique_ptr<DeclAst> Parser::decl(unique_ptr<TypeAst> ty) {
 }
 
 unique_ptr<DeclAst> Parser::decl() {
+    if (!matchOrError(Token::T_LET)) {
+        return nullptr;
+    }
+
     unique_ptr<TypeAst> ty = type();
     if (ty == nullptr) return nullptr;
 
@@ -379,18 +383,16 @@ std::unique_ptr<StmntAst> Parser::simple() {
         CodeLoc codeLoc = loc();
         next();
         return make_unique<EmptyStmntAst>(codeLoc);
+    } else if (peek().type == Token::T_LET) {
+        return decl();
     } else if (peek().type == Token::T_ID && symbolTable->getTypeTable()->isType(peek().nameId)) {
         unique_ptr<TypeAst> ty = type();
         if (ty == nullptr) return nullptr;
 
-        if (peek().type == Token::T_ID) {
-            return decl(move(ty));
-        } else {
-            unique_ptr<ExprAst> e = prim(move(ty));
-            if (e == nullptr) return nullptr;
+        unique_ptr<ExprAst> e = prim(move(ty));
+        if (e == nullptr) return nullptr;
 
-            return expr(move(e), minOperPrec);
-        }
+        return expr(move(e), minOperPrec);
     } else {
         return expr();
     }
@@ -813,7 +815,10 @@ unique_ptr<DataAst> Parser::data() {
     unordered_set<NamePool::Id> memberNames;
 
     while (peek().type != Token::T_BRACE_R_CUR) {
-        unique_ptr<DeclAst> declAst = decl();
+        unique_ptr<TypeAst> ty = type();
+        if (ty == nullptr) return nullptr;
+
+        unique_ptr<DeclAst> declAst = decl(move(ty));
         if (declAst == nullptr) return nullptr;
 
         TypeTable::Id declTypeId = declAst->getType()->getTypeId();
@@ -882,7 +887,12 @@ unique_ptr<BaseAst> Parser::parseNode() {
     if (peek().type == Token::T_IMPORT) next = import();
     else if (peek().type == Token::T_FNC) next = func();
     else if (peek().type == Token::T_DATA) next = data();
-    else next = decl();
+    else if (peek().type == Token::T_LET) next = decl();
+    else {
+        msgs->errorUnexpectedTokenType(loc(),
+            {Token::T_IMPORT, Token::T_FNC, Token::T_DATA, Token::T_LET}, peek());
+        return nullptr;
+    }
 
     return next;
 }

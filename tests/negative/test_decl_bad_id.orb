@@ -1,4 +1,4 @@
 fnc main() {
-    i32 x = 100;
-    u64 ret = 200;
+    let i32 x = 100;
+    let u64 ret = 200;
 }

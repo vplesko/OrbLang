@@ -1,6 +1,6 @@
 data Foo;
 
 fnc main() {
-    Foo* f;
+    let Foo* f;
     *f;
 }

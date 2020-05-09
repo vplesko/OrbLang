@@ -1,7 +1,7 @@
 data Foo { i32 x; }
 
 fnc foo() Foo {
-    Foo f;
+    let Foo f;
     ret f;
 }
 

@@ -1,4 +1,4 @@
-case x = 0;
+let case x = 0;
 
 fnc main() {
 }

@@ -1,5 +1,5 @@
 fnc main() {
-    i32 x;
-    ptr p = ptr(&x);
+    let i32 x;
+    let ptr p = ptr(&x);
     *p;
 }

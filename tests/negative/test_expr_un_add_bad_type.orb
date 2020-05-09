@@ -1,4 +1,4 @@
 fnc main() {
-    ptr x = null;
+    let ptr x = null;
     +x;
 }

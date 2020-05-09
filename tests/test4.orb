@@ -7,21 +7,21 @@ fnc foo_var(...);
 fnc free(i32 x, i32 y, ...);
 fnc foo_var(f32 x, ...) __no_name_mangle;
 
-i32 * glob1 = null;
-i32[4] glob2;
-i32[] glob3;
+let i32 * glob1 = null;
+let i32[4] glob2;
+let i32[] glob3;
 
 fnc pass(i32 [] x) i32 [] {
     ret x;
 }
 
 fnc touch(i32[4] arr) {
-    for (i32 i = 0; i < 4; ++i)
+    for (let i32 i = 0; i < 4; ++i)
         arr[i] = -1;
 }
 
 fnc setAll(i32[4]* arr, i32 val) {
-    for (i32 i = 0; i < 4; ++i)
+    for (let i32 i = 0; i < 4; ++i)
         (*arr)[i] = val;
 }
 
@@ -40,30 +40,30 @@ fnc pass(i32 cn*cn x) i32 {
 fnc meh(i32* x) {}
 
 fnc main() {
-    i32 * a;
-    i32 * b, c;
-    i32 ** d;
-    ptr e;
-    ptr f = null;
-    i32 [] g, h;
-    i32 [][] i;
-    i32 j;
-    i32 []* k;
-    i32 *[] l;
-    i32[4] m, n;
-    i32[4][2] o;
+    let i32 * a;
+    let i32 * b, c;
+    let i32 ** d;
+    let ptr e;
+    let ptr f = null;
+    let i32 [] g, h;
+    let i32 [][] i;
+    let i32 j;
+    let i32 []* k;
+    let i32 *[] l;
+    let i32[4] m, n;
+    let i32[4][2] o;
     j = 1001;
-    i32 cn p = 1000, q = j;
-    i32*cn r1 = i32*cn(malloc(4));
-    i32 cn* r2 = i32 cn*(malloc(4));
-    i32 cn*cn r3 = i32 cn*cn(malloc(4));
-    i32[]cn s1 = i32[]cn(malloc(4));
-    i32 cn[] s2 = i32 cn[](malloc(4));
-    i32 cn[]cn s3 = i32 cn[]cn(malloc(4));
+    let i32 cn p = 1000, q = j;
+    let i32*cn r1 = i32*cn(malloc(4));
+    let i32 cn* r2 = i32 cn*(malloc(4));
+    let i32 cn*cn r3 = i32 cn*cn(malloc(4));
+    let i32[]cn s1 = i32[]cn(malloc(4));
+    let i32 cn[] s2 = i32 cn[](malloc(4));
+    let i32 cn[]cn s3 = i32 cn[]cn(malloc(4));
     j = 3;
-    i32 cn[4] t1{0, i8(1), i32(2.0), +j};
-    i32[4]cn t2 = t1;
-    i32 cn[4]cn t3{0, 1, 2, 3};
+    let i32 cn[4] t1{0, i8(1), i32(2.0), +j};
+    let i32[4]cn t2 = t1;
+    let i32 cn[4]cn t3{0, 1, 2, 3};
 
     b = a;
 
@@ -204,13 +204,13 @@ fnc main() {
     if ((i32[2]{0, 1}); false);
 
     n = retAll(600);
-    i32 cn[4] p1 = n;
+    let i32 cn[4] p1 = n;
     println_i32(p1[0]);
     n = retAll(601);
-    i32 [4]cn p2 = n;
+    let i32 [4]cn p2 = n;
     println_i32(p2[0]);
     n = retAll(602);
-    i32 cn[4]cn p3 = n;
+    let i32 cn[4]cn p3 = n;
     println_i32(p3[0]);
 
     println_i32(p);
@@ -246,7 +246,7 @@ fnc main() {
     println_i32(glob3[0]);
     free(ptr(glob3));
 
-    for (i32 i = 0; i < 4; ++i)
+    for (let i32 i = 0; i < 4; ++i)
         println_i32(1200+t1[i]);
 }
 

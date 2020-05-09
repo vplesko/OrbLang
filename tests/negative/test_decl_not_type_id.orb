@@ -1,5 +1,5 @@
 fnc foo() {}
 
 fnc main() {
-    foo x = 0;
+    let foo x = 0;
 }

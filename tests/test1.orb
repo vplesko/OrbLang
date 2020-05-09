@@ -1,12 +1,12 @@
 import "tests/io.orb";
 
-i32 glob1;
-i32 glob2 = 1;
-i32 glob3 = 1+2*3, glob4 = 1, glob5;
-bool glob7 = true or false;
-c8 glob8 = 'E';
-c8 cn[] glob9 = "hello";
-c8[4] glob10 = "ola";
+let i32 glob1;
+let i32 glob2 = 1;
+let i32 glob3 = 1+2*3, glob4 = 1, glob5;
+let bool glob7 = true or false;
+let c8 glob8 = 'E';
+let c8 cn[] glob9 = "hello";
+let c8[4] glob10 = "ola";
 
 fnc main() {
     println_str("Hello, world!");
@@ -26,7 +26,7 @@ fnc main() {
     println_i64((1+2)*3);
     println_i64(4*(0-5));
 
-    i64 a = 0;
+    let i64 a = 0;
     println_i64(a);
     println_i64(a=1);
     println_i64(a);
@@ -62,15 +62,15 @@ fnc main() {
     println_i64(a ^= 5);
     println_i64(a);
 
-    i64 b = 1;
+    let i64 b = 1;
     println_i64(a-b);
 
     {
-        i64 a = 100;
+        let i64 a = 100;
         println_i64(a);
     }
 
-    f32 c = f32(5);
+    let f32 c = f32(5);
     println_i32(i32(c));
     println_i32(i32(+c));
     println_i32(i32(-c));
@@ -84,7 +84,7 @@ fnc main() {
     println_i32(glob5);
     if (glob7) println_i32(1); else println_i32(0);
 
-    bool d = false;
+    let bool d = false;
     if (!d) println_i32(0);
     if (!!d) println_i32(0);
 
@@ -135,11 +135,11 @@ fnc main() {
     println_u32(1000+100);
     println_i32(100-1000);
     println_u32(1000-1000);
-    u8 e = +0;
+    let u8 e = +0;
     e = e|1;
     println_u8(e);
     println_u32(e);
-    u32 f = e<<4;
+    let u32 f = e<<4;
     println_u32(f);
     if (1+1==2) println_i32(0);
 
@@ -206,7 +206,7 @@ fnc main() {
     println_f32(1.0/0.3);
     println_f32(1.0%0.3);
 
-    c8 g = 'A';
+    let c8 g = 'A';
     if (g == 'A') println_c8(g);
     if ('A' != 'B') println_c8('B');
     if ('A' >= 'C') println_c8('C');
@@ -224,7 +224,7 @@ fnc main() {
     );
 
     {
-        i32 x=1, y=2, z=3;
+        let i32 x=1, y=2, z=3;
         x = y = z = y+9000;
         println_i32(x);
         x = y = z += 1;

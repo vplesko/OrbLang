@@ -1,6 +1,6 @@
 data Foo;
 
-Foo f;
+let Foo f;
 
 fnc main() {
 }

@@ -1,4 +1,4 @@
 fnc main() {
-    i32 x;
-    ptr x = null;
+    let i32 x;
+    let ptr x = null;
 }

@@ -3,8 +3,8 @@ data Foo {
 }
 
 fnc main() {
-    Foo f1;
-    Foo* f2 = &f1;
-    Foo** f3 = &f2;
+    let Foo f1;
+    let Foo* f2 = &f1;
+    let Foo** f3 = &f2;
     f3.x;
 }

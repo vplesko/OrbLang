@@ -28,6 +28,7 @@ struct Token {
         T_BRACE_L_SQR,
         T_BRACE_R_SQR,
         T_ID,
+        T_LET,
         T_IF,
         T_ELSE,
         T_FOR,

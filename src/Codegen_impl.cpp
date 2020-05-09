@@ -716,6 +716,8 @@ optional<FuncValue> Codegen::codegen(const FuncProtoAst *ast, bool definition) {
     return symbolTable->registerFunc(val);
 }
 
+// TODO when 'else ret ...;' is the final instruction in a function, llvm gives a warning
+//   + 'while (true) ret ...;' gives a segfault
 void Codegen::codegen(const FuncAst *ast) {
     optional<FuncValue> funcValRet = codegen(ast->getProto(), true);
     if (!funcValRet.has_value()) return;

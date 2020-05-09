@@ -1,1 +1,2 @@
+// TODO! update negative tests when done changing syntax rules
 import "tests/negative/test_import_cycle.orb";

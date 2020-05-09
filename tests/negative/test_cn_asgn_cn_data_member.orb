@@ -3,11 +3,11 @@ data Foo {
 }
 
 fnc makeFoo() Foo {
-    Foo f;
+    let Foo f;
     ret f;
 }
 
 fnc main() {
-    Foo cn f = makeFoo();
+    let Foo cn f = makeFoo();
     f.x = 1;
 }
