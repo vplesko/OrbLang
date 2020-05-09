@@ -667,7 +667,7 @@ unique_ptr<BaseAst> Parser::func() {
         return nullptr;
 
     // args
-    bool first = true, last = false;
+    bool last = false;
     while (true) {
         if (peek().type == Token::T_BRACE_R_REG) {
             next();
@@ -678,17 +678,11 @@ unique_ptr<BaseAst> Parser::func() {
             return nullptr;
         }
 
-        if (!first && !matchOrError(Token::T_COMMA))
-            return nullptr;
-
         if (peek().type == Token::T_ELLIPSIS) {
             next();
             proto->setVariadic(true);
             last = true;
         } else {
-            unique_ptr<TypeAst> argType = type();
-            if (argType == nullptr) return nullptr;
-
             CodeLoc codeLocArg = loc();
             Token arg = next();
             if (arg.type != Token::T_ID) {
@@ -696,10 +690,15 @@ unique_ptr<BaseAst> Parser::func() {
                 return nullptr;
             }
 
+            if (!matchOrError(Token::T_COLON)) {
+                return nullptr;
+            }
+
+            unique_ptr<TypeAst> argType = type();
+            if (argType == nullptr) return nullptr;
+
             proto->addArg(make_pair(move(argType), arg.nameId));
         }
-
-        first = false;
     }
 
     // ret type

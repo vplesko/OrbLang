@@ -8,7 +8,7 @@ fnc bar() {
     for (;;) ret;
 }
 
-fnc inc(i64 a) i64 {
+fnc inc(a:i64) i64 {
     ret (+ a 1);
 }
 
@@ -17,7 +17,7 @@ fnc blocker() i64 {
     ret 0;
 }
 
-fnc fib(u32 n) {
+fnc fib(n:u32) {
 	switch (n) {
 	case 0, 1:
 		(println_i32 1);
@@ -34,7 +34,7 @@ fnc fib(u32 n) {
 	}
 }
 
-fnc abc(i32 n) {
+fnc abc(n:i32) {
 	switch (n) {
 	case 1:
 		(println_i32 65);

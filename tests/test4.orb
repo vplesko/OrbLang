@@ -1,41 +1,41 @@
 import "tests/io.orb";
 
 // func decls test
-fnc free(ptr addr) __no_name_mangle;
+fnc free(addr:ptr) __no_name_mangle;
 fnc free();
 fnc foo_var(...);
-fnc free(i32 x, i32 y, ...);
-fnc foo_var(f32 x, ...) __no_name_mangle;
+fnc free(x:i32 y:i32 ...);
+fnc foo_var(x:f32 ...) __no_name_mangle;
 
 let (glob1:i32 * null) glob2:i32[4] glob3:i32[];
 
-fnc pass(i32 [] x) i32 [] {
+fnc pass(x:i32 []) i32 [] {
     ret x;
 }
 
-fnc touch(i32[4] array) {
+fnc touch(array:i32[4]) {
     for (let (i:i32 0); (< i 4); (++ i))
         (= ([] array i) (- 1));
 }
 
-fnc setAll(i32[4]* array, i32 val) {
+fnc setAll(array:i32[4]* val:i32) {
     for (let (i:i32 0); (< i 4); (++ i))
         (= ([] (* array) i) val);
 }
 
-fnc retAll(i32 val) i32[4] {
+fnc retAll(val:i32) i32[4] {
     ret (arr i32[4] val val val val);
 }
 
-fnc pass(i32 x) i32 {
+fnc pass(x:i32) i32 {
     ret x;
 }
 
-fnc pass(i32 cn*cn x) i32 {
+fnc pass(x:i32 cn*cn) i32 {
     ret (* x);
 }
 
-fnc meh(i32* x) {}
+fnc meh(x:i32*) {}
 
 fnc main() {
     let a:i32 *;

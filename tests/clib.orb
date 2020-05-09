@@ -1,8 +1,8 @@
-fnc putchar(c8 x) __no_name_mangle;
+fnc putchar(x:c8) __no_name_mangle;
 fnc getchar() c8 __no_name_mangle;
 
-fnc printf(c8 cn[] fmt, ...) __no_name_mangle;
-fnc scanf(c8 cn[] fmt, ...) __no_name_mangle;
+fnc printf(fmt:c8 cn[] ...) __no_name_mangle;
+fnc scanf(fmt:c8 cn[] ...) __no_name_mangle;
 
-fnc malloc(u64 size) ptr __no_name_mangle;
-fnc free(ptr addr) __no_name_mangle;
+fnc malloc(size:u64) ptr __no_name_mangle;
+fnc free(addr:ptr) __no_name_mangle;

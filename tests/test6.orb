@@ -36,7 +36,7 @@ data Fwd {
 
 data Opaq;
 
-fnc makePoint(i32 x, i32 y, bool v) Point {
+fnc makePoint(x:i32 y:i32 v:bool) Point {
     let p:Point;
     (= (. p x) x);
     (= (. p y) y);
@@ -44,7 +44,7 @@ fnc makePoint(i32 x, i32 y, bool v) Point {
     ret p;
 }
 
-fnc makeNode(i32 val, Node* l, Node* r) Node {
+fnc makeNode(val:i32 l:Node* r:Node*) Node {
     let n:Node;
     (= (. n val) val);
     (= (. n l) l);
@@ -52,13 +52,13 @@ fnc makeNode(i32 val, Node* l, Node* r) Node {
     ret n;
 }
 
-fnc sum(ArrI32 a) i32 {
+fnc sum(a:ArrI32) i32 {
     let (s:i32 0);
     for (let (i:i32 0); (< i 4); (++ i)) (+= s ([] (. a a) i));
     ret s;
 }
 
-fnc setAll(ArrI32* a, i32 t) {
+fnc setAll(a:ArrI32* t:i32) {
     for (let (i:i32 0); (< i 4); (++ i)) (= ([] (. a a) i) t);
 }
 
