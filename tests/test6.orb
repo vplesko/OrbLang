@@ -5,7 +5,7 @@ data Point {
 }
 
 data Node {
-    val:i32 l:Node* r:Node*
+    val:i32 l:(Node *) r:(Node *)
 }
 
 data Tree {
@@ -13,11 +13,11 @@ data Tree {
 }
 
 data PtrI32Cn {
-    p:i32 cn*
+    p:(i32 cn *)
 }
 
 data ArrI32 {
-    a:i32[4]
+    a:(i32 [4])
 }
 
 data Int {
@@ -27,7 +27,7 @@ data Int {
 data Fwd;
 
 data WithFwd {
-    o:Fwd*
+    o:(Fwd *)
 }
 
 data Fwd {
@@ -44,7 +44,7 @@ fnc makePoint(x:i32 y:i32 v:bool) Point {
     ret p;
 }
 
-fnc makeNode(val:i32 l:Node* r:Node*) Node {
+fnc makeNode(val:i32 l:(Node *) r:(Node *)) Node {
     let n:Node;
     (= (. n val) val);
     (= (. n l) l);
@@ -58,7 +58,7 @@ fnc sum(a:ArrI32) i32 {
     ret s;
 }
 
-fnc setAll(a:ArrI32* t:i32) {
+fnc setAll(a:(ArrI32 *) t:i32) {
     for (let (i:i32 0); (< i 4); (++ i)) (= ([] (. a a) i) t);
 }
 
@@ -84,12 +84,12 @@ fnc main() {
         if ((. p v)) (println_i32 (. p y));
     }
     {
-        let (p:Point cn (makePoint 200 201 true));
+        let (p:(Point cn) (makePoint 200 201 true));
         (println_i32 (. p x));
         (println_i32 (* (& (. p y))));
     }
     {
-        let p:Point[4];
+        let p:(Point [4]);
         (= ([] p 2) (makePoint 300 301 false));
         (println_i32 (. ([] p 2) x));
     }
@@ -121,23 +121,23 @@ fnc main() {
         (println_u32 (. (. w o) u));
     }
     {
-        let z1:Int[4];
+        let z1:(Int [4]);
         (= (. ([] z1 0) x) 0);
-        let (z2:Int cn[4] z1);
+        let (z2:(Int cn [4]) z1);
         (println_i32 (+ 900 (. ([] z2 0) x)));
     }
     {
         let x:Int;
         (cast Int x);
-        (cast Int cn x);
+        (cast (Int cn) x);
     }
     {
-        let o1:Opaq*;
-        let o2:Opaq**;
+        let o1:(Opaq *);
+        let o2:(Opaq * *);
         (* o2);
     }
     {
-        let a:ArrI32[4];
+        let a:(ArrI32 [4]);
         (= ([] (. ([] a 0) a) 0) 1000);
         (println_i32 ([] (. ([] a 0) a) 0));
         (= ([] (. ([] a 0) a) 1) 1001);

@@ -54,20 +54,20 @@ fnc main() {
     }
 
     {
-        (println_str (cast c8 cn[] "testing1"));
-        let (str1:c8[9] "testing2");
-        (println_str (cast c8 cn[] (& str1)));
+        (println_str (cast (c8 cn []) "testing1"));
+        let (str1:(c8 [9]) "testing2");
+        (println_str (cast (c8 cn []) (& str1)));
         (println_c8 ([] str1 0));
         let (i:i32 1);
         (println_c8 ([] str1 i));
         (= ([] str1 7) '3');
-        (println_str (cast c8 cn[] (& str1)));
+        (println_str (cast (c8 cn []) (& str1)));
         (println_c8 ([] "hello" 0));
         (println_c8 (* (& ([] "hello" 1))));
         (= i 2);
         (println_c8 (* (& ([] "hello" i))));
         (cast ptr "ciao");
-        let (str2:c8 cn[] "abcd");
+        let (str2:(c8 cn []) "abcd");
         if ((!= str2 "pqrs")) (println_i32 0);
         if ((== "pqrs" str2)) (println_i32 1);
     }

@@ -222,8 +222,12 @@ unique_ptr<ExprAst> Parser::expr() {
 std::unique_ptr<TypeAst> Parser::type() {
     CodeLoc codeLocType = loc();
 
-    if (peek().type != Token::T_ID) {
-        msgs->errorUnexpectedTokenType(loc(), Token::T_ID, peek());
+    bool isDescr = false;
+    if (peek().type == Token::T_BRACE_L_REG) {
+        next();
+        isDescr = true;
+    } else if (peek().type != Token::T_ID) {
+        msgs->errorUnexpectedTokenType(codeLocType, {Token::T_ID, Token::T_BRACE_L_REG}, peek());
         return nullptr;
     }
 
@@ -233,6 +237,10 @@ std::unique_ptr<TypeAst> Parser::type() {
     if (!baseTypeId.has_value()) {
         msgs->errorNotTypeId(codeLocType, typeTok.nameId);
         return nullptr;
+    }
+
+    if (!isDescr) {
+        return make_unique<TypeAst>(codeLocType, baseTypeId.value());
     }
 
     TypeTable::TypeDescr typeDescr(baseTypeId.value());
@@ -272,6 +280,10 @@ std::unique_ptr<TypeAst> Parser::type() {
     }
 
     TypeTable::Id typeId = symbolTable->getTypeTable()->addTypeDescr(move(typeDescr));
+
+    if (!matchOrError(Token::T_BRACE_R_REG)) {
+        return nullptr;
+    }
 
     return make_unique<TypeAst>(codeLocType, typeId);
 }
@@ -702,7 +714,8 @@ unique_ptr<BaseAst> Parser::func() {
     }
 
     // ret type
-    if (peek().type == Token::T_ID && symbolTable->getTypeTable()->isType(peek().nameId)) {
+    if ((peek().type == Token::T_ID && symbolTable->getTypeTable()->isType(peek().nameId)) ||
+        peek().type == Token::T_BRACE_L_REG) {
         unique_ptr<TypeAst> retType = type();
         if (retType == nullptr) return nullptr;
         proto->setRetType(move(retType));

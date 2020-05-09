@@ -4,8 +4,8 @@ let glob1:i32 (glob2:i32 1);
 let (glob3:i32 (+ 1 (* 2 3))) (glob4:i32 1) glob5:i32;
 let (glob7:bool (or true false));
 let (glob8:c8 'E');
-let (glob9:c8 cn[] "hello");
-let (glob10:c8[4] "ola");
+let (glob9:(c8 cn []) "hello");
+let (glob10:(c8 [4]) "ola");
 
 fnc main() {
     (println_str "Hello, world!");
@@ -213,9 +213,9 @@ fnc main() {
     (println_str glob9);
     (= glob9 "ciao");
     (println_str glob9);
-    (println_str (cast c8 cn[] (& glob10)));
+    (println_str (cast (c8 cn []) (& glob10)));
     (= glob10 "yes");
-    (println_str (cast c8 cn[] (& glob10)));
+    (println_str (cast (c8 cn []) (& glob10)));
     (println_str 
         "String that spans \n"
         "two lines in code\x21"
