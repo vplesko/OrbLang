@@ -130,8 +130,8 @@ fnc main() {
     }
     {
         let Int x;
-        Int(x);
-        Int cn(x);
+        (cast Int x);
+        (cast Int cn x);
     }
     {
         let Opaq* o1;

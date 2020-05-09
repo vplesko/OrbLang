@@ -30,6 +30,7 @@ struct Token {
         T_ID,
         T_LET,
         T_ARR,
+        T_CAST,
         T_IF,
         T_ELSE,
         T_FOR,

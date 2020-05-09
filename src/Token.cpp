@@ -55,6 +55,7 @@ const unordered_map<string, Token> keywords = {
     {"data", {Token::T_DATA}},
     {"let", {Token::T_LET}},
     {"arr", {Token::T_ARR}},
+    {"cast", {Token::T_CAST}},
     {"if", {Token::T_IF}},
     {"else", {Token::T_ELSE}},
     {"for", {Token::T_FOR}},

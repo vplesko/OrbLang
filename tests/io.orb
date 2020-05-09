@@ -34,8 +34,8 @@ fnc print_u64(u64 x) { (printf "%u" x); }
 fnc println_u64(u64 x) { (printf "%u\n" x); }
 fnc scan_u64() u64 { let u64 x; (scanf "%u" (& x)); ret x; }
 
-fnc print_f32(f32 x) { (printf "%.4f" f64(x)); }
-fnc println_f32(f32 x) { (printf "%.4f\n" f64(x)); }
+fnc print_f32(f32 x) { (printf "%.4f" (cast f64 x)); }
+fnc println_f32(f32 x) { (printf "%.4f\n" (cast f64 x)); }
 fnc scan_f32() f32 { let f32 x; (scanf "%f" (& x)); ret x; }
 
 fnc print_f64(f64 x) { (printf "%.4lf" x); }
