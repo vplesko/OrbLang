@@ -4,61 +4,61 @@ fnc main() {
     (- 10);
     i64(0);
     
-    { println_i32(i32((- 10))); println_i32(i16(10)); println_i8(i8(i64(1027))); }
-    { println_u32(u32((- 10))); }
-    { println_i32(i32(f16((- 10)))); }
-    { let i32 x = 10; println_i32(i32(bool(x))); println_i32(i32(bool(10))); println_i32(i32(bool((- 10)))); }
+    { (println_i32 i32((- 10))); (println_i32 i16(10)); (println_i8 i8(i64(1027))); }
+    { (println_u32 u32((- 10))); }
+    { (println_i32 i32(f16((- 10)))); }
+    { let i32 x = 10; (println_i32 i32(bool(x))); (println_i32 i32(bool(10))); (println_i32 i32(bool((- 10)))); }
 
-    { println_i32(i32(u32(10))); }
-    { println_u32(u32(10)); println_u32(u16(10)); println_u8(u8(u64(1027))); }
-    { println_u32(u32(f32(10))); }
-    { let u32 x = u32(10); println_i32(i32(bool(x))); println_i32(i32(bool(u32(10)))); println_i32(i32(bool(u32((- 10))))); }
+    { (println_i32 i32(u32(10))); }
+    { (println_u32 u32(10)); (println_u32 u16(10)); (println_u8 u8(u64(1027))); }
+    { (println_u32 u32(f32(10))); }
+    { let u32 x = u32(10); (println_i32 i32(bool(x))); (println_i32 i32(bool(u32(10)))); (println_i32 i32(bool(u32((- 10))))); }
 
-    { println_i32(i32(f32(10))); }
-    { println_i32(i32(f32(u32(10)))); }
-    { println_i32(i32(f32((- 10)))); println_i32(i32(f16(10))); println_i32(i32(f16(f64(1027)))); }
+    { (println_i32 i32(f32(10))); }
+    { (println_i32 i32(f32(u32(10)))); }
+    { (println_i32 i32(f32((- 10)))); (println_i32 i32(f16(10))); (println_i32 i32(f16(f64(1027)))); }
 
-    { println_i32(i32(true)); println_i32(i32(false)); }
-    { println_u32(u32(true)); println_u32(u32(false)); }
+    { (println_i32 i32(true)); (println_i32 i32(false)); }
+    { (println_u32 u32(true)); (println_u32 u32(false)); }
 
     let bool t = true;
     let bool f = false;
 
     {
         let c8 c = 'a';
-        println_c8(c);
+        (println_c8 c);
         (= c c8(65));
-        println_c8(c);
+        (println_c8 c);
         let i32 x = 66;
         (= c c8(x));
-        println_c8(c);
-        println_u8(u8(c));
-        println_i32(i32('C'));
-        println_i32((- i16('A') i16('a')));
-        println_c8('D');
-        println_c8(' ');
-        println_c8('\n');
-        println_c8('\'');
-        println_c8('\x48');
-        println_c8('\\');
+        (println_c8 c);
+        (println_u8 u8(c));
+        (println_i32 i32('C'));
+        (println_i32 (- i16('A') i16('a')));
+        (println_c8 'D');
+        (println_c8 ' ');
+        (println_c8 '\n');
+        (println_c8 '\'');
+        (println_c8 '\x48');
+        (println_c8 '\\');
     }
 
     {
-        println_str(c8 cn[]("testing1"));
+        (println_str c8 cn[]("testing1"));
         let c8[9] str1 = "testing2";
-        println_str(c8 cn[]((& str1)));
-        println_c8(str1[0]);
+        (println_str c8 cn[]((& str1)));
+        (println_c8 str1[0]);
         let i32 i = 1;
-        println_c8(str1[i]);
+        (println_c8 str1[i]);
         (= str1[7] '3');
-        println_str(c8 cn[]((& str1)));
-        println_c8("hello"[0]);
-        println_c8((* (& "hello"[1])));
+        (println_str c8 cn[]((& str1)));
+        (println_c8 "hello"[0]);
+        (println_c8 (* (& "hello"[1])));
         (= i 2);
-        println_c8((* (& "hello"[i])));
+        (println_c8 (* (& "hello"[i])));
         ptr("ciao");
         let c8 cn[] str2 = "abcd";
-        if ((!= str2 "pqrs")) println_i32(0);
-        if ((== "pqrs" str2)) println_i32(1);
+        if ((!= str2 "pqrs")) (println_i32 0);
+        if ((== "pqrs" str2)) (println_i32 1);
     }
 }

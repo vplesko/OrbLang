@@ -151,36 +151,7 @@ unique_ptr<ExprAst> Parser::prim() {
             ret = prim(move(t));
         } else {
             Token tok = next();
-
-            if (peek().type == Token::T_BRACE_L_REG) {
-                next();
-
-                unique_ptr<CallExprAst> call = make_unique<CallExprAst>(codeLoc, tok.nameId);
-
-                bool first = true;
-                while (true) {
-                    if (peek().type == Token::T_BRACE_R_REG) {
-                        next();
-                        break;
-                    }
-
-                    if (!first && !match(Token::T_COMMA)) {
-                        msgs->errorUnexpectedTokenType(loc(), {Token::T_COMMA, Token::T_BRACE_R_REG}, peek());
-                        return nullptr;
-                    }
-
-                    unique_ptr<ExprAst> arg = expr();
-                    if (arg == nullptr) return nullptr;
-
-                    call->addArg(move(arg));
-
-                    first = false;
-                }
-
-                ret = move(call);
-            } else {
-                ret = make_unique<VarExprAst>(codeLoc, tok.nameId);
-            }
+            ret = make_unique<VarExprAst>(codeLoc, tok.nameId);
         }
     } else {
         msgs->errorNotPrim(codeLoc);
@@ -198,31 +169,46 @@ unique_ptr<ExprAst> Parser::expr() {
     } else {
         next(); // eat left brace
 
-        CodeLoc codeLocOp = loc();
-        Token tokOp = next();
-        if (tokOp.type != Token::T_OPER) {
-            msgs->errorUnexpectedTokenType(codeLocOp, Token::T_OPER, tokOp);
-            return nullptr;
-        }
+        if (peek().type == Token::T_OPER) {
+            CodeLoc codeLocOp = loc();
+            Token tokOp = next();
 
-        unique_ptr<ExprAst> lhsExpr = expr();
-        if (lhsExpr == nullptr) return nullptr;
+            unique_ptr<ExprAst> lhsExpr = expr();
+            if (lhsExpr == nullptr) return nullptr;
 
-        if (!operInfos.at(tokOp.op).binary) {
-            // if not binary, must be unary
-            retExpr = make_unique<UnExprAst>(codeLocOp, move(lhsExpr), tokOp.op);
-        } else {
-            unique_ptr<ExprAst> rhsExpr;
-            if (!operInfos.at(tokOp.op).unary || peek().type != Token::T_BRACE_R_REG) {
-                rhsExpr = expr();
-                if (rhsExpr == nullptr) return nullptr;
-            }
-
-            if (rhsExpr != nullptr) {
-                retExpr = make_unique<BinExprAst>(codeLocOp, move(lhsExpr), move(rhsExpr), tokOp.op);
-            } else {
+            if (!operInfos.at(tokOp.op).binary) {
+                // if not binary, must be unary
                 retExpr = make_unique<UnExprAst>(codeLocOp, move(lhsExpr), tokOp.op);
+            } else {
+                unique_ptr<ExprAst> rhsExpr;
+                if (!operInfos.at(tokOp.op).unary || peek().type != Token::T_BRACE_R_REG) {
+                    rhsExpr = expr();
+                    if (rhsExpr == nullptr) return nullptr;
+                }
+
+                if (rhsExpr != nullptr) {
+                    retExpr = make_unique<BinExprAst>(codeLocOp, move(lhsExpr), move(rhsExpr), tokOp.op);
+                } else {
+                    retExpr = make_unique<UnExprAst>(codeLocOp, move(lhsExpr), tokOp.op);
+                }
             }
+        } else if (peek().type == Token::T_ID) {
+            CodeLoc codeLocCall = loc();
+            Token tokFncId = next();
+            
+            unique_ptr<CallExprAst> call = make_unique<CallExprAst>(codeLocCall, tokFncId.nameId);
+
+            while (peek().type != Token::T_BRACE_R_REG) {
+                unique_ptr<ExprAst> arg = expr();
+                if (arg == nullptr) return nullptr;
+
+                call->addArg(move(arg));
+            }
+
+            retExpr = move(call);
+        } else {
+            msgs->errorUnexpectedTokenType(loc(), {Token::T_OPER, Token::T_ID}, peek());
+            return nullptr;
         }
 
         if (!matchOrError(Token::T_BRACE_R_REG)) {

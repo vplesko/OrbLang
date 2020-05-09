@@ -70,63 +70,63 @@ fnc main() {
     {
         let Int z;
         (= z.x 0);
-        println_i32(z.x);
+        (println_i32 z.x);
         let ArrI32 a;
         (= a.a[1] 1);
-        println_i32(a.a[1]);
+        (println_i32 a.a[1]);
         (= glob1.x 2);
-        println_i32(glob1.x);
+        (println_i32 glob1.x);
     }
     {
         let Point p;
         (= p.x 100);
         (= p.y 101);
-        println_i32(p.x);
+        (println_i32 p.x);
         (= p.v false);
-        if (p.v) println_i32(p.y);
+        if (p.v) (println_i32 p.y);
     }
     {
-        let Point cn p = makePoint(200, 201, true);
-        println_i32(p.x);
-        println_i32((* (& p.y)));
+        let Point cn p = (makePoint 200 201 true);
+        (println_i32 p.x);
+        (println_i32 (* (& p.y)));
     }
     {
         let Point[4] p;
-        (= p[2] makePoint(300, 301, false));
-        println_i32(p[2].x);
+        (= p[2] (makePoint 300 301 false));
+        (println_i32 p[2].x);
     }
     {
         let ArrI32 a;
-        (= a.a[2] makePoint(400, 401, false).x);
-        println_i32(a.a[2]);
+        (= a.a[2] (makePoint 400 401 false).x);
+        (println_i32 a.a[2]);
     }
     {
-        println_i32(makePoint(500, 501, true).x);
+        (println_i32 (makePoint 500 501 true).x);
     }
     {
-        let Node n1 = makeNode(600, null, null);
-        println_i32(n1.val);
-        let Node n2 = makeNode(601, null, null);
+        let Node n1 = (makeNode 600 null null);
+        (println_i32 n1.val);
+        let Node n2 = (makeNode 601 null null);
         (= n1.l (& n2));
-        println_i32((* n1.l).val);
+        (println_i32 (* n1.l).val);
     }
     {
         let Tree t;
-        (= t.root makeNode(700, null, null));
-        println_i32(t.root.val);
+        (= t.root (makeNode 700 null null));
+        (println_i32 t.root.val);
     }
     {
         let Fwd o;
         (= o.u 800);
         let WithFwd w;
         (= w.o (& o));
-        println_u32(w.o.u);
+        (println_u32 w.o.u);
     }
     {
         let Int[4] z1;
         (= z1[0].x 0);
         let Int cn[4] z2 = z1;
-        println_i32((+ 900 z2[0].x));
+        (println_i32 (+ 900 z2[0].x));
     }
     {
         let Int x;
@@ -141,22 +141,22 @@ fnc main() {
     {
         let ArrI32[4] a;
         (= a[0].a[0] 1000);
-        println_i32(a[0].a[0]);
+        (println_i32 a[0].a[0]);
         (= a[0].a[1] 1001);
-        println_i32((* (& a[0].a[1])));
+        (println_i32 (* (& a[0].a[1])));
     }
     {
         let ArrI32 a;
         (= a.a[0] 1100);
         (= a.a[1] (= a.a[2] 1));
         (= a.a[3] (- 2));
-        println_i32(sum(a));
-        setAll((& a), 1101);
-        println_i32(a.a[1]);
+        (println_i32 (sum a));
+        (setAll (& a) 1101);
+        (println_i32 a.a[1]);
     }
     {
         let Int x;
         (= (& x).x 1200);
-        println_i32((& x).x);
+        (println_i32 (& x).x);
     }
 }
