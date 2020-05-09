@@ -276,49 +276,68 @@ std::unique_ptr<TypeAst> Parser::type() {
     return make_unique<TypeAst>(codeLocType, typeId);
 }
 
-unique_ptr<DeclAst> Parser::decl(unique_ptr<TypeAst> ty) {
-    unique_ptr<DeclAst> ret = make_unique<DeclAst>(ty->loc(), ty->clone());
+vector<InitInfo> Parser::inits() {
+    vector<InitInfo> ret;
 
     while (true) {
-        CodeLoc codeLocId = loc();
-        Token id = next();
-        if (id.type != Token::T_ID) {
-            msgs->errorUnexpectedTokenType(codeLocId, Token::T_ID, id);
-            return nullptr;
+        bool hasInit = false;
+
+        if (peek().type == Token::T_BRACE_L_REG) {
+            hasInit = true;
+            next();
+        } else if (peek().type != Token::T_ID) {
+            if (ret.empty()) {
+                msgs->errorUnexpectedTokenType(loc(), {Token::T_ID, Token::T_BRACE_L_REG}, peek());
+                return {};
+            }
+
+            return ret;
         }
-        unique_ptr<VarExprAst> var = make_unique<VarExprAst>(codeLocId, id.nameId);
+
+        unique_ptr<VarExprAst> name = make_unique<VarExprAst>(loc(), next().nameId);
+
+        if (!matchOrError(Token::T_COLON)) {
+            return {};
+        }
+
+        unique_ptr<TypeAst> ty = type();
+        if (ty == nullptr) {
+            return {};
+        }
 
         unique_ptr<ExprAst> init;
-        Token look = peek();
-        if (look.type == Token::T_OPER && look.op == Token::O_ASGN) {
-            look = next();
-
+        if (hasInit) {
             init = expr();
-            if (init == nullptr) return nullptr;
+            if (init == nullptr || !matchOrError(Token::T_BRACE_R_REG)) {
+                return {};
+            }
         }
-        ret->add(make_pair(move(var), move(init)));
 
-        CodeLoc codeLocNext = loc();
-        look = next();
-        
-        if (look.type == Token::T_SEMICOLON) {
-            return ret;
-        } else if (look.type != Token::T_COMMA) {
-            msgs->errorUnexpectedTokenType(codeLocNext, Token::T_COMMA, look);
-            return nullptr;
-        }
+        ret.push_back({move(name), move(ty), move(init)});
     }
 }
 
 unique_ptr<DeclAst> Parser::decl() {
+    CodeLoc codeLocDecl = loc();
+
     if (!matchOrError(Token::T_LET)) {
         return nullptr;
     }
 
-    unique_ptr<TypeAst> ty = type();
-    if (ty == nullptr) return nullptr;
+    unique_ptr<DeclAst> ret = make_unique<DeclAst>(codeLocDecl);
 
-    return decl(move(ty));
+    vector<InitInfo> initInfos = inits();
+    if (initInfos.empty()) {
+        return nullptr;
+    }
+
+    if (!matchOrError(Token::T_SEMICOLON)) {
+        return nullptr;
+    }
+
+    ret->addAll(move(initInfos));
+
+    return ret;
 }
 
 std::unique_ptr<StmntAst> Parser::simple() {
@@ -749,41 +768,42 @@ unique_ptr<DataAst> Parser::data() {
     
     unordered_set<NamePool::Id> memberNames;
 
-    while (peek().type != Token::T_BRACE_R_CUR) {
-        unique_ptr<TypeAst> ty = type();
-        if (ty == nullptr) return nullptr;
+    vector<InitInfo> members = inits();
+    if (members.empty()) return nullptr;
 
-        unique_ptr<DeclAst> declAst = decl(move(ty));
-        if (declAst == nullptr) return nullptr;
-
-        TypeTable::Id declTypeId = declAst->getType()->getTypeId();
-
-        if (!getTypeTable()->isNonOpaqueType(declTypeId)) {
-            if (getTypeTable()->isDataType(declTypeId)) {
-                msgs->errorDataOpaqueInit(declAst->getType()->loc());
+    for (const InitInfo &m : members) {
+        TypeTable::Id memberTypeId = m.type->getTypeId();
+        if (!getTypeTable()->isNonOpaqueType(memberTypeId)) {
+            if (getTypeTable()->isDataType(memberTypeId)) {
+                msgs->errorDataOpaqueInit(m.type->loc());
             } else {
-                msgs->errorUndefinedType(declAst->getType()->loc());
+                msgs->errorUndefinedType(m.type->loc());
             }
             return nullptr;
         }
+    }
 
-        for (const auto &it : declAst->getDecls()) {
-            if (it.second != nullptr) {
-                msgs->errorDataMemberInit(it.second->loc());
-                return nullptr;
-            }
-
-            NamePool::Id memberName = it.first->getNameId();
-            if (memberNames.find(memberName) != memberNames.end()) {
-                msgs->errorDataMemberNameDuplicate(it.first->loc(), memberName);
-                return nullptr;
-            }
-            memberNames.insert(memberName);
+    for (const InitInfo &m : members) {
+        if (m.init != nullptr) {
+            msgs->errorDataMemberInit(m.init->loc());
+            return nullptr;
         }
 
-        ret->addMember(move(declAst));
+        NamePool::Id memberName = m.name->getNameId();
+        if (memberNames.find(memberName) != memberNames.end()) {
+            msgs->errorDataMemberNameDuplicate(m.name->loc(), memberName);
+            return nullptr;
+        }
+        memberNames.insert(memberName);
     }
-    next();
+
+    for (InitInfo &m : members) {
+        ret->addMember(move(m));
+    }
+    
+    if (!matchOrError(Token::T_BRACE_R_CUR)) {
+        return nullptr;
+    }
 
     if (memberNames.empty()) {
         msgs->errorDataNoMembers(codeLocData, dataName);

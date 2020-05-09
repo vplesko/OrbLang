@@ -8,7 +8,7 @@ fnc main() {
     { (println_u32 (cast u32 (- 10))); }
     { (println_i32 (cast i32 (cast f16 (- 10)))); }
     {
-        let i32 x = 10;
+        let (x:i32 10);
         (println_i32 (cast i32 (cast bool x)));
         (println_i32 (cast i32 (cast bool 10)));
         (println_i32 (cast i32 (cast bool (- 10))));
@@ -18,7 +18,7 @@ fnc main() {
     { (println_u32 (cast u32 10)); (println_u32 (cast u16 10)); (println_u8 (cast u8 (cast u64 1027))); }
     { (println_u32 (cast u32 (cast f32 10))); }
     {
-        let u32 x = (cast u32 10);
+        let (x:u32 (cast u32 10));
         (println_i32 (cast i32 (cast bool x)));
         (println_i32 (cast i32 (cast bool (cast u32 10))));
         (println_i32 (cast i32 (cast bool (cast u32 (- 10)))));
@@ -31,15 +31,15 @@ fnc main() {
     { (println_i32 (cast i32 true)); (println_i32 (cast i32 false)); }
     { (println_u32 (cast u32 true)); (println_u32 (cast u32 false)); }
 
-    let bool t = true;
-    let bool f = false;
+    let (t:bool true);
+    let (f:bool false);
 
     {
-        let c8 c = 'a';
+        let (c:c8 'a');
         (println_c8 c);
         (= c (cast c8 65));
         (println_c8 c);
-        let i32 x = 66;
+        let (x:i32 66);
         (= c (cast c8 x));
         (println_c8 c);
         (println_u8 (cast u8 c));
@@ -55,10 +55,10 @@ fnc main() {
 
     {
         (println_str (cast c8 cn[] "testing1"));
-        let c8[9] str1 = "testing2";
+        let (str1:c8[9] "testing2");
         (println_str (cast c8 cn[] (& str1)));
         (println_c8 ([] str1 0));
-        let i32 i = 1;
+        let (i:i32 1);
         (println_c8 ([] str1 i));
         (= ([] str1 7) '3');
         (println_str (cast c8 cn[] (& str1)));
@@ -67,7 +67,7 @@ fnc main() {
         (= i 2);
         (println_c8 (* (& ([] "hello" i))));
         (cast ptr "ciao");
-        let c8 cn[] str2 = "abcd";
+        let (str2:c8 cn[] "abcd");
         if ((!= str2 "pqrs")) (println_i32 0);
         if ((== "pqrs" str2)) (println_i32 1);
     }

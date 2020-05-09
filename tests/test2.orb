@@ -24,10 +24,10 @@ fnc fib(u32 n) {
 	case 2, 3:
 		(println_u32 n);
 	case 4:
-		let i32 n = 5;
+		let (n:i32 5);
 		(println_i32 n);
 	case 5:
-		let i32 n = 8;
+		let (n:i32 8);
 		(println_i32 n);
 	else:
 		(println_i32 (- 1));
@@ -48,12 +48,12 @@ fnc abc(i32 n) {
 }
 
 fnc main() {
-    let i64 a = 1, b = 2;
+    let (a:i64 1) (b:i64 2);
     if ((== a b)) (println_i64 101);
     if ((< a b)) (println_i64 102);
     if ((>= a b)) (println_i64 103);
     if ((> (+ a 3) (+ b 5))) (println_i64 104);
-    if (let i64 x = 5; (> x a)) (println_i64 105);
+    if (let (x:i64 5); (> x a)) (println_i64 105);
     if ((= a 100); (> a b)) (println_i64 106);
 
     (= a 1);
@@ -76,13 +76,13 @@ fnc main() {
 
     if ((cast i32 0); true) (println_i64 117);
 
-    for (let i64 i = 0, j = (- 1); (< i 10); (++ i)) (println_i64 (+ i j));
+    for (let (i:i64 0) (j:i64 (- 1)); (< i 10); (++ i)) (println_i64 (+ i j));
     for ((= a 0); (< a 3); (++ a)) (println_i64 a);
     for (; (>= a 0); (-- a)) (println_i64 a);
 
     while ((>= b 0)) (println_i64 (-- b));
     do {
-        let i64 x = 2;
+        let (x:i64 2);
         (println_i64 b);
         (= b (+ b x));
     } while ((< (+ b a) 8));
@@ -91,7 +91,7 @@ fnc main() {
 
     (bar);
 
-    for (let i32 i = 0; (< i 10); (++ i)) {
+    for (let (i:i32 0); (< i 10); (++ i)) {
         if ((>= i 3)) break;
         (println_i32 i);
     }
@@ -108,7 +108,7 @@ fnc main() {
         (= a 0);
     } while ((< a 1));
 
-    for (let i32 i = 0; (< i 10); (++ i)) {
+    for (let (i:i32 0); (< i 10); (++ i)) {
         if ((>= i 2)) continue;
         (println_i32 i);
     }
@@ -126,34 +126,34 @@ fnc main() {
         (= a 0);
     } while ((!= a 0));
 
-    for (let i32 i = 0; (< i 2); (++ i)) {
+    for (let (i:i32 0); (< i 2); (++ i)) {
         (println_i32 i);
-        for (let i32 j = 0; (< j 5); (++ j)) {
+        for (let (j:i32 0); (< j 5); (++ j)) {
             (println_i32 j);
             if ((>= j 1)) break;
         }
     }
 
-    for (let i32 i = 0; (> i (- 2)); (-- i)) {
+    for (let (i:i32 0); (> i (- 2)); (-- i)) {
         (println_i32 i);
-        for (let i32 j = 0; (> j (- 5)); (-- j)) {
+        for (let (j:i32 0); (> j (- 5)); (-- j)) {
             if ((<= j (- 1))) continue;
             (println_i32 j);
         }
     }
 
-    for (let i32 i = 10; (< i 15); (++ i)) {
+    for (let (i:i32 10); (< i 15); (++ i)) {
         (println_i32 i);
         if ((>= i 11)) break;
-        for (let i32 j = 10; (< j 12); (++ j)) {
+        for (let (j:i32 10); (< j 12); (++ j)) {
             (println_i32 j);
         }
     }
 
-    for (let i32 i = (- 10); (> i (- 13)); (-- i)) {
+    for (let (i:i32 (- 10)); (> i (- 13)); (-- i)) {
         (println_i32 i);
         if ((<= i (- 11))) continue;
-        for (let i32 j = (- 10); (> j (- 12)); (-- j)) {
+        for (let (j:i32 (- 10)); (> j (- 12)); (-- j)) {
             (println_i32 j);
         }
     }

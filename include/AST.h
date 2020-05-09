@@ -215,18 +215,20 @@ public:
     AstType type() const override { return AST_Empty; }
 };
 
+struct InitInfo {
+    std::unique_ptr<VarExprAst> name;
+    std::unique_ptr<TypeAst> type;
+    std::unique_ptr<ExprAst> init;
+};
+
 class DeclAst : public StmntAst {
-    std::unique_ptr<TypeAst> varType;
-    std::vector<std::pair<std::unique_ptr<VarExprAst>, std::unique_ptr<ExprAst>>> decls;
+    std::vector<InitInfo> decls;
 
 public:
-    DeclAst(CodeLoc loc, std::unique_ptr<TypeAst> type);
+    DeclAst(CodeLoc loc) : StmntAst(loc) {}
 
-    const TypeAst* getType() const { return varType.get(); }
-
-    void add(std::pair<std::unique_ptr<VarExprAst>, std::unique_ptr<ExprAst>> decl);
-    const std::vector<std::pair<std::unique_ptr<VarExprAst>, std::unique_ptr<ExprAst>>>& getDecls() const
-    { return decls; }
+    void addAll(std::vector<InitInfo> _decls);
+    const std::vector<InitInfo>& getDecls() const { return decls; }
 
     AstType type() const override { return AST_Decl; }
 };
@@ -411,7 +413,7 @@ public:
 
 class DataAst : public BaseAst {
     TypeTable::Id typeId;
-    std::vector<std::unique_ptr<DeclAst>> members;
+    std::vector<InitInfo> members;
 
 public:
     DataAst(CodeLoc loc, TypeTable::Id typeId) : BaseAst(loc), typeId(typeId) {}
@@ -420,8 +422,8 @@ public:
 
     TypeTable::Id getTypeId() const { return typeId; }
 
-    const std::vector<std::unique_ptr<DeclAst>>& getMembers() const { return members; }
-    void addMember(std::unique_ptr<DeclAst> d) { members.push_back(std::move(d)); }
+    const std::vector<InitInfo>& getMembers() const { return members; }
+    void addMember(InitInfo m) { members.push_back(std::move(m)); }
 
     bool isDecl() const { return members.empty(); }
 };

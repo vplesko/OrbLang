@@ -1,12 +1,11 @@
 import "tests/io.orb";
 
-let i32 glob1;
-let i32 glob2 = 1;
-let i32 glob3 = (+ 1 (* 2 3)), glob4 = 1, glob5;
-let bool glob7 = (or true false);
-let c8 glob8 = 'E';
-let c8 cn[] glob9 = "hello";
-let c8[4] glob10 = "ola";
+let glob1:i32 (glob2:i32 1);
+let (glob3:i32 (+ 1 (* 2 3))) (glob4:i32 1) glob5:i32;
+let (glob7:bool (or true false));
+let (glob8:c8 'E');
+let (glob9:c8 cn[] "hello");
+let (glob10:c8[4] "ola");
 
 fnc main() {
     (println_str "Hello, world!");
@@ -25,7 +24,7 @@ fnc main() {
     (println_i64 (* (+ 1 2) 3));
     (println_i64 (* 4 (- 0 5)));
 
-    let i64 a = 0;
+    let (a:i64 0);
     (println_i64 a);
     (println_i64 (= a 1));
     (println_i64 a);
@@ -61,15 +60,15 @@ fnc main() {
     (println_i64 (^= a 5));
     (println_i64 a);
 
-    let i64 b = 1;
+    let (b:i64 1);
     (println_i64 (- a b));
 
     {
-        let i64 a = 100;
+        let (a:i64 100);
         (println_i64 a);
     }
 
-    let f32 c = (cast f32 5);
+    let (c:f32 (cast f32 5));
     (println_i32 (cast i32 c));
     (println_i32 (cast i32 (+ c)));
     (println_i32 (cast i32 (- c)));
@@ -83,7 +82,7 @@ fnc main() {
     (println_i32 glob5);
     if (glob7) (println_i32 1); else (println_i32 0);
 
-    let bool d = false;
+    let (d:bool false);
     if ((! d)) (println_i32 0);
     if ((! (! d))) (println_i32 0);
 
@@ -134,11 +133,11 @@ fnc main() {
     (println_u32 (+ 1000 100));
     (println_i32 (- 100 1000));
     (println_u32 (- 1000 1000));
-    let u8 e = (+ 0);
+    let (e:u8 (+ 0));
     (= e (| e 1));
     (println_u8 e);
     (println_u32 e);
-    let u32 f = (<< e 4);
+    let (f:u32 (<< e 4));
     (println_u32 f);
     if ((== (+ 1 1) 2)) (println_i32 0);
 
@@ -205,7 +204,7 @@ fnc main() {
     (println_f32 (/ 1.0 0.3));
     (println_f32 (% 1.0 0.3));
 
-    let c8 g = 'A';
+    let (g:c8 'A');
     if ((== g 'A')) (println_c8 g);
     if ((!= 'A' 'B')) (println_c8 'B');
     if ((>= 'A' 'C')) (println_c8 'C');
@@ -223,7 +222,7 @@ fnc main() {
     );
 
     {
-        let i32 x=1, y=2, z=3;
+        let (x:i32 1) (y:i32 2) (z:i32 3);
         (= x (= y (= z (+ y 9000))));
         (println_i32 x);
         (= x (= y (+= z 1)));

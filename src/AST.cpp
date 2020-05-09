@@ -69,11 +69,10 @@ optional<size_t> SwitchAst::getDefault() const {
     return nullopt;
 }
 
-DeclAst::DeclAst(CodeLoc loc, unique_ptr<TypeAst> type) : StmntAst(loc), varType(move(type)) {
-}
-
-void DeclAst::add(pair<unique_ptr<VarExprAst>, unique_ptr<ExprAst>> decl) {
-    decls.push_back(move(decl));
+void DeclAst::addAll(vector<InitInfo> _decls) {
+    for (InitInfo &m : _decls) {
+        decls.push_back(move(m));
+    }
 }
 
 FuncAst::FuncAst(CodeLoc loc, unique_ptr<FuncProtoAst> proto, unique_ptr<BlockAst> body)

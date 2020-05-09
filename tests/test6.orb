@@ -1,45 +1,43 @@
 import "tests/io.orb";
 
 data Point {
-    i32 x, y;
-    bool v;
+    x:i32 y:i32 v:bool
 }
 
 data Node {
-    i32 val;
-    Node* l, r;
+    val:i32 l:Node* r:Node*
 }
 
 data Tree {
-    Node root;
+    root:Node
 }
 
 data PtrI32Cn {
-    i32 cn* p;
+    p:i32 cn*
 }
 
 data ArrI32 {
-    i32[4] a;
+    a:i32[4]
 }
 
 data Int {
-    i32 x;
+    x:i32
 }
 
 data Fwd;
 
 data WithFwd {
-    Fwd* o;
+    o:Fwd*
 }
 
 data Fwd {
-    u32 u;
+    u:u32
 }
 
 data Opaq;
 
 fnc makePoint(i32 x, i32 y, bool v) Point {
-    let Point p;
+    let p:Point;
     (= (. p x) x);
     (= (. p y) y);
     (= (. p v) v);
@@ -47,7 +45,7 @@ fnc makePoint(i32 x, i32 y, bool v) Point {
 }
 
 fnc makeNode(i32 val, Node* l, Node* r) Node {
-    let Node n;
+    let n:Node;
     (= (. n val) val);
     (= (. n l) l);
     (= (. n r) r);
@@ -55,30 +53,30 @@ fnc makeNode(i32 val, Node* l, Node* r) Node {
 }
 
 fnc sum(ArrI32 a) i32 {
-    let i32 s = 0;
-    for (let i32 i = 0; (< i 4); (++ i)) (+= s ([] (. a a) i));
+    let (s:i32 0);
+    for (let (i:i32 0); (< i 4); (++ i)) (+= s ([] (. a a) i));
     ret s;
 }
 
 fnc setAll(ArrI32* a, i32 t) {
-    for (let i32 i = 0; (< i 4); (++ i)) (= ([] (. a a) i) t);
+    for (let (i:i32 0); (< i 4); (++ i)) (= ([] (. a a) i) t);
 }
 
-let Int glob1;
+let glob1:Int;
 
 fnc main() {
     {
-        let Int z;
+        let z:Int;
         (= (. z x) 0);
         (println_i32 (. z x));
-        let ArrI32 a;
+        let a:ArrI32;
         (= ([] (. a a) 1) 1);
         (println_i32 ([] (. a a) 1));
         (= (. glob1 x) 2);
         (println_i32 (. glob1 x));
     }
     {
-        let Point p;
+        let p:Point;
         (= (. p x) 100);
         (= (. p y) 101);
         (println_i32 (. p x));
@@ -86,17 +84,17 @@ fnc main() {
         if ((. p v)) (println_i32 (. p y));
     }
     {
-        let Point cn p = (makePoint 200 201 true);
+        let (p:Point cn (makePoint 200 201 true));
         (println_i32 (. p x));
         (println_i32 (* (& (. p y))));
     }
     {
-        let Point[4] p;
+        let p:Point[4];
         (= ([] p 2) (makePoint 300 301 false));
         (println_i32 (. ([] p 2) x));
     }
     {
-        let ArrI32 a;
+        let a:ArrI32;
         (= ([] (. a a) 2) (. (makePoint 400 401 false) x));
         (println_i32 ([] (. a a) 2));
     }
@@ -104,49 +102,49 @@ fnc main() {
         (println_i32 (. (makePoint 500 501 true) x));
     }
     {
-        let Node n1 = (makeNode 600 null null);
+        let (n1:Node (makeNode 600 null null));
         (println_i32 (. n1 val));
-        let Node n2 = (makeNode 601 null null);
+        let (n2:Node (makeNode 601 null null));
         (= (. n1 l) (& n2));
         (println_i32 (. (* (. n1 l)) val));
     }
     {
-        let Tree t;
+        let t:Tree;
         (= (. t root) (makeNode 700 null null));
         (println_i32 (. (. t root) val));
     }
     {
-        let Fwd o;
+        let o:Fwd;
         (= (. o u) 800);
-        let WithFwd w;
+        let w:WithFwd;
         (= (. w o) (& o));
         (println_u32 (. (. w o) u));
     }
     {
-        let Int[4] z1;
+        let z1:Int[4];
         (= (. ([] z1 0) x) 0);
-        let Int cn[4] z2 = z1;
+        let (z2:Int cn[4] z1);
         (println_i32 (+ 900 (. ([] z2 0) x)));
     }
     {
-        let Int x;
+        let x:Int;
         (cast Int x);
         (cast Int cn x);
     }
     {
-        let Opaq* o1;
-        let Opaq** o2;
+        let o1:Opaq*;
+        let o2:Opaq**;
         (* o2);
     }
     {
-        let ArrI32[4] a;
+        let a:ArrI32[4];
         (= ([] (. ([] a 0) a) 0) 1000);
         (println_i32 ([] (. ([] a 0) a) 0));
         (= ([] (. ([] a 0) a) 1) 1001);
         (println_i32 (* (& ([] (. ([] a 0) a) 1))));
     }
     {
-        let ArrI32 a;
+        let a:ArrI32;
         (= ([] (. a a) 0) 1100);
         (= ([] (. a a) 1) (= ([] (. a a) 2) 1));
         (= ([] (. a a) 3) (- 2));
@@ -155,7 +153,7 @@ fnc main() {
         (println_i32 ([] (. a a) 1));
     }
     {
-        let Int x;
+        let x:Int;
         (= (. (& x) x) 1200);
         (println_i32 (. (& x) x));
     }

@@ -180,32 +180,32 @@ llvm::Type* Codegen::codegenType(const TypeAst *ast) {
 }
 
 void Codegen::codegen(const DeclAst *ast) {
-    TypeTable::Id typeId = ast->getType()->getTypeId();
-    if (!getTypeTable()->isNonOpaqueType(typeId)) {
-        if (getTypeTable()->isDataType(typeId)) {
-            msgs->errorDataOpaqueInit(ast->getType()->loc());
-        } else {
-            msgs->errorUndefinedType(ast->getType()->loc());
-        }
-        return;
-    }
-
-    llvm::Type *type = codegenType(ast->getType());
-    if (type == nullptr) return;
-
-    for (const auto &it : ast->getDecls()) {
-        if (!symbolTable->varMayTakeName(it.first->getNameId())) {
-            msgs->errorVarNameTaken(it.first->loc(), it.first->getNameId());
+    for (const InitInfo &it : ast->getDecls()) {
+        TypeTable::Id typeId = it.type->getTypeId();
+        if (!getTypeTable()->isNonOpaqueType(typeId)) {
+            if (getTypeTable()->isDataType(typeId)) {
+                msgs->errorDataOpaqueInit(it.type->loc());
+            } else {
+                msgs->errorUndefinedType(it.type->loc());
+            }
             return;
         }
 
-        const string &name = namePool->get(it.first->getNameId());
+        llvm::Type *type = codegenType(it.type.get());
+        if (type == nullptr) return;
+
+        if (!symbolTable->varMayTakeName(it.name->getNameId())) {
+            msgs->errorVarNameTaken(it.name->loc(), it.name->getNameId());
+            return;
+        }
+
+        const string &name = namePool->get(it.name->getNameId());
 
         llvm::Value *val;
         if (isGlobalScope()) {
             llvm::Constant *initConst = nullptr;
 
-            const ExprAst *init = it.second.get();
+            const ExprAst *init = it.init.get();
             if (init != nullptr) {
                 ExprGenPayload initPay = codegenExpr(init);
                 if (valueBroken(initPay)) {
@@ -222,7 +222,7 @@ void Codegen::codegen(const DeclAst *ast) {
                 initConst = (llvm::Constant*) initPay.val;
             } else {
                 if (getTypeTable()->worksAsTypeCn(typeId)) {
-                    msgs->errorCnNoInit(it.first->loc(), it.first->getNameId());
+                    msgs->errorCnNoInit(it.name->loc(), it.name->getNameId());
                     return;
                 }
             }
@@ -231,7 +231,7 @@ void Codegen::codegen(const DeclAst *ast) {
         } else {
             val = createAlloca(type, name);
 
-            const ExprAst *init = it.second.get();
+            const ExprAst *init = it.init.get();
             if (init != nullptr) {
                 ExprGenPayload initPay = codegenExpr(init);
                 if (valueBroken(initPay))
@@ -258,13 +258,13 @@ void Codegen::codegen(const DeclAst *ast) {
                 llvmBuilder.CreateStore(src, val);
             } else {
                 if (getTypeTable()->worksAsTypeCn(typeId)) {
-                    msgs->errorCnNoInit(it.first->loc(), it.first->getNameId());
+                    msgs->errorCnNoInit(it.name->loc(), it.name->getNameId());
                     return;
                 }
             }
         }
 
-        symbolTable->addVar(it.first->getNameId(), {typeId, val});
+        symbolTable->addVar(it.name->getNameId(), {typeId, val});
     }
 }
 
@@ -618,27 +618,25 @@ void Codegen::codegen(const DataAst *ast) {
         llvm::StructType *structType = ((llvm::StructType*) getTypeTable()->getType(ast->getTypeId()));
 
         vector<llvm::Type*> memberTypes;
-        for (const auto &decl : ast->getMembers()) {
-            TypeTable::Id memberTypeId = decl->getType()->getTypeId();
+        for (const auto &memb : ast->getMembers()) {
+            TypeTable::Id memberTypeId = memb.type->getTypeId();
 
-            llvm::Type *memberType = codegenType(decl->getType());
+            llvm::Type *memberType = codegenType(memb.type.get());
             if (memberType == nullptr) return;
 
-            for (const auto &var : decl->getDecls()) {
-                NamePool::Id memberName = var.first->getNameId();
-                
-                if (getTypeTable()->worksAsTypeCn(memberTypeId)) {
-                    msgs->errorCnNoInit(var.first->loc(), var.first->getNameId());
-                    return;
-                }
-                
-                TypeTable::DataType::Member member;
-                member.name = memberName;
-                member.type = memberTypeId;
-                dataType.addMember(member);
-
-                memberTypes.push_back(memberType);
+            NamePool::Id memberName = memb.name->getNameId();
+            
+            if (getTypeTable()->worksAsTypeCn(memberTypeId)) {
+                msgs->errorCnNoInit(memb.name->loc(), memb.name->getNameId());
+                return;
             }
+                
+            TypeTable::DataType::Member member;
+            member.name = memberName;
+            member.type = memberTypeId;
+            dataType.addMember(member);
+
+            memberTypes.push_back(memberType);
         }
 
         structType->setBody(memberTypes);
