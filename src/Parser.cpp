@@ -174,31 +174,26 @@ unique_ptr<ExprAst> Parser::expr() {
             if (e == nullptr) return nullptr;
 
             retExpr = make_unique<CastExprAst>(ty->loc(), move(ty), move(e));
-        } else {
-            msgs->errorUnexpectedTokenType(loc(),
-                {Token::T_OPER, Token::T_ID, Token::T_ARR, Token::T_CAST}, peek());
-            return nullptr;
-        }
-
-        if (!matchOrError(Token::T_BRACE_R_REG)) {
-            return nullptr;
-        }
-    }
-
-    while (peek().type == Token::T_BRACE_L_SQR || peek().type == Token::T_DOT) {
-        if (peek().type == Token::T_BRACE_L_SQR) {
+        } else if (peek().type == Token::T_BRACE_L_SQR) {
             CodeLoc codeLocInd = loc();
             next();
 
-            unique_ptr<ExprAst> indExpr = expr();
-            if (indExpr == nullptr) return nullptr;
             if (!matchOrError(Token::T_BRACE_R_SQR))
                 return nullptr;
+            
+            unique_ptr<ExprAst> baseExpr = expr();
+            if (baseExpr == nullptr) return nullptr;
 
-            retExpr = make_unique<IndExprAst>(codeLocInd, move(retExpr), move(indExpr));
-        } else {
+            unique_ptr<ExprAst> indExpr = expr();
+            if (indExpr == nullptr) return nullptr;
+
+            retExpr = make_unique<IndExprAst>(codeLocInd, move(baseExpr), move(indExpr));
+        } else if (peek().type == Token::T_DOT) {
             CodeLoc codeLocDot = loc();
             next();
+            
+            unique_ptr<ExprAst> baseExpr = expr();
+            if (baseExpr == nullptr) return nullptr;
 
             CodeLoc codeLocMember = loc();
             Token member = next();
@@ -208,7 +203,16 @@ unique_ptr<ExprAst> Parser::expr() {
             }
             unique_ptr<VarExprAst> varExpr = make_unique<VarExprAst>(codeLocMember, member.nameId);
 
-            retExpr = make_unique<DotExprAst>(codeLocDot, move(retExpr), move(varExpr));
+            retExpr = make_unique<DotExprAst>(codeLocDot, move(baseExpr), move(varExpr));
+        } else {
+            msgs->errorUnexpectedTokenType(loc(),
+                {Token::T_OPER, Token::T_ID, Token::T_ARR, Token::T_CAST, Token::T_BRACE_L_SQR, Token::T_DOT},
+                peek());
+            return nullptr;
+        }
+
+        if (!matchOrError(Token::T_BRACE_R_REG)) {
+            return nullptr;
         }
     }
 
