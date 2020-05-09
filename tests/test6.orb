@@ -40,28 +40,28 @@ data Opaq;
 
 fnc makePoint(i32 x, i32 y, bool v) Point {
     let Point p;
-    p.x = x;
-    p.y = y;
-    p.v = v;
+    (= p.x x);
+    (= p.y y);
+    (= p.v v);
     ret p;
 }
 
 fnc makeNode(i32 val, Node* l, Node* r) Node {
     let Node n;
-    n.val = val;
-    n.l = l;
-    n.r = r;
+    (= n.val val);
+    (= n.l l);
+    (= n.r r);
     ret n;
 }
 
 fnc sum(ArrI32 a) i32 {
     let i32 s = 0;
-    for (let i32 i = 0; i < 4; ++i) s += a.a[i];
+    for (let i32 i = 0; (< i 4); (++ i)) (+= s a.a[i]);
     ret s;
 }
 
 fnc setAll(ArrI32* a, i32 t) {
-    for (let i32 i = 0; i < 4; ++i) a.a[i] = t;
+    for (let i32 i = 0; (< i 4); (++ i)) (= a.a[i] t);
 }
 
 let Int glob1;
@@ -69,35 +69,35 @@ let Int glob1;
 fnc main() {
     {
         let Int z;
-        z.x = 0;
+        (= z.x 0);
         println_i32(z.x);
         let ArrI32 a;
-        a.a[1] = 1;
+        (= a.a[1] 1);
         println_i32(a.a[1]);
-        glob1.x = 2;
+        (= glob1.x 2);
         println_i32(glob1.x);
     }
     {
         let Point p;
-        p.x = 100;
-        p.y = 101;
+        (= p.x 100);
+        (= p.y 101);
         println_i32(p.x);
-        p.v = false;
+        (= p.v false);
         if (p.v) println_i32(p.y);
     }
     {
         let Point cn p = makePoint(200, 201, true);
         println_i32(p.x);
-        println_i32(*&p.y);
+        println_i32((* (& p.y)));
     }
     {
         let Point[4] p;
-        p[2] = makePoint(300, 301, false);
+        (= p[2] makePoint(300, 301, false));
         println_i32(p[2].x);
     }
     {
         let ArrI32 a;
-        a.a[2] = makePoint(400, 401, false).x;
+        (= a.a[2] makePoint(400, 401, false).x);
         println_i32(a.a[2]);
     }
     {
@@ -107,56 +107,56 @@ fnc main() {
         let Node n1 = makeNode(600, null, null);
         println_i32(n1.val);
         let Node n2 = makeNode(601, null, null);
-        n1.l = &n2;
-        println_i32((*n1.l).val);
+        (= n1.l (& n2));
+        println_i32((* n1.l).val);
     }
     {
         let Tree t;
-        t.root = makeNode(700, null, null);
+        (= t.root makeNode(700, null, null));
         println_i32(t.root.val);
     }
     {
         let Fwd o;
-        o.u = 800;
+        (= o.u 800);
         let WithFwd w;
-        w.o = &o;
+        (= w.o (& o));
         println_u32(w.o.u);
     }
     {
         let Int[4] z1;
-        z1[0].x = 0;
+        (= z1[0].x 0);
         let Int cn[4] z2 = z1;
-        println_i32(900+z2[0].x);
+        println_i32((+ 900 z2[0].x));
     }
     {
         let Int x;
-        (Int(x));
-        (Int cn(x));
+        Int(x);
+        Int cn(x);
     }
     {
         let Opaq* o1;
         let Opaq** o2;
-        *o2;
+        (* o2);
     }
     {
         let ArrI32[4] a;
-        a[0].a[0] = 1000;
+        (= a[0].a[0] 1000);
         println_i32(a[0].a[0]);
-        a[0].a[1] = 1001;
-        println_i32(*&a[0].a[1]);
+        (= a[0].a[1] 1001);
+        println_i32((* (& a[0].a[1])));
     }
     {
         let ArrI32 a;
-        a.a[0] = 1100;
-        a.a[1] = a.a[2] = 1;
-        a.a[3] = -2;
+        (= a.a[0] 1100);
+        (= a.a[1] (= a.a[2] 1));
+        (= a.a[3] (- 2));
         println_i32(sum(a));
-        setAll(&a, 1101);
+        setAll((& a), 1101);
         println_i32(a.a[1]);
     }
     {
         let Int x;
-        (&x).x = 1200;
-        println_i32((&x).x);
+        (= (& x).x 1200);
+        println_i32((& x).x);
     }
 }

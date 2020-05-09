@@ -98,16 +98,12 @@ struct Token {
     std::string str;
 };
 
-typedef int OperPrec;
 struct OperInfo {
-    OperPrec prec;
-    bool l_assoc = true;
     bool unary = false;
     bool binary = true;
     bool assignment = false;
 };
 
-extern const OperPrec minOperPrec;
 extern const std::unordered_map<Token::Oper, OperInfo> operInfos;
 extern const std::unordered_map<std::string, Token::Attr> attributes;
 extern const std::unordered_map<std::string, Token> keywords;

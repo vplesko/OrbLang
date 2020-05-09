@@ -27,7 +27,6 @@ class Parser {
     std::unique_ptr<ArrayExprAst> array_list(std::unique_ptr<TypeAst> arrTy);
     std::unique_ptr<ExprAst> prim(std::unique_ptr<TypeAst> ty);
     std::unique_ptr<ExprAst> prim();
-    std::unique_ptr<ExprAst> expr(std::unique_ptr<ExprAst> lhs, OperPrec min_prec);
     std::unique_ptr<ExprAst> expr();
     std::unique_ptr<TypeAst> type();
     std::unique_ptr<DeclAst> decl(std::unique_ptr<TypeAst> ty);

@@ -182,31 +182,52 @@ unique_ptr<ExprAst> Parser::prim() {
                 ret = make_unique<VarExprAst>(codeLoc, tok.nameId);
             }
         }
-    } else if (peek().type == Token::T_OPER) {
-        Token tok = next();
-
-        if (!operInfos.at(tok.op).unary) {
-            msgs->errorNonUnOp(codeLoc, tok);
-            return nullptr;
-        }
-
-        unique_ptr<ExprAst> e = prim();
-        if (e == nullptr) return nullptr;
-
-        ret = make_unique<UnExprAst>(codeLoc, move(e), tok.op);
-    } else if (peek().type == Token::T_BRACE_L_REG) {
-        next();
-
-        unique_ptr<ExprAst> e = expr();
-        if (e == nullptr) return nullptr;
-
-        if (!matchOrError(Token::T_BRACE_R_REG))
-            return nullptr;
-
-        ret = move(e);
     } else {
         msgs->errorNotPrim(codeLoc);
         return nullptr;
+    }
+
+    return ret;
+}
+
+unique_ptr<ExprAst> Parser::expr() {
+    unique_ptr<ExprAst> retExpr;
+
+    if (peek().type != Token::T_BRACE_L_REG) {
+        retExpr = prim();
+    } else {
+        next(); // eat left brace
+
+        CodeLoc codeLocOp = loc();
+        Token tokOp = next();
+        if (tokOp.type != Token::T_OPER) {
+            msgs->errorUnexpectedTokenType(codeLocOp, Token::T_OPER, tokOp);
+            return nullptr;
+        }
+
+        unique_ptr<ExprAst> lhsExpr = expr();
+        if (lhsExpr == nullptr) return nullptr;
+
+        if (!operInfos.at(tokOp.op).binary) {
+            // if not binary, must be unary
+            retExpr = make_unique<UnExprAst>(codeLocOp, move(lhsExpr), tokOp.op);
+        } else {
+            unique_ptr<ExprAst> rhsExpr;
+            if (!operInfos.at(tokOp.op).unary || peek().type != Token::T_BRACE_R_REG) {
+                rhsExpr = expr();
+                if (rhsExpr == nullptr) return nullptr;
+            }
+
+            if (rhsExpr != nullptr) {
+                retExpr = make_unique<BinExprAst>(codeLocOp, move(lhsExpr), move(rhsExpr), tokOp.op);
+            } else {
+                retExpr = make_unique<UnExprAst>(codeLocOp, move(lhsExpr), tokOp.op);
+            }
+        }
+
+        if (!matchOrError(Token::T_BRACE_R_REG)) {
+            return nullptr;
+        }
     }
 
     while (peek().type == Token::T_BRACE_L_SQR || peek().type == Token::T_DOT) {
@@ -214,12 +235,12 @@ unique_ptr<ExprAst> Parser::prim() {
             CodeLoc codeLocInd = loc();
             next();
 
-            unique_ptr<ExprAst> ind = expr();
-            if (ind == nullptr) return nullptr;
+            unique_ptr<ExprAst> indExpr = expr();
+            if (indExpr == nullptr) return nullptr;
             if (!matchOrError(Token::T_BRACE_R_SQR))
                 return nullptr;
 
-            ret = make_unique<IndExprAst>(codeLocInd, move(ret), move(ind));
+            retExpr = make_unique<IndExprAst>(codeLocInd, move(retExpr), move(indExpr));
         } else {
             CodeLoc codeLocDot = loc();
             next();
@@ -230,47 +251,13 @@ unique_ptr<ExprAst> Parser::prim() {
                 msgs->errorUnexpectedTokenType(codeLocMember, Token::T_ID, member);
                 return nullptr;
             }
-            unique_ptr<VarExprAst> var = make_unique<VarExprAst>(codeLocMember, member.nameId);
+            unique_ptr<VarExprAst> varExpr = make_unique<VarExprAst>(codeLocMember, member.nameId);
 
-            ret = make_unique<DotExprAst>(codeLocDot, move(ret), move(var));
+            retExpr = make_unique<DotExprAst>(codeLocDot, move(retExpr), move(varExpr));
         }
     }
 
-    return ret;
-}
-
-unique_ptr<ExprAst> Parser::expr(unique_ptr<ExprAst> lhs, OperPrec min_prec) {
-    Token lookOp = peek();
-    while (lookOp.type == Token::T_OPER && operInfos.at(lookOp.op).prec >= min_prec) {
-        CodeLoc codeLocOp = loc();
-        Token op = next();
-
-        if (!operInfos.at(op.op).binary) {
-            msgs->errorNonBinOp(codeLocOp, op);
-            return nullptr;
-        }
-        
-        unique_ptr<ExprAst> rhs = prim();
-        if (rhs == nullptr) return nullptr;
-
-        lookOp = peek();
-        while (lookOp.type == Token::T_OPER && 
-            (operInfos.at(lookOp.op).prec > operInfos.at(op.op).prec ||
-            (operInfos.at(lookOp.op).prec == operInfos.at(op.op).prec && !operInfos.at(lookOp.op).l_assoc))) {
-            rhs = expr(move(rhs), operInfos.at(lookOp.op).prec);
-            lookOp = peek();
-        }
-
-        lhs = make_unique<BinExprAst>(codeLocOp, move(lhs), move(rhs), op.op);
-    }
-    return lhs;
-}
-
-unique_ptr<ExprAst> Parser::expr() {
-    unique_ptr<ExprAst> e = prim();
-    if (e == nullptr) return nullptr;
-
-    return expr(move(e), minOperPrec);
+    return retExpr;
 }
 
 std::unique_ptr<TypeAst> Parser::type() {
@@ -385,14 +372,6 @@ std::unique_ptr<StmntAst> Parser::simple() {
         return make_unique<EmptyStmntAst>(codeLoc);
     } else if (peek().type == Token::T_LET) {
         return decl();
-    } else if (peek().type == Token::T_ID && symbolTable->getTypeTable()->isType(peek().nameId)) {
-        unique_ptr<TypeAst> ty = type();
-        if (ty == nullptr) return nullptr;
-
-        unique_ptr<ExprAst> e = prim(move(ty));
-        if (e == nullptr) return nullptr;
-
-        return expr(move(e), minOperPrec);
     } else {
         return expr();
     }

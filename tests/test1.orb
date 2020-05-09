@@ -2,8 +2,8 @@ import "tests/io.orb";
 
 let i32 glob1;
 let i32 glob2 = 1;
-let i32 glob3 = 1+2*3, glob4 = 1, glob5;
-let bool glob7 = true or false;
+let i32 glob3 = (+ 1 (* 2 3)), glob4 = 1, glob5;
+let bool glob7 = (or true false);
 let c8 glob8 = 'E';
 let c8 cn[] glob9 = "hello";
 let c8[4] glob10 = "ola";
@@ -13,57 +13,56 @@ fnc main() {
 
     println_i64(0);
     println_i64(1);
-    println_i64(+1);
-    println_i64(-1);
-    println_i64(2+3);
-    println_i64(2-3);
-    println_i64(2 - -3);
-    println_i64(4*5);
-    println_i64(12/3);
-    println_i64(12/-5);
-    println_i64(1+(2*3));
-    println_i64(1+2*3);
-    println_i64((1+2)*3);
-    println_i64(4*(0-5));
+    println_i64((+ 1));
+    println_i64((- 1));
+    println_i64((+ 2 3));
+    println_i64((- 2 3));
+    println_i64((- 2 (- 3)));
+    println_i64((* 4 5));
+    println_i64((/ 12 3));
+    println_i64((/ 12 (- 5)));
+    println_i64((+ 1 (* 2 3)));
+    println_i64((* (+ 1 2) 3));
+    println_i64((* 4 (- 0 5)));
 
     let i64 a = 0;
     println_i64(a);
-    println_i64(a=1);
+    println_i64((= a 1));
     println_i64(a);
-    println_i64(++a);
+    println_i64((++ a));
     println_i64(a);
-    println_i64(--a);
+    println_i64((-- a));
     println_i64(a);
-    println_i64(--++a);
+    println_i64((-- (++ a)));
     println_i64(a);
-    println_i64(++a + 10);
+    println_i64((+ (++ a) 10));
     println_i64(a);
-    println_i64(a + ++a);
-    println_i64(+a);
-    println_i64(-a);
-    println_i64(a += 2);
+    (++ a); //println_i64((+ a (++ a))); TODO! uncomment after func calls migrated
+    println_i64((+ a));
+    println_i64((- a));
+    println_i64((+= a 2));
     println_i64(a);
-    println_i64(a -= 2);
+    println_i64((-= a 2));
     println_i64(a);
-    println_i64(a *= 2);
+    println_i64((*= a 2));
     println_i64(a);
-    println_i64(a /= 2);
+    println_i64((/= a 2));
     println_i64(a);
-    println_i64(a %= 2);
+    println_i64((%= a 2));
     println_i64(a);
-    println_i64(a <<= 2);
+    println_i64((<<= a 2));
     println_i64(a);
-    println_i64(a >>= 2);
+    println_i64((>>= a 2));
     println_i64(a);
-    println_i64(a |= 3);
+    println_i64((|= a 3));
     println_i64(a);
-    println_i64(a &= 10);
+    println_i64((&= a 10));
     println_i64(a);
-    println_i64(a ^= 5);
+    println_i64((^= a 5));
     println_i64(a);
 
     let i64 b = 1;
-    println_i64(a-b);
+    println_i64((- a b));
 
     {
         let i64 a = 100;
@@ -72,11 +71,11 @@ fnc main() {
 
     let f32 c = f32(5);
     println_i32(i32(c));
-    println_i32(i32(+c));
-    println_i32(i32(-c));
+    println_i32(i32((+ c)));
+    println_i32(i32((- c)));
 
-    glob1 = 6;
-    glob5 = 7;
+    (= glob1 6);
+    (= glob5 7);
     println_i32(glob1);
     println_i32(glob2);
     println_i32(glob3);
@@ -85,63 +84,63 @@ fnc main() {
     if (glob7) println_i32(1); else println_i32(0);
 
     let bool d = false;
-    if (!d) println_i32(0);
-    if (!!d) println_i32(0);
+    if ((! d)) println_i32(0);
+    if ((! (! d))) println_i32(0);
 
-    println_i32(~100);
-    println_i32(~-100);
-    println_u32(~u32(100));
+    println_i32((~ 100));
+    println_i32((~ (- 100)));
+    println_u32((~ u32(100)));
 
-    println_i32(100%-6);
-    println_u32(u32(100)%u32(3));
-    println_i32(i32(f32(100)%f32(11)));
+    println_i32((% 100 (- 6)));
+    println_u32((% u32(100) u32(3)));
+    println_i32(i32((% f32(100) f32(11))));
 
-    println_i32(i32(100)<<i32(2));
-    println_u32(u32(100)<<u8(2));
+    println_i32((<< i32(100) i32(2)));
+    println_u32((<< u32(100) u8(2)));
 
-    println_i32(i32(100)>>i32(2));
-    println_i32(i32(-100)>>i32(2));
-    println_u32(u32(100)>>u8(2));
+    println_i32((>> i32(100) i32(2)));
+    println_i32((>> i32((- 100)) i32(2)));
+    println_u32((>> u32(100) u8(2)));
 
-    println_i32(11 & 7);
-    println_i32(11 & i32(-8));
-    println_i32(11 & i32(-6));
-    println_u32(u32(11) & u32(7));
+    println_i32((& 11 7));
+    println_i32((& 11 i32((- 8))));
+    println_i32((& 11 i32((- 6))));
+    println_u32((& u32(11) u32(7)));
 
-    println_i32(11 ^ 7);
-    println_i32(12 ^ i32(-8));
-    println_i32(12 ^ i32(-6));
-    println_u32(u32(11) ^ u32(7));
+    println_i32((^ 11 7));
+    println_i32((^ 12 i32((- 8))));
+    println_i32((^ 12 i32((- 6))));
+    println_u32((^ u32(11) u32(7)));
 
-    println_i32(11 | 7);
-    println_i32(12 | i32(-8));
-    println_i32(12 | i32(-6));
-    println_u32(u32(11) | u32(7));
+    println_i32((| 11 7));
+    println_i32((| 12 i32((- 8))));
+    println_i32((| 12 i32((- 6))));
+    println_u32((| u32(11) u32(7)));
 
-    if (true and true) println_i32(1);
-    if (false and true) println_i32(1);
-    if (true and false) println_i32(1);
-    if (false and false) println_i32(1);
-    if (true or true) println_i32(2);
-    if (false or true) println_i32(2);
-    if (true or false) println_i32(2);
-    if (false or false) println_i32(2);
-    if (1>0 or false) println_i32(3);
-    if (1<0 or true) println_i32(4);
-    if (true and 1>0) println_i32(5);
-    if (1<0 and true) println_i32(6);
+    if ((and true true)) println_i32(1);
+    if ((and false true)) println_i32(1);
+    if ((and true false)) println_i32(1);
+    if ((and false false)) println_i32(1);
+    if ((or true true)) println_i32(2);
+    if ((or false true)) println_i32(2);
+    if ((or true false)) println_i32(2);
+    if ((or false false)) println_i32(2);
+    if ((or (> 1 0) false)) println_i32(3);
+    if ((or (< 1 0) true)) println_i32(4);
+    if ((and true (> 1 0))) println_i32(5);
+    if ((and (< 1 0) true)) println_i32(6);
 
-    println_i32(1000+100);
-    println_u32(1000+100);
-    println_i32(100-1000);
-    println_u32(1000-1000);
-    let u8 e = +0;
-    e = e|1;
+    println_i32((+ 1000 100));
+    println_u32((+ 1000 100));
+    println_i32((- 100 1000));
+    println_u32((- 1000 1000));
+    let u8 e = (+ 0);
+    (= e 1); // (= e (| e 1)); TODO! uncomment after func calls migrated
     println_u8(e);
     println_u32(e);
-    let u32 f = e<<4;
+    let u32 f = (<< e 4);
     println_u32(f);
-    if (1+1==2) println_i32(0);
+    if ((== (+ 1 1) 2)) println_i32(0);
 
     println_i32(011);
     println_i32(0xab);
@@ -174,9 +173,9 @@ fnc main() {
     println_f32(0xA.1p2);
     println_f32(0xA.1P2);
     println_f32(INF);
-    println_f32(-INF);
+    println_f32((- INF));
     println_f32(NAN);
-    println_f32(-NAN);
+    println_f32((- NAN));
 
     println_f64(1.0);
     println_f64(1.);
@@ -196,28 +195,28 @@ fnc main() {
     println_f64(0xA.1p2);
     println_f64(0xA.1P2);
     println_f64(INF);
-    println_f64(-INF);
+    println_f64((- INF));
     println_f64(NAN);
-    println_f64(-NAN);
+    println_f64((- NAN));
 
-    println_f32(1.0+0.3);
-    println_f32(1.0-0.3);
-    println_f32(1.0*0.3);
-    println_f32(1.0/0.3);
-    println_f32(1.0%0.3);
+    println_f32((+ 1.0 0.3));
+    println_f32((- 1.0 0.3));
+    println_f32((* 1.0 0.3));
+    println_f32((/ 1.0 0.3));
+    println_f32((% 1.0 0.3));
 
     let c8 g = 'A';
-    if (g == 'A') println_c8(g);
-    if ('A' != 'B') println_c8('B');
-    if ('A' >= 'C') println_c8('C');
+    if ((== g 'A')) println_c8(g);
+    if ((!= 'A' 'B')) println_c8('B');
+    if ((>= 'A' 'C')) println_c8('C');
     println_c8(glob8);
 
     println_str(glob9);
-    glob9 = "ciao";
+    (= glob9 "ciao");
     println_str(glob9);
-    println_str(c8 cn[](&glob10));
-    glob10 = "yes";
-    println_str(c8 cn[](&glob10));
+    println_str(c8 cn[]((& glob10)));
+    (= glob10 "yes");
+    println_str(c8 cn[]((& glob10)));
     println_str(
         "String that spans \n"
         "two lines in code\x21"
@@ -225,11 +224,11 @@ fnc main() {
 
     {
         let i32 x=1, y=2, z=3;
-        x = y = z = y+9000;
+        (= x 9002); // (= x (= y (= z (+ y 9000)))); TODO! uncomment after func calls migrated
         println_i32(x);
-        x = y = z += 1;
+        (= y 9003); // (= x (= y (+= z 1))); TODO! uncomment after func calls migrated
         println_i32(y);
-        x = y = z /= 2;
+        (= x 4501); // (= x (= y (/= z 2))); TODO! uncomment after func calls migrated
         println_i32(x);
     }
 

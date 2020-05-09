@@ -9,7 +9,7 @@ fnc bar() {
 }
 
 fnc inc(i64 a) i64 {
-    ret a+1;
+    ret (+ a 1);
 }
 
 fnc blocker() i64 {
@@ -30,7 +30,7 @@ fnc fib(u32 n) {
 		let i32 n = 8;
 		println_i32(n);
 	else:
-		println_i32(-1);
+		println_i32((- 1));
 	}
 }
 
@@ -49,25 +49,25 @@ fnc abc(i32 n) {
 
 fnc main() {
     let i64 a = 1, b = 2;
-    if (a == b) println_i64(101);
-    if (a < b) println_i64(102);
-    if (a >= b) println_i64(103);
-    if (a+3>b+5) println_i64(104);
-    if (let i64 x = 5; x > a) println_i64(105);
-    if (a = 100; a > b) println_i64(106);
+    if ((== a b)) println_i64(101);
+    if ((< a b)) println_i64(102);
+    if ((>= a b)) println_i64(103);
+    if ((> (+ a 3) (+ b 5))) println_i64(104);
+    if (let i64 x = 5; (> x a)) println_i64(105);
+    if ((= a 100); (> a b)) println_i64(106);
 
-    a = 1;
-    b = 2;
-    if (a < b) println_i64(107);
+    (= a 1);
+    (= b 2);
+    if ((< a b)) println_i64(107);
     else println_i64(108);
-    if (a == b) println_i64(109);
+    if ((== a b)) println_i64(109);
     else println_i64(110);
-    if (a / b == 1) println_i64(111);
-    else if (a * b == 1) println_i64(112);
+    if ((== (/ a b) 1)) println_i64(111);
+    else if ((== (* a b) 1)) println_i64(112);
     else println_i64(113);
-    if (a + b == 3) {
+    if ((== (+ a b) 3)) {
         println_i64(114);
-        if (a % b == 1) {
+        if ((== (% a b) 1)) {
             println_i64(115);
         } else {
             println_i64(116);
@@ -76,115 +76,115 @@ fnc main() {
 
     if (i32(0); true) println_i64(117);
 
-    for (let i64 i = 0, j = -1; i < 10; ++i) println_i64(i+j);
-    for (a = 0; a < 3; ++a) println_i64(a);
-    for (; a >= 0; --a) println_i64(a);
+    for (let i64 i = 0, j = (- 1); (< i 10); (++ i)) println_i64((+ i j));
+    for ((= a 0); (< a 3); (++ a)) println_i64(a);
+    for (; (>= a 0); (-- a)) println_i64(a);
 
-    while (b >= 0) println_i64(--b);
+    while ((>= b 0)) println_i64((-- b));
     do {
         let i64 x = 2;
         println_i64(b);
-        b = b + x;
-    } while (b + a < 8);
-    do println_i64(1); while (--a >= 0);
-    do ; while (a > 0);
+        (+= b x); // (= b (+ b x)); TODO! uncomment after func calls migrated
+    } while ((< (+ b a) 8));
+    do println_i64(1); while ((>= (-- a) 0));
+    do ; while ((> a 0));
 
     bar();
 
-    for (let i32 i = 0; i < 10; ++i) {
-        if (i >= 3) break;
+    for (let i32 i = 0; (< i 10); (++ i)) {
+        if ((>= i 3)) break;
         println_i32(i);
     }
 
-    while (a <= 0) {
-        if (a <= -3) break;
+    while ((<= a 0)) {
+        if ((>= (- 3) a)) break; //if ((<= a (- 3))) break; TODO! uncomment after func calls migrated
         println_i64(a);
-        --a;
+        (-- a);
     }
 
     do {
-        if (a == 0) break;
+        if ((== a 0)) break;
         println_i64(a);
-        a = 0;
-    } while (a < 1);
+        (= a 0);
+    } while ((< a 1));
 
-    for (let i32 i = 0; i < 10; ++i) {
-        if (i >= 2) continue;
+    for (let i32 i = 0; (< i 10); (++ i)) {
+        if ((>= i 2)) continue;
         println_i32(i);
     }
 
-    while (a <= 0) {
-        ++a;
-        if (a > 0) continue;
+    while ((<= a 0)) {
+        (++ a);
+        if ((> a 0)) continue;
         println_i64(a);
     }
 
-    a = 99;
+    (= a 99);
     do {
-        if (a == 0) continue;
+        if ((== a 0)) continue;
         println_i64(a);
-        a = 0;
-    } while (a != 0);
+        (= a 0);
+    } while ((!= a 0));
 
-    for (let i32 i = 0; i < 2; ++i) {
+    for (let i32 i = 0; (< i 2); (++ i)) {
         println_i32(i);
-        for (let i32 j = 0; j < 5; ++j) {
+        for (let i32 j = 0; (< j 5); (++ j)) {
             println_i32(j);
-            if (j >= 1) break;
+            if ((>= j 1)) break;
         }
     }
 
-    for (let i32 i = 0; i > -2; --i) {
+    for (let i32 i = 0; (< (- 2) i); (-- i)) { //for (let i32 i = 0; (> i (- 2)); (-- i)) { TODO! uncomment after func calls migrated
         println_i32(i);
-        for (let i32 j = 0; j > -5; --j) {
-            if (j <= -1) continue;
-            println_i32(j);
-        }
-    }
-
-    for (let i32 i = 10; i < 15; ++i) {
-        println_i32(i);
-        if (i >= 11) break;
-        for (let i32 j = 10; j < 12; ++j) {
+        for (let i32 j = 0; (< (- 5) j); (-- j)) { // for (let i32 j = 0; (> j (- 5)); (-- j)) { TODO! uncomment after func calls migrated
+            if ((>= (- 1) j)) continue; //if ((<= j (- 1)) continue; TODO! uncomment after func calls migrated
             println_i32(j);
         }
     }
 
-    for (let i32 i = -10; i > -13; --i) {
+    for (let i32 i = 10; (< i 15); (++ i)) {
         println_i32(i);
-        if (i <= -11) continue;
-        for (let i32 j = -10; j > -12; --j) {
+        if ((>= i 11)) break;
+        for (let i32 j = 10; (< j 12); (++ j)) {
+            println_i32(j);
+        }
+    }
+
+    for (let i32 i = (- 10); (< (- 13) i); (-- i)) { //for (let i32 i = (- 10); (> i (- 13)); (-- i)) { TODO! uncomment after func calls migrated
+        println_i32(i);
+        if ((>= (- 11) i)) continue; //if ((<= i (- 11))) continue; TODO! uncomment after func calls migrated
+        for (let i32 j = (- 10); (< (- 12) j); (-- j)) { //for (let i32 j = (- 10); (> j (- 12)); (-- j)) { TODO! uncomment after func calls migrated
             println_i32(j);
         }
     }
 
     println_i64(inc(b));
-    println_i64(inc(b)+1);
+    println_i64((+ inc(b) 1));
 
-    if (1>0) println_i64(0); else println_i64(blocker());
-    if (1<0) println_i64(blocker()); else println_i64(0);
+    if ((> 1 0)) println_i64(0); else println_i64(blocker());
+    if ((< 1 0)) println_i64(blocker()); else println_i64(0);
 
-    if (false and blocker()==0) println_i32(0);
-    if (true or blocker()==0) println_i32(0);
+    if ((and false (== blocker() 0))) println_i32(0);
+    if ((or true (== blocker() 0))) println_i32(0);
 
-	switch (1+1) {
+	switch ((+ 1 1)) {
 	case 2:
 	}
 
-	switch (1+1) {
+	switch ((+ 1 1)) {
 	case 3:
         blocker();
 	}
 
-	switch (-1) {
+	switch ((- 1)) {
 	else:
-		println_i32(-1);
+		println_i32((- 1));
 	}
 
-	switch (-1) {
+	switch ((- 1)) {
 	else:
-		switch (-1) {
-        case -1:
+		switch ((- 1)) {
+        case (- 1):
             println_i32(0);
         }
 	}
@@ -196,5 +196,5 @@ fnc main() {
 
     abc(1);
     abc(2);
-    abc(-1);
+    abc((- 1));
 }
