@@ -1,4 +1,4 @@
 fnc main() {
-    let i32 cn[4] arr{0, 1, 2, 3};
-    arr[0] = 100;
+    let i32 cn[4] array{0, 1, 2, 3};
+    array[0] = 100;
 }

@@ -24,8 +24,6 @@ class Parser {
     bool matchOrError(Token::Type type);
     CodeLoc loc() const;
 
-    std::unique_ptr<ArrayExprAst> array_list(std::unique_ptr<TypeAst> arrTy);
-    std::unique_ptr<ExprAst> prim(std::unique_ptr<TypeAst> ty);
     std::unique_ptr<ExprAst> prim();
     std::unique_ptr<ExprAst> expr();
     std::unique_ptr<TypeAst> type();

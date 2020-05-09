@@ -15,18 +15,18 @@ fnc pass(i32 [] x) i32 [] {
     ret x;
 }
 
-fnc touch(i32[4] arr) {
+fnc touch(i32[4] array) {
     for (let i32 i = 0; (< i 4); (++ i))
-        (= arr[i] (- 1));
+        (= array[i] (- 1));
 }
 
-fnc setAll(i32[4]* arr, i32 val) {
+fnc setAll(i32[4]* array, i32 val) {
     for (let i32 i = 0; (< i 4); (++ i))
-        (= (* arr)[i] val);
+        (= (* array)[i] val);
 }
 
 fnc retAll(i32 val) i32[4] {
-    ret i32[4]{val, val, val, val};
+    ret (arr i32[4] val val val val);
 }
 
 fnc pass(i32 x) i32 {
@@ -61,9 +61,9 @@ fnc main() {
     let i32 cn[] s2 = i32 cn[]((malloc 4));
     let i32 cn[]cn s3 = i32 cn[]cn((malloc 4));
     (= j 3);
-    let i32 cn[4] t1{0, i8(1), i32(2.0), (+ j)};
+    let i32 cn[4] t1 = (arr i32 cn[4] 0 i8(1) i32(2.0) (+ j));
     let i32[4]cn t2 = t1;
-    let i32 cn[4]cn t3{0, 1, 2, 3};
+    let i32 cn[4]cn t3 = (arr i32 cn[4]cn 0 1 2 3);
 
     (= b a);
 
@@ -192,14 +192,14 @@ fnc main() {
     (println_i32 i32 cn[4]((retAll 510))[0]);
     (println_i32 i32[4]cn((retAll 511))[0]);
     (println_i32 i32 cn[4]cn((retAll 512))[0]);
-    (= o i32[4][]{i32[]{513, 513, 513, 513}, (retAll 514)});
+    (= o (arr i32[4][] (arr i32[] 513 513 513 513) (retAll 514)));
     (println_i32 o[0][0]);
     (println_i32 o[1][0]);
-    (println_i32 i32[]{515}[0]);
-    (println_i32 i32[1]{516}[0]);
+    (println_i32 (arr i32[] 515)[0]);
+    (println_i32 (arr i32[1] 516)[0]);
 
-    i32[2]{0, 1};
-    if (i32[2]{0, 1}; false);
+    (arr i32[2] 0 1);
+    if ((arr i32[2] 0 1); false);
 
     (= n (retAll 600));
     let i32 cn[4] p1 = n;

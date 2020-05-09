@@ -40,59 +40,6 @@ CodeLoc Parser::loc() const {
     return lex->loc();
 }
 
-unique_ptr<ArrayExprAst> Parser::array_list(unique_ptr<TypeAst> arrTy) {
-    vector<unique_ptr<ExprAst>> vals;
-
-    if (!matchOrError(Token::T_BRACE_L_CUR))
-        return nullptr;
-
-    if (peek().type == Token::T_BRACE_R_CUR) {
-        msgs->errorEmptyArr(loc());
-        return nullptr;
-    }
-
-    while (true) {
-        unique_ptr<ExprAst> ex = expr();
-        if (ex == nullptr) return nullptr;
-
-        vals.push_back(move(ex));
-
-        CodeLoc codeLocNext = loc();
-        Token tok = next();
-        if (tok.type != Token::T_COMMA) {
-            if (tok.type == Token::T_BRACE_R_CUR) {
-                break;
-            } else {
-                msgs->errorUnexpectedTokenType(codeLocNext, {Token::T_COMMA, Token::T_BRACE_R_CUR}, tok);
-                return nullptr;
-            }
-        }
-    }
-
-    return make_unique<ArrayExprAst>(arrTy->loc(), move(arrTy), move(vals));
-}
-
-unique_ptr<ExprAst> Parser::prim(std::unique_ptr<TypeAst> ty) {
-    if (peek().type == Token::T_BRACE_L_REG) {
-        next();
-
-        unique_ptr<ExprAst> e = expr();
-        if (e == nullptr) return nullptr;
-        if (!matchOrError(Token::T_BRACE_R_REG))
-            return nullptr;
-
-        return make_unique<CastExprAst>(ty->loc(), move(ty), move(e));
-    } else if (peek().type == Token::T_BRACE_L_CUR) {
-        unique_ptr<ArrayExprAst> e = array_list(move(ty));
-        if (e == nullptr) return nullptr;
-
-        return move(e);
-    } else {
-        msgs->errorUnexpectedTokenType(ty->loc(), {Token::T_BRACE_L_REG, Token::T_BRACE_L_CUR}, peek());
-        return nullptr;
-    }
-}
-
 unique_ptr<ExprAst> Parser::prim() {
     CodeLoc codeLoc = loc();
     unique_ptr<ExprAst> ret;
@@ -145,10 +92,20 @@ unique_ptr<ExprAst> Parser::prim() {
         ret = make_unique<UntypedExprAst>(codeLoc, val);
     } else if (peek().type == Token::T_ID) {
         if (symbolTable->getTypeTable()->isType(peek().nameId)) {
-            unique_ptr<TypeAst> t = type();
-            if (t == nullptr) return nullptr;
+            unique_ptr<TypeAst> ty = type();
+            if (ty == nullptr) return nullptr;
 
-            ret = prim(move(t));
+            if (!matchOrError(Token::T_BRACE_L_REG)) {
+                return nullptr;
+            }
+
+            unique_ptr<ExprAst> e = expr();
+            if (e == nullptr) return nullptr;
+            
+            if (!matchOrError(Token::T_BRACE_R_REG))
+                return nullptr;
+
+            ret = make_unique<CastExprAst>(ty->loc(), move(ty), move(e));
         } else {
             Token tok = next();
             ret = make_unique<VarExprAst>(codeLoc, tok.nameId);
@@ -206,8 +163,25 @@ unique_ptr<ExprAst> Parser::expr() {
             }
 
             retExpr = move(call);
+        } else if (peek().type == Token::T_ARR) {
+            CodeLoc codeLocArr = loc();
+            next();
+
+            unique_ptr<TypeAst> arrTy = type();
+            if (arrTy == nullptr) return nullptr;
+
+            vector<unique_ptr<ExprAst>> vals;
+
+            while (peek().type != Token::T_BRACE_R_REG) {
+                unique_ptr<ExprAst> ex = expr();
+                if (ex == nullptr) return nullptr;
+
+                vals.push_back(move(ex));
+            }
+
+            retExpr = make_unique<ArrayExprAst>(arrTy->loc(), move(arrTy), move(vals));
         } else {
-            msgs->errorUnexpectedTokenType(loc(), {Token::T_OPER, Token::T_ID}, peek());
+            msgs->errorUnexpectedTokenType(loc(), {Token::T_OPER, Token::T_ID, Token::T_ARR}, peek());
             return nullptr;
         }
 
@@ -321,9 +295,6 @@ unique_ptr<DeclAst> Parser::decl(unique_ptr<TypeAst> ty) {
             look = next();
 
             init = expr();
-            if (init == nullptr) return nullptr;
-        } else if (look.type == Token::T_BRACE_L_CUR) {
-            init = array_list(ty->clone());
             if (init == nullptr) return nullptr;
         }
         ret->add(make_pair(move(var), move(init)));
