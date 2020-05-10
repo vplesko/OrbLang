@@ -266,14 +266,6 @@ void Codegen::codegen(const DeclAst *ast) {
 }
 
 void Codegen::codegen(const IfAst *ast) {
-    // unlike C++, then and else may eclipse vars declared in if's init
-    ScopeControl scope(ast->hasInit() ? symbolTable : nullptr);
-
-    if (ast->hasInit()) {
-        codegenNode(ast->getInit());
-        if (msgs->isAbort()) return;
-    }
-
     ExprGenPayload condExpr = codegenExpr(ast->getCond());
     if (condExpr.isUntyVal() && !promoteUntyped(condExpr, getPrimTypeId(TypeTable::P_BOOL))) {
         msgs->errorExprCannotPromote(ast->getCond()->loc(), getPrimTypeId(TypeTable::P_BOOL));

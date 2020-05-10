@@ -34,10 +34,9 @@ ArrayExprAst::ArrayExprAst(CodeLoc loc, unique_ptr<TypeAst> arrTy, vector<unique
     : ExprAst(loc), arrTy(move(arrTy)), vals(move(vals)) {
 }
 
-IfAst::IfAst(CodeLoc loc,
-    unique_ptr<StmntAst> init, unique_ptr<ExprAst> cond, 
+IfAst::IfAst(CodeLoc loc, unique_ptr<ExprAst> cond, 
     unique_ptr<StmntAst> thenBody, unique_ptr<StmntAst> elseBody)
-    : StmntAst(loc), init(move(init)), cond(move(cond)), thenBody(move(thenBody)), elseBody(move(elseBody)) {
+    : StmntAst(loc), cond(move(cond)), thenBody(move(thenBody)), elseBody(move(elseBody)) {
 }
 
 ForAst::ForAst(CodeLoc loc,

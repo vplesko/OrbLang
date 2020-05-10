@@ -370,31 +370,8 @@ std::unique_ptr<StmntAst> Parser::if_stmnt() {
     if (!matchOrError(Token::T_IF) || !matchOrError(Token::T_BRACE_L_REG))
         return nullptr;
 
-    unique_ptr<StmntAst> init;
-    unique_ptr<ExprAst> cond;
-
-    init = simple();
-    if (init == nullptr) {
-        msgs->errorNotSimple(loc());
-        return nullptr;
-    }
-
-    if (init->type() == AST_Decl || init->type() == AST_Empty) {
-        // semicolon was eaten, parse condition
-        cond = expr();
-        if (cond == nullptr) return nullptr;
-    } else {
-        if (peek().type == Token::T_SEMICOLON) {
-            // init was expression, eat semicolon and parse condition
-            next();
-
-            cond = expr();
-            if (cond == nullptr) return nullptr;
-        } else {
-            // there was no init
-            cond = unique_ptr<ExprAst>((ExprAst*) init.release()); // modern C++ is modern
-        }
-    }
+    unique_ptr<ExprAst> cond = expr();
+    if (cond == nullptr) return nullptr;
 
     if (!matchOrError(Token::T_BRACE_R_REG))
         return nullptr;
@@ -410,7 +387,7 @@ std::unique_ptr<StmntAst> Parser::if_stmnt() {
         if (elseBody == nullptr) return nullptr;
     }
 
-    return make_unique<IfAst>(codeLocIf, move(init), move(cond), move(thenBody), move(elseBody));
+    return make_unique<IfAst>(codeLocIf, move(cond), move(thenBody), move(elseBody));
 }
 
 std::unique_ptr<StmntAst> Parser::for_stmnt() {

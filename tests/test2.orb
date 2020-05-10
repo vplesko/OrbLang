@@ -23,8 +23,14 @@ fnc main() {
     if ((< a b)) (println_i64 102);
     if ((>= a b)) (println_i64 103);
     if ((> (+ a 3) (+ b 5))) (println_i64 104);
-    if (let (x:i64 5); (> x a)) (println_i64 105);
-    if ((= a 100); (> a b)) (println_i64 106);
+    {
+        let (x:i64 5);
+        if ((> x a)) (println_i64 105);
+    }
+    {
+        (= a 100);
+        if ((> a b)) (println_i64 106);
+    }
 
     (= a 1);
     (= b 2);
@@ -43,8 +49,6 @@ fnc main() {
             (println_i64 116);
         }
     }
-
-    if ((cast i32 0); true) (println_i64 117);
 
     for (let (i:i64 0) (j:i64 (- 1)); (< i 10); (++ i)) (println_i64 (+ i j));
     for ((= a 0); (< a 3); (++ a)) (println_i64 a);

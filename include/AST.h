@@ -233,21 +233,17 @@ public:
 };
 
 class IfAst : public StmntAst {
-    std::unique_ptr<StmntAst> init;
     std::unique_ptr<ExprAst> cond;
     std::unique_ptr<StmntAst> thenBody, elseBody;
 
 public:
-    IfAst(CodeLoc loc,
-        std::unique_ptr<StmntAst> init, std::unique_ptr<ExprAst> cond, 
+    IfAst(CodeLoc loc, std::unique_ptr<ExprAst> cond, 
         std::unique_ptr<StmntAst> thenBody, std::unique_ptr<StmntAst> elseBody);
     
-    const StmntAst* getInit() const { return init.get(); }
     const ExprAst* getCond() const { return cond.get(); }
     const StmntAst* getThen() const { return thenBody.get(); }
     const StmntAst* getElse() const { return elseBody.get(); }
 
-    bool hasInit() const { return init != nullptr; }
     bool hasElse() const { return elseBody != nullptr; }
 
     AstType type() const override { return AST_If; }

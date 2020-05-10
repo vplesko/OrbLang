@@ -82,7 +82,7 @@ fnc main() {
     if ((!= null a)) (println_i32 3);
     if ((== null null)) (println_i32 4);
     if ((!= null null)) (println_i32 5);
-    if (; (cast bool a)) (println_i32 6);
+    if ((cast bool a)) (println_i32 6);
 
     (= a (cast (i32 *) (malloc 4)));
     if ((== a null)) (println_i32 7);
@@ -91,7 +91,7 @@ fnc main() {
     if ((!= null a)) (println_i32 10);
     if ((== null null)) (println_i32 11);
     if ((!= null null)) (println_i32 12);
-    if (; (cast bool a)) (println_i32 13);
+    if ((cast bool a)) (println_i32 13);
     (free (cast ptr a));
 
     if ((== glob1 null)) (println_i32 16);
@@ -105,7 +105,7 @@ fnc main() {
 
     if ((== e f)) (println_i32 18);
     if ((!= e f)) (println_i32 19);
-    if (; (cast bool e)) (println_i32 20);
+    if ((cast bool e)) (println_i32 20);
 
     if ((!= (& d) null)) (println_i32 100);
     if ((== (& d) null)) (println_i32 101);
@@ -197,7 +197,7 @@ fnc main() {
     (println_i32 ([] (arr (i32 [1]) 516) 0));
 
     (arr (i32 [2]) 0 1);
-    if ((arr (i32 [2]) 0 1); false);
+    if ((== ([] (arr (i32 [2]) 0 1) 0) 999));
 
     (= n (retAll 600));
     let (p1:(i32 cn [4]) n);
@@ -219,12 +219,12 @@ fnc main() {
     (println_i32 ([] s1 0));
     (= j 1004);
     (println_i32 (pass j));
-    if (; (cast bool r1)) (println_i32 1005);
-    if (; (cast bool r2)) (println_i32 1006);
-    if (; (cast bool r3)) (println_i32 1007);
-    if (; (cast bool s1)) (println_i32 1008);
-    if (; (cast bool s2)) (println_i32 1009);
-    if (; (cast bool s3)) (println_i32 1010);
+    if ((cast bool r1)) (println_i32 1005);
+    if ((cast bool r2)) (println_i32 1006);
+    if ((cast bool r3)) (println_i32 1007);
+    if ((cast bool s1)) (println_i32 1008);
+    if ((cast bool s2)) (println_i32 1009);
+    if ((cast bool s3)) (println_i32 1010);
     (free (cast (ptr cn) s3));
     (free (cast ptr s2));
     (free (cast (ptr cn) s1));
