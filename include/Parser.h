@@ -36,7 +36,6 @@ class Parser {
     std::unique_ptr<StmntAst> do_while_stmnt();
     std::unique_ptr<StmntAst> break_stmnt();
     std::unique_ptr<StmntAst> continue_stmnt();
-    std::unique_ptr<StmntAst> switch_stmnt();
     std::unique_ptr<StmntAst> ret();
     std::unique_ptr<StmntAst> stmnt();
     std::unique_ptr<BlockAst> block();

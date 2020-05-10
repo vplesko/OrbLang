@@ -512,87 +512,6 @@ std::unique_ptr<StmntAst> Parser::continue_stmnt() {
     return make_unique<ContinueAst>(codeLoc);
 }
 
-std::unique_ptr<StmntAst> Parser::switch_stmnt() {
-    CodeLoc codeLocSwitch = loc();
-
-    if (!matchOrError(Token::T_SWITCH) || !matchOrError(Token::T_BRACE_L_REG))
-        return nullptr;
-
-    unique_ptr<ExprAst> value = expr();
-    if (value == nullptr) return nullptr;
-
-    if (!matchOrError(Token::T_BRACE_R_REG) || !matchOrError(Token::T_BRACE_L_CUR))
-        return nullptr;
-
-    vector<SwitchAst::Case> cases;
-
-    bool parsedDefault = false;
-    while (peek().type != Token::T_BRACE_R_CUR) {
-        CodeLoc codeLocCase = loc();
-        Token case_ = next();
-
-        vector<unique_ptr<ExprAst>> comparisons;
-
-        if (case_.type == Token::T_CASE) {
-            while (true) {
-                unique_ptr<ExprAst> comp = expr();
-                if (comp == nullptr) return nullptr;
-
-                comparisons.push_back(move(comp));
-
-                Token::Type ty = peek().type;
-                if (ty == Token::T_COMMA) {
-                    next();
-                } else if (ty == Token::T_COLON) {
-                    break;
-                } else {
-                    msgs->errorUnexpectedTokenType(loc(), {Token::T_COMMA, Token::T_COLON}, peek());
-                    return nullptr;
-                }
-            }
-
-            if (comparisons.empty()) {
-                // should not be reached
-                msgs->errorUnknown(codeLocCase);
-                return nullptr;
-            }
-        } else if (case_.type == Token::T_ELSE) {
-            if (parsedDefault) {
-                msgs->errorSwitchMultiElse(codeLocCase);
-                return nullptr;
-            }
-            parsedDefault = true;
-        } else {
-            msgs->errorUnexpectedTokenType(codeLocCase, {Token::T_CASE, Token::T_ELSE}, case_);
-            return nullptr;
-        }
-
-        if (!matchOrError(Token::T_COLON))
-            return nullptr;
-
-        CodeLoc codeLocBlock = loc();
-        unique_ptr<BlockAst> body = make_unique<BlockAst>(codeLocBlock);
-        while (peek().type != Token::T_CASE && peek().type != Token::T_ELSE && peek().type != Token::T_BRACE_R_CUR) {
-            unique_ptr<StmntAst> st = stmnt();
-            if (st == nullptr) return nullptr;
-
-            body->add(move(st));
-        }
-
-        // i like to move it, move it
-        SwitchAst::Case caseSection(move(comparisons), move(body));
-        cases.push_back(move(caseSection));
-    }
-    next();
-
-    if (cases.empty()) {
-        msgs->errorSwitchNoBranches(codeLocSwitch);
-        return nullptr;
-    }
-
-    return make_unique<SwitchAst>(codeLocSwitch, move(value), move(cases));
-}
-
 std::unique_ptr<StmntAst> Parser::ret() {
     CodeLoc codeLoc = loc();
 
@@ -623,8 +542,6 @@ unique_ptr<StmntAst> Parser::stmnt() {
     if (peek().type == Token::T_BREAK) return break_stmnt();
 
     if (peek().type == Token::T_CONTINUE) return continue_stmnt();
-
-    if (peek().type == Token::T_SWITCH) return switch_stmnt();
 
     if (peek().type == Token::T_RET) return ret();
 

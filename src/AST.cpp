@@ -53,22 +53,6 @@ DoWhileAst::DoWhileAst(CodeLoc loc, unique_ptr<StmntAst> body, unique_ptr<ExprAs
     : StmntAst(loc), body(move(body)), cond(move(cond)) {
 }
 
-SwitchAst::Case::Case(std::vector<std::unique_ptr<ExprAst>> comparisons, std::unique_ptr<BlockAst> body)
-    : comparisons(move(comparisons)), body(move(body)) {
-}
-
-SwitchAst::SwitchAst(CodeLoc loc, unique_ptr<ExprAst> value, vector<Case> cases)
-    : StmntAst(loc), value(move(value)), cases(move(cases)) {
-}
-
-optional<size_t> SwitchAst::getDefault() const {
-    for (size_t i = 0; i < cases.size(); ++i) {
-        if (cases[i].isDefault()) return i;
-    }
-
-    return nullopt;
-}
-
 void DeclAst::addAll(vector<InitInfo> _decls) {
     for (InitInfo &m : _decls) {
         decls.push_back(move(m));

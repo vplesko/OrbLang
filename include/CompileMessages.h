@@ -45,10 +45,6 @@ public:
     void errorNotPrim(CodeLoc loc);
     void errorNotTypeId(CodeLoc loc, NamePool::Id name);
     void errorBadArraySize(CodeLoc loc, long int size);
-    void errorSwitchNoBranches(CodeLoc loc);
-    void errorSwitchMultiElse(CodeLoc loc);
-    void errorSwitchNotIntegral(CodeLoc loc);
-    void errorSwitchMatchDuplicate(CodeLoc loc);
     void errorNotLastParam(CodeLoc loc);
     void errorBadAttr(CodeLoc loc, Token::Attr attr);
     void errorEmptyArr(CodeLoc loc);

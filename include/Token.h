@@ -38,8 +38,6 @@ struct Token {
         T_DO,
         T_BREAK,
         T_CONTINUE,
-        T_SWITCH,
-        T_CASE,
         T_RET,
         T_IMPORT,
         T_ATTRIBUTE,

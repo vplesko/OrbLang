@@ -17,36 +17,6 @@ fnc blocker() i64 {
     ret 0;
 }
 
-fnc fib(n:u32) {
-	switch (n) {
-	case 0, 1:
-		(println_i32 1);
-	case 2, 3:
-		(println_u32 n);
-	case 4:
-		let (n:i32 5);
-		(println_i32 n);
-	case 5:
-		let (n:i32 8);
-		(println_i32 n);
-	else:
-		(println_i32 (- 1));
-	}
-}
-
-fnc abc(n:i32) {
-	switch (n) {
-	case 1:
-		(println_i32 65);
-	else:
-		(println_i32 63);
-	case 2:
-		(println_i32 66);
-	case 3:
-		(println_i32 67);
-	}
-}
-
 fnc main() {
     let (a:i64 1) (b:i64 2);
     if ((== a b)) (println_i64 101);
@@ -166,35 +136,4 @@ fnc main() {
 
     if ((and false (== (blocker) 0))) (println_i32 0);
     if ((or true (== (blocker) 0))) (println_i32 0);
-
-	switch ((+ 1 1)) {
-	case 2:
-	}
-
-	switch ((+ 1 1)) {
-	case 3:
-        (blocker);
-	}
-
-	switch ((- 1)) {
-	else:
-		(println_i32 (- 1));
-	}
-
-	switch ((- 1)) {
-	else:
-		switch ((- 1)) {
-        case (- 1):
-            (println_i32 0);
-        }
-	}
-
-    (fib 0);
-    (fib 3);
-    (fib 5);
-    (fib 8);
-
-    (abc 1);
-    (abc 2);
-    (abc (- 1));
 }

@@ -146,9 +146,6 @@ void Codegen::codegenNode(const BaseAst *ast, bool blockMakeScope) {
     case AST_Continue:
         codegen((const ContinueAst*) ast);
         return;
-    case AST_Switch:
-        codegen ((const SwitchAst*) ast);
-        return;
     case AST_Ret:
         codegen((const RetAst*)ast);
         return;
@@ -486,81 +483,6 @@ void Codegen::codegen(const ContinueAst *ast) {
     }
 
     llvmBuilder.CreateBr(continueStack.top());
-}
-
-// TODO get rid of llvm::SwitchInst, allow other types
-void Codegen::codegen(const SwitchAst *ast) {
-    ExprGenPayload valExprPay = codegenExpr(ast->getValue());
-
-    // literals get cast to the widest sint type, along with comparison values
-    if (valExprPay.isUntyVal() && !promoteUntyped(valExprPay, getPrimTypeId(TypeTable::WIDEST_I))) {
-        msgs->errorSwitchNotIntegral(ast->getValue()->loc());
-        return;
-    }
-    if (valBroken(valExprPay) ||
-        !(getTypeTable()->worksAsTypeI(valExprPay.type) || getTypeTable()->worksAsTypeU(valExprPay.type))) {
-        msgs->errorSwitchNotIntegral(ast->getValue()->loc());
-        return;
-    }
-
-    // num of blocks of execution (one for each case)
-    size_t caseBlockNum = ast->getCases().size();
-    // total num of comparison expressions among cases
-    size_t caseCompNum = 0;
-
-    vector<llvm::BasicBlock*> blocks(caseBlockNum);
-    for (size_t i = 0; i < blocks.size(); ++i) {
-        blocks[i] = llvm::BasicBlock::Create(llvmContext, "case");
-    }
-    llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
-
-    vector<vector<llvm::ConstantInt*>> caseComps(caseBlockNum);
-    unordered_set<int64_t> caseVals;
-    for (size_t i = 0; i < caseBlockNum; ++i) {
-        for (const auto &comp_ : ast->getCases()[i].comparisons) {
-            ExprGenPayload compExprPay = codegenExpr(comp_.get());
-            if (!compExprPay.isUntyVal()) {
-                msgs->errorExprNotBaked(comp_->loc());
-                return;
-            }
-            if (compExprPay.untyVal.type != UntypedVal::T_SINT || !promoteUntyped(compExprPay, valExprPay.type)) {
-                msgs->errorExprCannotPromote(comp_->loc(), valExprPay.type);
-                return;
-            }
-            if (caseVals.find(compExprPay.untyVal.val_si) != caseVals.end()) {
-                msgs->errorSwitchMatchDuplicate(comp_->loc());
-                return;
-            }
-
-            caseComps[i].push_back((llvm::ConstantInt*) compExprPay.val);
-            caseVals.insert(compExprPay.untyVal.val_si);
-            ++caseCompNum;
-        }
-    }
-
-    optional<size_t> def = ast->getDefault();
-    llvm::BasicBlock *defBlock = def ? blocks[def.value()] : afterBlock;
-
-    llvm::SwitchInst *switchInst = llvmBuilder.CreateSwitch(valExprPay.val, defBlock, caseCompNum);
-    for (size_t i = 0; i < caseBlockNum; ++i) {
-        for (const auto &it : caseComps[i]) {
-            switchInst->addCase(it, blocks[i]);
-        }
-    }
-
-    llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
-    for (size_t i = 0; i < caseBlockNum; ++i) {
-        func->getBasicBlockList().push_back(blocks[i]);
-        llvmBuilder.SetInsertPoint(blocks[i]);
-
-        codegen(ast->getCases()[i].body.get(), true);
-        if (msgs->isAbort()) return;
-
-        if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
-    }
-
-    func->getBasicBlockList().push_back(afterBlock);
-    llvmBuilder.SetInsertPoint(afterBlock);
 }
 
 void Codegen::codegen(const RetAst *ast) {

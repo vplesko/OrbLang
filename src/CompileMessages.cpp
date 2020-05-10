@@ -131,22 +131,6 @@ void CompileMessages::errorBadArraySize(CodeLoc loc, long int size) {
     error(loc, ss.str());
 }
 
-void CompileMessages::errorSwitchNoBranches(CodeLoc loc) {
-    error(loc, "Switch statements must contain at least one branch.");
-}
-
-void CompileMessages::errorSwitchMultiElse(CodeLoc loc) {
-    error(loc, "Switch statements may have at most one else branch.");
-}
-
-void CompileMessages::errorSwitchNotIntegral(CodeLoc loc) {
-    error(loc, "Switch statement can only match on integer and unsigned types.");
-}
-
-void CompileMessages::errorSwitchMatchDuplicate(CodeLoc loc) {
-    error(loc, "Duplicate matching value in a switch statement.");
-}
-
 void CompileMessages::errorNotLastParam(CodeLoc loc) {
     error(loc, "No further parameters are allowed in this function signature.");
 }
