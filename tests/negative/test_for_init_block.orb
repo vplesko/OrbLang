@@ -1,3 +1,0 @@
-fnc main() {
-    for ({}; false; 0) {}
-}

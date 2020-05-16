@@ -1,4 +1,4 @@
-fnc main() {
-    let i32 cn x = 500;
-    let u16 y = x;
-}
+fnc main() () {
+    let (x:(i32 cn) 500);
+    let (y:u16 x);
+};

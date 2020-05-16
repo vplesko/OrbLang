@@ -1,14 +1,14 @@
 data Foo {
-    i32 x;
-}
+    x:i32
+};
 
 fnc makeFoo() Foo {
-    let Foo f;
+    let f:Foo;
     ret f;
-}
+};
 
-fnc main() {
-    let Foo cn f1 = makeFoo();
-    let Foo f2;
-    f1 = f2;
-}
+fnc main() () {
+    let f1:(Foo cn) (makeFoo);
+    let f2:Foo;
+    = f1 f2;
+};

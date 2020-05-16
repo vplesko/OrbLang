@@ -1,10 +1,10 @@
 data Foo {
-    i32 x;
-}
+    x:i32
+};
 
-fnc main() {
-    let Foo f1;
-    let Foo* f2 = &f1;
-    let Foo** f3 = &f2;
-    f3.x;
-}
+fnc main() () {
+    let f1:Foo;
+    let (f2:(Foo*) (& f1));
+    let (f3:(Foo**) (& f2));
+    . f3 x;
+};

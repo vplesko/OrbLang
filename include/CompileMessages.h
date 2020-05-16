@@ -39,6 +39,8 @@ public:
     void errorUnclosedMultilineComment(CodeLoc loc);
     void errorImportNotFound(CodeLoc loc, std::string &path);
     void errorImportCyclical(CodeLoc loc, std::string &path);
+    void errorUnexpectedTokenType(CodeLoc loc, Token::Type exp);
+    void errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token::Type see);
     void errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token see);
     void errorUnexpectedTokenType(CodeLoc loc, std::vector<Token::Type> exp, Token see);
     void errorNotSimple(CodeLoc loc);
@@ -89,5 +91,7 @@ public:
     void errorDataOpaqueInit(CodeLoc loc);
     void errorDataUnknownMember(CodeLoc loc, NamePool::Id name);
     void errorUndefinedType(CodeLoc loc);
+    // placeholder error, should not stay in code
     void errorUnknown(CodeLoc loc);
+    void errorInternal(CodeLoc loc);
 };

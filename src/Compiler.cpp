@@ -156,16 +156,19 @@ bool Compiler::parse(const vector<string> &inputs) {
                     break;
                 }
 
-                unique_ptr<BaseAst> node = par.parseNode();
+                unique_ptr<AstNode> node = par.parseNode();
                 if (msgs->isAbort()) return false;
                 
-                if (node->type() == AST_Import) {
-                    string path = canonical(((ImportAst*)node.get())->getFile());
+                CompilerAction act = codegen->codegenNode(node.get());
+                if (msgs->isAbort()) return false;
+
+                if (act.kind == CompilerAction::Kind::kImport) {
+                    string path = canonical(act.file);
                     ImportTransRes imres = followImport(path, par, namePool.get(), msgs.get(), lexers);
                     if (imres == ITR_FAIL) {
                         return false;
                     } else if (imres == ITR_CYCLICAL) {
-                        msgs->errorImportCyclical(node->loc(), path);
+                        msgs->errorImportCyclical(node->codeLoc, path);
                         return false;
                     }
                     
@@ -173,9 +176,6 @@ bool Compiler::parse(const vector<string> &inputs) {
                         trace.push(par.getLexer());
                     }
                     break;
-                } else {
-                    codegen->codegenNode(node.get());
-                    if (msgs->isAbort()) return false;
                 }
             }
         }

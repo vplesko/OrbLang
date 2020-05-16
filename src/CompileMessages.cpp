@@ -94,6 +94,18 @@ void CompileMessages::errorImportCyclical(CodeLoc loc, std::string &path) {
     error(loc, ss.str());
 }
 
+void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp) {
+    stringstream ss;
+    ss << "Unexpected symbol found. Expected '" << errorString(exp) << "'.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token::Type see) {
+    stringstream ss;
+    ss << "Unexpected symbol found. Expected '" << errorString(exp) << "', instead found '" << errorString(see) << "'.";
+    error(loc, ss.str());
+}
+
 void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token see) {
     stringstream ss;
     ss << "Unexpected symbol found. Expected '" << errorString(exp) << "', instead found '" << errorString(see) << "'.";
@@ -369,4 +381,8 @@ void CompileMessages::errorUndefinedType(CodeLoc loc) {
 
 void CompileMessages::errorUnknown(CodeLoc loc) {
     error(loc, "Unknown error occured.");
+}
+
+void CompileMessages::errorInternal(CodeLoc loc) {
+    error(loc, "An internal error occured. You should not be seeing this.");
 }

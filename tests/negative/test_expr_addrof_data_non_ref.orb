@@ -1,10 +1,10 @@
-data Foo { i32 x; }
+data Foo { x:i32 };
 
 fnc foo() Foo {
-    let Foo f;
+    let f:Foo;
     ret f;
-}
+};
 
-fnc main() {
-    &foo();
-}
+fnc main() () {
+    & (foo);
+};

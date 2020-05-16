@@ -1,6 +1,6 @@
 data Foo;
 
-let Foo f;
+let f:Foo;
 
-fnc main() {
-}
+fnc main() () {
+};

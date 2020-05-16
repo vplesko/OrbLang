@@ -1,4 +1,4 @@
-let i32 & = 55;
+let (&:i32 55);
 
-fnc main() {
-}
+fnc main() () {
+};

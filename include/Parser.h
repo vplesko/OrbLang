@@ -24,24 +24,10 @@ class Parser {
     bool matchOrError(Token::Type type);
     CodeLoc loc() const;
 
-    std::unique_ptr<ExprAst> prim();
-    std::unique_ptr<ExprAst> expr();
-    std::unique_ptr<TypeAst> type();
-    std::vector<InitInfo> inits();
-    std::unique_ptr<DeclAst> decl();
-    std::unique_ptr<StmntAst> simple();
-    std::unique_ptr<StmntAst> if_stmnt();
-    std::unique_ptr<StmntAst> for_stmnt();
-    std::unique_ptr<StmntAst> while_stmnt();
-    std::unique_ptr<StmntAst> do_while_stmnt();
-    std::unique_ptr<StmntAst> break_stmnt();
-    std::unique_ptr<StmntAst> continue_stmnt();
-    std::unique_ptr<StmntAst> ret();
-    std::unique_ptr<StmntAst> stmnt();
-    std::unique_ptr<BlockAst> block();
-    std::unique_ptr<BaseAst> func();
-    std::unique_ptr<DataAst> data();
-    std::unique_ptr<ImportAst> import();
+    std::unique_ptr<AstNode> makeEmptyTerm();
+
+    std::unique_ptr<AstNode> parseType();
+    std::unique_ptr<AstNode> parseTerm();
 
 public:
     Parser(NamePool *namePool, SymbolTable *symbolTable, CompileMessages *msgs);
@@ -49,7 +35,7 @@ public:
     void setLexer(Lexer *lex_) { lex = lex_; }
     Lexer* getLexer() const { return lex; }
 
-    std::unique_ptr<BaseAst> parseNode();
+    std::unique_ptr<AstNode> parseNode();
 
     bool isOver() const { return peek().type == Token::T_END; }
 };

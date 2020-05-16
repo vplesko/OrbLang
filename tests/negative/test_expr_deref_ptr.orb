@@ -1,5 +1,5 @@
-fnc main() {
-    let i32 x;
-    let ptr p = ptr(&x);
-    *p;
-}
+fnc main() () {
+    let x:i32;
+    let p:ptr (cast ptr (& x));
+    * p;
+};

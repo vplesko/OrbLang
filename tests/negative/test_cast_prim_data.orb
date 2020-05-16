@@ -1,7 +1,7 @@
 data Foo {
-    i32 x;
-}
+    x:i32
+};
 
-fnc main() {
-    (Foo(100));
-}
+fnc main() () {
+    cast Foo 100;
+};

@@ -248,6 +248,202 @@ llvm::Constant* Codegen::createString(const std::string &str) {
     return llvm::ConstantExpr::getPointerCast(glob, getType(getTypeTable()->getTypeIdStr()));
 }
 
+bool Codegen::checkDefinedTypeOrError(TypeTable::Id type, CodeLoc codeLoc) {
+    if (!getTypeTable()->isNonOpaqueType(type)) {
+        if (getTypeTable()->isDataType(type)) {
+            msgs->errorDataOpaqueInit(codeLoc);
+            return false;
+        } else {
+            msgs->errorUndefinedType(codeLoc);
+            return false;
+        }
+    }
+    return true;
+}
+
+optional<Token::Type> Codegen::getStartingKeyword(const AstNode *ast) const {
+    if (ast->kind != AstNode::Kind::kTuple ||
+        ast->children.empty() ||
+        ast->children[0]->kind != AstNode::Kind::kTerminal ||
+        ast->children[0]->terminal->kind != AstTerminal::Kind::kKeyword) {
+        return nullopt;
+    }
+    
+    return ast->children[0]->terminal->keyword;
+}
+
+bool Codegen::checkStartingKeyword(const AstNode *ast, Token::Type t, bool orError) {
+    optional<Token::Type> tokTy = getStartingKeyword(ast);
+    if (!tokTy.has_value()) {
+        if (orError) msgs->errorUnknown(ast->codeLoc);
+        return false;
+    } else if (tokTy.value() != t) {
+        if (orError) msgs->errorUnexpectedTokenType(ast->codeLoc, tokTy.value());
+        return false;
+    }
+
+    return true;
+}
+
+bool Codegen::checkTerminal(const AstNode *ast, bool orError) {
+    if (ast->kind != AstNode::Kind::kTerminal) {
+        if (orError) msgs->errorUnknown(ast->codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
+bool Codegen::checkEmptyTerminal(const AstNode *ast, bool orError) {
+    if (ast->kind != AstNode::Kind::kTerminal || ast->terminal->kind != AstTerminal::Kind::kEmpty) {
+        if (orError) msgs->errorUnknown(ast->codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
+bool Codegen::checkEllipsis(const AstNode *ast, bool orError) {
+    if (ast->kind != AstNode::Kind::kTerminal ||
+        ast->terminal->kind != AstTerminal::Kind::kKeyword ||
+        ast->terminal->keyword != Token::T_ELLIPSIS) {
+        if (orError) msgs->errorUnknown(ast->codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
+bool Codegen::checkNotTerminal(const AstNode *ast, bool orError) {
+    if (ast->kind == AstNode::Kind::kTerminal) {
+        if (orError) msgs->errorUnknown(ast->codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
+bool Codegen::checkBlock(const AstNode *ast, bool orError) {
+    if (ast->kind == AstNode::Kind::kTerminal && ast->terminal->kind != AstTerminal::Kind::kEmpty) {
+        if (orError) msgs->errorUnknown(ast->codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
+bool Codegen::checkExactlyChildren(const AstNode *ast, size_t n, bool orError) {
+    if (ast->kind != AstNode::Kind::kTuple ||
+        ast->children.size() != n) {
+        if (orError) msgs->errorUnknown(ast->codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
+bool Codegen::checkAtLeastChildren(const AstNode *ast, size_t n, bool orError) {
+    if (ast->kind != AstNode::Kind::kTuple ||
+        ast->children.size() < n) {
+        if (orError) msgs->errorUnknown(ast->codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
+bool Codegen::checkAtMostChildren(const AstNode *ast, size_t n, bool orError) {
+    if (ast->kind != AstNode::Kind::kTuple ||
+        ast->children.size() > n) {
+        if (orError) msgs->errorUnknown(ast->codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
+bool Codegen::checkBetweenChildren(const AstNode *ast, std::size_t nLo, std::size_t nHi, bool orError) {
+    if (ast->kind != AstNode::Kind::kTuple ||
+        !between(ast->children.size(), nLo, nHi)) {
+        if (orError) msgs->errorUnknown(ast->codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
+optional<NamePool::Id> Codegen::getId(const AstNode *ast, bool orError) {
+    if (!checkTerminal(ast, orError)) return nullopt;
+
+    if (ast->terminal->kind != AstTerminal::Kind::kId) {
+        if (orError) msgs->errorUnknown(ast->codeLoc);
+        return nullopt;
+    }
+
+    return ast->terminal->id;
+}
+
+optional<Codegen::NameTypePair> Codegen::getIdTypePair(const AstNode *ast, bool orError) {
+    optional<NamePool::Id> id = getId(ast, orError);
+    if (!id.has_value()) return nullopt;
+
+    if (ast->type == nullptr) {
+        if (orError) msgs->errorUnknown(ast->codeLoc);
+        return nullopt;
+    }
+    optional<TypeTable::Id> type = codegenType(ast->type->get());
+    if (!type.has_value()) return nullopt;
+
+    NameTypePair idType;
+    idType.first = id.value();
+    idType.second = type.value();
+    return idType;
+}
+
+optional<Token::Type> Codegen::getKeyword(const AstNode *ast, bool orError) {
+    if (!checkTerminal(ast, orError)) return nullopt;
+
+    if (ast->terminal->kind != AstTerminal::Kind::kKeyword) {
+        if (orError) msgs->errorUnknown(ast->codeLoc);
+        return nullopt;
+    }
+
+    return ast->terminal->keyword;
+}
+
+optional<Token::Oper> Codegen::getOper(const AstNode *ast, bool orError) {
+    if (!checkTerminal(ast, orError)) return nullopt;
+
+    if (ast->terminal->kind != AstTerminal::Kind::kOper) {
+        if (orError) msgs->errorUnknown(ast->codeLoc);
+        return nullopt;
+    }
+
+    return ast->terminal->oper;
+}
+
+optional<UntypedVal> Codegen::getUntypedVal(const AstNode *ast, bool orError) {
+    if (!checkTerminal(ast, orError)) return nullopt;
+
+    if (ast->terminal->kind != AstTerminal::Kind::kVal) {
+        if (orError) msgs->errorUnknown(ast->codeLoc);
+        return nullopt;
+    }
+
+    return ast->terminal->val;
+}
+
+optional<Token::Attr> Codegen::getAttr(const AstNode *ast, bool orError) {
+    if (!checkTerminal(ast, orError)) return nullopt;
+
+    if (ast->terminal->kind != AstTerminal::Kind::kAttribute) {
+        if (orError) msgs->errorUnknown(ast->codeLoc);
+        return nullopt;
+    }
+
+    return ast->terminal->attribute;
+}
+
 void Codegen::printout() const {
     llvmModule->print(llvm::outs(), nullptr);
 }

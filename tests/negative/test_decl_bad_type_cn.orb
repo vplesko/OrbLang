@@ -1,5 +1,5 @@
 fnc main() {
-    let i32 x = 100;
-    let i32 cn* a = &x;
-    let i32* b = a;
-}
+    let (x:i32 100);
+    let (a:(i32 cn*) &x);
+    let (b:(i32*) a);
+};

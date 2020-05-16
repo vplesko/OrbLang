@@ -4,6 +4,7 @@
 #include <optional>
 #include "SymbolTable.h"
 #include "AST.h"
+#include "Values.h"
 #include "CompileMessages.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/IRBuilder.h"
@@ -30,9 +31,18 @@ class Codegen {
         void resetUntyVal() { untyVal.type = UntypedVal::T_NONE; }
     };
 
+    // checks if both val and unty val are invalid
+    bool valueBroken(const ExprGenPayload &e);
+    // checks if val is invalid
+    bool valBroken(const ExprGenPayload &e);
+    // checks if ref is invalid
+    bool refBroken(const ExprGenPayload &e);
+
     bool isBool(const ExprGenPayload &e) {
         return e.isUntyVal() ? e.untyVal.type == UntypedVal::T_BOOL : getTypeTable()->worksAsTypeB(e.type);
     }
+
+    bool promoteUntyped(ExprGenPayload &e, TypeTable::Id t);
 
     TypeTable* getTypeTable() { return symbolTable->getTypeTable(); }
     const TypeTable* getTypeTable() const { return symbolTable->getTypeTable(); }
@@ -54,44 +64,58 @@ class Codegen {
     bool isGlobalScope() const;
     bool isBlockTerminated() const;
 
-    // checks if both val and unty val are invalid
-    bool valueBroken(const ExprGenPayload &e);
-    // checks if val is invalid
-    bool valBroken(const ExprGenPayload &e);
-    // checks if ref is invalid
-    bool refBroken(const ExprGenPayload &e);
+    bool checkDefinedTypeOrError(TypeTable::Id type, CodeLoc codeLoc);
 
-    bool promoteUntyped(ExprGenPayload &e, TypeTable::Id t);
+    typedef std::pair<NamePool::Id, TypeTable::Id> NameTypePair;
 
-    ExprGenPayload codegen(const UntypedExprAst *ast);
-    ExprGenPayload codegen(const VarExprAst *ast);
-    ExprGenPayload codegen(const IndExprAst *ast);
-    ExprGenPayload codegen(const DotExprAst *ast);
-    ExprGenPayload codegen(const UnExprAst *ast);
+    std::optional<Token::Type> getStartingKeyword(const AstNode *ast) const;
+    bool checkStartingKeyword(const AstNode *ast, Token::Type t, bool orError);
+    bool checkTerminal(const AstNode *ast, bool orError);
+    bool checkEmptyTerminal(const AstNode *ast, bool orError);
+    bool checkEllipsis(const AstNode *ast, bool orError);
+    bool checkNotTerminal(const AstNode *ast, bool orError);
+    bool checkBlock(const AstNode *ast, bool orError);
+    bool checkExactlyChildren(const AstNode *ast, std::size_t n, bool orError);
+    bool checkAtLeastChildren(const AstNode *ast, std::size_t n, bool orError);
+    bool checkAtMostChildren(const AstNode *ast, std::size_t n, bool orError);
+    bool checkBetweenChildren(const AstNode *ast, std::size_t nLo, std::size_t nHi, bool orError);
+    std::optional<NamePool::Id> getId(const AstNode *ast, bool orError);
+    std::optional<NameTypePair> getIdTypePair(const AstNode *ast, bool orError);
+    std::optional<Token::Type> getKeyword(const AstNode *ast, bool orError);
+    std::optional<Token::Oper> getOper(const AstNode *ast, bool orError);
+    std::optional<UntypedVal> getUntypedVal(const AstNode *ast, bool orError);
+    std::optional<Token::Attr> getAttr(const AstNode *ast, bool orError);
+
+    ExprGenPayload codegenUntypedVal(const AstNode *ast);
+    ExprGenPayload codegenVar(const AstNode *ast);
+    ExprGenPayload codegenInd(const AstNode *ast);
+    ExprGenPayload codegenDot(const AstNode *ast);
+    ExprGenPayload codegenUn(const AstNode *ast);
     ExprGenPayload codegenUntypedUn(CodeLoc codeLoc, Token::Oper op, UntypedVal unty);
-    ExprGenPayload codegen(const BinExprAst *ast);
+    ExprGenPayload codegenBin(const AstNode *ast);
     // helper function for short-circuit evaluation of boolean AND and OR
-    ExprGenPayload codegenLogicAndOr(const BinExprAst *ast);
-    ExprGenPayload codegenLogicAndOrGlobalScope(const BinExprAst *ast);
+    ExprGenPayload codegenLogicAndOr(const AstNode *ast);
+    ExprGenPayload codegenLogicAndOrGlobalScope(const AstNode *ast);
     ExprGenPayload codegenUntypedBin(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR);
-    ExprGenPayload codegen(const CallExprAst *ast);
-    ExprGenPayload codegen(const CastExprAst *ast);
-    ExprGenPayload codegen(const ArrayExprAst *ast);
-    void codegen(const DeclAst *ast);
-    void codegen(const IfAst *ast);
-    void codegen(const ForAst *ast);
-    void codegen(const WhileAst *ast);
-    void codegen(const DoWhileAst *ast);
-    void codegen(const BreakAst *ast);
-    void codegen(const ContinueAst *ast);
-    void codegen(const RetAst *ast);
-    void codegen(const DataAst *ast);
-    void codegen(const BlockAst *ast, bool makeScope);
-    std::optional<FuncValue> codegen(const FuncProtoAst *ast, bool definition);
-    void codegen(const FuncAst *ast);
+    ExprGenPayload codegenCall(const AstNode *ast);
+    ExprGenPayload codegenCast(const AstNode *ast);
+    ExprGenPayload codegenArr(const AstNode *ast);
+    std::optional<std::string> codegenImport(const AstNode *ast);
+    void codegenLet(const AstNode *ast);
+    void codegenIf(const AstNode *ast);
+    void codegenFor(const AstNode *ast);
+    void codegenWhile(const AstNode *ast);
+    void codegenDo(const AstNode *ast);
+    void codegenBreak(const AstNode *ast);
+    void codegenContinue(const AstNode *ast);
+    void codegenRet(const AstNode *ast);
+    void codegenData(const AstNode *ast);
+    void codegenAll(const AstNode *ast, bool makeScope);
+    std::optional<FuncValue> codegenFuncProto(const AstNode *ast, bool definition);
+    void codegenFunc(const AstNode *ast);
 
-    llvm::Type* codegenType(const TypeAst *ast);
-    ExprGenPayload codegenExpr(const ExprAst *ast);
+    std::optional<TypeTable::Id> codegenType(const AstNode *ast);
+    ExprGenPayload codegenExpr(const AstNode *ast);
 
 public:
     Codegen(NamePool *namePool, SymbolTable *symbolTable, CompileMessages *msgs);
@@ -105,7 +129,7 @@ public:
     llvm::Type* genPrimTypeF64();
     llvm::Type* genPrimTypePtr();
 
-    void codegenNode(const BaseAst *ast, bool blockMakeScope = true);
+    CompilerAction codegenNode(const AstNode *ast, bool blockMakeScope = true);
 
     void printout() const;
 

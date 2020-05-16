@@ -1,5 +1,5 @@
-fnc foo() {}
+fnc foo() () {};
 
-fnc main() {
-    let foo x = 0;
-}
+fnc main() () {
+    let (x:foo 0);
+};

@@ -1,1 +1,1 @@
-fnc foo() {}
+fnc foo() () {};

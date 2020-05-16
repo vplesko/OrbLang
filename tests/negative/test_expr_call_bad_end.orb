@@ -1,5 +1,0 @@
-fnc foo(i32 x, i32 y) {}
-
-fnc main() {
-    foo(1, 2};
-}

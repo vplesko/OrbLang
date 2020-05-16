@@ -1,5 +1,0 @@
-fnc main() {
-    while (false) {
-        continue
-    }
-}

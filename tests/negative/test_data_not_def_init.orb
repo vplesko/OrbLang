@@ -1,5 +1,5 @@
 data Foo;
 
-fnc main() {
-    let Foo f;
-}
+fnc main() () {
+    let f:Foo;
+};

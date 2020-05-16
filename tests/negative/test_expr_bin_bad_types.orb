@@ -1,5 +1,5 @@
-fnc main() {
-    let i32 x = 1;
-    let c8 a = 'a';
-    x+a;
-}
+fnc main() () {
+    let (x:i32 1);
+    let (a:c8 'a');
+    + x a;
+};

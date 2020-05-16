@@ -1,4 +1,4 @@
-fnc main() {
-    let i32[4] cn array{0, 1, 2, 3};
-    array[0] = 100;
-}
+fnc main() () {
+    let array:(i32 4 cn) (arr (i32 4) 0 1 2 3);
+    = ([] array 0) 100;
+};

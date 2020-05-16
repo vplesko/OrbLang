@@ -1,8 +1,8 @@
 data Foo {
-    i32 a, b;
+    a:i32 b:i32
 }
 
-fnc main() {
-    let Foo f;
-    f.c;
-}
+fnc main() () {
+    let f:Foo;
+    . f c;
+};

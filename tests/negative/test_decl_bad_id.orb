@@ -1,4 +1,4 @@
-fnc main() {
-    let i32 x = 100;
-    let u64 ret = 200;
-}
+fnc main() () {
+    let (x:i32 100);
+    let (ret:u64 200);
+};

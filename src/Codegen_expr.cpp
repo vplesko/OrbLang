@@ -1,102 +1,127 @@
 #include "Codegen.h"
 using namespace std;
 
-Codegen::ExprGenPayload Codegen::codegenExpr(const ExprAst *ast) {
-    switch (ast->type()) {
-    case AST_UntypedExpr:
-        return codegen((const UntypedExprAst*)ast);
-    case AST_VarExpr:
-        return codegen((const VarExprAst*)ast);
-    case AST_IndExpr:
-        return codegen((const IndExprAst*)ast);
-    case AST_DotExpr:
-        return codegen((const DotExprAst*)ast);
-    case AST_UnExpr:
-        return codegen((const UnExprAst*)ast);
-    case AST_BinExpr:
-        return codegen((const BinExprAst*)ast);
-    case AST_CallExpr:
-        return codegen((const CallExprAst*)ast);
-    case AST_CastExpr:
-        return codegen((const CastExprAst*)ast);
-    case AST_ArrayExpr:
-        return codegen((const ArrayExprAst*)ast);
-    default:
-        // should not happen
-        msgs->errorUnknown(ast->loc());
-        return {};
+Codegen::ExprGenPayload Codegen::codegenExpr(const AstNode *ast) {
+    optional<Token::Type> keyw = getStartingKeyword(ast);
+
+    if (getUntypedVal(ast, false).has_value()) {
+        return codegenUntypedVal(ast);
+    } else if (getId(ast, false).has_value()) {
+        return codegenVar(ast);
+    } else if (keyw.has_value()) {
+        optional<Token::Type> keyw = getStartingKeyword(ast);
+
+        switch (keyw.value()) {
+        case Token::T_BRACE_L_SQR:
+            return codegenInd(ast);
+        case Token::T_DOT:
+            return codegenDot(ast);
+        case Token::T_CAST:
+            return codegenCast(ast);
+        case Token::T_ARR:
+            return codegenArr(ast);
+        default:
+            msgs->errorInternal(ast->codeLoc);
+            return {};
+        }
+    } else if (checkNotTerminal(ast, false)) {
+        if (getId(ast->children[0].get(), false).has_value()) {
+            return codegenCall(ast);
+        } else if (getOper(ast->children[0].get(), false).has_value()) {
+            if (ast->children.size() == 2) {
+                return codegenUn(ast);
+            } else if (ast->children.size() == 3) {
+                return codegenBin(ast);
+            }
+        }
     }
+    
+    msgs->errorUnknown(ast->codeLoc);
+    return {};
 }
 
-Codegen::ExprGenPayload Codegen::codegen(const UntypedExprAst *ast) {
-    if (ast->getVal().type == UntypedVal::T_NONE) {
+Codegen::ExprGenPayload Codegen::codegenUntypedVal(const AstNode *ast) {
+    optional<UntypedVal> val = getUntypedVal(ast, true);
+    if (!val.has_value()) return {};
+
+    if (val.value().type == UntypedVal::T_NONE) {
         // should not happen
-        msgs->errorUnknown(ast->loc());
+        msgs->errorInternal(ast->codeLoc);
         return {};
     }
 
-    return { .untyVal = ast->getVal() };
+    return { .untyVal = val.value() };
 }
 
-Codegen::ExprGenPayload Codegen::codegen(const VarExprAst *ast) {
-    optional<SymbolTable::VarPayload> var = symbolTable->getVar(ast->getNameId());
+Codegen::ExprGenPayload Codegen::codegenVar(const AstNode *ast) {
+    optional<NamePool::Id> name = getId(ast, true);
+    if (!name.has_value()) return {};
+
+    optional<SymbolTable::VarPayload> var = symbolTable->getVar(name.value());
     if (!var.has_value()) {
-        msgs->errorVarNotFound(ast->loc(), ast->getNameId());
+        msgs->errorVarNotFound(ast->codeLoc, name.value());
         return {};
     }
+
     return {var.value().type,
         llvmBuilder.CreateLoad(var.value().val,
-        namePool->get(ast->getNameId())),
+        namePool->get(name.value())),
         var.value().val};
 }
 
-Codegen::ExprGenPayload Codegen::codegen(const IndExprAst *ast) {
-    ExprGenPayload baseExprPay = codegenExpr(ast->getBase());
+Codegen::ExprGenPayload Codegen::codegenInd(const AstNode *ast) {
+    if (!checkStartingKeyword(ast, Token::T_BRACE_L_SQR, true) ||
+        !checkExactlyChildren(ast, 3, true)) {
+        return {};
+    }
+
+    const AstNode *nodeBase = ast->children[1].get();
+    const AstNode *nodeInd = ast->children[2].get();
+
+    ExprGenPayload baseExprPay = codegenExpr(nodeBase);
     if (valueBroken(baseExprPay)) return {};
 
     if (baseExprPay.isUntyVal()) {
         if (baseExprPay.untyVal.type == UntypedVal::T_STRING) {
             if (!promoteUntyped(baseExprPay, getTypeTable()->getTypeIdStr())) {
-                // should not happen
-                msgs->errorUnknown(ast->loc());
+                msgs->errorInternal(nodeBase->codeLoc);
                 return {};
             }
         } else {
-            msgs->errorExprIndexOnBadType(ast->loc());
+            msgs->errorExprIndexOnBadType(ast->codeLoc);
             return {};
         }
     }
 
-    ExprGenPayload indExprPay = codegenExpr(ast->getInd());
+    ExprGenPayload indExprPay = codegenExpr(nodeInd);
     if (valueBroken(indExprPay)) return {};
 
     if (indExprPay.isUntyVal()) {
         if (indExprPay.untyVal.type == UntypedVal::T_SINT) {
             if (!promoteUntyped(indExprPay, getTypeTable()->shortestFittingTypeIId(indExprPay.untyVal.val_si))) {
-                // should not happen
-                msgs->errorUnknown(ast->getInd()->loc());
+                msgs->errorInternal(nodeInd->codeLoc);
                 return {};
             }
             if (getTypeTable()->worksAsTypeArr(baseExprPay.type)) {
                 size_t len = getTypeTable()->extractLenOfArr(baseExprPay.type).value();
                 if (indExprPay.untyVal.val_si < 0 || ((size_t) indExprPay.untyVal.val_si) >= len) {
-                    msgs->warnExprIndexOutOfBounds(ast->getInd()->loc());
+                    msgs->warnExprIndexOutOfBounds(nodeInd->codeLoc);
                 }
             }
         } else {
-            msgs->errorExprIndexNotIntegral(ast->getInd()->loc());
+            msgs->errorExprIndexNotIntegral(nodeInd->codeLoc);
             return {};
         }
     }
 
     if (!getTypeTable()->worksAsTypeI(indExprPay.type) && !getTypeTable()->worksAsTypeU(indExprPay.type)) {
-        msgs->errorExprIndexNotIntegral(ast->getInd()->loc());
+        msgs->errorExprIndexNotIntegral(nodeInd->codeLoc);
         return {};
     }
 
     optional<TypeTable::Id> typeId = symbolTable->getTypeTable()->addTypeIndexOf(baseExprPay.type);
     if (!typeId) {
-        msgs->errorExprIndexOnBadType(ast->loc(), baseExprPay.type);
+        msgs->errorExprIndexOnBadType(ast->codeLoc, baseExprPay.type);
         return {};
     }
 
@@ -120,18 +145,28 @@ Codegen::ExprGenPayload Codegen::codegen(const IndExprAst *ast) {
             retPay.val = llvmBuilder.CreateLoad(tmp, "index_tmp");
         }
     } else {
-        // should not happen, verified above
-        msgs->errorUnknown(ast->loc());
+        msgs->errorInternal(ast->codeLoc);
         return {};
     }
 
     return retPay;
 }
 
-Codegen::ExprGenPayload Codegen::codegen(const DotExprAst *ast) {
-    ExprGenPayload baseExpr = codegenExpr(ast->getBase());
+Codegen::ExprGenPayload Codegen::codegenDot(const AstNode *ast) {
+    if (!checkStartingKeyword(ast, Token::T_DOT, true) ||
+        !checkExactlyChildren(ast, 3, true)) {
+        return {};
+    }
+
+    const AstNode *nodeBase = ast->children[1].get();
+    const AstNode *nodeMemb = ast->children[2].get();
+
+    optional<NamePool::Id> membName = getId(nodeMemb, true);
+    if (!membName.has_value()) return {};
+
+    ExprGenPayload baseExpr = codegenExpr(nodeBase);
     if (baseExpr.isUntyVal()) {
-        msgs->errorExprDotInvalidBase(ast->getBase()->loc());
+        msgs->errorExprDotInvalidBase(nodeBase->codeLoc);
         return {};
     }
     if (valueBroken(baseExpr)) return {};
@@ -141,8 +176,7 @@ Codegen::ExprGenPayload Codegen::codegen(const DotExprAst *ast) {
     if (getTypeTable()->worksAsTypeP(leftExpr.type)) {
         optional<TypeTable::Id> derefType = symbolTable->getTypeTable()->addTypeDerefOf(leftExpr.type);
         if (!derefType.has_value()) {
-            // should not happen
-            msgs->errorUnknown(ast->getBase()->loc());
+            msgs->errorInternal(nodeBase->codeLoc);
             return {};
         }
         leftExpr.type = derefType.value();
@@ -152,20 +186,20 @@ Codegen::ExprGenPayload Codegen::codegen(const DotExprAst *ast) {
     
     optional<const TypeTable::DataType*> dataTypeOpt = getTypeTable()->extractDataType(leftExpr.type);
     if (!dataTypeOpt.has_value()) {
-        msgs->errorExprDotInvalidBase(ast->getBase()->loc());
+        msgs->errorExprDotInvalidBase(nodeBase->codeLoc);
         return {};
     }
     const TypeTable::DataType &dataType = *(dataTypeOpt.value());
 
     optional<size_t> memberIndOpt;
     for (size_t i = 0; i < dataType.members.size(); ++i) {
-        if (dataType.members[i].name == ast->getMember()->getNameId()) {
+        if (dataType.members[i].name == membName.value()) {
             memberIndOpt = i;
             break;
         }
     }
     if (!memberIndOpt.has_value()) {
-        msgs->errorDataUnknownMember(ast->getMember()->loc(), ast->getMember()->getNameId());
+        msgs->errorDataUnknownMember(nodeMemb->codeLoc, membName.value());
         return {};
     }
     size_t memberInd = memberIndOpt.value();
@@ -190,77 +224,88 @@ Codegen::ExprGenPayload Codegen::codegen(const DotExprAst *ast) {
     return exprRet;
 }
 
-Codegen::ExprGenPayload Codegen::codegen(const UnExprAst *ast) {
-    ExprGenPayload exprPay = codegenExpr(ast->getExpr());
+Codegen::ExprGenPayload Codegen::codegenUn(const AstNode *ast) {
+    if (!checkExactlyChildren(ast, 2, true)) {
+        return {};
+    }
+
+    const AstNode *nodeOp = ast->children[0].get();
+    const AstNode *nodeVal = ast->children[1].get();
+
+    optional<Token::Oper> optOp = getOper(nodeOp, true);
+    if (!optOp.has_value()) return {};
+    Token::Oper op = optOp.value();
+
+    ExprGenPayload exprPay = codegenExpr(nodeVal);
     if (valueBroken(exprPay)) return {};
 
-    if (exprPay.isUntyVal()) return codegenUntypedUn(ast->loc(), ast->getOp(), exprPay.untyVal);
+    if (exprPay.isUntyVal()) return codegenUntypedUn(ast->codeLoc, op, exprPay.untyVal);
 
     ExprGenPayload exprRet;
     exprRet.type = exprPay.type;
-    if (ast->getOp() == Token::O_ADD) {
+    if (op == Token::O_ADD) {
         if (!(getTypeTable()->worksAsTypeI(exprPay.type) || getTypeTable()->worksAsTypeU(exprPay.type) || getTypeTable()->worksAsTypeF(exprPay.type))) {
-            msgs->errorExprUnBadType(ast->loc(), ast->getOp(), exprPay.type);
+            msgs->errorExprUnBadType(ast->codeLoc, op, exprPay.type);
             return {};
         }
         exprRet.val = exprPay.val;
-    } else if (ast->getOp() == Token::O_SUB) {
+    } else if (op == Token::O_SUB) {
         if (getTypeTable()->worksAsTypeI(exprPay.type)) {
             exprRet.val = llvmBuilder.CreateNeg(exprPay.val, "sneg_tmp");
         } else if (getTypeTable()->worksAsTypeF(exprPay.type)) {
             exprRet.val = llvmBuilder.CreateFNeg(exprPay.val, "fneg_tmp");
         } else {
-            msgs->errorExprUnBadType(ast->loc(), ast->getOp(), exprPay.type);
+            msgs->errorExprUnBadType(ast->codeLoc, op, exprPay.type);
             return {};
         }
-    } else if (ast->getOp() == Token::O_INC) {
+    } else if (op == Token::O_INC) {
         if (getTypeTable()->worksAsTypeCn(exprPay.type)) {
-            msgs->errorExprUnOnCn(ast->loc(), ast->getOp());
+            msgs->errorExprUnOnCn(ast->codeLoc, op);
             return {};
         }
         if (!(getTypeTable()->worksAsTypeI(exprPay.type) || getTypeTable()->worksAsTypeU(exprPay.type)) || refBroken(exprPay)) {
-            msgs->errorExprUnBadType(ast->loc(), ast->getOp(), exprPay.type);
+            msgs->errorExprUnBadType(ast->codeLoc, op, exprPay.type);
             return {};
         }
         exprRet.val = llvmBuilder.CreateAdd(exprPay.val, llvm::ConstantInt::get(getType(exprPay.type), 1), "inc_tmp");
         exprRet.ref = exprPay.ref;
         llvmBuilder.CreateStore(exprRet.val, exprRet.ref);
-    } else if (ast->getOp() == Token::O_DEC) {
+    } else if (op == Token::O_DEC) {
         if (getTypeTable()->worksAsTypeCn(exprPay.type)) {
-            msgs->errorExprUnOnCn(ast->loc(), ast->getOp());
+            msgs->errorExprUnOnCn(ast->codeLoc, op);
             return {};
         }
         if (!(getTypeTable()->worksAsTypeI(exprPay.type) || getTypeTable()->worksAsTypeU(exprPay.type)) || refBroken(exprPay)) {
-            msgs->errorExprUnBadType(ast->loc(), ast->getOp(), exprPay.type);
+            msgs->errorExprUnBadType(ast->codeLoc, op, exprPay.type);
             return {};
         }
         exprRet.val = llvmBuilder.CreateSub(exprPay.val, llvm::ConstantInt::get(getType(exprPay.type), 1), "dec_tmp");
         exprRet.ref = exprPay.ref;
         llvmBuilder.CreateStore(exprRet.val, exprRet.ref);
-    } else if (ast->getOp() == Token::O_BIT_NOT) {
+    } else if (op == Token::O_BIT_NOT) {
         if (!(getTypeTable()->worksAsTypeI(exprPay.type) || getTypeTable()->worksAsTypeU(exprPay.type))) {
-            msgs->errorExprUnBadType(ast->loc(), ast->getOp(), exprPay.type);
+            msgs->errorExprUnBadType(ast->codeLoc, op, exprPay.type);
             return {};
         }
         exprRet.val = llvmBuilder.CreateNot(exprPay.val, "bit_not_tmp");
-    } else if (ast->getOp() == Token::O_NOT) {
+    } else if (op == Token::O_NOT) {
         if (!getTypeTable()->worksAsTypeB(exprPay.type)) {
-            msgs->errorExprUnBadType(ast->loc(), ast->getOp(), exprPay.type);
+            msgs->errorExprUnBadType(ast->codeLoc, op, exprPay.type);
             return {};
         }
         exprRet.val = llvmBuilder.CreateNot(exprPay.val, "not_tmp");
-    } else if (ast->getOp() == Token::O_MUL) {
+    } else if (op == Token::O_MUL) {
         optional<TypeTable::Id> typeId = symbolTable->getTypeTable()->addTypeDerefOf(exprPay.type);
         if (!typeId || !getTypeTable()->isNonOpaqueType(typeId.value())) {
-            msgs->errorExprDerefOnBadType(ast->loc(), exprPay.type);
+            msgs->errorExprDerefOnBadType(ast->codeLoc, exprPay.type);
             return {};
         }
         exprRet.type = typeId.value();
         exprRet.val = llvmBuilder.CreateLoad(exprPay.val, "deref_tmp");
         exprRet.ref = exprPay.val;
-    } else if (ast->getOp() == Token::O_BIT_AND) {
+    } else if (op == Token::O_BIT_AND) {
         if (exprPay.ref == nullptr) {
-            msgs->errorExprAddressOfNoRef(ast->loc());
+            msgs->errorExprAddressOfNoRef(ast->codeLoc);
             return {};
         }
         TypeTable::Id typeId = symbolTable->getTypeTable()->addTypeAddrOf(exprPay.type);
@@ -268,7 +313,7 @@ Codegen::ExprGenPayload Codegen::codegen(const UnExprAst *ast) {
         exprRet.val = exprPay.ref;
     } else {
         // should not happen
-        msgs->errorUnknown(ast->loc());
+        msgs->errorUnknown(ast->codeLoc);
         return {};
     }
     return exprRet;
@@ -319,44 +364,56 @@ Codegen::ExprGenPayload Codegen::codegenUntypedUn(CodeLoc codeLoc, Token::Oper o
     return exprRet;
 }
 
-Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
-    if (ast->getOp() == Token::O_AND || ast->getOp() == Token::O_OR) {
+Codegen::ExprGenPayload Codegen::codegenBin(const AstNode *ast) {
+    if (!checkExactlyChildren(ast, 3, true)) {
+        return {};
+    }
+
+    const AstNode *nodeOp = ast->children[0].get();
+    const AstNode *nodeL = ast->children[1].get();
+    const AstNode *nodeR = ast->children[2].get();
+
+    optional<Token::Oper> optOp = getOper(nodeOp, true);
+    if (!optOp.has_value()) return {};
+    Token::Oper op = optOp.value();
+
+    if (op == Token::O_AND || op == Token::O_OR) {
         return codegenLogicAndOr(ast);
     }
 
     ExprGenPayload exprPayL, exprPayR, exprPayRet;
 
-    bool assignment = operInfos.at(ast->getOp()).assignment;
+    bool assignment = operInfos.at(op).assignment;
 
-    exprPayL = codegenExpr(ast->getL());
+    exprPayL = codegenExpr(nodeL);
     if (assignment) {
         if (refBroken(exprPayL)) {
-            msgs->errorExprAsgnNonRef(ast->loc(), ast->getOp());
+            msgs->errorExprAsgnNonRef(ast->codeLoc, op);
             return {};
         }
         if (getTypeTable()->worksAsTypeCn(exprPayL.type)) {
-            msgs->errorExprAsgnOnCn(ast->loc(), ast->getOp());
+            msgs->errorExprAsgnOnCn(ast->codeLoc, op);
             return {};
         }
     } else {
         if (valueBroken(exprPayL)) return {};
     }
 
-    exprPayR = codegenExpr(ast->getR());
+    exprPayR = codegenExpr(nodeR);
     if (valueBroken(exprPayR)) return {};
 
     if (exprPayL.isUntyVal() && !exprPayR.isUntyVal()) {
         if (!promoteUntyped(exprPayL, exprPayR.type)) {
-            msgs->errorExprCannotPromote(ast->getL()->loc(), exprPayR.type);
+            msgs->errorExprCannotPromote(nodeL->codeLoc, exprPayR.type);
             return {};
         }
     } else if (!exprPayL.isUntyVal() && exprPayR.isUntyVal()) {
         if (!promoteUntyped(exprPayR, exprPayL.type)) {
-            msgs->errorExprCannotPromote(ast->getR()->loc(), exprPayL.type);
+            msgs->errorExprCannotPromote(nodeR->codeLoc, exprPayL.type);
             return {};
         }
     } else if (exprPayL.isUntyVal() && exprPayR.isUntyVal()) {
-        return codegenUntypedBin(ast->loc(), ast->getOp(), exprPayL.untyVal, exprPayR.untyVal);
+        return codegenUntypedBin(ast->codeLoc, op, exprPayL.untyVal, exprPayR.untyVal);
     }
 
     llvm::Value *valL = exprPayL.val, *valR = exprPayR.val;
@@ -372,13 +429,13 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
             createCast(valL, exprPayL.type, exprPayR.type);
             exprPayRet.type = exprPayR.type;
         } else {
-            msgs->errorExprCannotImplicitCastEither(ast->loc(), exprPayL.type, exprPayR.type);
+            msgs->errorExprCannotImplicitCastEither(ast->codeLoc, exprPayL.type, exprPayR.type);
             return {};
         }
     }
 
     if (getTypeTable()->worksAsTypeB(exprPayRet.type)) {
-        switch (ast->getOp()) {
+        switch (op) {
         case Token::O_ASGN:
             exprPayRet.val = valR;
             break;
@@ -398,7 +455,7 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
         bool isTypeC = getTypeTable()->worksAsTypeC(exprPayRet.type);
         bool isTypeP = symbolTable->getTypeTable()->worksAsTypeAnyP(exprPayRet.type);
 
-        switch (ast->getOp()) {
+        switch (op) {
             case Token::O_ASGN:
                 exprPayRet.val = valR;
                 break;
@@ -529,15 +586,13 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
                 exprPayRet.type = getPrimTypeId(TypeTable::P_BOOL);
                 break;
             default:
-                // should not happen
-                msgs->errorUnknown(ast->loc());
+                msgs->errorInternal(ast->codeLoc);
                 return {};
         }
     }
 
     if (valueBroken(exprPayRet)) {
-        // should not happen
-        msgs->errorUnknown(ast->loc());
+        msgs->errorInternal(ast->codeLoc);
         return {};
     }
 
@@ -548,10 +603,22 @@ Codegen::ExprGenPayload Codegen::codegen(const BinExprAst *ast) {
     return exprPayRet;
 }
 
-Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const BinExprAst *ast) {
+Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const AstNode *ast) {
     if (isGlobalScope()) {
         return codegenLogicAndOrGlobalScope(ast);
     }
+
+    if (!checkExactlyChildren(ast, 3, true)) {
+        return {};
+    }
+
+    const AstNode *nodeOp = ast->children[0].get();
+    const AstNode *nodeL = ast->children[1].get();
+    const AstNode *nodeR = ast->children[2].get();
+
+    optional<Token::Oper> optOp = getOper(nodeOp, true);
+    if (!optOp.has_value()) return {};
+    Token::Oper op = optOp.value();
 
     ExprGenPayload exprPayL, exprPayR, exprPayRet;
 
@@ -564,42 +631,41 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const BinExprAst *ast) {
     llvmBuilder.CreateBr(firstBlock);
 
     llvmBuilder.SetInsertPoint(firstBlock);
-    exprPayL = codegenExpr(ast->getL());
+    exprPayL = codegenExpr(nodeL);
     if (valueBroken(exprPayL)) {
         return {};
     }
     if (!isBool(exprPayL)) {
-        msgs->errorExprCannotImplicitCast(ast->getL()->loc(), exprPayL.type, getPrimTypeId(TypeTable::P_BOOL));
+        msgs->errorExprCannotImplicitCast(nodeL->codeLoc, exprPayL.type, getPrimTypeId(TypeTable::P_BOOL));
         return {};
     }
 
-    if (ast->getOp() == Token::O_AND) {
+    if (op == Token::O_AND) {
         if (exprPayL.isUntyVal()) {
             llvmBuilder.CreateBr(exprPayL.untyVal.val_b ? otherBlock : afterBlock);
         } else {
             llvmBuilder.CreateCondBr(exprPayL.val, otherBlock, afterBlock);
         }
-    } else if (ast->getOp() == Token::O_OR) {
+    } else if (op == Token::O_OR) {
         if (exprPayL.isUntyVal()) {
             llvmBuilder.CreateBr(exprPayL.untyVal.val_b ? afterBlock : otherBlock);
         } else {
             llvmBuilder.CreateCondBr(exprPayL.val, afterBlock, otherBlock);
         }
     } else {
-        // should not happen
-        msgs->errorUnknown(ast->loc());
+        msgs->errorInternal(ast->codeLoc);
         return {};
     }
     firstBlock = llvmBuilder.GetInsertBlock();
 
     func->getBasicBlockList().push_back(otherBlock);
     llvmBuilder.SetInsertPoint(otherBlock);
-    exprPayR = codegenExpr(ast->getR());
+    exprPayR = codegenExpr(nodeR);
     if (valueBroken(exprPayR)) {
         return {};
     }
     if (!isBool(exprPayR)) {
-        msgs->errorExprCannotImplicitCast(ast->getR()->loc(), exprPayR.type, getPrimTypeId(TypeTable::P_BOOL));
+        msgs->errorExprCannotImplicitCast(nodeR->codeLoc, exprPayR.type, getPrimTypeId(TypeTable::P_BOOL));
         return {};
     }
     llvmBuilder.CreateBr(afterBlock);
@@ -613,14 +679,14 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const BinExprAst *ast) {
         // as we don't know whether exprs are untyVals until we call codegenExpr,
         // but calling it emits code to LLVM at that point
         ret.untyVal.type = UntypedVal::T_BOOL;
-        if (ast->getOp() == Token::O_AND)
+        if (op == Token::O_AND)
             ret.untyVal.val_b = exprPayL.untyVal.val_b && exprPayR.untyVal.val_b;
         else
             ret.untyVal.val_b = exprPayL.untyVal.val_b || exprPayR.untyVal.val_b;
     } else {
         llvm::PHINode *phi = llvmBuilder.CreatePHI(getType(getPrimTypeId(TypeTable::P_BOOL)), 2, "logic_tmp");
 
-        if (ast->getOp() == Token::O_AND)
+        if (op == Token::O_AND)
             phi->addIncoming(getConstB(false), firstBlock);
         else
             phi->addIncoming(getConstB(true), firstBlock);
@@ -638,30 +704,42 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const BinExprAst *ast) {
     return ret;
 }
 
-Codegen::ExprGenPayload Codegen::codegenLogicAndOrGlobalScope(const BinExprAst *ast) {
-    ExprGenPayload exprPayL = codegenExpr(ast->getL());
-    if (!exprPayL.isUntyVal()) {
-        msgs->errorExprNotBaked(ast->getL()->loc());
-        return {};
-    }
-    if (!isBool(exprPayL)) {
-        msgs->errorExprCannotImplicitCast(ast->getL()->loc(), exprPayL.type, getPrimTypeId(TypeTable::P_BOOL));
+Codegen::ExprGenPayload Codegen::codegenLogicAndOrGlobalScope(const AstNode *ast) {
+    if (!checkExactlyChildren(ast, 3, true)) {
         return {};
     }
 
-    ExprGenPayload exprPayR = codegenExpr(ast->getR());
+    const AstNode *nodeOp = ast->children[0].get();
+    const AstNode *nodeL = ast->children[1].get();
+    const AstNode *nodeR = ast->children[2].get();
+
+    optional<Token::Oper> optOp = getOper(nodeOp, true);
+    if (!optOp.has_value()) return {};
+    Token::Oper op = optOp.value();
+
+    ExprGenPayload exprPayL = codegenExpr(nodeL);
+    if (!exprPayL.isUntyVal()) {
+        msgs->errorExprNotBaked(nodeL->codeLoc);
+        return {};
+    }
+    if (!isBool(exprPayL)) {
+        msgs->errorExprCannotImplicitCast(nodeL->codeLoc, exprPayL.type, getPrimTypeId(TypeTable::P_BOOL));
+        return {};
+    }
+
+    ExprGenPayload exprPayR = codegenExpr(nodeR);
     if (!exprPayR.isUntyVal()) {
-        msgs->errorExprNotBaked(ast->getR()->loc());
+        msgs->errorExprNotBaked(nodeR->codeLoc);
         return {};
     }
     if (!isBool(exprPayR)) {
-        msgs->errorExprCannotImplicitCast(ast->getR()->loc(), exprPayR.type, getPrimTypeId(TypeTable::P_BOOL));
+        msgs->errorExprCannotImplicitCast(nodeR->codeLoc, exprPayR.type, getPrimTypeId(TypeTable::P_BOOL));
         return {};
     }
 
     ExprGenPayload exprPayRet;
     exprPayRet.untyVal.type = UntypedVal::T_BOOL;
-    if (ast->getOp() == Token::O_AND)
+    if (op == Token::O_AND)
         exprPayRet.untyVal.val_b = exprPayL.untyVal.val_b && exprPayR.untyVal.val_b;
     else
         exprPayRet.untyVal.val_b = exprPayL.untyVal.val_b || exprPayR.untyVal.val_b;
@@ -860,15 +938,27 @@ Codegen::ExprGenPayload Codegen::codegenUntypedBin(CodeLoc codeLoc, Token::Oper 
     return { .untyVal = untyValRet };
 }
 
-Codegen::ExprGenPayload Codegen::codegen(const CallExprAst *ast) {
-    FuncCallSite call(ast->getArgs().size());
-    call.name = ast->getName();
+Codegen::ExprGenPayload Codegen::codegenCall(const AstNode *ast) {
+    if (!checkNotTerminal(ast, true))
+        return {};
+    
+    const AstNode *nodeFuncName = ast->children[0].get();
 
-    vector<llvm::Value*> args(ast->getArgs().size());
+    size_t argCnt = ast->children.size()-1;
+
+    optional<NamePool::Id> funcName = getId(nodeFuncName, true);
+    if (!funcName.has_value()) return {};
+
+    FuncCallSite call(argCnt);
+    call.name = funcName.value();
+
+    vector<llvm::Value*> args(argCnt);
     vector<ExprGenPayload> exprs(args.size());
 
-    for (size_t i = 0; i < ast->getArgs().size(); ++i) {
-        exprs[i] = codegenExpr(ast->getArgs()[i].get());
+    for (size_t i = 0; i < argCnt; ++i) {
+        const AstNode *nodeArg = ast->children[i+1].get();
+
+        exprs[i] = codegenExpr(nodeArg);
         if (valueBroken(exprs[i])) return {};
 
         call.set(i, exprs[i].type);
@@ -878,15 +968,17 @@ Codegen::ExprGenPayload Codegen::codegen(const CallExprAst *ast) {
 
     optional<FuncValue> func = symbolTable->getFuncForCall(call);
     if (!func.has_value()) {
-        msgs->errorFuncNotFound(ast->loc(), ast->getName());
+        msgs->errorFuncNotFound(nodeFuncName->codeLoc, funcName.value());
         return {};
     }
 
-    for (size_t i = 0; i < ast->getArgs().size(); ++i) {
+    for (size_t i = 0; i < argCnt; ++i) {
+        const AstNode *nodeArg = ast->children[i+1].get();
+
         if (i >= func.value().argTypes.size()) {
             // variadic arguments
             if (exprs[i].isUntyVal()) {
-                msgs->errorExprCallVariadUnty(ast->getArgs()[i]->loc(), ast->getName());
+                msgs->errorExprCallVariadUnty(nodeArg->codeLoc, funcName.value());
                 return {};
             }
             // don't need to do anything in else case
@@ -894,13 +986,13 @@ Codegen::ExprGenPayload Codegen::codegen(const CallExprAst *ast) {
             if (exprs[i].isUntyVal()) {
                 // this also checks whether sint/uint literals fit into the arg type size
                 if (!promoteUntyped(exprs[i], func.value().argTypes[i])) {
-                    msgs->errorExprCannotPromote(ast->getArgs()[i]->loc(), func.value().argTypes[i]);
+                    msgs->errorExprCannotPromote(nodeArg->codeLoc, func.value().argTypes[i]);
                     return {};
                 }
                 args[i] = exprs[i].val;
             } else if (call.argTypes[i] != func.value().argTypes[i]) {
                 if (!createCast(args[i], call.argTypes[i], func.value().argTypes[i])) {
-                    msgs->errorExprCannotImplicitCast(ast->getArgs()[i]->loc(), call.argTypes[i], func.value().argTypes[i]);
+                    msgs->errorExprCannotImplicitCast(nodeArg->codeLoc, call.argTypes[i], func.value().argTypes[i]);
                     return {};
                 }
             }
@@ -916,11 +1008,22 @@ Codegen::ExprGenPayload Codegen::codegen(const CallExprAst *ast) {
     return ret;
 }
 
-Codegen::ExprGenPayload Codegen::codegen(const CastExprAst *ast) {
-    llvm::Type *type = codegenType(ast->getType());
+Codegen::ExprGenPayload Codegen::codegenCast(const AstNode *ast) {
+    if (!checkStartingKeyword(ast, Token::T_CAST, true) ||
+        !checkExactlyChildren(ast, 3, true)) {
+        return {};
+    }
+
+    const AstNode *nodeType = ast->children[1].get();
+    const AstNode *nodeVal = ast->children[2].get();
+
+    optional<TypeTable::Id> optTypeId = codegenType(nodeType);
+    if (!optTypeId.has_value()) return {};
+
+    llvm::Type *type = getType(optTypeId.value());
     if (type == nullptr) return {};
 
-    ExprGenPayload exprVal = codegenExpr(ast->getVal());
+    ExprGenPayload exprVal = codegenExpr(nodeVal);
     if (valueBroken(exprVal)) return {};
 
     if (exprVal.isUntyVal()) {
@@ -946,37 +1049,46 @@ Codegen::ExprGenPayload Codegen::codegen(const CastExprAst *ast) {
             promoType = getPrimTypeId(TypeTable::P_PTR);
             break;
         default:
-            // should not happen
-            msgs->errorUnknown(ast->loc());
+            msgs->errorInternal(ast->codeLoc);
             return {};
         }
         if (!promoteUntyped(exprVal, promoType)) {
-            // should not happen
-            msgs->errorUnknown(ast->loc());
+            msgs->errorInternal(ast->codeLoc);
             return {};
         }
     }
     
     llvm::Value *val = exprVal.val;
-    if (!createCast(val, exprVal.type, type, ast->getType()->getTypeId())) {
-        msgs->errorExprCannotCast(ast->getVal()->loc(), exprVal.type, ast->getType()->getTypeId());
+    if (!createCast(val, exprVal.type, type, optTypeId.value())) {
+        msgs->errorExprCannotCast(nodeVal->codeLoc, exprVal.type, optTypeId.value());
         return {};
     }
 
-    return {ast->getType()->getTypeId(), val, nullptr};
+    return {optTypeId.value(), val, nullptr};
 }
 
-Codegen::ExprGenPayload Codegen::codegen(const ArrayExprAst *ast) {
-    TypeTable::Id arrDeclTypeId = ast->getArrayType()->getTypeId();
-    if (!getTypeTable()->worksAsTypeArrP(arrDeclTypeId) &&
-        !getTypeTable()->worksAsTypeArrOfLen(arrDeclTypeId, ast->getVals().size())) {
-        msgs->errorExprIndexOnBadType(ast->loc(), arrDeclTypeId);
+Codegen::ExprGenPayload Codegen::codegenArr(const AstNode *ast) {
+    if (!checkStartingKeyword(ast, Token::T_ARR, true) ||
+        !checkAtLeastChildren(ast, 3, true)) {
         return {};
     }
 
-    optional<TypeTable::Id> elemTypeIdFind = getTypeTable()->addTypeIndexOf(arrDeclTypeId);
+    const AstNode *nodeArrType = ast->children[1].get();
+
+    size_t arrLen = ast->children.size()-2;
+
+    optional<TypeTable::Id> arrDeclTypeId = codegenType(nodeArrType);
+    if (!arrDeclTypeId.has_value()) return {};
+
+    if (!getTypeTable()->worksAsTypeArrP(arrDeclTypeId.value()) &&
+        !getTypeTable()->worksAsTypeArrOfLen(arrDeclTypeId.value(), arrLen)) {
+        msgs->errorExprIndexOnBadType(ast->codeLoc, arrDeclTypeId.value());
+        return {};
+    }
+
+    optional<TypeTable::Id> elemTypeIdFind = getTypeTable()->addTypeIndexOf(arrDeclTypeId.value());
     if (!elemTypeIdFind) {
-        msgs->errorExprIndexOnBadType(ast->loc(), arrDeclTypeId);
+        msgs->errorExprIndexOnBadType(ast->codeLoc, arrDeclTypeId.value());
         return {};
     }
 
@@ -984,25 +1096,26 @@ Codegen::ExprGenPayload Codegen::codegen(const ArrayExprAst *ast) {
 
     llvm::Type *elemType = getType(elemTypeId);
     if (elemType == nullptr) {
-        // should not happen
-        msgs->errorUnknown(ast->getArrayType()->loc());
+        msgs->errorInternal(nodeArrType->codeLoc);
         return {};
     }
 
     TypeTable::Id arrTypeId = getTypeTable()->addTypeArrOfLenIdOf(
-        elemTypeId, ast->getVals().size());
+        elemTypeId, arrLen);
     
     llvm::Value *arrRef = createAlloca(getType(arrTypeId), "tmp_arr");
 
-    for (size_t i = 0; i < ast->getVals().size(); ++i) {
-        ExprGenPayload exprPay = codegenExpr(ast->getVals()[i].get());
+    for (size_t i = 0; i < arrLen; ++i) {
+        const AstNode *nodeElem = ast->children[i+2].get();
+
+        ExprGenPayload exprPay = codegenExpr(nodeElem);
         if (exprPay.isUntyVal() && !promoteUntyped(exprPay, elemTypeId)) {
-            msgs->errorExprCannotPromote(ast->getVals()[i]->loc(), elemTypeId);
+            msgs->errorExprCannotPromote(nodeElem->codeLoc, elemTypeId);
             return {};
         }
         if (valBroken(exprPay)) return {};
         if (!getTypeTable()->isImplicitCastable(exprPay.type, elemTypeId)) {
-            msgs->errorExprCannotImplicitCast(ast->getVals()[i]->loc(), exprPay.type, elemTypeId);
+            msgs->errorExprCannotImplicitCast(nodeElem->codeLoc, exprPay.type, elemTypeId);
             return {};
         }
         createCast(exprPay, elemTypeId);

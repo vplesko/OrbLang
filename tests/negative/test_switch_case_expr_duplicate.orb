@@ -1,9 +1,0 @@
-fnc main() {
-    let u32 x = 100;
-    switch (x) {
-    case 50+50:
-        ret;
-    case 100:
-        ret;
-    }
-}

@@ -78,6 +78,7 @@ struct FuncValue {
     NamePool::Id name;
     bool variadic;
     bool noNameMangle;
+    std::vector<NamePool::Id> argNames;
     std::vector<TypeTable::Id> argTypes;
     std::optional<TypeTable::Id> retType;
     bool defined;

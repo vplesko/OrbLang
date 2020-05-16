@@ -57,7 +57,6 @@ const unordered_map<string, Token> keywords = {
     {"arr", {Token::T_ARR}},
     {"cast", {Token::T_CAST}},
     {"if", {Token::T_IF}},
-    {"else", {Token::T_ELSE}},
     {"for", {Token::T_FOR}},
     {"while", {Token::T_WHILE}},
     {"do", {Token::T_DO}},
@@ -105,8 +104,6 @@ string errorString(Token::Type tok) {
         return "identifier";
     case Token::T_ATTRIBUTE:
         return "attribute";
-    case Token::T_COMMA:
-        return ",";
     case Token::T_SEMICOLON:
         return ";";
     case Token::T_COLON:

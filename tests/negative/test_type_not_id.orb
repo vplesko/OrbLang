@@ -1,4 +1,3 @@
-let case x = 0;
+let (x:if 0);
 
-fnc main() {
-}
+fnc main() () {};

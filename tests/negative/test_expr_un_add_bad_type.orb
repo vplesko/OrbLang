@@ -1,4 +1,4 @@
-fnc main() {
-    let ptr x = null;
-    +x;
-}
+fnc main() () {
+    let (x:ptr null);
+    + x;
+};

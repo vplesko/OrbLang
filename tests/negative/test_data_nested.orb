@@ -1,6 +1,6 @@
 data Foo {
-    i32 val;
-    Foo foo;
-}
+    val:i32
+    foo:Foo
+};
 
-fnc main() {}
+fnc main() () {}

@@ -265,8 +265,6 @@ Token Lexer::next() {
             } else {
                 tok = {Token::T_OPER, Token::O_GT};
             }
-        } else if (ch == ',') {
-            tok = {Token::T_COMMA};
         } else if (ch == ';') {
             tok = {Token::T_SEMICOLON};
         } else if (ch == ':') {

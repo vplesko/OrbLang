@@ -1,43 +1,45 @@
 import "tests/io.orb";
 
 // func decls test
-fnc free(addr:ptr) __no_name_mangle;
-fnc free();
-fnc foo_var(...);
-fnc free(x:i32 y:i32 ...);
-fnc foo_var(x:f32 ...) __no_name_mangle;
+fnc free(addr:ptr) () __no_name_mangle;
+fnc free() ();
+fnc foo_var(...) ();
+fnc free(x:i32 y:i32 ...) ();
+fnc foo_var(x:f32 ...) () __no_name_mangle;
 
-let (glob1:(i32 *) null) glob2:(i32 [4]) glob3:(i32 []);
+let (glob1:(i32 *) null) glob2:(i32 4) glob3:(i32 []);
 
 fnc pass(x:(i32 [])) (i32 []) {
     ret x;
-}
+};
 
-fnc touch(array:(i32 [4])) {
-    for (let (i:i32 0); (< i 4); (++ i))
-        (= ([] array i) (- 1));
-}
+fnc touch(array:(i32 4)) () {
+    for (let (i:i32 0)) (< i 4) (++ i) {
+        = ([] array i) (- 1);
+    };
+};
 
-fnc setAll(array:(i32 [4] *) val:i32) {
-    for (let (i:i32 0); (< i 4); (++ i))
-        (= ([] (* array) i) val);
-}
+fnc setAll(array:(i32 4 *) val:i32) () {
+    for (let (i:i32 0)) (< i 4) (++ i) {
+        = ([] (* array) i) val;
+    };
+};
 
-fnc retAll(val:i32) (i32 [4]) {
-    ret (arr (i32 [4]) val val val val);
-}
+fnc retAll(val:i32) (i32 4) {
+    ret (arr (i32 4) val val val val);
+};
 
 fnc pass(x:i32) i32 {
     ret x;
-}
+};
 
 fnc pass(x:(i32 cn * cn)) i32 {
     ret (* x);
-}
+};
 
-fnc meh(x:(i32 *)) {}
+fnc meh(x:(i32 *)) () {};
 
-fnc main() {
+fnc main() () {
     let a:(i32 *);
     let b:(i32 *) c:(i32 *);
     let d:(i32 * *);
@@ -48,9 +50,9 @@ fnc main() {
     let j:i32;
     let k:(i32 [] *);
     let l:(i32 * []);
-    let m:(i32 [4]) n:(i32 [4]);
-    let o:(i32 [4] [2]);
-    (= j 1001);
+    let m:(i32 4) n:(i32 4);
+    let o:(i32 4 2);
+    = j 1001;
     let (p:(i32 cn) 1000) (q:(i32 cn) j);
     let (r1:(i32 * cn) (cast (i32 * cn) (malloc 4)));
     let (r2:(i32 cn *) (cast (i32 cn *) (malloc 4)));
@@ -58,193 +60,194 @@ fnc main() {
     let (s1:(i32 [] cn) (cast (i32 [] cn) (malloc 4)));
     let (s2:(i32 cn []) (cast (i32 cn []) (malloc 4)));
     let (s3:(i32 cn [] cn) (cast (i32 cn [] cn) (malloc 4)));
-    (= j 3);
-    let (t1:(i32 cn [4]) (arr (i32 cn [4]) 0 (cast i8 1) (cast i32 2.0) (+ j)));
-    let (t2:(i32 [4] cn) t1);
-    let (t3:(i32 cn [4] cn) (arr (i32 cn [4] cn) 0 1 2 3));
+    = j 3;
+    let (t1:(i32 cn 4) (arr (i32 cn 4) 0 (cast i8 1) (cast i32 2.0) (+ j)));
+    let (t2:(i32 4 cn) t1);
+    let (t3:(i32 cn 4 cn) (arr (i32 cn 4 cn) 0 1 2 3));
 
-    (= b a);
+    = b a;
 
-    (= a null);
-    (println_i32 (cast i32 null));
-    (println_i32 (cast i32 a));
-    (println_u32 (cast u32 a));
-    (println_i32 (cast i32 (cast (i32 *) 0)));
-    (println_i32 (cast i32 (cast (i32 *) (cast u32 0))));
+    = a null;
+    println_i32 (cast i32 null);
+    println_i32 (cast i32 a);
+    println_u32 (cast u32 a);
+    println_i32 (cast i32 (cast (i32 *) 0));
+    println_i32 (cast i32 (cast (i32 *) (cast u32 0)));
 
-    if ((== a b));
-    if ((!= a c));
+    if (== a b) {};
+    if (!= a c) {};
 
-    (= a null);
-    if ((== a null)) (println_i32 0);
-    if ((== null a)) (println_i32 1);
-    if ((!= a null)) (println_i32 2);
-    if ((!= null a)) (println_i32 3);
-    if ((== null null)) (println_i32 4);
-    if ((!= null null)) (println_i32 5);
-    if ((cast bool a)) (println_i32 6);
+    = a null;
+    if (== a null) (println_i32 0);
+    if (== null a) (println_i32 1);
+    if (!= a null) (println_i32 2);
+    if (!= null a) (println_i32 3);
+    if (== null null) (println_i32 4);
+    if (!= null null) (println_i32 5);
+    if (cast bool a) (println_i32 6);
 
-    (= a (cast (i32 *) (malloc 4)));
-    if ((== a null)) (println_i32 7);
-    if ((== null a)) (println_i32 8);
-    if ((!= a null)) (println_i32 9);
-    if ((!= null a)) (println_i32 10);
-    if ((== null null)) (println_i32 11);
-    if ((!= null null)) (println_i32 12);
-    if ((cast bool a)) (println_i32 13);
-    (free (cast ptr a));
+    = a (cast (i32 *) (malloc 4));
+    if (== a null) (println_i32 7);
+    if (== null a) (println_i32 8);
+    if (!= a null) (println_i32 9);
+    if (!= null a) (println_i32 10);
+    if (== null null) (println_i32 11);
+    if (!= null null) (println_i32 12);
+    if (cast bool a) (println_i32 13);
+    free (cast ptr a);
 
-    if ((== glob1 null)) (println_i32 16);
+    if (== glob1 null) (println_i32 16);
 
-    (= c (cast (i32 *) null));
-    if ((== c null)) (println_i32 17);
+    = c (cast (i32 *) null);
+    if (== c null) (println_i32 17);
 
-    (= e null);
-    (cast (i8 *) e);
-    (cast (i32 *) e);
+    = e null;
+    cast (i8 *) e;
+    cast (i32 *) e;
 
-    if ((== e f)) (println_i32 18);
-    if ((!= e f)) (println_i32 19);
-    if ((cast bool e)) (println_i32 20);
+    if (== e f) (println_i32 18);
+    if (!= e f) (println_i32 19);
+    if (cast bool e) (println_i32 20);
 
-    if ((!= (& d) null)) (println_i32 100);
-    if ((== (& d) null)) (println_i32 101);
-    if ((!= (& glob1) null)) (println_i32 102);
-    if ((== (& glob1) null)) (println_i32 103);
+    if (!= (& d) null) (println_i32 100);
+    if (== (& d) null) (println_i32 101);
+    if (!= (& glob1) null) (println_i32 102);
+    if (== (& glob1) null) (println_i32 103);
 
-    (= a (cast (i32 *) (malloc 4)));
-    (= b (cast (i32 *) (malloc 4)));
-    (= (* a) 200);
-    (println_i32 (* a));
-    (= c a);
-    (= (* a) 201);
-    (println_i32 (* c));
-    (= (* a) 202);
-    (println_i32 (* (* (& (* (& a))))));
-    (= (* a) 203);
-    (println_i32 (pass a));
-    (free (cast ptr a));
-    (free (cast ptr b));
+    = a (cast (i32 *) (malloc 4));
+    = b (cast (i32 *) (malloc 4));
+    = (* a) 200;
+    println_i32 (* a);
+    = c a;
+    = (* a) 201;
+    println_i32 (* c);
+    = (* a) 202;
+    println_i32 (* (* (& (* (& a)))));
+    = (* a) 203;
+    println_i32 (pass a);
+    free (cast ptr a);
+    free (cast ptr b);
 
-    (= g (cast (i32 []) (malloc (* 4 4))));
-    (= ([] g 0) 300);
-    (println_i32 ([] g 0));
-    (= j 0);
-    (println_i32 ([] g j));
-    (println_i32 ([] g 0));
-    (println_i32 ([] (cast (i32 []) g) 0));
-    (println_i32 ([] (pass g) 0));
-    (= ([] g 1) 301);
-    (println_i32 ([] g 1));
-    (println_i32 ([] g (+ j 1)));
-    (= h (cast (i32 []) (& ([] g 1))));
-    (println_i32 ([] h 0));
-    (println_i32 ([] h (- 1)));
-    (println_i32 ([] h (- j 1)));
-    (free (cast ptr g));
+    = g (cast (i32 []) (malloc (* 4 4)));
+    = ([] g 0) 300;
+    println_i32 ([] g 0);
+    = j 0;
+    println_i32 ([] g j);
+    println_i32 ([] g 0);
+    println_i32 ([] (cast (i32 []) g) 0);
+    println_i32 ([] (pass g) 0);
+    = ([] g 1) 301;
+    println_i32 ([] g 1);
+    println_i32 ([] g (+ j 1));
+    = h (cast (i32 []) (& ([] g 1)));
+    println_i32 ([] h 0);
+    println_i32 ([] h (- 1));
+    println_i32 ([] h (- j 1));
+    free (cast ptr g);
 
-    (= i (cast (i32 [] []) (malloc 32))); // some number larger than size of pointer
-    (= ([] i 0) (cast (i32 []) (malloc 4)));
-    (= ([] ([] i 0) 0) 400);
-    (println_i32 ([] ([] i 0) 0));
-    (= ([] ([] i 0) 0) 401);
-    (= k (cast (i32 [] *) i));
-    (println_i32 ([] (*k) 0));
-    (= ([] ([] i 0) 0) 402);
-    (= l (cast (i32 * []) i));
-    (println_i32 (* ([] l 0)));
-    (free (cast ptr ([] i 0)));
-    (free (cast ptr i));
+    = i (cast (i32 [] []) (malloc 32)); // some number larger than size of pointer
+    = ([] i 0) (cast (i32 []) (malloc 4));
+    = ([] ([] i 0) 0) 400;
+    println_i32 ([] ([] i 0) 0);
+    = ([] ([] i 0) 0) 401;
+    = k (cast (i32 [] *) i);
+    println_i32 ([] (*k) 0);
+    = ([] ([] i 0) 0) 402;
+    = l (cast (i32 * []) i);
+    println_i32 (* ([] l 0));
+    free (cast ptr ([] i 0));
+    free (cast ptr i);
 
-    (= ([] m 0) 500);
-    (println_i32 ([] m 0));
-    (= ([] n 1) ([] m 0));
-    (= j 1);
-    (println_i32 ([] n j));
-    (touch m);
-    (= j 1);
-    (println_i32 ([] m (- j 1)));
-    (setAll (& m) 501);
-    (println_i32 ([] m (+ 0 1)));
-    (= ([] m 0) 502);
-    (println_i32 ([] (cast (i32 []) (& m)) 0));
-    (= ([] m 1) 503);
-    (println_i32 ([] (cast (i32 []) (& ([] m 1))) 0));
-    (println_i32 ([] (* (cast (i32 [4] *) (& ([] m 1)))) 0));
-    (setAll (& m) 504);
-    (= n m);
-    (println_i32 ([] n 2));
-    (= ([] ([] o 0) 0) 505);
-    (println_i32 ([] ([] o 0) 0));
-    (setAll (& ([] o 1)) 506);
-    (println_i32 ([] ([] o 1) 3));
-    (setAll (& ([] o 0)) 507);
-    (println_i32 ([] (cast (i32 []) (& o)) 3));
-    (println_i32 ([] (cast (i32 []) (& o)) 4));
-    (println_i32 ([] ([] o 1) 0));
-    (= n ([] o 0));
-    (println_i32 ([] n 0));
-    (= n (retAll 508));
-    (println_i32 ([] n 0));
-    (println_i32 ([] (retAll 509) 0));
-    (println_i32 ([] (cast (i32 cn [4]) (retAll 510)) 0));
-    (println_i32 ([] (cast (i32 [4] cn) (retAll 511)) 0));
-    (println_i32 ([] (cast (i32 cn [4] cn) (retAll 512)) 0));
-    (= o (arr (i32 [4] []) (arr (i32 []) 513 513 513 513) (retAll 514)));
-    (println_i32 ([] ([] o 0) 0));
-    (println_i32 ([] ([] o 1) 0));
-    (println_i32 ([] (arr (i32 []) 515) 0));
-    (println_i32 ([] (arr (i32 [1]) 516) 0));
+    = ([] m 0) 500;
+    println_i32 ([] m 0);
+    = ([] n 1) ([] m 0);
+    = j 1;
+    println_i32 ([] n j);
+    touch m;
+    = j 1;
+    println_i32 ([] m (- j 1));
+    setAll (& m) 501;
+    println_i32 ([] m (+ 0 1));
+    = ([] m 0) 502;
+    println_i32 ([] (cast (i32 []) (& m)) 0);
+    = ([] m 1) 503;
+    println_i32 ([] (cast (i32 []) (& ([] m 1))) 0);
+    println_i32 ([] (* (cast (i32 4 *) (& ([] m 1)))) 0);
+    setAll (& m) 504;
+    = n m;
+    println_i32 ([] n 2);
+    = ([] ([] o 0) 0) 505;
+    println_i32 ([] ([] o 0) 0);
+    setAll (& ([] o 1)) 506;
+    println_i32 ([] ([] o 1) 3);
+    setAll (& ([] o 0)) 507;
+    println_i32 ([] (cast (i32 []) (& o)) 3);
+    println_i32 ([] (cast (i32 []) (& o)) 4);
+    println_i32 ([] ([] o 1) 0);
+    = n ([] o 0);
+    println_i32 ([] n 0);
+    = n (retAll 508);
+    println_i32 ([] n 0);
+    println_i32 ([] (retAll 509) 0);
+    println_i32 ([] (cast (i32 cn 4) (retAll 510)) 0);
+    println_i32 ([] (cast (i32 4 cn) (retAll 511)) 0);
+    println_i32 ([] (cast (i32 cn 4 cn) (retAll 512)) 0);
+    = o (arr (i32 4 []) (arr (i32 []) 513 513 513 513) (retAll 514));
+    println_i32 ([] ([] o 0) 0);
+    println_i32 ([] ([] o 1) 0);
+    println_i32 ([] (arr (i32 []) 515) 0);
+    println_i32 ([] (arr (i32 1) 516) 0);
 
-    (arr (i32 [2]) 0 1);
-    if ((== ([] (arr (i32 [2]) 0 1) 0) 999));
+    arr (i32 2) 0 1;
+    if (== ([] (arr (i32 2) 0 1) 0) 999) {};
 
-    (= n (retAll 600));
-    let (p1:(i32 cn [4]) n);
-    (println_i32 ([] p1 0));
-    (= n (retAll 601));
-    let (p2:(i32 [4] cn) n);
-    (println_i32 ([] p2 0));
-    (= n (retAll 602));
-    let (p3:(i32 cn [4] cn) n);
-    (println_i32 ([] p3 0));
+    = n (retAll 600);
+    let (p1:(i32 cn 4) n);
+    println_i32 ([] p1 0);
+    = n (retAll 601);
+    let (p2:(i32 4 cn) n);
+    println_i32 ([] p2 0);
+    = n (retAll 602);
+    let (p3:(i32 cn 4 cn) n);
+    println_i32 ([] p3 0);
 
-    (println_i32 p);
-    (println_i32 q);
-    (= (* r1) 1002);
-    (println_i32 (* r1));
-    (free (cast ptr r2));
-    (= r2 (cast (i32 cn *) (malloc 4)));
-    (= ([] s1 0) 1003);
-    (println_i32 ([] s1 0));
-    (= j 1004);
-    (println_i32 (pass j));
-    if ((cast bool r1)) (println_i32 1005);
-    if ((cast bool r2)) (println_i32 1006);
-    if ((cast bool r3)) (println_i32 1007);
-    if ((cast bool s1)) (println_i32 1008);
-    if ((cast bool s2)) (println_i32 1009);
-    if ((cast bool s3)) (println_i32 1010);
-    (free (cast (ptr cn) s3));
-    (free (cast ptr s2));
-    (free (cast (ptr cn) s1));
-    (free (cast (ptr cn) r3));
-    (free (cast ptr r2));
-    (free (cast (ptr cn) r1));
+    println_i32 p;
+    println_i32 q;
+    = (* r1) 1002;
+    println_i32 (* r1);
+    free (cast ptr r2);
+    = r2 (cast (i32 cn *) (malloc 4));
+    = ([] s1 0) 1003;
+    println_i32 ([] s1 0);
+    = j 1004;
+    println_i32 (pass j);
+    if (cast bool r1) (println_i32 1005);
+    if (cast bool r2) (println_i32 1006);
+    if (cast bool r3) (println_i32 1007);
+    if (cast bool s1) (println_i32 1008);
+    if (cast bool s2) (println_i32 1009);
+    if (cast bool s3) (println_i32 1010);
+    free (cast (ptr cn) s3);
+    free (cast ptr s2);
+    free (cast (ptr cn) s1);
+    free (cast (ptr cn) r3);
+    free (cast ptr r2);
+    free (cast (ptr cn) r1);
 
-    (= r2 a);
-    (meh null);
+    = r2 a;
+    meh null;
 
-    (= glob2 (retAll 1100));
-    (println_i32 ([] glob2 0));
-    (= glob3 (cast (i32 []) (malloc (* 4 4))));
-    (= ([] glob3 0) 1101);
-    (println_i32 ([] glob3 0));
-    (free (cast ptr glob3));
+    = glob2 (retAll 1100);
+    println_i32 ([] glob2 0);
+    = glob3 (cast (i32 []) (malloc (* 4 4)));
+    = ([] glob3 0) 1101;
+    println_i32 ([] glob3 0);
+    free (cast ptr glob3);
 
-    for (let (i:i32 0); (< i 4); (++ i))
-        (println_i32 (+ 1200 ([] t1 i)));
-}
+    for (let (i:i32 0)) (< i 4) (++ i) {
+        println_i32 (+ 1200 ([] t1 i));
+    };
+};
 
 // import test
 import "tests/clib.orb";
