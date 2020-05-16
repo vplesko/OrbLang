@@ -111,6 +111,7 @@ class Codegen {
     void codegenContinue(const AstNode *ast);
     void codegenRet(const AstNode *ast);
     void codegenData(const AstNode *ast);
+    void codegenBlock(const AstNode *ast);
     void codegenAll(const AstNode *ast, bool makeScope);
     std::optional<FuncValue> codegenFuncProto(const AstNode *ast, bool definition);
     void codegenFunc(const AstNode *ast);

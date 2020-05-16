@@ -19,129 +19,129 @@ fnc blocker() i64 {
 
 fnc main() () {
     let (a:i64 1) (b:i64 2);
-    if (== a b) (println_i64 101);
-    if (< a b) (println_i64 102);
-    if (>= a b) (println_i64 103);
-    if (> (+ a 3) (+ b 5)) (println_i64 104);
-    {
+    if (== a b) {(println_i64 101)};
+    if (< a b) {(println_i64 102)};
+    if (>= a b) {(println_i64 103)};
+    if (> (+ a 3) (+ b 5)) {(println_i64 104)};
+    block {
         let (x:i64 5);
-        if (> x a) (println_i64 105);
-    }
-    {
+        if (> x a) { (println_i64 105) };
+    };
+    block {
         = a 100;
-        if (> a b) (println_i64 106);
-    }
+        if (> a b) { (println_i64 106) };
+    };
 
-    (= a 1)
-    (= b 2)
-    (if (< a b)
-        (println_i64 107)
-        (println_i64 108))
-    (if (== a b)
-        (println_i64 109)
-        (println_i64 110))
-    (if (== (/ a b) 1)
-        (println_i64 111)
-        (if (== (* a b) 1)
-            (println_i64 112)
-            (println_i64 113)))
-    (if (== (+ a b) 3) {
+    = a 1;
+    = b 2;
+    if (< a b)
+        {(println_i64 107)}
+        {(println_i64 108)};
+    if (== a b)
+        {(println_i64 109)}
+        {(println_i64 110)};
+    if (== (/ a b) 1)
+        {(println_i64 111)}
+        {(if (== (* a b) 1)
+            {(println_i64 112)}
+            {(println_i64 113)})};
+    if (== (+ a b) 3) {
         (println_i64 114)
         (if (== (% a b) 1) {
             (println_i64 115)
         } {
             (println_i64 116)
         })
-    })
+    };
 
-    (for (let (i:i64 0) (j:i64 (- 1))) (< i 10) (++ i) (println_i64 (+ i j)))
-    (for ((= a 0)) (< a 3) (++ a) (println_i64 a))
-    (for () (>= a 0) (-- a) (println_i64 a))
+    for (let (i:i64 0) (j:i64 (- 1))) (< i 10) (++ i) {(println_i64 (+ i j))};
+    for (= a 0) (< a 3) (++ a) {(println_i64 a)};
+    for () (>= a 0) (-- a) {(println_i64 a)};
 
-    (while (>= b 0) (println_i64 (-- b)))
-    (do {
+    while (>= b 0) {(println_i64 (-- b))};
+    do {
         let (x:i64 2);
         println_i64 b;
         = b (+ b x);
-    } (< (+ b a) 8))
-    (do {println_i64 1;} (>= (-- a) 0))
-    (do {} (> a 0))
+    } (< (+ b a) 8);
+    do {println_i64 1;} (>= (-- a) 0);
+    do {} (> a 0);
 
-    (bar)
+    bar;
 
-    (for (let (i:i32 0)) (< i 10) (++ i) {
-        if (>= i 3) (break);
+    for (let (i:i32 0)) (< i 10) (++ i) {
+        if (>= i 3) {break;};
         println_i32 i;
-    })
+    };
 
-    (while (<= a 0) {
-        if (<= a (- 3)) (break);
+    while (<= a 0) {
+        if (<= a (- 3)) {(break)};
         println_i64 a;
         -- a;
-    })
+    };
 
-    (do {
-        if (== a 0) (break);
+    do {
+        if (== a 0) {(break)};
         println_i64 a;
         = a 0;
-    } (< a 1))
+    } (< a 1);
 
-    (for (let (i:i32 0)) (< i 10) (++ i) {
-        if (>= i 2) (continue);
+    for (let (i:i32 0)) (< i 10) (++ i) {
+        if (>= i 2) {(continue)};
         println_i32 i;
-    })
+    };
 
-    (while (<= a 0) {
+    while (<= a 0) {
         ++ a;
-        if (> a 0) (continue);
+        if (> a 0) {(continue)};
         println_i64 a;
-    })
+    };
 
-    (= a 99)
-    (do {
-        if (== a 0) (continue);
+    = a 99;
+    do {
+        if (== a 0) {(continue)};
         println_i64 a;
         = a 0;
-    } (!= a 0))
+    } (!= a 0);
 
-    (for (let (i:i32 0)) (< i 2) (++ i) {
+    for (let (i:i32 0)) (< i 2) (++ i) {
         println_i32 i;
         for (let (j:i32 0)) (< j 5) (++ j) {
             println_i32 j;
-            if (>= j 1) (break);
+            if (>= j 1) {(break)};
         };
-    })
+    };
 
-    (for (let (i:i32 0)) (> i (- 2)) (-- i) {
+    for (let (i:i32 0)) (> i (- 2)) (-- i) {
         println_i32 i;
         for (let (j:i32 0)) (> j (- 5)) (-- j) {
-            if (<= j (- 1)) (continue);
+            if (<= j (- 1)) {(continue)};
             println_i32 j;
         };
-    })
+    };
 
-    (for (let (i:i32 10)) (< i 15) (++ i) {
+    for (let (i:i32 10)) (< i 15) (++ i) {
         println_i32 i;
-        if (>= i 11) (break);
+        if (>= i 11) {(break)};
         for (let (j:i32 10)) (< j 12) (++ j) {
             println_i32 j;
         };
-    })
+    };
 
-    (for (let (i:i32 (- 10))) (> i (- 13)) (-- i) {
+    for (let (i:i32 (- 10))) (> i (- 13)) (-- i) {
         println_i32 i;
-        if (<= i (- 11)) (continue);
+        if (<= i (- 11)) {(continue)};
         for (let (j:i32 (- 10))) (> j (- 12)) (-- j) {
             println_i32 j;
         };
-    })
+    };
 
-    (println_i64 (inc b))
-    (println_i64 (+ (inc b) 1))
+    println_i64 (inc b);
+    println_i64 (+ (inc b) 1);
 
-    (if (> 1 0) (println_i64 0) (println_i64 (blocker)))
-    (if (< 1 0) (println_i64 (blocker)) (println_i64 0))
+    if (> 1 0) {(println_i64 0)} {(println_i64 (blocker))};
+    if (< 1 0) {(println_i64 (blocker))} {(println_i64 0)};
 
-    (if (and false (== (blocker) 0)) (println_i32 0))
-    (if (or true (== (blocker) 0)) (println_i32 0))
+    if (and false (== (blocker) 0)) {(println_i32 0)};
+    if (or true (== (blocker) 0)) {(println_i32 0)};
 };

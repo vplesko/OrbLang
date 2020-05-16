@@ -28,6 +28,7 @@ struct Token {
         T_LET,
         T_ARR,
         T_CAST,
+        T_BLOCK,
         T_IF,
         T_FOR,
         T_WHILE,

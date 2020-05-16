@@ -1,40 +1,40 @@
 import "tests/io.orb";
 
 fnc main() () {
-    (- 10)
-    (cast i64 0)
+    - 10; // TODO allow negative literals
+    cast i64 0; // TODO allow typing literals (eg. 0:i64)
     
-    { println_i32 (cast i32 (- 10)); println_i32 (cast i16 10); println_i8 (cast i8 (cast i64 1027)); }
-    { println_u32 (cast u32 (- 10)); }
-    { println_i32 (cast i32 (cast f16 (- 10))); }
-    {
+    block { println_i32 (cast i32 (- 10)); println_i32 (cast i16 10); println_i8 (cast i8 (cast i64 1027)); };
+    block { println_u32 (cast u32 (- 10)); };
+    block { println_i32 (cast i32 (cast f16 (- 10))); };
+    block {
         let (x:i32 10);
         println_i32 (cast i32 (cast bool x));
         println_i32 (cast i32 (cast bool 10));
         println_i32 (cast i32 (cast bool (- 10)));
-    }
+    };
 
-    { println_i32 (cast i32 (cast u32 10)); }
-    { println_u32 (cast u32 10); println_u32 (cast u16 10); println_u8 (cast u8 (cast u64 1027)); }
-    { println_u32 (cast u32 (cast f32 10)); }
-    {
+    block { println_i32 (cast i32 (cast u32 10)); };
+    block { println_u32 (cast u32 10); println_u32 (cast u16 10); println_u8 (cast u8 (cast u64 1027)); };
+    block { println_u32 (cast u32 (cast f32 10)); };
+    block {
         let (x:u32 (cast u32 10));
         println_i32 (cast i32 (cast bool x));
         println_i32 (cast i32 (cast bool (cast u32 10)));
         println_i32 (cast i32 (cast bool (cast u32 (- 10))));
-    }
+    };
 
-    { println_i32 (cast i32 (cast f32 10)); }
-    { println_i32 (cast i32 (cast f32 (cast u32 10))); }
-    { println_i32 (cast i32 (cast f32 (- 10))); println_i32 (cast i32 (cast f16 10)); println_i32 (cast i32 (cast f16 (cast f64 1027))); }
+    block { println_i32 (cast i32 (cast f32 10)); };
+    block { println_i32 (cast i32 (cast f32 (cast u32 10))); };
+    block { println_i32 (cast i32 (cast f32 (- 10))); println_i32 (cast i32 (cast f16 10)); println_i32 (cast i32 (cast f16 (cast f64 1027))); };
 
-    { println_i32 (cast i32 true); println_i32 (cast i32 false); }
-    { println_u32 (cast u32 true); println_u32 (cast u32 false); }
+    block { println_i32 (cast i32 true); println_i32 (cast i32 false); };
+    block { println_u32 (cast u32 true); println_u32 (cast u32 false); };
 
-    (let (t:bool true))
-    (let (f:bool false))
+    let (t:bool true);
+    let (f:bool false);
 
-    {
+    block {
         let (c:c8 'a');
         println_c8 c;
         = c (cast c8 65);
@@ -51,9 +51,9 @@ fnc main() () {
         println_c8 '\'';
         println_c8 '\x48';
         println_c8 '\\';
-    }
+    };
 
-    {
+    block {
         println_str (cast (c8 cn []) "testing1");
         let (str1:(c8 9) "testing2");
         println_str (cast (c8 cn []) (& str1));
@@ -70,5 +70,5 @@ fnc main() () {
         let (str2:(c8 cn []) "abcd");
         if (!= str2 "pqrs") { println_i32 0; };
         if (== "pqrs" str2) { println_i32 1; };
-    }
+    };
 };

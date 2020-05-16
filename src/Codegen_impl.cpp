@@ -129,11 +129,6 @@ CompilerAction Codegen::codegenNode(const AstNode *ast, bool blockMakeScope) {
 
     if (!checkNotTerminal(ast, true)) return CompilerAction();
 
-    if (checkNotTerminal(ast->children[0].get(), false)) {
-        codegenAll(ast, true);
-        return CompilerAction();
-    }
-
     optional<Token::Type> keyword = getStartingKeyword(ast);
     if (keyword.has_value()) {
         switch (keyword.value()) {
@@ -148,6 +143,9 @@ CompilerAction Codegen::codegenNode(const AstNode *ast, bool blockMakeScope) {
             }
         case Token::T_LET:
             codegenLet(ast);
+            return CompilerAction();
+        case Token::T_BLOCK:
+            codegenBlock(ast);
             return CompilerAction();
         case Token::T_IF:
             codegenIf(ast);
@@ -405,7 +403,7 @@ void Codegen::codegenIf(const AstNode *ast) {
     {
         ScopeControl thenScope(symbolTable);
         llvmBuilder.SetInsertPoint(thenBlock);
-        codegenNode(nodeThen, false);
+        codegenAll(nodeThen, false);
         if (msgs->isAbort()) return;
         if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
     }
@@ -414,7 +412,7 @@ void Codegen::codegenIf(const AstNode *ast) {
         ScopeControl elseScope(symbolTable);
         func->getBasicBlockList().push_back(elseBlock);
         llvmBuilder.SetInsertPoint(elseBlock);
-        codegenNode(nodeElse, false);
+        codegenAll(nodeElse, false);
         if (msgs->isAbort()) return;
         if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
     }
@@ -481,7 +479,7 @@ void Codegen::codegenFor(const AstNode *ast) {
         func->getBasicBlockList().push_back(bodyBlock);
         llvmBuilder.SetInsertPoint(bodyBlock);
         if (hasBody) {
-            codegenNode(nodeBody, false);
+            codegenAll(nodeBody, false);
             if (msgs->isAbort()) return;
         }
         if (!isBlockTerminated()) llvmBuilder.CreateBr(iterBlock);
@@ -548,7 +546,7 @@ void Codegen::codegenWhile(const AstNode *ast) {
         func->getBasicBlockList().push_back(bodyBlock);
         llvmBuilder.SetInsertPoint(bodyBlock);
         if (hasBody) {
-            codegenNode(nodeBody, false);
+            codegenAll(nodeBody, false);
             if (msgs->isAbort()) return;
         }
         if (!isBlockTerminated()) llvmBuilder.CreateBr(condBlock);
@@ -584,7 +582,7 @@ void Codegen::codegenDo(const AstNode *ast) {
 
     {
         ScopeControl scope(symbolTable);
-        codegenNode(nodeBody, false);
+        codegenAll(nodeBody, false);
         if (msgs->isAbort()) return;
         if (!isBlockTerminated()) llvmBuilder.CreateBr(condBlock);
     }
@@ -765,6 +763,15 @@ void Codegen::codegenData(const AstNode *ast) {
 
         structType->setBody(memberTypes);
     }
+}
+
+void Codegen::codegenBlock(const AstNode *ast) {
+    if (!checkStartingKeyword(ast, Token::T_BLOCK, true) ||
+        !checkExactlyChildren(ast, 2, true)) {
+        return;
+    }
+
+    codegenAll(ast->children[1].get(), true);
 }
 
 void Codegen::codegenAll(const AstNode *ast, bool makeScope) {
