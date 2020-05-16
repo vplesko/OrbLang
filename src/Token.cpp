@@ -35,7 +35,9 @@ const unordered_map<Token::Oper, OperInfo> operInfos = {
     {Token::O_INC, {.unary=true, .binary=false}},
     {Token::O_DEC, {.unary=true, .binary=false}},
     {Token::O_NOT, {.unary=true, .binary=false}},
-    {Token::O_BIT_NOT, {.unary=true, .binary=false}}
+    {Token::O_BIT_NOT, {.unary=true, .binary=false}},
+    {Token::O_IND, {}},
+    {Token::O_DOT, {}}
 };
 
 const std::unordered_map<std::string, Token::Attr> attributes = {
@@ -77,7 +79,7 @@ std::string errorString(Token tok) {
     case Token::T_BVAL:
         return tok.bval ? "true" : "false";
     case Token::T_STRING:
-        return string(1, '"') + tok.str + string(1, '"');
+        return "<string>";
     case Token::T_OPER:
         return errorString(tok.op);
     default:
@@ -108,8 +110,6 @@ string errorString(Token::Type tok) {
         return ";";
     case Token::T_COLON:
         return ":";
-    case Token::T_DOT:
-        return ".";
     case Token::T_ELLIPSIS:
         return "...";
     case Token::T_BRACE_L_REG:
@@ -120,10 +120,6 @@ string errorString(Token::Type tok) {
         return "{";
     case Token::T_BRACE_R_CUR:
         return "}";
-    case Token::T_BRACE_L_SQR:
-        return "[";
-    case Token::T_BRACE_R_SQR:
-        return "]";
     default:
         // do nothing
         break;
@@ -171,6 +167,8 @@ std::string errorString(Token::Oper op) {
     case Token::O_DEC: return "--";
     case Token::O_NOT: return "!";
     case Token::O_BIT_NOT: return "~";
+    case Token::O_IND: return "[]";
+    case Token::O_DOT: return ".";
     default: return "<unknown>";
     }
 }

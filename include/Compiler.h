@@ -10,6 +10,7 @@
 
 class Compiler {
     std::unique_ptr<NamePool> namePool;
+    std::unique_ptr<StringPool> stringPool;
     std::unique_ptr<TypeTable> typeTable;
     std::unique_ptr<SymbolTable> symbolTable;
     std::unique_ptr<CompileMessages> msgs;

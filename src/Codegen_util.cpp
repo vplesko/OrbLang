@@ -10,8 +10,8 @@
 #include "llvm/Target/TargetOptions.h"
 using namespace std;
 
-Codegen::Codegen(NamePool *namePool, SymbolTable *symbolTable, CompileMessages *msgs)
-    : namePool(namePool), symbolTable(symbolTable), msgs(msgs),
+Codegen::Codegen(NamePool *namePool, StringPool *stringPool, SymbolTable *symbolTable, CompileMessages *msgs)
+    : namePool(namePool), stringPool(stringPool), symbolTable(symbolTable), msgs(msgs),
     llvmBuilder(llvmContext), llvmBuilderAlloca(llvmContext) {
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("test"), llvmContext);
 }
@@ -144,14 +144,17 @@ bool Codegen::promoteUntyped(ExprGenPayload &e, TypeTable::Id t) {
         }
         break;
     case UntypedVal::T_STRING:
-        if (getTypeTable()->worksAsTypeStr(t)) {
-            e.val = createString(e.untyVal.val_str);
-        } else if (getTypeTable()->worksAsTypeCharArrOfLen(t, e.untyVal.getStringLen())) {
-            e.val = llvm::ConstantDataArray::getString(llvmContext, e.untyVal.val_str, true);
-        } else {
-            success = false;
+        {
+            const std::string &str = stringPool->get(e.untyVal.val_str);
+            if (getTypeTable()->worksAsTypeStr(t)) {
+                e.val = createString(str);
+            } else if (getTypeTable()->worksAsTypeCharArrOfLen(t, UntypedVal::getStringLen(str))) {
+                e.val = llvm::ConstantDataArray::getString(llvmContext, str, true);
+            } else {
+                success = false;
+            }
+            break;
         }
-        break;
     case UntypedVal::T_NULL:
         if (!symbolTable->getTypeTable()->worksAsTypeAnyP(t)) {
             success = false;

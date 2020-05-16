@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include "NamePool.h"
+#include "StringPool.h"
 #include "TypeTable.h"
 #include "llvm/IR/Instructions.h"
 
@@ -38,11 +39,10 @@ struct UntypedVal {
         double val_f;
         char val_c;
         bool val_b;
+        StringPool::Id val_str;
     };
-    std::string val_str;
 
     static std::size_t getStringLen(const std::string &str) { return str.size()+1; }
-    std::size_t getStringLen() const { return getStringLen(val_str); }
 };
 
 struct FuncCallSite {
@@ -102,6 +102,7 @@ private:
         Scope *prev;
     };
 
+    StringPool *stringPool;
     TypeTable *typeTable;
 
     std::unordered_map<FuncSignature, FuncValue, FuncSignature::Hasher> funcs;
@@ -122,7 +123,7 @@ private:
     std::optional<FuncSignature> makeFuncSignature(const FuncCallSite &call) const;
 
 public:
-    SymbolTable(TypeTable *typeTable);
+    SymbolTable(StringPool *stringPool, TypeTable *typeTable);
 
     void addVar(NamePool::Id name, const VarPayload &var);
     std::optional<VarPayload> getVar(NamePool::Id name) const;

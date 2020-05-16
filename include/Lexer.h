@@ -2,8 +2,6 @@
 
 #include <iostream>
 #include <string>
-#include <unordered_map>
-#include <memory>
 #include <fstream>
 #include "CodeLoc.h"
 #include "SymbolTable.h"
@@ -12,6 +10,7 @@
 
 class Lexer {
     NamePool *namePool;
+    StringPool *stringPool;
     CompileMessages *msgs;
     std::ifstream in;
     std::string line;
@@ -27,7 +26,7 @@ class Lexer {
     void skipLine();
 
 public:
-    Lexer(NamePool *namePool, CompileMessages *msgs, const std::string &file);
+    Lexer(NamePool *namePool, StringPool *stringPool, CompileMessages *msgs, const std::string &file);
 
     bool start();
 

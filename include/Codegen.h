@@ -12,6 +12,7 @@
 
 class Codegen {
     NamePool *namePool;
+    StringPool *stringPool;
     SymbolTable *symbolTable;
     CompileMessages *msgs;
 
@@ -100,7 +101,7 @@ class Codegen {
     ExprGenPayload codegenCall(const AstNode *ast);
     ExprGenPayload codegenCast(const AstNode *ast);
     ExprGenPayload codegenArr(const AstNode *ast);
-    std::optional<std::string> codegenImport(const AstNode *ast);
+    std::optional<StringPool::Id> codegenImport(const AstNode *ast);
     void codegenLet(const AstNode *ast);
     void codegenIf(const AstNode *ast);
     void codegenFor(const AstNode *ast);
@@ -118,7 +119,7 @@ class Codegen {
     ExprGenPayload codegenExpr(const AstNode *ast);
 
 public:
-    Codegen(NamePool *namePool, SymbolTable *symbolTable, CompileMessages *msgs);
+    Codegen(NamePool *namePool, StringPool *stringPool, SymbolTable *symbolTable, CompileMessages *msgs);
 
     llvm::Type* genPrimTypeBool();
     llvm::Type* genPrimTypeI(unsigned bits);

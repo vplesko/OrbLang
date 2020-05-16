@@ -1,16 +1,13 @@
 #pragma once
 
 #include <memory>
-#include <vector>
 #include "Lexer.h"
 #include "AST.h"
 #include "CompileMessages.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/Module.h"
 
 class Parser {
     NamePool *namePool;
+    StringPool *stringPool;
     SymbolTable *symbolTable;
     Lexer *lex;
     CompileMessages *msgs;
@@ -30,7 +27,7 @@ class Parser {
     std::unique_ptr<AstNode> parseTerm();
 
 public:
-    Parser(NamePool *namePool, SymbolTable *symbolTable, CompileMessages *msgs);
+    Parser(NamePool *namePool, StringPool *stringPool, SymbolTable *symbolTable, CompileMessages *msgs);
 
     void setLexer(Lexer *lex_) { lex = lex_; }
     Lexer* getLexer() const { return lex; }

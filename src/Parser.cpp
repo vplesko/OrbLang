@@ -2,12 +2,11 @@
 #include <iostream>
 #include <sstream>
 #include <cstdint>
-#include <unordered_set>
 #include "AST.h"
 using namespace std;
 
-Parser::Parser(NamePool *namePool, SymbolTable *symbolTable, CompileMessages *msgs) 
-    : namePool(namePool), symbolTable(symbolTable), msgs(msgs), lex(nullptr) {
+Parser::Parser(NamePool *namePool, StringPool *stringPool, SymbolTable *symbolTable, CompileMessages *msgs) 
+    : namePool(namePool), stringPool(stringPool), symbolTable(symbolTable), msgs(msgs), lex(nullptr) {
 }
 
 const Token& Parser::peek() const {
@@ -77,7 +76,6 @@ unique_ptr<AstNode> Parser::parseTerm() {
     case Token::T_CONTINUE:
     case Token::T_RET:
     case Token::T_IMPORT:
-    case Token::T_DOT:
         term->terminal = make_unique<AstTerminal>(tok.type);
         break;
     
@@ -104,13 +102,13 @@ unique_ptr<AstNode> Parser::parseTerm() {
     case Token::T_STRING:
         {
             stringstream ss;
-            ss << tok.str;
+            ss << stringPool->get(tok.stringId);
             while (peek().type == Token::T_STRING) {
-                ss << next().str;
+                ss << stringPool->get(next().stringId);
             }
             UntypedVal val;
             val.type = UntypedVal::T_STRING;
-            val.val_str = ss.str();
+            val.val_str = stringPool->add(ss.str());
             term->terminal = make_unique<AstTerminal>(move(val));
             break;
         }
@@ -121,14 +119,6 @@ unique_ptr<AstNode> Parser::parseTerm() {
     
     case Token::T_OPER:
         term->terminal = make_unique<AstTerminal>(tok.op);
-        break;
-    
-    case Token::T_BRACE_L_SQR:
-        if (!matchOrError(Token::T_BRACE_R_SQR)) {
-            return nullptr;
-        }
-        // TODO! should be an operator
-        term->terminal = make_unique<AstTerminal>(tok.type);
         break;
 
     case Token::T_ID:

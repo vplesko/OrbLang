@@ -6,7 +6,8 @@ using namespace std;
 
 const string numLitChars = "0123456789abcdefABCDEF.xXeEpP_";
 
-Lexer::Lexer(NamePool *namePool, CompileMessages *msgs, const std::string &file) : namePool(namePool), msgs(msgs), in(file) {
+Lexer::Lexer(NamePool *namePool, StringPool *stringPool, CompileMessages *msgs, const std::string &file)
+    : namePool(namePool), stringPool(stringPool), msgs(msgs), in(file) {
     ln = 0;
     col = 0;
     ch = 0; // not EOF
@@ -106,7 +107,7 @@ Token Lexer::next() {
                         tok = {Token::T_UNKNOWN};
                     }
                 } else {
-                    tok = {Token::T_DOT};
+                    tok = {Token::T_OPER, Token::O_DOT};
                 }
             } else {  
                 CodeIndex l = col-1;
@@ -278,9 +279,12 @@ Token Lexer::next() {
         } else if (ch == '}') {
             tok = {Token::T_BRACE_R_CUR};
         } else if (ch == '[') {
-            tok = {Token::T_BRACE_L_SQR};
-        } else if (ch == ']') {
-            tok = {Token::T_BRACE_R_SQR};
+            if (peekCh() == ']') {
+                nextCh();
+                tok = {Token::T_OPER, Token::O_IND};
+            } else {
+                tok.type = Token::T_UNKNOWN;
+            }
         } else if (ch == '\'') {
             UnescapePayload unesc = unescape(line, col-1, true);
 
@@ -301,7 +305,7 @@ Token Lexer::next() {
                 tok.type = Token::T_UNKNOWN;
             } else {
                 tok.type = Token::T_STRING;
-                tok.str = move(unesc.unescaped);
+                tok.stringId = stringPool->add(unesc.unescaped);
             }
 
             col = unesc.nextIndex-1;

@@ -17,7 +17,8 @@ std::size_t FuncSignature::Hasher::operator()(const FuncSignature &k) const {
     return leNiceHasheFunctione(k.name, sum);
 }
 
-SymbolTable::SymbolTable(TypeTable *typeTable) : typeTable(typeTable), inFunc(false) {
+SymbolTable::SymbolTable(StringPool *stringPool, TypeTable *typeTable)
+    : stringPool(stringPool), typeTable(typeTable), inFunc(false) {
     last = glob = new Scope();
     glob->prev = nullptr;
 }
@@ -160,9 +161,12 @@ optional<FuncValue> SymbolTable::getFuncForCall(const FuncCallSite &call) {
                     argTypeOk = typeTable->worksAsTypeAnyP(it.second.argTypes[i]);
                     break;
                 case UntypedVal::T_STRING:
-                    argTypeOk = typeTable->worksAsTypeStr(it.second.argTypes[i]) ||
-                        typeTable->worksAsTypeCharArrOfLen(it.second.argTypes[i], call.untypedVals[i].getStringLen());
-                    break;
+                    {
+                        const std::string &str = stringPool->get(call.untypedVals[i].val_str);
+                        argTypeOk = typeTable->worksAsTypeStr(it.second.argTypes[i]) ||
+                            typeTable->worksAsTypeCharArrOfLen(it.second.argTypes[i], UntypedVal::getStringLen(str));
+                        break;
+                    }
                 default:
                     argTypeOk = false;
                     break;

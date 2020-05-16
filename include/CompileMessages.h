@@ -16,6 +16,7 @@ class CompileMessages {
     };
 
     NamePool *namePool;
+    StringPool *stringPool;
     SymbolTable *symbolTable;
     std::ostream *out;
     Status status;
@@ -28,8 +29,8 @@ class CompileMessages {
     std::string errorStringOfType(TypeTable::Id ty) const;
 
 public:
-    explicit CompileMessages(NamePool *namePool, SymbolTable *symbolTable, std::ostream &out)
-        : namePool(namePool), symbolTable(symbolTable), out(&out), status(S_OK) {}
+    explicit CompileMessages(NamePool *namePool, StringPool *stringPool, SymbolTable *symbolTable, std::ostream &out)
+        : namePool(namePool), stringPool(stringPool), symbolTable(symbolTable), out(&out), status(S_OK) {}
     
     bool isAbort() const { return status >= S_ERROR; }
 

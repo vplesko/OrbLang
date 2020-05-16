@@ -3,8 +3,6 @@
 #include <unordered_map>
 #include <string>
 
-// TODO make a StringLiteralPool
-
 class NamePool {
 public:
     typedef unsigned Id;

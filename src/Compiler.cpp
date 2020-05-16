@@ -10,10 +10,11 @@ using namespace std;
 
 Compiler::Compiler(ostream &out) {
     namePool = make_unique<NamePool>();
+    stringPool = make_unique<StringPool>();
     typeTable = make_unique<TypeTable>();
-    symbolTable = make_unique<SymbolTable>(typeTable.get());
-    msgs = make_unique<CompileMessages>(namePool.get(), symbolTable.get(), out);
-    codegen = make_unique<Codegen>(namePool.get(), symbolTable.get(), msgs.get());
+    symbolTable = make_unique<SymbolTable>(stringPool.get(), typeTable.get());
+    msgs = make_unique<CompileMessages>(namePool.get(), stringPool.get(), symbolTable.get(), out);
+    codegen = make_unique<Codegen>(namePool.get(), stringPool.get(), symbolTable.get(), msgs.get());
 
     genPrimTypes();
 }
@@ -109,11 +110,11 @@ string canonical(const string &file) {
 
 // TODO error reports don't show file name on imported files
 ImportTransRes followImport(
-    const string &path, Parser &par, NamePool *names, CompileMessages *msgs,
+    const string &path, Parser &par, NamePool *names, StringPool *strings, CompileMessages *msgs,
     unordered_map<string, unique_ptr<Lexer>> &lexers) {
     auto loc = lexers.find(path);
     if (loc == lexers.end()) {
-        unique_ptr<Lexer> lex = make_unique<Lexer>(names, msgs, path);
+        unique_ptr<Lexer> lex = make_unique<Lexer>(names, strings, msgs, path);
         if (!lex->start()) return ITR_FAIL;
 
         par.setLexer(lex.get());
@@ -130,14 +131,14 @@ ImportTransRes followImport(
 bool Compiler::parse(const vector<string> &inputs) {
     if (inputs.empty()) return false;
 
-    Parser par(namePool.get(), symbolTable.get(), msgs.get());
+    Parser par(namePool.get(), stringPool.get(), symbolTable.get(), msgs.get());
 
     unordered_map<string, unique_ptr<Lexer>> lexers;
     stack<Lexer*> trace;
 
     for (const string &in : inputs) {
         string path = canonical(in);
-        ImportTransRes imres = followImport(path, par, namePool.get(), msgs.get(), lexers);
+        ImportTransRes imres = followImport(path, par, namePool.get(), stringPool.get(), msgs.get(), lexers);
         if (imres == ITR_CYCLICAL || imres == ITR_FAIL) {
             // cyclical should logically not happen here
             return false;
@@ -163,8 +164,8 @@ bool Compiler::parse(const vector<string> &inputs) {
                 if (msgs->isAbort()) return false;
 
                 if (act.kind == CompilerAction::Kind::kImport) {
-                    string path = canonical(act.file);
-                    ImportTransRes imres = followImport(path, par, namePool.get(), msgs.get(), lexers);
+                    string path = canonical(stringPool->get(act.file));
+                    ImportTransRes imres = followImport(path, par, namePool.get(), stringPool.get(), msgs.get(), lexers);
                     if (imres == ITR_FAIL) {
                         return false;
                     } else if (imres == ITR_CYCLICAL) {

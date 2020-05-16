@@ -1,8 +1,3 @@
-// TODO! walk through TODOs
-// TODO! update negative tests when done changing syntax rules
 // TODO! remove obsolete compiler messages
-// TODO! remove unused includes
-// TODO! elaborate on errorUnknowns
 // TODO! check there are no types where there shouldn't be
-// TODO! review indexes in codegen
 import "tests/negative/test_import_cycle.orb";

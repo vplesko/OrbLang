@@ -139,11 +139,11 @@ CompilerAction Codegen::codegenNode(const AstNode *ast, bool blockMakeScope) {
         switch (keyword.value()) {
         case Token::T_IMPORT:
             {
-                optional<string> file = codegenImport(ast);
+                optional<StringPool::Id> file = codegenImport(ast);
                 if (!file.has_value()) return CompilerAction();
                 CompilerAction act;
                 act.kind = CompilerAction::Kind::kImport;
-                act.file = move(file.value());
+                act.file = file.value();
                 return act;
             }
         case Token::T_LET:
@@ -186,7 +186,7 @@ CompilerAction Codegen::codegenNode(const AstNode *ast, bool blockMakeScope) {
     }
 }
 
-optional<string> Codegen::codegenImport(const AstNode *ast) {
+optional<StringPool::Id> Codegen::codegenImport(const AstNode *ast) {
     if (!checkStartingKeyword(ast, Token::T_IMPORT, true) ||
         !checkExactlyChildren(ast, 2, true))
         return nullopt;
@@ -232,7 +232,7 @@ optional<TypeTable::Id> Codegen::codegenType(const AstNode *ast) {
 
         if (op.has_value() && op == Token::O_MUL) {
             typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_PTR});
-        } else if (keyw.has_value() && keyw == Token::T_BRACE_L_SQR) {
+        } else if (op.has_value() && op == Token::O_IND) {
             typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_ARR_PTR});
         } else if (val.has_value()) {
             if (val.value().type != UntypedVal::T_SINT) {
@@ -709,8 +709,8 @@ void Codegen::codegenData(const AstNode *ast) {
     TypeTable::DataType &dataType = getTypeTable()->getDataType(dataTypeId);
     
     // declaration part
-    // TODO getType should be handling this
     if (getTypeTable()->getType(dataTypeId) == nullptr) {
+        // this isn't done in getType as we need to ensure data types get llvm::Type* on first creation
         llvm::StructType *structType = llvm::StructType::create(llvmContext, namePool->get(dataType.name));
         getTypeTable()->setType(dataTypeId, structType);
     }

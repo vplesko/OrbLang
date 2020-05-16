@@ -12,10 +12,6 @@ Codegen::ExprGenPayload Codegen::codegenExpr(const AstNode *ast) {
         optional<Token::Type> keyw = getStartingKeyword(ast);
 
         switch (keyw.value()) {
-        case Token::T_BRACE_L_SQR:
-            return codegenInd(ast);
-        case Token::T_DOT:
-            return codegenDot(ast);
         case Token::T_CAST:
             return codegenCast(ast);
         case Token::T_ARR:
@@ -70,8 +66,7 @@ Codegen::ExprGenPayload Codegen::codegenVar(const AstNode *ast) {
 }
 
 Codegen::ExprGenPayload Codegen::codegenInd(const AstNode *ast) {
-    if (!checkStartingKeyword(ast, Token::T_BRACE_L_SQR, true) ||
-        !checkExactlyChildren(ast, 3, true)) {
+    if (!checkExactlyChildren(ast, 3, true)) {
         return {};
     }
 
@@ -153,8 +148,7 @@ Codegen::ExprGenPayload Codegen::codegenInd(const AstNode *ast) {
 }
 
 Codegen::ExprGenPayload Codegen::codegenDot(const AstNode *ast) {
-    if (!checkStartingKeyword(ast, Token::T_DOT, true) ||
-        !checkExactlyChildren(ast, 3, true)) {
+    if (!checkExactlyChildren(ast, 3, true)) {
         return {};
     }
 
@@ -379,6 +373,10 @@ Codegen::ExprGenPayload Codegen::codegenBin(const AstNode *ast) {
 
     if (op == Token::O_AND || op == Token::O_OR) {
         return codegenLogicAndOr(ast);
+    } else if (op == Token::O_IND) {
+        return codegenInd(ast);
+    } else if (op == Token::O_DOT) {
+        return codegenDot(ast);
     }
 
     ExprGenPayload exprPayL, exprPayR, exprPayRet;

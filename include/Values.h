@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "StringPool.h"
 
 // TODO move different compile values in here
 
@@ -12,7 +13,7 @@ struct CompilerAction {
 
     Kind kind;
 
-    std::string file;
+    StringPool::Id file;
 
     CompilerAction() : kind(Kind::kNoAction) {}
 };

@@ -3,6 +3,7 @@
 #include <string>
 #include <unordered_map>
 #include "NamePool.h"
+#include "StringPool.h"
 
 struct Token {
     enum Type {
@@ -15,7 +16,6 @@ struct Token {
         T_OPER,
         T_SEMICOLON,
         T_COLON,
-        T_DOT,
         T_ELLIPSIS,
         T_CN,
         T_FNC,
@@ -24,8 +24,6 @@ struct Token {
         T_BRACE_R_REG,
         T_BRACE_L_CUR,
         T_BRACE_R_CUR,
-        T_BRACE_L_SQR,
-        T_BRACE_R_SQR,
         T_ID,
         T_LET,
         T_ARR,
@@ -76,7 +74,9 @@ struct Token {
         O_INC,
         O_DEC,
         O_NOT,
-        O_BIT_NOT
+        O_BIT_NOT,
+        O_IND,
+        O_DOT
     };
 
     enum Attr {
@@ -92,8 +92,8 @@ struct Token {
         Oper op;
         Attr attr;
         NamePool::Id nameId;
+        StringPool::Id stringId;
     };
-    std::string str;
 };
 
 struct OperInfo {
