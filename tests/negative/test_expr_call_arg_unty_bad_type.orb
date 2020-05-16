@@ -1,5 +1,5 @@
 fnc foo(x:u32) () {};
 
 fnc main() () {
-    foo -1;
+    foo (- 1);
 };

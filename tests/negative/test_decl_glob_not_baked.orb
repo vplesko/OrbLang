@@ -1,5 +1,0 @@
-import "tests/io.orb";
-
-let (x:i32 (scan_i32));
-
-fnc main() () {};
