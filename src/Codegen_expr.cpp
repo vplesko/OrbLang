@@ -2,32 +2,18 @@
 using namespace std;
 
 NodeVal Codegen::codegenExpr(const AstNode *ast) {
-    optional<Token::Type> keyw = getStartingKeyword(ast);
-
     if (getUntypedVal(ast, false).has_value()) {
         return codegenUntypedVal(ast);
     } else if (getId(ast, false).has_value()) {
         return codegenVar(ast);
-    } else if (keyw.has_value()) {
-        optional<Token::Type> keyw = getStartingKeyword(ast);
-
-        switch (keyw.value()) {
-        case Token::T_CAST:
-            return codegenCast(ast);
-        case Token::T_ARR:
-            return codegenArr(ast);
-        default:
-            msgs->errorInternal(ast->codeLoc);
-            return NodeVal();
-        }
     } else if (checkNotTerminal(ast, false)) {
         if (getId(ast->children[0].get(), false).has_value()) {
             return codegenCall(ast);
         } else if (getOper(ast->children[0].get(), false).has_value()) {
             if (ast->children.size() == 2) {
-                return codegenUn(ast);
+                return codegenOperUnary(ast);
             } else if (ast->children.size() == 3) {
-                return codegenBin(ast);
+                return codegenOperBinary(ast);
             }
         }
     }
@@ -68,7 +54,7 @@ NodeVal Codegen::codegenVar(const AstNode *ast) {
     return ret;
 }
 
-NodeVal Codegen::codegenInd(const AstNode *ast) {
+NodeVal Codegen::codegenOperInd(const AstNode *ast) {
     if (!checkExactlyChildren(ast, 3, true)) {
         return NodeVal();
     }
@@ -151,7 +137,7 @@ NodeVal Codegen::codegenInd(const AstNode *ast) {
     return retPay;
 }
 
-NodeVal Codegen::codegenDot(const AstNode *ast) {
+NodeVal Codegen::codegenOperDot(const AstNode *ast) {
     if (!checkExactlyChildren(ast, 3, true)) {
         return NodeVal();
     }
@@ -222,7 +208,7 @@ NodeVal Codegen::codegenDot(const AstNode *ast) {
     return exprRet;
 }
 
-NodeVal Codegen::codegenUn(const AstNode *ast) {
+NodeVal Codegen::codegenOperUnary(const AstNode *ast) {
     if (!checkExactlyChildren(ast, 2, true)) {
         return NodeVal();
     }
@@ -237,7 +223,7 @@ NodeVal Codegen::codegenUn(const AstNode *ast) {
     NodeVal exprPay = codegenNode(nodeVal);
     if (!checkValueUnbroken(nodeVal->codeLoc, exprPay, true)) return NodeVal();
 
-    if (exprPay.isUntyVal()) return codegenUntypedUn(ast->codeLoc, op, exprPay.untyVal);
+    if (exprPay.isUntyVal()) return codegenOperUnaryUntyped(ast->codeLoc, op, exprPay.untyVal);
 
     NodeVal exprRet(NodeVal::Kind::kLlvmVal);
     exprRet.llvmVal.type = exprPay.llvmVal.type;
@@ -323,7 +309,7 @@ NodeVal Codegen::codegenUn(const AstNode *ast) {
     return exprRet;
 }
 
-NodeVal Codegen::codegenUntypedUn(CodeLoc codeLoc, Token::Oper op, UntypedVal unty) {
+NodeVal Codegen::codegenOperUnaryUntyped(CodeLoc codeLoc, Token::Oper op, UntypedVal unty) {
     NodeVal exprRet(NodeVal::Kind::kUntyVal);
     exprRet.untyVal.kind = unty.kind;
     if (op == Token::O_ADD) {
@@ -368,7 +354,7 @@ NodeVal Codegen::codegenUntypedUn(CodeLoc codeLoc, Token::Oper op, UntypedVal un
     return exprRet;
 }
 
-NodeVal Codegen::codegenBin(const AstNode *ast) {
+NodeVal Codegen::codegenOperBinary(const AstNode *ast) {
     if (!checkExactlyChildren(ast, 3, true)) {
         return NodeVal();
     }
@@ -382,11 +368,11 @@ NodeVal Codegen::codegenBin(const AstNode *ast) {
     Token::Oper op = optOp.value();
 
     if (op == Token::O_AND || op == Token::O_OR) {
-        return codegenLogicAndOr(ast);
+        return codegenOperLogicAndOr(ast);
     } else if (op == Token::O_IND) {
-        return codegenInd(ast);
+        return codegenOperInd(ast);
     } else if (op == Token::O_DOT) {
-        return codegenDot(ast);
+        return codegenOperDot(ast);
     }
 
     NodeVal exprPayL, exprPayR, exprPayRet;
@@ -421,7 +407,7 @@ NodeVal Codegen::codegenBin(const AstNode *ast) {
             return NodeVal();
         }
     } else if (exprPayL.isUntyVal() && exprPayR.isUntyVal()) {
-        return codegenUntypedBin(ast->codeLoc, op, exprPayL.untyVal, exprPayR.untyVal);
+        return codegenOperBinaryUntyped(ast->codeLoc, op, exprPayL.untyVal, exprPayR.untyVal);
     }
 
     exprPayRet = NodeVal(NodeVal::Kind::kLlvmVal);
@@ -613,9 +599,9 @@ NodeVal Codegen::codegenBin(const AstNode *ast) {
     return exprPayRet;
 }
 
-NodeVal Codegen::codegenLogicAndOr(const AstNode *ast) {
+NodeVal Codegen::codegenOperLogicAndOr(const AstNode *ast) {
     if (isGlobalScope()) {
-        return codegenLogicAndOrGlobalScope(ast);
+        return codegenOperLogicAndOrGlobalScope(ast);
     }
 
     if (!checkExactlyChildren(ast, 3, true)) {
@@ -719,7 +705,7 @@ NodeVal Codegen::codegenLogicAndOr(const AstNode *ast) {
     return ret;
 }
 
-NodeVal Codegen::codegenLogicAndOrGlobalScope(const AstNode *ast) {
+NodeVal Codegen::codegenOperLogicAndOrGlobalScope(const AstNode *ast) {
     if (!checkExactlyChildren(ast, 3, true)) {
         return NodeVal();
     }
@@ -762,7 +748,7 @@ NodeVal Codegen::codegenLogicAndOrGlobalScope(const AstNode *ast) {
     return exprPayRet;
 }
 
-NodeVal Codegen::codegenUntypedBin(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR) {
+NodeVal Codegen::codegenOperBinaryUntyped(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR) {
     if (untyL.kind != untyR.kind) {
         msgs->errorExprUntyMismatch(codeLoc);
         return NodeVal();

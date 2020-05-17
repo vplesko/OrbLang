@@ -171,6 +171,10 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
             return codegenFunc(ast);
         case Token::T_DATA:
             return codegenData(ast);
+        case Token::T_CAST:
+            return codegenCast(ast);
+        case Token::T_ARR:
+            return codegenArr(ast);
         default:
             return codegenExpr(ast);
         }

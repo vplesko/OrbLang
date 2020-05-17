@@ -73,15 +73,15 @@ class Codegen {
 
     NodeVal codegenUntypedVal(const AstNode *ast);
     NodeVal codegenVar(const AstNode *ast);
-    NodeVal codegenInd(const AstNode *ast);
-    NodeVal codegenDot(const AstNode *ast);
-    NodeVal codegenUn(const AstNode *ast);
-    NodeVal codegenUntypedUn(CodeLoc codeLoc, Token::Oper op, UntypedVal unty);
-    NodeVal codegenBin(const AstNode *ast);
+    NodeVal codegenOperInd(const AstNode *ast);
+    NodeVal codegenOperDot(const AstNode *ast);
+    NodeVal codegenOperUnary(const AstNode *ast);
+    NodeVal codegenOperUnaryUntyped(CodeLoc codeLoc, Token::Oper op, UntypedVal unty);
+    NodeVal codegenOperBinary(const AstNode *ast);
     // helper function for short-circuit evaluation of boolean AND and OR
-    NodeVal codegenLogicAndOr(const AstNode *ast);
-    NodeVal codegenLogicAndOrGlobalScope(const AstNode *ast);
-    NodeVal codegenUntypedBin(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR);
+    NodeVal codegenOperLogicAndOr(const AstNode *ast);
+    NodeVal codegenOperLogicAndOrGlobalScope(const AstNode *ast);
+    NodeVal codegenOperBinaryUntyped(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR);
     NodeVal codegenCall(const AstNode *ast);
     NodeVal codegenCast(const AstNode *ast);
     NodeVal codegenArr(const AstNode *ast);
