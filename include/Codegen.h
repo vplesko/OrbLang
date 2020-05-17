@@ -22,11 +22,9 @@ class Codegen {
 
     std::stack<llvm::BasicBlock*> breakStack, continueStack;
 
-    bool isBool(const ExprGenPayload &e) {
-        return e.isUntyVal() ? e.untyVal.kind == UntypedVal::Kind::kBool : getTypeTable()->worksAsTypeB(e.type);
-    }
+    bool isBool(const NodeVal &e) const;
 
-    bool promoteUntyped(ExprGenPayload &e, TypeTable::Id t);
+    bool promoteUntyped(NodeVal &e, TypeTable::Id t);
 
     TypeTable* getTypeTable() { return symbolTable->getTypeTable(); }
     const TypeTable* getTypeTable() const { return symbolTable->getTypeTable(); }
@@ -43,7 +41,7 @@ class Codegen {
     TypeTable::Id getPrimTypeId(TypeTable::PrimIds primId) const { return getTypeTable()->getPrimTypeId(primId); }
     bool createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId);
     bool createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
-    bool createCast(ExprGenPayload &e, TypeTable::Id t);
+    bool createCast(NodeVal &e, TypeTable::Id t);
 
     bool isGlobalScope() const;
     bool isBlockTerminated() const;
@@ -63,6 +61,7 @@ class Codegen {
     bool checkAtLeastChildren(const AstNode *ast, std::size_t n, bool orError);
     bool checkAtMostChildren(const AstNode *ast, std::size_t n, bool orError);
     bool checkBetweenChildren(const AstNode *ast, std::size_t nLo, std::size_t nHi, bool orError);
+    bool checkValueUnbroken(CodeLoc codeLoc, const NodeVal &val, bool orError);
     std::optional<NamePool::Id> getId(const AstNode *ast, bool orError);
     std::optional<NameTypePair> getIdTypePair(const AstNode *ast, bool orError);
     std::optional<Token::Type> getKeyword(const AstNode *ast, bool orError);
@@ -70,20 +69,20 @@ class Codegen {
     std::optional<UntypedVal> getUntypedVal(const AstNode *ast, bool orError);
     std::optional<Token::Attr> getAttr(const AstNode *ast, bool orError);
 
-    ExprGenPayload codegenUntypedVal(const AstNode *ast);
-    ExprGenPayload codegenVar(const AstNode *ast);
-    ExprGenPayload codegenInd(const AstNode *ast);
-    ExprGenPayload codegenDot(const AstNode *ast);
-    ExprGenPayload codegenUn(const AstNode *ast);
-    ExprGenPayload codegenUntypedUn(CodeLoc codeLoc, Token::Oper op, UntypedVal unty);
-    ExprGenPayload codegenBin(const AstNode *ast);
+    NodeVal codegenUntypedVal(const AstNode *ast);
+    NodeVal codegenVar(const AstNode *ast);
+    NodeVal codegenInd(const AstNode *ast);
+    NodeVal codegenDot(const AstNode *ast);
+    NodeVal codegenUn(const AstNode *ast);
+    NodeVal codegenUntypedUn(CodeLoc codeLoc, Token::Oper op, UntypedVal unty);
+    NodeVal codegenBin(const AstNode *ast);
     // helper function for short-circuit evaluation of boolean AND and OR
-    ExprGenPayload codegenLogicAndOr(const AstNode *ast);
-    ExprGenPayload codegenLogicAndOrGlobalScope(const AstNode *ast);
-    ExprGenPayload codegenUntypedBin(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR);
-    ExprGenPayload codegenCall(const AstNode *ast);
-    ExprGenPayload codegenCast(const AstNode *ast);
-    ExprGenPayload codegenArr(const AstNode *ast);
+    NodeVal codegenLogicAndOr(const AstNode *ast);
+    NodeVal codegenLogicAndOrGlobalScope(const AstNode *ast);
+    NodeVal codegenUntypedBin(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR);
+    NodeVal codegenCall(const AstNode *ast);
+    NodeVal codegenCast(const AstNode *ast);
+    NodeVal codegenArr(const AstNode *ast);
     std::optional<StringPool::Id> codegenImport(const AstNode *ast);
     void codegenLet(const AstNode *ast);
     void codegenIf(const AstNode *ast);
@@ -100,7 +99,7 @@ class Codegen {
     void codegenFunc(const AstNode *ast);
 
     std::optional<TypeTable::Id> codegenType(const AstNode *ast);
-    ExprGenPayload codegenExpr(const AstNode *ast);
+    NodeVal codegenExpr(const AstNode *ast);
 
 public:
     Codegen(NamePool *namePool, StringPool *stringPool, SymbolTable *symbolTable, CompileMessages *msgs);
@@ -114,7 +113,7 @@ public:
     llvm::Type* genPrimTypeF64();
     llvm::Type* genPrimTypePtr();
 
-    CompilerAction codegenNode(const AstNode *ast);
+    NodeVal codegenNode(const AstNode *ast);
 
     void printout() const;
 

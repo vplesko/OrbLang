@@ -94,11 +94,18 @@ llvm::Type* Codegen::getType(TypeTable::Id typeId) {
     return llvmType;
 }
 
-bool Codegen::promoteUntyped(ExprGenPayload &e, TypeTable::Id t) {
+bool Codegen::isBool(const NodeVal &e) const {
+    return (e.isUntyVal() && e.untyVal.kind == UntypedVal::Kind::kBool) ||
+     (e.isLlvmVal() && getTypeTable()->worksAsTypeB(e.llvmVal.type));
+}
+
+bool Codegen::promoteUntyped(NodeVal &e, TypeTable::Id t) {
     if (!e.isUntyVal()) {
         return false;
     }
 
+    NodeVal n(NodeVal::Kind::kLlvmVal);
+    n.llvmVal.type = t;
     bool success = true;
 
     switch (e.untyVal.kind) {
@@ -106,21 +113,21 @@ bool Codegen::promoteUntyped(ExprGenPayload &e, TypeTable::Id t) {
         if (!getTypeTable()->worksAsTypeB(t)) {
             success = false;
         } else {
-            e.val = getConstB(e.untyVal.val_b);
+            n.llvmVal.val = getConstB(e.untyVal.val_b);
         }
         break;
     case UntypedVal::Kind::kSint:
         if ((!getTypeTable()->worksAsTypeI(t) && !getTypeTable()->worksAsTypeU(t)) || !getTypeTable()->fitsType(e.untyVal.val_si, t)) {
             success = false;
         } else {
-            e.val = llvm::ConstantInt::get(getType(t), e.untyVal.val_si, getTypeTable()->worksAsTypeI(t));
+            n.llvmVal.val = llvm::ConstantInt::get(getType(t), e.untyVal.val_si, getTypeTable()->worksAsTypeI(t));
         }
         break;
     case UntypedVal::Kind::kChar:
         if (!getTypeTable()->worksAsTypeC(t)) {
             success = false;
         } else {
-            e.val = llvm::ConstantInt::get(getType(t), (uint8_t) e.untyVal.val_c, false);
+            n.llvmVal.val = llvm::ConstantInt::get(getType(t), (uint8_t) e.untyVal.val_c, false);
         }
         break;
     case UntypedVal::Kind::kFloat:
@@ -128,16 +135,16 @@ bool Codegen::promoteUntyped(ExprGenPayload &e, TypeTable::Id t) {
         if (!getTypeTable()->worksAsTypeF(t)) {
             success = false;
         } else {
-            e.val = llvm::ConstantFP::get(getType(t), e.untyVal.val_f);
+            n.llvmVal.val = llvm::ConstantFP::get(getType(t), e.untyVal.val_f);
         }
         break;
     case UntypedVal::Kind::kString:
         {
             const std::string &str = stringPool->get(e.untyVal.val_str);
             if (getTypeTable()->worksAsTypeStr(t)) {
-                e.val = createString(str);
+                n.llvmVal.val = createString(str);
             } else if (getTypeTable()->worksAsTypeCharArrOfLen(t, UntypedVal::getStringLen(str))) {
-                e.val = llvm::ConstantDataArray::getString(llvmContext, str, true);
+                n.llvmVal.val = llvm::ConstantDataArray::getString(llvmContext, str, true);
             } else {
                 success = false;
             }
@@ -147,15 +154,14 @@ bool Codegen::promoteUntyped(ExprGenPayload &e, TypeTable::Id t) {
         if (!symbolTable->getTypeTable()->worksAsTypeAnyP(t)) {
             success = false;
         } else {
-            e.val = llvm::ConstantPointerNull::get((llvm::PointerType*)getType(t));
+            n.llvmVal.val = llvm::ConstantPointerNull::get((llvm::PointerType*)getType(t));
         }
         break;
     default:
         success = false;
     }
 
-    e.resetUntyVal();
-    e.type = t;
+    e = n;
     return success;
 }
 
@@ -357,6 +363,15 @@ bool Codegen::checkBetweenChildren(const AstNode *ast, std::size_t nLo, std::siz
     if (ast->kind != AstNode::Kind::kTuple ||
         !between(ast->children.size(), nLo, nHi)) {
         if (orError) msgs->errorUnknown(ast->codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
+bool Codegen::checkValueUnbroken(CodeLoc codeLoc, const NodeVal &val, bool orError) {
+    if (val.valueBroken()) {
+        if (orError) msgs->errorUnknown(codeLoc);
         return false;
     }
 

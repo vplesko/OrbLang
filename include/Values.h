@@ -7,7 +7,7 @@
 
 struct UntypedVal {
     enum class Kind {
-        kNone, // TODO get rid of this one
+        kNone,
         kSint,
         kFloat,
         kChar,
@@ -16,7 +16,7 @@ struct UntypedVal {
         kNull
     };
 
-    Kind kind;
+    Kind kind = Kind::kNone;
     union {
         int64_t val_si;
         double val_f;
@@ -55,31 +55,40 @@ struct TerminalVal {
     explicit TerminalVal(UntypedVal v) : kind(Kind::kVal), val(v) {}
 };
 
-struct ExprGenPayload {
+struct LlvmVal {
     TypeTable::Id type;
     llvm::Value *val = nullptr;
     llvm::Value *ref = nullptr;
-    UntypedVal untyVal = { .kind = UntypedVal::Kind::kNone };
 
-    bool isUntyVal() const { return untyVal.kind != UntypedVal::Kind::kNone; }
-    void resetUntyVal() { untyVal.kind = UntypedVal::Kind::kNone; }
-
-    // checks if val is invalid
     bool valBroken() const { return val == nullptr; }
-    // checks if ref is invalid
     bool refBroken() const { return ref == nullptr; }
-    // checks if both val and unty val are invalid
-    bool valueBroken() const { return valBroken() && !isUntyVal(); }
 };
 
-struct CompilerAction {
+struct NodeVal {
     enum class Kind {
-        kNoAction,
-        kImport
+        kInvalid,
+        kEmpty,
+        kImport,
+        kLlvmVal,
+        kUntyVal
     };
 
-    Kind kind;
-    StringPool::Id file;
+    Kind kind = Kind::kInvalid;
+    union {
+        LlvmVal llvmVal;
+        UntypedVal untyVal;
+        StringPool::Id file;
+    };
 
-    CompilerAction() : kind(Kind::kNoAction) {}
+    NodeVal() : kind(Kind::kInvalid) {}
+    NodeVal(Kind kind);
+
+    bool isLlvmVal() const { return kind == Kind::kLlvmVal; }
+    bool isUntyVal() const { return kind == Kind::kUntyVal; }
+
+    // returns true if this is not unty val nor llvm val with valid value
+    bool valueBroken() const { return
+        !(isLlvmVal() && !llvmVal.valBroken()) &&
+        !(isUntyVal() && untyVal.kind != UntypedVal::Kind::kNone);
+    }
 };

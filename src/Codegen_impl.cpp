@@ -115,19 +115,23 @@ bool Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::
     return createCast(val, srcTypeId, getType(dstTypeId), dstTypeId);
 }
 
-bool Codegen::createCast(ExprGenPayload &e, TypeTable::Id t) {
-    if (!createCast(e.val, e.type, t)) return false;
-    e.type = t;
+bool Codegen::createCast(NodeVal &e, TypeTable::Id t) {
+    if (!e.isLlvmVal()) return false;
+
+    if (!createCast(e.llvmVal.val, e.llvmVal.type, t)) return false;
+    e.llvmVal.type = t;
     return true;
 }
 
-CompilerAction Codegen::codegenNode(const AstNode *ast) {
+NodeVal Codegen::codegenNode(const AstNode *ast) {
+    NodeVal ret(NodeVal::Kind::kEmpty);
+
     if (checkEmptyTerminal(ast, false)) {
         // do nothin'
-        return CompilerAction();
+        return ret;
     }
 
-    if (!checkNotTerminal(ast, true)) return CompilerAction();
+    if (!checkNotTerminal(ast, true)) return ret;
 
     optional<Token::Type> keyword = getStartingKeyword(ast);
     if (keyword.has_value()) {
@@ -135,52 +139,49 @@ CompilerAction Codegen::codegenNode(const AstNode *ast) {
         case Token::T_IMPORT:
             {
                 optional<StringPool::Id> file = codegenImport(ast);
-                if (!file.has_value()) return CompilerAction();
-                CompilerAction act;
-                act.kind = CompilerAction::Kind::kImport;
-                act.file = file.value();
-                return act;
+                if (!file.has_value()) return ret;
+                ret = NodeVal(NodeVal::Kind::kImport);
+                ret.file = file.value();
+                return ret;
             }
         case Token::T_LET:
             codegenLet(ast);
-            return CompilerAction();
+            return ret;
         case Token::T_BLOCK:
             codegenBlock(ast);
-            return CompilerAction();
+            return ret;
         case Token::T_IF:
             codegenIf(ast);
-            return CompilerAction();
+            return ret;
         case Token::T_FOR:
             codegenFor(ast);
-            return CompilerAction();
+            return ret;
         case Token::T_WHILE:
             codegenWhile(ast);
-            return CompilerAction();
+            return ret;
         case Token::T_DO:
             codegenDo(ast);
-            return CompilerAction();
+            return ret;
         case Token::T_BREAK:
             codegenBreak(ast);
-            return CompilerAction();
+            return ret;
         case Token::T_CONTINUE:
             codegenContinue(ast);
-            return CompilerAction();
+            return ret;
         case Token::T_RET:
             codegenRet(ast);
-            return CompilerAction();
+            return ret;
         case Token::T_FNC:
             codegenFunc(ast);
-            return CompilerAction();
+            return ret;
         case Token::T_DATA:
             codegenData(ast);
-            return CompilerAction();
+            return ret;
         default:
-            codegenExpr(ast);
-            return CompilerAction();
+            return codegenExpr(ast);
         }
-    } else {    
-        codegenExpr(ast);
-        return CompilerAction();
+    } else {
+        return codegenExpr(ast);
     }
 }
 
@@ -311,7 +312,7 @@ void Codegen::codegenLet(const AstNode *ast) {
             llvm::Constant *initConst = nullptr;
 
             if (init.has_value()) {
-                ExprGenPayload initPay = codegenExpr(init.value());
+                NodeVal initPay = codegenExpr(init.value());
                 if (initPay.valueBroken()) {
                     return;
                 }
@@ -323,7 +324,7 @@ void Codegen::codegenLet(const AstNode *ast) {
                     msgs->errorExprCannotPromote(codeLocInit, typeId);
                     return;
                 }
-                initConst = (llvm::Constant*) initPay.val;
+                initConst = (llvm::Constant*) initPay.llvmVal.val;
             } else {
                 if (getTypeTable()->worksAsTypeCn(typeId)) {
                     msgs->errorCnNoInit(codeLocName, nameType.first);
@@ -336,7 +337,7 @@ void Codegen::codegenLet(const AstNode *ast) {
             val = createAlloca(type, name);
 
             if (init.has_value()) {
-                ExprGenPayload initPay = codegenExpr(init.value());
+                NodeVal initPay = codegenExpr(init.value());
                 if (initPay.valueBroken())
                     return;
 
@@ -347,15 +348,15 @@ void Codegen::codegenLet(const AstNode *ast) {
                     }
                 }
 
-                llvm::Value *src = initPay.val;
+                llvm::Value *src = initPay.llvmVal.val;
 
-                if (initPay.type != typeId) {
-                    if (!getTypeTable()->isImplicitCastable(initPay.type, typeId)) {
-                        msgs->errorExprCannotImplicitCast(codeLocInit, initPay.type, typeId);
+                if (initPay.llvmVal.type != typeId) {
+                    if (!getTypeTable()->isImplicitCastable(initPay.llvmVal.type, typeId)) {
+                        msgs->errorExprCannotImplicitCast(codeLocInit, initPay.llvmVal.type, typeId);
                         return;
                     }
 
-                    createCast(src, initPay.type, type, typeId);
+                    createCast(src, initPay.llvmVal.type, type, typeId);
                 }
 
                 llvmBuilder.CreateStore(src, val);
@@ -382,13 +383,14 @@ void Codegen::codegenIf(const AstNode *ast) {
     const AstNode *nodeThen = ast->children[2].get();
     const AstNode *nodeElse = hasElse ? ast->children[3].get() : nullptr;
     
-    ExprGenPayload condExpr = codegenExpr(nodeCond);
+    NodeVal condExpr = codegenExpr(nodeCond);
+    if (!checkValueUnbroken(nodeCond->codeLoc, condExpr, true)) return;
     if (condExpr.isUntyVal() && !promoteUntyped(condExpr, getPrimTypeId(TypeTable::P_BOOL))) {
         msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
         return;
     }
-    if (condExpr.valBroken() || !getTypeTable()->worksAsTypeB(condExpr.type)) {
-        msgs->errorExprCannotImplicitCast(nodeCond->codeLoc, condExpr.type, getPrimTypeId(TypeTable::P_BOOL));
+    if (!getTypeTable()->worksAsTypeB(condExpr.llvmVal.type)) {
+        msgs->errorExprCannotImplicitCast(nodeCond->codeLoc, condExpr.llvmVal.type, getPrimTypeId(TypeTable::P_BOOL));
         return;
     }
 
@@ -398,7 +400,7 @@ void Codegen::codegenIf(const AstNode *ast) {
     llvm::BasicBlock *elseBlock = hasElse ? llvm::BasicBlock::Create(llvmContext, "else") : nullptr;
     llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
 
-    llvmBuilder.CreateCondBr(condExpr.val, thenBlock, hasElse ? elseBlock : afterBlock);
+    llvmBuilder.CreateCondBr(condExpr.llvmVal.val, thenBlock, hasElse ? elseBlock : afterBlock);
 
     {
         ScopeControl thenScope(symbolTable);
@@ -455,23 +457,25 @@ void Codegen::codegenFor(const AstNode *ast) {
     llvmBuilder.SetInsertPoint(condBlock);
 
     {
-        ExprGenPayload condExpr;
+        NodeVal condExpr;
         if (hasCond) {
             condExpr = codegenExpr(nodeCond);
+            if (!checkValueUnbroken(nodeCond->codeLoc, condExpr, true)) return;
             if (condExpr.isUntyVal() && !promoteUntyped(condExpr, getPrimTypeId(TypeTable::P_BOOL))) {
                 msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
                 return;
             }
-            if (condExpr.valBroken() || !getTypeTable()->worksAsTypeB(condExpr.type)) {
-                msgs->errorExprCannotImplicitCast(nodeCond->codeLoc, condExpr.type, getPrimTypeId(TypeTable::P_BOOL));
+            if (!getTypeTable()->worksAsTypeB(condExpr.llvmVal.type)) {
+                msgs->errorExprCannotImplicitCast(nodeCond->codeLoc, condExpr.llvmVal.type, getPrimTypeId(TypeTable::P_BOOL));
                 return;
             }
         } else {
-            condExpr.type = getPrimTypeId(TypeTable::P_BOOL);
-            condExpr.val = getConstB(true);
+            condExpr = NodeVal(NodeVal::Kind::kLlvmVal);
+            condExpr.llvmVal.type = getPrimTypeId(TypeTable::P_BOOL);
+            condExpr.llvmVal.val = getConstB(true);
         }
 
-        llvmBuilder.CreateCondBr(condExpr.val, bodyBlock, afterBlock);
+        llvmBuilder.CreateCondBr(condExpr.llvmVal.val, bodyBlock, afterBlock);
     }
 
     {
@@ -528,17 +532,18 @@ void Codegen::codegenWhile(const AstNode *ast) {
     llvmBuilder.SetInsertPoint(condBlock);
 
     {
-        ExprGenPayload condExpr = codegenExpr(nodeCond);
+        NodeVal condExpr = codegenExpr(nodeCond);
+        if (!checkValueUnbroken(nodeCond->codeLoc, condExpr, true)) return;
         if (condExpr.isUntyVal() && !promoteUntyped(condExpr, getPrimTypeId(TypeTable::P_BOOL))) {
             msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
             return;
         }
-        if (condExpr.valBroken() || !getTypeTable()->worksAsTypeB(condExpr.type)) {
-            msgs->errorExprCannotImplicitCast(nodeCond->codeLoc, condExpr.type, getPrimTypeId(TypeTable::P_BOOL));
+        if (!getTypeTable()->worksAsTypeB(condExpr.llvmVal.type)) {
+            msgs->errorExprCannotImplicitCast(nodeCond->codeLoc, condExpr.llvmVal.type, getPrimTypeId(TypeTable::P_BOOL));
             return;
         }
 
-        llvmBuilder.CreateCondBr(condExpr.val, bodyBlock, afterBlock);
+        llvmBuilder.CreateCondBr(condExpr.llvmVal.val, bodyBlock, afterBlock);
     }
 
     {
@@ -591,17 +596,18 @@ void Codegen::codegenDo(const AstNode *ast) {
         func->getBasicBlockList().push_back(condBlock);
         llvmBuilder.SetInsertPoint(condBlock);
 
-        ExprGenPayload condExpr = codegenExpr(nodeCond);
+        NodeVal condExpr = codegenExpr(nodeCond);
+        if (!checkValueUnbroken(nodeCond->codeLoc, condExpr, true)) return;
         if (condExpr.isUntyVal() && !promoteUntyped(condExpr, getPrimTypeId(TypeTable::P_BOOL))) {
             msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
             return;
         }
-        if (condExpr.valBroken() || !getTypeTable()->worksAsTypeB(condExpr.type)) {
-            msgs->errorExprCannotImplicitCast(nodeCond->codeLoc, condExpr.type, getPrimTypeId(TypeTable::P_BOOL));
+        if (!getTypeTable()->worksAsTypeB(condExpr.llvmVal.type)) {
+            msgs->errorExprCannotImplicitCast(nodeCond->codeLoc, condExpr.llvmVal.type, getPrimTypeId(TypeTable::P_BOOL));
             return;
         }
 
-        llvmBuilder.CreateCondBr(condExpr.val, bodyBlock, afterBlock);
+        llvmBuilder.CreateCondBr(condExpr.llvmVal.val, bodyBlock, afterBlock);
     }
 
     func->getBasicBlockList().push_back(afterBlock);
@@ -664,20 +670,20 @@ void Codegen::codegenRet(const AstNode *ast) {
         return;
     }
 
-    ExprGenPayload retExpr = codegenExpr(nodeVal);
+    NodeVal retExpr = codegenExpr(nodeVal);
+    if (!checkValueUnbroken(nodeVal->codeLoc, retExpr, true)) return;
     if (retExpr.isUntyVal() && !promoteUntyped(retExpr, currFunc.value().retType.value())) {
         msgs->errorExprCannotPromote(nodeVal->codeLoc, currFunc.value().retType.value());
         return;
     }
-    if (retExpr.valBroken()) return;
 
-    llvm::Value *retVal = retExpr.val;
-    if (retExpr.type != currFunc.value().retType.value()) {
-        if (!getTypeTable()->isImplicitCastable(retExpr.type, currFunc.value().retType.value())) {
-            msgs->errorExprCannotImplicitCast(nodeVal->codeLoc, retExpr.type, currFunc.value().retType.value());
+    llvm::Value *retVal = retExpr.llvmVal.val;
+    if (retExpr.llvmVal.type != currFunc.value().retType.value()) {
+        if (!getTypeTable()->isImplicitCastable(retExpr.llvmVal.type, currFunc.value().retType.value())) {
+            msgs->errorExprCannotImplicitCast(nodeVal->codeLoc, retExpr.llvmVal.type, currFunc.value().retType.value());
             return;
         }
-        createCast(retVal, retExpr.type, currFunc.value().retType.value());
+        createCast(retVal, retExpr.llvmVal.type, currFunc.value().retType.value());
     }
 
     llvmBuilder.CreateRet(retVal);

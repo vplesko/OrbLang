@@ -160,11 +160,11 @@ bool Compiler::parse(const vector<string> &inputs) {
                 unique_ptr<AstNode> node = par.parseNode();
                 if (msgs->isAbort()) return false;
                 
-                CompilerAction act = codegen->codegenNode(node.get());
+                NodeVal nodeVal = codegen->codegenNode(node.get());
                 if (msgs->isAbort()) return false;
 
-                if (act.kind == CompilerAction::Kind::kImport) {
-                    string path = canonical(stringPool->get(act.file));
+                if (nodeVal.kind == NodeVal::Kind::kImport) {
+                    string path = canonical(stringPool->get(nodeVal.file));
                     ImportTransRes imres = followImport(path, par, namePool.get(), stringPool.get(), msgs.get(), lexers);
                     if (imres == ITR_FAIL) {
                         return false;
