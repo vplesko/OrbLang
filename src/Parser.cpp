@@ -135,9 +135,7 @@ unique_ptr<AstNode> Parser::parseTerm() {
         return nullptr;
     }
 
-    if (peek().type == Token::T_COLON) {
-        next();
-        
+    if (match(Token::T_COLON)) {
         term->type = parseType();
     }
 
@@ -215,10 +213,7 @@ unique_ptr<AstNode> Parser::parseNode() {
         node = makeEmptyTerm();
     }
 
-    if (peek().type == Token::T_COLON) {
-        // TODO nextIf - eats if matching and rets true, otherwise rets false
-        next();
-
+    if (match(Token::T_COLON)) {
         node->type = parseType();
     }
 

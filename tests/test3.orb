@@ -1,8 +1,8 @@
 import "tests/io.orb";
 
 fnc main() () {
-    - 10; // TODO allow literals -10, +10, -10.0, +10.0
-    cast i64 0; // TODO allow typing literals (eg. 0:i64)
+    - 10;
+    cast i64 0;
     
     block { println_i32 (cast i32 (- 10)); println_i32 (cast i16 10); println_i8 (cast i8 (cast i64 1027)); };
     block { println_u32 (cast u32 (- 10)); };
