@@ -14,6 +14,7 @@ struct AstNode {
         kTuple,
         kTerminal
     };
+
     const Kind kind;
     
     std::vector<std::unique_ptr<AstNode>> children;

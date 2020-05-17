@@ -258,30 +258,6 @@ bool Codegen::checkDefinedTypeOrError(TypeTable::Id type, CodeLoc codeLoc) {
     return true;
 }
 
-optional<Token::Type> Codegen::getStartingKeyword(const AstNode *ast) const {
-    if (ast->kind != AstNode::Kind::kTuple ||
-        ast->children.empty() ||
-        ast->children[0]->kind != AstNode::Kind::kTerminal ||
-        ast->children[0]->terminal->kind != TerminalVal::Kind::kKeyword) {
-        return nullopt;
-    }
-    
-    return ast->children[0]->terminal->keyword;
-}
-
-bool Codegen::checkStartingKeyword(const AstNode *ast, Token::Type t, bool orError) {
-    optional<Token::Type> tokTy = getStartingKeyword(ast);
-    if (!tokTy.has_value()) {
-        if (orError) msgs->errorUnknown(ast->codeLoc);
-        return false;
-    } else if (tokTy.value() != t) {
-        if (orError) msgs->errorUnexpectedTokenType(ast->codeLoc, tokTy.value());
-        return false;
-    }
-
-    return true;
-}
-
 bool Codegen::checkTerminal(const AstNode *ast, bool orError) {
     if (ast->kind != AstNode::Kind::kTerminal) {
         if (orError) msgs->errorUnknown(ast->codeLoc);
@@ -387,8 +363,62 @@ bool Codegen::checkIsId(CodeLoc codeLoc, const NodeVal &val, bool orError) {
     return true;
 }
 
+bool Codegen::checkIsFuncId(CodeLoc codeLoc, const NodeVal &val, bool orError) {
+    if (!val.isFuncId()) {
+        if (orError) msgs->errorUnknown(codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
+bool Codegen::checkIsAnyId(CodeLoc codeLoc, const NodeVal &val, bool orError) {
+    if (!val.isId() && !val.isFuncId()) {
+        if (orError) msgs->errorUnknown(codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
+bool Codegen::checkIsKeyword(CodeLoc codeLoc, const NodeVal &val, bool orError) {
+    if (!val.isKeyword()) {
+        if (orError) msgs->errorUnknown(codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
+bool Codegen::checkIsOper(CodeLoc codeLoc, const NodeVal &val, bool orError) {
+    if (!val.isOper()) {
+        if (orError) msgs->errorUnknown(codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
 bool Codegen::checkIsType(CodeLoc codeLoc, const NodeVal &val, bool orError) {
     if (!val.isType()) {
+        if (orError) msgs->errorUnknown(codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
+bool Codegen::checkIsUntyped(CodeLoc codeLoc, const NodeVal &val, bool orError) {
+    if (!val.isUntyVal()) {
+        if (orError) msgs->errorUnknown(codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
+bool Codegen::checkIsAttribute(CodeLoc codeLoc, const NodeVal &val, bool orError) {
+    if (!val.isAttribute()) {
         if (orError) msgs->errorUnknown(codeLoc);
         return false;
     }
@@ -406,6 +436,11 @@ bool Codegen::checkGlobalScope(CodeLoc codeLoc, bool orError) {
 }
 
 optional<NamePool::Id> Codegen::getId(const AstNode *ast, bool orError) {
+    // TODO! revisit after introducing unescape
+    /*NodeVal nodeVal = codegenNode(ast);
+    if (!checkIsId(ast->codeLoc, nodeVal, orError)) return nullopt;
+
+    return nodeVal.id;*/
     if (!checkTerminal(ast, orError)) return nullopt;
 
     if (ast->terminal->kind != TerminalVal::Kind::kId) {
@@ -414,6 +449,20 @@ optional<NamePool::Id> Codegen::getId(const AstNode *ast, bool orError) {
     }
 
     return ast->terminal->id;
+}
+
+optional<NamePool::Id> Codegen::getFuncId(const AstNode *ast, bool orError) {
+    NodeVal nodeVal = codegenNode(ast);
+    if (!checkIsFuncId(ast->codeLoc, nodeVal, orError)) return nullopt;
+
+    return nodeVal.id;
+}
+
+optional<NamePool::Id> Codegen::getAnyId(const AstNode *ast, bool orError) {
+    NodeVal nodeVal = codegenNode(ast);
+    if (!checkIsAnyId(ast->codeLoc, nodeVal, orError)) return nullopt;
+
+    return nodeVal.id;
 }
 
 optional<Codegen::NameTypePair> Codegen::getIdTypePair(const AstNode *ast, bool orError) {
@@ -434,47 +483,31 @@ optional<Codegen::NameTypePair> Codegen::getIdTypePair(const AstNode *ast, bool 
 }
 
 optional<Token::Type> Codegen::getKeyword(const AstNode *ast, bool orError) {
-    if (!checkTerminal(ast, orError)) return nullopt;
+    NodeVal nodeVal = codegenNode(ast);
+    if (!checkIsKeyword(ast->codeLoc, nodeVal, orError)) return nullopt;
 
-    if (ast->terminal->kind != TerminalVal::Kind::kKeyword) {
-        if (orError) msgs->errorUnknown(ast->codeLoc);
-        return nullopt;
-    }
-
-    return ast->terminal->keyword;
+    return nodeVal.keyword;
 }
 
 optional<Token::Oper> Codegen::getOper(const AstNode *ast, bool orError) {
-    if (!checkTerminal(ast, orError)) return nullopt;
+    NodeVal nodeVal = codegenNode(ast);
+    if (!checkIsOper(ast->codeLoc, nodeVal, orError)) return nullopt;
 
-    if (ast->terminal->kind != TerminalVal::Kind::kOper) {
-        if (orError) msgs->errorUnknown(ast->codeLoc);
-        return nullopt;
-    }
-
-    return ast->terminal->oper;
+    return nodeVal.oper;
 }
 
 optional<UntypedVal> Codegen::getUntypedVal(const AstNode *ast, bool orError) {
-    if (!checkTerminal(ast, orError)) return nullopt;
+    NodeVal nodeVal = codegenNode(ast);
+    if (!checkIsUntyped(ast->codeLoc, nodeVal, orError)) return nullopt;
 
-    if (ast->terminal->kind != TerminalVal::Kind::kVal) {
-        if (orError) msgs->errorUnknown(ast->codeLoc);
-        return nullopt;
-    }
-
-    return ast->terminal->val;
+    return nodeVal.untyVal;
 }
 
 optional<Token::Attr> Codegen::getAttr(const AstNode *ast, bool orError) {
-    if (!checkTerminal(ast, orError)) return nullopt;
+    NodeVal nodeVal = codegenNode(ast);
+    if (!checkIsAttribute(ast->codeLoc, nodeVal, orError)) return nullopt;
 
-    if (ast->terminal->kind != TerminalVal::Kind::kAttribute) {
-        if (orError) msgs->errorUnknown(ast->codeLoc);
-        return nullopt;
-    }
-
-    return ast->terminal->attribute;
+    return nodeVal.attribute;
 }
 
 void Codegen::printout() const {

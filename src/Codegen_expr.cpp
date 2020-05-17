@@ -992,8 +992,7 @@ NodeVal Codegen::codegenCall(const AstNode *ast, const NodeVal &first) {
 }
 
 NodeVal Codegen::codegenCast(const AstNode *ast) {
-    if (!checkStartingKeyword(ast, Token::T_CAST, true) ||
-        !checkExactlyChildren(ast, 3, true)) {
+    if (!checkExactlyChildren(ast, 3, true)) {
         return NodeVal();
     }
 
@@ -1054,8 +1053,7 @@ NodeVal Codegen::codegenCast(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenArr(const AstNode *ast) {
-    if (!checkStartingKeyword(ast, Token::T_ARR, true) ||
-        !checkAtLeastChildren(ast, 3, true)) {
+    if (!checkAtLeastChildren(ast, 3, true)) {
         return NodeVal();
     }
 
