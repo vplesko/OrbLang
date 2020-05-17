@@ -22,23 +22,6 @@ class Codegen {
 
     std::stack<llvm::BasicBlock*> breakStack, continueStack;
 
-    struct ExprGenPayload {
-        TypeTable::Id type;
-        llvm::Value *val = nullptr;
-        llvm::Value *ref = nullptr;
-        UntypedVal untyVal = { .type = UntypedVal::T_NONE };
-
-        bool isUntyVal() const { return untyVal.type != UntypedVal::T_NONE; }
-        void resetUntyVal() { untyVal.type = UntypedVal::T_NONE; }
-    };
-
-    // checks if both val and unty val are invalid
-    bool valueBroken(const ExprGenPayload &e);
-    // checks if val is invalid
-    bool valBroken(const ExprGenPayload &e);
-    // checks if ref is invalid
-    bool refBroken(const ExprGenPayload &e);
-
     bool isBool(const ExprGenPayload &e) {
         return e.isUntyVal() ? e.untyVal.type == UntypedVal::T_BOOL : getTypeTable()->worksAsTypeB(e.type);
     }

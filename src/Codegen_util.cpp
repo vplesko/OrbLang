@@ -94,18 +94,6 @@ llvm::Type* Codegen::getType(TypeTable::Id typeId) {
     return llvmType;
 }
 
-bool Codegen::valueBroken(const ExprGenPayload &e) {
-    return e.val == nullptr && !e.isUntyVal();
-}
-
-bool Codegen::valBroken(const ExprGenPayload &e) {
-    return e.val == nullptr;
-}
-
-bool Codegen::refBroken(const ExprGenPayload &e) {
-    return e.ref == nullptr;
-}
-
 bool Codegen::promoteUntyped(ExprGenPayload &e, TypeTable::Id t) {
     if (!e.isUntyVal()) {
         return false;

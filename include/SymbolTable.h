@@ -5,45 +5,9 @@
 #include <string>
 #include "NamePool.h"
 #include "StringPool.h"
+#include "Values.h"
 #include "TypeTable.h"
 #include "llvm/IR/Instructions.h"
-
-/*
-UntypedVal is needed to represent a literal value whose exact type is yet unknown.
-
-Let's say we interpret an integer literal as i32.
-Then the user couldn't do this: i8 i = 0;
-
-Let's say we interpret it as the shortest type it can fit.
-Then this would overflow: i32 i = 250 + 10;
-
-Therefore, we need this intermediate value holder.
-
-NOTE
-Does not hold uint values. Users can overcome this by casting.
-*/
-struct UntypedVal {
-    enum Type {
-        T_NONE,
-        T_SINT,
-        T_FLOAT,
-        T_CHAR,
-        T_STRING,
-        T_BOOL,
-        T_NULL
-    };
-
-    Type type;
-    union {
-        int64_t val_si;
-        double val_f;
-        char val_c;
-        bool val_b;
-        StringPool::Id val_str;
-    };
-
-    static std::size_t getStringLen(const std::string &str) { return str.size()+1; }
-};
 
 struct FuncCallSite {
     NamePool::Id name;

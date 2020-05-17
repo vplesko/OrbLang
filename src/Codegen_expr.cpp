@@ -1,7 +1,7 @@
 #include "Codegen.h"
 using namespace std;
 
-Codegen::ExprGenPayload Codegen::codegenExpr(const AstNode *ast) {
+ExprGenPayload Codegen::codegenExpr(const AstNode *ast) {
     optional<Token::Type> keyw = getStartingKeyword(ast);
 
     if (getUntypedVal(ast, false).has_value()) {
@@ -36,7 +36,7 @@ Codegen::ExprGenPayload Codegen::codegenExpr(const AstNode *ast) {
     return {};
 }
 
-Codegen::ExprGenPayload Codegen::codegenUntypedVal(const AstNode *ast) {
+ExprGenPayload Codegen::codegenUntypedVal(const AstNode *ast) {
     optional<UntypedVal> val = getUntypedVal(ast, true);
     if (!val.has_value()) return {};
 
@@ -49,7 +49,7 @@ Codegen::ExprGenPayload Codegen::codegenUntypedVal(const AstNode *ast) {
     return { .untyVal = val.value() };
 }
 
-Codegen::ExprGenPayload Codegen::codegenVar(const AstNode *ast) {
+ExprGenPayload Codegen::codegenVar(const AstNode *ast) {
     optional<NamePool::Id> name = getId(ast, true);
     if (!name.has_value()) return {};
 
@@ -65,7 +65,7 @@ Codegen::ExprGenPayload Codegen::codegenVar(const AstNode *ast) {
         var.value().val};
 }
 
-Codegen::ExprGenPayload Codegen::codegenInd(const AstNode *ast) {
+ExprGenPayload Codegen::codegenInd(const AstNode *ast) {
     if (!checkExactlyChildren(ast, 3, true)) {
         return {};
     }
@@ -74,7 +74,7 @@ Codegen::ExprGenPayload Codegen::codegenInd(const AstNode *ast) {
     const AstNode *nodeInd = ast->children[2].get();
 
     ExprGenPayload baseExprPay = codegenExpr(nodeBase);
-    if (valueBroken(baseExprPay)) return {};
+    if (baseExprPay.valueBroken()) return {};
 
     if (baseExprPay.isUntyVal()) {
         if (baseExprPay.untyVal.type == UntypedVal::T_STRING) {
@@ -89,7 +89,7 @@ Codegen::ExprGenPayload Codegen::codegenInd(const AstNode *ast) {
     }
 
     ExprGenPayload indExprPay = codegenExpr(nodeInd);
-    if (valueBroken(indExprPay)) return {};
+    if (indExprPay.valueBroken()) return {};
 
     if (indExprPay.isUntyVal()) {
         if (indExprPay.untyVal.type == UntypedVal::T_SINT) {
@@ -147,7 +147,7 @@ Codegen::ExprGenPayload Codegen::codegenInd(const AstNode *ast) {
     return retPay;
 }
 
-Codegen::ExprGenPayload Codegen::codegenDot(const AstNode *ast) {
+ExprGenPayload Codegen::codegenDot(const AstNode *ast) {
     if (!checkExactlyChildren(ast, 3, true)) {
         return {};
     }
@@ -163,7 +163,7 @@ Codegen::ExprGenPayload Codegen::codegenDot(const AstNode *ast) {
         msgs->errorExprDotInvalidBase(nodeBase->codeLoc);
         return {};
     }
-    if (valueBroken(baseExpr)) return {};
+    if (baseExpr.valueBroken()) return {};
 
     ExprGenPayload leftExpr = baseExpr;
 
@@ -218,7 +218,7 @@ Codegen::ExprGenPayload Codegen::codegenDot(const AstNode *ast) {
     return exprRet;
 }
 
-Codegen::ExprGenPayload Codegen::codegenUn(const AstNode *ast) {
+ExprGenPayload Codegen::codegenUn(const AstNode *ast) {
     if (!checkExactlyChildren(ast, 2, true)) {
         return {};
     }
@@ -231,7 +231,7 @@ Codegen::ExprGenPayload Codegen::codegenUn(const AstNode *ast) {
     Token::Oper op = optOp.value();
 
     ExprGenPayload exprPay = codegenExpr(nodeVal);
-    if (valueBroken(exprPay)) return {};
+    if (exprPay.valueBroken()) return {};
 
     if (exprPay.isUntyVal()) return codegenUntypedUn(ast->codeLoc, op, exprPay.untyVal);
 
@@ -257,7 +257,7 @@ Codegen::ExprGenPayload Codegen::codegenUn(const AstNode *ast) {
             msgs->errorExprUnOnCn(ast->codeLoc, op);
             return {};
         }
-        if (!(getTypeTable()->worksAsTypeI(exprPay.type) || getTypeTable()->worksAsTypeU(exprPay.type)) || refBroken(exprPay)) {
+        if (!(getTypeTable()->worksAsTypeI(exprPay.type) || getTypeTable()->worksAsTypeU(exprPay.type)) || exprPay.refBroken()) {
             msgs->errorExprUnBadType(ast->codeLoc, op, exprPay.type);
             return {};
         }
@@ -269,7 +269,7 @@ Codegen::ExprGenPayload Codegen::codegenUn(const AstNode *ast) {
             msgs->errorExprUnOnCn(ast->codeLoc, op);
             return {};
         }
-        if (!(getTypeTable()->worksAsTypeI(exprPay.type) || getTypeTable()->worksAsTypeU(exprPay.type)) || refBroken(exprPay)) {
+        if (!(getTypeTable()->worksAsTypeI(exprPay.type) || getTypeTable()->worksAsTypeU(exprPay.type)) || exprPay.refBroken()) {
             msgs->errorExprUnBadType(ast->codeLoc, op, exprPay.type);
             return {};
         }
@@ -313,7 +313,7 @@ Codegen::ExprGenPayload Codegen::codegenUn(const AstNode *ast) {
     return exprRet;
 }
 
-Codegen::ExprGenPayload Codegen::codegenUntypedUn(CodeLoc codeLoc, Token::Oper op, UntypedVal unty) {
+ExprGenPayload Codegen::codegenUntypedUn(CodeLoc codeLoc, Token::Oper op, UntypedVal unty) {
     ExprGenPayload exprRet;
     exprRet.untyVal.type = unty.type;
     if (op == Token::O_ADD) {
@@ -358,7 +358,7 @@ Codegen::ExprGenPayload Codegen::codegenUntypedUn(CodeLoc codeLoc, Token::Oper o
     return exprRet;
 }
 
-Codegen::ExprGenPayload Codegen::codegenBin(const AstNode *ast) {
+ExprGenPayload Codegen::codegenBin(const AstNode *ast) {
     if (!checkExactlyChildren(ast, 3, true)) {
         return {};
     }
@@ -385,7 +385,7 @@ Codegen::ExprGenPayload Codegen::codegenBin(const AstNode *ast) {
 
     exprPayL = codegenExpr(nodeL);
     if (assignment) {
-        if (refBroken(exprPayL)) {
+        if (exprPayL.refBroken()) {
             msgs->errorExprAsgnNonRef(ast->codeLoc, op);
             return {};
         }
@@ -394,11 +394,11 @@ Codegen::ExprGenPayload Codegen::codegenBin(const AstNode *ast) {
             return {};
         }
     } else {
-        if (valueBroken(exprPayL)) return {};
+        if (exprPayL.valueBroken()) return {};
     }
 
     exprPayR = codegenExpr(nodeR);
-    if (valueBroken(exprPayR)) return {};
+    if (exprPayR.valueBroken()) return {};
 
     if (exprPayL.isUntyVal() && !exprPayR.isUntyVal()) {
         if (!promoteUntyped(exprPayL, exprPayR.type)) {
@@ -589,7 +589,7 @@ Codegen::ExprGenPayload Codegen::codegenBin(const AstNode *ast) {
         }
     }
 
-    if (valueBroken(exprPayRet)) {
+    if (exprPayRet.valueBroken()) {
         msgs->errorInternal(ast->codeLoc);
         return {};
     }
@@ -601,7 +601,7 @@ Codegen::ExprGenPayload Codegen::codegenBin(const AstNode *ast) {
     return exprPayRet;
 }
 
-Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const AstNode *ast) {
+ExprGenPayload Codegen::codegenLogicAndOr(const AstNode *ast) {
     if (isGlobalScope()) {
         return codegenLogicAndOrGlobalScope(ast);
     }
@@ -630,7 +630,7 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const AstNode *ast) {
 
     llvmBuilder.SetInsertPoint(firstBlock);
     exprPayL = codegenExpr(nodeL);
-    if (valueBroken(exprPayL)) {
+    if (exprPayL.valueBroken()) {
         return {};
     }
     if (!isBool(exprPayL)) {
@@ -659,7 +659,7 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const AstNode *ast) {
     func->getBasicBlockList().push_back(otherBlock);
     llvmBuilder.SetInsertPoint(otherBlock);
     exprPayR = codegenExpr(nodeR);
-    if (valueBroken(exprPayR)) {
+    if (exprPayR.valueBroken()) {
         return {};
     }
     if (!isBool(exprPayR)) {
@@ -702,7 +702,7 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOr(const AstNode *ast) {
     return ret;
 }
 
-Codegen::ExprGenPayload Codegen::codegenLogicAndOrGlobalScope(const AstNode *ast) {
+ExprGenPayload Codegen::codegenLogicAndOrGlobalScope(const AstNode *ast) {
     if (!checkExactlyChildren(ast, 3, true)) {
         return {};
     }
@@ -745,7 +745,7 @@ Codegen::ExprGenPayload Codegen::codegenLogicAndOrGlobalScope(const AstNode *ast
     return exprPayRet;
 }
 
-Codegen::ExprGenPayload Codegen::codegenUntypedBin(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR) {
+ExprGenPayload Codegen::codegenUntypedBin(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR) {
     if (untyL.type != untyR.type) {
         msgs->errorExprUntyMismatch(codeLoc);
         return {};
@@ -936,7 +936,7 @@ Codegen::ExprGenPayload Codegen::codegenUntypedBin(CodeLoc codeLoc, Token::Oper 
     return { .untyVal = untyValRet };
 }
 
-Codegen::ExprGenPayload Codegen::codegenCall(const AstNode *ast) {
+ExprGenPayload Codegen::codegenCall(const AstNode *ast) {
     if (!checkNotTerminal(ast, true))
         return {};
     
@@ -957,7 +957,7 @@ Codegen::ExprGenPayload Codegen::codegenCall(const AstNode *ast) {
         const AstNode *nodeArg = ast->children[i+1].get();
 
         exprs[i] = codegenExpr(nodeArg);
-        if (valueBroken(exprs[i])) return {};
+        if (exprs[i].valueBroken()) return {};
 
         call.set(i, exprs[i].type);
         args[i] = exprs[i].val;
@@ -1006,7 +1006,7 @@ Codegen::ExprGenPayload Codegen::codegenCall(const AstNode *ast) {
     return ret;
 }
 
-Codegen::ExprGenPayload Codegen::codegenCast(const AstNode *ast) {
+ExprGenPayload Codegen::codegenCast(const AstNode *ast) {
     if (!checkStartingKeyword(ast, Token::T_CAST, true) ||
         !checkExactlyChildren(ast, 3, true)) {
         return {};
@@ -1022,7 +1022,7 @@ Codegen::ExprGenPayload Codegen::codegenCast(const AstNode *ast) {
     if (type == nullptr) return {};
 
     ExprGenPayload exprVal = codegenExpr(nodeVal);
-    if (valueBroken(exprVal)) return {};
+    if (exprVal.valueBroken()) return {};
 
     if (exprVal.isUntyVal()) {
         TypeTable::Id promoType;
@@ -1065,7 +1065,7 @@ Codegen::ExprGenPayload Codegen::codegenCast(const AstNode *ast) {
     return {optTypeId.value(), val, nullptr};
 }
 
-Codegen::ExprGenPayload Codegen::codegenArr(const AstNode *ast) {
+ExprGenPayload Codegen::codegenArr(const AstNode *ast) {
     if (!checkStartingKeyword(ast, Token::T_ARR, true) ||
         !checkAtLeastChildren(ast, 3, true)) {
         return {};
@@ -1111,7 +1111,7 @@ Codegen::ExprGenPayload Codegen::codegenArr(const AstNode *ast) {
             msgs->errorExprCannotPromote(nodeElem->codeLoc, elemTypeId);
             return {};
         }
-        if (valBroken(exprPay)) return {};
+        if (exprPay.valBroken()) return {};
         if (!getTypeTable()->isImplicitCastable(exprPay.type, elemTypeId)) {
             msgs->errorExprCannotImplicitCast(nodeElem->codeLoc, exprPay.type, elemTypeId);
             return {};
