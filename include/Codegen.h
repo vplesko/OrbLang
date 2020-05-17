@@ -23,7 +23,7 @@ class Codegen {
     std::stack<llvm::BasicBlock*> breakStack, continueStack;
 
     bool isBool(const ExprGenPayload &e) {
-        return e.isUntyVal() ? e.untyVal.type == UntypedVal::T_BOOL : getTypeTable()->worksAsTypeB(e.type);
+        return e.isUntyVal() ? e.untyVal.kind == UntypedVal::Kind::kBool : getTypeTable()->worksAsTypeB(e.type);
     }
 
     bool promoteUntyped(ExprGenPayload &e, TypeTable::Id t);
@@ -114,7 +114,7 @@ public:
     llvm::Type* genPrimTypeF64();
     llvm::Type* genPrimTypePtr();
 
-    CompilerAction codegenNode(const AstNode *ast, bool blockMakeScope = true);
+    CompilerAction codegenNode(const AstNode *ast);
 
     void printout() const;
 

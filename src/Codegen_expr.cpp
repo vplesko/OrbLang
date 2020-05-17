@@ -40,7 +40,7 @@ ExprGenPayload Codegen::codegenUntypedVal(const AstNode *ast) {
     optional<UntypedVal> val = getUntypedVal(ast, true);
     if (!val.has_value()) return {};
 
-    if (val.value().type == UntypedVal::T_NONE) {
+    if (val.value().kind == UntypedVal::Kind::kNone) {
         // should not happen
         msgs->errorInternal(ast->codeLoc);
         return {};
@@ -77,7 +77,7 @@ ExprGenPayload Codegen::codegenInd(const AstNode *ast) {
     if (baseExprPay.valueBroken()) return {};
 
     if (baseExprPay.isUntyVal()) {
-        if (baseExprPay.untyVal.type == UntypedVal::T_STRING) {
+        if (baseExprPay.untyVal.kind == UntypedVal::Kind::kString) {
             if (!promoteUntyped(baseExprPay, getTypeTable()->getTypeIdStr())) {
                 msgs->errorInternal(nodeBase->codeLoc);
                 return {};
@@ -92,7 +92,7 @@ ExprGenPayload Codegen::codegenInd(const AstNode *ast) {
     if (indExprPay.valueBroken()) return {};
 
     if (indExprPay.isUntyVal()) {
-        if (indExprPay.untyVal.type == UntypedVal::T_SINT) {
+        if (indExprPay.untyVal.kind == UntypedVal::Kind::kSint) {
             if (!promoteUntyped(indExprPay, getTypeTable()->shortestFittingTypeIId(indExprPay.untyVal.val_si))) {
                 msgs->errorInternal(nodeInd->codeLoc);
                 return {};
@@ -315,38 +315,38 @@ ExprGenPayload Codegen::codegenUn(const AstNode *ast) {
 
 ExprGenPayload Codegen::codegenUntypedUn(CodeLoc codeLoc, Token::Oper op, UntypedVal unty) {
     ExprGenPayload exprRet;
-    exprRet.untyVal.type = unty.type;
+    exprRet.untyVal.kind = unty.kind;
     if (op == Token::O_ADD) {
-        if (unty.type != UntypedVal::T_SINT && unty.type != UntypedVal::T_FLOAT) {
+        if (unty.kind != UntypedVal::Kind::kSint && unty.kind != UntypedVal::Kind::kFloat) {
             msgs->errorExprUnBadType(codeLoc, op);
             return {};
         }
         exprRet.untyVal = unty;
     } else if (op == Token::O_SUB) {
-        if (unty.type == UntypedVal::T_SINT) {
+        if (unty.kind == UntypedVal::Kind::kSint) {
             exprRet.untyVal.val_si = -unty.val_si;
-        } else if (unty.type == UntypedVal::T_FLOAT) {
+        } else if (unty.kind == UntypedVal::Kind::kFloat) {
             exprRet.untyVal.val_f = -unty.val_f;
         } else {
             msgs->errorExprUnBadType(codeLoc, op);
             return {};
         }
     } else if (op == Token::O_BIT_NOT) {
-        if (unty.type == UntypedVal::T_SINT) {
+        if (unty.kind == UntypedVal::Kind::kSint) {
             exprRet.untyVal.val_si = ~unty.val_si;
         } else {
             msgs->errorExprUnBadType(codeLoc, op);
             return {};
         }
     } else if (op == Token::O_NOT) {
-        if (unty.type == UntypedVal::T_BOOL) {
+        if (unty.kind == UntypedVal::Kind::kBool) {
             exprRet.untyVal.val_b = !unty.val_b;
         } else {
             msgs->errorExprUnBadType(codeLoc, op);
             return {};
         }
     } else {
-        if (op == Token::O_MUL && unty.type == UntypedVal::T_NULL) {
+        if (op == Token::O_MUL && unty.kind == UntypedVal::Kind::kNull) {
             msgs->errorExprUnOnNull(codeLoc, op);
         } else if (op == Token::O_BIT_AND) {
             msgs->errorExprAddressOfNoRef(codeLoc);
@@ -676,7 +676,7 @@ ExprGenPayload Codegen::codegenLogicAndOr(const AstNode *ast) {
         // this cannot be moved to other codegen methods,
         // as we don't know whether exprs are untyVals until we call codegenExpr,
         // but calling it emits code to LLVM at that point
-        ret.untyVal.type = UntypedVal::T_BOOL;
+        ret.untyVal.kind = UntypedVal::Kind::kBool;
         if (op == Token::O_AND)
             ret.untyVal.val_b = exprPayL.untyVal.val_b && exprPayR.untyVal.val_b;
         else
@@ -736,7 +736,7 @@ ExprGenPayload Codegen::codegenLogicAndOrGlobalScope(const AstNode *ast) {
     }
 
     ExprGenPayload exprPayRet;
-    exprPayRet.untyVal.type = UntypedVal::T_BOOL;
+    exprPayRet.untyVal.kind = UntypedVal::Kind::kBool;
     if (op == Token::O_AND)
         exprPayRet.untyVal.val_b = exprPayL.untyVal.val_b && exprPayR.untyVal.val_b;
     else
@@ -746,20 +746,20 @@ ExprGenPayload Codegen::codegenLogicAndOrGlobalScope(const AstNode *ast) {
 }
 
 ExprGenPayload Codegen::codegenUntypedBin(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR) {
-    if (untyL.type != untyR.type) {
+    if (untyL.kind != untyR.kind) {
         msgs->errorExprUntyMismatch(codeLoc);
         return {};
     }
-    if (untyL.type == UntypedVal::T_NONE) {
+    if (untyL.kind == UntypedVal::Kind::kNone) {
         // should not happen
         msgs->errorUnknown(codeLoc);
         return {};
     }
 
     UntypedVal untyValRet;
-    untyValRet.type = untyL.type;
+    untyValRet.kind = untyL.kind;
 
-    if (untyValRet.type == UntypedVal::T_BOOL) {
+    if (untyValRet.kind == UntypedVal::Kind::kBool) {
         switch (op) {
         case Token::O_EQ:
             untyValRet.val_b = untyL.val_b == untyR.val_b;
@@ -772,15 +772,15 @@ ExprGenPayload Codegen::codegenUntypedBin(CodeLoc codeLoc, Token::Oper op, Untyp
             msgs->errorExprUntyBinBadOp(codeLoc, op);
             return {};
         }
-    } else if (untyValRet.type == UntypedVal::T_NULL) {
+    } else if (untyValRet.kind == UntypedVal::Kind::kNull) {
         // both are null
         switch (op) {
         case Token::O_EQ:
-            untyValRet.type = UntypedVal::T_BOOL;
+            untyValRet.kind = UntypedVal::Kind::kBool;
             untyValRet.val_b = true;
             break;
         case Token::O_NEQ:
-            untyValRet.type = UntypedVal::T_BOOL;
+            untyValRet.kind = UntypedVal::Kind::kBool;
             untyValRet.val_b = false;
             break;
         default:
@@ -788,13 +788,13 @@ ExprGenPayload Codegen::codegenUntypedBin(CodeLoc codeLoc, Token::Oper op, Untyp
             return {};
         }
     } else {
-        bool isTypeI = untyValRet.type == UntypedVal::T_SINT;
-        bool isTypeC = untyValRet.type == UntypedVal::T_CHAR;
-        bool isTypeF = untyValRet.type == UntypedVal::T_FLOAT;
+        bool isTypeI = untyValRet.kind == UntypedVal::Kind::kSint;
+        bool isTypeC = untyValRet.kind == UntypedVal::Kind::kChar;
+        bool isTypeF = untyValRet.kind == UntypedVal::Kind::kFloat;
 
         if (!isTypeI && !isTypeC && !isTypeF) {
             // NOTE cannot == nor != on two string literals
-            if (untyValRet.type == UntypedVal::T_STRING) {
+            if (untyValRet.kind == UntypedVal::Kind::kString) {
                 msgs->errorExprCompareStringLits(codeLoc);
             } else {
                 msgs->errorExprUntyBinBadOp(codeLoc, op);
@@ -873,7 +873,7 @@ ExprGenPayload Codegen::codegenUntypedBin(CodeLoc codeLoc, Token::Oper op, Untyp
                         untyValRet.val_si = untyL.val_si%untyR.val_si;
                     break;
                 case Token::O_EQ:
-                    untyValRet.type = UntypedVal::T_BOOL;
+                    untyValRet.kind = UntypedVal::Kind::kBool;
                     if (isTypeF)
                         untyValRet.val_b = untyL.val_f == untyR.val_f;
                     else if (isTypeI)
@@ -882,7 +882,7 @@ ExprGenPayload Codegen::codegenUntypedBin(CodeLoc codeLoc, Token::Oper op, Untyp
                         untyValRet.val_b = untyL.val_c == untyR.val_c;
                     break;
                 case Token::O_NEQ:
-                    untyValRet.type = UntypedVal::T_BOOL;
+                    untyValRet.kind = UntypedVal::Kind::kBool;
                     if (isTypeF)
                         untyValRet.val_b = untyL.val_f != untyR.val_f;
                     else if (isTypeI)
@@ -891,7 +891,7 @@ ExprGenPayload Codegen::codegenUntypedBin(CodeLoc codeLoc, Token::Oper op, Untyp
                         untyValRet.val_b = untyL.val_c != untyR.val_c;
                     break;
                 case Token::O_LT:
-                    untyValRet.type = UntypedVal::T_BOOL;
+                    untyValRet.kind = UntypedVal::Kind::kBool;
                     if (isTypeF)
                         untyValRet.val_b = untyL.val_f < untyR.val_f;
                     else if (isTypeI)
@@ -900,7 +900,7 @@ ExprGenPayload Codegen::codegenUntypedBin(CodeLoc codeLoc, Token::Oper op, Untyp
                         untyValRet.val_b = untyL.val_c < untyR.val_c;
                     break;
                 case Token::O_LTEQ:
-                    untyValRet.type = UntypedVal::T_BOOL;
+                    untyValRet.kind = UntypedVal::Kind::kBool;
                     if (isTypeF)
                         untyValRet.val_b = untyL.val_f <= untyR.val_f;
                     else if (isTypeI)
@@ -909,7 +909,7 @@ ExprGenPayload Codegen::codegenUntypedBin(CodeLoc codeLoc, Token::Oper op, Untyp
                         untyValRet.val_b = untyL.val_c <= untyR.val_c;
                     break;
                 case Token::O_GT:
-                    untyValRet.type = UntypedVal::T_BOOL;
+                    untyValRet.kind = UntypedVal::Kind::kBool;
                     if (isTypeF)
                         untyValRet.val_b = untyL.val_f > untyR.val_f;
                     else if (isTypeI)
@@ -918,7 +918,7 @@ ExprGenPayload Codegen::codegenUntypedBin(CodeLoc codeLoc, Token::Oper op, Untyp
                         untyValRet.val_b = untyL.val_c > untyR.val_c;
                     break;
                 case Token::O_GTEQ:
-                    untyValRet.type = UntypedVal::T_BOOL;
+                    untyValRet.kind = UntypedVal::Kind::kBool;
                     if (isTypeF)
                         untyValRet.val_b = untyL.val_f >= untyR.val_f;
                     else if (isTypeI)
@@ -1026,24 +1026,24 @@ ExprGenPayload Codegen::codegenCast(const AstNode *ast) {
 
     if (exprVal.isUntyVal()) {
         TypeTable::Id promoType;
-        switch (exprVal.untyVal.type) {
-        case UntypedVal::T_BOOL:
+        switch (exprVal.untyVal.kind) {
+        case UntypedVal::Kind::kBool:
             promoType = getPrimTypeId(TypeTable::P_BOOL);
             break;
-        case UntypedVal::T_SINT:
+        case UntypedVal::Kind::kSint:
             promoType = getTypeTable()->shortestFittingTypeIId(exprVal.untyVal.val_si);
             break;
-        case UntypedVal::T_CHAR:
+        case UntypedVal::Kind::kChar:
             promoType = getPrimTypeId(TypeTable::P_C8);
             break;
-        case UntypedVal::T_FLOAT:
+        case UntypedVal::Kind::kFloat:
             // cast to widest float type
             promoType = getPrimTypeId(TypeTable::WIDEST_F);
             break;
-        case UntypedVal::T_STRING:
+        case UntypedVal::Kind::kString:
             promoType = getTypeTable()->getTypeIdStr();
             break;
-        case UntypedVal::T_NULL:
+        case UntypedVal::Kind::kNull:
             promoType = getPrimTypeId(TypeTable::P_PTR);
             break;
         default:

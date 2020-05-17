@@ -121,7 +121,7 @@ bool Codegen::createCast(ExprGenPayload &e, TypeTable::Id t) {
     return true;
 }
 
-CompilerAction Codegen::codegenNode(const AstNode *ast, bool blockMakeScope) {
+CompilerAction Codegen::codegenNode(const AstNode *ast) {
     if (checkEmptyTerminal(ast, false)) {
         // do nothin'
         return CompilerAction();
@@ -194,7 +194,7 @@ optional<StringPool::Id> Codegen::codegenImport(const AstNode *ast) {
     optional<UntypedVal> val = getUntypedVal(nodeFile, true);
     if (!val.has_value()) return nullopt;
 
-    if (val.value().type != UntypedVal::T_STRING) {
+    if (val.value().kind != UntypedVal::Kind::kString) {
         msgs->errorUnknown(nodeFile->codeLoc);
         return nullopt;
     }
@@ -233,7 +233,7 @@ optional<TypeTable::Id> Codegen::codegenType(const AstNode *ast) {
         } else if (op.has_value() && op == Token::O_IND) {
             typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_ARR_PTR});
         } else if (val.has_value()) {
-            if (val.value().type != UntypedVal::T_SINT) {
+            if (val.value().kind != UntypedVal::Kind::kSint) {
                 msgs->errorUnknown(nodeChild->codeLoc);
                 return nullopt;
             }

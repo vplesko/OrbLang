@@ -59,7 +59,7 @@ FuncSignature SymbolTable::makeFuncSignature(NamePool::Id name, const std::vecto
 
 optional<FuncSignature> SymbolTable::makeFuncSignature(const FuncCallSite &call) const {
     for (const UntypedVal &it : call.untypedVals) {
-        if (it.type != UntypedVal::T_NONE)
+        if (it.kind != UntypedVal::Kind::kNone)
             return nullopt;
     }
     return makeFuncSignature(call.name, call.argTypes);
@@ -138,29 +138,29 @@ optional<FuncValue> SymbolTable::getFuncForCall(const FuncCallSite &call) {
 
         for (size_t i = 0; i < it.second.argTypes.size(); ++i) {
             // if arg of same or implicitly castable type, we're good
-            bool argTypeOk = call.untypedVals[i].type == UntypedVal::T_NONE &&
+            bool argTypeOk = call.untypedVals[i].kind == UntypedVal::Kind::kNone &&
                 typeTable->isArgTypeProper(call.argTypes[i], it.second.argTypes[i]);
 
             // otherwise, if untyped val which can be used for this func, we're also good
-            if (!argTypeOk && call.untypedVals[i].type != UntypedVal::T_NONE) {
-                switch (call.untypedVals[i].type) {
-                case UntypedVal::T_BOOL:
+            if (!argTypeOk && call.untypedVals[i].kind != UntypedVal::Kind::kNone) {
+                switch (call.untypedVals[i].kind) {
+                case UntypedVal::Kind::kBool:
                     argTypeOk = typeTable->worksAsTypeB(it.second.argTypes[i]);
                     break;
-                case UntypedVal::T_SINT:
+                case UntypedVal::Kind::kSint:
                     argTypeOk = typeTable->worksAsTypeI(it.second.argTypes[i]) ||
                         (typeTable->worksAsTypeU(it.second.argTypes[i]) && call.untypedVals[i].val_si >= 0);
                     break;
-                case UntypedVal::T_CHAR:
+                case UntypedVal::Kind::kChar:
                     argTypeOk = typeTable->worksAsTypeC(it.second.argTypes[i]);
                     break;
-                case UntypedVal::T_FLOAT:
+                case UntypedVal::Kind::kFloat:
                     argTypeOk = typeTable->worksAsTypeF(it.second.argTypes[i]);
                     break;
-                case UntypedVal::T_NULL:
+                case UntypedVal::Kind::kNull:
                     argTypeOk = typeTable->worksAsTypeAnyP(it.second.argTypes[i]);
                     break;
-                case UntypedVal::T_STRING:
+                case UntypedVal::Kind::kString:
                     {
                         const std::string &str = stringPool->get(call.untypedVals[i].val_str);
                         argTypeOk = typeTable->worksAsTypeStr(it.second.argTypes[i]) ||

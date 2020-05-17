@@ -41,7 +41,7 @@ CodeLoc Parser::loc() const {
 
 unique_ptr<AstNode> Parser::makeEmptyTerm() {
     unique_ptr<AstNode> empty = make_unique<AstNode>(loc(), AstNode::Kind::kTerminal);
-    empty->terminal = make_unique<AstTerminal>();
+    empty->terminal = TerminalVal();
     return empty;
 }
 
@@ -77,28 +77,28 @@ unique_ptr<AstNode> Parser::parseTerm() {
     case Token::T_CONTINUE:
     case Token::T_RET:
     case Token::T_IMPORT:
-        term->terminal = make_unique<AstTerminal>(tok.type);
+        term->terminal = TerminalVal(tok.type);
         break;
     
     case Token::T_NUM:
-        val.type = UntypedVal::T_SINT;
+        val.kind = UntypedVal::Kind::kSint;
         val.val_si = tok.num;
-        term->terminal = make_unique<AstTerminal>(move(val));
+        term->terminal = TerminalVal(val);
         break;
     case Token::T_FNUM:
-        val.type = UntypedVal::T_FLOAT;
+        val.kind = UntypedVal::Kind::kFloat;
         val.val_f = tok.fnum;
-        term->terminal = make_unique<AstTerminal>(move(val));
+        term->terminal = TerminalVal(val);
         break;
     case Token::T_CHAR:
-        val.type = UntypedVal::T_CHAR;
+        val.kind = UntypedVal::Kind::kChar;
         val.val_c = tok.ch;
-        term->terminal = make_unique<AstTerminal>(move(val));
+        term->terminal = TerminalVal(val);
         break;
     case Token::T_BVAL:
-        val.type = UntypedVal::T_BOOL;
+        val.kind = UntypedVal::Kind::kBool;
         val.val_b = tok.bval;
-        term->terminal = make_unique<AstTerminal>(move(val));
+        term->terminal = TerminalVal(val);
         break;
     case Token::T_STRING:
         {
@@ -108,26 +108,26 @@ unique_ptr<AstNode> Parser::parseTerm() {
                 ss << stringPool->get(next().stringId);
             }
             UntypedVal val;
-            val.type = UntypedVal::T_STRING;
+            val.kind = UntypedVal::Kind::kString;
             val.val_str = stringPool->add(ss.str());
-            term->terminal = make_unique<AstTerminal>(move(val));
+            term->terminal = TerminalVal(val);
             break;
         }
     case Token::T_NULL:
-        val.type = UntypedVal::T_NULL;
-        term->terminal = make_unique<AstTerminal>(move(val));
+        val.kind = UntypedVal::Kind::kNull;
+        term->terminal = TerminalVal(val);
         break;
     
     case Token::T_OPER:
-        term->terminal = make_unique<AstTerminal>(tok.op);
+        term->terminal = TerminalVal(tok.op);
         break;
 
     case Token::T_ID:
-        term->terminal = make_unique<AstTerminal>(tok.nameId);
+        term->terminal = TerminalVal(tok.nameId);
         break;
     
     case Token::T_ATTRIBUTE:
-        term->terminal = make_unique<AstTerminal>(tok.attr);
+        term->terminal = TerminalVal(tok.attr);
         break;
     
     default:

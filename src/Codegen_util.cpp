@@ -101,29 +101,29 @@ bool Codegen::promoteUntyped(ExprGenPayload &e, TypeTable::Id t) {
 
     bool success = true;
 
-    switch (e.untyVal.type) {
-    case UntypedVal::T_BOOL:
+    switch (e.untyVal.kind) {
+    case UntypedVal::Kind::kBool:
         if (!getTypeTable()->worksAsTypeB(t)) {
             success = false;
         } else {
             e.val = getConstB(e.untyVal.val_b);
         }
         break;
-    case UntypedVal::T_SINT:
+    case UntypedVal::Kind::kSint:
         if ((!getTypeTable()->worksAsTypeI(t) && !getTypeTable()->worksAsTypeU(t)) || !getTypeTable()->fitsType(e.untyVal.val_si, t)) {
             success = false;
         } else {
             e.val = llvm::ConstantInt::get(getType(t), e.untyVal.val_si, getTypeTable()->worksAsTypeI(t));
         }
         break;
-    case UntypedVal::T_CHAR:
+    case UntypedVal::Kind::kChar:
         if (!getTypeTable()->worksAsTypeC(t)) {
             success = false;
         } else {
             e.val = llvm::ConstantInt::get(getType(t), (uint8_t) e.untyVal.val_c, false);
         }
         break;
-    case UntypedVal::T_FLOAT:
+    case UntypedVal::Kind::kFloat:
         // no precision checks for float types, this makes float literals somewhat unsafe
         if (!getTypeTable()->worksAsTypeF(t)) {
             success = false;
@@ -131,7 +131,7 @@ bool Codegen::promoteUntyped(ExprGenPayload &e, TypeTable::Id t) {
             e.val = llvm::ConstantFP::get(getType(t), e.untyVal.val_f);
         }
         break;
-    case UntypedVal::T_STRING:
+    case UntypedVal::Kind::kString:
         {
             const std::string &str = stringPool->get(e.untyVal.val_str);
             if (getTypeTable()->worksAsTypeStr(t)) {
@@ -143,7 +143,7 @@ bool Codegen::promoteUntyped(ExprGenPayload &e, TypeTable::Id t) {
             }
             break;
         }
-    case UntypedVal::T_NULL:
+    case UntypedVal::Kind::kNull:
         if (!symbolTable->getTypeTable()->worksAsTypeAnyP(t)) {
             success = false;
         } else {
@@ -256,7 +256,7 @@ optional<Token::Type> Codegen::getStartingKeyword(const AstNode *ast) const {
     if (ast->kind != AstNode::Kind::kTuple ||
         ast->children.empty() ||
         ast->children[0]->kind != AstNode::Kind::kTerminal ||
-        ast->children[0]->terminal->kind != AstTerminal::Kind::kKeyword) {
+        ast->children[0]->terminal->kind != TerminalVal::Kind::kKeyword) {
         return nullopt;
     }
     
@@ -286,7 +286,7 @@ bool Codegen::checkTerminal(const AstNode *ast, bool orError) {
 }
 
 bool Codegen::checkEmptyTerminal(const AstNode *ast, bool orError) {
-    if (ast->kind != AstNode::Kind::kTerminal || ast->terminal->kind != AstTerminal::Kind::kEmpty) {
+    if (ast->kind != AstNode::Kind::kTerminal || ast->terminal->kind != TerminalVal::Kind::kEmpty) {
         if (orError) msgs->errorUnknown(ast->codeLoc);
         return false;
     }
@@ -296,7 +296,7 @@ bool Codegen::checkEmptyTerminal(const AstNode *ast, bool orError) {
 
 bool Codegen::checkEllipsis(const AstNode *ast, bool orError) {
     if (ast->kind != AstNode::Kind::kTerminal ||
-        ast->terminal->kind != AstTerminal::Kind::kKeyword ||
+        ast->terminal->kind != TerminalVal::Kind::kKeyword ||
         ast->terminal->keyword != Token::T_ELLIPSIS) {
         if (orError) msgs->errorUnknown(ast->codeLoc);
         return false;
@@ -315,7 +315,7 @@ bool Codegen::checkNotTerminal(const AstNode *ast, bool orError) {
 }
 
 bool Codegen::checkBlock(const AstNode *ast, bool orError) {
-    if (ast->kind == AstNode::Kind::kTerminal && ast->terminal->kind != AstTerminal::Kind::kEmpty) {
+    if (ast->kind == AstNode::Kind::kTerminal && ast->terminal->kind != TerminalVal::Kind::kEmpty) {
         if (orError) msgs->errorUnknown(ast->codeLoc);
         return false;
     }
@@ -366,7 +366,7 @@ bool Codegen::checkBetweenChildren(const AstNode *ast, std::size_t nLo, std::siz
 optional<NamePool::Id> Codegen::getId(const AstNode *ast, bool orError) {
     if (!checkTerminal(ast, orError)) return nullopt;
 
-    if (ast->terminal->kind != AstTerminal::Kind::kId) {
+    if (ast->terminal->kind != TerminalVal::Kind::kId) {
         if (orError) msgs->errorUnknown(ast->codeLoc);
         return nullopt;
     }
@@ -394,7 +394,7 @@ optional<Codegen::NameTypePair> Codegen::getIdTypePair(const AstNode *ast, bool 
 optional<Token::Type> Codegen::getKeyword(const AstNode *ast, bool orError) {
     if (!checkTerminal(ast, orError)) return nullopt;
 
-    if (ast->terminal->kind != AstTerminal::Kind::kKeyword) {
+    if (ast->terminal->kind != TerminalVal::Kind::kKeyword) {
         if (orError) msgs->errorUnknown(ast->codeLoc);
         return nullopt;
     }
@@ -405,7 +405,7 @@ optional<Token::Type> Codegen::getKeyword(const AstNode *ast, bool orError) {
 optional<Token::Oper> Codegen::getOper(const AstNode *ast, bool orError) {
     if (!checkTerminal(ast, orError)) return nullopt;
 
-    if (ast->terminal->kind != AstTerminal::Kind::kOper) {
+    if (ast->terminal->kind != TerminalVal::Kind::kOper) {
         if (orError) msgs->errorUnknown(ast->codeLoc);
         return nullopt;
     }
@@ -416,7 +416,7 @@ optional<Token::Oper> Codegen::getOper(const AstNode *ast, bool orError) {
 optional<UntypedVal> Codegen::getUntypedVal(const AstNode *ast, bool orError) {
     if (!checkTerminal(ast, orError)) return nullopt;
 
-    if (ast->terminal->kind != AstTerminal::Kind::kVal) {
+    if (ast->terminal->kind != TerminalVal::Kind::kVal) {
         if (orError) msgs->errorUnknown(ast->codeLoc);
         return nullopt;
     }
@@ -427,7 +427,7 @@ optional<UntypedVal> Codegen::getUntypedVal(const AstNode *ast, bool orError) {
 optional<Token::Attr> Codegen::getAttr(const AstNode *ast, bool orError) {
     if (!checkTerminal(ast, orError)) return nullopt;
 
-    if (ast->terminal->kind != AstTerminal::Kind::kAttribute) {
+    if (ast->terminal->kind != TerminalVal::Kind::kAttribute) {
         if (orError) msgs->errorUnknown(ast->codeLoc);
         return nullopt;
     }

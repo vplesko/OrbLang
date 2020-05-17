@@ -19,7 +19,7 @@ struct FuncCallSite {
 
     void set(std::size_t ind, TypeTable::Id t) {
         argTypes[ind] = t;
-        untypedVals[ind] = {UntypedVal::T_NONE};
+        untypedVals[ind] = {UntypedVal::Kind::kNone};
     }
 
     void set(std::size_t ind, UntypedVal l) {

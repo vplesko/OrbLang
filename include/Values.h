@@ -1,35 +1,22 @@
 #pragma once
 
 #include <string>
+#include "Token.h"
 #include "StringPool.h"
 #include "TypeTable.h"
 
-/*
-UntypedVal is needed to represent a literal value whose exact type is yet unknown.
-
-Let's say we interpret an integer literal as i32.
-Then the user couldn't do this: i8 i = 0;
-
-Let's say we interpret it as the shortest type it can fit.
-Then this would overflow: i32 i = 250 + 10;
-
-Therefore, we need this intermediate value holder.
-
-NOTE
-Does not hold uint values. Users can overcome this by casting.
-*/
 struct UntypedVal {
-    enum Type {
-        T_NONE,
-        T_SINT,
-        T_FLOAT,
-        T_CHAR,
-        T_STRING,
-        T_BOOL,
-        T_NULL
+    enum class Kind {
+        kNone, // TODO get rid of this one
+        kSint,
+        kFloat,
+        kChar,
+        kString,
+        kBool,
+        kNull
     };
 
-    Type type;
+    Kind kind;
     union {
         int64_t val_si;
         double val_f;
@@ -41,14 +28,41 @@ struct UntypedVal {
     static std::size_t getStringLen(const std::string &str) { return str.size()+1; }
 };
 
+struct TerminalVal {
+    enum class Kind {
+        kKeyword,
+        kOper,
+        kId,
+        kAttribute,
+        kVal,
+        kEmpty
+    };
+
+    Kind kind;
+    union {
+        Token::Type keyword;
+        Token::Oper oper;
+        NamePool::Id id;
+        Token::Attr attribute;
+    };
+    UntypedVal val = { .kind = UntypedVal::Kind::kNone };
+
+    TerminalVal() : kind(Kind::kEmpty) {}
+    explicit TerminalVal(Token::Type k) : kind(Kind::kKeyword), keyword(k) {}
+    explicit TerminalVal(Token::Oper o) : kind(Kind::kOper), oper(o) {}
+    explicit TerminalVal(NamePool::Id n) : kind(Kind::kId), id(n) {}
+    explicit TerminalVal(Token::Attr a) : kind(Kind::kAttribute), attribute(a) {}
+    explicit TerminalVal(UntypedVal v) : kind(Kind::kVal), val(v) {}
+};
+
 struct ExprGenPayload {
     TypeTable::Id type;
     llvm::Value *val = nullptr;
     llvm::Value *ref = nullptr;
-    UntypedVal untyVal = { .type = UntypedVal::T_NONE };
+    UntypedVal untyVal = { .kind = UntypedVal::Kind::kNone };
 
-    bool isUntyVal() const { return untyVal.type != UntypedVal::T_NONE; }
-    void resetUntyVal() { untyVal.type = UntypedVal::T_NONE; }
+    bool isUntyVal() const { return untyVal.kind != UntypedVal::Kind::kNone; }
+    void resetUntyVal() { untyVal.kind = UntypedVal::Kind::kNone; }
 
     // checks if val is invalid
     bool valBroken() const { return val == nullptr; }
@@ -65,7 +79,6 @@ struct CompilerAction {
     };
 
     Kind kind;
-
     StringPool::Id file;
 
     CompilerAction() : kind(Kind::kNoAction) {}
