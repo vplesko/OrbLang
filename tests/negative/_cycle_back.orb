@@ -1,6 +1,4 @@
-// TODO! separate codegen for terminals
 // TODO! codegenAll looks at the first child and passes to the appropriate codegen
-// TODO! codegenVar can return func handle
 // TODO! check there are no types where there shouldn't be (don't forget codegenAll)
 
 // TODO! replace errorUnknown with actual error messages

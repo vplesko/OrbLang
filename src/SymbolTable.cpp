@@ -200,14 +200,20 @@ optional<FuncValue> SymbolTable::getCurrFunc() const {
     else return nullopt;
 }
 
+bool SymbolTable::isFuncName(NamePool::Id name) const {
+    for (const auto &p : funcs)
+        if (p.first.name == name)
+            return true;
+    
+    return false;
+}
+
 bool SymbolTable::varMayTakeName(NamePool::Id name) const {
     if (typeTable->isType(name)) return false;
 
     if (last == glob) {
         // you can have vars with same name as funcs, except in global
-        for (const auto &p : funcs)
-            if (p.first.name == name)
-                return false;
+        if (isFuncName(name)) return false;
     }
 
     return last->vars.find(name) == last->vars.end();

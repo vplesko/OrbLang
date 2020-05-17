@@ -123,30 +123,56 @@ bool Codegen::createCast(NodeVal &e, TypeTable::Id t) {
     return true;
 }
 
-NodeVal Codegen::codegenNode(const AstNode *ast) {
-    NodeVal ret(NodeVal::Kind::kEmpty);
+NodeVal Codegen::codegenTerminal(const AstNode *ast) {
+    const TerminalVal &term = ast->terminal.value();
 
-    if (checkEmptyTerminal(ast, false)) {
-        // do nothin'
-        return ret;
-    }
+    NodeVal ret;
 
-    // TODO! refactor
-    {
-        const AstNode *nodeBase = ast->kind == AstNode::Kind::kTuple ? ast->children[0].get() : ast;
-
-        optional<NamePool::Id> baseTypeName = getId(nodeBase, false);
-        if (baseTypeName.has_value()) {
-            optional<TypeTable::Id> baseTypeId = symbolTable->getTypeTable()->getTypeId(baseTypeName.value());
-            if (baseTypeId.has_value()) {
-                return codegenType(ast);
-            }
+    switch (term.kind) {
+    case TerminalVal::Kind::kKeyword:
+        ret = NodeVal(NodeVal::Kind::kKeyword);
+        ret.keyword = term.keyword;
+        break;
+    case TerminalVal::Kind::kOper:
+        ret = NodeVal(NodeVal::Kind::kOper);
+        ret.oper = term.oper;
+        break;
+    case TerminalVal::Kind::kId:
+        if (getTypeTable()->isType(term.id)) {
+            TypeTable::Id type = getTypeTable()->getTypeId(term.id).value();
+            ret = NodeVal(NodeVal::Kind::kType);
+            ret.type = type;
+        } else if (symbolTable->isFuncName(term.id)) {
+            ret = NodeVal(NodeVal::Kind::kFuncId);
+            ret.id = term.id;
+        } else {
+            ret = codegenVar(ast);
         }
+        break;
+    case TerminalVal::Kind::kAttribute:
+        ret = NodeVal(NodeVal::Kind::kAttribute);
+        ret.attribute = term.attribute;
+        break;
+    case TerminalVal::Kind::kVal:
+        ret = codegenUntypedVal(ast);
+        break;
+    case TerminalVal::Kind::kEmpty:
+        ret = NodeVal(NodeVal::Kind::kEmpty);
+        break;
+    };
+
+    return ret;
+}
+
+NodeVal Codegen::codegenNode(const AstNode *ast) {
+    if (ast->kind == AstNode::Kind::kTerminal) {
+        return codegenTerminal(ast);
     }
 
-    optional<Token::Type> keyword = getStartingKeyword(ast);
-    if (keyword.has_value()) {
-        switch (keyword.value()) {
+    NodeVal starting = codegenNode(ast->children[0].get());
+
+    if (starting.isKeyword()) {
+        switch (starting.keyword) {
         case Token::T_IMPORT:
             return codegenImport(ast);
         case Token::T_LET:
@@ -176,10 +202,16 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
         case Token::T_ARR:
             return codegenArr(ast);
         default:
-            return codegenExpr(ast);
+            msgs->errorUnknown(ast->codeLoc);
+            return NodeVal();
         }
-    } else {
+    } else if (starting.isOper() || starting.isFuncId()) {
         return codegenExpr(ast);
+    } else if (starting.isType()) {
+        return codegenType(ast);
+    } else {
+        msgs->errorUnknown(ast->codeLoc);
+        return NodeVal();
     }
 }
 
@@ -211,7 +243,7 @@ NodeVal Codegen::codegenType(const AstNode *ast) {
     optional<NamePool::Id> baseTypeName = getId(nodeBase, true);
     if (!baseTypeName.has_value()) return NodeVal();
 
-    optional<TypeTable::Id> baseTypeId = symbolTable->getTypeTable()->getTypeId(baseTypeName.value());
+    optional<TypeTable::Id> baseTypeId = getTypeTable()->getTypeId(baseTypeName.value());
     if (!baseTypeId.has_value()) {
         msgs->errorNotTypeId(nodeBase->codeLoc, baseTypeName.value());
         return NodeVal();

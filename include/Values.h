@@ -68,6 +68,11 @@ struct NodeVal {
     enum class Kind {
         kInvalid,
         kEmpty,
+        kKeyword,
+        kOper,
+        kId,
+        kFuncId,
+        kAttribute,
         kImport,
         kLlvmVal,
         kUntyVal,
@@ -76,6 +81,10 @@ struct NodeVal {
 
     Kind kind = Kind::kInvalid;
     union {
+        Token::Type keyword;
+        Token::Oper oper;
+        NamePool::Id id;
+        Token::Attr attribute;
         LlvmVal llvmVal;
         UntypedVal untyVal;
         StringPool::Id file;
@@ -85,6 +94,12 @@ struct NodeVal {
     NodeVal() : kind(Kind::kInvalid) {}
     NodeVal(Kind kind);
 
+    bool isEmpty() const { return kind == Kind::kEmpty; }
+    bool isKeyword() const { return kind == Kind::kKeyword; }
+    bool isOper() const { return kind == Kind::kOper; }
+    bool isId() const { return kind == Kind::kId; }
+    bool isFuncId() const { return kind == Kind::kFuncId; }
+    bool isAttribute() const { return kind == Kind::kAttribute; }
     bool isLlvmVal() const { return kind == Kind::kLlvmVal; }
     bool isUntyVal() const { return kind == Kind::kUntyVal; }
     bool isType() const { return kind == Kind::kType; }

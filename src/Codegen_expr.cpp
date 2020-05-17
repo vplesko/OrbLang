@@ -2,19 +2,13 @@
 using namespace std;
 
 NodeVal Codegen::codegenExpr(const AstNode *ast) {
-    if (getUntypedVal(ast, false).has_value()) {
-        return codegenUntypedVal(ast);
-    } else if (getId(ast, false).has_value()) {
-        return codegenVar(ast);
-    } else if (checkNotTerminal(ast, false)) {
-        if (getId(ast->children[0].get(), false).has_value()) {
-            return codegenCall(ast);
-        } else if (getOper(ast->children[0].get(), false).has_value()) {
-            if (ast->children.size() == 2) {
-                return codegenOperUnary(ast);
-            } else if (ast->children.size() == 3) {
-                return codegenOperBinary(ast);
-            }
+    if (getId(ast->children[0].get(), false).has_value()) {
+        return codegenCall(ast);
+    } else if (getOper(ast->children[0].get(), false).has_value()) {
+        if (ast->children.size() == 2) {
+            return codegenOperUnary(ast);
+        } else if (ast->children.size() == 3) {
+            return codegenOperBinary(ast);
         }
     }
     

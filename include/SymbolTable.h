@@ -101,6 +101,8 @@ public:
 
     std::optional<FuncValue> getCurrFunc() const;
 
+    bool isFuncName(NamePool::Id name) const;
+    
     bool varMayTakeName(NamePool::Id name) const;
     // does not check for type redefinitions, allows multiple data decls/defs to have the same name
     bool dataMayTakeName(NamePool::Id name) const;
