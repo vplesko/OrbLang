@@ -62,6 +62,7 @@ class Codegen {
     bool checkAtMostChildren(const AstNode *ast, std::size_t n, bool orError);
     bool checkBetweenChildren(const AstNode *ast, std::size_t nLo, std::size_t nHi, bool orError);
     bool checkValueUnbroken(CodeLoc codeLoc, const NodeVal &val, bool orError);
+    bool checkIsId(CodeLoc codeLoc, const NodeVal &val, bool orError);
     bool checkIsType(CodeLoc codeLoc, const NodeVal &val, bool orError);
     bool checkGlobalScope(CodeLoc codeLoc, bool orError);
     std::optional<NamePool::Id> getId(const AstNode *ast, bool orError);
@@ -75,14 +76,14 @@ class Codegen {
     NodeVal codegenVar(const AstNode *ast);
     NodeVal codegenOperInd(const AstNode *ast);
     NodeVal codegenOperDot(const AstNode *ast);
-    NodeVal codegenOperUnary(const AstNode *ast);
+    NodeVal codegenOperUnary(const AstNode *ast, const NodeVal &first);
     NodeVal codegenOperUnaryUntyped(CodeLoc codeLoc, Token::Oper op, UntypedVal unty);
-    NodeVal codegenOperBinary(const AstNode *ast);
+    NodeVal codegenOperBinary(const AstNode *ast, const NodeVal &first);
     // helper function for short-circuit evaluation of boolean AND and OR
-    NodeVal codegenOperLogicAndOr(const AstNode *ast);
-    NodeVal codegenOperLogicAndOrGlobalScope(const AstNode *ast);
+    NodeVal codegenOperLogicAndOr(const AstNode *ast, const NodeVal &first);
+    NodeVal codegenOperLogicAndOrGlobalScope(const AstNode *ast, const NodeVal &first);
     NodeVal codegenOperBinaryUntyped(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR);
-    NodeVal codegenCall(const AstNode *ast);
+    NodeVal codegenCall(const AstNode *ast, const NodeVal &first);
     NodeVal codegenCast(const AstNode *ast);
     NodeVal codegenArr(const AstNode *ast);
     NodeVal codegenImport(const AstNode *ast);
@@ -99,8 +100,8 @@ class Codegen {
     NodeVal codegenAll(const AstNode *ast, bool makeScope);
     NodeVal codegenFunc(const AstNode *ast);
 
-    NodeVal codegenType(const AstNode *ast);
-    NodeVal codegenExpr(const AstNode *ast);
+    NodeVal codegenType(const AstNode *ast, const NodeVal &first);
+    NodeVal codegenExpr(const AstNode *ast, const NodeVal &first);
     NodeVal codegenTerminal(const AstNode *ast);
 
     std::optional<FuncValue> codegenFuncProto(const AstNode *ast, bool definition);

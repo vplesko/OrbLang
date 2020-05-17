@@ -206,9 +206,9 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
             return NodeVal();
         }
     } else if (starting.isOper() || starting.isFuncId()) {
-        return codegenExpr(ast);
+        return codegenExpr(ast, starting);
     } else if (starting.isType()) {
-        return codegenType(ast);
+        return codegenType(ast, starting);
     } else {
         msgs->errorUnknown(ast->codeLoc);
         return NodeVal();
@@ -235,27 +235,8 @@ NodeVal Codegen::codegenImport(const AstNode *ast) {
     return ret;
 }
 
-NodeVal Codegen::codegenType(const AstNode *ast) {
-    bool isDescr = ast->kind == AstNode::Kind::kTuple;
-
-    const AstNode *nodeBase = isDescr ? ast->children[0].get() : ast;
-
-    optional<NamePool::Id> baseTypeName = getId(nodeBase, true);
-    if (!baseTypeName.has_value()) return NodeVal();
-
-    optional<TypeTable::Id> baseTypeId = getTypeTable()->getTypeId(baseTypeName.value());
-    if (!baseTypeId.has_value()) {
-        msgs->errorNotTypeId(nodeBase->codeLoc, baseTypeName.value());
-        return NodeVal();
-    }
-
-    if (!isDescr) {
-        NodeVal ret(NodeVal::Kind::kType);
-        ret.type = baseTypeId.value();
-        return ret;
-    }
-
-    TypeTable::TypeDescr typeDescr(baseTypeId.value());
+NodeVal Codegen::codegenType(const AstNode *ast, const NodeVal &first) {
+    TypeTable::TypeDescr typeDescr(first.type);
     for (size_t i = 1; i < ast->children.size(); ++i) {
         const AstNode *nodeChild = ast->children[i].get();
 

@@ -378,6 +378,15 @@ bool Codegen::checkValueUnbroken(CodeLoc codeLoc, const NodeVal &val, bool orErr
     return true;
 }
 
+bool Codegen::checkIsId(CodeLoc codeLoc, const NodeVal &val, bool orError) {
+    if (!val.isId()) {
+        if (orError) msgs->errorUnknown(codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
 bool Codegen::checkIsType(CodeLoc codeLoc, const NodeVal &val, bool orError) {
     if (!val.isType()) {
         if (orError) msgs->errorUnknown(codeLoc);

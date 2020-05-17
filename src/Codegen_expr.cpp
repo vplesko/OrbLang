@@ -1,14 +1,14 @@
 #include "Codegen.h"
 using namespace std;
 
-NodeVal Codegen::codegenExpr(const AstNode *ast) {
-    if (getId(ast->children[0].get(), false).has_value()) {
-        return codegenCall(ast);
-    } else if (getOper(ast->children[0].get(), false).has_value()) {
+NodeVal Codegen::codegenExpr(const AstNode *ast, const NodeVal &first) {
+    if (first.isFuncId()) {
+        return codegenCall(ast, first);
+    } else if (first.isOper()) {
         if (ast->children.size() == 2) {
-            return codegenOperUnary(ast);
+            return codegenOperUnary(ast, first);
         } else if (ast->children.size() == 3) {
-            return codegenOperBinary(ast);
+            return codegenOperBinary(ast, first);
         }
     }
     
@@ -17,33 +17,31 @@ NodeVal Codegen::codegenExpr(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenUntypedVal(const AstNode *ast) {
-    optional<UntypedVal> val = getUntypedVal(ast, true);
-    if (!val.has_value()) return NodeVal();
+    UntypedVal val = ast->terminal.value().val;
 
-    if (val.value().kind == UntypedVal::Kind::kNone) {
+    if (val.kind == UntypedVal::Kind::kNone) {
         // should not happen
         msgs->errorInternal(ast->codeLoc);
         return NodeVal();
     }
 
     NodeVal ret(NodeVal::Kind::kUntyVal);
-    ret.untyVal = val.value();
+    ret.untyVal = val;
     return ret;
 }
 
 NodeVal Codegen::codegenVar(const AstNode *ast) {
-    optional<NamePool::Id> name = getId(ast, true);
-    if (!name.has_value()) return NodeVal();
+    NamePool::Id name = ast->terminal.value().id;
 
-    optional<SymbolTable::VarPayload> var = symbolTable->getVar(name.value());
+    optional<SymbolTable::VarPayload> var = symbolTable->getVar(name);
     if (!var.has_value()) {
-        msgs->errorVarNotFound(ast->codeLoc, name.value());
+        msgs->errorVarNotFound(ast->codeLoc, name);
         return NodeVal();
     }
 
     NodeVal ret(NodeVal::Kind::kLlvmVal);
     ret.llvmVal.type = var.value().type;
-    ret.llvmVal.val = llvmBuilder.CreateLoad(var.value().val, namePool->get(name.value()));
+    ret.llvmVal.val = llvmBuilder.CreateLoad(var.value().val, namePool->get(name));
     ret.llvmVal.ref = var.value().val;
     return ret;
 }
@@ -202,17 +200,14 @@ NodeVal Codegen::codegenOperDot(const AstNode *ast) {
     return exprRet;
 }
 
-NodeVal Codegen::codegenOperUnary(const AstNode *ast) {
+NodeVal Codegen::codegenOperUnary(const AstNode *ast, const NodeVal &first) {
     if (!checkExactlyChildren(ast, 2, true)) {
         return NodeVal();
     }
 
-    const AstNode *nodeOp = ast->children[0].get();
     const AstNode *nodeVal = ast->children[1].get();
 
-    optional<Token::Oper> optOp = getOper(nodeOp, true);
-    if (!optOp.has_value()) return NodeVal();
-    Token::Oper op = optOp.value();
+    Token::Oper op = first.oper;
 
     NodeVal exprPay = codegenNode(nodeVal);
     if (!checkValueUnbroken(nodeVal->codeLoc, exprPay, true)) return NodeVal();
@@ -348,21 +343,18 @@ NodeVal Codegen::codegenOperUnaryUntyped(CodeLoc codeLoc, Token::Oper op, Untype
     return exprRet;
 }
 
-NodeVal Codegen::codegenOperBinary(const AstNode *ast) {
+NodeVal Codegen::codegenOperBinary(const AstNode *ast, const NodeVal &first) {
     if (!checkExactlyChildren(ast, 3, true)) {
         return NodeVal();
     }
 
-    const AstNode *nodeOp = ast->children[0].get();
     const AstNode *nodeL = ast->children[1].get();
     const AstNode *nodeR = ast->children[2].get();
 
-    optional<Token::Oper> optOp = getOper(nodeOp, true);
-    if (!optOp.has_value()) return NodeVal();
-    Token::Oper op = optOp.value();
+    Token::Oper op = first.oper;
 
     if (op == Token::O_AND || op == Token::O_OR) {
-        return codegenOperLogicAndOr(ast);
+        return codegenOperLogicAndOr(ast, first);
     } else if (op == Token::O_IND) {
         return codegenOperInd(ast);
     } else if (op == Token::O_DOT) {
@@ -593,22 +585,19 @@ NodeVal Codegen::codegenOperBinary(const AstNode *ast) {
     return exprPayRet;
 }
 
-NodeVal Codegen::codegenOperLogicAndOr(const AstNode *ast) {
+NodeVal Codegen::codegenOperLogicAndOr(const AstNode *ast, const NodeVal &first) {
     if (isGlobalScope()) {
-        return codegenOperLogicAndOrGlobalScope(ast);
+        return codegenOperLogicAndOrGlobalScope(ast, first);
     }
 
     if (!checkExactlyChildren(ast, 3, true)) {
         return NodeVal();
     }
 
-    const AstNode *nodeOp = ast->children[0].get();
     const AstNode *nodeL = ast->children[1].get();
     const AstNode *nodeR = ast->children[2].get();
 
-    optional<Token::Oper> optOp = getOper(nodeOp, true);
-    if (!optOp.has_value()) return NodeVal();
-    Token::Oper op = optOp.value();
+    Token::Oper op = first.oper;
 
     NodeVal exprPayL, exprPayR, exprPayRet;
 
@@ -699,18 +688,15 @@ NodeVal Codegen::codegenOperLogicAndOr(const AstNode *ast) {
     return ret;
 }
 
-NodeVal Codegen::codegenOperLogicAndOrGlobalScope(const AstNode *ast) {
+NodeVal Codegen::codegenOperLogicAndOrGlobalScope(const AstNode *ast, const NodeVal &first) {
     if (!checkExactlyChildren(ast, 3, true)) {
         return NodeVal();
     }
 
-    const AstNode *nodeOp = ast->children[0].get();
     const AstNode *nodeL = ast->children[1].get();
     const AstNode *nodeR = ast->children[2].get();
 
-    optional<Token::Oper> optOp = getOper(nodeOp, true);
-    if (!optOp.has_value()) return NodeVal();
-    Token::Oper op = optOp.value();
+    Token::Oper op = first.oper;
 
     NodeVal exprPayL = codegenNode(nodeL);
     if (!exprPayL.isUntyVal()) {
@@ -935,19 +921,13 @@ NodeVal Codegen::codegenOperBinaryUntyped(CodeLoc codeLoc, Token::Oper op, Untyp
     return ret;
 }
 
-NodeVal Codegen::codegenCall(const AstNode *ast) {
-    if (!checkNotTerminal(ast, true))
-        return NodeVal();
-    
-    const AstNode *nodeFuncName = ast->children[0].get();
-
+NodeVal Codegen::codegenCall(const AstNode *ast, const NodeVal &first) {
     size_t argCnt = ast->children.size()-1;
 
-    optional<NamePool::Id> funcName = getId(nodeFuncName, true);
-    if (!funcName.has_value()) return NodeVal();
+    NamePool::Id funcName = first.id;
 
     FuncCallSite call(argCnt);
-    call.name = funcName.value();
+    call.name = funcName;
 
     vector<llvm::Value*> args(argCnt);
     vector<NodeVal> exprs(args.size());
@@ -968,7 +948,7 @@ NodeVal Codegen::codegenCall(const AstNode *ast) {
 
     optional<FuncValue> func = symbolTable->getFuncForCall(call);
     if (!func.has_value()) {
-        msgs->errorFuncNotFound(nodeFuncName->codeLoc, funcName.value());
+        msgs->errorFuncNotFound(ast->children[0].get()->codeLoc, funcName);
         return NodeVal();
     }
 
@@ -978,7 +958,7 @@ NodeVal Codegen::codegenCall(const AstNode *ast) {
         if (i >= func.value().argTypes.size()) {
             // variadic arguments
             if (exprs[i].isUntyVal()) {
-                msgs->errorExprCallVariadUnty(nodeArg->codeLoc, funcName.value());
+                msgs->errorExprCallVariadUnty(nodeArg->codeLoc, funcName);
                 return NodeVal();
             }
             // don't need to do anything in else case

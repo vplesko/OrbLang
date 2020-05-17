@@ -1,9 +1,11 @@
 // TODO! replace getX functions with codegenNode
-// TODO! codegenAll looks at the first child and passes to the appropriate codegen
 // TODO! check there are no types where there shouldn't be (don't forget codegenAll)
 
 // TODO! allow literals -10, +10, -10.0, +10.0
 // TODO! allow typing literals (eg. 0:i64)
+
+// TODO! variadic operators
+// TODO! maybe refactor operator codegen
 
 // TODO! replace errorUnknown with actual error messages
 // TODO! remove obsolete compiler messages
