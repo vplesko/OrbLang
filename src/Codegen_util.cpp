@@ -415,7 +415,7 @@ optional<Codegen::NameTypePair> Codegen::getIdTypePair(const AstNode *ast, bool 
         if (orError) msgs->errorUnknown(ast->codeLoc);
         return nullopt;
     }
-    NodeVal type = codegenType(ast->type->get());
+    NodeVal type = codegenNode(ast->type->get());
     if (!checkIsType(ast->type->get()->codeLoc, type, true)) return nullopt;
 
     NameTypePair idType;

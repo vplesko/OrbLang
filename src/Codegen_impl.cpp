@@ -131,7 +131,18 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
         return ret;
     }
 
-    if (!checkNotTerminal(ast, true)) return ret;
+    // TODO! refactor
+    {
+        const AstNode *nodeBase = ast->kind == AstNode::Kind::kTuple ? ast->children[0].get() : ast;
+
+        optional<NamePool::Id> baseTypeName = getId(nodeBase, false);
+        if (baseTypeName.has_value()) {
+            optional<TypeTable::Id> baseTypeId = symbolTable->getTypeTable()->getTypeId(baseTypeName.value());
+            if (baseTypeId.has_value()) {
+                return codegenType(ast);
+            }
+        }
+    }
 
     optional<Token::Type> keyword = getStartingKeyword(ast);
     if (keyword.has_value()) {
@@ -300,7 +311,7 @@ NodeVal Codegen::codegenLet(const AstNode *ast) {
             llvm::Constant *initConst = nullptr;
 
             if (init.has_value()) {
-                NodeVal initPay = codegenExpr(init.value());
+                NodeVal initPay = codegenNode(init.value());
                 if (initPay.valueBroken()) {
                     return NodeVal();
                 }
@@ -325,7 +336,7 @@ NodeVal Codegen::codegenLet(const AstNode *ast) {
             val = createAlloca(type, name);
 
             if (init.has_value()) {
-                NodeVal initPay = codegenExpr(init.value());
+                NodeVal initPay = codegenNode(init.value());
                 if (initPay.valueBroken())
                     return NodeVal();
 
@@ -372,7 +383,7 @@ NodeVal Codegen::codegenIf(const AstNode *ast) {
     const AstNode *nodeThen = ast->children[2].get();
     const AstNode *nodeElse = hasElse ? ast->children[3].get() : nullptr;
     
-    NodeVal condExpr = codegenExpr(nodeCond);
+    NodeVal condExpr = codegenNode(nodeCond);
     if (!checkValueUnbroken(nodeCond->codeLoc, condExpr, true)) return NodeVal();
     if (condExpr.isUntyVal() && !promoteUntyped(condExpr, getPrimTypeId(TypeTable::P_BOOL))) {
         msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
@@ -449,7 +460,7 @@ NodeVal Codegen::codegenFor(const AstNode *ast) {
     {
         NodeVal condExpr;
         if (hasCond) {
-            condExpr = codegenExpr(nodeCond);
+            condExpr = codegenNode(nodeCond);
             if (!checkValueUnbroken(nodeCond->codeLoc, condExpr, true)) return NodeVal();
             if (condExpr.isUntyVal() && !promoteUntyped(condExpr, getPrimTypeId(TypeTable::P_BOOL))) {
                 msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
@@ -523,7 +534,7 @@ NodeVal Codegen::codegenWhile(const AstNode *ast) {
     llvmBuilder.SetInsertPoint(condBlock);
 
     {
-        NodeVal condExpr = codegenExpr(nodeCond);
+        NodeVal condExpr = codegenNode(nodeCond);
         if (!checkValueUnbroken(nodeCond->codeLoc, condExpr, true)) return NodeVal();
         if (condExpr.isUntyVal() && !promoteUntyped(condExpr, getPrimTypeId(TypeTable::P_BOOL))) {
             msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
@@ -588,7 +599,7 @@ NodeVal Codegen::codegenDo(const AstNode *ast) {
         func->getBasicBlockList().push_back(condBlock);
         llvmBuilder.SetInsertPoint(condBlock);
 
-        NodeVal condExpr = codegenExpr(nodeCond);
+        NodeVal condExpr = codegenNode(nodeCond);
         if (!checkValueUnbroken(nodeCond->codeLoc, condExpr, true)) return NodeVal();
         if (condExpr.isUntyVal() && !promoteUntyped(condExpr, getPrimTypeId(TypeTable::P_BOOL))) {
             msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
@@ -665,7 +676,7 @@ NodeVal Codegen::codegenRet(const AstNode *ast) {
         return NodeVal();
     }
 
-    NodeVal retExpr = codegenExpr(nodeVal);
+    NodeVal retExpr = codegenNode(nodeVal);
     if (!checkValueUnbroken(nodeVal->codeLoc, retExpr, true)) return NodeVal();
     if (retExpr.isUntyVal() && !promoteUntyped(retExpr, currFunc.value().retType.value())) {
         msgs->errorExprCannotPromote(nodeVal->codeLoc, currFunc.value().retType.value());
@@ -837,7 +848,7 @@ optional<FuncValue> Codegen::codegenFuncProto(const AstNode *ast, bool definitio
     // func ret
     optional<TypeTable::Id> retType;
     if (!checkEmptyTerminal(nodeRet, false)) {
-        NodeVal type = codegenType(nodeRet);
+        NodeVal type = codegenNode(nodeRet);
         if (!checkIsType(nodeRet->codeLoc, type, true)) return nullopt;
 
         retType = type.type;

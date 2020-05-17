@@ -1,9 +1,8 @@
-// TODO! all go through codegenNode or codegenAll
 // TODO! codegenVar can return func handle
+// TODO! codegenAll looks at the first child and passes to the appropriate codegen
 // TODO! check there are no types where there shouldn't be (don't forget codegenAll)
 // TODO! cast and arr outside of expr, oper by themselves
 // TODO! separate codegen for terminals
-// TODO! refactor codegen expr switches
 // TODO! replace errorUnknown with actual error messages
 // TODO! remove obsolete compiler messages
 import "tests/negative/test_import_cycle.orb";

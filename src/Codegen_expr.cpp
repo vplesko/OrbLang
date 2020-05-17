@@ -76,7 +76,7 @@ NodeVal Codegen::codegenInd(const AstNode *ast) {
     const AstNode *nodeBase = ast->children[1].get();
     const AstNode *nodeInd = ast->children[2].get();
 
-    NodeVal baseExprPay = codegenExpr(nodeBase);
+    NodeVal baseExprPay = codegenNode(nodeBase);
     if (!checkValueUnbroken(nodeBase->codeLoc, baseExprPay, true)) return NodeVal();
 
     if (baseExprPay.isUntyVal()) {
@@ -91,7 +91,7 @@ NodeVal Codegen::codegenInd(const AstNode *ast) {
         }
     }
 
-    NodeVal indExprPay = codegenExpr(nodeInd);
+    NodeVal indExprPay = codegenNode(nodeInd);
     if (!checkValueUnbroken(nodeInd->codeLoc, indExprPay, true)) return NodeVal();
 
     if (indExprPay.isUntyVal()) {
@@ -162,7 +162,7 @@ NodeVal Codegen::codegenDot(const AstNode *ast) {
     optional<NamePool::Id> membName = getId(nodeMemb, true);
     if (!membName.has_value()) return NodeVal();
 
-    NodeVal baseExpr = codegenExpr(nodeBase);
+    NodeVal baseExpr = codegenNode(nodeBase);
     if (!checkValueUnbroken(nodeBase->codeLoc, baseExpr, true)) return NodeVal();
     if (baseExpr.isUntyVal()) {
         msgs->errorExprDotInvalidBase(nodeBase->codeLoc);
@@ -234,7 +234,7 @@ NodeVal Codegen::codegenUn(const AstNode *ast) {
     if (!optOp.has_value()) return NodeVal();
     Token::Oper op = optOp.value();
 
-    NodeVal exprPay = codegenExpr(nodeVal);
+    NodeVal exprPay = codegenNode(nodeVal);
     if (!checkValueUnbroken(nodeVal->codeLoc, exprPay, true)) return NodeVal();
 
     if (exprPay.isUntyVal()) return codegenUntypedUn(ast->codeLoc, op, exprPay.untyVal);
@@ -393,7 +393,7 @@ NodeVal Codegen::codegenBin(const AstNode *ast) {
 
     bool assignment = operInfos.at(op).assignment;
 
-    exprPayL = codegenExpr(nodeL);
+    exprPayL = codegenNode(nodeL);
     if (!checkValueUnbroken(nodeL->codeLoc, exprPayL, true)) return NodeVal();
 
     if (assignment) {
@@ -407,7 +407,7 @@ NodeVal Codegen::codegenBin(const AstNode *ast) {
         }
     }
 
-    exprPayR = codegenExpr(nodeR);
+    exprPayR = codegenNode(nodeR);
     if (!checkValueUnbroken(nodeR->codeLoc, exprPayR, true)) return NodeVal();
 
     if (exprPayL.isUntyVal() && !exprPayR.isUntyVal()) {
@@ -641,7 +641,7 @@ NodeVal Codegen::codegenLogicAndOr(const AstNode *ast) {
     llvmBuilder.CreateBr(firstBlock);
 
     llvmBuilder.SetInsertPoint(firstBlock);
-    exprPayL = codegenExpr(nodeL);
+    exprPayL = codegenNode(nodeL);
     if (!checkValueUnbroken(nodeL->codeLoc, exprPayL, true)) return NodeVal();
     if (!isBool(exprPayL)) {
         if (exprPayL.kind == NodeVal::Kind::kLlvmVal)
@@ -671,7 +671,7 @@ NodeVal Codegen::codegenLogicAndOr(const AstNode *ast) {
 
     func->getBasicBlockList().push_back(otherBlock);
     llvmBuilder.SetInsertPoint(otherBlock);
-    exprPayR = codegenExpr(nodeR);
+    exprPayR = codegenNode(nodeR);
     if (!checkValueUnbroken(nodeR->codeLoc, exprPayR, true)) return NodeVal();
     if (!isBool(exprPayR)) {
         if (exprPayR.kind == NodeVal::Kind::kLlvmVal)
@@ -732,7 +732,7 @@ NodeVal Codegen::codegenLogicAndOrGlobalScope(const AstNode *ast) {
     if (!optOp.has_value()) return NodeVal();
     Token::Oper op = optOp.value();
 
-    NodeVal exprPayL = codegenExpr(nodeL);
+    NodeVal exprPayL = codegenNode(nodeL);
     if (!exprPayL.isUntyVal()) {
         msgs->errorExprNotBaked(nodeL->codeLoc);
         return NodeVal();
@@ -742,7 +742,7 @@ NodeVal Codegen::codegenLogicAndOrGlobalScope(const AstNode *ast) {
         return NodeVal();
     }
 
-    NodeVal exprPayR = codegenExpr(nodeR);
+    NodeVal exprPayR = codegenNode(nodeR);
     if (!exprPayR.isUntyVal()) {
         msgs->errorExprNotBaked(nodeR->codeLoc);
         return NodeVal();
@@ -975,7 +975,7 @@ NodeVal Codegen::codegenCall(const AstNode *ast) {
     for (size_t i = 0; i < argCnt; ++i) {
         const AstNode *nodeArg = ast->children[i+1].get();
 
-        exprs[i] = codegenExpr(nodeArg);
+        exprs[i] = codegenNode(nodeArg);
         if (!checkValueUnbroken(nodeArg->codeLoc, exprs[i], true)) return NodeVal();
 
         if (exprs[i].isLlvmVal()) {
@@ -1040,13 +1040,13 @@ NodeVal Codegen::codegenCast(const AstNode *ast) {
     const AstNode *nodeType = ast->children[1].get();
     const AstNode *nodeVal = ast->children[2].get();
 
-    NodeVal valTypeId = codegenType(nodeType);
+    NodeVal valTypeId = codegenNode(nodeType);
     if (!checkIsType(nodeType->codeLoc, valTypeId, true)) return NodeVal();
 
     llvm::Type *type = getType(valTypeId.type);
     if (type == nullptr) return NodeVal();
 
-    NodeVal exprVal = codegenExpr(nodeVal);
+    NodeVal exprVal = codegenNode(nodeVal);
     if (!checkValueUnbroken(nodeVal->codeLoc, exprVal, true)) return NodeVal();
 
     if (exprVal.isUntyVal()) {
@@ -1103,7 +1103,7 @@ NodeVal Codegen::codegenArr(const AstNode *ast) {
 
     size_t arrLen = ast->children.size()-2;
 
-    NodeVal arrDeclTypeId = codegenType(nodeArrType);
+    NodeVal arrDeclTypeId = codegenNode(nodeArrType);
     if (!checkIsType(nodeArrType->codeLoc, arrDeclTypeId, true)) return NodeVal();
 
     if (!getTypeTable()->worksAsTypeArrP(arrDeclTypeId.type) &&
@@ -1134,7 +1134,7 @@ NodeVal Codegen::codegenArr(const AstNode *ast) {
     for (size_t i = 0; i < arrLen; ++i) {
         const AstNode *nodeElem = ast->children[i+2].get();
 
-        NodeVal exprPay = codegenExpr(nodeElem);
+        NodeVal exprPay = codegenNode(nodeElem);
         if (!checkValueUnbroken(nodeElem->codeLoc, exprPay, true)) return NodeVal();
 
         if (exprPay.isUntyVal() && !promoteUntyped(exprPay, elemTypeId)) {
