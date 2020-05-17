@@ -137,46 +137,29 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
     if (keyword.has_value()) {
         switch (keyword.value()) {
         case Token::T_IMPORT:
-            {
-                optional<StringPool::Id> file = codegenImport(ast);
-                if (!file.has_value()) return ret;
-                ret = NodeVal(NodeVal::Kind::kImport);
-                ret.file = file.value();
-                return ret;
-            }
+            return codegenImport(ast);
         case Token::T_LET:
-            codegenLet(ast);
-            return ret;
+            return codegenLet(ast);
         case Token::T_BLOCK:
-            codegenBlock(ast);
-            return ret;
+            return codegenBlock(ast);
         case Token::T_IF:
-            codegenIf(ast);
-            return ret;
+            return codegenIf(ast);
         case Token::T_FOR:
-            codegenFor(ast);
-            return ret;
+            return codegenFor(ast);
         case Token::T_WHILE:
-            codegenWhile(ast);
-            return ret;
+            return codegenWhile(ast);
         case Token::T_DO:
-            codegenDo(ast);
-            return ret;
+            return codegenDo(ast);
         case Token::T_BREAK:
-            codegenBreak(ast);
-            return ret;
+            return codegenBreak(ast);
         case Token::T_CONTINUE:
-            codegenContinue(ast);
-            return ret;
+            return codegenContinue(ast);
         case Token::T_RET:
-            codegenRet(ast);
-            return ret;
+            return codegenRet(ast);
         case Token::T_FNC:
-            codegenFunc(ast);
-            return ret;
+            return codegenFunc(ast);
         case Token::T_DATA:
-            codegenData(ast);
-            return ret;
+            return codegenData(ast);
         default:
             return codegenExpr(ast);
         }
@@ -185,22 +168,24 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
     }
 }
 
-optional<StringPool::Id> Codegen::codegenImport(const AstNode *ast) {
+NodeVal Codegen::codegenImport(const AstNode *ast) {
     if (!checkStartingKeyword(ast, Token::T_IMPORT, true) ||
         !checkExactlyChildren(ast, 2, true))
-        return nullopt;
+        return NodeVal();
     
     const AstNode *nodeFile = ast->children[1].get();
 
     optional<UntypedVal> val = getUntypedVal(nodeFile, true);
-    if (!val.has_value()) return nullopt;
+    if (!val.has_value()) return NodeVal();
 
     if (val.value().kind != UntypedVal::Kind::kString) {
         msgs->errorUnknown(nodeFile->codeLoc);
-        return nullopt;
+        return NodeVal();
     }
 
-    return val.value().val_str;
+    NodeVal ret(NodeVal::Kind::kImport);
+    ret.file = val.value().val_str;
+    return ret;
 }
 
 NodeVal Codegen::codegenType(const AstNode *ast) {
@@ -262,10 +247,10 @@ NodeVal Codegen::codegenType(const AstNode *ast) {
     return ret;
 }
 
-void Codegen::codegenLet(const AstNode *ast) {
+NodeVal Codegen::codegenLet(const AstNode *ast) {
     if (!checkStartingKeyword(ast, Token::T_LET, true) ||
         !checkAtLeastChildren(ast, 2, true))
-        return;
+        return NodeVal();
     
     for (size_t i = 1; i < ast->children.size(); ++i) {
         const AstNode *childNode = ast->children[i].get();
@@ -277,16 +262,16 @@ void Codegen::codegenLet(const AstNode *ast) {
 
         if (childNode->kind == AstNode::Kind::kTerminal) {
             optional<NameTypePair> optIdType = getIdTypePair(childNode, true);
-            if (!optIdType.has_value()) return;
+            if (!optIdType.has_value()) return NodeVal();
             nameType = optIdType.value();
 
             codeLocName = childNode->codeLoc;
             codeLocType = childNode->type->get()->codeLoc;
         } else {
-            if (!checkExactlyChildren(childNode, 2, true)) return;
+            if (!checkExactlyChildren(childNode, 2, true)) return NodeVal();
 
             optional<NameTypePair> optIdType = getIdTypePair(childNode->children[0].get(), true);
-            if (!optIdType.has_value()) return;
+            if (!optIdType.has_value()) return NodeVal();
             nameType = optIdType.value();
 
             init = childNode->children[1].get();
@@ -298,15 +283,15 @@ void Codegen::codegenLet(const AstNode *ast) {
 
         TypeTable::Id typeId = nameType.second;
         if (!checkDefinedTypeOrError(typeId, codeLocType)) {
-            return;
+            return NodeVal();
         }
 
         llvm::Type *type = getType(typeId);
-        if (type == nullptr) return;
+        if (type == nullptr) return NodeVal();
 
         if (!symbolTable->varMayTakeName(nameType.first)) {
             msgs->errorVarNameTaken(codeLocName, nameType.first);
-            return;
+            return NodeVal();
         }
 
         const string &name = namePool->get(nameType.first);
@@ -318,21 +303,21 @@ void Codegen::codegenLet(const AstNode *ast) {
             if (init.has_value()) {
                 NodeVal initPay = codegenExpr(init.value());
                 if (initPay.valueBroken()) {
-                    return;
+                    return NodeVal();
                 }
                 if (!initPay.isUntyVal()) {
                     msgs->errorExprNotBaked(codeLocInit);
-                    return;
+                    return NodeVal();
                 }
                 if (!promoteUntyped(initPay, typeId)) {
                     msgs->errorExprCannotPromote(codeLocInit, typeId);
-                    return;
+                    return NodeVal();
                 }
                 initConst = (llvm::Constant*) initPay.llvmVal.val;
             } else {
                 if (getTypeTable()->worksAsTypeCn(typeId)) {
                     msgs->errorCnNoInit(codeLocName, nameType.first);
-                    return;
+                    return NodeVal();
                 }
             }
 
@@ -343,12 +328,12 @@ void Codegen::codegenLet(const AstNode *ast) {
             if (init.has_value()) {
                 NodeVal initPay = codegenExpr(init.value());
                 if (initPay.valueBroken())
-                    return;
+                    return NodeVal();
 
                 if (initPay.isUntyVal()) {
                     if (!promoteUntyped(initPay, typeId)) {
                         msgs->errorExprCannotPromote(codeLocInit, typeId);
-                        return;
+                        return NodeVal();
                     }
                 }
 
@@ -357,7 +342,7 @@ void Codegen::codegenLet(const AstNode *ast) {
                 if (initPay.llvmVal.type != typeId) {
                     if (!getTypeTable()->isImplicitCastable(initPay.llvmVal.type, typeId)) {
                         msgs->errorExprCannotImplicitCast(codeLocInit, initPay.llvmVal.type, typeId);
-                        return;
+                        return NodeVal();
                     }
 
                     createCast(src, initPay.llvmVal.type, type, typeId);
@@ -367,19 +352,21 @@ void Codegen::codegenLet(const AstNode *ast) {
             } else {
                 if (getTypeTable()->worksAsTypeCn(typeId)) {
                     msgs->errorCnNoInit(codeLocName, nameType.first);
-                    return;
+                    return NodeVal();
                 }
             }
         }
 
         symbolTable->addVar(nameType.first, {typeId, val});
     }
+
+    return NodeVal();
 }
 
-void Codegen::codegenIf(const AstNode *ast) {
+NodeVal Codegen::codegenIf(const AstNode *ast) {
     if (!checkStartingKeyword(ast, Token::T_IF, true) ||
         !checkBetweenChildren(ast, 3, 4, true))
-        return;
+        return NodeVal();
 
     bool hasElse = ast->children.size() == 4;
 
@@ -388,14 +375,14 @@ void Codegen::codegenIf(const AstNode *ast) {
     const AstNode *nodeElse = hasElse ? ast->children[3].get() : nullptr;
     
     NodeVal condExpr = codegenExpr(nodeCond);
-    if (!checkValueUnbroken(nodeCond->codeLoc, condExpr, true)) return;
+    if (!checkValueUnbroken(nodeCond->codeLoc, condExpr, true)) return NodeVal();
     if (condExpr.isUntyVal() && !promoteUntyped(condExpr, getPrimTypeId(TypeTable::P_BOOL))) {
         msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
-        return;
+        return NodeVal();
     }
     if (!getTypeTable()->worksAsTypeB(condExpr.llvmVal.type)) {
         msgs->errorExprCannotImplicitCast(nodeCond->codeLoc, condExpr.llvmVal.type, getPrimTypeId(TypeTable::P_BOOL));
-        return;
+        return NodeVal();
     }
 
     llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
@@ -410,7 +397,7 @@ void Codegen::codegenIf(const AstNode *ast) {
         ScopeControl thenScope(symbolTable);
         llvmBuilder.SetInsertPoint(thenBlock);
         codegenAll(nodeThen, false);
-        if (msgs->isAbort()) return;
+        if (msgs->isAbort()) return NodeVal();
         if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
     }
 
@@ -419,18 +406,20 @@ void Codegen::codegenIf(const AstNode *ast) {
         func->getBasicBlockList().push_back(elseBlock);
         llvmBuilder.SetInsertPoint(elseBlock);
         codegenAll(nodeElse, false);
-        if (msgs->isAbort()) return;
+        if (msgs->isAbort()) return NodeVal();
         if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
     }
 
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);
+
+    return NodeVal();
 }
 
-void Codegen::codegenFor(const AstNode *ast) {
+NodeVal Codegen::codegenFor(const AstNode *ast) {
     if (!checkStartingKeyword(ast, Token::T_FOR, true) ||
         !checkBetweenChildren(ast, 4, 5, true))
-        return;
+        return NodeVal();
     
     bool hasBody = ast->children.size() == 5;
     
@@ -445,7 +434,7 @@ void Codegen::codegenFor(const AstNode *ast) {
     ScopeControl scope(symbolTable);
 
     codegenNode(nodeInit);
-    if (msgs->isAbort()) return;
+    if (msgs->isAbort()) return NodeVal();
 
     llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
 
@@ -464,14 +453,14 @@ void Codegen::codegenFor(const AstNode *ast) {
         NodeVal condExpr;
         if (hasCond) {
             condExpr = codegenExpr(nodeCond);
-            if (!checkValueUnbroken(nodeCond->codeLoc, condExpr, true)) return;
+            if (!checkValueUnbroken(nodeCond->codeLoc, condExpr, true)) return NodeVal();
             if (condExpr.isUntyVal() && !promoteUntyped(condExpr, getPrimTypeId(TypeTable::P_BOOL))) {
                 msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
-                return;
+                return NodeVal();
             }
             if (!getTypeTable()->worksAsTypeB(condExpr.llvmVal.type)) {
                 msgs->errorExprCannotImplicitCast(nodeCond->codeLoc, condExpr.llvmVal.type, getPrimTypeId(TypeTable::P_BOOL));
-                return;
+                return NodeVal();
             }
         } else {
             condExpr = NodeVal(NodeVal::Kind::kLlvmVal);
@@ -488,7 +477,7 @@ void Codegen::codegenFor(const AstNode *ast) {
         llvmBuilder.SetInsertPoint(bodyBlock);
         if (hasBody) {
             codegenAll(nodeBody, false);
-            if (msgs->isAbort()) return;
+            if (msgs->isAbort()) return NodeVal();
         }
         if (!isBlockTerminated()) llvmBuilder.CreateBr(iterBlock);
     }
@@ -499,7 +488,7 @@ void Codegen::codegenFor(const AstNode *ast) {
 
         if (hasIter) {
             codegenNode(nodeIter);
-            if (msgs->isAbort()) return;
+            if (msgs->isAbort()) return NodeVal();
         }
 
         if (!isBlockTerminated()) llvmBuilder.CreateBr(condBlock);
@@ -510,12 +499,14 @@ void Codegen::codegenFor(const AstNode *ast) {
 
     breakStack.pop();
     continueStack.pop();
+
+    return NodeVal();
 }
 
-void Codegen::codegenWhile(const AstNode *ast) {
+NodeVal Codegen::codegenWhile(const AstNode *ast) {
     if (!checkStartingKeyword(ast, Token::T_WHILE, true) ||
         !checkBetweenChildren(ast, 2, 3, true)) {
-        return;
+        return NodeVal();
     }
 
     bool hasBody = ast->children.size() == 3;
@@ -537,14 +528,14 @@ void Codegen::codegenWhile(const AstNode *ast) {
 
     {
         NodeVal condExpr = codegenExpr(nodeCond);
-        if (!checkValueUnbroken(nodeCond->codeLoc, condExpr, true)) return;
+        if (!checkValueUnbroken(nodeCond->codeLoc, condExpr, true)) return NodeVal();
         if (condExpr.isUntyVal() && !promoteUntyped(condExpr, getPrimTypeId(TypeTable::P_BOOL))) {
             msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
-            return;
+            return NodeVal();
         }
         if (!getTypeTable()->worksAsTypeB(condExpr.llvmVal.type)) {
             msgs->errorExprCannotImplicitCast(nodeCond->codeLoc, condExpr.llvmVal.type, getPrimTypeId(TypeTable::P_BOOL));
-            return;
+            return NodeVal();
         }
 
         llvmBuilder.CreateCondBr(condExpr.llvmVal.val, bodyBlock, afterBlock);
@@ -556,7 +547,7 @@ void Codegen::codegenWhile(const AstNode *ast) {
         llvmBuilder.SetInsertPoint(bodyBlock);
         if (hasBody) {
             codegenAll(nodeBody, false);
-            if (msgs->isAbort()) return;
+            if (msgs->isAbort()) return NodeVal();
         }
         if (!isBlockTerminated()) llvmBuilder.CreateBr(condBlock);
     }
@@ -566,12 +557,14 @@ void Codegen::codegenWhile(const AstNode *ast) {
 
     breakStack.pop();
     continueStack.pop();
+
+    return NodeVal();
 }
 
-void Codegen::codegenDo(const AstNode *ast) {
+NodeVal Codegen::codegenDo(const AstNode *ast) {
     if (!checkStartingKeyword(ast, Token::T_DO, true) ||
         !checkExactlyChildren(ast, 3, true)) {
-        return;
+        return NodeVal();
     }
 
     const AstNode *nodeBody = ast->children[1].get();
@@ -592,7 +585,7 @@ void Codegen::codegenDo(const AstNode *ast) {
     {
         ScopeControl scope(symbolTable);
         codegenAll(nodeBody, false);
-        if (msgs->isAbort()) return;
+        if (msgs->isAbort()) return NodeVal();
         if (!isBlockTerminated()) llvmBuilder.CreateBr(condBlock);
     }
 
@@ -601,14 +594,14 @@ void Codegen::codegenDo(const AstNode *ast) {
         llvmBuilder.SetInsertPoint(condBlock);
 
         NodeVal condExpr = codegenExpr(nodeCond);
-        if (!checkValueUnbroken(nodeCond->codeLoc, condExpr, true)) return;
+        if (!checkValueUnbroken(nodeCond->codeLoc, condExpr, true)) return NodeVal();
         if (condExpr.isUntyVal() && !promoteUntyped(condExpr, getPrimTypeId(TypeTable::P_BOOL))) {
             msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
-            return;
+            return NodeVal();
         }
         if (!getTypeTable()->worksAsTypeB(condExpr.llvmVal.type)) {
             msgs->errorExprCannotImplicitCast(nodeCond->codeLoc, condExpr.llvmVal.type, getPrimTypeId(TypeTable::P_BOOL));
-            return;
+            return NodeVal();
         }
 
         llvmBuilder.CreateCondBr(condExpr.llvmVal.val, bodyBlock, afterBlock);
@@ -619,40 +612,46 @@ void Codegen::codegenDo(const AstNode *ast) {
 
     breakStack.pop();
     continueStack.pop();
+
+    return NodeVal();
 }
 
-void Codegen::codegenBreak(const AstNode *ast) {
+NodeVal Codegen::codegenBreak(const AstNode *ast) {
     if (!checkStartingKeyword(ast, Token::T_BREAK, true) ||
         !checkExactlyChildren(ast, 1, true)) {
-        return;
+        return NodeVal();
     }
 
     if (breakStack.empty()) {
         msgs->errorBreakNowhere(ast->codeLoc);
-        return;
+        return NodeVal();
     }
 
     llvmBuilder.CreateBr(breakStack.top());
+
+    return NodeVal();
 }
 
-void Codegen::codegenContinue(const AstNode *ast) {
+NodeVal Codegen::codegenContinue(const AstNode *ast) {
     if (!checkStartingKeyword(ast, Token::T_CONTINUE, true) ||
         !checkExactlyChildren(ast, 1, true)) {
-        return;
+        return NodeVal();
     }
 
     if (continueStack.empty()) {
         msgs->errorContinueNowhere(ast->codeLoc);
-        return;
+        return NodeVal();
     }
 
     llvmBuilder.CreateBr(continueStack.top());
+
+    return NodeVal();
 }
 
-void Codegen::codegenRet(const AstNode *ast) {
+NodeVal Codegen::codegenRet(const AstNode *ast) {
     if (!checkStartingKeyword(ast, Token::T_RET, true) ||
         !checkBetweenChildren(ast, 1, 2, true)) {
-        return;
+        return NodeVal();
     }
 
     bool hasVal = ast->children.size() == 2;
@@ -662,41 +661,43 @@ void Codegen::codegenRet(const AstNode *ast) {
     optional<FuncValue> currFunc = symbolTable->getCurrFunc();
     if (!currFunc.has_value()) {
         msgs->errorUnknown(ast->codeLoc);
-        return;
+        return NodeVal();
     }
 
     if (!hasVal) {
         if (currFunc.value().hasRet()) {
             msgs->errorRetNoValue(ast->codeLoc, currFunc.value().retType.value());
-            return;
+            return NodeVal();
         }
         llvmBuilder.CreateRetVoid();
-        return;
+        return NodeVal();
     }
 
     NodeVal retExpr = codegenExpr(nodeVal);
-    if (!checkValueUnbroken(nodeVal->codeLoc, retExpr, true)) return;
+    if (!checkValueUnbroken(nodeVal->codeLoc, retExpr, true)) return NodeVal();
     if (retExpr.isUntyVal() && !promoteUntyped(retExpr, currFunc.value().retType.value())) {
         msgs->errorExprCannotPromote(nodeVal->codeLoc, currFunc.value().retType.value());
-        return;
+        return NodeVal();
     }
 
     llvm::Value *retVal = retExpr.llvmVal.val;
     if (retExpr.llvmVal.type != currFunc.value().retType.value()) {
         if (!getTypeTable()->isImplicitCastable(retExpr.llvmVal.type, currFunc.value().retType.value())) {
             msgs->errorExprCannotImplicitCast(nodeVal->codeLoc, retExpr.llvmVal.type, currFunc.value().retType.value());
-            return;
+            return NodeVal();
         }
         createCast(retVal, retExpr.llvmVal.type, currFunc.value().retType.value());
     }
 
     llvmBuilder.CreateRet(retVal);
+
+    return NodeVal();
 }
 
-void Codegen::codegenData(const AstNode *ast) {
+NodeVal Codegen::codegenData(const AstNode *ast) {
     if (!checkStartingKeyword(ast, Token::T_DATA, true) ||
         !checkBetweenChildren(ast, 2, 3, true)) {
-        return;
+        return NodeVal();
     }
 
     bool isDefinition = ast->children.size() == 3;
@@ -705,11 +706,11 @@ void Codegen::codegenData(const AstNode *ast) {
     const AstNode *nodeMembers = isDefinition ? ast->children[2].get() : nullptr;
 
     optional<NamePool::Id> dataName = getId(nodeName, true);
-    if (!dataName.has_value()) return;
+    if (!dataName.has_value()) return NodeVal();
 
     if (!symbolTable->dataMayTakeName(dataName.value())) {
         msgs->errorDataNameTaken(nodeName->codeLoc, dataName.value());
-        return;
+        return NodeVal();
     }
 
     TypeTable::Id dataTypeId = symbolTable->getTypeTable()->addDataType(dataName.value());
@@ -727,11 +728,11 @@ void Codegen::codegenData(const AstNode *ast) {
     if (isDefinition) {
         if (!dataType.isDecl()) {
             msgs->errorDataRedefinition(ast->codeLoc, dataType.name);
-            return;
+            return NodeVal();
         }
 
         if (!checkNotTerminal(nodeMembers, true)) {
-            return;
+            return NodeVal();
         }
 
         llvm::StructType *structType = ((llvm::StructType*) getTypeTable()->getType(dataTypeId));
@@ -741,26 +742,26 @@ void Codegen::codegenData(const AstNode *ast) {
         vector<llvm::Type*> memberTypes;
         for (const unique_ptr<AstNode> &memb : nodeMembers->children) {
             optional<NameTypePair> optIdType = getIdTypePair(memb.get(), true);
-            if (!optIdType.has_value()) return;
+            if (!optIdType.has_value()) return NodeVal();
 
             TypeTable::Id memberTypeId = optIdType.value().second;
             if (!checkDefinedTypeOrError(memberTypeId, memb->type.value()->codeLoc)) {
-                return;
+                return NodeVal();
             }
 
             llvm::Type *memberType = getType(memberTypeId);
-            if (memberType == nullptr) return;
+            if (memberType == nullptr) return NodeVal();
 
             NamePool::Id memberName = optIdType.value().first;
             if (memberNames.find(memberName) != memberNames.end()) {
                 msgs->errorDataMemberNameDuplicate(memb->codeLoc, memberName);
-                return;
+                return NodeVal();
             }
             memberNames.insert(memberName);
             
             if (getTypeTable()->worksAsTypeCn(memberTypeId)) {
                 msgs->errorCnNoInit(memb->codeLoc, memberName);
-                return;
+                return NodeVal();
             }
                 
             TypeTable::DataType::Member member;
@@ -773,23 +774,29 @@ void Codegen::codegenData(const AstNode *ast) {
 
         structType->setBody(memberTypes);
     }
+
+    return NodeVal();
 }
 
-void Codegen::codegenBlock(const AstNode *ast) {
+NodeVal Codegen::codegenBlock(const AstNode *ast) {
     if (!checkStartingKeyword(ast, Token::T_BLOCK, true) ||
         !checkExactlyChildren(ast, 2, true)) {
-        return;
+        return NodeVal();
     }
 
     codegenAll(ast->children[1].get(), true);
+
+    return NodeVal();
 }
 
-void Codegen::codegenAll(const AstNode *ast, bool makeScope) {
-    if (!checkBlock(ast, true)) return;
+NodeVal Codegen::codegenAll(const AstNode *ast, bool makeScope) {
+    if (!checkBlock(ast, true)) return NodeVal();
 
     ScopeControl scope(makeScope ? symbolTable : nullptr);
 
     for (const std::unique_ptr<AstNode> &child : ast->children) codegenNode(child.get());
+
+    return NodeVal();
 }
 
 optional<FuncValue> Codegen::codegenFuncProto(const AstNode *ast, bool definition) {
@@ -932,18 +939,18 @@ optional<FuncValue> Codegen::codegenFuncProto(const AstNode *ast, bool definitio
 
 // TODO when 'else ret ...;' is the final instruction in a function, llvm gives a warning
 //   + 'while (true) ret ...;' gives a segfault
-void Codegen::codegenFunc(const AstNode *ast) {
+NodeVal Codegen::codegenFunc(const AstNode *ast) {
     if (!checkStartingKeyword(ast, Token::T_FNC, true) ||
         !checkAtLeastChildren(ast, 4, true)) {
-        return;
+        return NodeVal();
     }
 
     bool definition = ast->children.size() >= 5 && checkBlock(ast->children.back().get(), false);
 
     optional<FuncValue> funcValRet = codegenFuncProto(ast, definition);
-    if (!funcValRet.has_value()) return;
+    if (!funcValRet.has_value()) return NodeVal();
 
-    if (!definition) return;
+    if (!definition) return NodeVal();
 
     const FuncValue *funcVal = &funcValRet.value();
 
@@ -970,7 +977,7 @@ void Codegen::codegenFunc(const AstNode *ast) {
     codegenAll(ast->children.back().get(), false);
     if (msgs->isAbort()) {
         funcVal->func->eraseFromParent();
-        return;
+        return NodeVal();
     }
 
     llvmBuilderAlloca.CreateBr(body);
@@ -979,4 +986,6 @@ void Codegen::codegenFunc(const AstNode *ast) {
             llvmBuilder.CreateRetVoid();
 
     if (llvm::verifyFunction(*funcVal->func, &llvm::errs())) cerr << endl;
+
+    return NodeVal();
 }

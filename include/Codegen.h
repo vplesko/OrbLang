@@ -84,23 +84,24 @@ class Codegen {
     NodeVal codegenCall(const AstNode *ast);
     NodeVal codegenCast(const AstNode *ast);
     NodeVal codegenArr(const AstNode *ast);
-    std::optional<StringPool::Id> codegenImport(const AstNode *ast);
-    void codegenLet(const AstNode *ast);
-    void codegenIf(const AstNode *ast);
-    void codegenFor(const AstNode *ast);
-    void codegenWhile(const AstNode *ast);
-    void codegenDo(const AstNode *ast);
-    void codegenBreak(const AstNode *ast);
-    void codegenContinue(const AstNode *ast);
-    void codegenRet(const AstNode *ast);
-    void codegenData(const AstNode *ast);
-    void codegenBlock(const AstNode *ast);
-    void codegenAll(const AstNode *ast, bool makeScope);
-    std::optional<FuncValue> codegenFuncProto(const AstNode *ast, bool definition);
-    void codegenFunc(const AstNode *ast);
+    NodeVal codegenImport(const AstNode *ast);
+    NodeVal codegenLet(const AstNode *ast);
+    NodeVal codegenIf(const AstNode *ast);
+    NodeVal codegenFor(const AstNode *ast);
+    NodeVal codegenWhile(const AstNode *ast);
+    NodeVal codegenDo(const AstNode *ast);
+    NodeVal codegenBreak(const AstNode *ast);
+    NodeVal codegenContinue(const AstNode *ast);
+    NodeVal codegenRet(const AstNode *ast);
+    NodeVal codegenData(const AstNode *ast);
+    NodeVal codegenBlock(const AstNode *ast);
+    NodeVal codegenAll(const AstNode *ast, bool makeScope);
+    NodeVal codegenFunc(const AstNode *ast);
 
     NodeVal codegenType(const AstNode *ast);
     NodeVal codegenExpr(const AstNode *ast);
+
+    std::optional<FuncValue> codegenFuncProto(const AstNode *ast, bool definition);
 
 public:
     Codegen(NamePool *namePool, StringPool *stringPool, SymbolTable *symbolTable, CompileMessages *msgs);
