@@ -1,11 +1,11 @@
 // TODO! remove re-checking starting keyword
 // TODO! check when needs to be in global (import, fnc, data)
 // TODO! all go through codegenNode or codegenAll
-// TODO! separate codegen for terminals
 // TODO! codegenVar can return func handle
 // TODO! check there are no types where there shouldn't be (don't forget codegenAll)
-// TODO! refactor codegen expr switches
 // TODO! cast and arr outside of expr, oper by themselves
+// TODO! separate codegen for terminals
+// TODO! refactor codegen expr switches
 // TODO! replace errorUnknown with actual error messages
 // TODO! remove obsolete compiler messages
 import "tests/negative/test_import_cycle.orb";

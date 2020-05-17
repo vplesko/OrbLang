@@ -169,8 +169,7 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenImport(const AstNode *ast) {
-    if (!checkStartingKeyword(ast, Token::T_IMPORT, true) ||
-        !checkExactlyChildren(ast, 2, true))
+    if (!checkExactlyChildren(ast, 2, true))
         return NodeVal();
     
     const AstNode *nodeFile = ast->children[1].get();
@@ -248,8 +247,7 @@ NodeVal Codegen::codegenType(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenLet(const AstNode *ast) {
-    if (!checkStartingKeyword(ast, Token::T_LET, true) ||
-        !checkAtLeastChildren(ast, 2, true))
+    if (!checkAtLeastChildren(ast, 2, true))
         return NodeVal();
     
     for (size_t i = 1; i < ast->children.size(); ++i) {
@@ -364,8 +362,7 @@ NodeVal Codegen::codegenLet(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenIf(const AstNode *ast) {
-    if (!checkStartingKeyword(ast, Token::T_IF, true) ||
-        !checkBetweenChildren(ast, 3, 4, true))
+    if (!checkBetweenChildren(ast, 3, 4, true))
         return NodeVal();
 
     bool hasElse = ast->children.size() == 4;
@@ -417,8 +414,7 @@ NodeVal Codegen::codegenIf(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenFor(const AstNode *ast) {
-    if (!checkStartingKeyword(ast, Token::T_FOR, true) ||
-        !checkBetweenChildren(ast, 4, 5, true))
+    if (!checkBetweenChildren(ast, 4, 5, true))
         return NodeVal();
     
     bool hasBody = ast->children.size() == 5;
@@ -504,8 +500,7 @@ NodeVal Codegen::codegenFor(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenWhile(const AstNode *ast) {
-    if (!checkStartingKeyword(ast, Token::T_WHILE, true) ||
-        !checkBetweenChildren(ast, 2, 3, true)) {
+    if (!checkBetweenChildren(ast, 2, 3, true)) {
         return NodeVal();
     }
 
@@ -562,8 +557,7 @@ NodeVal Codegen::codegenWhile(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenDo(const AstNode *ast) {
-    if (!checkStartingKeyword(ast, Token::T_DO, true) ||
-        !checkExactlyChildren(ast, 3, true)) {
+    if (!checkExactlyChildren(ast, 3, true)) {
         return NodeVal();
     }
 
@@ -617,8 +611,7 @@ NodeVal Codegen::codegenDo(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenBreak(const AstNode *ast) {
-    if (!checkStartingKeyword(ast, Token::T_BREAK, true) ||
-        !checkExactlyChildren(ast, 1, true)) {
+    if (!checkExactlyChildren(ast, 1, true)) {
         return NodeVal();
     }
 
@@ -633,8 +626,7 @@ NodeVal Codegen::codegenBreak(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenContinue(const AstNode *ast) {
-    if (!checkStartingKeyword(ast, Token::T_CONTINUE, true) ||
-        !checkExactlyChildren(ast, 1, true)) {
+    if (!checkExactlyChildren(ast, 1, true)) {
         return NodeVal();
     }
 
@@ -649,8 +641,7 @@ NodeVal Codegen::codegenContinue(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenRet(const AstNode *ast) {
-    if (!checkStartingKeyword(ast, Token::T_RET, true) ||
-        !checkBetweenChildren(ast, 1, 2, true)) {
+    if (!checkBetweenChildren(ast, 1, 2, true)) {
         return NodeVal();
     }
 
@@ -695,8 +686,7 @@ NodeVal Codegen::codegenRet(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenData(const AstNode *ast) {
-    if (!checkStartingKeyword(ast, Token::T_DATA, true) ||
-        !checkBetweenChildren(ast, 2, 3, true)) {
+    if (!checkBetweenChildren(ast, 2, 3, true)) {
         return NodeVal();
     }
 
@@ -779,8 +769,7 @@ NodeVal Codegen::codegenData(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenBlock(const AstNode *ast) {
-    if (!checkStartingKeyword(ast, Token::T_BLOCK, true) ||
-        !checkExactlyChildren(ast, 2, true)) {
+    if (!checkExactlyChildren(ast, 2, true)) {
         return NodeVal();
     }
 
@@ -800,11 +789,6 @@ NodeVal Codegen::codegenAll(const AstNode *ast, bool makeScope) {
 }
 
 optional<FuncValue> Codegen::codegenFuncProto(const AstNode *ast, bool definition) {
-    if (!checkStartingKeyword(ast, Token::T_FNC, true) ||
-        !checkAtLeastChildren(ast, 4, true)) {
-        return nullopt;
-    }
-
     const AstNode *nodeName = ast->children[1].get();
     const AstNode *nodeArgs = ast->children[2].get();
     const AstNode *nodeRet = ast->children[3].get();
@@ -940,8 +924,7 @@ optional<FuncValue> Codegen::codegenFuncProto(const AstNode *ast, bool definitio
 // TODO when 'else ret ...;' is the final instruction in a function, llvm gives a warning
 //   + 'while (true) ret ...;' gives a segfault
 NodeVal Codegen::codegenFunc(const AstNode *ast) {
-    if (!checkStartingKeyword(ast, Token::T_FNC, true) ||
-        !checkAtLeastChildren(ast, 4, true)) {
+    if (!checkAtLeastChildren(ast, 4, true)) {
         return NodeVal();
     }
 
