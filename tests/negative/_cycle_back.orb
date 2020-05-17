@@ -1,11 +1,12 @@
 // TODO! all codegens should return NodeVal
 // TODO! codegen funcs can return some handle to function
+// TODO! remove re-checking starting keyword
+// TODO! all go through codegenNode or codegenAll
 // TODO! separate codegen for terminals
+// TODO! check there are no types where there shouldn't be (don't forget codegenAll)
+// TODO! check when needs to be in global (import, fnc, data)
 // TODO! refactor codegen expr switches
 // TODO! cast and arr outside of expr, oper by themselves
 // TODO! replace errorUnknown with actual error messages
 // TODO! remove obsolete compiler messages
-// TODO! remove re-checking starting keyword
-// TODO! check there are no types where there shouldn't be (don't forget codegenAll)
-// TODO! check when needs to be in global (import, fnc, data)
 import "tests/negative/test_import_cycle.orb";

@@ -70,7 +70,8 @@ struct NodeVal {
         kEmpty,
         kImport,
         kLlvmVal,
-        kUntyVal
+        kUntyVal,
+        kType
     };
 
     Kind kind = Kind::kInvalid;
@@ -78,6 +79,7 @@ struct NodeVal {
         LlvmVal llvmVal;
         UntypedVal untyVal;
         StringPool::Id file;
+        TypeTable::Id type;
     };
 
     NodeVal() : kind(Kind::kInvalid) {}
@@ -85,6 +87,7 @@ struct NodeVal {
 
     bool isLlvmVal() const { return kind == Kind::kLlvmVal; }
     bool isUntyVal() const { return kind == Kind::kUntyVal; }
+    bool isType() const { return kind == Kind::kType; }
 
     // returns true if this is not unty val nor llvm val with valid value
     bool valueBroken() const { return

@@ -1040,10 +1040,10 @@ NodeVal Codegen::codegenCast(const AstNode *ast) {
     const AstNode *nodeType = ast->children[1].get();
     const AstNode *nodeVal = ast->children[2].get();
 
-    optional<TypeTable::Id> optTypeId = codegenType(nodeType);
-    if (!optTypeId.has_value()) return NodeVal();
+    NodeVal valTypeId = codegenType(nodeType);
+    if (!checkIsType(nodeType->codeLoc, valTypeId, true)) return NodeVal();
 
-    llvm::Type *type = getType(optTypeId.value());
+    llvm::Type *type = getType(valTypeId.type);
     if (type == nullptr) return NodeVal();
 
     NodeVal exprVal = codegenExpr(nodeVal);
@@ -1082,13 +1082,13 @@ NodeVal Codegen::codegenCast(const AstNode *ast) {
     }
     
     llvm::Value *val = exprVal.llvmVal.val;
-    if (!createCast(val, exprVal.llvmVal.type, type, optTypeId.value())) {
-        msgs->errorExprCannotCast(nodeVal->codeLoc, exprVal.llvmVal.type, optTypeId.value());
+    if (!createCast(val, exprVal.llvmVal.type, type, valTypeId.type)) {
+        msgs->errorExprCannotCast(nodeVal->codeLoc, exprVal.llvmVal.type, valTypeId.type);
         return NodeVal();
     }
 
     NodeVal ret(NodeVal::Kind::kLlvmVal);
-    ret.llvmVal.type = optTypeId.value();
+    ret.llvmVal.type = valTypeId.type;
     ret.llvmVal.val = val;
     return ret;
 }
@@ -1103,18 +1103,18 @@ NodeVal Codegen::codegenArr(const AstNode *ast) {
 
     size_t arrLen = ast->children.size()-2;
 
-    optional<TypeTable::Id> arrDeclTypeId = codegenType(nodeArrType);
-    if (!arrDeclTypeId.has_value()) return NodeVal();
+    NodeVal arrDeclTypeId = codegenType(nodeArrType);
+    if (!checkIsType(nodeArrType->codeLoc, arrDeclTypeId, true)) return NodeVal();
 
-    if (!getTypeTable()->worksAsTypeArrP(arrDeclTypeId.value()) &&
-        !getTypeTable()->worksAsTypeArrOfLen(arrDeclTypeId.value(), arrLen)) {
-        msgs->errorExprIndexOnBadType(ast->codeLoc, arrDeclTypeId.value());
+    if (!getTypeTable()->worksAsTypeArrP(arrDeclTypeId.type) &&
+        !getTypeTable()->worksAsTypeArrOfLen(arrDeclTypeId.type, arrLen)) {
+        msgs->errorExprIndexOnBadType(ast->codeLoc, arrDeclTypeId.type);
         return NodeVal();
     }
 
-    optional<TypeTable::Id> elemTypeIdFind = getTypeTable()->addTypeIndexOf(arrDeclTypeId.value());
+    optional<TypeTable::Id> elemTypeIdFind = getTypeTable()->addTypeIndexOf(arrDeclTypeId.type);
     if (!elemTypeIdFind) {
-        msgs->errorExprIndexOnBadType(ast->codeLoc, arrDeclTypeId.value());
+        msgs->errorExprIndexOnBadType(ast->codeLoc, arrDeclTypeId.type);
         return NodeVal();
     }
 

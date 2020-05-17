@@ -378,6 +378,15 @@ bool Codegen::checkValueUnbroken(CodeLoc codeLoc, const NodeVal &val, bool orErr
     return true;
 }
 
+bool Codegen::checkIsType(CodeLoc codeLoc, const NodeVal &val, bool orError) {
+    if (!val.isType()) {
+        if (orError) msgs->errorUnknown(codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
 optional<NamePool::Id> Codegen::getId(const AstNode *ast, bool orError) {
     if (!checkTerminal(ast, orError)) return nullopt;
 
@@ -397,12 +406,12 @@ optional<Codegen::NameTypePair> Codegen::getIdTypePair(const AstNode *ast, bool 
         if (orError) msgs->errorUnknown(ast->codeLoc);
         return nullopt;
     }
-    optional<TypeTable::Id> type = codegenType(ast->type->get());
-    if (!type.has_value()) return nullopt;
+    NodeVal type = codegenType(ast->type->get());
+    if (!checkIsType(ast->type->get()->codeLoc, type, true)) return nullopt;
 
     NameTypePair idType;
     idType.first = id.value();
-    idType.second = type.value();
+    idType.second = type.type;
     return idType;
 }
 

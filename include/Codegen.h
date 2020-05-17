@@ -62,6 +62,7 @@ class Codegen {
     bool checkAtMostChildren(const AstNode *ast, std::size_t n, bool orError);
     bool checkBetweenChildren(const AstNode *ast, std::size_t nLo, std::size_t nHi, bool orError);
     bool checkValueUnbroken(CodeLoc codeLoc, const NodeVal &val, bool orError);
+    bool checkIsType(CodeLoc codeLoc, const NodeVal &val, bool orError);
     std::optional<NamePool::Id> getId(const AstNode *ast, bool orError);
     std::optional<NameTypePair> getIdTypePair(const AstNode *ast, bool orError);
     std::optional<Token::Type> getKeyword(const AstNode *ast, bool orError);
@@ -98,7 +99,7 @@ class Codegen {
     std::optional<FuncValue> codegenFuncProto(const AstNode *ast, bool definition);
     void codegenFunc(const AstNode *ast);
 
-    std::optional<TypeTable::Id> codegenType(const AstNode *ast);
+    NodeVal codegenType(const AstNode *ast);
     NodeVal codegenExpr(const AstNode *ast);
 
 public:

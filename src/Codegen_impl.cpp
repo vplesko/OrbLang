@@ -203,22 +203,24 @@ optional<StringPool::Id> Codegen::codegenImport(const AstNode *ast) {
     return val.value().val_str;
 }
 
-optional<TypeTable::Id> Codegen::codegenType(const AstNode *ast) {
+NodeVal Codegen::codegenType(const AstNode *ast) {
     bool isDescr = ast->kind == AstNode::Kind::kTuple;
 
     const AstNode *nodeBase = isDescr ? ast->children[0].get() : ast;
 
     optional<NamePool::Id> baseTypeName = getId(nodeBase, true);
-    if (!baseTypeName.has_value()) return nullopt;
+    if (!baseTypeName.has_value()) return NodeVal();
 
     optional<TypeTable::Id> baseTypeId = symbolTable->getTypeTable()->getTypeId(baseTypeName.value());
     if (!baseTypeId.has_value()) {
         msgs->errorNotTypeId(nodeBase->codeLoc, baseTypeName.value());
-        return nullopt;
+        return NodeVal();
     }
 
     if (!isDescr) {
-        return baseTypeId;
+        NodeVal ret(NodeVal::Kind::kType);
+        ret.type = baseTypeId.value();
+        return ret;
     }
 
     TypeTable::TypeDescr typeDescr(baseTypeId.value());
@@ -236,12 +238,12 @@ optional<TypeTable::Id> Codegen::codegenType(const AstNode *ast) {
         } else if (val.has_value()) {
             if (val.value().kind != UntypedVal::Kind::kSint) {
                 msgs->errorUnknown(nodeChild->codeLoc);
-                return nullopt;
+                return NodeVal();
             }
             int64_t arrSize = val.value().val_si;
             if (arrSize <= 0) {
                 msgs->errorBadArraySize(nodeChild->codeLoc, arrSize);
-                return nullopt;
+                return NodeVal();
             }
 
             typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_ARR, (unsigned long) arrSize});
@@ -249,13 +251,15 @@ optional<TypeTable::Id> Codegen::codegenType(const AstNode *ast) {
             typeDescr.setLastCn();
         } else {
             msgs->errorUnknown(nodeChild->codeLoc);
-            return nullopt;
+            return NodeVal();
         }
     }
 
     TypeTable::Id typeId = symbolTable->getTypeTable()->addTypeDescr(move(typeDescr));
 
-    return typeId;
+    NodeVal ret(NodeVal::Kind::kType);
+    ret.type = typeId;
+    return ret;
 }
 
 void Codegen::codegenLet(const AstNode *ast) {
@@ -840,10 +844,10 @@ optional<FuncValue> Codegen::codegenFuncProto(const AstNode *ast, bool definitio
     // func ret
     optional<TypeTable::Id> retType;
     if (!checkEmptyTerminal(nodeRet, false)) {
-        optional<TypeTable::Id> type = codegenType(nodeRet);
-        if (!type.has_value()) return nullopt;
+        NodeVal type = codegenType(nodeRet);
+        if (!checkIsType(nodeRet->codeLoc, type, true)) return nullopt;
 
-        retType = type;
+        retType = type.type;
     }
 
     // func attrs
