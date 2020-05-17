@@ -169,7 +169,8 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenImport(const AstNode *ast) {
-    if (!checkExactlyChildren(ast, 2, true))
+    if (!checkGlobalScope(ast->codeLoc, true) ||
+        !checkExactlyChildren(ast, 2, true))
         return NodeVal();
     
     const AstNode *nodeFile = ast->children[1].get();
@@ -686,7 +687,8 @@ NodeVal Codegen::codegenRet(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenData(const AstNode *ast) {
-    if (!checkBetweenChildren(ast, 2, 3, true)) {
+    if (!checkGlobalScope(ast->codeLoc, true) ||
+        !checkBetweenChildren(ast, 2, 3, true)) {
         return NodeVal();
     }
 
@@ -924,7 +926,8 @@ optional<FuncValue> Codegen::codegenFuncProto(const AstNode *ast, bool definitio
 // TODO when 'else ret ...;' is the final instruction in a function, llvm gives a warning
 //   + 'while (true) ret ...;' gives a segfault
 NodeVal Codegen::codegenFunc(const AstNode *ast) {
-    if (!checkAtLeastChildren(ast, 4, true)) {
+    if (!checkGlobalScope(ast->codeLoc, true) ||
+        !checkAtLeastChildren(ast, 4, true)) {
         return NodeVal();
     }
 

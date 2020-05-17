@@ -387,6 +387,15 @@ bool Codegen::checkIsType(CodeLoc codeLoc, const NodeVal &val, bool orError) {
     return true;
 }
 
+bool Codegen::checkGlobalScope(CodeLoc codeLoc, bool orError) {
+    if (!isGlobalScope()) {
+        if (orError) msgs->errorUnknown(codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
 optional<NamePool::Id> Codegen::getId(const AstNode *ast, bool orError) {
     if (!checkTerminal(ast, orError)) return nullopt;
 

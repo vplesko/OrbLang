@@ -1,5 +1,3 @@
-// TODO! remove re-checking starting keyword
-// TODO! check when needs to be in global (import, fnc, data)
 // TODO! all go through codegenNode or codegenAll
 // TODO! codegenVar can return func handle
 // TODO! check there are no types where there shouldn't be (don't forget codegenAll)

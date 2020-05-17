@@ -63,6 +63,7 @@ class Codegen {
     bool checkBetweenChildren(const AstNode *ast, std::size_t nLo, std::size_t nHi, bool orError);
     bool checkValueUnbroken(CodeLoc codeLoc, const NodeVal &val, bool orError);
     bool checkIsType(CodeLoc codeLoc, const NodeVal &val, bool orError);
+    bool checkGlobalScope(CodeLoc codeLoc, bool orError);
     std::optional<NamePool::Id> getId(const AstNode *ast, bool orError);
     std::optional<NameTypePair> getIdTypePair(const AstNode *ast, bool orError);
     std::optional<Token::Type> getKeyword(const AstNode *ast, bool orError);
