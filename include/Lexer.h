@@ -25,6 +25,8 @@ class Lexer {
     char nextCh();
     void skipLine();
 
+    void lexNum(CodeIndex from);
+
 public:
     Lexer(NamePool *namePool, StringPool *stringPool, CompileMessages *msgs, const std::string &file);
 

@@ -56,6 +56,56 @@ void Lexer::skipLine() {
     ch = col == line.size() ? '\n' : line[col];
 }
 
+void Lexer::lexNum(CodeIndex from) {
+    CodeIndex l = from;
+    while (numLitChars.find(peekCh()) != numLitChars.npos) nextCh();
+    CodeIndex r = col-1;
+
+    size_t dotIndex = line.find(".", l);
+    if (dotIndex != line.npos && dotIndex <= r) {
+        tok.type = Token::T_FNUM;
+
+        string lit = line.substr(l, r-l+1);
+        if (lit.size() >= 3 && lit[0] == '0' && lit[1] == '_' && (lit[2] == 'x' || lit[2] == 'X')) {
+            tok.type = Token::T_UNKNOWN;
+        } else {
+            lit.erase(remove(lit.begin(), lit.end(), '_'), lit.end());
+            
+            char *end;
+            tok.fnum = strtod(lit.c_str(), &end);
+            if (end != lit.end().base() || errno == ERANGE) tok.type = Token::T_UNKNOWN;
+        }
+    } else {
+        tok.type = Token::T_NUM;
+        int base = 10;
+        if (r-l+1 > 2 && line[l] == '0' && (line[l+1] == 'x' || line[l+1] == 'X')) {
+            base = 16;
+            l += 2;
+        } else if (r-l+1 > 2 && line[l] == '0' && line[l+1] == 'b') {
+            base = 2;
+            l += 2;
+        } else if (r-l+1 > 1 && line[l] == '0') {
+            base = 8;
+            l += 1;
+        }
+
+        string lit = line.substr(l, r-l+1);
+        lit.erase(remove(lit.begin(), lit.end(), '_'), lit.end());
+        if (lit.empty()) {
+            // 0_, 0__... are allowed and equal to 0
+            if (base == 8) {
+                tok.num = 0;
+            } else {
+                tok.type = Token::T_UNKNOWN;
+            }
+        } else {
+            char *end;
+            tok.num = strtol(lit.c_str(), &end, base);
+            if (end != lit.end().base() || errno == ERANGE) tok.type = Token::T_UNKNOWN;
+        }
+    }
+}
+
 Token Lexer::next() {
     if (tok.type == Token::T_END) return tok;
 
@@ -96,7 +146,7 @@ Token Lexer::next() {
             continue;
         }
         
-        if ((ch >= '0' && ch <= '9') || ch == '.') {
+        if (isdigit(ch) || ch == '.') {
             if (ch == '.') {
                 if (peekCh() == '.') {
                     nextCh();
@@ -109,54 +159,8 @@ Token Lexer::next() {
                 } else {
                     tok = {Token::T_OPER, Token::O_DOT};
                 }
-            } else {  
-                CodeIndex l = col-1;
-                while (numLitChars.find(peekCh()) != numLitChars.npos) nextCh();
-                CodeIndex r = col-1;
-
-                size_t dotIndex = line.find(".", l);
-                if (dotIndex != line.npos && dotIndex <= r) {
-                    tok.type = Token::T_FNUM;
-
-                    string lit = line.substr(l, r-l+1);
-                    if (lit.size() >= 3 && lit[0] == '0' && lit[1] == '_' && (lit[2] == 'x' || lit[2] == 'X')) {
-                        tok.type = Token::T_UNKNOWN;
-                    } else {
-                        lit.erase(remove(lit.begin(), lit.end(), '_'), lit.end());
-                        
-                        char *end;
-                        tok.fnum = strtod(lit.c_str(), &end);
-                        if (end != lit.end().base() || errno == ERANGE) tok.type = Token::T_UNKNOWN;
-                    }
-                } else {
-                    tok.type = Token::T_NUM;
-                    int base = 10;
-                    if (r-l+1 > 2 && line[l] == '0' && (line[l+1] == 'x' || line[l+1] == 'X')) {
-                        base = 16;
-                        l += 2;
-                    } else if (r-l+1 > 2 && line[l] == '0' && line[l+1] == 'b') {
-                        base = 2;
-                        l += 2;
-                    } else if (r-l+1 > 1 && line[l] == '0') {
-                        base = 8;
-                        l += 1;
-                    }
-
-                    string lit = line.substr(l, r-l+1);
-                    lit.erase(remove(lit.begin(), lit.end(), '_'), lit.end());
-                    if (lit.empty()) {
-                        // 0_, 0__... are allowed and equal to 0
-                        if (base == 8) {
-                            tok.num = 0;
-                        } else {
-                            tok.type = Token::T_UNKNOWN;
-                        }
-                    } else {
-                        char *end;
-                        tok.num = strtol(lit.c_str(), &end, base);
-                        if (end != lit.end().base() || errno == ERANGE) tok.type = Token::T_UNKNOWN;
-                    }
-                }
+            } else {
+                lexNum(col-1);
             }
         } else if (ch == '+') {
             if (peekCh() == '+') {
@@ -165,6 +169,8 @@ Token Lexer::next() {
             } else if (peekCh() == '=') {
                 nextCh();
                 tok = {Token::T_OPER, Token::O_ADD_ASGN};
+            } else if (isdigit(peekCh())) {
+                lexNum(col);
             } else {
                 tok = {Token::T_OPER, Token::O_ADD};
             }
@@ -175,6 +181,10 @@ Token Lexer::next() {
             } else if (peekCh() == '=') {
                 nextCh();
                 tok = {Token::T_OPER, Token::O_SUB_ASGN};
+            } else if (isdigit(peekCh())) {
+                lexNum(col);
+                if (tok.type == Token::T_NUM) tok.num *= -1;
+                else if (tok.type == Token::T_FNUM) tok.fnum *= -1.0;
             } else {
                 tok = {Token::T_OPER, Token::O_SUB};
             }
