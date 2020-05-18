@@ -35,7 +35,7 @@ fnc main() () {
     println_i64 (-- (++ a));
     println_i64 a;
     println_i64 (+ (++ a) 10);
-    println_i64 a;
+    println_i64 a:i64;
     println_i64 (+ a (++ a));
     println_i64 (+ a);
     println_i64 (- a);
@@ -61,7 +61,7 @@ fnc main() () {
     println_i64 a;
 
     let (b:i64 1);
-    println_i64 (- a b);
+    println_i64 (- a b):i64;
 
     block {
         let (a:i64 100);

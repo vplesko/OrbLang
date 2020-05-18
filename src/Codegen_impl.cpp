@@ -170,54 +170,112 @@ NodeVal Codegen::codegenTerminal(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenNode(const AstNode *ast) {
+    NodeVal ret;
+
     if (ast->kind == AstNode::Kind::kTerminal) {
-        return codegenTerminal(ast);
-    }
+        ret = codegenTerminal(ast);
+    } else {
+        NodeVal starting = codegenNode(ast->children[0].get());
 
-    NodeVal starting = codegenNode(ast->children[0].get());
-
-    if (starting.isKeyword()) {
-        switch (starting.keyword) {
-        case Token::T_IMPORT:
-            return codegenImport(ast);
-        case Token::T_LET:
-            return codegenLet(ast);
-        case Token::T_BLOCK:
-            return codegenBlock(ast);
-        case Token::T_IF:
-            return codegenIf(ast);
-        case Token::T_FOR:
-            return codegenFor(ast);
-        case Token::T_WHILE:
-            return codegenWhile(ast);
-        case Token::T_DO:
-            return codegenDo(ast);
-        case Token::T_BREAK:
-            return codegenBreak(ast);
-        case Token::T_CONTINUE:
-            return codegenContinue(ast);
-        case Token::T_RET:
-            return codegenRet(ast);
-        case Token::T_FNC:
-            return codegenFunc(ast);
-        case Token::T_DATA:
-            return codegenData(ast);
-        case Token::T_CAST:
-            return codegenCast(ast);
-        case Token::T_ARR:
-            return codegenArr(ast);
-        default:
+        if (starting.isKeyword()) {
+            switch (starting.keyword) {
+            case Token::T_IMPORT:
+                ret = codegenImport(ast);
+                break;
+            case Token::T_LET:
+                ret = codegenLet(ast);
+                break;
+            case Token::T_BLOCK:
+                ret = codegenBlock(ast);
+                break;
+            case Token::T_IF:
+                ret = codegenIf(ast);
+                break;
+            case Token::T_FOR:
+                ret = codegenFor(ast);
+                break;
+            case Token::T_WHILE:
+                ret = codegenWhile(ast);
+                break;
+            case Token::T_DO:
+                ret = codegenDo(ast);
+                break;
+            case Token::T_BREAK:
+                ret = codegenBreak(ast);
+                break;
+            case Token::T_CONTINUE:
+                ret = codegenContinue(ast);
+                break;
+            case Token::T_RET:
+                ret = codegenRet(ast);
+                break;
+            case Token::T_FNC:
+                ret = codegenFunc(ast);
+                break;
+            case Token::T_DATA:
+                ret = codegenData(ast);
+                break;
+            case Token::T_CAST:
+                ret = codegenCast(ast);
+                break;
+            case Token::T_ARR:
+                ret = codegenArr(ast);
+                break;
+            default:
+                msgs->errorUnknown(ast->codeLoc);
+                return NodeVal();
+            }
+        } else if (starting.isOper() || starting.isFuncId()) {
+            ret = codegenExpr(ast, starting);
+        } else if (starting.isType()) {
+            ret = codegenType(ast, starting);
+        } else {
             msgs->errorUnknown(ast->codeLoc);
             return NodeVal();
         }
-    } else if (starting.isOper() || starting.isFuncId()) {
-        return codegenExpr(ast, starting);
-    } else if (starting.isType()) {
-        return codegenType(ast, starting);
-    } else {
-        msgs->errorUnknown(ast->codeLoc);
+    }
+
+    if (!ast->escaped && ast->type.has_value()) {
+        const AstNode *nodeType = ast->type.value().get();
+
+        NodeVal nodeTypeVal = codegenNode(nodeType);
+        if (!checkIsType(nodeType->codeLoc, nodeTypeVal, true))
+            return NodeVal();
+
+        switch (ret.kind) {
+        case NodeVal::Kind::kLlvmVal:
+            if (ret.type != nodeTypeVal.type) {
+                msgs->errorUnknown(nodeType->codeLoc);
+                return NodeVal();
+            }
+            break;
+        case NodeVal::Kind::kUntyVal:
+            if (!promoteUntyped(ret, nodeTypeVal.type)) {
+                msgs->errorExprCannotPromote(ast->codeLoc, nodeTypeVal.type);
+                return NodeVal();
+            }
+            break;
+        default:
+            msgs->errorUnknown(nodeType->codeLoc);
+            return NodeVal();
+        }
+    }
+
+    return ret;
+}
+
+NodeVal Codegen::codegenAll(const AstNode *ast, bool makeScope) {
+    if (!checkBlock(ast, true)) return NodeVal();
+    if (ast->type.has_value()) {
+        msgs->errorUnknown(ast->type.value()->codeLoc);
         return NodeVal();
     }
+
+    ScopeControl scope(makeScope ? symbolTable : nullptr);
+
+    for (const std::unique_ptr<AstNode> &child : ast->children) codegenNode(child.get());
+
+    return NodeVal();
 }
 
 NodeVal Codegen::codegenImport(const AstNode *ast) {
@@ -809,16 +867,6 @@ NodeVal Codegen::codegenBlock(const AstNode *ast) {
     }
 
     codegenAll(ast->children[1].get(), true);
-
-    return NodeVal();
-}
-
-NodeVal Codegen::codegenAll(const AstNode *ast, bool makeScope) {
-    if (!checkBlock(ast, true)) return NodeVal();
-
-    ScopeControl scope(makeScope ? symbolTable : nullptr);
-
-    for (const std::unique_ptr<AstNode> &child : ast->children) codegenNode(child.get());
 
     return NodeVal();
 }

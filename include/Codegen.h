@@ -104,13 +104,13 @@ class Codegen {
     NodeVal codegenRet(const AstNode *ast);
     NodeVal codegenData(const AstNode *ast);
     NodeVal codegenBlock(const AstNode *ast);
-    NodeVal codegenAll(const AstNode *ast, bool makeScope);
     NodeVal codegenFunc(const AstNode *ast);
 
     NodeVal codegenType(const AstNode *ast, const NodeVal &first);
     NodeVal codegenExpr(const AstNode *ast, const NodeVal &first);
 
     NodeVal codegenTerminal(const AstNode *ast);
+    NodeVal codegenAll(const AstNode *ast, bool makeScope);
 
     std::optional<FuncValue> codegenFuncProto(const AstNode *ast, bool definition);
 
