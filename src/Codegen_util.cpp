@@ -436,19 +436,14 @@ bool Codegen::checkGlobalScope(CodeLoc codeLoc, bool orError) {
 }
 
 optional<NamePool::Id> Codegen::getId(const AstNode *ast, bool orError) {
-    // TODO! revisit after introducing unescape
-    /*NodeVal nodeVal = codegenNode(ast);
-    if (!checkIsId(ast->codeLoc, nodeVal, orError)) return nullopt;
+    AstNode *esc = const_cast<AstNode*>(ast);
 
-    return nodeVal.id;*/
-    if (!checkTerminal(ast, orError)) return nullopt;
+    esc->escaped = true;
+    
+    NodeVal nodeVal = codegenNode(esc);
+    if (!checkIsId(esc->codeLoc, nodeVal, orError)) return nullopt;
 
-    if (ast->terminal->kind != TerminalVal::Kind::kId) {
-        if (orError) msgs->errorUnknown(ast->codeLoc);
-        return nullopt;
-    }
-
-    return ast->terminal->id;
+    return nodeVal.id;
 }
 
 optional<NamePool::Id> Codegen::getFuncId(const AstNode *ast, bool orError) {

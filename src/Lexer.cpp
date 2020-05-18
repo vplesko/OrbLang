@@ -270,6 +270,8 @@ Token Lexer::next() {
             tok = {Token::T_SEMICOLON};
         } else if (ch == ':') {
             tok = {Token::T_COLON};
+        } else if (ch == '\\') {
+            tok = {Token::T_BACKSLASH};
         } else if (ch == '(') {
             tok = {Token::T_BRACE_L_REG};
         } else if (ch == ')') {

@@ -1,7 +1,7 @@
 import "tests/io.orb";
 
 data Point {
-    x:i32 y:i32 v:bool
+    x:i32 y:i32 \v:bool
 };
 
 data Node {

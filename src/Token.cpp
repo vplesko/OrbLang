@@ -113,6 +113,8 @@ string errorString(Token::Type tok) {
         return ":";
     case Token::T_ELLIPSIS:
         return "...";
+    case Token::T_BACKSLASH:
+        return "\\";
     case Token::T_BRACE_L_REG:
         return "(";
     case Token::T_BRACE_R_REG:

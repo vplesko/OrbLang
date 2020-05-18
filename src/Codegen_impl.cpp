@@ -138,15 +138,20 @@ NodeVal Codegen::codegenTerminal(const AstNode *ast) {
         ret.oper = term.oper;
         break;
     case TerminalVal::Kind::kId:
-        if (getTypeTable()->isType(term.id)) {
-            TypeTable::Id type = getTypeTable()->getTypeId(term.id).value();
-            ret = NodeVal(NodeVal::Kind::kType);
-            ret.type = type;
-        } else if (symbolTable->isFuncName(term.id)) {
-            ret = NodeVal(NodeVal::Kind::kFuncId);
+        if (ast->escaped) {
+            ret = NodeVal(NodeVal::Kind::kId);
             ret.id = term.id;
         } else {
-            ret = codegenVar(ast);
+            if (getTypeTable()->isType(term.id)) {
+                TypeTable::Id type = getTypeTable()->getTypeId(term.id).value();
+                ret = NodeVal(NodeVal::Kind::kType);
+                ret.type = type;
+            } else if (symbolTable->isFuncName(term.id)) {
+                ret = NodeVal(NodeVal::Kind::kFuncId);
+                ret.id = term.id;
+            } else {
+                ret = codegenVar(ast);
+            }
         }
         break;
     case TerminalVal::Kind::kAttribute:
@@ -329,7 +334,7 @@ NodeVal Codegen::codegenLet(const AstNode *ast) {
 
             if (init.has_value()) {
                 NodeVal initPay = codegenNode(init.value());
-                if (initPay.valueBroken()) {
+                if (!checkValueUnbroken(init.value()->codeLoc, initPay, true)) {
                     return NodeVal();
                 }
                 if (!initPay.isUntyVal()) {
@@ -354,7 +359,7 @@ NodeVal Codegen::codegenLet(const AstNode *ast) {
 
             if (init.has_value()) {
                 NodeVal initPay = codegenNode(init.value());
-                if (initPay.valueBroken())
+                if (!checkValueUnbroken(init.value()->codeLoc, initPay, true))
                     return NodeVal();
 
                 if (initPay.isUntyVal()) {

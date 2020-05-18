@@ -16,6 +16,8 @@ struct AstNode {
     };
 
     const Kind kind;
+
+    bool escaped = false;
     
     std::vector<std::unique_ptr<AstNode>> children;
     std::optional<TerminalVal> terminal;

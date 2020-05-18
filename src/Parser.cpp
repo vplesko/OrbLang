@@ -150,6 +150,8 @@ unique_ptr<AstNode> Parser::parseNode() {
     CodeLoc codeLocNode = loc();
     unique_ptr<AstNode> node = make_unique<AstNode>(codeLocNode, AstNode::Kind::kTuple);
 
+    bool escaped = match(Token::T_BACKSLASH);
+
     if (peek().type == Token::T_BRACE_L_REG || peek().type == Token::T_BRACE_L_CUR) {
         Token openBrace = next();
 
@@ -168,13 +170,16 @@ unique_ptr<AstNode> Parser::parseNode() {
                     node->children.push_back(move(tuple));
                 }
             } else {
+                bool escaped = match(Token::T_BACKSLASH);
                 if (peek().type == Token::T_BRACE_L_REG || peek().type == Token::T_BRACE_L_CUR) {
                     unique_ptr<AstNode> child = parseNode();
                     if (child == nullptr) return nullptr;
+                    child->escaped = escaped;
                     children.push_back(move(child));
                 } else {
                     unique_ptr<AstNode> child = parseTerm();
                     if (child == nullptr) return nullptr;
+                    child->escaped = escaped;
                     children.push_back(move(child));
                 }
             }
@@ -196,17 +201,27 @@ unique_ptr<AstNode> Parser::parseNode() {
         }
     } else {
         while (peek().type != Token::T_SEMICOLON) {
+            if (!escaped) escaped = match(Token::T_BACKSLASH);
             if (peek().type == Token::T_BRACE_L_REG || peek().type == Token::T_BRACE_L_CUR) {
                 unique_ptr<AstNode> child = parseNode();
                 if (child == nullptr) return nullptr;
+                child->escaped = escaped;
+                escaped = false;
                 node->children.push_back(move(child));
             } else {
                 unique_ptr<AstNode> child = parseTerm();
                 if (child == nullptr) return nullptr;
+                child->escaped = escaped;
+                escaped = false;
                 node->children.push_back(move(child));
             }
         }
         next();
+    }
+
+    if (escaped) {
+        node->escaped = true;
+        escaped = false;
     }
 
     if (node->children.empty()) {

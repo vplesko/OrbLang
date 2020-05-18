@@ -106,7 +106,8 @@ struct NodeVal {
 
     // returns true if this is not unty val nor llvm val with valid value
     bool valueBroken() const { return
-        !(isLlvmVal() && !llvmVal.valBroken()) &&
-        !(isUntyVal() && untyVal.kind != UntypedVal::Kind::kNone);
+        (!isLlvmVal() && !isUntyVal()) ||
+        (isLlvmVal() && llvmVal.valBroken()) ||
+        (isUntyVal() && untyVal.kind == UntypedVal::Kind::kNone);
     }
 };

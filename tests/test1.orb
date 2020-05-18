@@ -84,7 +84,7 @@ fnc main() () {
         { (println_i32 1) }
         { (println_i32 0) };
 
-    let (d:bool false);
+    let (\d:bool false);
     if (! d) { (println_i32 0) };
     if (! (! d)) { (println_i32 0) };
 
