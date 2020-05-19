@@ -222,7 +222,7 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
                 ret = codegenArr(ast);
                 break;
             default:
-                msgs->errorUnknown(ast->codeLoc);
+                msgs->errorUnexpectedKeyword(ast->children[0].get()->codeLoc, starting.keyword);
                 return NodeVal();
             }
         } else if (starting.isOper() || starting.isFuncId()) {
@@ -230,7 +230,7 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
         } else if (starting.isType()) {
             ret = codegenType(ast, starting);
         } else {
-            msgs->errorUnknown(ast->codeLoc);
+            msgs->errorUnexpectedNodeValue(ast->children[0].get()->codeLoc);
             return NodeVal();
         }
     }
@@ -245,7 +245,7 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
         switch (ret.kind) {
         case NodeVal::Kind::kLlvmVal:
             if (ret.type != nodeTypeVal.type) {
-                msgs->errorUnknown(nodeType->codeLoc);
+                msgs->errorMismatchTypeAnnotation(nodeType->codeLoc, nodeTypeVal.type);
                 return NodeVal();
             }
             break;
@@ -256,7 +256,7 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
             }
             break;
         default:
-            msgs->errorUnknown(nodeType->codeLoc);
+            msgs->errorMismatchTypeAnnotation(nodeType->codeLoc, nodeTypeVal.type);
             return NodeVal();
         }
     }
@@ -267,7 +267,7 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
 NodeVal Codegen::codegenAll(const AstNode *ast, bool makeScope) {
     if (!checkBlock(ast, true)) return NodeVal();
     if (ast->type.has_value()) {
-        msgs->errorUnknown(ast->type.value()->codeLoc);
+        msgs->errorMismatchTypeAnnotation(ast->type.value()->codeLoc);
         return NodeVal();
     }
 
@@ -289,7 +289,7 @@ NodeVal Codegen::codegenImport(const AstNode *ast) {
     if (!val.has_value()) return NodeVal();
 
     if (val.value().kind != UntypedVal::Kind::kString) {
-        msgs->errorUnknown(nodeFile->codeLoc);
+        msgs->errorImportNotString(nodeFile->codeLoc);
         return NodeVal();
     }
 
@@ -313,7 +313,7 @@ NodeVal Codegen::codegenType(const AstNode *ast, const NodeVal &first) {
             typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_ARR_PTR});
         } else if (val.has_value()) {
             if (val.value().kind != UntypedVal::Kind::kSint) {
-                msgs->errorUnknown(nodeChild->codeLoc);
+                msgs->errorInvalidTypeDecorator(nodeChild->codeLoc);
                 return NodeVal();
             }
             int64_t arrSize = val.value().val_si;
@@ -326,7 +326,7 @@ NodeVal Codegen::codegenType(const AstNode *ast, const NodeVal &first) {
         } else if (keyw.has_value() && keyw == Token::T_CN) {
             typeDescr.setLastCn();
         } else {
-            msgs->errorUnknown(nodeChild->codeLoc);
+            msgs->errorInvalidTypeDecorator(nodeChild->codeLoc);
             return NodeVal();
         }
     }
@@ -743,7 +743,7 @@ NodeVal Codegen::codegenRet(const AstNode *ast) {
 
     optional<FuncValue> currFunc = symbolTable->getCurrFunc();
     if (!currFunc.has_value()) {
-        msgs->errorUnknown(ast->codeLoc);
+        msgs->errorUnexpectedKeyword(ast->codeLoc, Token::T_RET);
         return NodeVal();
     }
 

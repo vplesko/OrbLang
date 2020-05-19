@@ -258,15 +258,6 @@ bool Codegen::checkDefinedTypeOrError(TypeTable::Id type, CodeLoc codeLoc) {
     return true;
 }
 
-bool Codegen::checkTerminal(const AstNode *ast, bool orError) {
-    if (ast->kind != AstNode::Kind::kTerminal) {
-        if (orError) msgs->errorUnknown(ast->codeLoc);
-        return false;
-    }
-
-    return true;
-}
-
 bool Codegen::checkEmptyTerminal(const AstNode *ast, bool orError) {
     if (ast->kind != AstNode::Kind::kTerminal || ast->terminal->kind != TerminalVal::Kind::kEmpty) {
         if (orError) msgs->errorUnknown(ast->codeLoc);
@@ -289,7 +280,7 @@ bool Codegen::checkEllipsis(const AstNode *ast, bool orError) {
 
 bool Codegen::checkNotTerminal(const AstNode *ast, bool orError) {
     if (ast->kind == AstNode::Kind::kTerminal) {
-        if (orError) msgs->errorUnknown(ast->codeLoc);
+        if (orError) msgs->errorUnexpectedIsTerminal(ast->codeLoc);
         return false;
     }
 
@@ -298,7 +289,7 @@ bool Codegen::checkNotTerminal(const AstNode *ast, bool orError) {
 
 bool Codegen::checkBlock(const AstNode *ast, bool orError) {
     if (ast->kind == AstNode::Kind::kTerminal && ast->terminal->kind != TerminalVal::Kind::kEmpty) {
-        if (orError) msgs->errorUnknown(ast->codeLoc);
+        if (orError) msgs->errorUnexpectedNotBlock(ast->codeLoc);
         return false;
     }
 
@@ -308,7 +299,7 @@ bool Codegen::checkBlock(const AstNode *ast, bool orError) {
 bool Codegen::checkExactlyChildren(const AstNode *ast, size_t n, bool orError) {
     if (ast->kind != AstNode::Kind::kTuple ||
         ast->children.size() != n) {
-        if (orError) msgs->errorUnknown(ast->codeLoc);
+        if (orError) msgs->errorChildrenNotEq(ast->codeLoc, n);
         return false;
     }
 
@@ -318,7 +309,7 @@ bool Codegen::checkExactlyChildren(const AstNode *ast, size_t n, bool orError) {
 bool Codegen::checkAtLeastChildren(const AstNode *ast, size_t n, bool orError) {
     if (ast->kind != AstNode::Kind::kTuple ||
         ast->children.size() < n) {
-        if (orError) msgs->errorUnknown(ast->codeLoc);
+        if (orError) msgs->errorChildrenLessThan(ast->codeLoc, n);
         return false;
     }
 
@@ -328,7 +319,7 @@ bool Codegen::checkAtLeastChildren(const AstNode *ast, size_t n, bool orError) {
 bool Codegen::checkAtMostChildren(const AstNode *ast, size_t n, bool orError) {
     if (ast->kind != AstNode::Kind::kTuple ||
         ast->children.size() > n) {
-        if (orError) msgs->errorUnknown(ast->codeLoc);
+        if (orError) msgs->errorChildrenMoreThan(ast->codeLoc, n);
         return false;
     }
 
@@ -338,7 +329,7 @@ bool Codegen::checkAtMostChildren(const AstNode *ast, size_t n, bool orError) {
 bool Codegen::checkBetweenChildren(const AstNode *ast, std::size_t nLo, std::size_t nHi, bool orError) {
     if (ast->kind != AstNode::Kind::kTuple ||
         !between(ast->children.size(), nLo, nHi)) {
-        if (orError) msgs->errorUnknown(ast->codeLoc);
+        if (orError) msgs->errorChildrenNotBetween(ast->codeLoc, nLo, nHi);
         return false;
     }
 
@@ -347,7 +338,7 @@ bool Codegen::checkBetweenChildren(const AstNode *ast, std::size_t nLo, std::siz
 
 bool Codegen::checkValueUnbroken(CodeLoc codeLoc, const NodeVal &val, bool orError) {
     if (val.valueBroken()) {
-        if (orError) msgs->errorUnknown(codeLoc);
+        if (orError) msgs->errorExprNotValue(codeLoc);
         return false;
     }
 
@@ -356,25 +347,7 @@ bool Codegen::checkValueUnbroken(CodeLoc codeLoc, const NodeVal &val, bool orErr
 
 bool Codegen::checkIsId(CodeLoc codeLoc, const NodeVal &val, bool orError) {
     if (!val.isId()) {
-        if (orError) msgs->errorUnknown(codeLoc);
-        return false;
-    }
-
-    return true;
-}
-
-bool Codegen::checkIsFuncId(CodeLoc codeLoc, const NodeVal &val, bool orError) {
-    if (!val.isFuncId()) {
-        if (orError) msgs->errorUnknown(codeLoc);
-        return false;
-    }
-
-    return true;
-}
-
-bool Codegen::checkIsAnyId(CodeLoc codeLoc, const NodeVal &val, bool orError) {
-    if (!val.isId() && !val.isFuncId()) {
-        if (orError) msgs->errorUnknown(codeLoc);
+        if (orError) msgs->errorUnexpectedNotId(codeLoc);
         return false;
     }
 
@@ -383,7 +356,7 @@ bool Codegen::checkIsAnyId(CodeLoc codeLoc, const NodeVal &val, bool orError) {
 
 bool Codegen::checkIsKeyword(CodeLoc codeLoc, const NodeVal &val, bool orError) {
     if (!val.isKeyword()) {
-        if (orError) msgs->errorUnknown(codeLoc);
+        if (orError) msgs->errorUnexpectedNotKeyword(codeLoc);
         return false;
     }
 
@@ -401,7 +374,7 @@ bool Codegen::checkIsOper(CodeLoc codeLoc, const NodeVal &val, bool orError) {
 
 bool Codegen::checkIsType(CodeLoc codeLoc, const NodeVal &val, bool orError) {
     if (!val.isType()) {
-        if (orError) msgs->errorUnknown(codeLoc);
+        if (orError) msgs->errorUnexpectedNotType(codeLoc);
         return false;
     }
 
@@ -410,7 +383,7 @@ bool Codegen::checkIsType(CodeLoc codeLoc, const NodeVal &val, bool orError) {
 
 bool Codegen::checkIsUntyped(CodeLoc codeLoc, const NodeVal &val, bool orError) {
     if (!val.isUntyVal()) {
-        if (orError) msgs->errorUnknown(codeLoc);
+        if (orError) msgs->errorExprNotBaked(codeLoc);
         return false;
     }
 
@@ -419,7 +392,7 @@ bool Codegen::checkIsUntyped(CodeLoc codeLoc, const NodeVal &val, bool orError) 
 
 bool Codegen::checkIsAttribute(CodeLoc codeLoc, const NodeVal &val, bool orError) {
     if (!val.isAttribute()) {
-        if (orError) msgs->errorUnknown(codeLoc);
+        if (orError) msgs->errorUnexpectedNotAttribute(codeLoc);
         return false;
     }
 
@@ -428,7 +401,7 @@ bool Codegen::checkIsAttribute(CodeLoc codeLoc, const NodeVal &val, bool orError
 
 bool Codegen::checkGlobalScope(CodeLoc codeLoc, bool orError) {
     if (!isGlobalScope()) {
-        if (orError) msgs->errorUnknown(codeLoc);
+        if (orError) msgs->errorNotGlobalScope(codeLoc);
         return false;
     }
 
@@ -446,26 +419,12 @@ optional<NamePool::Id> Codegen::getId(const AstNode *ast, bool orError) {
     return nodeVal.id;
 }
 
-optional<NamePool::Id> Codegen::getFuncId(const AstNode *ast, bool orError) {
-    NodeVal nodeVal = codegenNode(ast);
-    if (!checkIsFuncId(ast->codeLoc, nodeVal, orError)) return nullopt;
-
-    return nodeVal.id;
-}
-
-optional<NamePool::Id> Codegen::getAnyId(const AstNode *ast, bool orError) {
-    NodeVal nodeVal = codegenNode(ast);
-    if (!checkIsAnyId(ast->codeLoc, nodeVal, orError)) return nullopt;
-
-    return nodeVal.id;
-}
-
 optional<Codegen::NameTypePair> Codegen::getIdTypePair(const AstNode *ast, bool orError) {
     optional<NamePool::Id> id = getId(ast, orError);
     if (!id.has_value()) return nullopt;
 
     if (ast->type == nullptr) {
-        if (orError) msgs->errorUnknown(ast->codeLoc);
+        if (orError) msgs->errorMissingTypeAnnotation(ast->codeLoc);
         return nullopt;
     }
     NodeVal type = codegenNode(ast->type->get());

@@ -1,5 +1,1 @@
-// TODO! replace errorUnknown with actual error messages
-// TODO! remove obsolete compiler messages
-
-// TODO! merge into master, delete branch, empty trash bin
 import "tests/negative/test_import_cycle.orb";

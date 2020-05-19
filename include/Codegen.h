@@ -50,7 +50,6 @@ class Codegen {
 
     typedef std::pair<NamePool::Id, TypeTable::Id> NameTypePair;
 
-    bool checkTerminal(const AstNode *ast, bool orError);
     bool checkEmptyTerminal(const AstNode *ast, bool orError);
     bool checkEllipsis(const AstNode *ast, bool orError);
     bool checkNotTerminal(const AstNode *ast, bool orError);
@@ -61,8 +60,6 @@ class Codegen {
     bool checkBetweenChildren(const AstNode *ast, std::size_t nLo, std::size_t nHi, bool orError);
     bool checkValueUnbroken(CodeLoc codeLoc, const NodeVal &val, bool orError);
     bool checkIsId(CodeLoc codeLoc, const NodeVal &val, bool orError);
-    bool checkIsFuncId(CodeLoc codeLoc, const NodeVal &val, bool orError);
-    bool checkIsAnyId(CodeLoc codeLoc, const NodeVal &val, bool orError);
     bool checkIsKeyword(CodeLoc codeLoc, const NodeVal &val, bool orError);
     bool checkIsOper(CodeLoc codeLoc, const NodeVal &val, bool orError);
     bool checkIsType(CodeLoc codeLoc, const NodeVal &val, bool orError);
@@ -71,8 +68,6 @@ class Codegen {
     bool checkGlobalScope(CodeLoc codeLoc, bool orError);
 
     std::optional<NamePool::Id> getId(const AstNode *ast, bool orError);
-    std::optional<NamePool::Id> getFuncId(const AstNode *ast, bool orError);
-    std::optional<NamePool::Id> getAnyId(const AstNode *ast, bool orError);
     std::optional<NameTypePair> getIdTypePair(const AstNode *ast, bool orError);
     std::optional<Token::Type> getKeyword(const AstNode *ast, bool orError);
     std::optional<Token::Oper> getOper(const AstNode *ast, bool orError);

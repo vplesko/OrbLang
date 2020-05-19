@@ -12,7 +12,7 @@ NodeVal Codegen::codegenExpr(const AstNode *ast, const NodeVal &first) {
         }
     }
     
-    msgs->errorUnknown(ast->codeLoc);
+    msgs->errorUnexpectedNodeValue(ast->codeLoc);
     return NodeVal();
 }
 
@@ -291,8 +291,7 @@ NodeVal Codegen::codegenOperUnary(const AstNode *ast, const NodeVal &first) {
         exprRet.llvmVal.type = typeId;
         exprRet.llvmVal.val = exprPay.llvmVal.ref;
     } else {
-        // should not happen
-        msgs->errorUnknown(ast->codeLoc);
+        msgs->errorNonUnOp(ast->codeLoc, op);
         return NodeVal();
     }
     return exprRet;
@@ -568,7 +567,7 @@ NodeVal Codegen::codegenOperBinary(const AstNode *ast, const NodeVal &first) {
                 exprPayRet.llvmVal.type = getPrimTypeId(TypeTable::P_BOOL);
                 break;
             default:
-                msgs->errorInternal(ast->codeLoc);
+                msgs->errorNonBinOp(ast->codeLoc, op);
                 return NodeVal();
         }
     }
@@ -616,7 +615,7 @@ NodeVal Codegen::codegenOperLogicAndOr(const AstNode *ast, const NodeVal &first)
         if (exprPayL.kind == NodeVal::Kind::kLlvmVal)
             msgs->errorExprCannotImplicitCast(nodeL->codeLoc, exprPayL.llvmVal.type, getPrimTypeId(TypeTable::P_BOOL));
         else
-            msgs->errorUnknown(nodeL->codeLoc);
+            msgs->errorExprCannotPromote(nodeL->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
         return NodeVal();
     }
 
@@ -646,7 +645,7 @@ NodeVal Codegen::codegenOperLogicAndOr(const AstNode *ast, const NodeVal &first)
         if (exprPayR.kind == NodeVal::Kind::kLlvmVal)
             msgs->errorExprCannotImplicitCast(nodeR->codeLoc, exprPayR.llvmVal.type, getPrimTypeId(TypeTable::P_BOOL));
         else
-            msgs->errorUnknown(nodeR->codeLoc);
+            msgs->errorExprCannotPromote(nodeR->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
         return NodeVal();
     }
     llvmBuilder.CreateBr(afterBlock);
@@ -704,7 +703,7 @@ NodeVal Codegen::codegenOperLogicAndOrGlobalScope(const AstNode *ast, const Node
         return NodeVal();
     }
     if (!isBool(exprPayL)) {
-        msgs->errorUnknown(nodeL->codeLoc);
+        msgs->errorExprCannotPromote(nodeL->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
         return NodeVal();
     }
 
@@ -714,7 +713,7 @@ NodeVal Codegen::codegenOperLogicAndOrGlobalScope(const AstNode *ast, const Node
         return NodeVal();
     }
     if (!isBool(exprPayR)) {
-        msgs->errorUnknown(nodeR->codeLoc);
+        msgs->errorExprCannotPromote(nodeR->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
         return NodeVal();
     }
 
@@ -734,8 +733,7 @@ NodeVal Codegen::codegenOperBinaryUntyped(CodeLoc codeLoc, Token::Oper op, Untyp
         return NodeVal();
     }
     if (untyL.kind == UntypedVal::Kind::kNone) {
-        // should not happen
-        msgs->errorUnknown(codeLoc);
+        msgs->errorInternal(codeLoc);
         return NodeVal();
     }
 

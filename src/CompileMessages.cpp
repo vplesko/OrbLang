@@ -82,6 +82,10 @@ void CompileMessages::errorUnclosedMultilineComment(CodeLoc loc) {
     error(loc, "End of file reached, but a multiline comment was not closed.");
 }
 
+void CompileMessages::errorImportNotString(CodeLoc loc) {
+    error(loc, "Import path not a string.");
+}
+
 void CompileMessages::errorImportNotFound(CodeLoc loc, std::string &path) {
     stringstream ss;
     ss << "Importing nonexistent file '" << path << "'.";
@@ -123,18 +127,70 @@ void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, vector<Token::Type> 
     error(loc, ss.str());
 }
 
-void CompileMessages::errorNotSimple(CodeLoc loc) {
-    error(loc, "Statement not one of: declaration, expression, empty.");
-}
-
-void CompileMessages::errorNotPrim(CodeLoc loc) {
-    error(loc, "Expected an expression, could not parse one.");
-}
-
-void CompileMessages::errorNotTypeId(CodeLoc loc, NamePool::Id name) {
+void CompileMessages::errorUnexpectedKeyword(CodeLoc loc, Token::Type keyw) {
     stringstream ss;
-    ss << "Expected a type identifier, instead found '" << namePool->get(name) << "'.";
+    ss << "Unexpected keyword '" << errorString(keyw) << "' found.";
     error(loc, ss.str());
+}
+
+void CompileMessages::errorUnexpectedIsTerminal(CodeLoc loc) {
+    error(loc, "Terminal was not expected at this location.");
+}
+
+void CompileMessages::errorUnexpectedNotKeyword(CodeLoc loc) {
+    error(loc, "Result does not present a keyword.");
+}
+
+void CompileMessages::errorUnexpectedNotId(CodeLoc loc) {
+    error(loc, "Result does not present an id.");
+}
+
+void CompileMessages::errorUnexpectedNotFunc(CodeLoc loc) {
+    error(loc, "Result does not present a function.");
+}
+
+void CompileMessages::errorUnexpectedNotType(CodeLoc loc) {
+    error(loc, "Result does not present a type.");
+}
+
+void CompileMessages::errorUnexpectedNotBlock(CodeLoc loc) {
+    error(loc, "Block was expected at this location.");
+}
+
+void CompileMessages::errorUnexpectedNotAttribute(CodeLoc loc) {
+    error(loc, "Result does not present an attribute.");
+}
+
+void CompileMessages::errorUnexpectedNodeValue(CodeLoc loc) {
+    error(loc, "Unexpected node value found.");
+}
+
+void CompileMessages::errorChildrenNotEq(CodeLoc loc, std::size_t cnt) {
+    stringstream ss;
+    ss << "Number of children notes must be exactly " << cnt << ".";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorChildrenLessThan(CodeLoc loc, std::size_t cnt) {
+    stringstream ss;
+    ss << "Number of children notes must be at least " << cnt << ".";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorChildrenMoreThan(CodeLoc loc, std::size_t cnt) {
+    stringstream ss;
+    ss << "Number of children notes must be at most " << cnt << ".";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorChildrenNotBetween(CodeLoc loc, std::size_t lo, std::size_t hi) {
+    stringstream ss;
+    ss << "Number of children notes must be between " << lo << " and " << hi << ".";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorInvalidTypeDecorator(CodeLoc loc) {
+    error(loc, "Invalid type decorator.");
 }
 
 void CompileMessages::errorBadArraySize(CodeLoc loc, long int size) {
@@ -153,16 +209,16 @@ void CompileMessages::errorBadAttr(CodeLoc loc, Token::Attr attr) {
     error(loc, ss.str());
 }
 
-void CompileMessages::errorEmptyArr(CodeLoc loc) {
-    error(loc, "Empty arrays are not allowed.");
+void CompileMessages::errorNonUnOp(CodeLoc loc, Token::Oper op) {
+    stringstream ss;
+    ss << "Operation '" << errorString(op) << "' is not unary.";
+    error(loc, ss.str());
 }
 
-void CompileMessages::errorNonUnOp(CodeLoc loc, Token op) {
-    error(loc, "Expected a unary operation.");
-}
-
-void CompileMessages::errorNonBinOp(CodeLoc loc, Token op) {
-    error(loc, "Expected a binary operation.");
+void CompileMessages::errorNonBinOp(CodeLoc loc, Token::Oper op) {
+    stringstream ss;
+    ss << "Operation '" << errorString(op) << "' is not binary.";
+    error(loc, ss.str());
 }
 
 void CompileMessages::errorVarNameTaken(CodeLoc loc, NamePool::Id name) {
@@ -278,16 +334,6 @@ void CompileMessages::errorDataMemberNameDuplicate(CodeLoc loc, NamePool::Id nam
     error(loc, ss.str());
 }
 
-void CompileMessages::errorDataMemberInit(CodeLoc loc) {
-    error(loc, "Cannot init data type members within data type definitions.");
-}
-
-void CompileMessages::errorDataNoMembers(CodeLoc loc, NamePool::Id name) {
-    stringstream ss;
-    ss << "Data type '" << namePool->get(name) << "' has no members, but must have at least one.";
-    error(loc, ss.str());
-}
-
 void CompileMessages::errorDataRedefinition(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Data type '" << namePool->get(name) << "' has already been defined.";
@@ -375,8 +421,32 @@ void CompileMessages::errorExprDotInvalidBase(CodeLoc loc) {
     error(loc, "Invalid expression on left side of dot operator.");
 }
 
+void CompileMessages::errorExprNotValue(CodeLoc loc) {
+    error(loc, "Result does not present a value.");
+}
+
 void CompileMessages::errorUndefinedType(CodeLoc loc) {
     error(loc, "Referencing undefined type.");
+}
+
+void CompileMessages::errorMismatchTypeAnnotation(CodeLoc loc, TypeTable::Id ty) {
+    stringstream ss;
+    ss << "Type annotation '" << errorStringOfType(ty) << "' does not match the type of the value.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorMismatchTypeAnnotation(CodeLoc loc) {
+    stringstream ss;
+    ss << "Type annotation does not match the type of the value.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorMissingTypeAnnotation(CodeLoc loc) {
+    error(loc, "Type annotation was expected on this node.");
+}
+
+void CompileMessages::errorNotGlobalScope(CodeLoc loc) {
+    error(loc, "This is only allowed in global scope.");
 }
 
 void CompileMessages::errorUnknown(CodeLoc loc) {
