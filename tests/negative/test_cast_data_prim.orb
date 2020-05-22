@@ -1,8 +1,0 @@
-data Foo {
-    x:i32
-};
-
-fnc main() () {
-    let f:Foo;
-    cast i32 f;
-};

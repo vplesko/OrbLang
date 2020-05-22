@@ -104,8 +104,6 @@ public:
     bool isFuncName(NamePool::Id name) const;
     
     bool varMayTakeName(NamePool::Id name) const;
-    // does not check for type redefinitions, allows multiple data decls/defs to have the same name
-    bool dataMayTakeName(NamePool::Id name) const;
     // only checks for name collisions with global vars and datas, NOT with funcs of same sig!
     bool funcMayTakeName(NamePool::Id name) const;
 

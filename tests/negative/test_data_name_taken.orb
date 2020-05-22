@@ -1,7 +1,0 @@
-fnc foo() () {};
-
-data foo {
-    x:i32
-};
-
-fnc main() () {};

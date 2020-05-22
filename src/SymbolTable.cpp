@@ -219,16 +219,6 @@ bool SymbolTable::varMayTakeName(NamePool::Id name) const {
     return last->vars.find(name) == last->vars.end();
 }
 
-bool SymbolTable::dataMayTakeName(NamePool::Id name) const {
-    for (const auto &p : funcs)
-        if (p.first.name == name)
-            return false;
-    
-    if (last->vars.find(name) != last->vars.end()) return false;
-    
-    return typeTable->dataMayTakeName(name);
-}
-
 bool SymbolTable::funcMayTakeName(NamePool::Id name) const {
     return !typeTable->isType(name) && last->vars.find(name) == last->vars.end();
 }

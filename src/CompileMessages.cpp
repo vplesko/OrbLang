@@ -239,6 +239,10 @@ void CompileMessages::errorCnNoInit(CodeLoc loc, NamePool::Id name) {
     error(loc, ss.str());
 }
 
+void CompileMessages::errorCnNoInit(CodeLoc loc) {
+    error(loc, "Constant is not initialized.");
+}
+
 void CompileMessages::errorExprNotBaked(CodeLoc loc) {
     error(loc, "Expression cannot be evaluated at compile time.");
 }
@@ -322,32 +326,8 @@ void CompileMessages::errorFuncNotFound(CodeLoc loc, NamePool::Id name) {
     error(loc, ss.str());
 }
 
-void CompileMessages::errorDataNameTaken(CodeLoc loc, NamePool::Id name) {
-    stringstream ss;
-    ss << "Name '" << namePool->get(name) << "' is already taken and cannot be used for a data type.";
-    error(loc, ss.str());
-}
-
-void CompileMessages::errorDataMemberNameDuplicate(CodeLoc loc, NamePool::Id name) {
-    stringstream ss;
-    ss << "Name '" << namePool->get(name) << "' was already used for another member of this data type.";
-    error(loc, ss.str());
-}
-
-void CompileMessages::errorDataRedefinition(CodeLoc loc, NamePool::Id name) {
-    stringstream ss;
-    ss << "Data type '" << namePool->get(name) << "' has already been defined.";
-    error(loc, ss.str());
-}
-
-void CompileMessages::errorDataOpaqueInit(CodeLoc loc) {
-    error(loc, "Attempting to initialize undefined data type.");
-}
-
-void CompileMessages::errorDataUnknownMember(CodeLoc loc, NamePool::Id name) {
-    stringstream ss;
-    ss << "Member with name '" << namePool->get(name) << "' does not exist for this data type.";
-    error(loc, ss.str());
+void CompileMessages::errorMemberIndex(CodeLoc loc) {
+    error(loc, "Invalid member index.");
 }
 
 void CompileMessages::errorExprCallVariadUnty(CodeLoc loc, NamePool::Id name) {
@@ -423,10 +403,6 @@ void CompileMessages::errorExprDotInvalidBase(CodeLoc loc) {
 
 void CompileMessages::errorExprNotValue(CodeLoc loc) {
     error(loc, "Result does not present a value.");
-}
-
-void CompileMessages::errorUndefinedType(CodeLoc loc) {
-    error(loc, "Referencing undefined type.");
 }
 
 void CompileMessages::errorMismatchTypeAnnotation(CodeLoc loc, TypeTable::Id ty) {

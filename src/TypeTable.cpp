@@ -1,8 +1,17 @@
 #include "TypeTable.h"
 using namespace std;
 
-void TypeTable::DataType::addMember(Member m) {
+void TypeTable::Tuple::addMember(TypeTable::Id m) {
     members.push_back(m);
+}
+
+bool TypeTable::Tuple::eq(const Tuple &other) const {
+    if (members.size() != other.members.size()) return false;
+
+    for (size_t i = 0; i < members.size(); ++i)
+        if (members[i] != other.members[i]) return false;
+    
+    return true;
 }
 
 bool TypeTable::TypeDescr::eq(const TypeDescr &other) const {
@@ -86,21 +95,26 @@ void TypeTable::addPrimType(NamePool::Id name, PrimIds primId, llvm::Type *type)
     primTypes[primId] = type;
 }
 
-TypeTable::Id TypeTable::addDataType(NamePool::Id name) {
-    auto loc = typeIds.find(name);
-    if (loc != typeIds.end()) {
-        return loc->second;
+optional<TypeTable::Id> TypeTable::addTuple(Tuple tup) {
+    if (tup.members.empty()) return nullopt;
+
+    if (tup.members.size() == 1) return tup.members[0];
+
+    // TODO optimize
+    for (size_t i = 0; i < tuples.size(); ++i) {
+        if (tup.eq(tuples[i].first)) {
+            Id id;
+            id.kind = Id::kTuple;
+            id.index = i;
+            return id;
+        }
     }
 
     Id id;
-    id.kind = Id::kData;
-    id.index = dataTypes.size();
+    id.kind = Id::kTuple;
+    id.index = tuples.size();
 
-    DataType dataType(name);
-    dataTypes.push_back(make_pair(move(dataType), nullptr));
-
-    typeIds.insert(make_pair(name, id));
-    typeNames.insert(make_pair(id, name));
+    tuples.push_back(make_pair(move(tup), nullptr));
 
     return id;
 }
@@ -206,7 +220,7 @@ void TypeTable::addTypeStr() {
 llvm::Type* TypeTable::getType(Id id) {
     switch (id.kind) {
     case Id::kPrim: return primTypes[id.index];
-    case Id::kData: return dataTypes[id.index].second;
+    case Id::kTuple: return tuples[id.index].second;
     case Id::kDescr: return typeDescrs[id.index].second;
     }
 }
@@ -214,7 +228,7 @@ llvm::Type* TypeTable::getType(Id id) {
 void TypeTable::setType(Id id, llvm::Type *type) {
     switch (id.kind) {
     case Id::kPrim: primTypes[id.index] = type; break;
-    case Id::kData: dataTypes[id.index].second = type; break;
+    case Id::kTuple: tuples[id.index].second = type; break;
     case Id::kDescr: typeDescrs[id.index].second = type; break;
     }
 }
@@ -227,12 +241,8 @@ TypeTable::Id TypeTable::getPrimTypeId(PrimIds id) const {
     return Id{Id::kPrim, id};
 }
 
-TypeTable::DataType& TypeTable::getDataType(Id id) {
-    return dataTypes[id.index].first;
-}
-
-const TypeTable::DataType& TypeTable::getDataType(Id id) const {
-    return dataTypes[id.index].first;
+const TypeTable::Tuple& TypeTable::getTuple(Id id) const {
+    return tuples[id.index].first;
 }
 
 const TypeTable::TypeDescr& TypeTable::getTypeDescr(Id id) const {
@@ -252,7 +262,7 @@ optional<size_t> TypeTable::extractLenOfArr(Id arrTypeId) const {
 bool TypeTable::isValidType(Id t) const {
     switch (t.kind) {
     case Id::kPrim: return t.index < primTypes.size();
-    case Id::kData: return t.index < dataTypes.size();
+    case Id::kTuple: return t.index < tuples.size();
     case Id::kDescr: return t.index < typeDescrs.size();
     }
 }
@@ -278,7 +288,7 @@ bool TypeTable::worksAsPrimitive(Id t) const {
 
     if (isPrimitive(t)) {
         return true;
-    } else if (isDataType(t)) {
+    } else if (isTuple(t)) {
         return false;
     } else {
         const TypeDescr &descr = typeDescrs[t.index].first;
@@ -292,7 +302,7 @@ bool TypeTable::worksAsPrimitive(Id t, PrimIds p) const {
 
     if (isPrimitive(t)) {
         return t.index == p;
-    } else if (isDataType(t)) {
+    } else if (isTuple(t)) {
         return false;
     } else {
         const TypeDescr &descr = typeDescrs[t.index].first;
@@ -307,7 +317,7 @@ bool TypeTable::worksAsPrimitive(Id t, PrimIds lo, PrimIds hi) const {
 
     if (isPrimitive(t)) {
         return between((PrimIds) t.index, lo, hi);
-    } else if (isDataType(t)) {
+    } else if (isTuple(t)) {
         return false;
     } else {
         const TypeDescr &descr = typeDescrs[t.index].first;
@@ -321,45 +331,24 @@ bool TypeTable::isPrimitive(Id t) const {
     return t.kind == Id::kPrim && t.index < primTypes.size();
 }
 
-bool TypeTable::isDataType(Id t) const {
-    return t.kind == Id::kData && t.index < dataTypes.size();
+bool TypeTable::isTuple(Id t) const {
+    return t.kind == Id::kTuple && t.index < tuples.size();
 }
 
 bool TypeTable::isTypeDescr(Id t) const {
     return t.kind == Id::kDescr && t.index < typeDescrs.size();
 }
 
-bool TypeTable::isNonOpaqueType(Id t) const {
-    if (!isValidType(t)) return false;
-
-    if (isPrimitive(t)) {
-        return true;
-    } else if (isDataType(t)) {
-        return !dataTypes[t.index].first.isDecl();
-    } else {
-        const TypeDescr &descr = typeDescrs[t.index].first;
-        if (!isDataType(descr.base)) return true;
-
-        for (const TypeDescr::Decor &decor : descr.decors) {
-            if (decor.type == TypeDescr::Decor::D_PTR ||
-                decor.type == TypeDescr::Decor::D_ARR_PTR)
-                return true;
-        }
-        
-        return !dataTypes[descr.base.index].first.isDecl();
-    }
-}
-
-optional<const TypeTable::DataType*> TypeTable::extractDataType(Id t) const {
+optional<const TypeTable::Tuple*> TypeTable::extractTuple(Id t) const {
     if (!isValidType(t)) return nullopt;
 
-    if (isDataType(t)) return &(getDataType(t));
+    if (isTuple(t)) return &(getTuple(t));
 
     if (isTypeDescr(t)) {
         const TypeDescr &descr = getTypeDescr(t);
 
-        if (descr.decors.empty() && isDataType(descr.base))
-            return &(getDataType(descr.base));
+        if (descr.decors.empty() && isTuple(descr.base))
+            return &(getTuple(descr.base));
     }
 
     return nullopt;
@@ -435,15 +424,6 @@ bool TypeTable::worksAsTypeCn(Id t) const {
     });
 }
 
-bool TypeTable::dataMayTakeName(NamePool::Id name) const {
-    auto loc = typeIds.find(name);
-    if (loc != typeIds.end()) {
-        if (isPrimitive(loc->second)) return false;
-    }
-
-    return true;
-}
-
 bool TypeTable::fitsType(int64_t x, Id t) const {
     if (!worksAsPrimitive(t)) return false;
 
@@ -516,8 +496,8 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
             (worksAsTypeI(from) && between(d, s, P_I64)) ||
             (worksAsTypeU(from) && between(d, s, P_U64)) ||
             (worksAsTypeF(from) && between(d, s, P_F64)));
-    } else if (isDataType(from)) {
-        if (!isDataType(into)) return false;
+    } else if (isTuple(from)) {
+        if (!isTuple(into)) return false;
 
         return from.index == into.index;
     } else if (isTypeDescr(from)) {

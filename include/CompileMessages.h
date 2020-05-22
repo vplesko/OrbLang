@@ -67,6 +67,7 @@ public:
     void errorVarNameTaken(CodeLoc loc, NamePool::Id name);
     void errorVarNotFound(CodeLoc loc, NamePool::Id name);
     void errorCnNoInit(CodeLoc loc, NamePool::Id name);
+    void errorCnNoInit(CodeLoc loc);
     void errorExprNotBaked(CodeLoc loc);
     void errorExprCannotPromote(CodeLoc loc, TypeTable::Id into);
     void errorExprUntyMismatch(CodeLoc loc);
@@ -96,12 +97,7 @@ public:
     void errorFuncSigConflict(CodeLoc loc);
     void errorFuncArgNameDuplicate(CodeLoc loc, NamePool::Id name);
     void errorFuncNotFound(CodeLoc loc, NamePool::Id name);
-    void errorDataNameTaken(CodeLoc loc, NamePool::Id name);
-    void errorDataMemberNameDuplicate(CodeLoc loc, NamePool::Id name);
-    void errorDataRedefinition(CodeLoc loc, NamePool::Id name);
-    void errorDataOpaqueInit(CodeLoc loc);
-    void errorDataUnknownMember(CodeLoc loc, NamePool::Id name);
-    void errorUndefinedType(CodeLoc loc);
+    void errorMemberIndex(CodeLoc loc);
     void errorMismatchTypeAnnotation(CodeLoc loc, TypeTable::Id ty);
     void errorMismatchTypeAnnotation(CodeLoc loc);
     void errorMissingTypeAnnotation(CodeLoc loc);

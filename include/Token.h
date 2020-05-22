@@ -20,7 +20,6 @@ struct Token {
         T_BACKSLASH,
         T_CN,
         T_FNC,
-        T_DATA,
         T_BRACE_L_REG,
         T_BRACE_R_REG,
         T_BRACE_L_CUR,

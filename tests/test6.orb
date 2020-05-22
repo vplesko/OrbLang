@@ -1,160 +1,120 @@
 import "tests/io.orb";
 
-data Point {
-    x:i32 y:i32 \v:bool
+fnc pair(x:i32 y:i32) (i32 i32) {
+    let r:(i32 i32);
+    = (. r 0) x;
+    = (. r 1) y;
+    ret r;
 };
 
-data Node {
-    val:i32 l:(Node *) r:(Node *)
+fnc dot(x:(i32 i32) y:i32) i32 {
+    if (== y 0) {
+        ret (. x 0);
+    };
+    if (== y 1) {
+        ret (. x 1);
+    };
+    ret -1;
 };
 
-data Tree {
-    root:Node
+fnc copy(x:((i32 i32) *)) (i32 i32) {
+    let r:(i32 i32);
+    = (. r 0) (. x 0);
+    = (. r 1) (. x 1);
+    ret r;
 };
 
-data PtrI32Cn {
-    p:(i32 cn *)
-};
-
-data ArrI32 {
-    a:(i32 4)
-};
-
-data Int {
-    x:i32
-};
-
-data Fwd;
-
-data WithFwd {
-    o:(Fwd *)
-};
-
-data Fwd {
-    u:u32
-};
-
-data Opaq;
-
-fnc makePoint(x:i32 y:i32 v:bool) Point {
-    let p:Point;
-    = (. p x) x;
-    = (. p y) y;
-    = (. p v) v;
-    ret p;
-};
-
-fnc makeNode(val:i32 l:(Node *) r:(Node *)) Node {
-    let n:Node;
-    = (. n val) val;
-    = (. n l) l;
-    = (. n r) r;
-    ret n;
-};
-
-fnc sum(a:ArrI32) i32 {
-    let (s:i32 0);
-    for (let (i:i32 0)) (< i 4) (++ i) { (+= s ([] (. a a) i)) };
-    ret s;
-};
-
-fnc setAll(a:(ArrI32 *) t:i32) () {
-    for (let (i:i32 0)) (< i 4) (++ i) { (= ([] (. a a) i) t) };
-};
-
-let glob1:Int;
+let glob1:(i32 i32);
 
 fnc main() () {
     block {
-        let z:Int;
-        = (. z x) 0;
-        println_i32 (. z x);
-        let a:ArrI32;
-        = ([] (. a a) 1) 1;
-        println_i32 ([] (. a a) 1);
-        = (. glob1 x) 2;
-        println_i32 (. glob1 x);
+        let x:(i32 bool);
+        = (. x 0) 100;
+        = (. x 1) true;
+        if (. x 1) {
+            println_i32 (. x 0);
+        };
     };
     block {
-        let p:Point;
-        = (. p x) 100;
-        = (. p y) 101;
-        println_i32 (. p x);
-        = (. p v) false;
-        if (. p v) { (println_i32 (. p y)) };
+        let x:(i32 bool);
+        let y:(i32 bool);
+        = (. x 0) 200;
+        = (. y 0) (. x 0);
+        println_i32 (. y 0);
     };
     block {
-        let (p:(Point cn) (makePoint 200 201 true));
-        println_i32 (. p x);
-        println_i32 (* (& (. p y)));
+        let x:((i32 f32) bool);
+        = (. (. x 0) 0) 300;
+        println_i32 (. (. x 0) 0);
     };
     block {
-        let p:(Point 4);
-        = ([] p 2) (makePoint 300 301 false);
-        println_i32 (. ([] p 2) x);
+        let x:((i32 i32) 4);
+        = (. ([] x 0) 0) 400;
+        println_i32 (. ([] x 0) 0);
     };
     block {
-        let a:ArrI32;
-        = ([] (. a a) 2) (. (makePoint 400 401 false) x);
-        println_i32 ([] (. a a) 2);
+        let x:(i32 i32);
+        let y:((i32 i32) *);
+        = y (& x);
+        = (. x 0) 500;
+        println_i32 (. (* y) 0);
     };
     block {
-        println_i32 (. (makePoint 500 501 true) x);
+        let x:(i32 i32);
+        let y:(i32 []);
+        = y (cast (i32 []) (& x));
+        = (. x 0) 600;
+        println_i32 ([] y 0);
     };
     block {
-        let (n1:Node (makeNode 600 null null));
-        println_i32 (. n1 val);
-        let (n2:Node (makeNode 601 null null));
-        = (. n1 l) (& n2);
-        println_i32 (. (* (. n1 l)) val);
+        let x:((i32 i32) 4);
+        let (y:(i32 []) (cast (i32 []) (& x)));
+        = (. ([] x 0) 0) 700;
+        = (. ([] x 0) 1) 701;
+        = (. ([] x 1) 0) 702;
+        println_i32 ([] y 0);
+        println_i32 ([] y 1);
+        println_i32 ([] y 2);
     };
     block {
-        let t:Tree;
-        = (. t root) (makeNode 700 null null);
-        println_i32 (. (. t root) val);
+        let (x:i32 800) (y:i32 801);
+        let (z:(i32 i32) (pair x y));
+        println_i32 (. z 0);
+        println_i32 (. z 1);
     };
     block {
-        let o:Fwd;
-        = (. o u) 800;
-        let w:WithFwd;
-        = (. w o) (& o);
-        println_u32 (. (. w o) u);
+        let (x:(i32 i32) (pair 900 901));
+        println_i32 (dot x 0);
+        println_i32 (dot x 1);
     };
     block {
-        let z1:(Int 4);
-        = (. ([] z1 0) x) 0;
-        let (z2:(Int cn 4) z1);
-        println_i32 (+ 900 (. ([] z2 0) x));
+        let (x:(i32 i32) (pair 1000 1001));
+        let (y:((i32 i32) *) (& x));
+        let (z:(i32 i32) (copy y));
+        println_i32 (dot z 0);
+        println_i32 (dot z 1);
     };
     block {
-        let x:Int;
-        cast Int x;
-        cast (Int cn) x;
+        = (. glob1 0) 1100;
+        println_i32 (. glob1 0);
     };
     block {
-        let o1:(Opaq *);
-        let o2:(Opaq * *);
-        * o2;
+        let (x:((i32 i32) cn) (pair 1200 1201));
+        println_i32 (. x 0);
     };
     block {
-        let a:(ArrI32 4);
-        = ([] (. ([] a 0) a) 0) 1000;
-        println_i32 ([] (. ([] a 0) a) 0);
-        = ([] (. ([] a 0) a) 1) 1001;
-        println_i32 (* (& ([] (. ([] a 0) a) 1)));
+        let x:(i32 i32);
+        = (. x 0) 1300;
+        println_i32 (* (& (. x 0)));
     };
     block {
-        let a:ArrI32;
-        = ([] (. a a) 0) 1100;
-        = ([] (. a a) 1) (= ([] (. a a) 2) 1);
-        = ([] (. a a) 3) (- 2);
-        println_i32 (sum a);
-        setAll (& a) 1101;
-        println_i32 ([] (. a a) 1);
+        let x:(i32 i32);
+        cast (i32 i32) x;
+        cast ((i32 i32) cn) x;
     };
     block {
-        let x:Int;
-        = (. (& x) x) 1200;
-        println_i32 (. (& x) x);
+        let x:((i32 (i32 4)));
+        = ([] (. x 1) 0) 1400;
+        println_i32 ([] (. x 1) 0);
     };
 };

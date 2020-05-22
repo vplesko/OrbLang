@@ -1,7 +1,0 @@
-data Foo;
-
-data Bar {
-    f:Foo
-};
-
-fnc main() () {}

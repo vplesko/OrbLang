@@ -137,63 +137,59 @@ NodeVal Codegen::codegenOperDot(const AstNode *ast) {
     const AstNode *nodeBase = ast->children[1].get();
     const AstNode *nodeMemb = ast->children[2].get();
 
-    optional<NamePool::Id> membName = getId(nodeMemb, true);
-    if (!membName.has_value()) return NodeVal();
-
-    NodeVal baseExpr = codegenNode(nodeBase);
-    if (!checkValueUnbroken(nodeBase->codeLoc, baseExpr, true)) return NodeVal();
-    if (baseExpr.isUntyVal()) {
+    NodeVal baseVal = codegenNode(nodeBase);
+    if (!checkValueUnbroken(nodeBase->codeLoc, baseVal, true)) return NodeVal();
+    if (baseVal.isUntyVal()) {
         msgs->errorExprDotInvalidBase(nodeBase->codeLoc);
         return NodeVal();
     }
 
-    NodeVal leftExpr = baseExpr;
+    NodeVal membVal = codegenNode(nodeMemb);
+    if (!checkValueUnbroken(nodeMemb->codeLoc, membVal, true)) return NodeVal();
+    if (!checkIsUntyped(nodeMemb->codeLoc, membVal, true)) return NodeVal();
 
-    if (getTypeTable()->worksAsTypeP(leftExpr.llvmVal.type)) {
-        optional<TypeTable::Id> derefType = symbolTable->getTypeTable()->addTypeDerefOf(leftExpr.llvmVal.type);
+    NodeVal leftVal = baseVal;
+
+    if (getTypeTable()->worksAsTypeP(leftVal.llvmVal.type)) {
+        optional<TypeTable::Id> derefType = symbolTable->getTypeTable()->addTypeDerefOf(leftVal.llvmVal.type);
         if (!derefType.has_value()) {
             msgs->errorInternal(nodeBase->codeLoc);
             return NodeVal();
         }
-        leftExpr.llvmVal.type = derefType.value();
-        leftExpr.llvmVal.ref = leftExpr.llvmVal.val;
-        leftExpr.llvmVal.val = llvmBuilder.CreateLoad(leftExpr.llvmVal.val, "deref_tmp");
+        leftVal.llvmVal.type = derefType.value();
+        leftVal.llvmVal.ref = leftVal.llvmVal.val;
+        leftVal.llvmVal.val = llvmBuilder.CreateLoad(leftVal.llvmVal.val, "deref_tmp");
     }
     
-    optional<const TypeTable::DataType*> dataTypeOpt = getTypeTable()->extractDataType(leftExpr.llvmVal.type);
-    if (!dataTypeOpt.has_value()) {
+    optional<const TypeTable::Tuple*> tupleOpt = getTypeTable()->extractTuple(leftVal.llvmVal.type);
+    if (!tupleOpt.has_value()) {
         msgs->errorExprDotInvalidBase(nodeBase->codeLoc);
         return NodeVal();
     }
-    const TypeTable::DataType &dataType = *(dataTypeOpt.value());
+    const TypeTable::Tuple &tuple = *(tupleOpt.value());
 
-    optional<size_t> memberIndOpt;
-    for (size_t i = 0; i < dataType.members.size(); ++i) {
-        if (dataType.members[i].name == membName.value()) {
-            memberIndOpt = i;
-            break;
-        }
-    }
-    if (!memberIndOpt.has_value()) {
-        msgs->errorDataUnknownMember(nodeMemb->codeLoc, membName.value());
+    UntypedVal membUntyVal = membVal.untyVal;
+    if (membUntyVal.kind != UntypedVal::Kind::kSint ||
+        membUntyVal.val_si < 0 || membUntyVal.val_si >= tuple.members.size()) {
+        msgs->errorMemberIndex(nodeMemb->codeLoc);
         return NodeVal();
     }
-    size_t memberInd = memberIndOpt.value();
+    size_t memberInd = (size_t) membUntyVal.val_si;
 
     NodeVal exprRet(NodeVal::Kind::kLlvmVal);
 
-    if (leftExpr.llvmVal.ref != nullptr) {
-        exprRet.llvmVal.ref = llvmBuilder.CreateStructGEP(leftExpr.llvmVal.ref, memberInd);
+    if (leftVal.llvmVal.ref != nullptr) {
+        exprRet.llvmVal.ref = llvmBuilder.CreateStructGEP(leftVal.llvmVal.ref, memberInd);
         exprRet.llvmVal.val = llvmBuilder.CreateLoad(exprRet.llvmVal.ref, "dot_tmp");
     } else {
-        llvm::Value *tmp = createAlloca(getType(leftExpr.llvmVal.type), "tmp");
-        llvmBuilder.CreateStore(leftExpr.llvmVal.val, tmp);
+        llvm::Value *tmp = createAlloca(getType(leftVal.llvmVal.type), "tmp");
+        llvmBuilder.CreateStore(leftVal.llvmVal.val, tmp);
         tmp = llvmBuilder.CreateStructGEP(tmp, memberInd);
         exprRet.llvmVal.val = llvmBuilder.CreateLoad(tmp, "dot_tmp");
     }
 
-    exprRet.llvmVal.type = dataType.members[memberInd].type;
-    if (getTypeTable()->worksAsTypeCn(leftExpr.llvmVal.type)) {
+    exprRet.llvmVal.type = tuple.members[memberInd];
+    if (getTypeTable()->worksAsTypeCn(leftVal.llvmVal.type)) {
         exprRet.llvmVal.type = getTypeTable()->addTypeCnOf(exprRet.llvmVal.type);
     }
 
@@ -275,7 +271,7 @@ NodeVal Codegen::codegenOperUnary(const AstNode *ast, const NodeVal &first) {
         exprRet.llvmVal.val = llvmBuilder.CreateNot(exprPay.llvmVal.val, "not_tmp");
     } else if (op == Token::O_MUL) {
         optional<TypeTable::Id> typeId = symbolTable->getTypeTable()->addTypeDerefOf(exprPay.llvmVal.type);
-        if (!typeId || !getTypeTable()->isNonOpaqueType(typeId.value())) {
+        if (!typeId) {
             msgs->errorExprDerefOnBadType(ast->codeLoc, exprPay.llvmVal.type);
             return NodeVal();
         }

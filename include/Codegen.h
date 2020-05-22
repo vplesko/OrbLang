@@ -35,6 +35,7 @@ class Codegen {
     llvm::GlobalValue* createGlobal(llvm::Type *type, llvm::Constant *init, bool isConstant, const std::string &name);
     llvm::Constant* createString(const std::string &str);
     
+    bool mangleName(std::stringstream &ss, TypeTable::Id ty);
     std::optional<NamePool::Id> mangleName(const FuncValue &f);
 
     llvm::Type* getType(TypeTable::Id typeId);
@@ -45,8 +46,6 @@ class Codegen {
 
     bool isGlobalScope() const;
     bool isBlockTerminated() const;
-
-    bool checkDefinedTypeOrError(TypeTable::Id type, CodeLoc codeLoc);
 
     typedef std::pair<NamePool::Id, TypeTable::Id> NameTypePair;
 
@@ -68,6 +67,7 @@ class Codegen {
     bool checkGlobalScope(CodeLoc codeLoc, bool orError);
 
     std::optional<NamePool::Id> getId(const AstNode *ast, bool orError);
+    std::optional<TypeTable::Id> getType(const AstNode *ast, bool orError);
     std::optional<NameTypePair> getIdTypePair(const AstNode *ast, bool orError);
     std::optional<Token::Type> getKeyword(const AstNode *ast, bool orError);
     std::optional<Token::Oper> getOper(const AstNode *ast, bool orError);
@@ -97,10 +97,10 @@ class Codegen {
     NodeVal codegenBreak(const AstNode *ast);
     NodeVal codegenContinue(const AstNode *ast);
     NodeVal codegenRet(const AstNode *ast);
-    NodeVal codegenData(const AstNode *ast);
     NodeVal codegenBlock(const AstNode *ast);
     NodeVal codegenFunc(const AstNode *ast);
 
+    std::optional<NodeVal> codegenTypeDescr(const AstNode *ast, const NodeVal &first);
     NodeVal codegenType(const AstNode *ast, const NodeVal &first);
     NodeVal codegenExpr(const AstNode *ast, const NodeVal &first);
 

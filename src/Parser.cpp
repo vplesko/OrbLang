@@ -64,7 +64,6 @@ unique_ptr<AstNode> Parser::parseTerm() {
     case Token::T_ELLIPSIS:
     case Token::T_CN:
     case Token::T_FNC:
-    case Token::T_DATA:
     case Token::T_LET:
     case Token::T_ARR:
     case Token::T_CAST:

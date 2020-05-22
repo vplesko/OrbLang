@@ -13,7 +13,7 @@ public:
     struct Id {
         enum Kind {
             kPrim,
-            kData,
+            kTuple,
             kDescr
         };
 
@@ -33,25 +33,15 @@ public:
         };
     };
 
-    struct DataType {
-        struct Member {
-            Id type;
-            NamePool::Id name;
-        };
+    struct Tuple {
+        std::vector<Id> members;
 
-        NamePool::Id name;
-        std::vector<Member> members;
+        Tuple() {}
+        Tuple(std::vector<Id> membs) : members(std::move(membs)) {}
 
-        DataType() {}
-        explicit DataType(NamePool::Id name) : name(name) {}
+        void addMember(Id m);
 
-        bool isDecl() const { return members.empty(); }
-
-        void addMember(Member m);
-
-        bool eq(const DataType &other) const {
-            return name == other.name;
-        }
+        bool eq(const Tuple &other) const;
     };
 
     struct TypeDescr {
@@ -119,7 +109,7 @@ private:
     Id strType;
 
     std::array<llvm::Type*, P_ENUM_END> primTypes;
-    std::vector<std::pair<DataType, llvm::Type*>> dataTypes;
+    std::vector<std::pair<Tuple, llvm::Type*>> tuples;
     std::vector<std::pair<TypeDescr, llvm::Type*>> typeDescrs;
     
     std::unordered_map<NamePool::Id, Id> typeIds;
@@ -137,11 +127,13 @@ public:
     TypeTable();
 
     void addPrimType(NamePool::Id name, PrimIds primId, llvm::Type *type);
-    Id addDataType(NamePool::Id name);
+    // should have at least one member. if there is exactly one member,
+    // the created type will not be a tuple, but the type of that member.
+    std::optional<Id> addTuple(Tuple tup);
 
-    // if typeDescr is secretly a prim/data, that type's Id is returned instead
+    // if typeDescr is secretly a prim/tuple, that type's Id is returned instead
     Id addTypeDescr(TypeDescr typeDescr);
-    // if typeDescr is secretly a prim/data, that type's Id is returned instead
+    // if typeDescr is secretly a prim/tuple, that type's Id is returned instead
     Id addTypeDescr(TypeDescr typeDescr, llvm::Type *type);
 
     std::optional<Id> addTypeDerefOf(Id typeId);
@@ -156,8 +148,7 @@ public:
     
     llvm::Type* getPrimType(PrimIds id) const;
     Id getPrimTypeId(PrimIds id) const;
-    DataType& getDataType(Id id);
-    const DataType& getDataType(Id id) const;
+    const Tuple& getTuple(Id id) const;
     const TypeDescr& getTypeDescr(Id id) const;
 
     Id getTypeIdStr() { return strType; }
@@ -169,9 +160,8 @@ public:
     std::optional<NamePool::Id> getTypeName(Id t) const;
 
     bool isPrimitive(Id t) const;
-    bool isDataType(Id t) const;
+    bool isTuple(Id t) const;
     bool isTypeDescr(Id t) const;
-    bool isNonOpaqueType(Id t) const;
     
     bool worksAsPrimitive(Id t) const;
     bool worksAsTypeI(Id t) const { return worksAsPrimitive(t, P_I8, P_I64); }
@@ -190,10 +180,9 @@ public:
     bool worksAsTypeCharArrOfLen(Id t, std::size_t len) const;
     bool worksAsTypeCn(Id t) const;
 
-    std::optional<const DataType*> extractDataType(Id t) const;
+    std::optional<const Tuple*> extractTuple(Id t) const;
     std::optional<std::size_t> extractLenOfArr(Id arrTypeId) const;
 
-    bool dataMayTakeName(NamePool::Id name) const;
     bool fitsType(int64_t x, Id t) const;
     Id shortestFittingTypeIId(int64_t x) const;
     bool isImplicitCastable(Id from, Id into) const;

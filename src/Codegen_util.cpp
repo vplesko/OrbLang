@@ -16,6 +16,49 @@ Codegen::Codegen(NamePool *namePool, StringPool *stringPool, SymbolTable *symbol
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("test"), llvmContext);
 }
 
+bool Codegen::mangleName(stringstream &ss, TypeTable::Id ty) {
+    if (getTypeTable()->isTypeDescr(ty)) {
+        const TypeTable::TypeDescr &typeDescr = getTypeTable()->getTypeDescr(ty);
+    
+        if (!mangleName(ss, typeDescr.base)) return false;
+
+        for (TypeTable::TypeDescr::Decor d : typeDescr.decors) {
+            switch (d.type) {
+            case TypeTable::TypeDescr::Decor::D_ARR:
+                ss << "$Arr" << d.len;
+                break;
+            case TypeTable::TypeDescr::Decor::D_ARR_PTR:
+                ss << "$ArrPtr";
+                break;
+            case TypeTable::TypeDescr::Decor::D_PTR:
+                ss << "$Ptr";
+                break;
+            default:
+                return false;
+            }
+        }
+    } else if (getTypeTable()->isTuple(ty)) {
+        const TypeTable::Tuple &tup = getTypeTable()->getTuple(ty);
+
+        ss << "$Tup";
+        ss << "$" << tup.members.size();
+
+        for (auto it : tup.members) {
+            ss << "$";
+            if (!mangleName(ss, it)) return false;
+        }
+    } else {
+        optional<NamePool::Id> name = getTypeTable()->getTypeName(ty);
+        if (!name) {
+            return false;
+        }
+
+        ss << "$" << namePool->get(name.value());
+    }
+
+    return true;
+}
+
 optional<NamePool::Id> Codegen::mangleName(const FuncValue &f) {
     stringstream mangle;
     mangle << namePool->get(f.name);
@@ -23,39 +66,7 @@ optional<NamePool::Id> Codegen::mangleName(const FuncValue &f) {
     mangle << "$Args";
 
     for (TypeTable::Id ty : f.argTypes) {
-        if (getTypeTable()->isTypeDescr(ty)) {
-            const TypeTable::TypeDescr &typeDescr = getTypeTable()->getTypeDescr(ty);
-            
-            optional<NamePool::Id> name = getTypeTable()->getTypeName(typeDescr.base);
-            if (!name) {
-                return nullopt;
-            }
-
-            mangle << "$" << namePool->get(name.value());
-
-            for (TypeTable::TypeDescr::Decor d : typeDescr.decors) {
-                switch (d.type) {
-                    case TypeTable::TypeDescr::Decor::D_ARR:
-                        mangle << "$Arr" << d.len;
-                        break;
-                    case TypeTable::TypeDescr::Decor::D_ARR_PTR:
-                        mangle << "$ArrPtr";
-                        break;
-                    case TypeTable::TypeDescr::Decor::D_PTR:
-                        mangle << "$Ptr";
-                        break;
-                    default:
-                        return nullopt;
-                }
-            }
-        } else {
-            optional<NamePool::Id> name = getTypeTable()->getTypeName(ty);
-            if (!name) {
-                return nullopt;
-            }
-
-            mangle << "$" << namePool->get(name.value());
-        }
+        if (!mangleName(mangle, ty)) return nullopt;
     }
 
     if (f.variadic) mangle << "$Variadic";
@@ -64,12 +75,14 @@ optional<NamePool::Id> Codegen::mangleName(const FuncValue &f) {
 }
 
 llvm::Type* Codegen::getType(TypeTable::Id typeId) {
-    llvm::Type *llvmType = symbolTable->getTypeTable()->getType(typeId);
+    llvm::Type *llvmType = getTypeTable()->getType(typeId);
+    if (llvmType != nullptr) return llvmType;
 
-    if (llvmType == nullptr) {
+    // primitive type are codegened at the start of compilation
+    if (getTypeTable()->isTypeDescr(typeId)) {
         const TypeTable::TypeDescr &descr = symbolTable->getTypeTable()->getTypeDescr(typeId);
 
-        llvmType = symbolTable->getTypeTable()->getType(descr.base);
+        llvmType = getType(descr.base);
         if (llvmType == nullptr) return nullptr;
 
         for (const TypeTable::TypeDescr::Decor &decor : descr.decors) {
@@ -89,6 +102,21 @@ llvm::Type* Codegen::getType(TypeTable::Id typeId) {
         }
 
         symbolTable->getTypeTable()->setType(typeId, llvmType);
+    } else if (getTypeTable()->isTuple(typeId)) {
+        const TypeTable::Tuple &tup = getTypeTable()->getTuple(typeId);
+
+        llvm::StructType *structType = llvm::StructType::create(llvmContext, "tuple");
+        getTypeTable()->setType(typeId, structType);
+
+        vector<llvm::Type*> memberTypes(tup.members.size());
+        for (size_t i = 0; i < tup.members.size(); ++i) {
+            llvm::Type *memberType = getType(tup.members[i]);
+            memberTypes[i] = memberType;
+        }
+
+        structType->setBody(memberTypes);
+
+        llvmType = structType;
     }
 
     return llvmType;
@@ -243,19 +271,6 @@ llvm::Constant* Codegen::createString(const std::string &str) {
     llvm::Constant *arr = llvm::ConstantDataArray::getString(llvmContext, str, true);
     glob->setInitializer(arr);
     return llvm::ConstantExpr::getPointerCast(glob, getType(getTypeTable()->getTypeIdStr()));
-}
-
-bool Codegen::checkDefinedTypeOrError(TypeTable::Id type, CodeLoc codeLoc) {
-    if (!getTypeTable()->isNonOpaqueType(type)) {
-        if (getTypeTable()->isDataType(type)) {
-            msgs->errorDataOpaqueInit(codeLoc);
-            return false;
-        } else {
-            msgs->errorUndefinedType(codeLoc);
-            return false;
-        }
-    }
-    return true;
 }
 
 bool Codegen::checkEmptyTerminal(const AstNode *ast, bool orError) {
@@ -419,6 +434,13 @@ optional<NamePool::Id> Codegen::getId(const AstNode *ast, bool orError) {
     return nodeVal.id;
 }
 
+optional<TypeTable::Id> Codegen::getType(const AstNode *ast, bool orError) {
+    NodeVal type = codegenNode(ast);
+    if (!checkIsType(ast->codeLoc, type, true)) return nullopt;
+
+    return type.type;
+}
+
 optional<Codegen::NameTypePair> Codegen::getIdTypePair(const AstNode *ast, bool orError) {
     optional<NamePool::Id> id = getId(ast, orError);
     if (!id.has_value()) return nullopt;
@@ -427,12 +449,12 @@ optional<Codegen::NameTypePair> Codegen::getIdTypePair(const AstNode *ast, bool 
         if (orError) msgs->errorMissingTypeAnnotation(ast->codeLoc);
         return nullopt;
     }
-    NodeVal type = codegenNode(ast->type->get());
-    if (!checkIsType(ast->type->get()->codeLoc, type, true)) return nullopt;
+    optional<TypeTable::Id> type = getType(ast->type.value().get(), orError);
+    if (!type.has_value()) return nullopt;
 
     NameTypePair idType;
     idType.first = id.value();
-    idType.second = type.type;
+    idType.second = type.value();
     return idType;
 }
 
