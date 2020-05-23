@@ -594,8 +594,7 @@ NodeVal Codegen::codegenOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs
 NodeVal Codegen::codegenOper(const AstNode *ast, const NodeVal &first) {
     OperInfo opInfo = operInfos.at(first.oper);
 
-    // TODO! variadic comparison operators
-    if ((opInfo.variadic && !opInfo.comparison) ?
+    if (opInfo.variadic ?
         !checkAtLeastChildren(ast, 3, true) :
         !checkExactlyChildren(ast, 3, true)) {
         return NodeVal();
