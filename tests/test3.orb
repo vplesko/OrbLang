@@ -73,4 +73,21 @@ fnc main() () {
         if (!= str2 "pqrs") { println_i32 0; };
         if (== "pqrs" str2) { println_i32 1; };
     };
+
+    block {
+        let (p1:ptr null) (p2:(ptr cn) null);
+
+        let (x1:(i32 cn *) p1);
+        let (x2:(i32 cn *) p2);
+        let (x3:(i32 * cn) p1);
+        let (x4:(i32 * cn) p2);
+
+        let (y1:(i32 cn []) p1);
+        let (y2:(i32 cn []) p2);
+        let (y3:(i32 [] cn) p1);
+        let (y4:(i32 [] cn) p2);
+
+        let (z1:ptr p2);
+        let (z2:(ptr cn) p1);
+    };
 };

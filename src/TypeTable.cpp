@@ -506,6 +506,10 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
         from = typeDescrs[from.index].first.base;
     if (isTypeDescr(into) && typeDescrs[into.index].first.decors.empty())
         into = typeDescrs[into.index].first.base;
+    
+    if ((worksAsTypePtr(from) && worksAsTypeAnyP(into)) ||
+        (worksAsTypePtr(into) && worksAsTypeAnyP(from)))
+        return true;
 
     if (isPrimitive(from)) {
         if (!isPrimitive(into)) return false;

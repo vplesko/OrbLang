@@ -86,7 +86,7 @@ fnc main() () {
     if (!= null null) { println_i32 5; };
     if (cast bool a) { println_i32 6; };
 
-    = a (cast (i32 *) (malloc 4));
+    = a (malloc 4);
     if (== a null) {(println_i32 7)};
     if (== null a) {(println_i32 8)};
     if (!= a null) {(println_i32 9)};
@@ -114,8 +114,8 @@ fnc main() () {
     if (!= (& glob1) null) {(println_i32 102)};
     if (== (& glob1) null) {(println_i32 103)};
 
-    = a (cast (i32 *) (malloc 4));
-    = b (cast (i32 *) (malloc 4));
+    = a (malloc 4);
+    = b (malloc 4);
     = (* a) 200;
     println_i32 (* a);
     = c a;
@@ -125,10 +125,10 @@ fnc main() () {
     println_i32 (* (* (& (* (& a)))));
     = (* a) 203;
     println_i32 (pass a);
-    free (cast ptr a);
-    free (cast ptr b);
+    free a;
+    free b;
 
-    = g (cast (i32 []) (malloc (* 4 4)));
+    = g (malloc (* 4 4));
     = ([] g 0) 300;
     println_i32 ([] g 0);
     = j 0;
@@ -143,7 +143,7 @@ fnc main() () {
     println_i32 ([] h 0);
     println_i32 ([] h (- 1));
     println_i32 ([] h (- j 1));
-    free (cast ptr g);
+    free g;
 
     = i (cast (i32 [] []) (malloc 32)); // some number larger than size of pointer
     = ([] i 0) (cast (i32 []) (malloc 4));
