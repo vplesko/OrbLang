@@ -103,6 +103,7 @@ struct NodeVal {
     bool isLlvmVal() const { return kind == Kind::kLlvmVal; }
     bool isUntyVal() const { return kind == Kind::kUntyVal; }
     bool isType() const { return kind == Kind::kType; }
+    bool isInvalid() const { return kind == Kind::kInvalid; }
 
     // returns true if this is not unty val nor llvm val with valid value
     bool valueBroken() const { return

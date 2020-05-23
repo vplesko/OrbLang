@@ -5,7 +5,13 @@ NodeVal Codegen::codegenExpr(const AstNode *ast, const NodeVal &first) {
     if (first.isFuncId()) {
         return codegenCall(ast, first);
     } else if (first.isOper()) {
-        if (ast->children.size() == 2) {
+        if (first.oper == Token::O_DOT) {
+            return codegenOperDot(ast);
+        } else if (first.oper == Token::O_IND) {
+            return codegenOperInd(ast);
+        } else if (first.oper == Token::O_AND || first.oper == Token::O_OR) {
+            return codegenOperLogicAndOr(ast, first);
+        } else if (ast->children.size() == 2) {
             return codegenOperUnary(ast, first);
         } else if (ast->children.size() == 3) {
             return codegenOperBinary(ast, first);
@@ -130,31 +136,21 @@ NodeVal Codegen::codegenOperInd(const AstNode *ast) {
     return retPay;
 }
 
-NodeVal Codegen::codegenOperDot(const AstNode *ast) {
-    if (!checkExactlyChildren(ast, 3, true)) {
+NodeVal Codegen::codegenOperDot(CodeLoc codeLoc, const NodeVal &base, const NodeVal &memb) {
+    if (!checkValueUnbroken(codeLoc, base, false) || base.isUntyVal()) {
+        msgs->errorExprDotInvalidBase(codeLoc);
         return NodeVal();
     }
 
-    const AstNode *nodeBase = ast->children[1].get();
-    const AstNode *nodeMemb = ast->children[2].get();
+    if (!checkValueUnbroken(codeLoc, memb, true)) return NodeVal();
+    if (!checkIsUntyped(codeLoc, memb, true)) return NodeVal();
 
-    NodeVal baseVal = codegenNode(nodeBase);
-    if (!checkValueUnbroken(nodeBase->codeLoc, baseVal, true)) return NodeVal();
-    if (baseVal.isUntyVal()) {
-        msgs->errorExprDotInvalidBase(nodeBase->codeLoc);
-        return NodeVal();
-    }
-
-    NodeVal membVal = codegenNode(nodeMemb);
-    if (!checkValueUnbroken(nodeMemb->codeLoc, membVal, true)) return NodeVal();
-    if (!checkIsUntyped(nodeMemb->codeLoc, membVal, true)) return NodeVal();
-
-    NodeVal leftVal = baseVal;
+    NodeVal leftVal = base;
 
     if (getTypeTable()->worksAsTypeP(leftVal.llvmVal.type)) {
         optional<TypeTable::Id> derefType = symbolTable->getTypeTable()->addTypeDerefOf(leftVal.llvmVal.type);
         if (!derefType.has_value()) {
-            msgs->errorInternal(nodeBase->codeLoc);
+            msgs->errorInternal(codeLoc);
             return NodeVal();
         }
         leftVal.llvmVal.type = derefType.value();
@@ -164,15 +160,15 @@ NodeVal Codegen::codegenOperDot(const AstNode *ast) {
     
     optional<const TypeTable::Tuple*> tupleOpt = getTypeTable()->extractTuple(leftVal.llvmVal.type);
     if (!tupleOpt.has_value()) {
-        msgs->errorExprDotInvalidBase(nodeBase->codeLoc);
+        msgs->errorExprDotInvalidBase(codeLoc);
         return NodeVal();
     }
     const TypeTable::Tuple &tuple = *(tupleOpt.value());
 
-    UntypedVal membUntyVal = membVal.untyVal;
+    UntypedVal membUntyVal = memb.untyVal;
     if (membUntyVal.kind != UntypedVal::Kind::kSint ||
         membUntyVal.val_si < 0 || membUntyVal.val_si >= tuple.members.size()) {
-        msgs->errorMemberIndex(nodeMemb->codeLoc);
+        msgs->errorMemberIndex(codeLoc);
         return NodeVal();
     }
     size_t memberInd = (size_t) membUntyVal.val_si;
@@ -195,6 +191,24 @@ NodeVal Codegen::codegenOperDot(const AstNode *ast) {
     }
 
     return exprRet;
+}
+
+NodeVal Codegen::codegenOperDot(const AstNode *ast) {
+    if (!checkAtLeastChildren(ast, 3, true)) {
+        return NodeVal();
+    }
+
+    const AstNode *nodeBase = ast->children[1].get();
+    NodeVal baseVal = codegenNode(nodeBase);
+
+    for (size_t i = 2; i < ast->children.size(); ++i) {
+        const AstNode *nodeMemb = ast->children[i].get();
+
+        baseVal = codegenOperDot(nodeMemb->codeLoc, baseVal, codegenNode(nodeMemb));
+        if (baseVal.isInvalid()) return NodeVal();
+    }
+
+    return baseVal;
 }
 
 NodeVal Codegen::codegenOperUnary(const AstNode *ast, const NodeVal &first) {
@@ -348,14 +362,6 @@ NodeVal Codegen::codegenOperBinary(const AstNode *ast, const NodeVal &first) {
     const AstNode *nodeR = ast->children[2].get();
 
     Token::Oper op = first.oper;
-
-    if (op == Token::O_AND || op == Token::O_OR) {
-        return codegenOperLogicAndOr(ast, first);
-    } else if (op == Token::O_IND) {
-        return codegenOperInd(ast);
-    } else if (op == Token::O_DOT) {
-        return codegenOperDot(ast);
-    }
 
     NodeVal exprPayL, exprPayR, exprPayRet;
 

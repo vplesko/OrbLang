@@ -77,6 +77,7 @@ class Codegen {
     NodeVal codegenUntypedVal(const AstNode *ast);
     NodeVal codegenVar(const AstNode *ast);
     NodeVal codegenOperInd(const AstNode *ast);
+    NodeVal codegenOperDot(CodeLoc codeLoc, const NodeVal &base, const NodeVal &memb);
     NodeVal codegenOperDot(const AstNode *ast);
     NodeVal codegenOperUnary(const AstNode *ast, const NodeVal &first);
     NodeVal codegenOperUnaryUntyped(CodeLoc codeLoc, Token::Oper op, UntypedVal unty);
