@@ -10,9 +10,10 @@ NodeVal Codegen::codegenExpr(const AstNode *ast, const NodeVal &first) {
         } else if (ast->children.size() == 3) {
             return codegenOperBinary(ast, first);
         }
+    } else {
+        return codegenTuple(ast, first);
     }
-    
-    msgs->errorUnexpectedNodeValue(ast->codeLoc);
+
     return NodeVal();
 }
 
@@ -111,14 +112,14 @@ NodeVal Codegen::codegenOperInd(const AstNode *ast) {
     } else if (symbolTable->getTypeTable()->worksAsTypeArr(baseExprPay.llvmVal.type)) {
         if (baseExprPay.llvmVal.ref != nullptr) {
             retPay.llvmVal.ref = llvmBuilder.CreateGEP(baseExprPay.llvmVal.ref,
-                {llvm::ConstantInt::get(getType(indExprPay.llvmVal.type), 0), indExprPay.llvmVal.val});
+                {llvm::ConstantInt::get(getLlvmType(indExprPay.llvmVal.type), 0), indExprPay.llvmVal.val});
             retPay.llvmVal.val = llvmBuilder.CreateLoad(retPay.llvmVal.ref, "index_tmp");
         } else {
             // llvm's extractvalue requires compile-time known indices
-            llvm::Value *tmp = createAlloca(getType(baseExprPay.llvmVal.type), "tmp");
+            llvm::Value *tmp = createAlloca(getLlvmType(baseExprPay.llvmVal.type), "tmp");
             llvmBuilder.CreateStore(baseExprPay.llvmVal.val, tmp);
             tmp = llvmBuilder.CreateGEP(tmp,
-                {llvm::ConstantInt::get(getType(indExprPay.llvmVal.type), 0), indExprPay.llvmVal.val});
+                {llvm::ConstantInt::get(getLlvmType(indExprPay.llvmVal.type), 0), indExprPay.llvmVal.val});
             retPay.llvmVal.val = llvmBuilder.CreateLoad(tmp, "index_tmp");
         }
     } else {
@@ -182,7 +183,7 @@ NodeVal Codegen::codegenOperDot(const AstNode *ast) {
         exprRet.llvmVal.ref = llvmBuilder.CreateStructGEP(leftVal.llvmVal.ref, memberInd);
         exprRet.llvmVal.val = llvmBuilder.CreateLoad(exprRet.llvmVal.ref, "dot_tmp");
     } else {
-        llvm::Value *tmp = createAlloca(getType(leftVal.llvmVal.type), "tmp");
+        llvm::Value *tmp = createAlloca(getLlvmType(leftVal.llvmVal.type), "tmp");
         llvmBuilder.CreateStore(leftVal.llvmVal.val, tmp);
         tmp = llvmBuilder.CreateStructGEP(tmp, memberInd);
         exprRet.llvmVal.val = llvmBuilder.CreateLoad(tmp, "dot_tmp");
@@ -240,7 +241,7 @@ NodeVal Codegen::codegenOperUnary(const AstNode *ast, const NodeVal &first) {
             msgs->errorExprUnBadType(ast->codeLoc, op, exprPay.llvmVal.type);
             return NodeVal();
         }
-        exprRet.llvmVal.val = llvmBuilder.CreateAdd(exprPay.llvmVal.val, llvm::ConstantInt::get(getType(exprPay.llvmVal.type), 1), "inc_tmp");
+        exprRet.llvmVal.val = llvmBuilder.CreateAdd(exprPay.llvmVal.val, llvm::ConstantInt::get(getLlvmType(exprPay.llvmVal.type), 1), "inc_tmp");
         exprRet.llvmVal.ref = exprPay.llvmVal.ref;
         llvmBuilder.CreateStore(exprRet.llvmVal.val, exprRet.llvmVal.ref);
     } else if (op == Token::O_DEC) {
@@ -254,7 +255,7 @@ NodeVal Codegen::codegenOperUnary(const AstNode *ast, const NodeVal &first) {
             msgs->errorExprUnBadType(ast->codeLoc, op, exprPay.llvmVal.type);
             return NodeVal();
         }
-        exprRet.llvmVal.val = llvmBuilder.CreateSub(exprPay.llvmVal.val, llvm::ConstantInt::get(getType(exprPay.llvmVal.type), 1), "dec_tmp");
+        exprRet.llvmVal.val = llvmBuilder.CreateSub(exprPay.llvmVal.val, llvm::ConstantInt::get(getLlvmType(exprPay.llvmVal.type), 1), "dec_tmp");
         exprRet.llvmVal.ref = exprPay.llvmVal.ref;
         llvmBuilder.CreateStore(exprRet.llvmVal.val, exprRet.llvmVal.ref);
     } else if (op == Token::O_BIT_NOT) {
@@ -509,8 +510,8 @@ NodeVal Codegen::codegenOperBinary(const AstNode *ast, const NodeVal &first) {
                     exprPayRet.llvmVal.val = llvmBuilder.CreateICmpEQ(valL, valR, "cmp_eq_tmp");
                 else if (isTypeP) {
                     exprPayRet.llvmVal.val =
-                        llvmBuilder.CreateICmpEQ(llvmBuilder.CreatePtrToInt(valL, getType(getPrimTypeId(TypeTable::WIDEST_I))),
-                        llvmBuilder.CreatePtrToInt(valR, getType(getPrimTypeId(TypeTable::WIDEST_I))), "pcmp_eq_tmp");
+                        llvmBuilder.CreateICmpEQ(llvmBuilder.CreatePtrToInt(valL, getLlvmType(getPrimTypeId(TypeTable::WIDEST_I))),
+                        llvmBuilder.CreatePtrToInt(valR, getLlvmType(getPrimTypeId(TypeTable::WIDEST_I))), "pcmp_eq_tmp");
                 }
                 exprPayRet.llvmVal.type = getPrimTypeId(TypeTable::P_BOOL);
                 break;
@@ -521,8 +522,8 @@ NodeVal Codegen::codegenOperBinary(const AstNode *ast, const NodeVal &first) {
                     exprPayRet.llvmVal.val = llvmBuilder.CreateICmpNE(valL, valR, "cmp_neq_tmp");
                 else if (isTypeP) {
                     exprPayRet.llvmVal.val =
-                        llvmBuilder.CreateICmpNE(llvmBuilder.CreatePtrToInt(valL, getType(getPrimTypeId(TypeTable::WIDEST_I))),
-                        llvmBuilder.CreatePtrToInt(valR, getType(getPrimTypeId(TypeTable::WIDEST_I))), "pcmp_eq_tmp");
+                        llvmBuilder.CreateICmpNE(llvmBuilder.CreatePtrToInt(valL, getLlvmType(getPrimTypeId(TypeTable::WIDEST_I))),
+                        llvmBuilder.CreatePtrToInt(valR, getLlvmType(getPrimTypeId(TypeTable::WIDEST_I))), "pcmp_eq_tmp");
                 }
                 exprPayRet.llvmVal.type = getPrimTypeId(TypeTable::P_BOOL);
                 break;
@@ -663,7 +664,7 @@ NodeVal Codegen::codegenOperLogicAndOr(const AstNode *ast, const NodeVal &first)
     } else {
         ret = NodeVal(NodeVal::Kind::kLlvmVal);
 
-        llvm::PHINode *phi = llvmBuilder.CreatePHI(getType(getPrimTypeId(TypeTable::P_BOOL)), 2, "logic_tmp");
+        llvm::PHINode *phi = llvmBuilder.CreatePHI(getLlvmType(getPrimTypeId(TypeTable::P_BOOL)), 2, "logic_tmp");
 
         if (op == Token::O_AND)
             phi->addIncoming(getConstB(false), firstBlock);
@@ -915,6 +916,58 @@ NodeVal Codegen::codegenOperBinaryUntyped(CodeLoc codeLoc, Token::Oper op, Untyp
     return ret;
 }
 
+NodeVal Codegen::codegenTuple(const AstNode *ast, const NodeVal &first) {
+    if (ast->children.size() == 1) return first;
+
+    TypeTable::Tuple tup;
+    tup.members.resize(ast->children.size());
+
+    vector<llvm::Value*> llvmMembs(ast->children.size());
+
+    for (size_t i = 0; i < ast->children.size(); ++i) {
+        const AstNode *nodeMemb = ast->children[i].get();
+
+        NodeVal nodeValMemb = i == 0 ? first : codegenNode(nodeMemb);
+        if (nodeValMemb.kind != NodeVal::Kind::kLlvmVal) {
+            if (nodeValMemb.kind == NodeVal::Kind::kInvalid) {
+                return NodeVal();
+            } else if (nodeValMemb.kind == NodeVal::Kind::kUntyVal) {
+                msgs->errorMissingTypeAnnotation(nodeMemb->codeLoc);
+                return NodeVal();
+            } else {
+                msgs->errorTupleValueMember(nodeMemb->codeLoc);
+            }
+        }
+
+        tup.members[i] = nodeValMemb.llvmVal.type;
+        llvmMembs[i] = nodeValMemb.llvmVal.val;
+    }
+
+    optional<TypeTable::Id> tupTyOpt = getTypeTable()->addTuple(move(tup));
+    if (!tupTyOpt.has_value()) {
+        msgs->errorInternal(ast->codeLoc);
+        return NodeVal();
+    }
+    TypeTable::Id tupTy = tupTyOpt.value();
+
+    llvm::StructType *tupLlvmTy = (llvm::StructType*) getLlvmType(tupTy);
+    if (tupLlvmTy == nullptr) {
+        msgs->errorInternal(ast->codeLoc);
+        return NodeVal();
+    }
+    
+    llvm::Value *tupLlvmRef = createAlloca(tupLlvmTy, "tup");
+    for (size_t i = 0; i < llvmMembs.size(); ++i) {
+        llvmBuilder.CreateStore(llvmMembs[i], llvmBuilder.CreateStructGEP(tupLlvmRef, i));
+    }
+    llvm::Value *tupLlvmVal = llvmBuilder.CreateLoad(tupLlvmRef, "tmp_tup");
+
+    NodeVal ret(NodeVal::Kind::kLlvmVal);
+    ret.llvmVal.type = tupTy;
+    ret.llvmVal.val = tupLlvmVal;
+    return ret;
+}
+
 NodeVal Codegen::codegenCall(const AstNode *ast, const NodeVal &first) {
     size_t argCnt = ast->children.size()-1;
 
@@ -996,7 +1049,7 @@ NodeVal Codegen::codegenCast(const AstNode *ast) {
     NodeVal valTypeId = codegenNode(nodeType);
     if (!checkIsType(nodeType->codeLoc, valTypeId, true)) return NodeVal();
 
-    llvm::Type *type = getType(valTypeId.type);
+    llvm::Type *type = getLlvmType(valTypeId.type);
     if (type == nullptr) return NodeVal();
 
     NodeVal exprVal = codegenNode(nodeVal);
@@ -1072,7 +1125,7 @@ NodeVal Codegen::codegenArr(const AstNode *ast) {
 
     TypeTable::Id elemTypeId = elemTypeIdFind.value();
 
-    llvm::Type *elemType = getType(elemTypeId);
+    llvm::Type *elemType = getLlvmType(elemTypeId);
     if (elemType == nullptr) {
         msgs->errorInternal(nodeArrType->codeLoc);
         return NodeVal();
@@ -1081,7 +1134,7 @@ NodeVal Codegen::codegenArr(const AstNode *ast) {
     TypeTable::Id arrTypeId = getTypeTable()->addTypeArrOfLenIdOf(
         elemTypeId, arrLen);
     
-    llvm::Value *arrRef = createAlloca(getType(arrTypeId), "tmp_arr");
+    llvm::Value *arrRef = createAlloca(getLlvmType(arrTypeId), "tmp_arr");
 
     for (size_t i = 0; i < arrLen; ++i) {
         const AstNode *nodeElem = ast->children[i+2].get();
@@ -1100,8 +1153,8 @@ NodeVal Codegen::codegenArr(const AstNode *ast) {
         createCast(exprPay, elemTypeId);
 
         llvm::Value *elemRef = llvmBuilder.CreateGEP(arrRef, 
-            {llvm::ConstantInt::get(getType(getPrimTypeId(TypeTable::WIDEST_I)), 0),
-            llvm::ConstantInt::get(getType(getPrimTypeId(TypeTable::WIDEST_I)), i)});
+            {llvm::ConstantInt::get(getLlvmType(getPrimTypeId(TypeTable::WIDEST_I)), 0),
+            llvm::ConstantInt::get(getLlvmType(getPrimTypeId(TypeTable::WIDEST_I)), i)});
         llvmBuilder.CreateStore(exprPay.llvmVal.val, elemRef);
     }
 

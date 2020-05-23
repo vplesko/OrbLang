@@ -148,4 +148,18 @@ fnc main() () {
         = (. y 1) 1800;
         println_i32 (. y 1);
     };
+    block {
+        let (x:(i32 i32) (1900:i32 1901:i32));
+        println_i32 (. x 1);
+    };
+    block {
+        let (x:((i32 cn) (i32 cn)) (2000:(i32 cn) 2001:(i32 cn)));
+        println_i32 (. x 0);
+    };
+    block {
+        println_i32 (. (2100:i32 2101:i32) 1);
+    };
+    block {
+        println_i32 (dot (2200:i32 2201:i32) 0);
+    };
 };

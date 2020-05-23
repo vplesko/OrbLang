@@ -38,7 +38,7 @@ class Codegen {
     bool mangleName(std::stringstream &ss, TypeTable::Id ty);
     std::optional<NamePool::Id> mangleName(const FuncValue &f);
 
-    llvm::Type* getType(TypeTable::Id typeId);
+    llvm::Type* getLlvmType(TypeTable::Id typeId);
     TypeTable::Id getPrimTypeId(TypeTable::PrimIds primId) const { return getTypeTable()->getPrimTypeId(primId); }
     bool createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId);
     bool createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
@@ -85,6 +85,7 @@ class Codegen {
     NodeVal codegenOperLogicAndOr(const AstNode *ast, const NodeVal &first);
     NodeVal codegenOperLogicAndOrGlobalScope(const AstNode *ast, const NodeVal &first);
     NodeVal codegenOperBinaryUntyped(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR);
+    NodeVal codegenTuple(const AstNode *ast, const NodeVal &first);
     NodeVal codegenCall(const AstNode *ast, const NodeVal &first);
     NodeVal codegenCast(const AstNode *ast);
     NodeVal codegenArr(const AstNode *ast);
@@ -102,6 +103,7 @@ class Codegen {
 
     std::optional<NodeVal> codegenTypeDescr(const AstNode *ast, const NodeVal &first);
     NodeVal codegenType(const AstNode *ast, const NodeVal &first);
+
     NodeVal codegenExpr(const AstNode *ast, const NodeVal &first);
 
     NodeVal codegenTerminal(const AstNode *ast);

@@ -98,6 +98,7 @@ public:
     void errorFuncArgNameDuplicate(CodeLoc loc, NamePool::Id name);
     void errorFuncNotFound(CodeLoc loc, NamePool::Id name);
     void errorMemberIndex(CodeLoc loc);
+    void errorTupleValueMember(CodeLoc loc);
     void errorMismatchTypeAnnotation(CodeLoc loc, TypeTable::Id ty);
     void errorMismatchTypeAnnotation(CodeLoc loc);
     void errorMissingTypeAnnotation(CodeLoc loc);

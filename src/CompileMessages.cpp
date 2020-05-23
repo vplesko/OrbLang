@@ -330,6 +330,10 @@ void CompileMessages::errorMemberIndex(CodeLoc loc) {
     error(loc, "Invalid member index.");
 }
 
+void CompileMessages::errorTupleValueMember(CodeLoc loc) {
+    error(loc, "Unexpected value for a tuple member.");
+}
+
 void CompileMessages::errorExprCallVariadUnty(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Attempting to call variadic function '" << namePool->get(name) << "' with an untyped value as variadic argument.";

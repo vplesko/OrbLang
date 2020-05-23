@@ -74,7 +74,7 @@ optional<NamePool::Id> Codegen::mangleName(const FuncValue &f) {
     return namePool->add(mangle.str());
 }
 
-llvm::Type* Codegen::getType(TypeTable::Id typeId) {
+llvm::Type* Codegen::getLlvmType(TypeTable::Id typeId) {
     llvm::Type *llvmType = getTypeTable()->getType(typeId);
     if (llvmType != nullptr) return llvmType;
 
@@ -82,7 +82,7 @@ llvm::Type* Codegen::getType(TypeTable::Id typeId) {
     if (getTypeTable()->isTypeDescr(typeId)) {
         const TypeTable::TypeDescr &descr = symbolTable->getTypeTable()->getTypeDescr(typeId);
 
-        llvmType = getType(descr.base);
+        llvmType = getLlvmType(descr.base);
         if (llvmType == nullptr) return nullptr;
 
         for (const TypeTable::TypeDescr::Decor &decor : descr.decors) {
@@ -110,7 +110,7 @@ llvm::Type* Codegen::getType(TypeTable::Id typeId) {
 
         vector<llvm::Type*> memberTypes(tup.members.size());
         for (size_t i = 0; i < tup.members.size(); ++i) {
-            llvm::Type *memberType = getType(tup.members[i]);
+            llvm::Type *memberType = getLlvmType(tup.members[i]);
             memberTypes[i] = memberType;
         }
 
@@ -148,14 +148,14 @@ bool Codegen::promoteUntyped(NodeVal &e, TypeTable::Id t) {
         if ((!getTypeTable()->worksAsTypeI(t) && !getTypeTable()->worksAsTypeU(t)) || !getTypeTable()->fitsType(e.untyVal.val_si, t)) {
             success = false;
         } else {
-            n.llvmVal.val = llvm::ConstantInt::get(getType(t), e.untyVal.val_si, getTypeTable()->worksAsTypeI(t));
+            n.llvmVal.val = llvm::ConstantInt::get(getLlvmType(t), e.untyVal.val_si, getTypeTable()->worksAsTypeI(t));
         }
         break;
     case UntypedVal::Kind::kChar:
         if (!getTypeTable()->worksAsTypeC(t)) {
             success = false;
         } else {
-            n.llvmVal.val = llvm::ConstantInt::get(getType(t), (uint8_t) e.untyVal.val_c, false);
+            n.llvmVal.val = llvm::ConstantInt::get(getLlvmType(t), (uint8_t) e.untyVal.val_c, false);
         }
         break;
     case UntypedVal::Kind::kFloat:
@@ -163,7 +163,7 @@ bool Codegen::promoteUntyped(NodeVal &e, TypeTable::Id t) {
         if (!getTypeTable()->worksAsTypeF(t)) {
             success = false;
         } else {
-            n.llvmVal.val = llvm::ConstantFP::get(getType(t), e.untyVal.val_f);
+            n.llvmVal.val = llvm::ConstantFP::get(getLlvmType(t), e.untyVal.val_f);
         }
         break;
     case UntypedVal::Kind::kString:
@@ -182,7 +182,7 @@ bool Codegen::promoteUntyped(NodeVal &e, TypeTable::Id t) {
         if (!symbolTable->getTypeTable()->worksAsTypeAnyP(t)) {
             success = false;
         } else {
-            n.llvmVal.val = llvm::ConstantPointerNull::get((llvm::PointerType*)getType(t));
+            n.llvmVal.val = llvm::ConstantPointerNull::get((llvm::PointerType*)getLlvmType(t));
         }
         break;
     default:
@@ -261,7 +261,7 @@ llvm::GlobalValue* Codegen::createGlobal(llvm::Type *type, llvm::Constant *init,
 llvm::Constant* Codegen::createString(const std::string &str) {
     llvm::GlobalVariable *glob = new llvm::GlobalVariable(
         *llvmModule,
-        getType(getTypeTable()->getTypeCharArrOfLenId(UntypedVal::getStringLen(str))),
+        getLlvmType(getTypeTable()->getTypeCharArrOfLenId(UntypedVal::getStringLen(str))),
         true,
         llvm::GlobalValue::PrivateLinkage,
         nullptr,
@@ -270,7 +270,7 @@ llvm::Constant* Codegen::createString(const std::string &str) {
 
     llvm::Constant *arr = llvm::ConstantDataArray::getString(llvmContext, str, true);
     glob->setInitializer(arr);
-    return llvm::ConstantExpr::getPointerCast(glob, getType(getTypeTable()->getTypeIdStr()));
+    return llvm::ConstantExpr::getPointerCast(glob, getLlvmType(getTypeTable()->getTypeIdStr()));
 }
 
 bool Codegen::checkEmptyTerminal(const AstNode *ast, bool orError) {

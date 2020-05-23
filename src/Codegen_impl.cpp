@@ -56,6 +56,7 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
         ret = codegenTerminal(ast);
     } else {
         NodeVal starting = codegenNode(ast->children[0].get());
+        if (starting.kind == NodeVal::Kind::kInvalid) return NodeVal();
 
         if (starting.isKeyword()) {
             switch (starting.keyword) {
@@ -102,13 +103,10 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
                 msgs->errorUnexpectedKeyword(ast->children[0].get()->codeLoc, starting.keyword);
                 return NodeVal();
             }
-        } else if (starting.isOper() || starting.isFuncId()) {
-            ret = codegenExpr(ast, starting);
         } else if (starting.isType()) {
             ret = codegenType(ast, starting);
         } else {
-            msgs->errorUnexpectedNodeValue(ast->children[0].get()->codeLoc);
-            return NodeVal();
+            ret = codegenExpr(ast, starting);
         }
     }
 
@@ -324,8 +322,8 @@ bool Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
             val = llvmBuilder.CreatePointerCast(val, type, "p2p_cast");
         else if (getTypeTable()->worksAsTypeB(dstTypeId)) {
             val = llvmBuilder.CreateICmpNE(
-                llvmBuilder.CreatePtrToInt(val, getType(getPrimTypeId(TypeTable::WIDEST_I))),
-                llvm::ConstantInt::get(getType(getPrimTypeId(TypeTable::WIDEST_I)), 0),
+                llvmBuilder.CreatePtrToInt(val, getLlvmType(getPrimTypeId(TypeTable::WIDEST_I))),
+                llvm::ConstantInt::get(getLlvmType(getPrimTypeId(TypeTable::WIDEST_I)), 0),
                 "p2b_cast");
         } else {
             val = nullptr;
@@ -347,7 +345,7 @@ bool Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
 }
 
 bool Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId) {
-    return createCast(val, srcTypeId, getType(dstTypeId), dstTypeId);
+    return createCast(val, srcTypeId, getLlvmType(dstTypeId), dstTypeId);
 }
 
 bool Codegen::createCast(NodeVal &e, TypeTable::Id t) {
@@ -413,7 +411,7 @@ NodeVal Codegen::codegenLet(const AstNode *ast) {
 
         TypeTable::Id typeId = nameType.second;
 
-        llvm::Type *type = getType(typeId);
+        llvm::Type *type = getLlvmType(typeId);
         if (type == nullptr) return NodeVal();
 
         if (!symbolTable->varMayTakeName(nameType.first)) {
@@ -937,8 +935,8 @@ optional<FuncValue> Codegen::codegenFuncProto(const AstNode *ast, bool definitio
     if (func == nullptr) {
         vector<llvm::Type*> argTypes(args.size());
         for (size_t i = 0; i < argTypes.size(); ++i)
-            argTypes[i] = getType(args[i].second);
-        llvm::Type *llvmRetType = retType.has_value() ? getType(retType.value()) : llvm::Type::getVoidTy(llvmContext);
+            argTypes[i] = getLlvmType(args[i].second);
+        llvm::Type *llvmRetType = retType.has_value() ? getLlvmType(retType.value()) : llvm::Type::getVoidTy(llvmContext);
         llvm::FunctionType *funcType = llvm::FunctionType::get(llvmRetType, argTypes, val.variadic);
 
         // TODO optimize on const args
@@ -987,7 +985,7 @@ NodeVal Codegen::codegenFunc(const AstNode *ast) {
         NamePool::Id astArgName = funcVal->argNames[i];
         const string &name = namePool->get(astArgName);
         
-        llvm::AllocaInst *alloca = createAlloca(getType(astArgType), name);
+        llvm::AllocaInst *alloca = createAlloca(getLlvmType(astArgType), name);
         llvmBuilder.CreateStore(&arg, alloca);
         symbolTable->addVar(astArgName, {astArgType, alloca});
 
