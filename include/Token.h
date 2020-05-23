@@ -101,6 +101,7 @@ struct OperInfo {
     bool unary = false;
     bool binary = true;
     bool variadic = true;
+    bool comparison = false;
     bool assignment = false;
     bool l_assoc = true;
 };

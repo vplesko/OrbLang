@@ -23,6 +23,7 @@ fnc main() () {
     println_i64 (+ 1 (* 2 3));
     println_i64 (* (+ 1 2) 3);
     println_i64 (* 4 (- 0 5));
+    println_i64 (+ 1 2 3 4 5);
 
     let (a:i64 0);
     println_i64 a;
@@ -242,12 +243,18 @@ fnc main() () {
 
     block {
         let (x:i32 1) (y:i32 2) (z:i32 3);
-        = x (= y (= z (+ y 9000)));
+        = x y z (+ y 9000);
         println_i32 x;
-        = x (= y (+= z 1));
+        = x y (+= z 1);
         println_i32 y;
-        = x (= y (/= z 2));
+        = x y (/= z 2);
         println_i32 x;
+        += x y z;
+        println_i32 x;
+    };
+
+    if (== (% 16:i32 6:i32 3) 1) {
+        println_i32 -9000;
     };
 
     //println_i64 0;

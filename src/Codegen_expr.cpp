@@ -13,8 +13,8 @@ NodeVal Codegen::codegenExpr(const AstNode *ast, const NodeVal &first) {
             return codegenOperLogicAndOr(ast, first);
         } else if (ast->children.size() == 2) {
             return codegenOperUnary(ast, first);
-        } else if (ast->children.size() == 3) {
-            return codegenOperBinary(ast, first);
+        } else {
+            return codegenOper(ast, first);
         }
     } else {
         return codegenTuple(ast, first);
@@ -366,49 +366,40 @@ NodeVal Codegen::codegenOperUnaryUntyped(CodeLoc codeLoc, Token::Oper op, Untype
     return exprRet;
 }
 
-NodeVal Codegen::codegenOperBinary(const AstNode *ast, const NodeVal &first) {
-    if (!checkExactlyChildren(ast, 3, true)) {
-        return NodeVal();
-    }
-
-    const AstNode *nodeL = ast->children[1].get();
-    const AstNode *nodeR = ast->children[2].get();
-
-    Token::Oper op = first.oper;
-
+NodeVal Codegen::codegenOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs, const NodeVal &rhs) {
     NodeVal exprPayL, exprPayR, exprPayRet;
 
     bool assignment = operInfos.at(op).assignment;
 
-    exprPayL = codegenNode(nodeL);
-    if (!checkValueUnbroken(nodeL->codeLoc, exprPayL, true)) return NodeVal();
+    exprPayL = lhs;
+    if (!checkValueUnbroken(codeLoc, exprPayL, true)) return NodeVal();
 
     if (assignment) {
         if (!exprPayL.isLlvmVal() || exprPayL.llvmVal.refBroken()) {
-            msgs->errorExprAsgnNonRef(ast->codeLoc, op);
+            msgs->errorExprAsgnNonRef(codeLoc, op);
             return NodeVal();
         }
         if (getTypeTable()->worksAsTypeCn(exprPayL.llvmVal.type)) {
-            msgs->errorExprAsgnOnCn(ast->codeLoc, op);
+            msgs->errorExprAsgnOnCn(codeLoc, op);
             return NodeVal();
         }
     }
 
-    exprPayR = codegenNode(nodeR);
-    if (!checkValueUnbroken(nodeR->codeLoc, exprPayR, true)) return NodeVal();
+    exprPayR = rhs;
+    if (!checkValueUnbroken(codeLoc, exprPayR, true)) return NodeVal();
 
     if (exprPayL.isUntyVal() && !exprPayR.isUntyVal()) {
         if (!promoteUntyped(exprPayL, exprPayR.llvmVal.type)) {
-            msgs->errorExprCannotPromote(nodeL->codeLoc, exprPayR.llvmVal.type);
+            msgs->errorExprCannotPromote(codeLoc, exprPayR.llvmVal.type);
             return NodeVal();
         }
     } else if (!exprPayL.isUntyVal() && exprPayR.isUntyVal()) {
         if (!promoteUntyped(exprPayR, exprPayL.llvmVal.type)) {
-            msgs->errorExprCannotPromote(nodeR->codeLoc, exprPayL.llvmVal.type);
+            msgs->errorExprCannotPromote(codeLoc, exprPayL.llvmVal.type);
             return NodeVal();
         }
     } else if (exprPayL.isUntyVal() && exprPayR.isUntyVal()) {
-        return codegenOperBinaryUntyped(ast->codeLoc, op, exprPayL.untyVal, exprPayR.untyVal);
+        return codegenOperBinaryUntyped(codeLoc, op, exprPayL.untyVal, exprPayR.untyVal);
     }
 
     exprPayRet = NodeVal(NodeVal::Kind::kLlvmVal);
@@ -426,7 +417,7 @@ NodeVal Codegen::codegenOperBinary(const AstNode *ast, const NodeVal &first) {
             createCast(valL, exprPayL.llvmVal.type, exprPayR.llvmVal.type);
             exprPayRet.llvmVal.type = exprPayR.llvmVal.type;
         } else {
-            msgs->errorExprCannotImplicitCastEither(ast->codeLoc, exprPayL.llvmVal.type, exprPayR.llvmVal.type);
+            msgs->errorExprCannotImplicitCastEither(codeLoc, exprPayL.llvmVal.type, exprPayR.llvmVal.type);
             return NodeVal();
         }
     }
@@ -583,13 +574,13 @@ NodeVal Codegen::codegenOperBinary(const AstNode *ast, const NodeVal &first) {
                 exprPayRet.llvmVal.type = getPrimTypeId(TypeTable::P_BOOL);
                 break;
             default:
-                msgs->errorNonBinOp(ast->codeLoc, op);
+                msgs->errorNonBinOp(codeLoc, op);
                 return NodeVal();
         }
     }
 
     if (exprPayRet.valueBroken()) {
-        msgs->errorInternal(ast->codeLoc);
+        msgs->errorInternal(codeLoc);
         return NodeVal();
     }
 
@@ -598,6 +589,45 @@ NodeVal Codegen::codegenOperBinary(const AstNode *ast, const NodeVal &first) {
     }
 
     return exprPayRet;
+}
+
+NodeVal Codegen::codegenOper(const AstNode *ast, const NodeVal &first) {
+    OperInfo opInfo = operInfos.at(first.oper);
+
+    // TODO! variadic comparison operators
+    if ((opInfo.variadic && !opInfo.comparison) ?
+        !checkAtLeastChildren(ast, 3, true) :
+        !checkExactlyChildren(ast, 3, true)) {
+        return NodeVal();
+    }
+
+    if (opInfo.l_assoc) {
+        const AstNode *nodeLhs = ast->children[1].get();
+        NodeVal lhsVal = codegenNode(nodeLhs);
+
+        for (size_t i = 2; i < ast->children.size(); ++i) {
+            const AstNode *nodeRhs = ast->children[i].get();
+
+            lhsVal = codegenOper(nodeRhs->codeLoc, first.oper, lhsVal, codegenNode(nodeRhs));
+            if (lhsVal.isInvalid()) return NodeVal();
+        }
+
+        return lhsVal;
+    } else {
+        const AstNode *nodeRhs = ast->children.back().get();
+        NodeVal rhsVal = codegenNode(nodeRhs);
+
+        for (size_t i = ast->children.size()-2;; --i) {
+            const AstNode *nodeLhs = ast->children[i].get();
+
+            rhsVal = codegenOper(nodeLhs->codeLoc, first.oper, codegenNode(nodeLhs), rhsVal);
+            if (rhsVal.isInvalid()) return NodeVal();
+
+            if (i == 1) break;
+        }
+
+        return rhsVal;
+    }
 }
 
 NodeVal Codegen::codegenOperLogicAndOr(const AstNode *ast, const NodeVal &first) {

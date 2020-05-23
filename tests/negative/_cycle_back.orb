@@ -1,2 +1,1 @@
-// TODO variadic opers
 import "tests/negative/test_import_cycle.orb";
