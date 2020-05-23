@@ -147,12 +147,12 @@ fnc main() () {
 
     = i (cast (i32 [] []) (malloc 32)); // some number larger than size of pointer
     = ([] i 0) (cast (i32 []) (malloc 4));
-    = ([] ([] i 0) 0) 400;
-    println_i32 ([] ([] i 0) 0);
-    = ([] ([] i 0) 0) 401;
+    = ([] i 0 0) 400;
+    println_i32 ([] i 0 0);
+    = ([] i 0 0) 401;
     = k (cast (i32 [] *) i);
     println_i32 ([] (*k) 0);
-    = ([] ([] i 0) 0) 402;
+    = ([] i 0 0) 402;
     = l (cast (i32 * []) i);
     println_i32 (* ([] l 0));
     free (cast ptr ([] i 0));

@@ -76,6 +76,7 @@ class Codegen {
 
     NodeVal codegenUntypedVal(const AstNode *ast);
     NodeVal codegenVar(const AstNode *ast);
+    NodeVal codegenOperInd(CodeLoc codeLoc, const NodeVal &base, const NodeVal &ind);
     NodeVal codegenOperInd(const AstNode *ast);
     NodeVal codegenOperDot(CodeLoc codeLoc, const NodeVal &base, const NodeVal &memb);
     NodeVal codegenOperDot(const AstNode *ast);

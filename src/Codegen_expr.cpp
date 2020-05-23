@@ -53,87 +53,100 @@ NodeVal Codegen::codegenVar(const AstNode *ast) {
     return ret;
 }
 
-NodeVal Codegen::codegenOperInd(const AstNode *ast) {
-    if (!checkExactlyChildren(ast, 3, true)) {
-        return NodeVal();
-    }
+NodeVal Codegen::codegenOperInd(CodeLoc codeLoc, const NodeVal &base, const NodeVal &ind) {
+    if (!checkValueUnbroken(codeLoc, base, true)) return NodeVal();
 
-    const AstNode *nodeBase = ast->children[1].get();
-    const AstNode *nodeInd = ast->children[2].get();
+    NodeVal leftVal = base;
 
-    NodeVal baseExprPay = codegenNode(nodeBase);
-    if (!checkValueUnbroken(nodeBase->codeLoc, baseExprPay, true)) return NodeVal();
-
-    if (baseExprPay.isUntyVal()) {
-        if (baseExprPay.untyVal.kind == UntypedVal::Kind::kString) {
-            if (!promoteUntyped(baseExprPay, getTypeTable()->getTypeIdStr())) {
-                msgs->errorInternal(nodeBase->codeLoc);
+    if (leftVal.isUntyVal()) {
+        if (leftVal.untyVal.kind == UntypedVal::Kind::kString) {
+            if (!promoteUntyped(leftVal, getTypeTable()->getTypeIdStr())) {
+                msgs->errorInternal(codeLoc);
                 return NodeVal();
             }
         } else {
-            msgs->errorExprIndexOnBadType(ast->codeLoc);
+            msgs->errorExprIndexOnBadType(codeLoc);
             return NodeVal();
         }
     }
 
-    NodeVal indExprPay = codegenNode(nodeInd);
-    if (!checkValueUnbroken(nodeInd->codeLoc, indExprPay, true)) return NodeVal();
+    if (!checkValueUnbroken(codeLoc, ind, true)) return NodeVal();
 
-    if (indExprPay.isUntyVal()) {
-        if (indExprPay.untyVal.kind == UntypedVal::Kind::kSint) {
-            int64_t untyInd = indExprPay.untyVal.val_si;
-            if (!promoteUntyped(indExprPay, getTypeTable()->shortestFittingTypeIId(untyInd))) {
-                msgs->errorInternal(nodeInd->codeLoc);
+    NodeVal rightVal = ind;
+
+    if (rightVal.isUntyVal()) {
+        if (rightVal.untyVal.kind == UntypedVal::Kind::kSint) {
+            int64_t untyInd = rightVal.untyVal.val_si;
+            if (!promoteUntyped(rightVal, getTypeTable()->shortestFittingTypeIId(untyInd))) {
+                msgs->errorInternal(codeLoc);
                 return NodeVal();
             }
-            if (getTypeTable()->worksAsTypeArr(baseExprPay.llvmVal.type)) {
-                size_t len = getTypeTable()->extractLenOfArr(baseExprPay.llvmVal.type).value();
+            if (getTypeTable()->worksAsTypeArr(leftVal.llvmVal.type)) {
+                size_t len = getTypeTable()->extractLenOfArr(leftVal.llvmVal.type).value();
                 if (untyInd < 0 || ((size_t) untyInd) >= len) {
-                    msgs->warnExprIndexOutOfBounds(nodeInd->codeLoc);
+                    msgs->warnExprIndexOutOfBounds(codeLoc);
                 }
             }
         } else {
-            msgs->errorExprIndexNotIntegral(nodeInd->codeLoc);
+            msgs->errorExprIndexNotIntegral(codeLoc);
             return NodeVal();
         }
     }
 
-    if (!getTypeTable()->worksAsTypeI(indExprPay.llvmVal.type) && !getTypeTable()->worksAsTypeU(indExprPay.llvmVal.type)) {
-        msgs->errorExprIndexNotIntegral(nodeInd->codeLoc);
+    if (!getTypeTable()->worksAsTypeI(rightVal.llvmVal.type) && !getTypeTable()->worksAsTypeU(rightVal.llvmVal.type)) {
+        msgs->errorExprIndexNotIntegral(codeLoc);
         return NodeVal();
     }
 
-    optional<TypeTable::Id> typeId = symbolTable->getTypeTable()->addTypeIndexOf(baseExprPay.llvmVal.type);
+    optional<TypeTable::Id> typeId = symbolTable->getTypeTable()->addTypeIndexOf(leftVal.llvmVal.type);
     if (!typeId) {
-        msgs->errorExprIndexOnBadType(ast->codeLoc, baseExprPay.llvmVal.type);
+        msgs->errorExprIndexOnBadType(codeLoc, leftVal.llvmVal.type);
         return NodeVal();
     }
 
     NodeVal retPay(NodeVal::Kind::kLlvmVal);
     retPay.llvmVal.type = typeId.value();
 
-    if (symbolTable->getTypeTable()->worksAsTypeArrP(baseExprPay.llvmVal.type)) {
-        retPay.llvmVal.ref = llvmBuilder.CreateGEP(baseExprPay.llvmVal.val, indExprPay.llvmVal.val);
+    if (symbolTable->getTypeTable()->worksAsTypeArrP(leftVal.llvmVal.type)) {
+        retPay.llvmVal.ref = llvmBuilder.CreateGEP(leftVal.llvmVal.val, rightVal.llvmVal.val);
         retPay.llvmVal.val = llvmBuilder.CreateLoad(retPay.llvmVal.ref, "index_tmp");
-    } else if (symbolTable->getTypeTable()->worksAsTypeArr(baseExprPay.llvmVal.type)) {
-        if (baseExprPay.llvmVal.ref != nullptr) {
-            retPay.llvmVal.ref = llvmBuilder.CreateGEP(baseExprPay.llvmVal.ref,
-                {llvm::ConstantInt::get(getLlvmType(indExprPay.llvmVal.type), 0), indExprPay.llvmVal.val});
+    } else if (symbolTable->getTypeTable()->worksAsTypeArr(leftVal.llvmVal.type)) {
+        if (leftVal.llvmVal.ref != nullptr) {
+            retPay.llvmVal.ref = llvmBuilder.CreateGEP(leftVal.llvmVal.ref,
+                {llvm::ConstantInt::get(getLlvmType(rightVal.llvmVal.type), 0), rightVal.llvmVal.val});
             retPay.llvmVal.val = llvmBuilder.CreateLoad(retPay.llvmVal.ref, "index_tmp");
         } else {
             // llvm's extractvalue requires compile-time known indices
-            llvm::Value *tmp = createAlloca(getLlvmType(baseExprPay.llvmVal.type), "tmp");
-            llvmBuilder.CreateStore(baseExprPay.llvmVal.val, tmp);
+            llvm::Value *tmp = createAlloca(getLlvmType(leftVal.llvmVal.type), "tmp");
+            llvmBuilder.CreateStore(leftVal.llvmVal.val, tmp);
             tmp = llvmBuilder.CreateGEP(tmp,
-                {llvm::ConstantInt::get(getLlvmType(indExprPay.llvmVal.type), 0), indExprPay.llvmVal.val});
+                {llvm::ConstantInt::get(getLlvmType(rightVal.llvmVal.type), 0), rightVal.llvmVal.val});
             retPay.llvmVal.val = llvmBuilder.CreateLoad(tmp, "index_tmp");
         }
     } else {
-        msgs->errorInternal(ast->codeLoc);
+        msgs->errorInternal(codeLoc);
         return NodeVal();
     }
 
     return retPay;
+}
+
+NodeVal Codegen::codegenOperInd(const AstNode *ast) {
+    if (!checkAtLeastChildren(ast, 3, true)) {
+        return NodeVal();
+    }
+
+    const AstNode *nodeBase = ast->children[1].get();
+    NodeVal baseVal = codegenNode(nodeBase);
+
+    for (size_t i = 2; i < ast->children.size(); ++i) {
+        const AstNode *nodeInd = ast->children[i].get();
+
+        baseVal = codegenOperInd(nodeInd->codeLoc, baseVal, codegenNode(nodeInd));
+        if (baseVal.isInvalid()) return NodeVal();
+    }
+
+    return baseVal;
 }
 
 NodeVal Codegen::codegenOperDot(CodeLoc codeLoc, const NodeVal &base, const NodeVal &memb) {

@@ -100,7 +100,9 @@ struct Token {
 struct OperInfo {
     bool unary = false;
     bool binary = true;
+    bool variadic = true;
     bool assignment = false;
+    bool l_assoc = true;
 };
 
 extern const std::unordered_map<Token::Oper, OperInfo> operInfos;
