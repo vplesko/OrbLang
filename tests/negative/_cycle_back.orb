@@ -1,5 +1,6 @@
-// TODO! cn tuple members
+// TODO! tuple casting (+ implicit)
 // TODO! tuple values
+// TODO variadic opers + refactor oper codegen
 // TODO ptr implicit castable
 // TODO compile time typed values, instead of untyped values
 import "tests/negative/test_import_cycle.orb";

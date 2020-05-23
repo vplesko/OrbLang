@@ -226,10 +226,6 @@ NodeVal Codegen::codegenType(const AstNode *ast, const NodeVal &first) {
 
         optional<TypeTable::Id> memb = getType(nodeChild, true);
         if (!memb.has_value()) return NodeVal();
-        if (getTypeTable()->worksAsTypeCn(memb.value())) {
-            msgs->errorCnNoInit(nodeChild->codeLoc);
-            return NodeVal();
-        }
 
         tup.members[i] = memb.value();
     }

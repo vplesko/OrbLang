@@ -189,7 +189,7 @@ NodeVal Codegen::codegenOperDot(const AstNode *ast) {
     }
 
     exprRet.llvmVal.type = tuple.members[memberInd];
-    if (getTypeTable()->worksAsTypeCn(leftVal.llvmVal.type)) {
+    if (getTypeTable()->isDirectCn(leftVal.llvmVal.type)) {
         exprRet.llvmVal.type = getTypeTable()->addTypeCnOf(exprRet.llvmVal.type);
     }
 

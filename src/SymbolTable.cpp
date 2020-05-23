@@ -114,13 +114,58 @@ llvm::Function* SymbolTable::getFunction(const FuncValue &val) const {
     return loc->second.func;
 }
 
+bool SymbolTable::isCallArgsOk(const FuncCallSite &call, const FuncValue &func) const {
+    for (size_t i = 0; i < func.argTypes.size(); ++i) {
+        // if arg of same or implicitly castable type, we're good
+        if (call.untypedVals[i].kind == UntypedVal::Kind::kNone) {
+            if (!typeTable->isArgTypeProper(call.argTypes[i], func.argTypes[i]))
+                return false;
+        } else {
+            // otherwise, if untyped val which can be used for this func, we're also good
+            switch (call.untypedVals[i].kind) {
+            case UntypedVal::Kind::kBool:
+                if (!typeTable->worksAsTypeB(func.argTypes[i])) return false;
+                break;
+            case UntypedVal::Kind::kSint:
+                if (!typeTable->worksAsTypeI(func.argTypes[i]) &&
+                    !(typeTable->worksAsTypeU(func.argTypes[i]) && call.untypedVals[i].val_si >= 0))
+                    return false;
+                break;
+            case UntypedVal::Kind::kChar:
+                if (!typeTable->worksAsTypeC(func.argTypes[i])) return false;
+                break;
+            case UntypedVal::Kind::kFloat:
+                if (!typeTable->worksAsTypeF(func.argTypes[i])) return false;
+                break;
+            case UntypedVal::Kind::kNull:
+                if (!typeTable->worksAsTypeAnyP(func.argTypes[i])) return false;
+                break;
+            case UntypedVal::Kind::kString:
+                {
+                    const std::string &str = stringPool->get(call.untypedVals[i].val_str);
+                    if (!typeTable->worksAsTypeStr(func.argTypes[i]) &&
+                        !typeTable->worksAsTypeCharArrOfLen(func.argTypes[i], UntypedVal::getStringLen(str)))
+                        return false;
+                }
+                break;
+            default:
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 optional<FuncValue> SymbolTable::getFuncForCall(const FuncCallSite &call) {
-    // if there are any untypedVal args, we don't know their types in advance
     optional<FuncSignature> sig = makeFuncSignature(call);
     if (sig.has_value()) {
-        auto loc = funcs.find(sig.value());
         // if there's a single function and doesn't need casting, return it
-        if (loc != funcs.end()) return loc->second;
+        auto loc = funcs.find(sig.value());
+        if (loc != funcs.end()) {
+            if (isCallArgsOk(call, loc->second)) return loc->second;
+            else return nullopt;
+        }
     }
 
     const FuncSignature *foundSig = nullptr;
@@ -136,48 +181,9 @@ optional<FuncValue> SymbolTable::getFuncForCall(const FuncCallSite &call) {
         const FuncSignature *candSig = &it.first;
         FuncValue *candVal = &it.second;
 
-        for (size_t i = 0; i < it.second.argTypes.size(); ++i) {
-            // if arg of same or implicitly castable type, we're good
-            bool argTypeOk = call.untypedVals[i].kind == UntypedVal::Kind::kNone &&
-                typeTable->isArgTypeProper(call.argTypes[i], it.second.argTypes[i]);
-
-            // otherwise, if untyped val which can be used for this func, we're also good
-            if (!argTypeOk && call.untypedVals[i].kind != UntypedVal::Kind::kNone) {
-                switch (call.untypedVals[i].kind) {
-                case UntypedVal::Kind::kBool:
-                    argTypeOk = typeTable->worksAsTypeB(it.second.argTypes[i]);
-                    break;
-                case UntypedVal::Kind::kSint:
-                    argTypeOk = typeTable->worksAsTypeI(it.second.argTypes[i]) ||
-                        (typeTable->worksAsTypeU(it.second.argTypes[i]) && call.untypedVals[i].val_si >= 0);
-                    break;
-                case UntypedVal::Kind::kChar:
-                    argTypeOk = typeTable->worksAsTypeC(it.second.argTypes[i]);
-                    break;
-                case UntypedVal::Kind::kFloat:
-                    argTypeOk = typeTable->worksAsTypeF(it.second.argTypes[i]);
-                    break;
-                case UntypedVal::Kind::kNull:
-                    argTypeOk = typeTable->worksAsTypeAnyP(it.second.argTypes[i]);
-                    break;
-                case UntypedVal::Kind::kString:
-                    {
-                        const std::string &str = stringPool->get(call.untypedVals[i].val_str);
-                        argTypeOk = typeTable->worksAsTypeStr(it.second.argTypes[i]) ||
-                            typeTable->worksAsTypeCharArrOfLen(it.second.argTypes[i], UntypedVal::getStringLen(str));
-                        break;
-                    }
-                default:
-                    argTypeOk = false;
-                    break;
-                }
-            }
-
-            if (!argTypeOk) {
-                candSig = nullptr;
-                candVal = nullptr;
-                break;
-            }
+        if (!isCallArgsOk(call, *candVal)) {
+            candSig = nullptr;
+            candVal = nullptr;
         }
 
         // found no suitable functions

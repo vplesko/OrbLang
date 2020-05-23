@@ -85,6 +85,7 @@ private:
 
     FuncSignature makeFuncSignature(NamePool::Id name, const std::vector<TypeTable::Id> &argTypes) const;
     std::optional<FuncSignature> makeFuncSignature(const FuncCallSite &call) const;
+    bool isCallArgsOk(const FuncCallSite &call, const FuncValue &func) const;
 
 public:
     SymbolTable(StringPool *stringPool, TypeTable *typeTable);

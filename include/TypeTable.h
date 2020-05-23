@@ -188,6 +188,7 @@ public:
     bool isImplicitCastable(Id from, Id into) const;
     Id getTypeFuncSigParam(Id t) { return addTypeDropCnsOf(t); }
     bool isArgTypeProper(Id callArg, Id fncParam) const { return isImplicitCastable(callArg, fncParam); }
+    bool isDirectCn(Id t) const;
 };
 
 template <typename T>

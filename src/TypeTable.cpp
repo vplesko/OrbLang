@@ -33,22 +33,9 @@ void TypeTable::TypeDescr::addDecor(Decor d, bool cn_) {
         setLastCn();
 }
 
-// marks the last type descriptor as cn
-// in case of D_ARR, propagates further
 void TypeTable::TypeDescr::setLastCn() {
     if (cns.empty()) cn = true;
-    else {
-        bool setBaseCn = false;
-        for (size_t i = cns.size()-1;; --i) {
-            if (cns[i]) break;
-
-            cns[i] = true;
-
-            if (decors[i].type != Decor::D_ARR) break;
-            if (i == 0) { setBaseCn = true; break; }
-        }
-        if (setBaseCn) cn = true;
-    }
+    else cns[cns.size()-1] = true;
 }
 
 TypeTable::PrimIds TypeTable::shortestFittingPrimTypeI(int64_t x) {
@@ -419,9 +406,43 @@ bool TypeTable::worksAsTypeCharArrOfLen(Id t, size_t len) const {
 }
 
 bool TypeTable::worksAsTypeCn(Id t) const {
-    return isTypeDescrSatisfyingCondition(t, [](const TypeDescr &ty) {
-        return ty.cns.empty() ? ty.cn : ty.cns.back();
-    });
+    if (isTypeDescr(t)) {
+        const TypeDescr &descr = getTypeDescr(t);
+
+        if (!descr.cns.empty()) {
+            for (size_t i = descr.cns.size()-1;; --i) {
+                if (descr.cns[i]) return true;
+
+                if (descr.decors[i].type != TypeDescr::Decor::D_ARR) return false;
+                
+                if (i == 0) break;
+            }
+        }
+
+        if (descr.cn) return true;
+
+        return worksAsTypeCn(descr.base);
+    } else if (isTuple(t)) {
+        const Tuple &tup = getTuple(t);
+
+        for (auto it : tup.members) {
+            if (worksAsTypeCn(it)) return true;
+        }
+
+        return false;
+    } else {
+        return false;
+    }
+}
+
+bool TypeTable::isDirectCn(Id t) const {
+    if (isTypeDescr(t)) {
+        const TypeDescr &descr = getTypeDescr(t);
+
+        return descr.cns.empty() ? descr.cn : descr.cns.back();
+    } else {
+        return false;
+    }
 }
 
 bool TypeTable::fitsType(int64_t x, Id t) const {
@@ -526,13 +547,25 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
 }
 
 TypeTable::Id TypeTable::addTypeDropCnsOf(Id t) {
-    if (!isTypeDescr(t)) return t;
+    if (isTypeDescr(t)) {
+        const TypeDescr &old = getTypeDescr(t);
 
-    TypeDescr &old = typeDescrs[t.index].first;
+        TypeDescr now(addTypeDropCnsOf(old.base), false);
+        now.decors = vector<TypeDescr::Decor>(old.decors.begin(), old.decors.end());
+        now.cns = vector<bool>(old.cns.size(), false);
 
-    TypeDescr now(old.base, false);
-    now.decors = vector<TypeDescr::Decor>(old.decors.begin(), old.decors.end());
-    now.cns = vector<bool>(old.cns.size(), false);
+        return addTypeDescr(move(now));
+    } else if (isTuple(t)) {
+        const Tuple &old = getTuple(t);
 
-    return addTypeDescr(move(now));
+        Tuple now;
+        now.members.resize(old.members.size());
+        for (size_t i = 0; i < old.members.size(); ++i) {
+            now.members[i] = addTypeDropCnsOf(old.members[i]);
+        }
+
+        return addTuple(move(now)).value();
+    } else {
+        return t;
+    }
 }
