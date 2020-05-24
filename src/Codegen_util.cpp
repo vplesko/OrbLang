@@ -445,7 +445,7 @@ optional<Codegen::NameTypePair> Codegen::getIdTypePair(const AstNode *ast, bool 
     optional<NamePool::Id> id = getId(ast, orError);
     if (!id.has_value()) return nullopt;
 
-    if (ast->type == nullptr) {
+    if (!ast->type.has_value()) {
         if (orError) msgs->errorMissingTypeAnnotation(ast->codeLoc);
         return nullopt;
     }
@@ -526,7 +526,7 @@ bool Codegen::binary(const std::string &filename) {
     }
 
     llvm::legacy::PassManager pass;
-    llvm::TargetMachine::CodeGenFileType fileType = llvm::TargetMachine::CGFT_ObjectFile;
+    llvm::CodeGenFileType fileType = llvm::CGFT_ObjectFile;
 
     bool fail = targetMachine->addPassesToEmitFile(pass, dest, nullptr, fileType);
     if (fail) {
