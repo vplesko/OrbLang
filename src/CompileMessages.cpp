@@ -74,6 +74,12 @@ inline void CompileMessages::error(CodeLoc loc, const string &str) {
     error(str);
 }
 
+void CompileMessages::errorInputFileNotFound(const string &path) {
+    stringstream ss;
+    ss << "Input file " << path << " does not exists.";
+    error(ss.str());
+}
+
 void CompileMessages::errorBadToken(CodeLoc loc) {
     error(loc, "Could not parse token at this location.");
 }
@@ -86,13 +92,13 @@ void CompileMessages::errorImportNotString(CodeLoc loc) {
     error(loc, "Import path not a string.");
 }
 
-void CompileMessages::errorImportNotFound(CodeLoc loc, std::string &path) {
+void CompileMessages::errorImportNotFound(CodeLoc loc, const string &path) {
     stringstream ss;
     ss << "Importing nonexistent file '" << path << "'.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorImportCyclical(CodeLoc loc, std::string &path) {
+void CompileMessages::errorImportCyclical(CodeLoc loc, const string &path) {
     stringstream ss;
     ss << "Importing the file '" << path << "' at this point introduced a cyclical dependency.";
     error(loc, ss.str());

@@ -36,11 +36,12 @@ public:
 
     void warnExprIndexOutOfBounds(CodeLoc loc);
 
+    void errorInputFileNotFound(const std::string &path);
     void errorBadToken(CodeLoc loc);
     void errorUnclosedMultilineComment(CodeLoc loc);
     void errorImportNotString(CodeLoc loc);
-    void errorImportNotFound(CodeLoc loc, std::string &path);
-    void errorImportCyclical(CodeLoc loc, std::string &path);
+    void errorImportNotFound(CodeLoc loc, const std::string &path);
+    void errorImportCyclical(CodeLoc loc, const std::string &path);
     void errorUnexpectedTokenType(CodeLoc loc, Token::Type exp);
     void errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token::Type see);
     void errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token see);

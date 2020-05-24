@@ -1,0 +1,8 @@
+fnc foo() () {
+};
+
+fnc main() () {
+    block {
+        { foo; }
+    };
+};

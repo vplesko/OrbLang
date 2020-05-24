@@ -148,7 +148,11 @@ NodeVal Codegen::codegenAll(const AstNode *ast, bool makeScope) {
 
     ScopeControl scope(makeScope ? symbolTable : nullptr);
 
-    for (const std::unique_ptr<AstNode> &child : ast->children) codegenNode(child.get());
+    for (const std::unique_ptr<AstNode> &child : ast->children) {
+        if (!checkNotTerminal(child.get(), true)) return NodeVal();
+        
+        codegenNode(child.get());
+    }
 
     return NodeVal();
 }

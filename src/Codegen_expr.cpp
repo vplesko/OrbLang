@@ -965,7 +965,11 @@ NodeVal Codegen::codegenOperBinaryUntyped(CodeLoc codeLoc, Token::Oper op, Untyp
 }
 
 NodeVal Codegen::codegenTuple(const AstNode *ast, const NodeVal &first) {
-    if (ast->children.size() == 1) return first;
+    if (ast->children.size() == 1) {
+        if (!checkValueUnbroken(ast->codeLoc, first, true)) return NodeVal();
+        
+        return first;
+    }
 
     TypeTable::Tuple tup;
     tup.members.resize(ast->children.size());

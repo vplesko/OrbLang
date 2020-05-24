@@ -104,6 +104,10 @@ enum ImportTransRes {
     ITR_FAIL
 };
 
+bool exists(const string &file) {
+    return filesystem::exists(file);
+}
+
 string canonical(const string &file) {
     return filesystem::canonical(file).string();
 }
@@ -137,6 +141,10 @@ bool Compiler::parse(const vector<string> &inputs) {
     stack<Lexer*> trace;
 
     for (const string &in : inputs) {
+        if (!exists(in)) {
+            msgs->errorInputFileNotFound(in);
+            return false;
+        }
         string path = canonical(in);
         ImportTransRes imres = followImport(path, par, namePool.get(), stringPool.get(), msgs.get(), lexers);
         if (imres == ITR_CYCLICAL || imres == ITR_FAIL) {
@@ -164,7 +172,12 @@ bool Compiler::parse(const vector<string> &inputs) {
                 if (msgs->isAbort()) return false;
 
                 if (nodeVal.kind == NodeVal::Kind::kImport) {
-                    string path = canonical(stringPool->get(nodeVal.file));
+                    const string &file = stringPool->get(nodeVal.file);
+                    if (!exists(file)) {
+                        msgs->errorImportNotFound(node->codeLoc, file);
+                        return false;
+                    }
+                    string path = canonical(file);
                     ImportTransRes imres = followImport(path, par, namePool.get(), stringPool.get(), msgs.get(), lexers);
                     if (imres == ITR_FAIL) {
                         return false;
