@@ -18,7 +18,7 @@ fnc blocker() i64 {
 };
 
 fnc main() () {
-    let (a:i64 1) (b:i64 2);
+    let (a:i64 1) (b 2:i64);
     if (== a b) {(println_i64 101)};
     if (< a b) {(println_i64 102)};
     if (>= a b) {(println_i64 103)};

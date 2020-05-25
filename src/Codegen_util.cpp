@@ -274,7 +274,7 @@ llvm::Constant* Codegen::createString(const std::string &str) {
 }
 
 bool Codegen::checkEmptyTerminal(const AstNode *ast, bool orError) {
-    if (ast->kind != AstNode::Kind::kTerminal || ast->terminal->kind != TerminalVal::Kind::kEmpty) {
+    if (!ast->isTerminal() || ast->terminal->kind != TerminalVal::Kind::kEmpty) {
         if (orError) msgs->errorUnknown(ast->codeLoc);
         return false;
     }
@@ -283,7 +283,7 @@ bool Codegen::checkEmptyTerminal(const AstNode *ast, bool orError) {
 }
 
 bool Codegen::checkEllipsis(const AstNode *ast, bool orError) {
-    if (ast->kind != AstNode::Kind::kTerminal ||
+    if (!ast->isTerminal() ||
         ast->terminal->kind != TerminalVal::Kind::kKeyword ||
         ast->terminal->keyword != Token::T_ELLIPSIS) {
         if (orError) msgs->errorUnknown(ast->codeLoc);
@@ -294,7 +294,7 @@ bool Codegen::checkEllipsis(const AstNode *ast, bool orError) {
 }
 
 bool Codegen::checkNotTerminal(const AstNode *ast, bool orError) {
-    if (ast->kind == AstNode::Kind::kTerminal) {
+    if (ast->isTerminal()) {
         if (orError) msgs->errorUnexpectedIsTerminal(ast->codeLoc);
         return false;
     }
@@ -303,7 +303,7 @@ bool Codegen::checkNotTerminal(const AstNode *ast, bool orError) {
 }
 
 bool Codegen::checkBlock(const AstNode *ast, bool orError) {
-    if (ast->kind == AstNode::Kind::kTerminal && ast->terminal->kind != TerminalVal::Kind::kEmpty) {
+    if (ast->isTerminal() && ast->terminal->kind != TerminalVal::Kind::kEmpty) {
         if (orError) msgs->errorUnexpectedNotBlock(ast->codeLoc);
         return false;
     }

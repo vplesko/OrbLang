@@ -387,106 +387,98 @@ NodeVal Codegen::codegenLet(const AstNode *ast) {
     for (size_t i = 1; i < ast->children.size(); ++i) {
         const AstNode *childNode = ast->children[i].get();
 
-        NameTypePair nameType;
-        optional<const AstNode*> init;
+        if (!childNode->isTerminal() && !checkExactlyChildren(childNode, 2, true))
+            continue;
+        
+        const AstNode *nameTypeNode = childNode->isTerminal() ? childNode : childNode->children[0].get();
+        bool hasInit = !childNode->isTerminal();
 
-        CodeLoc codeLocName, codeLocType, codeLocInit;
+        NamePool::Id name;
+        CodeLoc codeLocName = nameTypeNode->codeLoc;
+        {
+            optional<NamePool::Id> optName = getId(nameTypeNode, true);
+            if (!optName.has_value()) continue;
 
-        if (childNode->kind == AstNode::Kind::kTerminal) {
-            optional<NameTypePair> optIdType = getIdTypePair(childNode, true);
-            if (!optIdType.has_value()) return NodeVal();
-            nameType = optIdType.value();
+            name = optName.value();
+            if (!symbolTable->varMayTakeName(name)) {
+                msgs->errorVarNameTaken(codeLocName, name);
+                continue;
+            }
+        }
 
-            codeLocName = childNode->codeLoc;
-            codeLocType = childNode->type->get()->codeLoc;
-        } else {
-            if (!checkExactlyChildren(childNode, 2, true)) return NodeVal();
+        optional<TypeTable::Id> optType;
+        CodeLoc codeLocType;
+        if (nameTypeNode->hasType()) {
+            optType = getType(nameTypeNode->type.value().get(), true);
+            codeLocType = nameTypeNode->type.value()->codeLoc;
+            if (!optType.has_value()) continue;
 
-            optional<NameTypePair> optIdType = getIdTypePair(childNode->children[0].get(), true);
-            if (!optIdType.has_value()) return NodeVal();
-            nameType = optIdType.value();
+            if (!hasInit && getTypeTable()->worksAsTypeCn(optType.value())) {
+                msgs->errorCnNoInit(codeLocName, name);
+                continue;
+            }
+        } else if (!hasInit) {
+            msgs->errorMissingTypeAnnotation(codeLocName);
+            continue;
+        }
 
-            init = childNode->children[1].get();
+        llvm::Value *llvmInitVal = nullptr;
+        TypeTable::Id initType;
+        CodeLoc codeLocInit;
+        if (hasInit) {
+            NodeVal initVal = codegenNode(childNode->children[1].get());
+            codeLocInit = childNode->children[1]->codeLoc;
+            if (!checkValueUnbroken(codeLocInit, initVal, true))
+                continue;
             
-            codeLocName = childNode->children[0]->codeLoc;
-            codeLocType = childNode->children[0]->type->get()->codeLoc;
-            codeLocInit = init.value()->codeLoc;
+            if (!optType.has_value() && initVal.isUntyVal()) {
+                msgs->errorMissingTypeAnnotation(codeLocName);
+                continue;
+            }
+            if (isGlobalScope() && !initVal.isUntyVal()) {
+                msgs->errorExprNotBaked(codeLocInit);
+                continue;
+            }
+
+            if (initVal.isUntyVal()) {
+                if (!promoteUntyped(initVal, optType.value())) {
+                    msgs->errorExprCannotPromote(codeLocInit, optType.value());
+                    continue;
+                }
+            }
+
+            llvmInitVal = initVal.llvmVal.val;
+            initType = initVal.llvmVal.type;
+            if (!optType.has_value()) optType = initType;
         }
 
-        TypeTable::Id typeId = nameType.second;
+        llvm::Type *llvmType = getLlvmType(optType.value());
+        if (llvmType == nullptr) return NodeVal();
 
-        llvm::Type *type = getLlvmType(typeId);
-        if (type == nullptr) return NodeVal();
 
-        if (!symbolTable->varMayTakeName(nameType.first)) {
-            msgs->errorVarNameTaken(codeLocName, nameType.first);
-            return NodeVal();
+        if (hasInit && initType != optType.value()) {
+            if (!getTypeTable()->isImplicitCastable(initType, optType.value())) {
+                msgs->errorExprCannotImplicitCast(codeLocInit, initType, optType.value());
+                continue;
+            }
+
+            createCast(llvmInitVal, initType, llvmType, optType.value());
+            initType = optType.value();
         }
 
-        const string &name = namePool->get(nameType.first);
-
-        llvm::Value *val;
+        llvm::Value *llvmVar;
         if (isGlobalScope()) {
-            llvm::Constant *initConst = nullptr;
-
-            if (init.has_value()) {
-                NodeVal initPay = codegenNode(init.value());
-                if (!checkValueUnbroken(init.value()->codeLoc, initPay, true)) {
-                    return NodeVal();
-                }
-                if (!initPay.isUntyVal()) {
-                    msgs->errorExprNotBaked(codeLocInit);
-                    return NodeVal();
-                }
-                if (!promoteUntyped(initPay, typeId)) {
-                    msgs->errorExprCannotPromote(codeLocInit, typeId);
-                    return NodeVal();
-                }
-                initConst = (llvm::Constant*) initPay.llvmVal.val;
-            } else {
-                if (getTypeTable()->worksAsTypeCn(typeId)) {
-                    msgs->errorCnNoInit(codeLocName, nameType.first);
-                    return NodeVal();
-                }
-            }
-
-            val = createGlobal(type, initConst, getTypeTable()->worksAsTypeCn(typeId), name);
+            llvmVar = createGlobal(
+                llvmType,
+                (llvm::Constant*) llvmInitVal,
+                getTypeTable()->worksAsTypeCn(optType.value()),
+                namePool->get(name));
         } else {
-            val = createAlloca(type, name);
-
-            if (init.has_value()) {
-                NodeVal initPay = codegenNode(init.value());
-                if (!checkValueUnbroken(init.value()->codeLoc, initPay, true))
-                    return NodeVal();
-
-                if (initPay.isUntyVal()) {
-                    if (!promoteUntyped(initPay, typeId)) {
-                        msgs->errorExprCannotPromote(codeLocInit, typeId);
-                        return NodeVal();
-                    }
-                }
-
-                llvm::Value *src = initPay.llvmVal.val;
-
-                if (initPay.llvmVal.type != typeId) {
-                    if (!getTypeTable()->isImplicitCastable(initPay.llvmVal.type, typeId)) {
-                        msgs->errorExprCannotImplicitCast(codeLocInit, initPay.llvmVal.type, typeId);
-                        return NodeVal();
-                    }
-
-                    createCast(src, initPay.llvmVal.type, type, typeId);
-                }
-
-                llvmBuilder.CreateStore(src, val);
-            } else {
-                if (getTypeTable()->worksAsTypeCn(typeId)) {
-                    msgs->errorCnNoInit(codeLocName, nameType.first);
-                    return NodeVal();
-                }
-            }
+            llvmVar = createAlloca(llvmType, namePool->get(name));
+            if (hasInit) llvmBuilder.CreateStore(llvmInitVal, llvmVar);
         }
 
-        symbolTable->addVar(nameType.first, {typeId, val});
+        symbolTable->addVar(name, {optType.value(), llvmVar});
     }
 
     return NodeVal();

@@ -25,4 +25,7 @@ struct AstNode {
     std::optional<std::unique_ptr<AstNode>> type;
 
     AstNode(CodeLoc loc, Kind k) : codeLoc(loc), kind(k) {}
+
+    bool isTerminal() const { return kind == Kind::kTerminal; }
+    bool hasType() const { return type.has_value(); }
 };

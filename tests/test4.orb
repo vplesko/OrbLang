@@ -59,7 +59,7 @@ fnc main() () {
     let (r3:(i32 cn * cn) (cast (i32 cn * cn) (malloc 4)));
     let (s1:(i32 [] cn) (cast (i32 [] cn) (malloc 4)));
     let (s2:(i32 cn []) (cast (i32 cn []) (malloc 4)));
-    let (s3:(i32 cn [] cn) (cast (i32 cn [] cn) (malloc 4)));
+    let (s3 (cast (i32 cn [] cn) (malloc 4)));
     = j 3;
     let (t1:(i32 cn 4) (arr (i32 cn 4) 0 (cast i8 1) (cast i32 2.0) (+ j)));
     let (t2:(i32 4 cn) t1);
