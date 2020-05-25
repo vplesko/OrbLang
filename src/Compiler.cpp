@@ -166,10 +166,10 @@ bool Compiler::parse(const vector<string> &inputs) {
                 }
 
                 unique_ptr<AstNode> node = par.parseNode();
-                if (msgs->isAbort()) return false;
+                if (msgs->isFail()) return false;
                 
                 NodeVal nodeVal = codegen->codegenNode(node.get());
-                if (msgs->isAbort()) return false;
+                if (msgs->isFail()) return false;
 
                 if (nodeVal.kind == NodeVal::Kind::kImport) {
                     const string &file = stringPool->get(nodeVal.file);

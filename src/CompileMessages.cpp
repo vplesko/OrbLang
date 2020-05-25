@@ -10,17 +10,17 @@ string CompileMessages::errorStringOfType(TypeTable::Id ty) const {
     stringstream ss;
 
     if (symbolTable->getTypeTable()->isTypeDescr(ty)) {
-        const TypeTable::TypeDescr &descr = symbolTable->getTypeTable()->getTypeDescr(ty);
+        ss << '(';
 
-        optional<NamePool::Id> base = symbolTable->getTypeTable()->getTypeName(descr.base);
-        if (!base.has_value()) return fallback;
+        const TypeTable::TypeDescr &descr = getTypeTable()->getTypeDescr(ty);
 
-        ss << namePool->get(base.value());
+        ss << errorStringOfType(descr.base);
         if (descr.cn) ss << " cn";
         for (size_t i = 0; i < descr.decors.size(); ++i) {
+            ss << ' ';
             switch (descr.decors[i].type) {
             case TypeTable::TypeDescr::Decor::D_ARR:
-                ss << "[" << descr.decors[i].len << "]";
+                ss << descr.decors[i].len;
                 break;
             case TypeTable::TypeDescr::Decor::D_ARR_PTR:
                 ss << "[]";
@@ -33,6 +33,19 @@ string CompileMessages::errorStringOfType(TypeTable::Id ty) const {
             }
             if (descr.cns[i]) ss << "cn";
         }
+
+        ss << ')';
+    } else if (getTypeTable()->isTuple(ty)) {
+        ss << '(';
+
+        const TypeTable::Tuple &tuple = getTypeTable()->getTuple(ty);
+
+        for (size_t i = 0; i < tuple.members.size(); ++i) {
+            if (i > 0) ss << ' ';
+            ss << errorStringOfType(tuple.members[i]);
+        }
+
+        ss << ')';
     } else {
         optional<NamePool::Id> name = symbolTable->getTypeTable()->getTypeName(ty);
         if (!name.has_value()) return fallback;

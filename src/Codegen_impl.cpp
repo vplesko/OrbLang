@@ -525,7 +525,7 @@ NodeVal Codegen::codegenIf(const AstNode *ast) {
         ScopeControl thenScope(symbolTable);
         llvmBuilder.SetInsertPoint(thenBlock);
         codegenAll(nodeThen, false);
-        if (msgs->isAbort()) return NodeVal();
+        if (msgs->isFail()) return NodeVal();
         if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
     }
 
@@ -534,7 +534,7 @@ NodeVal Codegen::codegenIf(const AstNode *ast) {
         func->getBasicBlockList().push_back(elseBlock);
         llvmBuilder.SetInsertPoint(elseBlock);
         codegenAll(nodeElse, false);
-        if (msgs->isAbort()) return NodeVal();
+        if (msgs->isFail()) return NodeVal();
         if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
     }
 
@@ -561,7 +561,7 @@ NodeVal Codegen::codegenFor(const AstNode *ast) {
     ScopeControl scope(symbolTable);
 
     codegenNode(nodeInit);
-    if (msgs->isAbort()) return NodeVal();
+    if (msgs->isFail()) return NodeVal();
 
     llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
 
@@ -604,7 +604,7 @@ NodeVal Codegen::codegenFor(const AstNode *ast) {
         llvmBuilder.SetInsertPoint(bodyBlock);
         if (hasBody) {
             codegenAll(nodeBody, false);
-            if (msgs->isAbort()) return NodeVal();
+            if (msgs->isFail()) return NodeVal();
         }
         if (!isBlockTerminated()) llvmBuilder.CreateBr(iterBlock);
     }
@@ -615,7 +615,7 @@ NodeVal Codegen::codegenFor(const AstNode *ast) {
 
         if (hasIter) {
             codegenNode(nodeIter);
-            if (msgs->isAbort()) return NodeVal();
+            if (msgs->isFail()) return NodeVal();
         }
 
         if (!isBlockTerminated()) llvmBuilder.CreateBr(condBlock);
@@ -673,7 +673,7 @@ NodeVal Codegen::codegenWhile(const AstNode *ast) {
         llvmBuilder.SetInsertPoint(bodyBlock);
         if (hasBody) {
             codegenAll(nodeBody, false);
-            if (msgs->isAbort()) return NodeVal();
+            if (msgs->isFail()) return NodeVal();
         }
         if (!isBlockTerminated()) llvmBuilder.CreateBr(condBlock);
     }
@@ -710,7 +710,7 @@ NodeVal Codegen::codegenDo(const AstNode *ast) {
     {
         ScopeControl scope(symbolTable);
         codegenAll(nodeBody, false);
-        if (msgs->isAbort()) return NodeVal();
+        if (msgs->isFail()) return NodeVal();
         if (!isBlockTerminated()) llvmBuilder.CreateBr(condBlock);
     }
 
@@ -997,7 +997,7 @@ NodeVal Codegen::codegenFunc(const AstNode *ast) {
     }
 
     codegenAll(ast->children.back().get(), false);
-    if (msgs->isAbort()) {
+    if (msgs->isFail()) {
         funcVal->func->eraseFromParent();
         return NodeVal();
     }

@@ -21,6 +21,9 @@ class CompileMessages {
     std::ostream *out;
     Status status;
 
+    TypeTable* getTypeTable() { return symbolTable->getTypeTable(); }
+    const TypeTable* getTypeTable() const { return symbolTable->getTypeTable(); }
+
     void warn(const std::string &str);
     void warn(CodeLoc loc, const std::string &str);
     void error(const std::string &str);
@@ -32,7 +35,7 @@ public:
     explicit CompileMessages(NamePool *namePool, StringPool *stringPool, SymbolTable *symbolTable, std::ostream &out)
         : namePool(namePool), stringPool(stringPool), symbolTable(symbolTable), out(&out), status(S_OK) {}
     
-    bool isAbort() const { return status >= S_ERROR; }
+    bool isFail() const { return status >= S_ERROR; }
 
     void warnExprIndexOutOfBounds(CodeLoc loc);
 

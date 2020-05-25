@@ -1,4 +1,1 @@
-// TODO err string for tuples
-// TODO invalid node propagation reports too many errors
-// TODO infer type on let
 import "tests/negative/test_import_cycle.orb";
