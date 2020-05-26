@@ -1,26 +1,28 @@
-# build to build the compiler
+# build to build the compiler (default)
+# release to build the compiler for release
 # test to run automated tests
 # clean_test to delete only test releated built files
 # clean to delete all built files
 
-.PHONY: build test clean_test clean
+.PHONY: build release test clean_test clean
 
 .DEFAULT_GOAL := build
 
 APP_NAME = orbc
 
-CC = clang++
-INC_DIR = include
-# TODO: separate release and debug builds
-COMPILE_FLAGS = -g -I$(INC_DIR) `llvm-config --cxxflags` -std=c++17
-LINK_FLAGS = `llvm-config --ldflags --system-libs --libs core` -lstdc++fs -lclangDriver -lclangBasic -std=c++17
-
 HDR_DIR = include
 SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
+RELEASE_DIR = release
 TEST_DIR = tests
 NEG_DIR = negative
+
+CC = clang++
+# TODO add -Wall (to both builds), fix warnings
+COMPILE_FLAGS = -g -I$(HDR_DIR) `llvm-config --cxxflags` -std=c++17
+LINK_FLAGS = `llvm-config --ldflags --system-libs --libs core` -lstdc++fs -lclangDriver -lclangBasic -std=c++17
+RELEASE_FLAGS = -I$(HDR_DIR) `llvm-config --cxxflags --ldflags --system-libs --libs core` -lstdc++fs -lclangDriver -lclangBasic -std=c++17 -O3 -march=native
 
 HDRS = $(wildcard $(HDR_DIR)/*.h)
 SRCS = $(wildcard $(SRC_DIR)/*.cpp)
@@ -41,6 +43,12 @@ $(BIN_DIR)/$(APP_NAME): $(OBJS)
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HDRS)
 	@mkdir -p $(OBJ_DIR)
 	$(CC) -c -o $@ $< $(COMPILE_FLAGS)
+
+release: $(BIN_DIR)/$(RELEASE_DIR)/$(APP_NAME)
+
+$(BIN_DIR)/$(RELEASE_DIR)/$(APP_NAME): $(SRCS) $(HDRS)
+	@mkdir -p $(BIN_DIR)/$(RELEASE_DIR)
+	$(CC) -o $@ $(SRCS) $(RELEASE_FLAGS)
 
 test: $(TEST_BINS) $(TEST_NEG_BINS)
 
