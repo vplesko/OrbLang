@@ -1,10 +1,11 @@
 #pragma once
 
 #include <string>
+#include "StringPool.h"
 
 typedef unsigned CodeIndex;
 
 struct CodeLoc {
-    const std::string *file;
+    StringPool::Id file;
     CodeIndex ln, col;
 };

@@ -112,7 +112,6 @@ string canonical(const string &file) {
     return filesystem::canonical(file).string();
 }
 
-// TODO error reports don't show file name on imported files
 ImportTransRes followImport(
     const string &path, Parser &par, NamePool *names, StringPool *strings, CompileMessages *msgs,
     unordered_map<string, unique_ptr<Lexer>> &lexers) {

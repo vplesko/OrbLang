@@ -56,9 +56,10 @@ string CompileMessages::errorStringOfType(TypeTable::Id ty) const {
     return ss.str();
 }
 
-inline string toString(CodeLoc loc) {
+inline string toString(CodeLoc loc, const StringPool *stringPool) {
     stringstream ss;
-    ss << filesystem::relative(*loc.file);
+    const string &file = stringPool->get(loc.file);
+    ss << filesystem::relative(file);
     ss << ':' << loc.ln << ':' << loc.col << ':';
     return ss.str();
 }
@@ -69,7 +70,7 @@ inline void CompileMessages::warn(const std::string &str) {
 }
 
 inline void CompileMessages::warn(CodeLoc loc, const std::string &str) {
-    (*out) << toString(loc) << ' ';
+    (*out) << toString(loc, stringPool) << ' ';
     warn(str);
 }
 
@@ -83,7 +84,7 @@ inline void CompileMessages::error(const string &str) {
 }
 
 inline void CompileMessages::error(CodeLoc loc, const string &str) {
-    (*out) << toString(loc) << ' ';
+    (*out) << toString(loc, stringPool) << ' ';
     error(str);
 }
 

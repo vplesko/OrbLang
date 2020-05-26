@@ -12,7 +12,7 @@ Lexer::Lexer(NamePool *namePool, StringPool *stringPool, CompileMessages *msgs, 
     col = 0;
     ch = 0; // not EOF
     tok.type = Token::T_NUM; // not END
-    codeLoc.file = &file;
+    codeLoc.file = stringPool->add(file);
 }
 
 bool Lexer::start() {
