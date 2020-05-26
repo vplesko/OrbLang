@@ -353,7 +353,8 @@ bool Codegen::checkBetweenChildren(const AstNode *ast, std::size_t nLo, std::siz
 
 bool Codegen::checkValueUnbroken(CodeLoc codeLoc, const NodeVal &val, bool orError) {
     if (val.valueBroken()) {
-        if (orError) msgs->errorExprNotValue(codeLoc);
+        // if NodeVal::kInvalid, an error was probably already reported somewhere
+        if (orError && !val.isInvalid()) msgs->errorExprNotValue(codeLoc);
         return false;
     }
 
