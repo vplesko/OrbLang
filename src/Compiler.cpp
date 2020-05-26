@@ -134,7 +134,7 @@ ImportTransRes followImport(
 bool Compiler::parse(const vector<string> &inputs) {
     if (inputs.empty()) return false;
 
-    Parser par(namePool.get(), stringPool.get(), symbolTable.get(), msgs.get());
+    Parser par(stringPool.get(), symbolTable.get(), msgs.get());
 
     unordered_map<string, unique_ptr<Lexer>> lexers;
     stack<Lexer*> trace;

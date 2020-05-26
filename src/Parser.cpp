@@ -5,8 +5,8 @@
 #include "AST.h"
 using namespace std;
 
-Parser::Parser(NamePool *namePool, StringPool *stringPool, SymbolTable *symbolTable, CompileMessages *msgs) 
-    : namePool(namePool), stringPool(stringPool), symbolTable(symbolTable), msgs(msgs), lex(nullptr) {
+Parser::Parser(StringPool *stringPool, SymbolTable *symbolTable, CompileMessages *msgs) 
+    : stringPool(stringPool), symbolTable(symbolTable), lex(nullptr), msgs(msgs) {
 }
 
 const Token& Parser::peek() const {

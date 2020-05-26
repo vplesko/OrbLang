@@ -6,7 +6,6 @@
 #include "CompileMessages.h"
 
 class Parser {
-    NamePool *namePool;
     StringPool *stringPool;
     SymbolTable *symbolTable;
     Lexer *lex;
@@ -27,7 +26,7 @@ class Parser {
     std::unique_ptr<AstNode> parseTerm();
 
 public:
-    Parser(NamePool *namePool, StringPool *stringPool, SymbolTable *symbolTable, CompileMessages *msgs);
+    Parser(StringPool *stringPool, SymbolTable *symbolTable, CompileMessages *msgs);
 
     void setLexer(Lexer *lex_) { lex = lex_; }
     Lexer* getLexer() const { return lex; }

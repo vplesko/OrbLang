@@ -19,10 +19,9 @@ TEST_DIR = tests
 NEG_DIR = negative
 
 CC = clang++
-# TODO add -Wall (to both builds), fix warnings
-COMPILE_FLAGS = -g -I$(HDR_DIR) `llvm-config --cxxflags` -std=c++17
+COMPILE_FLAGS = -g -I$(HDR_DIR) `llvm-config --cxxflags` -std=c++17 -Wall
 LINK_FLAGS = `llvm-config --ldflags --system-libs --libs core` -lstdc++fs -lclangDriver -lclangBasic -std=c++17
-RELEASE_FLAGS = -I$(HDR_DIR) `llvm-config --cxxflags --ldflags --system-libs --libs core` -lstdc++fs -lclangDriver -lclangBasic -std=c++17 -O3 -march=native
+RELEASE_FLAGS = -I$(HDR_DIR) `llvm-config --cxxflags --ldflags --system-libs --libs core` -lstdc++fs -lclangDriver -lclangBasic -std=c++17 -Wall -O3 -march=native
 
 HDRS = $(wildcard $(HDR_DIR)/*.h)
 SRCS = $(wildcard $(SRC_DIR)/*.cpp)
