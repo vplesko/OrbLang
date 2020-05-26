@@ -58,6 +58,21 @@ public:
         llvm::Value *val;
     };
 
+    struct FuncForCallPayload {
+        enum Result {
+            kFound,
+            kAmbigious,
+            kNotFound
+        };
+
+        Result res;
+
+        std::optional<FuncValue> funcVal;
+
+        explicit FuncForCallPayload(Result res) : res(res) {}
+        explicit FuncForCallPayload(const FuncValue &funcVal) : res(kFound), funcVal(funcVal) {}
+    };
+
 private:
     friend class ScopeControl;
 
@@ -96,7 +111,7 @@ public:
     bool canRegisterFunc(const FuncValue &val) const;
     FuncValue registerFunc(const FuncValue &val);
     llvm::Function* getFunction(const FuncValue &val) const;
-    std::optional<FuncValue> getFuncForCall(const FuncCallSite &call);
+    FuncForCallPayload getFuncForCall(const FuncCallSite &call);
 
     bool inGlobalScope() const { return last == glob; }
 

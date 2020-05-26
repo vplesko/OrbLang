@@ -341,8 +341,14 @@ void CompileMessages::errorFuncArgNameDuplicate(CodeLoc loc, NamePool::Id name) 
 
 void CompileMessages::errorFuncNotFound(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
-    // TODO separate errors for not found and ambiguity
-    ss << "Zero or more than one function with name '" << namePool->get(name) << "' satisfying the call signature has been found.";
+    // TODO if untyped vals get removed, print the signature for attempted function call
+    ss << "No functions with name '" << namePool->get(name) << "' satisfying the call signature have been found.";
+    error(loc, ss.str());
+}
+
+void CompileMessages::errorFuncAmbigious(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "More than one function with name '" << namePool->get(name) << "' satisfying the call signature have been found.";
     error(loc, ss.str());
 }
 

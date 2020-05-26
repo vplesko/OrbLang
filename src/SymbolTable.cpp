@@ -157,14 +157,14 @@ bool SymbolTable::isCallArgsOk(const FuncCallSite &call, const FuncValue &func) 
     return true;
 }
 
-optional<FuncValue> SymbolTable::getFuncForCall(const FuncCallSite &call) {
+SymbolTable::FuncForCallPayload SymbolTable::getFuncForCall(const FuncCallSite &call) {
     optional<FuncSignature> sig = makeFuncSignature(call);
     if (sig.has_value()) {
         // if there's a single function and doesn't need casting, return it
         auto loc = funcs.find(sig.value());
         if (loc != funcs.end()) {
-            if (isCallArgsOk(call, loc->second)) return loc->second;
-            else return nullopt;
+            if (isCallArgsOk(call, loc->second)) return FuncForCallPayload(loc->second);
+            else return FuncForCallPayload(FuncForCallPayload::kNotFound);
         }
     }
 
@@ -190,15 +190,15 @@ optional<FuncValue> SymbolTable::getFuncForCall(const FuncCallSite &call) {
         if (candVal == nullptr) continue;
 
         // in case of multiple possible funcs, error due to ambiguity
-        if (foundVal != nullptr) return nullopt;
+        if (foundVal != nullptr) return FuncForCallPayload(FuncForCallPayload::kAmbigious);
         
         // found a function that fits this description (which may or may not require casts)
         foundSig = candSig;
         foundVal = candVal;
     }
 
-    if (foundVal) return *foundVal;
-    else return nullopt;
+    if (foundVal) return FuncForCallPayload(*foundVal);
+    else return FuncForCallPayload(FuncForCallPayload::kNotFound);
 }
 
 optional<FuncValue> SymbolTable::getCurrFunc() const {

@@ -1045,16 +1045,20 @@ NodeVal Codegen::codegenCall(const AstNode *ast, const NodeVal &first) {
         }
     }
 
-    optional<FuncValue> func = symbolTable->getFuncForCall(call);
-    if (!func.has_value()) {
+    SymbolTable::FuncForCallPayload funcFind = symbolTable->getFuncForCall(call);
+    if (funcFind.res == SymbolTable::FuncForCallPayload::kNotFound) {
         msgs->errorFuncNotFound(ast->children[0].get()->codeLoc, funcName);
         return NodeVal();
+    } else if (funcFind.res == SymbolTable::FuncForCallPayload::kAmbigious) {
+        msgs->errorFuncAmbigious(ast->children[0].get()->codeLoc, funcName);
+        return NodeVal();
     }
+    const FuncValue &func = funcFind.funcVal.value();
 
     for (size_t i = 0; i < argCnt; ++i) {
         const AstNode *nodeArg = ast->children[i+1].get();
 
-        if (i >= func.value().argTypes.size()) {
+        if (i >= func.argTypes.size()) {
             // variadic arguments
             if (exprs[i].isUntyVal()) {
                 msgs->errorExprCallVariadUnty(nodeArg->codeLoc, funcName);
@@ -1064,14 +1068,14 @@ NodeVal Codegen::codegenCall(const AstNode *ast, const NodeVal &first) {
         } else {
             if (exprs[i].isUntyVal()) {
                 // this also checks whether sint/uint literals fit into the arg type size
-                if (!promoteUntyped(exprs[i], func.value().argTypes[i])) {
-                    msgs->errorExprCannotPromote(nodeArg->codeLoc, func.value().argTypes[i]);
+                if (!promoteUntyped(exprs[i], func.argTypes[i])) {
+                    msgs->errorExprCannotPromote(nodeArg->codeLoc, func.argTypes[i]);
                     return NodeVal();
                 }
                 args[i] = exprs[i].llvmVal.val;
-            } else if (call.argTypes[i] != func.value().argTypes[i]) {
-                if (!createCast(args[i], call.argTypes[i], func.value().argTypes[i])) {
-                    msgs->errorExprCannotImplicitCast(nodeArg->codeLoc, call.argTypes[i], func.value().argTypes[i]);
+            } else if (call.argTypes[i] != func.argTypes[i]) {
+                if (!createCast(args[i], call.argTypes[i], func.argTypes[i])) {
+                    msgs->errorExprCannotImplicitCast(nodeArg->codeLoc, call.argTypes[i], func.argTypes[i]);
                     return NodeVal();
                 }
             }
@@ -1079,13 +1083,13 @@ NodeVal Codegen::codegenCall(const AstNode *ast, const NodeVal &first) {
     }
 
     NodeVal ret;
-    if (func.value().hasRet()) {
+    if (func.hasRet()) {
         ret = NodeVal(NodeVal::Kind::kLlvmVal);
-        ret.llvmVal.type = func.value().retType.value();
-        ret.llvmVal.val = llvmBuilder.CreateCall(func.value().func, args, "call_tmp");
+        ret.llvmVal.type = func.retType.value();
+        ret.llvmVal.val = llvmBuilder.CreateCall(func.func, args, "call_tmp");
     } else {
         ret = NodeVal(NodeVal::Kind::kEmpty);
-        llvmBuilder.CreateCall(func.value().func, args, "");
+        llvmBuilder.CreateCall(func.func, args, "");
     }
     return ret;
 }

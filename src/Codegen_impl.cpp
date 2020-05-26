@@ -935,7 +935,6 @@ optional<FuncValue> Codegen::codegenFuncProto(const AstNode *ast, bool definitio
         llvm::Type *llvmRetType = retType.has_value() ? getLlvmType(retType.value()) : llvm::Type::getVoidTy(llvmContext);
         llvm::FunctionType *funcType = llvm::FunctionType::get(llvmRetType, argTypes, val.variadic);
 
-        // TODO optimize on const args
         func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, 
                 namePool->get(name.value()), llvmModule.get());
         
