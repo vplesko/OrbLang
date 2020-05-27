@@ -1,6 +1,5 @@
 #include "Codegen.h"
 #include <sstream>
-#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Host.h"
 #include "llvm/Support/raw_ostream.h"
@@ -14,6 +13,12 @@ Codegen::Codegen(NamePool *namePool, StringPool *stringPool, SymbolTable *symbol
     : namePool(namePool), stringPool(stringPool), symbolTable(symbolTable), msgs(msgs),
     llvmBuilder(llvmContext), llvmBuilderAlloca(llvmContext) {
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("test"), llvmContext);
+
+    llvmPMB = make_unique<llvm::PassManagerBuilder>();
+    llvmPMB->OptLevel = 3;
+
+    llvmFPM = make_unique<llvm::legacy::FunctionPassManager>(llvmModule.get());
+    llvmPMB->populateFunctionPassManager(*llvmFPM);
 }
 
 bool Codegen::mangleName(stringstream &ss, TypeTable::Id ty) {
@@ -492,8 +497,6 @@ void Codegen::printout() const {
 }
 
 bool Codegen::binary(const std::string &filename) {
-    // TODO add optimizer passes
-    
     llvm::InitializeAllTargetInfos();
     llvm::InitializeAllTargets();
     llvm::InitializeAllTargetMCs();
@@ -526,16 +529,18 @@ bool Codegen::binary(const std::string &filename) {
         return false;
     }
 
-    llvm::legacy::PassManager pass;
+    llvm::legacy::PassManager MPM;
+    llvmPMB->populateModulePassManager(MPM);
+
     llvm::CodeGenFileType fileType = llvm::CGFT_ObjectFile;
 
-    bool fail = targetMachine->addPassesToEmitFile(pass, dest, nullptr, fileType);
+    bool fail = targetMachine->addPassesToEmitFile(MPM, dest, nullptr, fileType);
     if (fail) {
         llvm::errs() << "Target machine can't emit to this file type!";
         return false;
     }
 
-    pass.run(*llvmModule);
+    MPM.run(*llvmModule);
     dest.flush();
 
     return true;

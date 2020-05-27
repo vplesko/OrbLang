@@ -5,6 +5,7 @@
 #include "StringPool.h"
 #include "TypeTable.h"
 
+// TODO get rid of these in favor of compile-time values
 struct UntypedVal {
     enum class Kind {
         kNone,

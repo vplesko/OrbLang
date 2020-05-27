@@ -999,6 +999,7 @@ NodeVal Codegen::codegenFunc(const AstNode *ast) {
             llvmBuilder.CreateRetVoid();
 
     if (llvm::verifyFunction(*funcVal->func, &llvm::errs())) cerr << endl;
+    llvmFPM->run(*funcVal->func);
 
     return NodeVal();
 }

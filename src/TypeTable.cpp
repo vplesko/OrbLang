@@ -87,7 +87,6 @@ optional<TypeTable::Id> TypeTable::addTuple(Tuple tup) {
 
     if (tup.members.size() == 1) return tup.members[0];
 
-    // TODO optimize
     for (size_t i = 0; i < tuples.size(); ++i) {
         if (tup.eq(tuples[i].first)) {
             Id id;

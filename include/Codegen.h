@@ -9,6 +9,8 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
 class Codegen {
     NamePool *namePool;
@@ -19,6 +21,8 @@ class Codegen {
     llvm::LLVMContext llvmContext;
     llvm::IRBuilder<> llvmBuilder, llvmBuilderAlloca;
     std::unique_ptr<llvm::Module> llvmModule;
+    std::unique_ptr<llvm::PassManagerBuilder> llvmPMB;
+    std::unique_ptr<llvm::legacy::FunctionPassManager> llvmFPM;
 
     std::stack<llvm::BasicBlock*> breakStack, continueStack;
 

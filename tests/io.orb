@@ -14,6 +14,7 @@ fnc print_i32(x:i32) () { printf "%d" x; };
 fnc println_i32(x:i32) () { printf "%d\n" x; };
 fnc scan_i32() i32 { let x:i32; scanf "%d" (& x); ret x; };
 
+// TODO ld! also, lu? what about scan?
 fnc print_i64(x:i64) () { printf "%d" x; };
 fnc println_i64(x:i64) () { printf "%d\n" x; };
 fnc scan_i64() i64 { let x:i64; scanf "%d" (& x); ret x; };
