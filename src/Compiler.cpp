@@ -205,8 +205,6 @@ bool Compiler::compile(const std::string &output, bool exe) {
     if (!exe) {
         return codegen->binary(output);
     } else {
-        // TODO see if lld::elf::link can be used
-
         const static string tempObjName = isOsWindows ? "a.obj" : "a.o";
         // TODO doesn't get called on linker failure
         DeferredFallback delObjTemp([&] { remove(tempObjName.c_str()); });
