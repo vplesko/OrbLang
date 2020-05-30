@@ -29,6 +29,8 @@ mac function() fnc;
 
 mac declaration() let;
 
+mac zz() zz;
+
 fnc main() () {
     block {
         let (a:i32 99) (b:i32 1);
@@ -60,5 +62,9 @@ fnc main() () {
     };
     block {
         println_i32 (+ ((thyName)) 700);
+    };
+    block {
+        let ((zz):i32 800);
+        println_i32 (zz);
     };
 };

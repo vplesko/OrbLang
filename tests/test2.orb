@@ -17,6 +17,10 @@ fnc blocker() i64 {
     ret 0;
 };
 
+fnc sameNamed(sameNamed:i32) () {
+    println_i32 sameNamed;
+};
+
 fnc main() () {
     let (a:i64 1) (b 2:i64);
     if (== a b) {(println_i64 101)};
@@ -147,4 +151,6 @@ fnc main() () {
 
     let (bar:i32 200);
     println_i32 bar;
+
+    sameNamed 201;
 };

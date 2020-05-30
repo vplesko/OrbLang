@@ -925,8 +925,6 @@ optional<FuncValue> Codegen::codegenFuncProto(const AstNode *ast, bool definitio
         return nullopt;
     }
 
-    // TODO what happens if arg has the same name as function/macro? C++ shadows the function name
-
     // can't have args with same name
     for (size_t i = 0; i+1 < args.size(); ++i) {
         for (size_t j = i+1; j < args.size(); ++j) {
