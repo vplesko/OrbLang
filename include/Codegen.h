@@ -13,6 +13,9 @@
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
 class Codegen {
+    // TODO evaluator may call some utility methods from Codegen, factor them out of this class and break this association
+    friend class Evaluator;
+
     NamePool *namePool;
     StringPool *stringPool;
     SymbolTable *symbolTable;
@@ -55,6 +58,7 @@ class Codegen {
 
     bool checkEmptyTerminal(const AstNode *ast, bool orError);
     bool checkEllipsis(const AstNode *ast, bool orError);
+    bool checkTerminal(const AstNode *ast, bool orError);
     bool checkNotTerminal(const AstNode *ast, bool orError);
     bool checkBlock(const AstNode *ast, bool orError);
     bool checkExactlyChildren(const AstNode *ast, std::size_t n, bool orError);

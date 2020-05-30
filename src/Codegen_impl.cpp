@@ -1,5 +1,6 @@
 #include "Codegen.h"
 #include <unordered_set>
+#include <iostream>
 #include "llvm/IR/Verifier.h"
 using namespace std;
 
@@ -904,15 +905,17 @@ optional<FuncValue> Codegen::codegenFuncProto(const AstNode *ast, bool definitio
     val.noNameMangle = noNameMangle;
 
     if (!symbolTable->canRegisterFunc(val)) {
-        msgs->errorFuncSigConflict(ast->codeLoc);
+        msgs->errorSigConflict(ast->codeLoc);
         return nullopt;
     }
+
+    // TODO what happens if arg has the same name as function/macro? C++ shadows the function name
 
     // can't have args with same name
     for (size_t i = 0; i+1 < args.size(); ++i) {
         for (size_t j = i+1; j < args.size(); ++j) {
             if (args[i].first == args[j].first) {
-                msgs->errorFuncArgNameDuplicate(ast->codeLoc, args[j].first);
+                msgs->errorArgNameDuplicate(ast->codeLoc, args[j].first);
                 return nullopt;
             }
         }

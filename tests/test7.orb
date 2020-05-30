@@ -1,0 +1,10 @@
+import "tests/io.orb";
+
+mac add(x y) (+ x y);
+
+fnc main() () {
+    block {
+        let (a:i32 99) (b:i32 1);
+        println_i32 (+ a b); // TODO call add
+    };
+};

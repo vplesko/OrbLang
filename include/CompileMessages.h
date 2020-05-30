@@ -50,6 +50,7 @@ public:
     void errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token see);
     void errorUnexpectedTokenType(CodeLoc loc, std::vector<Token::Type> exp, Token see);
     void errorUnexpectedKeyword(CodeLoc loc, Token::Type keyw);
+    void errorUnexpectedIsNotTerminal(CodeLoc loc);
     void errorUnexpectedIsTerminal(CodeLoc loc);
     void errorUnexpectedNotKeyword(CodeLoc loc);
     void errorUnexpectedNotId(CodeLoc loc);
@@ -98,8 +99,9 @@ public:
     void errorContinueNowhere(CodeLoc loc);
     void errorRetNoValue(CodeLoc loc, TypeTable::Id shouldRet);
     void errorFuncNameTaken(CodeLoc loc, NamePool::Id name);
-    void errorFuncSigConflict(CodeLoc loc);
-    void errorFuncArgNameDuplicate(CodeLoc loc, NamePool::Id name);
+    void errorMacroNameTaken(CodeLoc loc, NamePool::Id name);
+    void errorSigConflict(CodeLoc loc);
+    void errorArgNameDuplicate(CodeLoc loc, NamePool::Id name);
     void errorFuncNotFound(CodeLoc loc, NamePool::Id name);
     void errorFuncAmbigious(CodeLoc loc, NamePool::Id name);
     void errorMemberIndex(CodeLoc loc);

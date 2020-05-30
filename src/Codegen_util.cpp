@@ -298,6 +298,15 @@ bool Codegen::checkEllipsis(const AstNode *ast, bool orError) {
     return true;
 }
 
+bool Codegen::checkTerminal(const AstNode *ast, bool orError) {
+    if (!ast->isTerminal()) {
+        if (orError) msgs->errorUnexpectedIsNotTerminal(ast->codeLoc);
+        return false;
+    }
+
+    return true;
+}
+
 bool Codegen::checkNotTerminal(const AstNode *ast, bool orError) {
     if (ast->isTerminal()) {
         if (orError) msgs->errorUnexpectedIsTerminal(ast->codeLoc);

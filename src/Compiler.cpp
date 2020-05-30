@@ -13,8 +13,12 @@ Compiler::Compiler(ostream &out) {
     stringPool = make_unique<StringPool>();
     typeTable = make_unique<TypeTable>();
     symbolTable = make_unique<SymbolTable>(stringPool.get(), typeTable.get());
+    astStorage = make_unique<AstStorage>();
     msgs = make_unique<CompileMessages>(namePool.get(), stringPool.get(), symbolTable.get(), out);
     codegen = make_unique<Codegen>(namePool.get(), stringPool.get(), symbolTable.get(), msgs.get());
+    evaluator = make_unique<Evaluator>(symbolTable.get(), astStorage.get(), msgs.get());
+
+    evaluator->setCodegen(codegen.get());
 
     genPrimTypes();
 }
@@ -167,28 +171,33 @@ bool Compiler::parse(const vector<string> &inputs) {
                 unique_ptr<AstNode> node = par.parseNode();
                 if (msgs->isFail()) return false;
                 
-                NodeVal nodeVal = codegen->codegenNode(node.get());
+                bool forCompiler = !evaluator->evaluateNode(node.get());
                 if (msgs->isFail()) return false;
 
-                if (nodeVal.kind == NodeVal::Kind::kImport) {
-                    const string &file = stringPool->get(nodeVal.file);
-                    if (!exists(file)) {
-                        msgs->errorImportNotFound(node->codeLoc, file);
-                        return false;
+                if (forCompiler) {
+                    NodeVal nodeVal = codegen->codegenNode(node.get());
+                    if (msgs->isFail()) return false;
+
+                    if (nodeVal.kind == NodeVal::Kind::kImport) {
+                        const string &file = stringPool->get(nodeVal.file);
+                        if (!exists(file)) {
+                            msgs->errorImportNotFound(node->codeLoc, file);
+                            return false;
+                        }
+                        string path = canonical(file);
+                        ImportTransRes imres = followImport(path, par, namePool.get(), stringPool.get(), msgs.get(), lexers);
+                        if (imres == ITR_FAIL) {
+                            return false;
+                        } else if (imres == ITR_CYCLICAL) {
+                            msgs->errorImportCyclical(node->codeLoc, path);
+                            return false;
+                        }
+                        
+                        if (imres == ITR_STARTED) {
+                            trace.push(par.getLexer());
+                        }
+                        break;
                     }
-                    string path = canonical(file);
-                    ImportTransRes imres = followImport(path, par, namePool.get(), stringPool.get(), msgs.get(), lexers);
-                    if (imres == ITR_FAIL) {
-                        return false;
-                    } else if (imres == ITR_CYCLICAL) {
-                        msgs->errorImportCyclical(node->codeLoc, path);
-                        return false;
-                    }
-                    
-                    if (imres == ITR_STARTED) {
-                        trace.push(par.getLexer());
-                    }
-                    break;
                 }
             }
         }

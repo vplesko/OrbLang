@@ -153,6 +153,10 @@ void CompileMessages::errorUnexpectedKeyword(CodeLoc loc, Token::Type keyw) {
     error(loc, ss.str());
 }
 
+void CompileMessages::errorUnexpectedIsNotTerminal(CodeLoc loc) {
+    error(loc, "Non-terminal was not expected at this location.");
+}
+
 void CompileMessages::errorUnexpectedIsTerminal(CodeLoc loc) {
     error(loc, "Terminal was not expected at this location.");
 }
@@ -329,13 +333,19 @@ void CompileMessages::errorFuncNameTaken(CodeLoc loc, NamePool::Id name) {
     error(loc, ss.str());
 }
 
-void CompileMessages::errorFuncSigConflict(CodeLoc loc) {
-    error(loc, "Function's signature conflicts with a previously defined function.");
+void CompileMessages::errorMacroNameTaken(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Name '" << namePool->get(name) << "' is already taken and cannot be used for a macro.";
+    error(loc, ss.str());
 }
 
-void CompileMessages::errorFuncArgNameDuplicate(CodeLoc loc, NamePool::Id name) {
+void CompileMessages::errorSigConflict(CodeLoc loc) {
+    error(loc, "Signature conflicts with a previously defined function or macro.");
+}
+
+void CompileMessages::errorArgNameDuplicate(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
-    ss << "Argument name '" << namePool->get(name) << "' used more than once in function proto.";
+    ss << "Argument name '" << namePool->get(name) << "' used more than once.";
     error(loc, ss.str());
 }
 

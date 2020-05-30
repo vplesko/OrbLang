@@ -9,6 +9,8 @@
 #include "TypeTable.h"
 #include "llvm/IR/Instructions.h"
 
+struct AstNode;
+
 struct FuncCallSite {
     NamePool::Id name;
     std::vector<TypeTable::Id> argTypes;
@@ -51,6 +53,23 @@ struct FuncValue {
     bool hasRet() const { return retType.has_value(); }
 };
 
+struct MacroSignature {
+    NamePool::Id name;
+    std::size_t argCount;
+    
+    bool operator==(const MacroSignature &other) const;
+
+    struct Hasher {
+        std::size_t operator()(const MacroSignature &k) const;
+    };
+};
+
+struct MacroValue {
+    NamePool::Id name;
+    std::vector<NamePool::Id> argNames;
+    const AstNode *body;
+};
+
 class SymbolTable {
 public:
     struct VarPayload {
@@ -87,6 +106,8 @@ private:
     std::unordered_map<FuncSignature, FuncValue, FuncSignature::Hasher> funcs;
     std::unordered_map<NamePool::Id, FuncValue> funcsNoNameMangle;
 
+    std::unordered_map<MacroSignature, MacroValue, MacroSignature::Hasher> macros;
+
     Scope *last, *glob;
 
     bool inFunc;
@@ -102,6 +123,8 @@ private:
     std::optional<FuncSignature> makeFuncSignature(const FuncCallSite &call) const;
     bool isCallArgsOk(const FuncCallSite &call, const FuncValue &func) const;
 
+    MacroSignature makeMacroSignature(const MacroValue &val) const;
+
 public:
     SymbolTable(StringPool *stringPool, TypeTable *typeTable);
 
@@ -113,15 +136,21 @@ public:
     llvm::Function* getFunction(const FuncValue &val) const;
     FuncForCallPayload getFuncForCall(const FuncCallSite &call);
 
+    bool canRegisterMacro(const MacroValue &val) const;
+    void registerMacro(const MacroValue &val);
+
     bool inGlobalScope() const { return last == glob; }
 
     std::optional<FuncValue> getCurrFunc() const;
 
     bool isFuncName(NamePool::Id name) const;
+    bool isMacroName(NamePool::Id name) const;
     
     bool varMayTakeName(NamePool::Id name) const;
-    // only checks for name collisions with global vars and datas, NOT with funcs of same sig!
+    // only checks for name collisions with global vars, macros and datas, NOT with funcs of same sig!
     bool funcMayTakeName(NamePool::Id name) const;
+    // only checks for name collisions with global vars, functions and datas, NOT with macros of same sig!
+    bool macroMayTakeName(NamePool::Id name) const;
 
     TypeTable* getTypeTable() { return typeTable; }
 

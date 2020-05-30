@@ -5,16 +5,24 @@ using namespace std;
 bool FuncSignature::operator==(const FuncSignature &other) const {
     if (name != other.name) return false;
     if (argTypes.size() != other.argTypes.size()) return false;
-    for (std::size_t i = 0; i < argTypes.size(); ++i)
+    for (size_t i = 0; i < argTypes.size(); ++i)
         if (argTypes[i] != other.argTypes[i]) return false;
     
     return true;
 }
 
-std::size_t FuncSignature::Hasher::operator()(const FuncSignature &k) const {
-    std::size_t sum = k.argTypes.size();
+size_t FuncSignature::Hasher::operator()(const FuncSignature &k) const {
+    size_t sum = k.argTypes.size();
     for (const auto &it : k.argTypes) sum += TypeTable::Id::Hasher()(it);
     return leNiceHasheFunctione(k.name, sum);
+}
+
+bool MacroSignature::operator==(const MacroSignature &other) const {
+    return name == other.name && argCount == other.argCount;
+}
+
+size_t MacroSignature::Hasher::operator()(const MacroSignature &k) const {
+    return leNiceHasheFunctione(k.name, k.argCount);
 }
 
 SymbolTable::SymbolTable(StringPool *stringPool, TypeTable *typeTable)
@@ -201,6 +209,23 @@ SymbolTable::FuncForCallPayload SymbolTable::getFuncForCall(const FuncCallSite &
     else return FuncForCallPayload(FuncForCallPayload::kNotFound);
 }
 
+MacroSignature SymbolTable::makeMacroSignature(const MacroValue &val) const {
+    MacroSignature sig;
+    sig.name = val.name;
+    sig.argCount = val.argNames.size();
+    return sig;
+}
+
+bool SymbolTable::canRegisterMacro(const MacroValue &val) const {
+    MacroSignature sig = makeMacroSignature(val);
+    return macros.find(sig) == macros.end();
+}
+
+void SymbolTable::registerMacro(const MacroValue &val) {
+    MacroSignature sig = makeMacroSignature(val);
+    macros[sig] = val;
+}
+
 optional<FuncValue> SymbolTable::getCurrFunc() const {
     if (inFunc) return currFunc;
     else return nullopt;
@@ -208,6 +233,14 @@ optional<FuncValue> SymbolTable::getCurrFunc() const {
 
 bool SymbolTable::isFuncName(NamePool::Id name) const {
     for (const auto &p : funcs)
+        if (p.first.name == name)
+            return true;
+    
+    return false;
+}
+
+bool SymbolTable::isMacroName(NamePool::Id name) const {
+    for (const auto &p : macros)
         if (p.first.name == name)
             return true;
     
@@ -226,7 +259,11 @@ bool SymbolTable::varMayTakeName(NamePool::Id name) const {
 }
 
 bool SymbolTable::funcMayTakeName(NamePool::Id name) const {
-    return !typeTable->isType(name) && last->vars.find(name) == last->vars.end();
+    return !typeTable->isType(name) && !isMacroName(name) && last->vars.find(name) == last->vars.end();
+}
+
+bool SymbolTable::macroMayTakeName(NamePool::Id name) const {
+    return !typeTable->isType(name) && !isFuncName(name) && last->vars.find(name) == last->vars.end();
 }
 
 SymbolTable::~SymbolTable() {

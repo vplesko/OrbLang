@@ -1,0 +1,5 @@
+mac calc(a b) (+ a b);
+
+mac calc(c d) (- c d);
+
+fnc main() () {};

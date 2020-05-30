@@ -3,9 +3,8 @@
 #include <memory>
 #include <vector>
 #include <optional>
-#include "Lexer.h"
+#include "CodeLoc.h"
 #include "Values.h"
-#include "SymbolTable.h"
 
 struct AstNode {
     const CodeLoc codeLoc;
@@ -28,4 +27,14 @@ struct AstNode {
 
     bool isTerminal() const { return kind == Kind::kTerminal; }
     bool hasType() const { return type.has_value(); }
+};
+
+class AstStorage {
+    std::vector<std::unique_ptr<AstNode>> nodes;
+
+public:
+
+    void store(std::unique_ptr<AstNode> node) {
+        nodes.push_back(std::move(node));
+    }
 };
