@@ -28,6 +28,8 @@ NodeVal Codegen::codegenTerminal(const AstNode *ast) {
                 TypeTable::Id type = getTypeTable()->getTypeId(term.id).value();
                 ret = NodeVal(NodeVal::Kind::kType);
                 ret.type = type;
+            } else if (symbolTable->isVarName(term.id)) {
+                ret = codegenVar(ast);
             } else if (symbolTable->isFuncName(term.id)) {
                 ret = NodeVal(NodeVal::Kind::kFuncId);
                 ret.id = term.id;
@@ -35,8 +37,8 @@ NodeVal Codegen::codegenTerminal(const AstNode *ast) {
                 ret = NodeVal(NodeVal::Kind::kMacroId);
                 ret.id = term.id;
             } else {
-                // TODO what if a local var shares its name with a function or macro?
-                ret = codegenVar(ast);
+                msgs->errorInternal(ast->codeLoc);
+                return NodeVal();
             }
         }
         break;
@@ -141,6 +143,9 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
                 msgs->errorExprCannotPromote(ast->codeLoc, nodeTypeVal.type);
                 return NodeVal();
             }
+            break;
+        case NodeVal::Kind::kInvalid:
+            // do nothing
             break;
         default:
             msgs->errorMismatchTypeAnnotation(nodeType->codeLoc, nodeTypeVal.type);

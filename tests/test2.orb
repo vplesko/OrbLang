@@ -144,4 +144,7 @@ fnc main() () {
 
     if (and false (== (blocker) 0)) {(println_i32 0)};
     if (or true (== (blocker) 0)) {(println_i32 0)};
+
+    let (bar:i32 200);
+    println_i32 bar;
 };

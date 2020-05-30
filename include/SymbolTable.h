@@ -144,6 +144,7 @@ public:
 
     std::optional<FuncValue> getCurrFunc() const;
 
+    bool isVarName(NamePool::Id name) const { return getVar(name).has_value(); }
     bool isFuncName(NamePool::Id name) const;
     bool isMacroName(NamePool::Id name) const;
     
