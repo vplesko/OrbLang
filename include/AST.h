@@ -27,6 +27,8 @@ struct AstNode {
 
     bool isTerminal() const { return kind == Kind::kTerminal; }
     bool hasType() const { return type.has_value(); }
+
+    std::unique_ptr<AstNode> clone() const;
 };
 
 class AstStorage {

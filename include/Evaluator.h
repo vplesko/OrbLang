@@ -17,10 +17,17 @@ class Evaluator {
 
     void evaluateMac(AstNode *ast);
 
+    // TODO unify with one from codegen
+    std::optional<NamePool::Id> getId(const AstNode *ast, bool orError);
+
+    void substitute(std::unique_ptr<AstNode> &body, const std::vector<NamePool::Id> &names, const std::vector<const AstNode*> &values);
+
 public:
     Evaluator(SymbolTable *symbolTable, AstStorage *astStorage, CompileMessages *msgs);
 
     void setCodegen(Codegen *c) { codegen = c; }
 
     bool evaluateNode(AstNode *ast);
+
+    std::unique_ptr<AstNode> evaluateInvoke(const AstNode *ast);
 };

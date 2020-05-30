@@ -1,6 +1,7 @@
 #include "Codegen.h"
 #include <unordered_set>
 #include <iostream>
+#include "Evaluator.h"
 #include "llvm/IR/Verifier.h"
 using namespace std;
 
@@ -30,7 +31,11 @@ NodeVal Codegen::codegenTerminal(const AstNode *ast) {
             } else if (symbolTable->isFuncName(term.id)) {
                 ret = NodeVal(NodeVal::Kind::kFuncId);
                 ret.id = term.id;
+            } else if (symbolTable->isMacroName(term.id)) {
+                ret = NodeVal(NodeVal::Kind::kMacroId);
+                ret.id = term.id;
             } else {
+                // TODO what if a local var shares its name with a function or macro?
                 ret = codegenVar(ast);
             }
         }
@@ -58,6 +63,12 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
     } else {
         NodeVal starting = codegenNode(ast->children[0].get());
         if (starting.kind == NodeVal::Kind::kInvalid) return NodeVal();
+
+        if (starting.isMacroId()) {
+            unique_ptr<AstNode> expanded = evaluator->evaluateInvoke(ast);
+            if (expanded == nullptr) return NodeVal();
+            return codegenNode(expanded.get());
+        }
 
         if (starting.isKeyword()) {
             switch (starting.keyword) {

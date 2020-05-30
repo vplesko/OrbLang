@@ -2,9 +2,63 @@ import "tests/io.orb";
 
 mac add(x y) (+ x y);
 
+mac makeCall(c x y z) (c x (c y z));
+
+mac callOnBoth(c x y) (
+    block {
+        c x;
+        c y;
+    }
+);
+
+mac hundred() 100;
+
+mac intPtr() (i32 *);
+
+mac asterisk() *;
+
+mac thyName() steve;
+
+fnc (thyName)() i32 {
+    ret 1;
+};
+
+mac function() fnc;
+
+((function) foo() () {})
+
+mac declaration() let;
+
 fnc main() () {
     block {
         let (a:i32 99) (b:i32 1);
-        println_i32 (+ a b); // TODO call add
+        println_i32 (add a b);
+    };
+    block {
+        let (a:i32 100) (b:i32 99) (c:i32 1);
+        println_i32 (makeCall add a b c);
+        ++ c;
+        println_i32 (makeCall + a b c);
+    };
+    block {
+        callOnBoth println_i32 300 301;
+    };
+    block {
+        println_i32 (* 4 (hundred));
+    };
+    block {
+        let (x:i32 300) (y:i32 100);
+        println_i32 (add x (+ y 100));
+    };
+    block {
+        let (x:i32 600);
+        let (p1:(intPtr) (& x));
+        println_i32 (* p1);
+        ++ x;
+        let (p2:(i32 (asterisk)) (& x));
+        println_i32 (* p2);
+    };
+    block {
+        println_i32 (+ ((thyName)) 700);
     };
 };

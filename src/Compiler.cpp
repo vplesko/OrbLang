@@ -18,6 +18,7 @@ Compiler::Compiler(ostream &out) {
     codegen = make_unique<Codegen>(namePool.get(), stringPool.get(), symbolTable.get(), msgs.get());
     evaluator = make_unique<Evaluator>(symbolTable.get(), astStorage.get(), msgs.get());
 
+    codegen->setEvaluator(evaluator.get());
     evaluator->setCodegen(codegen.get());
 
     genPrimTypes();

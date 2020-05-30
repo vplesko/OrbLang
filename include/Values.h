@@ -73,6 +73,7 @@ struct NodeVal {
         kOper,
         kId,
         kFuncId,
+        kMacroId,
         kAttribute,
         kImport,
         kLlvmVal,
@@ -100,6 +101,7 @@ struct NodeVal {
     bool isOper() const { return kind == Kind::kOper; }
     bool isId() const { return kind == Kind::kId; }
     bool isFuncId() const { return kind == Kind::kFuncId; }
+    bool isMacroId() const { return kind == Kind::kMacroId; }
     bool isAttribute() const { return kind == Kind::kAttribute; }
     bool isLlvmVal() const { return kind == Kind::kLlvmVal; }
     bool isUntyVal() const { return kind == Kind::kUntyVal; }

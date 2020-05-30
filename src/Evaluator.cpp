@@ -7,13 +7,28 @@ Evaluator::Evaluator(SymbolTable *symbolTable, AstStorage *astStorage, CompileMe
     : symbolTable(symbolTable), astStorage(astStorage), msgs(msgs), codegen(nullptr) {
 }
 
+optional<NamePool::Id> Evaluator::getId(const AstNode *ast, bool orError) {
+    // TODO evaluate recursively
+
+    if (!codegen->checkTerminal(ast, false) ||
+        ast->terminal->kind != TerminalVal::Kind::kId) {
+        if (orError) msgs->errorUnexpectedNotId(ast->codeLoc);
+        return nullopt;
+    }
+    if (ast->hasType()) {
+        if (orError) msgs->errorMismatchTypeAnnotation(ast->codeLoc);
+        return nullopt;
+    }
+    return ast->terminal->id;
+}
+
 bool Evaluator::evaluateNode(AstNode *ast) {
     // TODO should evaluate into NodeVal recursively
-    if (ast->kind == AstNode::Kind::kTerminal) return false;
+    if (ast->isTerminal()) return false;
 
     AstNode *starting = ast->children[0].get();
 
-    if (starting->kind == AstNode::Kind::kTerminal &&
+    if (starting->isTerminal() &&
         starting->terminal->kind == TerminalVal::Kind::kKeyword &&
         starting->terminal->keyword == Token::T_MAC) {
         evaluateMac(ast);
@@ -33,18 +48,9 @@ void Evaluator::evaluateMac(AstNode *ast) {
     const AstNode *nodeArgs = ast->children[2].get();
     unique_ptr<AstNode> &nodeBody = ast->children[3];
 
-    // TODO make a function for this
-    if (!codegen->checkTerminal(nodeName, false) ||
-        nodeName->terminal->kind != TerminalVal::Kind::kId) {
-        msgs->errorUnexpectedNotId(nodeName->codeLoc);
-        return;
-    }
-    if (nodeName->hasType()) {
-        msgs->errorMismatchTypeAnnotation(nodeName->codeLoc);
-        return;
-    }
-    // TODO evaluate recursively
-    NamePool::Id name = nodeName->terminal->id;
+    optional<NamePool::Id> nameOpt = getId(nodeName, true);
+    if (!nameOpt.has_value()) return;
+    NamePool::Id name = nameOpt.value();
 
     if (!symbolTable->macroMayTakeName(name)) {
         msgs->errorMacroNameTaken(nodeName->codeLoc, name);
@@ -58,19 +64,10 @@ void Evaluator::evaluateMac(AstNode *ast) {
         for (size_t i = 0; i < nodeArgs->children.size(); ++i) {
             const AstNode *nodeArg = nodeArgs->children[i].get();
 
-            // TODO make a function for this
-            if (!codegen->checkTerminal(nodeArg, false) ||
-                nodeArg->terminal->kind != TerminalVal::Kind::kId) {
-                msgs->errorUnexpectedNotId(nodeArg->codeLoc);
-                return;
-            }
-            if (nodeArg->hasType()) {
-                msgs->errorMismatchTypeAnnotation(nodeArg->codeLoc);
-                return;
-            }
+            optional<NamePool::Id> nameOpt = getId(nodeArg, true);
+            if (!nameOpt.has_value()) return;
 
-            // TODO evaluate recursively
-            args.push_back(nodeArg->terminal->id);
+            args.push_back(nameOpt.value());
         }
     }
     if (nodeArgs->hasType()) {
@@ -105,4 +102,50 @@ void Evaluator::evaluateMac(AstNode *ast) {
         symbolTable->registerMacro(val);
         astStorage->store(move(nodeBody));
     }
+}
+
+void Evaluator::substitute(unique_ptr<AstNode> &body, const vector<NamePool::Id> &names, const vector<const AstNode*> &values) {
+    if (body->isTerminal()) {
+        if (body->terminal->kind == TerminalVal::Kind::kId) {
+            for (size_t i = 0; i < names.size(); ++i) {
+                if (body->terminal->id == names[i]) {
+                    body = values[i]->clone();
+                    break;
+                }
+            }
+        }
+    } else {
+        for (auto &it : body->children) substitute(it, names, values);
+    }
+    
+    if (body->hasType()) substitute(body->type.value(), names, values);
+}
+
+unique_ptr<AstNode> Evaluator::evaluateInvoke(const AstNode *ast) {
+    if (!codegen->checkNotTerminal(ast, true)) return nullptr;
+
+    const AstNode *nodeMacroName = ast->children[0].get();
+
+    optional<NamePool::Id> nameOpt = getId(nodeMacroName, true);
+    if (!nameOpt.has_value()) return nullptr;
+    NamePool::Id name = nameOpt.value();
+
+    MacroSignature sig;
+    sig.name = name;
+    sig.argCount = ast->children.size()-1;
+
+    optional<MacroValue> macro = symbolTable->getMacro(sig);
+    if (!macro.has_value()) {
+        msgs->errorMacroNotFound(ast->codeLoc, name);
+        return nullptr;
+    }
+
+    vector<const AstNode*> values(sig.argCount);
+    for (size_t i = 0; i < sig.argCount; ++i)
+        values[i] = ast->children[i+1].get();
+    
+    unique_ptr<AstNode> expanded = macro->body->clone();
+    substitute(expanded, macro.value().argNames, values);
+    if (ast->escaped) expanded->escaped = true;
+    return expanded;
 }

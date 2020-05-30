@@ -138,6 +138,7 @@ public:
 
     bool canRegisterMacro(const MacroValue &val) const;
     void registerMacro(const MacroValue &val);
+    std::optional<MacroValue> getMacro(const MacroSignature &sig) const;
 
     bool inGlobalScope() const { return last == glob; }
 

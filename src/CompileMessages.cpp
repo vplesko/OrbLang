@@ -362,6 +362,13 @@ void CompileMessages::errorFuncAmbigious(CodeLoc loc, NamePool::Id name) {
     error(loc, ss.str());
 }
 
+void CompileMessages::errorMacroNotFound(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    // TODO print the signature for attempted macro invocation
+    ss << "No macros with name '" << namePool->get(name) << "' satisfying the invocation signature have been found.";
+    error(loc, ss.str());
+}
+
 void CompileMessages::errorMemberIndex(CodeLoc loc) {
     error(loc, "Invalid member index.");
 }

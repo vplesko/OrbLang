@@ -12,13 +12,16 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
+class Evaluator;
+
 class Codegen {
-    // TODO evaluator may call some utility methods from Codegen, factor them out of this class and break this association
+    // TODO evaluator may call some utility methods from Codegen, factor them out of this class and break this friendship
     friend class Evaluator;
 
     NamePool *namePool;
     StringPool *stringPool;
     SymbolTable *symbolTable;
+    Evaluator *evaluator;
     CompileMessages *msgs;
 
     llvm::LLVMContext llvmContext;
@@ -124,6 +127,8 @@ class Codegen {
 
 public:
     Codegen(NamePool *namePool, StringPool *stringPool, SymbolTable *symbolTable, CompileMessages *msgs);
+
+    void setEvaluator(Evaluator *e) { evaluator = e; }
 
     llvm::Type* genPrimTypeBool();
     llvm::Type* genPrimTypeI(unsigned bits);

@@ -226,6 +226,12 @@ void SymbolTable::registerMacro(const MacroValue &val) {
     macros[sig] = val;
 }
 
+optional<MacroValue> SymbolTable::getMacro(const MacroSignature &sig) const {
+    auto loc = macros.find(sig);
+    if (loc == macros.end()) return nullopt;
+    return loc->second;
+}
+
 optional<FuncValue> SymbolTable::getCurrFunc() const {
     if (inFunc) return currFunc;
     else return nullopt;
