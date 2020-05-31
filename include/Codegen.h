@@ -30,8 +30,6 @@ class Codegen {
     std::unique_ptr<llvm::PassManagerBuilder> llvmPMB;
     std::unique_ptr<llvm::legacy::FunctionPassManager> llvmFPM;
 
-    std::stack<llvm::BasicBlock*> exitStack, loopStack;
-
     bool isBool(const NodeVal &e) const;
 
     bool promoteUntyped(NodeVal &e, TypeTable::Id t);

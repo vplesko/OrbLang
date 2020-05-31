@@ -31,15 +31,14 @@ SymbolTable::SymbolTable(StringPool *stringPool, TypeTable *typeTable)
     glob->prev = nullptr;
 }
 
-void SymbolTable::newBlock() {
+void SymbolTable::newBlock(BlockOpen b) {
     Block *s = new Block();
+    s->name = b.name;
+    s->blockExit = b.blockExit;
+    s->blockLoop = b.blockLoop;
+    
     s->prev = last;
     last = s;
-}
-
-void SymbolTable::newBlock(NamePool::Id name) {
-    newBlock();
-    last->name = name;
 }
 
 void SymbolTable::endBlock() {

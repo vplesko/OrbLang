@@ -564,8 +564,8 @@ NodeVal Codegen::codegenFor(const AstNode *ast) {
 
     bool hasCond = !checkEmptyTerminal(nodeCond, false);
     bool hasIter = !checkEmptyTerminal(nodeIter, false);
-    
-    BlockControl blockCtrl(symbolTable);
+
+    BlockControl blockCtrlOuter(symbolTable);
 
     codegenNode(nodeInit);
     if (msgs->isFail()) return NodeVal();
@@ -576,9 +576,6 @@ NodeVal Codegen::codegenFor(const AstNode *ast) {
     llvm::BasicBlock *bodyBlock = llvm::BasicBlock::Create(llvmContext, "body");
     llvm::BasicBlock *iterBlock = llvm::BasicBlock::Create(llvmContext, "iter");
     llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
-
-    loopStack.push(iterBlock);
-    exitStack.push(afterBlock);
 
     llvmBuilder.CreateBr(condBlock);
     llvmBuilder.SetInsertPoint(condBlock);
@@ -606,7 +603,11 @@ NodeVal Codegen::codegenFor(const AstNode *ast) {
     }
 
     {
-        BlockControl blockCtrlBody(symbolTable);
+        SymbolTable::BlockOpen blockOpen;
+        blockOpen.blockLoop = iterBlock;
+        blockOpen.blockExit = afterBlock;
+        BlockControl blockCtrlBody(symbolTable, blockOpen);
+        
         func->getBasicBlockList().push_back(bodyBlock);
         llvmBuilder.SetInsertPoint(bodyBlock);
         if (hasBody) {
@@ -631,9 +632,6 @@ NodeVal Codegen::codegenFor(const AstNode *ast) {
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);
 
-    exitStack.pop();
-    loopStack.pop();
-
     return NodeVal();
 }
 
@@ -652,9 +650,6 @@ NodeVal Codegen::codegenWhile(const AstNode *ast) {
     llvm::BasicBlock *condBlock = llvm::BasicBlock::Create(llvmContext, "cond", func);
     llvm::BasicBlock *bodyBlock = llvm::BasicBlock::Create(llvmContext, "body");
     llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
-
-    loopStack.push(condBlock);
-    exitStack.push(afterBlock);
 
     llvmBuilder.CreateBr(condBlock);
     llvmBuilder.SetInsertPoint(condBlock);
@@ -675,7 +670,11 @@ NodeVal Codegen::codegenWhile(const AstNode *ast) {
     }
 
     {
-        BlockControl blockCtrl(symbolTable);
+        SymbolTable::BlockOpen blockOpen;
+        blockOpen.blockLoop = condBlock;
+        blockOpen.blockExit = afterBlock;
+        BlockControl blockCtrl(symbolTable, blockOpen);
+
         func->getBasicBlockList().push_back(bodyBlock);
         llvmBuilder.SetInsertPoint(bodyBlock);
         if (hasBody) {
@@ -687,9 +686,6 @@ NodeVal Codegen::codegenWhile(const AstNode *ast) {
 
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);
-
-    exitStack.pop();
-    loopStack.pop();
 
     return NodeVal();
 }
@@ -708,14 +704,15 @@ NodeVal Codegen::codegenDo(const AstNode *ast) {
     llvm::BasicBlock *condBlock = llvm::BasicBlock::Create(llvmContext, "cond");
     llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
 
-    loopStack.push(condBlock);
-    exitStack.push(afterBlock);
-
     llvmBuilder.CreateBr(bodyBlock);
     llvmBuilder.SetInsertPoint(bodyBlock);
 
     {
-        BlockControl blockCtrl(symbolTable);
+        SymbolTable::BlockOpen blockOpen;
+        blockOpen.blockLoop = condBlock;
+        blockOpen.blockExit = afterBlock;
+        BlockControl blockCtrl(symbolTable, blockOpen);
+        
         codegenAll(nodeBody);
         if (msgs->isFail()) return NodeVal();
         if (!isLlvmBlockTerminated()) llvmBuilder.CreateBr(condBlock);
@@ -742,9 +739,6 @@ NodeVal Codegen::codegenDo(const AstNode *ast) {
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);
 
-    exitStack.pop();
-    loopStack.pop();
-
     return NodeVal();
 }
 
@@ -753,7 +747,8 @@ NodeVal Codegen::codegenExit(const AstNode *ast) {
         return NodeVal();
     }
 
-    if (exitStack.empty()) {
+    llvm::BasicBlock *blockExit = symbolTable->getLastBlock()->blockExit;
+    if (isGlobalScope() || blockExit == nullptr) {
         msgs->errorExitNowhere(ast->codeLoc);
         return NodeVal();
     }
@@ -771,10 +766,10 @@ NodeVal Codegen::codegenExit(const AstNode *ast) {
             return NodeVal();
         }
 
-        if (valCond.untyVal.val_b) llvmBuilder.CreateBr(exitStack.top());
+        if (valCond.untyVal.val_b) llvmBuilder.CreateBr(blockExit);
     } else {
         llvm::BasicBlock *blockAfter = llvm::BasicBlock::Create(llvmContext, "after");
-        llvmBuilder.CreateCondBr(valCond.llvmVal.val, exitStack.top(), blockAfter);
+        llvmBuilder.CreateCondBr(valCond.llvmVal.val, blockExit, blockAfter);
         func->getBasicBlockList().push_back(blockAfter);
         llvmBuilder.SetInsertPoint(blockAfter);
     }
@@ -787,7 +782,8 @@ NodeVal Codegen::codegenLoop(const AstNode *ast) {
         return NodeVal();
     }
 
-    if (loopStack.empty()) {
+    llvm::BasicBlock *blockLoop = symbolTable->getLastBlock()->blockLoop;
+    if (isGlobalScope() || blockLoop == nullptr) {
         msgs->errorLoopNowhere(ast->codeLoc);
         return NodeVal();
     }
@@ -805,10 +801,10 @@ NodeVal Codegen::codegenLoop(const AstNode *ast) {
             return NodeVal();
         }
 
-        if (valCond.untyVal.val_b) llvmBuilder.CreateBr(loopStack.top());
+        if (valCond.untyVal.val_b) llvmBuilder.CreateBr(blockLoop);
     } else {
         llvm::BasicBlock *blockAfter = llvm::BasicBlock::Create(llvmContext, "after");
-        llvmBuilder.CreateCondBr(valCond.llvmVal.val, loopStack.top(), blockAfter);
+        llvmBuilder.CreateCondBr(valCond.llvmVal.val, blockLoop, blockAfter);
         func->getBasicBlockList().push_back(blockAfter);
         llvmBuilder.SetInsertPoint(blockAfter);
     }
@@ -874,7 +870,9 @@ NodeVal Codegen::codegenBlock(const AstNode *ast) {
         optional<NamePool::Id> name = getId(ast->children[1].get(), true);
         if (!name.has_value()) return NodeVal();
 
-        BlockControl blockCtrl(symbolTable, name.value());
+        SymbolTable::BlockOpen blockOpen;
+        blockOpen.name = name;
+        BlockControl blockCtrl(symbolTable, blockOpen);
 
         codegenAll(ast->children[2].get());
     }
