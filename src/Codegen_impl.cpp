@@ -743,17 +743,37 @@ NodeVal Codegen::codegenDo(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenExit(const AstNode *ast) {
-    if (!checkExactlyChildren(ast, 2, true)) {
+    if (!checkBetweenChildren(ast, 2, 3, true)) {
         return NodeVal();
     }
 
-    llvm::BasicBlock *blockExit = symbolTable->getLastBlock()->blockExit;
+    bool hasName = ast->children.size() == 3;
+
+    const AstNode *nodeName = hasName ? ast->children[1].get() : nullptr;
+    const AstNode *nodeCond = ast->children[hasName ? 2 : 1].get();
+
+    optional<NamePool::Id> name;
+    if (hasName) {
+        name = getId(nodeName, true);
+        if (!name.has_value()) return NodeVal();
+    }
+
+    llvm::BasicBlock *blockExit;
+    if (hasName) {
+        const SymbolTable::Block *symBlockExit = symbolTable->getBlock(name.value());
+        if (symBlockExit == nullptr) {
+            // TODO it's not a var
+            msgs->errorVarNotFound(nodeName->codeLoc, name.value());
+            return NodeVal();
+        }
+        blockExit = symBlockExit->blockExit;
+    } else {
+        blockExit = symbolTable->getLastBlock()->blockExit;
+    }
     if (isGlobalScope() || blockExit == nullptr) {
         msgs->errorExitNowhere(ast->codeLoc);
         return NodeVal();
     }
-
-    const AstNode *nodeCond = ast->children[1].get();
 
     llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
 
@@ -778,17 +798,37 @@ NodeVal Codegen::codegenExit(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenLoop(const AstNode *ast) {
-    if (!checkExactlyChildren(ast, 2, true)) {
+    if (!checkBetweenChildren(ast, 2, 3, true)) {
         return NodeVal();
     }
 
-    llvm::BasicBlock *blockLoop = symbolTable->getLastBlock()->blockLoop;
+    bool hasName = ast->children.size() == 3;
+
+    const AstNode *nodeName = hasName ? ast->children[1].get() : nullptr;
+    const AstNode *nodeCond = ast->children[hasName ? 2 : 1].get();
+
+    optional<NamePool::Id> name;
+    if (hasName) {
+        name = getId(nodeName, true);
+        if (!name.has_value()) return NodeVal();
+    }
+
+    llvm::BasicBlock *blockLoop;
+    if (hasName) {
+        const SymbolTable::Block *symBlockLoop = symbolTable->getBlock(name.value());
+        if (symBlockLoop == nullptr) {
+            // TODO it's not a var
+            msgs->errorVarNotFound(nodeName->codeLoc, name.value());
+            return NodeVal();
+        }
+        blockLoop = symBlockLoop->blockLoop;
+    } else {
+        blockLoop = symbolTable->getLastBlock()->blockLoop;
+    }
     if (isGlobalScope() || blockLoop == nullptr) {
         msgs->errorLoopNowhere(ast->codeLoc);
         return NodeVal();
     }
-
-    const AstNode *nodeCond = ast->children[1].get();
 
     llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
 

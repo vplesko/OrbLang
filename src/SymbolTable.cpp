@@ -236,6 +236,14 @@ optional<MacroValue> SymbolTable::getMacro(const MacroSignature &sig) const {
     return loc->second;
 }
 
+const SymbolTable::Block* SymbolTable::getBlock(NamePool::Id name) const {
+    for (const Block *s = last; s != nullptr; s = s->prev) {
+        if (s->name == name) return s;
+    }
+
+    return nullptr;
+}
+
 optional<FuncValue> SymbolTable::getCurrFunc() const {
     if (inFunc) return currFunc;
     else return nullopt;

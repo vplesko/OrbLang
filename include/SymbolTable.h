@@ -149,6 +149,7 @@ public:
 
     bool inGlobalScope() const { return last == glob; }
     const Block* getLastBlock() const { return last; }
+    const Block* getBlock(NamePool::Id name) const;
 
     std::optional<FuncValue> getCurrFunc() const;
 

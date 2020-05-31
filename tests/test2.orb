@@ -170,4 +170,12 @@ fnc main() () {
         let (x:i32 1);
         loop (> x 2);
     };
+
+    block block1 {
+        while true {
+            println_i32 202;
+            exit block1 true;
+        };
+        println_i32 203;
+    };
 };
