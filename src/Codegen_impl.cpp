@@ -37,7 +37,7 @@ NodeVal Codegen::codegenTerminal(const AstNode *ast) {
                 ret = NodeVal(NodeVal::Kind::kMacroId);
                 ret.id = term.id;
             } else {
-                msgs->errorInternal(ast->codeLoc);
+                msgs->errorVarNotFound(ast->codeLoc, term.id);
                 return NodeVal();
             }
         }
@@ -85,9 +85,6 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
                 break;
             case Token::T_IF:
                 ret = codegenIf(ast);
-                break;
-            case Token::T_FOR:
-                ret = codegenFor(ast);
                 break;
             case Token::T_EXIT:
                 ret = codegenExit(ast);
@@ -158,7 +155,7 @@ NodeVal Codegen::codegenAll(const AstNode *ast) {
     }
 
     for (const std::unique_ptr<AstNode> &child : ast->children) {
-        if (!checkNotTerminal(child.get(), true)) return NodeVal();
+        if (!checkEmptyTerminal(child.get(), false) && !checkNotTerminal(child.get(), true)) return NodeVal();
         
         codegenNode(child.get());
     }
@@ -537,90 +534,6 @@ NodeVal Codegen::codegenIf(const AstNode *ast) {
         codegenAll(nodeElse);
         if (msgs->isFail()) return NodeVal();
         if (!isLlvmBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
-    }
-
-    func->getBasicBlockList().push_back(afterBlock);
-    llvmBuilder.SetInsertPoint(afterBlock);
-
-    return NodeVal();
-}
-
-NodeVal Codegen::codegenFor(const AstNode *ast) {
-    if (!checkBetweenChildren(ast, 4, 5, true))
-        return NodeVal();
-    
-    bool hasBody = ast->children.size() == 5;
-    
-    const AstNode *nodeInit = ast->children[1].get();
-    const AstNode *nodeCond = ast->children[2].get();
-    const AstNode *nodeIter = ast->children[3].get();
-    const AstNode *nodeBody = hasBody ? ast->children[4].get() : nullptr;
-
-    bool hasCond = !checkEmptyTerminal(nodeCond, false);
-    bool hasIter = !checkEmptyTerminal(nodeIter, false);
-
-    BlockControl blockCtrlOuter(symbolTable);
-
-    codegenNode(nodeInit);
-    if (msgs->isFail()) return NodeVal();
-
-    llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
-
-    llvm::BasicBlock *condBlock = llvm::BasicBlock::Create(llvmContext, "cond", func);
-    llvm::BasicBlock *bodyBlock = llvm::BasicBlock::Create(llvmContext, "body");
-    llvm::BasicBlock *iterBlock = llvm::BasicBlock::Create(llvmContext, "iter");
-    llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
-
-    llvmBuilder.CreateBr(condBlock);
-    llvmBuilder.SetInsertPoint(condBlock);
-
-    {
-        NodeVal condExpr;
-        if (hasCond) {
-            condExpr = codegenNode(nodeCond);
-            if (!checkValueUnbroken(nodeCond->codeLoc, condExpr, true)) return NodeVal();
-            if (condExpr.isUntyVal() && !promoteUntyped(condExpr, getPrimTypeId(TypeTable::P_BOOL))) {
-                msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
-                return NodeVal();
-            }
-            if (!getTypeTable()->worksAsTypeB(condExpr.llvmVal.type)) {
-                msgs->errorExprCannotImplicitCast(nodeCond->codeLoc, condExpr.llvmVal.type, getPrimTypeId(TypeTable::P_BOOL));
-                return NodeVal();
-            }
-        } else {
-            condExpr = NodeVal(NodeVal::Kind::kLlvmVal);
-            condExpr.llvmVal.type = getPrimTypeId(TypeTable::P_BOOL);
-            condExpr.llvmVal.val = getConstB(true);
-        }
-
-        llvmBuilder.CreateCondBr(condExpr.llvmVal.val, bodyBlock, afterBlock);
-    }
-
-    {
-        SymbolTable::BlockOpen blockOpen;
-        blockOpen.blockLoop = iterBlock;
-        blockOpen.blockExit = afterBlock;
-        BlockControl blockCtrlBody(symbolTable, blockOpen);
-        
-        func->getBasicBlockList().push_back(bodyBlock);
-        llvmBuilder.SetInsertPoint(bodyBlock);
-        if (hasBody) {
-            codegenAll(nodeBody);
-            if (msgs->isFail()) return NodeVal();
-        }
-        if (!isLlvmBlockTerminated()) llvmBuilder.CreateBr(iterBlock);
-    }
-    
-    {
-        func->getBasicBlockList().push_back(iterBlock);
-        llvmBuilder.SetInsertPoint(iterBlock);
-
-        if (hasIter) {
-            codegenNode(nodeIter);
-            if (msgs->isFail()) return NodeVal();
-        }
-
-        if (!isLlvmBlockTerminated()) llvmBuilder.CreateBr(condBlock);
     }
 
     func->getBasicBlockList().push_back(afterBlock);

@@ -6,7 +6,7 @@ fnc foo() () {
 };
 
 fnc bar() () {
-    for () () () { ret; };
+    for () true () { ret; };
 };
 
 fnc inc(a:i64) i64 {
@@ -15,6 +15,7 @@ fnc inc(a:i64) i64 {
 
 fnc blocker() i64 {
     while true;
+    for () true ();
     ret 0;
 };
 
@@ -62,6 +63,7 @@ fnc main() () {
     for (let (i:i64 0) (j:i64 (- 1))) (< i 10) (++ i) {(println_i64 (+ i j))};
     for (= a 0) (< a 3) (++ a) {(println_i64 a)};
     for () (>= a 0) (-- a) {(println_i64 a)};
+    for (let (i:i32 10)) (> i 0) (-- i);
 
     while (>= b 0) {(println_i64 (-- b))};
     do {
@@ -75,7 +77,7 @@ fnc main() () {
     bar;
 
     for (let (i:i32 0)) (< i 10) (++ i) {
-        exit (>= i 3);
+        break (>= i 3);
         println_i32 i;
     };
 
@@ -92,7 +94,7 @@ fnc main() () {
     } (< a 1);
 
     for (let (i:i32 0)) (< i 10) (++ i) {
-        loop (>= i 2);
+        continue (>= i 2);
         println_i32 i;
     };
 
@@ -113,21 +115,21 @@ fnc main() () {
         println_i32 i;
         for (let (j:i32 0)) (< j 5) (++ j) {
             println_i32 j;
-            exit (>= j 1);
+            break (>= j 1);
         };
     };
 
     for (let (i:i32 0)) (> i (- 2)) (-- i) {
         println_i32 i;
         for (let (j:i32 0)) (> j (- 5)) (-- j) {
-            loop (<= j (- 1));
+            continue (<= j (- 1));
             println_i32 j;
         };
     };
 
     for (let (i:i32 10)) (< i 15) (++ i) {
         println_i32 i;
-        exit (>= i 11);
+        break (>= i 11);
         for (let (j:i32 10)) (< j 12) (++ j) {
             println_i32 j;
         };
@@ -135,7 +137,7 @@ fnc main() () {
 
     for (let (i:i32 (- 10))) (> i (- 13)) (-- i) {
         println_i32 i;
-        loop (<= i (- 11));
+        continue (<= i (- 11));
         for (let (j:i32 (- 10))) (> j (- 12)) (-- j) {
             println_i32 j;
         };

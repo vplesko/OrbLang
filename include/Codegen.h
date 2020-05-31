@@ -104,7 +104,6 @@ class Codegen {
     NodeVal codegenImport(const AstNode *ast);
     NodeVal codegenLet(const AstNode *ast);
     NodeVal codegenIf(const AstNode *ast);
-    NodeVal codegenFor(const AstNode *ast);
     NodeVal codegenExit(const AstNode *ast);
     NodeVal codegenLoop(const AstNode *ast);
     NodeVal codegenRet(const AstNode *ast);

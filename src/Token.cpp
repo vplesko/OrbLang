@@ -60,7 +60,6 @@ const unordered_map<string, Token> keywords = {
     {"cast", {Token::T_CAST}},
     {"block", {Token::T_BLOCK}},
     {"if", {Token::T_IF}},
-    {"for", {Token::T_FOR}},
     {"exit", {Token::T_EXIT}},
     {"loop", {Token::T_LOOP}},
     {"ret", {Token::T_RET}},

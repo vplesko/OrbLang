@@ -2,7 +2,37 @@
 
 // TODO revisit when first-class ids introduced
 // TODO rename when packages introduced (or whatever else i settle for, i've no idea where all this is going)
+// or just make hygenic in some way
 mac loopingBlocksName() _loopingBlocksName;
+mac forFirstStepTracker() _forFirstStepTracker;
+
+mac for(init cond step) (
+    block {
+        init
+        (block (loopingBlocksName) {
+            (exit (! cond))
+            step
+            (loop true)
+        })
+    }
+);
+
+mac for(init cond step body) (
+    block {
+        init
+        (let ((forFirstStepTracker):bool true))
+        (block (loopingBlocksName) {
+            (if (forFirstStepTracker) {
+                (= (forFirstStepTracker) false)
+            } {
+                step
+            })
+            (exit (! cond))
+            (block body)
+            (loop true)
+        })
+    }
+);
 
 mac while(cond) (
     block (loopingBlocksName) {
