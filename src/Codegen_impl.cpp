@@ -862,20 +862,39 @@ NodeVal Codegen::codegenBlock(const AstNode *ast) {
         return NodeVal();
     }
 
-    if (ast->children.size() == 2) {
-        BlockControl blockCtrl(symbolTable);
+    bool hasName = ast->children.size() == 3;
 
-        codegenAll(ast->children[1].get());
-    } else {
-        optional<NamePool::Id> name = getId(ast->children[1].get(), true);
+    const AstNode *nodeName = hasName ? ast->children[1].get() : nullptr;
+    const AstNode *nodeBody = ast->children[hasName ? 2 : 1].get();
+
+    optional<NamePool::Id> name;
+    if (hasName) {
+        name = getId(nodeName, true);
         if (!name.has_value()) return NodeVal();
+    }
 
+    llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
+
+    llvm::BasicBlock *bodyBlock = llvm::BasicBlock::Create(llvmContext, "body", func);
+    llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
+
+    llvmBuilder.CreateBr(bodyBlock);
+    llvmBuilder.SetInsertPoint(bodyBlock);
+
+    {
         SymbolTable::BlockOpen blockOpen;
-        blockOpen.name = name;
+        if (hasName) blockOpen.name = name;
+        blockOpen.blockExit = afterBlock;
+        blockOpen.blockLoop = bodyBlock;
         BlockControl blockCtrl(symbolTable, blockOpen);
 
-        codegenAll(ast->children[2].get());
+        codegenAll(nodeBody);
     }
+
+    llvmBuilder.CreateBr(afterBlock);
+
+    func->getBasicBlockList().push_back(afterBlock);
+    llvmBuilder.SetInsertPoint(afterBlock);
 
     return NodeVal();
 }
