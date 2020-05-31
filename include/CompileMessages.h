@@ -95,8 +95,8 @@ public:
     void errorExprAsgnOnCn(CodeLoc loc, Token::Oper op);
     void errorExprDotInvalidBase(CodeLoc loc);
     void errorExprNotValue(CodeLoc loc);
-    void errorBreakNowhere(CodeLoc loc);
-    void errorContinueNowhere(CodeLoc loc);
+    void errorExitNowhere(CodeLoc loc);
+    void errorLoopNowhere(CodeLoc loc);
     void errorRetNoValue(CodeLoc loc, TypeTable::Id shouldRet);
     void errorFuncNameTaken(CodeLoc loc, NamePool::Id name);
     void errorMacroNameTaken(CodeLoc loc, NamePool::Id name);

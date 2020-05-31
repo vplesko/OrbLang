@@ -30,7 +30,7 @@ class Codegen {
     std::unique_ptr<llvm::PassManagerBuilder> llvmPMB;
     std::unique_ptr<llvm::legacy::FunctionPassManager> llvmFPM;
 
-    std::stack<llvm::BasicBlock*> breakStack, continueStack;
+    std::stack<llvm::BasicBlock*> exitStack, loopStack;
 
     bool isBool(const NodeVal &e) const;
 
@@ -109,8 +109,8 @@ class Codegen {
     NodeVal codegenFor(const AstNode *ast);
     NodeVal codegenWhile(const AstNode *ast);
     NodeVal codegenDo(const AstNode *ast);
-    NodeVal codegenBreak(const AstNode *ast);
-    NodeVal codegenContinue(const AstNode *ast);
+    NodeVal codegenExit(const AstNode *ast);
+    NodeVal codegenLoop(const AstNode *ast);
     NodeVal codegenRet(const AstNode *ast);
     NodeVal codegenBlock(const AstNode *ast);
     NodeVal codegenFunc(const AstNode *ast);

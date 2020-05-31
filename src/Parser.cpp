@@ -73,8 +73,8 @@ unique_ptr<AstNode> Parser::parseTerm() {
     case Token::T_FOR:
     case Token::T_WHILE:
     case Token::T_DO:
-    case Token::T_BREAK:
-    case Token::T_CONTINUE:
+    case Token::T_EXIT:
+    case Token::T_LOOP:
     case Token::T_RET:
     case Token::T_IMPORT:
         term->terminal = TerminalVal(tok.type);

@@ -312,12 +312,12 @@ void CompileMessages::errorExprCannotImplicitCastEither(CodeLoc loc, TypeTable::
     error(loc, ss.str());
 }
 
-void CompileMessages::errorBreakNowhere(CodeLoc loc) {
-    error(loc, "Break statement has no enclosing loop to break from.");
+void CompileMessages::errorExitNowhere(CodeLoc loc) {
+    error(loc, "Exit statement has no enclosing block to exit from.");
 }
 
-void CompileMessages::errorContinueNowhere(CodeLoc loc) {
-    error(loc, "Continue statement has no enclosing loop to continue into.");
+void CompileMessages::errorLoopNowhere(CodeLoc loc) {
+    error(loc, "Loop statement has no enclosing block to loop in.");
 }
 
 void CompileMessages::errorRetNoValue(CodeLoc loc, TypeTable::Id shouldRet) {

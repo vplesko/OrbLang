@@ -95,11 +95,11 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
             case Token::T_DO:
                 ret = codegenDo(ast);
                 break;
-            case Token::T_BREAK:
-                ret = codegenBreak(ast);
+            case Token::T_EXIT:
+                ret = codegenExit(ast);
                 break;
-            case Token::T_CONTINUE:
-                ret = codegenContinue(ast);
+            case Token::T_LOOP:
+                ret = codegenLoop(ast);
                 break;
             case Token::T_RET:
                 ret = codegenRet(ast);
@@ -579,8 +579,8 @@ NodeVal Codegen::codegenFor(const AstNode *ast) {
     llvm::BasicBlock *iterBlock = llvm::BasicBlock::Create(llvmContext, "iter");
     llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
 
-    continueStack.push(iterBlock);
-    breakStack.push(afterBlock);
+    loopStack.push(iterBlock);
+    exitStack.push(afterBlock);
 
     llvmBuilder.CreateBr(condBlock);
     llvmBuilder.SetInsertPoint(condBlock);
@@ -633,8 +633,8 @@ NodeVal Codegen::codegenFor(const AstNode *ast) {
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);
 
-    breakStack.pop();
-    continueStack.pop();
+    exitStack.pop();
+    loopStack.pop();
 
     return NodeVal();
 }
@@ -655,8 +655,8 @@ NodeVal Codegen::codegenWhile(const AstNode *ast) {
     llvm::BasicBlock *bodyBlock = llvm::BasicBlock::Create(llvmContext, "body");
     llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
 
-    continueStack.push(condBlock);
-    breakStack.push(afterBlock);
+    loopStack.push(condBlock);
+    exitStack.push(afterBlock);
 
     llvmBuilder.CreateBr(condBlock);
     llvmBuilder.SetInsertPoint(condBlock);
@@ -690,8 +690,8 @@ NodeVal Codegen::codegenWhile(const AstNode *ast) {
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);
 
-    breakStack.pop();
-    continueStack.pop();
+    exitStack.pop();
+    loopStack.pop();
 
     return NodeVal();
 }
@@ -710,8 +710,8 @@ NodeVal Codegen::codegenDo(const AstNode *ast) {
     llvm::BasicBlock *condBlock = llvm::BasicBlock::Create(llvmContext, "cond");
     llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
 
-    continueStack.push(condBlock);
-    breakStack.push(afterBlock);
+    loopStack.push(condBlock);
+    exitStack.push(afterBlock);
 
     llvmBuilder.CreateBr(bodyBlock);
     llvmBuilder.SetInsertPoint(bodyBlock);
@@ -744,38 +744,38 @@ NodeVal Codegen::codegenDo(const AstNode *ast) {
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);
 
-    breakStack.pop();
-    continueStack.pop();
+    exitStack.pop();
+    loopStack.pop();
 
     return NodeVal();
 }
 
-NodeVal Codegen::codegenBreak(const AstNode *ast) {
+NodeVal Codegen::codegenExit(const AstNode *ast) {
     if (!checkExactlyChildren(ast, 1, true)) {
         return NodeVal();
     }
 
-    if (breakStack.empty()) {
-        msgs->errorBreakNowhere(ast->codeLoc);
+    if (exitStack.empty()) {
+        msgs->errorExitNowhere(ast->codeLoc);
         return NodeVal();
     }
 
-    llvmBuilder.CreateBr(breakStack.top());
+    llvmBuilder.CreateBr(exitStack.top());
 
     return NodeVal();
 }
 
-NodeVal Codegen::codegenContinue(const AstNode *ast) {
+NodeVal Codegen::codegenLoop(const AstNode *ast) {
     if (!checkExactlyChildren(ast, 1, true)) {
         return NodeVal();
     }
 
-    if (continueStack.empty()) {
-        msgs->errorContinueNowhere(ast->codeLoc);
+    if (loopStack.empty()) {
+        msgs->errorLoopNowhere(ast->codeLoc);
         return NodeVal();
     }
 
-    llvmBuilder.CreateBr(continueStack.top());
+    llvmBuilder.CreateBr(loopStack.top());
 
     return NodeVal();
 }
