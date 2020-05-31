@@ -1,3 +1,4 @@
+import "tests/base.orb";
 import "tests/io.orb";
 
 fnc main() () {

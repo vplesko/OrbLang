@@ -1,5 +1,5 @@
 fnc main() () {
     block {
-        if false { }
+        exit true
     };
 };

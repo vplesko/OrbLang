@@ -4,7 +4,26 @@
 // TODO rename when packages introduced (or whatever else i settle for, i've no idea where all this is going)
 // or just make hygenic in some way
 mac loopingBlocksName() _loopingBlocksName;
+mac ifOuterBlockName() _ifOuterBlockName;
 mac forFirstStepTracker() _forFirstStepTracker;
+
+mac if(cond then) (
+    block (ifOuterBlockName) {
+        exit (! cond);
+        block then;
+    }
+);
+
+mac if(cond then else) (
+    block (ifOuterBlockName) {
+        block {
+            exit (! cond);
+            block then;
+            exit (ifOuterBlockName) true;
+        };
+        block else;
+    }
+);
 
 mac for(init cond step) (
     block {
