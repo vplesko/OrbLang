@@ -121,7 +121,7 @@ class Codegen {
     NodeVal codegenExpr(const AstNode *ast, const NodeVal &first);
 
     NodeVal codegenTerminal(const AstNode *ast);
-    NodeVal codegenAll(const AstNode *ast, bool makeBlock);
+    NodeVal codegenAll(const AstNode *ast);
 
     std::optional<FuncValue> codegenFuncProto(const AstNode *ast, bool definition);
 

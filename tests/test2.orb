@@ -31,7 +31,7 @@ fnc main() () {
         let (x:i64 5);
         if (> x a) { (println_i64 105) };
     };
-    block {
+    block blockName {
         = a 100;
         if (> a b) { (println_i64 106) };
     };

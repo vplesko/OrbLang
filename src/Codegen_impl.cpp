@@ -156,14 +156,12 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
     return ret;
 }
 
-NodeVal Codegen::codegenAll(const AstNode *ast, bool makeBlock) {
+NodeVal Codegen::codegenAll(const AstNode *ast) {
     if (!checkBlock(ast, true)) return NodeVal();
     if (ast->type.has_value()) {
         msgs->errorMismatchTypeAnnotation(ast->type.value()->codeLoc);
         return NodeVal();
     }
-
-    BlockControl blockCtrl(makeBlock ? symbolTable : nullptr);
 
     for (const std::unique_ptr<AstNode> &child : ast->children) {
         if (!checkNotTerminal(child.get(), true)) return NodeVal();
@@ -533,7 +531,7 @@ NodeVal Codegen::codegenIf(const AstNode *ast) {
     {
         BlockControl thenBlockCtrl(symbolTable);
         llvmBuilder.SetInsertPoint(thenBlock);
-        codegenAll(nodeThen, false);
+        codegenAll(nodeThen);
         if (msgs->isFail()) return NodeVal();
         if (!isLlvmBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
     }
@@ -542,7 +540,7 @@ NodeVal Codegen::codegenIf(const AstNode *ast) {
         BlockControl elseBlockCtrl(symbolTable);
         func->getBasicBlockList().push_back(elseBlock);
         llvmBuilder.SetInsertPoint(elseBlock);
-        codegenAll(nodeElse, false);
+        codegenAll(nodeElse);
         if (msgs->isFail()) return NodeVal();
         if (!isLlvmBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
     }
@@ -612,7 +610,7 @@ NodeVal Codegen::codegenFor(const AstNode *ast) {
         func->getBasicBlockList().push_back(bodyBlock);
         llvmBuilder.SetInsertPoint(bodyBlock);
         if (hasBody) {
-            codegenAll(nodeBody, false);
+            codegenAll(nodeBody);
             if (msgs->isFail()) return NodeVal();
         }
         if (!isLlvmBlockTerminated()) llvmBuilder.CreateBr(iterBlock);
@@ -681,7 +679,7 @@ NodeVal Codegen::codegenWhile(const AstNode *ast) {
         func->getBasicBlockList().push_back(bodyBlock);
         llvmBuilder.SetInsertPoint(bodyBlock);
         if (hasBody) {
-            codegenAll(nodeBody, false);
+            codegenAll(nodeBody);
             if (msgs->isFail()) return NodeVal();
         }
         if (!isLlvmBlockTerminated()) llvmBuilder.CreateBr(condBlock);
@@ -718,7 +716,7 @@ NodeVal Codegen::codegenDo(const AstNode *ast) {
 
     {
         BlockControl blockCtrl(symbolTable);
-        codegenAll(nodeBody, false);
+        codegenAll(nodeBody);
         if (msgs->isFail()) return NodeVal();
         if (!isLlvmBlockTerminated()) llvmBuilder.CreateBr(condBlock);
     }
@@ -864,11 +862,22 @@ NodeVal Codegen::codegenRet(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenBlock(const AstNode *ast) {
-    if (!checkExactlyChildren(ast, 2, true)) {
+    if (!checkBetweenChildren(ast, 2, 3, true)) {
         return NodeVal();
     }
 
-    codegenAll(ast->children[1].get(), true);
+    if (ast->children.size() == 2) {
+        BlockControl blockCtrl(symbolTable);
+
+        codegenAll(ast->children[1].get());
+    } else {
+        optional<NamePool::Id> name = getId(ast->children[1].get(), true);
+        if (!name.has_value()) return NodeVal();
+
+        BlockControl blockCtrl(symbolTable, name.value());
+
+        codegenAll(ast->children[2].get());
+    }
 
     return NodeVal();
 }
@@ -1042,7 +1051,7 @@ NodeVal Codegen::codegenFunc(const AstNode *ast) {
         ++i;
     }
 
-    codegenAll(ast->children.back().get(), false);
+    codegenAll(ast->children.back().get());
     if (msgs->isFail()) {
         funcVal->func->eraseFromParent();
         return NodeVal();

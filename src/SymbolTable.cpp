@@ -37,6 +37,11 @@ void SymbolTable::newBlock() {
     last = s;
 }
 
+void SymbolTable::newBlock(NamePool::Id name) {
+    newBlock();
+    last->name = name;
+}
+
 void SymbolTable::endBlock() {
     Block *s = last;
     last = last->prev;

@@ -96,6 +96,7 @@ private:
     friend class BlockControl;
 
     struct Block {
+        std::optional<NamePool::Id> name;
         std::unordered_map<NamePool::Id, VarPayload> vars;
         Block *prev;
     };
@@ -117,6 +118,7 @@ private:
     void clearCurrFunc() { inFunc = false; }
 
     void newBlock();
+    void newBlock(NamePool::Id name);
     void endBlock();
 
     FuncSignature makeFuncSignature(NamePool::Id name, const std::vector<TypeTable::Id> &argTypes) const;
@@ -164,8 +166,11 @@ class BlockControl {
     bool funcOpen;
 
 public:
-    BlockControl(SymbolTable *symTable = nullptr) : symTable(symTable), funcOpen(false) {
+    explicit BlockControl(SymbolTable *symTable = nullptr) : symTable(symTable), funcOpen(false) {
         if (symTable != nullptr) symTable->newBlock();
+    }
+    BlockControl(SymbolTable *symTable, NamePool::Id name) : symTable(symTable), funcOpen(false) {
+        this->symTable->newBlock(name);
     }
     // ref cuz must not be null
     BlockControl(SymbolTable &symTable, const FuncValue &func) : symTable(&symTable), funcOpen(true) {
