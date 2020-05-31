@@ -74,36 +74,36 @@ fnc main() () {
     bar;
 
     for (let (i:i32 0)) (< i 10) (++ i) {
-        if (>= i 3) {exit;};
+        exit (>= i 3);
         println_i32 i;
     };
 
     while (<= a 0) {
-        if (<= a (- 3)) {(exit)};
+        exit (<= a (- 3));
         println_i64 a;
         -- a;
     };
 
     do {
-        if (== a 0) {(exit)};
+        exit (== a 0);
         println_i64 a;
         = a 0;
     } (< a 1);
 
     for (let (i:i32 0)) (< i 10) (++ i) {
-        if (>= i 2) {(loop)};
+        loop (>= i 2);
         println_i32 i;
     };
 
     while (<= a 0) {
         ++ a;
-        if (> a 0) {(loop)};
+        loop (> a 0);
         println_i64 a;
     };
 
     = a 99;
     do {
-        if (== a 0) {(loop)};
+        loop (== a 0);
         println_i64 a;
         = a 0;
     } (!= a 0);
@@ -112,21 +112,21 @@ fnc main() () {
         println_i32 i;
         for (let (j:i32 0)) (< j 5) (++ j) {
             println_i32 j;
-            if (>= j 1) {(exit)};
+            exit (>= j 1);
         };
     };
 
     for (let (i:i32 0)) (> i (- 2)) (-- i) {
         println_i32 i;
         for (let (j:i32 0)) (> j (- 5)) (-- j) {
-            if (<= j (- 1)) {(loop)};
+            loop (<= j (- 1));
             println_i32 j;
         };
     };
 
     for (let (i:i32 10)) (< i 15) (++ i) {
         println_i32 i;
-        if (>= i 11) {(exit)};
+        exit (>= i 11);
         for (let (j:i32 10)) (< j 12) (++ j) {
             println_i32 j;
         };
@@ -134,7 +134,7 @@ fnc main() () {
 
     for (let (i:i32 (- 10))) (> i (- 13)) (-- i) {
         println_i32 i;
-        if (<= i (- 11)) {(loop)};
+        loop (<= i (- 11));
         for (let (j:i32 (- 10))) (> j (- 12)) (-- j) {
             println_i32 j;
         };
@@ -153,4 +153,21 @@ fnc main() () {
     println_i32 bar;
 
     sameNamed 201;
+
+    while false {
+        loop false;
+    };
+
+    while true {
+        exit true;
+    };
+
+    while true {
+        exit (> 2 1);
+    };
+
+    while false {
+        let (x:i32 1);
+        loop (> x 2);
+    };
 };

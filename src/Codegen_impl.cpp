@@ -751,7 +751,7 @@ NodeVal Codegen::codegenDo(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenExit(const AstNode *ast) {
-    if (!checkExactlyChildren(ast, 1, true)) {
+    if (!checkExactlyChildren(ast, 2, true)) {
         return NodeVal();
     }
 
@@ -760,13 +760,32 @@ NodeVal Codegen::codegenExit(const AstNode *ast) {
         return NodeVal();
     }
 
-    llvmBuilder.CreateBr(exitStack.top());
+    const AstNode *nodeCond = ast->children[1].get();
+
+    llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
+
+    NodeVal valCond = codegenNode(nodeCond);
+    if (!checkValueUnbroken(nodeCond->codeLoc, valCond, true)) return NodeVal();
+
+    if (valCond.isUntyVal()) {
+        if (valCond.untyVal.kind != UntypedVal::Kind::kBool) {
+            msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
+            return NodeVal();
+        }
+
+        if (valCond.untyVal.val_b) llvmBuilder.CreateBr(exitStack.top());
+    } else {
+        llvm::BasicBlock *blockAfter = llvm::BasicBlock::Create(llvmContext, "after");
+        llvmBuilder.CreateCondBr(valCond.llvmVal.val, exitStack.top(), blockAfter);
+        func->getBasicBlockList().push_back(blockAfter);
+        llvmBuilder.SetInsertPoint(blockAfter);
+    }
 
     return NodeVal();
 }
 
 NodeVal Codegen::codegenLoop(const AstNode *ast) {
-    if (!checkExactlyChildren(ast, 1, true)) {
+    if (!checkExactlyChildren(ast, 2, true)) {
         return NodeVal();
     }
 
@@ -775,7 +794,26 @@ NodeVal Codegen::codegenLoop(const AstNode *ast) {
         return NodeVal();
     }
 
-    llvmBuilder.CreateBr(loopStack.top());
+    const AstNode *nodeCond = ast->children[1].get();
+
+    llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
+
+    NodeVal valCond = codegenNode(nodeCond);
+    if (!checkValueUnbroken(nodeCond->codeLoc, valCond, true)) return NodeVal();
+
+    if (valCond.isUntyVal()) {
+        if (valCond.untyVal.kind != UntypedVal::Kind::kBool) {
+            msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
+            return NodeVal();
+        }
+
+        if (valCond.untyVal.val_b) llvmBuilder.CreateBr(loopStack.top());
+    } else {
+        llvm::BasicBlock *blockAfter = llvm::BasicBlock::Create(llvmContext, "after");
+        llvmBuilder.CreateCondBr(valCond.llvmVal.val, loopStack.top(), blockAfter);
+        func->getBasicBlockList().push_back(blockAfter);
+        llvmBuilder.SetInsertPoint(blockAfter);
+    }
 
     return NodeVal();
 }
