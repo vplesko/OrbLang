@@ -1,5 +1,3 @@
-// TODO! remove obsolete negative tests and error msgs
-
 // TODO revisit when first-class ids introduced
 // TODO rename when packages introduced (or whatever else i settle for, i've no idea where all this is going)
 // or just make hygenic in some way

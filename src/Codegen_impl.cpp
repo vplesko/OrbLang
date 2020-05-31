@@ -823,8 +823,7 @@ optional<FuncValue> Codegen::codegenFuncProto(const AstNode *ast, bool definitio
     return symbolTable->registerFunc(val);
 }
 
-// TODO! when 'else ret ...;' is the final instruction in a function, llvm gives a warning
-//   + 'while (true) ret ...;' gives a segfault
+// TODO when 'while ... { ret ...; }' is the final instruction in a function, llvm gives a warning
 NodeVal Codegen::codegenFunc(const AstNode *ast) {
     if (!checkGlobalScope(ast->codeLoc, true) ||
         !checkAtLeastChildren(ast, 4, true)) {
