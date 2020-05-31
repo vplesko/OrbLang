@@ -369,6 +369,12 @@ void CompileMessages::errorMacroNotFound(CodeLoc loc, NamePool::Id name) {
     error(loc, ss.str());
 }
 
+void CompileMessages::errorBlockNotFound(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "No enclosing blocks with name '" << namePool->get(name) << "' have been found.";
+    error(loc, ss.str());
+}
+
 void CompileMessages::errorMemberIndex(CodeLoc loc) {
     error(loc, "Invalid member index.");
 }

@@ -105,6 +105,7 @@ public:
     void errorFuncNotFound(CodeLoc loc, NamePool::Id name);
     void errorFuncAmbigious(CodeLoc loc, NamePool::Id name);
     void errorMacroNotFound(CodeLoc loc, NamePool::Id name);
+    void errorBlockNotFound(CodeLoc loc, NamePool::Id name);
     void errorMemberIndex(CodeLoc loc);
     void errorTupleValueMember(CodeLoc loc);
     void errorMismatchTypeAnnotation(CodeLoc loc, TypeTable::Id ty);

@@ -86,7 +86,7 @@ fnc main() () {
     };
 
     do {
-        exit (== a 0);
+        break (== a 0);
         println_i64 a;
         = a 0;
     } (< a 1);
@@ -104,7 +104,7 @@ fnc main() () {
 
     = a 99;
     do {
-        loop (== a 0);
+        continue (== a 0);
         println_i64 a;
         = a 0;
     } (!= a 0);

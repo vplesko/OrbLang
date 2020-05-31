@@ -18,6 +18,14 @@ mac while(cond body) (
     }
 );
 
+mac do(body cond) (
+    block (loopingBlocksName) {
+        block body;
+        exit (! cond);
+        loop true;
+    }
+);
+
 mac break() (exit (loopingBlocksName) true);
 
 mac break(cond) (exit (loopingBlocksName) cond);

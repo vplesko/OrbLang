@@ -89,9 +89,6 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
             case Token::T_FOR:
                 ret = codegenFor(ast);
                 break;
-            case Token::T_DO:
-                ret = codegenDo(ast);
-                break;
             case Token::T_EXIT:
                 ret = codegenExit(ast);
                 break;
@@ -632,58 +629,6 @@ NodeVal Codegen::codegenFor(const AstNode *ast) {
     return NodeVal();
 }
 
-NodeVal Codegen::codegenDo(const AstNode *ast) {
-    if (!checkExactlyChildren(ast, 3, true)) {
-        return NodeVal();
-    }
-
-    const AstNode *nodeBody = ast->children[1].get();
-    const AstNode *nodeCond = ast->children[2].get();
-
-    llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
-
-    llvm::BasicBlock *bodyBlock = llvm::BasicBlock::Create(llvmContext, "body", func);
-    llvm::BasicBlock *condBlock = llvm::BasicBlock::Create(llvmContext, "cond");
-    llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
-
-    llvmBuilder.CreateBr(bodyBlock);
-    llvmBuilder.SetInsertPoint(bodyBlock);
-
-    {
-        SymbolTable::BlockOpen blockOpen;
-        blockOpen.blockLoop = condBlock;
-        blockOpen.blockExit = afterBlock;
-        BlockControl blockCtrl(symbolTable, blockOpen);
-        
-        codegenAll(nodeBody);
-        if (msgs->isFail()) return NodeVal();
-        if (!isLlvmBlockTerminated()) llvmBuilder.CreateBr(condBlock);
-    }
-
-    {
-        func->getBasicBlockList().push_back(condBlock);
-        llvmBuilder.SetInsertPoint(condBlock);
-
-        NodeVal condExpr = codegenNode(nodeCond);
-        if (!checkValueUnbroken(nodeCond->codeLoc, condExpr, true)) return NodeVal();
-        if (condExpr.isUntyVal() && !promoteUntyped(condExpr, getPrimTypeId(TypeTable::P_BOOL))) {
-            msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
-            return NodeVal();
-        }
-        if (!getTypeTable()->worksAsTypeB(condExpr.llvmVal.type)) {
-            msgs->errorExprCannotImplicitCast(nodeCond->codeLoc, condExpr.llvmVal.type, getPrimTypeId(TypeTable::P_BOOL));
-            return NodeVal();
-        }
-
-        llvmBuilder.CreateCondBr(condExpr.llvmVal.val, bodyBlock, afterBlock);
-    }
-
-    func->getBasicBlockList().push_back(afterBlock);
-    llvmBuilder.SetInsertPoint(afterBlock);
-
-    return NodeVal();
-}
-
 NodeVal Codegen::codegenExit(const AstNode *ast) {
     if (!checkBetweenChildren(ast, 2, 3, true)) {
         return NodeVal();
@@ -704,8 +649,7 @@ NodeVal Codegen::codegenExit(const AstNode *ast) {
     if (hasName) {
         const SymbolTable::Block *symBlockExit = symbolTable->getBlock(name.value());
         if (symBlockExit == nullptr) {
-            // TODO it's not a var
-            msgs->errorVarNotFound(nodeName->codeLoc, name.value());
+            msgs->errorBlockNotFound(nodeName->codeLoc, name.value());
             return NodeVal();
         }
         blockExit = symBlockExit->blockExit;
@@ -764,8 +708,7 @@ NodeVal Codegen::codegenLoop(const AstNode *ast) {
     if (hasName) {
         const SymbolTable::Block *symBlockLoop = symbolTable->getBlock(name.value());
         if (symBlockLoop == nullptr) {
-            // TODO it's not a var
-            msgs->errorVarNotFound(nodeName->codeLoc, name.value());
+            msgs->errorBlockNotFound(nodeName->codeLoc, name.value());
             return NodeVal();
         }
         blockLoop = symBlockLoop->blockLoop;
