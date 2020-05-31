@@ -93,11 +93,11 @@ public:
     };
 
 private:
-    friend class ScopeControl;
+    friend class BlockControl;
 
-    struct Scope {
+    struct Block {
         std::unordered_map<NamePool::Id, VarPayload> vars;
-        Scope *prev;
+        Block *prev;
     };
 
     StringPool *stringPool;
@@ -108,7 +108,7 @@ private:
 
     std::unordered_map<MacroSignature, MacroValue, MacroSignature::Hasher> macros;
 
-    Scope *last, *glob;
+    Block *last, *glob;
 
     bool inFunc;
     FuncValue currFunc;
@@ -116,8 +116,8 @@ private:
     void setCurrFunc(const FuncValue &func) { inFunc = true; currFunc = func; }
     void clearCurrFunc() { inFunc = false; }
 
-    void newScope();
-    void endScope();
+    void newBlock();
+    void endBlock();
 
     FuncSignature makeFuncSignature(NamePool::Id name, const std::vector<TypeTable::Id> &argTypes) const;
     std::optional<FuncSignature> makeFuncSignature(const FuncCallSite &call) const;
@@ -159,28 +159,28 @@ public:
     ~SymbolTable();
 };
 
-class ScopeControl {
+class BlockControl {
     SymbolTable *symTable;
     bool funcOpen;
 
 public:
-    ScopeControl(SymbolTable *symTable = nullptr) : symTable(symTable), funcOpen(false) {
-        if (symTable != nullptr) symTable->newScope();
+    BlockControl(SymbolTable *symTable = nullptr) : symTable(symTable), funcOpen(false) {
+        if (symTable != nullptr) symTable->newBlock();
     }
     // ref cuz must not be null
-    ScopeControl(SymbolTable &symTable, const FuncValue &func) : symTable(&symTable), funcOpen(true) {
+    BlockControl(SymbolTable &symTable, const FuncValue &func) : symTable(&symTable), funcOpen(true) {
         this->symTable->setCurrFunc(func);
-        this->symTable->newScope();
+        this->symTable->newBlock();
     }
 
-    ScopeControl(const ScopeControl&) = delete;
-    void operator=(const ScopeControl&) = delete;
+    BlockControl(const BlockControl&) = delete;
+    void operator=(const BlockControl&) = delete;
 
-    ScopeControl(const ScopeControl&&) = delete;
-    void operator=(const ScopeControl&&) = delete;
+    BlockControl(const BlockControl&&) = delete;
+    void operator=(const BlockControl&&) = delete;
 
-    ~ScopeControl() {
-        if (symTable) symTable->endScope();
+    ~BlockControl() {
+        if (symTable) symTable->endBlock();
         if (funcOpen) symTable->clearCurrFunc();
     }
 };

@@ -244,7 +244,7 @@ bool Codegen::isGlobalScope() const {
     return symbolTable->inGlobalScope();
 }
 
-bool Codegen::isBlockTerminated() const {
+bool Codegen::isLlvmBlockTerminated() const {
     return !llvmBuilder.GetInsertBlock()->empty() && llvmBuilder.GetInsertBlock()->back().isTerminator();
 }
 

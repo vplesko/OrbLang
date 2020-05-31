@@ -156,14 +156,14 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
     return ret;
 }
 
-NodeVal Codegen::codegenAll(const AstNode *ast, bool makeScope) {
+NodeVal Codegen::codegenAll(const AstNode *ast, bool makeBlock) {
     if (!checkBlock(ast, true)) return NodeVal();
     if (ast->type.has_value()) {
         msgs->errorMismatchTypeAnnotation(ast->type.value()->codeLoc);
         return NodeVal();
     }
 
-    ScopeControl scope(makeScope ? symbolTable : nullptr);
+    BlockControl blockCtrl(makeBlock ? symbolTable : nullptr);
 
     for (const std::unique_ptr<AstNode> &child : ast->children) {
         if (!checkNotTerminal(child.get(), true)) return NodeVal();
@@ -531,20 +531,20 @@ NodeVal Codegen::codegenIf(const AstNode *ast) {
     llvmBuilder.CreateCondBr(condExpr.llvmVal.val, thenBlock, hasElse ? elseBlock : afterBlock);
 
     {
-        ScopeControl thenScope(symbolTable);
+        BlockControl thenBlockCtrl(symbolTable);
         llvmBuilder.SetInsertPoint(thenBlock);
         codegenAll(nodeThen, false);
         if (msgs->isFail()) return NodeVal();
-        if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
+        if (!isLlvmBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
     }
 
     if (hasElse) {
-        ScopeControl elseScope(symbolTable);
+        BlockControl elseBlockCtrl(symbolTable);
         func->getBasicBlockList().push_back(elseBlock);
         llvmBuilder.SetInsertPoint(elseBlock);
         codegenAll(nodeElse, false);
         if (msgs->isFail()) return NodeVal();
-        if (!isBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
+        if (!isLlvmBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
     }
 
     func->getBasicBlockList().push_back(afterBlock);
@@ -567,7 +567,7 @@ NodeVal Codegen::codegenFor(const AstNode *ast) {
     bool hasCond = !checkEmptyTerminal(nodeCond, false);
     bool hasIter = !checkEmptyTerminal(nodeIter, false);
     
-    ScopeControl scope(symbolTable);
+    BlockControl blockCtrl(symbolTable);
 
     codegenNode(nodeInit);
     if (msgs->isFail()) return NodeVal();
@@ -608,14 +608,14 @@ NodeVal Codegen::codegenFor(const AstNode *ast) {
     }
 
     {
-        ScopeControl scopeBody(symbolTable);
+        BlockControl blockCtrlBody(symbolTable);
         func->getBasicBlockList().push_back(bodyBlock);
         llvmBuilder.SetInsertPoint(bodyBlock);
         if (hasBody) {
             codegenAll(nodeBody, false);
             if (msgs->isFail()) return NodeVal();
         }
-        if (!isBlockTerminated()) llvmBuilder.CreateBr(iterBlock);
+        if (!isLlvmBlockTerminated()) llvmBuilder.CreateBr(iterBlock);
     }
     
     {
@@ -627,7 +627,7 @@ NodeVal Codegen::codegenFor(const AstNode *ast) {
             if (msgs->isFail()) return NodeVal();
         }
 
-        if (!isBlockTerminated()) llvmBuilder.CreateBr(condBlock);
+        if (!isLlvmBlockTerminated()) llvmBuilder.CreateBr(condBlock);
     }
 
     func->getBasicBlockList().push_back(afterBlock);
@@ -677,14 +677,14 @@ NodeVal Codegen::codegenWhile(const AstNode *ast) {
     }
 
     {
-        ScopeControl scope(symbolTable);
+        BlockControl blockCtrl(symbolTable);
         func->getBasicBlockList().push_back(bodyBlock);
         llvmBuilder.SetInsertPoint(bodyBlock);
         if (hasBody) {
             codegenAll(nodeBody, false);
             if (msgs->isFail()) return NodeVal();
         }
-        if (!isBlockTerminated()) llvmBuilder.CreateBr(condBlock);
+        if (!isLlvmBlockTerminated()) llvmBuilder.CreateBr(condBlock);
     }
 
     func->getBasicBlockList().push_back(afterBlock);
@@ -717,10 +717,10 @@ NodeVal Codegen::codegenDo(const AstNode *ast) {
     llvmBuilder.SetInsertPoint(bodyBlock);
 
     {
-        ScopeControl scope(symbolTable);
+        BlockControl blockCtrl(symbolTable);
         codegenAll(nodeBody, false);
         if (msgs->isFail()) return NodeVal();
-        if (!isBlockTerminated()) llvmBuilder.CreateBr(condBlock);
+        if (!isLlvmBlockTerminated()) llvmBuilder.CreateBr(condBlock);
     }
 
     {
@@ -1022,7 +1022,7 @@ NodeVal Codegen::codegenFunc(const AstNode *ast) {
 
     const FuncValue *funcVal = &funcValRet.value();
 
-    ScopeControl scope(*symbolTable, *funcVal);
+    BlockControl blockCtrl(*symbolTable, *funcVal);
 
     llvmBuilderAlloca.SetInsertPoint(llvm::BasicBlock::Create(llvmContext, "alloca", funcVal->func));
 
@@ -1050,7 +1050,7 @@ NodeVal Codegen::codegenFunc(const AstNode *ast) {
 
     llvmBuilderAlloca.CreateBr(body);
 
-    if (!funcVal->hasRet() && !isBlockTerminated())
+    if (!funcVal->hasRet() && !isLlvmBlockTerminated())
             llvmBuilder.CreateRetVoid();
 
     if (llvm::verifyFunction(*funcVal->func, &llvm::errs())) cerr << endl;

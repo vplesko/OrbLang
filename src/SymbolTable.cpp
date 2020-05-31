@@ -27,18 +27,18 @@ size_t MacroSignature::Hasher::operator()(const MacroSignature &k) const {
 
 SymbolTable::SymbolTable(StringPool *stringPool, TypeTable *typeTable)
     : stringPool(stringPool), typeTable(typeTable), inFunc(false) {
-    last = glob = new Scope();
+    last = glob = new Block();
     glob->prev = nullptr;
 }
 
-void SymbolTable::newScope() {
-    Scope *s = new Scope();
+void SymbolTable::newBlock() {
+    Block *s = new Block();
     s->prev = last;
     last = s;
 }
 
-void SymbolTable::endScope() {
-    Scope *s = last;
+void SymbolTable::endBlock() {
+    Block *s = last;
     last = last->prev;
     delete s;
 }
@@ -48,7 +48,7 @@ void SymbolTable::addVar(NamePool::Id name, const VarPayload &var) {
 }
 
 optional<SymbolTable::VarPayload> SymbolTable::getVar(NamePool::Id name) const {
-    for (Scope *s = last; s != nullptr; s = s->prev) {
+    for (Block *s = last; s != nullptr; s = s->prev) {
         auto loc = s->vars.find(name);
         if (loc != s->vars.end()) return loc->second;
     }
@@ -274,7 +274,7 @@ bool SymbolTable::macroMayTakeName(NamePool::Id name) const {
 
 SymbolTable::~SymbolTable() {
     while (last != nullptr) {
-        Scope *s = last;
+        Block *s = last;
         last = last->prev;
         delete s;
     }
