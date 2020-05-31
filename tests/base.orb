@@ -1,0 +1,27 @@
+// TODO! remove obsolete negative tests and error msgs
+
+// TODO revisit when first-class ids introduced
+// TODO rename when packages introduced (or whatever else i settle for, i've no idea where all this is going)
+mac loopingBlocksName() _loopingBlocksName;
+
+mac while(cond) (
+    block (loopingBlocksName) {
+        loop cond;
+    }
+);
+
+mac while(cond body) (
+    block (loopingBlocksName) {
+        exit (! cond);
+        block body;
+        loop true;
+    }
+);
+
+mac break() (exit (loopingBlocksName) true);
+
+mac break(cond) (exit (loopingBlocksName) cond);
+
+mac continue() (loop (loopingBlocksName) true);
+
+mac continue(cond) (loop (loopingBlocksName) cond);

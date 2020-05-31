@@ -71,7 +71,6 @@ unique_ptr<AstNode> Parser::parseTerm() {
     case Token::T_BLOCK:
     case Token::T_IF:
     case Token::T_FOR:
-    case Token::T_WHILE:
     case Token::T_DO:
     case Token::T_EXIT:
     case Token::T_LOOP:

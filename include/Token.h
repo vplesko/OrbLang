@@ -32,7 +32,6 @@ struct Token {
         T_BLOCK,
         T_IF,
         T_FOR,
-        T_WHILE,
         T_DO,
         T_EXIT,
         T_LOOP,

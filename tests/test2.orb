@@ -1,3 +1,4 @@
+import "tests/base.orb";
 import "tests/io.orb";
 
 fnc foo() () {
@@ -79,7 +80,7 @@ fnc main() () {
     };
 
     while (<= a 0) {
-        exit (<= a (- 3));
+        break (<= a (- 3));
         println_i64 a;
         -- a;
     };
@@ -97,7 +98,7 @@ fnc main() () {
 
     while (<= a 0) {
         ++ a;
-        loop (> a 0);
+        continue (> a 0);
         println_i64 a;
     };
 
@@ -155,20 +156,20 @@ fnc main() () {
     sameNamed 201;
 
     while false {
-        loop false;
+        continue false;
     };
 
     while true {
-        exit true;
+        break true;
     };
 
     while true {
-        exit (> 2 1);
+        break (> 2 1);
     };
 
     while false {
         let (x:i32 1);
-        loop (> x 2);
+        continue (> x 2);
     };
 
     block block1 {
