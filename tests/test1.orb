@@ -65,7 +65,7 @@ fnc main() () {
     let (b:i64 1);
     println_i64 (- a b):i64;
 
-    block {
+    block () {
         let (a:i64 100);
         println_i64 a;
     };
@@ -242,7 +242,7 @@ fnc main() () {
         "String that spans \n"
         "two lines in code\x21";
 
-    block {
+    block () {
         let (x:i32 1) (y:i32 2) (z:i32 3);
         = x y z (+ y 9000);
         println_i32 x;

@@ -6,27 +6,27 @@ mac ifOuterBlockName() _ifOuterBlockName;
 mac forFirstStepTracker() _forFirstStepTracker;
 
 mac if(cond then) (
-    block (ifOuterBlockName) {
+    block (ifOuterBlockName) () {
         exit (! cond);
-        block then;
+        block () then;
     }
 );
 
 mac if(cond then else) (
-    block (ifOuterBlockName) {
-        block {
+    block (ifOuterBlockName) () {
+        block () {
             exit (! cond);
-            block then;
+            block () then;
             exit (ifOuterBlockName) true;
         };
-        block else;
+        block () else;
     }
 );
 
 mac for(init cond step) (
-    block {
+    block () {
         init
-        (block (loopingBlocksName) {
+        (block (loopingBlocksName) () {
             (exit (! cond))
             step
             (loop true)
@@ -35,39 +35,39 @@ mac for(init cond step) (
 );
 
 mac for(init cond step body) (
-    block {
+    block () {
         init
         (let ((forFirstStepTracker):bool true))
-        (block (loopingBlocksName) {
+        (block (loopingBlocksName) () {
             (if (forFirstStepTracker) {
                 (= (forFirstStepTracker) false)
             } {
                 step
             })
             (exit (! cond))
-            (block body)
+            (block () body)
             (loop true)
         })
     }
 );
 
 mac while(cond) (
-    block (loopingBlocksName) {
+    block (loopingBlocksName) () {
         loop cond;
     }
 );
 
 mac while(cond body) (
-    block (loopingBlocksName) {
+    block (loopingBlocksName) () {
         exit (! cond);
-        block body;
+        block () body;
         loop true;
     }
 );
 
 mac do(body cond) (
-    block (loopingBlocksName) {
-        block body;
+    block (loopingBlocksName) () {
+        block () body;
         exit (! cond);
         loop true;
     }

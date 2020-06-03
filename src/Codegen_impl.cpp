@@ -651,19 +651,26 @@ NodeVal Codegen::codegenRet(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenBlock(const AstNode *ast) {
-    if (!checkBetweenChildren(ast, 2, 3, true)) {
+    if (!checkBetweenChildren(ast, 3, 4, true)) {
         return NodeVal();
     }
 
-    bool hasName = ast->children.size() == 3;
+    bool hasName = ast->children.size() == 4;
 
     const AstNode *nodeName = hasName ? ast->children[1].get() : nullptr;
-    const AstNode *nodeBody = ast->children[hasName ? 2 : 1].get();
+    const AstNode *nodeType = ast->children[hasName ? 2 : 1].get();
+    const AstNode *nodeBody = ast->children[hasName ? 3 : 2].get();
 
     optional<NamePool::Id> name;
     if (hasName) {
         name = getId(nodeName, true);
         if (!name.has_value()) return NodeVal();
+    }
+
+    optional<TypeTable::Id> type;
+    if (!checkEmptyTerminal(nodeType, false)) {
+        type = getType(nodeType, true);
+        if (!type.has_value()) return NodeVal();
     }
 
     llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
@@ -677,6 +684,7 @@ NodeVal Codegen::codegenBlock(const AstNode *ast) {
     {
         SymbolTable::Block blockOpen;
         if (hasName) blockOpen.name = name;
+        if (type.has_value()) blockOpen.type = type.value();
         blockOpen.blockExit = afterBlock;
         blockOpen.blockLoop = bodyBlock;
         BlockControl blockCtrl(symbolTable, blockOpen);

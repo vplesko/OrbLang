@@ -94,6 +94,7 @@ public:
 
     struct Block {
         std::optional<NamePool::Id> name;
+        std::optional<TypeTable::Id> type;
         llvm::BasicBlock *blockExit = nullptr, *blockLoop = nullptr;
     };
 

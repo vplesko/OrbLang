@@ -2,7 +2,7 @@ fnc foo() () {
 };
 
 fnc main() () {
-    block {
+    block () {
         { foo; }
     };
 };

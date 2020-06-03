@@ -29,11 +29,11 @@ fnc main() () {
     if (< a b) {(println_i64 102)};
     if (>= a b) {(println_i64 103)};
     if (> (+ a 3) (+ b 5)) {(println_i64 104)};
-    block {
+    block () {
         let (x:i64 5);
         if (> x a) { (println_i64 105) };
     };
-    block blockName {
+    block blockName () {
         = a 100;
         if (> a b) { (println_i64 106) };
     };
@@ -174,7 +174,7 @@ fnc main() () {
         continue (> x 2);
     };
 
-    block block1 {
+    block block1 () {
         while true {
             println_i32 202;
             exit block1 true;
