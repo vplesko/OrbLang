@@ -27,22 +27,20 @@ size_t MacroSignature::Hasher::operator()(const MacroSignature &k) const {
 
 SymbolTable::SymbolTable(StringPool *stringPool, TypeTable *typeTable)
     : stringPool(stringPool), typeTable(typeTable), inFunc(false) {
-    last = glob = new Block();
+    last = glob = new BlockInternal();
     glob->prev = nullptr;
 }
 
-void SymbolTable::newBlock(BlockOpen b) {
-    Block *s = new Block();
-    s->name = b.name;
-    s->blockExit = b.blockExit;
-    s->blockLoop = b.blockLoop;
+void SymbolTable::newBlock(Block b) {
+    BlockInternal *s = new BlockInternal();
+    s->block = b;
     
     s->prev = last;
     last = s;
 }
 
 void SymbolTable::endBlock() {
-    Block *s = last;
+    BlockInternal *s = last;
     last = last->prev;
     delete s;
 }
@@ -52,7 +50,7 @@ void SymbolTable::addVar(NamePool::Id name, const VarPayload &var) {
 }
 
 optional<SymbolTable::VarPayload> SymbolTable::getVar(NamePool::Id name) const {
-    for (Block *s = last; s != nullptr; s = s->prev) {
+    for (BlockInternal *s = last; s != nullptr; s = s->prev) {
         auto loc = s->vars.find(name);
         if (loc != s->vars.end()) return loc->second;
     }
@@ -237,8 +235,8 @@ optional<MacroValue> SymbolTable::getMacro(const MacroSignature &sig) const {
 }
 
 const SymbolTable::Block* SymbolTable::getBlock(NamePool::Id name) const {
-    for (const Block *s = last; s != nullptr; s = s->prev) {
-        if (s->name == name) return s;
+    for (const BlockInternal *s = last; s != nullptr; s = s->prev) {
+        if (s->block.name == name) return &s->block;
     }
 
     return nullptr;
@@ -286,7 +284,7 @@ bool SymbolTable::macroMayTakeName(NamePool::Id name) const {
 
 SymbolTable::~SymbolTable() {
     while (last != nullptr) {
-        Block *s = last;
+        BlockInternal *s = last;
         last = last->prev;
         delete s;
     }

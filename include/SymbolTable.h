@@ -92,19 +92,18 @@ public:
         explicit FuncForCallPayload(const FuncValue &funcVal) : res(kFound), funcVal(funcVal) {}
     };
 
-    struct BlockOpen {
-        std::optional<NamePool::Id> name;
-        llvm::BasicBlock *blockExit = nullptr, *blockLoop = nullptr;
-    };
-
     struct Block {
         std::optional<NamePool::Id> name;
         llvm::BasicBlock *blockExit = nullptr, *blockLoop = nullptr;
-        std::unordered_map<NamePool::Id, VarPayload> vars;
-        Block *prev;
     };
 
 private:
+    struct BlockInternal {
+        Block block;
+        std::unordered_map<NamePool::Id, VarPayload> vars;
+        BlockInternal *prev;
+    };
+
     friend class BlockControl;
 
     StringPool *stringPool;
@@ -115,7 +114,7 @@ private:
 
     std::unordered_map<MacroSignature, MacroValue, MacroSignature::Hasher> macros;
 
-    Block *last, *glob;
+    BlockInternal *last, *glob;
 
     bool inFunc;
     FuncValue currFunc;
@@ -123,7 +122,7 @@ private:
     void setCurrFunc(const FuncValue &func) { inFunc = true; currFunc = func; }
     void clearCurrFunc() { inFunc = false; }
 
-    void newBlock(BlockOpen b);
+    void newBlock(Block b);
     void endBlock();
 
     FuncSignature makeFuncSignature(NamePool::Id name, const std::vector<TypeTable::Id> &argTypes) const;
@@ -148,7 +147,7 @@ public:
     std::optional<MacroValue> getMacro(const MacroSignature &sig) const;
 
     bool inGlobalScope() const { return last == glob; }
-    const Block* getLastBlock() const { return last; }
+    const Block* getLastBlock() const { return &last->block; }
     const Block* getBlock(NamePool::Id name) const;
 
     std::optional<FuncValue> getCurrFunc() const;
@@ -174,15 +173,15 @@ class BlockControl {
 
 public:
     explicit BlockControl(SymbolTable *symTable = nullptr) : symTable(symTable), funcOpen(false) {
-        if (symTable != nullptr) symTable->newBlock(SymbolTable::BlockOpen());
+        if (symTable != nullptr) symTable->newBlock(SymbolTable::Block());
     }
-    BlockControl(SymbolTable *symTable, SymbolTable::BlockOpen bo) : symTable(symTable), funcOpen(false) {
+    BlockControl(SymbolTable *symTable, SymbolTable::Block bo) : symTable(symTable), funcOpen(false) {
         this->symTable->newBlock(bo);
     }
     // ref cuz must not be null
     BlockControl(SymbolTable &symTable, const FuncValue &func) : symTable(&symTable), funcOpen(true) {
         this->symTable->setCurrFunc(func);
-        this->symTable->newBlock(SymbolTable::BlockOpen());
+        this->symTable->newBlock(SymbolTable::Block());
     }
 
     BlockControl(const BlockControl&) = delete;

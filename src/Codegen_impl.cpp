@@ -675,7 +675,7 @@ NodeVal Codegen::codegenBlock(const AstNode *ast) {
     llvmBuilder.SetInsertPoint(bodyBlock);
 
     {
-        SymbolTable::BlockOpen blockOpen;
+        SymbolTable::Block blockOpen;
         if (hasName) blockOpen.name = name;
         blockOpen.blockExit = afterBlock;
         blockOpen.blockLoop = bodyBlock;
