@@ -693,6 +693,7 @@ NodeVal Codegen::codegenBlock(const AstNode *ast) {
         if (!isLlvmBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
     }
 
+    // TODO don't do this when nothing jumps into this block
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);
 
@@ -831,7 +832,7 @@ optional<FuncValue> Codegen::codegenFuncProto(const AstNode *ast, bool definitio
     return symbolTable->registerFunc(val);
 }
 
-// TODO when 'while ... { ret ...; }' is the final instruction in a function, llvm gives a warning
+// TODO when 'while true { ret ...; }' is the final instruction in a function, llvm gives a warning
 NodeVal Codegen::codegenFunc(const AstNode *ast) {
     if (!checkGlobalScope(ast->codeLoc, true) ||
         !checkAtLeastChildren(ast, 4, true)) {
