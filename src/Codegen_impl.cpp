@@ -669,6 +669,8 @@ NodeVal Codegen::codegenRet(const AstNode *ast) {
 
     const AstNode *nodeVal = hasVal ? ast->children[1].get() : nullptr;
 
+    if (hasVal && checkEmptyTerminal(nodeVal, false)) hasVal = false;
+
     optional<FuncValue> currFunc = symbolTable->getCurrFunc();
     if (!currFunc.has_value()) {
         msgs->errorUnexpectedKeyword(ast->codeLoc, Token::T_RET);

@@ -7,6 +7,7 @@
 
 class Codegen;
 
+// TODO find a way to not get into a lot of code duplication with Codegen before introducing compile-time evaluations
 class Evaluator {
     SymbolTable *symbolTable;
     AstStorage *astStorage;

@@ -9,6 +9,10 @@ fnc bar() () {
     for () true () { ret; };
 };
 
+fnc loneRet() () {
+    ret ();
+};
+
 fnc inc(a:i64) i64 {
     ret (+ a 1);
 };
@@ -216,4 +220,6 @@ fnc main() () {
         };
         pass 0; // dummy
     });
+
+    loneRet;
 };
