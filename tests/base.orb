@@ -4,6 +4,7 @@
 mac loopingBlocksName() _loopingBlocksName;
 mac ifOuterBlockName() _ifOuterBlockName;
 mac forFirstStepTracker() _forFirstStepTracker;
+mac logicBlocksName() _logicBlocksName;
 
 mac if(cond then) (
     block (ifOuterBlockName) () {
@@ -80,3 +81,23 @@ mac break(cond) (exit (loopingBlocksName) cond);
 mac continue() (loop (loopingBlocksName) true);
 
 mac continue(cond) (loop (loopingBlocksName) cond);
+
+mac and(p q) (
+    block (logicBlocksName) bool {
+        block {
+            exit p;
+            pass (logicBlocksName) false;
+        };
+        pass q;
+    }
+);
+
+mac or(p q) (
+    block (logicBlocksName) bool {
+        block {
+            exit (! p);
+            pass (logicBlocksName) true;
+        };
+        pass q;
+    }
+);

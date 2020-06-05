@@ -94,9 +94,6 @@ class Codegen {
     NodeVal codegenOperUnaryUntyped(CodeLoc codeLoc, Token::Oper op, UntypedVal unty);
     NodeVal codegenOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs, const NodeVal &rhs);
     NodeVal codegenOper(const AstNode *ast, const NodeVal &first);
-    // helper function for short-circuit evaluation of boolean AND and OR
-    NodeVal codegenOperLogicAndOr(const AstNode *ast, const NodeVal &first);
-    NodeVal codegenOperLogicAndOrGlobalScope(const AstNode *ast, const NodeVal &first);
     NodeVal codegenOperBinaryUntyped(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR);
     NodeVal codegenTuple(const AstNode *ast, const NodeVal &first);
     NodeVal codegenCall(const AstNode *ast, const NodeVal &first);

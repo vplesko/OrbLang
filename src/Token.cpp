@@ -14,8 +14,6 @@ const unordered_map<Token::Oper, OperInfo> operInfos = {
     {Token::O_BIT_AND_ASGN, {.assignment=true, .l_assoc=false}},
     {Token::O_BIT_XOR_ASGN, {.assignment=true, .l_assoc=false}},
     {Token::O_BIT_OR_ASGN, {.assignment=true, .l_assoc=false}},
-    {Token::O_OR, {.variadic=false}},
-    {Token::O_AND, {.variadic=false}},
     {Token::O_BIT_OR, {}},
     {Token::O_BIT_XOR, {.variadic=false}},
     {Token::O_BIT_AND, {.unary=true}},
@@ -50,8 +48,6 @@ const unordered_map<string, Token> keywords = {
     {"INF", {.type=Token::T_FNUM, .fnum=INFINITY}},
     {"NAN", {.type=Token::T_FNUM, .fnum=NAN}},
     {"null", {.type=Token::T_NULL}},
-    {"and", {.type=Token::T_OPER, .op=Token::O_AND}},
-    {"or", {.type=Token::T_OPER, .op=Token::O_OR}},
     {"cn", {Token::T_CN}},
     {"fnc", {Token::T_FNC}},
     {"mac", {Token::T_MAC}},
@@ -144,8 +140,6 @@ std::string errorString(Token::Oper op) {
     case Token::O_BIT_AND_ASGN: return "&=";
     case Token::O_BIT_XOR_ASGN: return "^=";
     case Token::O_BIT_OR_ASGN: return "|=";
-    case Token::O_OR: return "or";
-    case Token::O_AND: return "and";
     case Token::O_BIT_OR: return "|";
     case Token::O_BIT_XOR: return "^";
     case Token::O_BIT_AND: return "&";
