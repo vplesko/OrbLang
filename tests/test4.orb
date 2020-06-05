@@ -10,7 +10,7 @@ fnc foo_var(x:f32 ...) () __no_name_mangle;
 
 let (glob1:(i32 *) null) glob2:(i32 4) glob3:(i32 []);
 
-fnc pass(x:(i32 [])) (i32 []) {
+fnc passthrough(x:(i32 [])) (i32 []) {
     ret x;
 };
 
@@ -30,11 +30,11 @@ fnc retAll(val:i32) (i32 4) {
     ret (arr (i32 4) val val val val);
 };
 
-fnc pass(x:i32) i32 {
+fnc passthrough(x:i32) i32 {
     ret x;
 };
 
-fnc pass(x:(i32 cn * cn)) i32 {
+fnc passthrough(x:(i32 cn * cn)) i32 {
     ret (* x);
 };
 
@@ -125,7 +125,7 @@ fnc main() () {
     = (* a) 202;
     println_i32 (* (* (& (* (& a)))));
     = (* a) 203;
-    println_i32 (pass a);
+    println_i32 (passthrough a);
     free a;
     free b;
 
@@ -136,7 +136,7 @@ fnc main() () {
     println_i32 ([] g j);
     println_i32 ([] g 0);
     println_i32 ([] (cast (i32 []) g) 0);
-    println_i32 ([] (pass g) 0);
+    println_i32 ([] (passthrough g) 0);
     = ([] g 1) 301;
     println_i32 ([] g 1);
     println_i32 ([] g (+ j 1));
@@ -221,7 +221,7 @@ fnc main() () {
     = ([] s1 0) 1003;
     println_i32 ([] s1 0);
     = j 1004;
-    println_i32 (pass j);
+    println_i32 (passthrough j);
     if (cast bool r1) {(println_i32 1005)};
     if (cast bool r2) {(println_i32 1006)};
     if (cast bool r3) {(println_i32 1007)};

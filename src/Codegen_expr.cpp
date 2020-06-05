@@ -1195,18 +1195,8 @@ NodeVal Codegen::codegenArr(const AstNode *ast) {
     for (size_t i = 0; i < arrLen; ++i) {
         const AstNode *nodeElem = ast->children[i+2].get();
 
-        NodeVal exprPay = codegenNode(nodeElem);
-        if (!checkValueUnbroken(nodeElem->codeLoc, exprPay, true)) return NodeVal();
-
-        if (exprPay.isUntyVal() && !promoteUntyped(exprPay, elemTypeId)) {
-            msgs->errorExprCannotPromote(nodeElem->codeLoc, elemTypeId);
-            return NodeVal();
-        }
-        if (!getTypeTable()->isImplicitCastable(exprPay.llvmVal.type, elemTypeId)) {
-            msgs->errorExprCannotImplicitCast(nodeElem->codeLoc, exprPay.llvmVal.type, elemTypeId);
-            return NodeVal();
-        }
-        createCast(exprPay, elemTypeId);
+        NodeVal exprPay = codegenConversion(nodeElem, elemTypeId);
+        if (exprPay.isInvalid()) return NodeVal();
 
         llvm::Value *elemRef = llvmBuilder.CreateGEP(arrRef, 
             {llvm::ConstantInt::get(getLlvmType(getPrimTypeId(TypeTable::WIDEST_I)), 0),

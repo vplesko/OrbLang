@@ -181,4 +181,39 @@ fnc main() () {
         };
         println_i32 203;
     };
+
+    println_i32 (block i32 {
+        let (x:i32 300);
+        pass x;
+    });
+
+    println_i32 (block block1 i32 {
+        block () {
+            let (x:i16 301);
+            pass block1 x;
+        };
+        pass 0; // dummy TODO make this unnecessary
+    });
+
+    block block1 () {
+        println_i32 302;
+        block i32 {
+            exit block1 true;
+            pass 0; // dummy
+        };
+        println_i32 303;
+    };
+
+    println_i32 (block block1 i32 {
+        let (x:bool true);
+        block () {
+            exit x;
+            pass block1 304;
+        };
+        block () {
+            exit (! x);
+            pass block1 305;
+        };
+        pass 0; // dummy
+    });
 };

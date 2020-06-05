@@ -31,6 +31,7 @@ struct Token {
         T_CAST,
         T_BLOCK,
         T_EXIT,
+        T_PASS,
         T_LOOP,
         T_RET,
         T_IMPORT,

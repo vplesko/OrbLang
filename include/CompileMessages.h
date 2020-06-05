@@ -96,6 +96,8 @@ public:
     void errorExprDotInvalidBase(CodeLoc loc);
     void errorExprNotValue(CodeLoc loc);
     void errorExitNowhere(CodeLoc loc);
+    void errorExitPassingBlock(CodeLoc loc);
+    void errorPassNonPassingBlock(CodeLoc loc);
     void errorLoopNowhere(CodeLoc loc);
     void errorRetNoValue(CodeLoc loc, TypeTable::Id shouldRet);
     void errorFuncNameTaken(CodeLoc loc, NamePool::Id name);
@@ -106,6 +108,7 @@ public:
     void errorFuncAmbigious(CodeLoc loc, NamePool::Id name);
     void errorMacroNotFound(CodeLoc loc, NamePool::Id name);
     void errorBlockNotFound(CodeLoc loc, NamePool::Id name);
+    void errorBlockNoPass(CodeLoc loc);
     void errorMemberIndex(CodeLoc loc);
     void errorTupleValueMember(CodeLoc loc);
     void errorMismatchTypeAnnotation(CodeLoc loc, TypeTable::Id ty);

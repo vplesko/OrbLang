@@ -501,6 +501,13 @@ optional<Token::Attr> Codegen::getAttr(const AstNode *ast, bool orError) {
     return nodeVal.attribute;
 }
 
+SymbolTable::Block* Codegen::getBlock(CodeLoc codeLoc, NamePool::Id name, bool orError) {
+    SymbolTable::Block *block = symbolTable->getBlock(name);
+    if (block == nullptr && orError)
+        msgs->errorBlockNotFound(codeLoc, name);
+    return block;
+}
+
 void Codegen::printout() const {
     llvmModule->print(llvm::outs(), nullptr);
 }

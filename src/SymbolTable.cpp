@@ -242,6 +242,14 @@ const SymbolTable::Block* SymbolTable::getBlock(NamePool::Id name) const {
     return nullptr;
 }
 
+SymbolTable::Block* SymbolTable::getBlock(NamePool::Id name) {
+    for (BlockInternal *s = last; s != nullptr; s = s->prev) {
+        if (s->block.name == name) return &s->block;
+    }
+
+    return nullptr;
+}
+
 optional<FuncValue> SymbolTable::getCurrFunc() const {
     if (inFunc) return currFunc;
     else return nullopt;

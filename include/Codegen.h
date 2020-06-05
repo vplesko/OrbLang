@@ -82,6 +82,7 @@ class Codegen {
     std::optional<Token::Oper> getOper(const AstNode *ast, bool orError);
     std::optional<UntypedVal> getUntypedVal(const AstNode *ast, bool orError);
     std::optional<Token::Attr> getAttr(const AstNode *ast, bool orError);
+    SymbolTable::Block* getBlock(CodeLoc codeLoc, NamePool::Id name, bool orError);
 
     NodeVal codegenUntypedVal(const AstNode *ast);
     NodeVal codegenVar(const AstNode *ast);
@@ -104,10 +105,13 @@ class Codegen {
     NodeVal codegenImport(const AstNode *ast);
     NodeVal codegenLet(const AstNode *ast);
     NodeVal codegenExit(const AstNode *ast);
+    NodeVal codegenPass(const AstNode *ast);
     NodeVal codegenLoop(const AstNode *ast);
     NodeVal codegenRet(const AstNode *ast);
     NodeVal codegenBlock(const AstNode *ast);
     NodeVal codegenFunc(const AstNode *ast);
+
+    NodeVal codegenConversion(const AstNode *ast, TypeTable::Id t);
 
     std::optional<NodeVal> codegenTypeDescr(const AstNode *ast, const NodeVal &first);
     NodeVal codegenType(const AstNode *ast, const NodeVal &first);

@@ -86,6 +86,9 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
             case Token::T_EXIT:
                 ret = codegenExit(ast);
                 break;
+            case Token::T_PASS:
+                ret = codegenPass(ast);
+                break;
             case Token::T_LOOP:
                 ret = codegenLoop(ast);
                 break;
@@ -158,6 +161,26 @@ NodeVal Codegen::codegenAll(const AstNode *ast) {
     }
 
     return NodeVal();
+}
+
+NodeVal Codegen::codegenConversion(const AstNode *ast, TypeTable::Id t) {
+    NodeVal value = codegenNode(ast);
+    if (!checkValueUnbroken(ast->codeLoc, value, true)) return NodeVal();
+    if (value.isUntyVal() && !promoteUntyped(value, t)) {
+        msgs->errorExprCannotPromote(ast->codeLoc, t);
+        return NodeVal();
+    }
+    if (value.llvmVal.type != t) {
+        if (!getTypeTable()->isImplicitCastable(value.llvmVal.type, t)) {
+            msgs->errorExprCannotImplicitCast(ast->codeLoc, value.llvmVal.type, t);
+            return NodeVal();
+        }
+        if (!createCast(value, t)) {
+            msgs->errorInternal(ast->codeLoc);
+            return NodeVal();
+        }
+    }
+    return value;
 }
 
 optional<NodeVal> Codegen::codegenTypeDescr(const AstNode *ast, const NodeVal &first) {
@@ -503,26 +526,24 @@ NodeVal Codegen::codegenExit(const AstNode *ast) {
         if (!name.has_value()) return NodeVal();
     }
 
-    llvm::BasicBlock *blockExit;
-    if (hasName) {
-        const SymbolTable::Block *symBlockExit = symbolTable->getBlock(name.value());
-        if (symBlockExit == nullptr) {
-            msgs->errorBlockNotFound(nodeName->codeLoc, name.value());
-            return NodeVal();
-        }
-        blockExit = symBlockExit->blockExit;
-    } else {
-        blockExit = symbolTable->getLastBlock()->blockExit;
-    }
-    if (isGlobalScope() || blockExit == nullptr) {
+    SymbolTable::Block *targetBlock;
+    if (hasName) targetBlock = getBlock(nodeName->codeLoc, name.value(), true);
+    else targetBlock = symbolTable->getLastBlock();
+    if (isGlobalScope() || targetBlock == nullptr) {
         msgs->errorExitNowhere(ast->codeLoc);
         return NodeVal();
     }
+    llvm::BasicBlock *blockExit = targetBlock->blockExit;
 
     llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
 
     NodeVal valCond = codegenNode(nodeCond);
     if (!checkValueUnbroken(nodeCond->codeLoc, valCond, true)) return NodeVal();
+
+    if (targetBlock->type.has_value()) {
+        msgs->errorExitPassingBlock(ast->codeLoc);
+        return NodeVal();
+    }
 
     if (valCond.isUntyVal()) {
         if (valCond.untyVal.kind != UntypedVal::Kind::kBool) {
@@ -546,6 +567,47 @@ NodeVal Codegen::codegenExit(const AstNode *ast) {
     return NodeVal();
 }
 
+NodeVal Codegen::codegenPass(const AstNode *ast) {
+    if (!checkBetweenChildren(ast, 2, 3, true)) {
+        return NodeVal();
+    }
+
+    bool hasName = ast->children.size() == 3;
+
+    const AstNode *nodeName = hasName ? ast->children[1].get() : nullptr;
+    const AstNode *nodeValue = ast->children[hasName ? 2 : 1].get();
+
+    optional<NamePool::Id> name;
+    if (hasName) {
+        name = getId(nodeName, true);
+        if (!name.has_value()) return NodeVal();
+    }
+
+    SymbolTable::Block *targetBlock;
+    if (hasName) targetBlock = getBlock(nodeName->codeLoc, name.value(), true);
+    else targetBlock = symbolTable->getLastBlock();
+    if (isGlobalScope() || targetBlock == nullptr) {
+        msgs->errorExitNowhere(ast->codeLoc);
+        return NodeVal();
+    }
+    llvm::BasicBlock *blockExit = targetBlock->blockExit;
+
+    if (!targetBlock->type.has_value()) {
+        msgs->errorPassNonPassingBlock(nodeValue->codeLoc);
+        return NodeVal();
+    }
+
+    TypeTable::Id expectedType = targetBlock->type.value();
+
+    NodeVal value = codegenConversion(nodeValue, expectedType);
+    if (value.isInvalid()) return NodeVal();
+
+    targetBlock->phi->addIncoming(value.llvmVal.val, llvmBuilder.GetInsertBlock());
+    llvmBuilder.CreateBr(blockExit);
+
+    return NodeVal();
+}
+
 NodeVal Codegen::codegenLoop(const AstNode *ast) {
     if (!checkBetweenChildren(ast, 2, 3, true)) {
         return NodeVal();
@@ -562,21 +624,14 @@ NodeVal Codegen::codegenLoop(const AstNode *ast) {
         if (!name.has_value()) return NodeVal();
     }
 
-    llvm::BasicBlock *blockLoop;
-    if (hasName) {
-        const SymbolTable::Block *symBlockLoop = symbolTable->getBlock(name.value());
-        if (symBlockLoop == nullptr) {
-            msgs->errorBlockNotFound(nodeName->codeLoc, name.value());
-            return NodeVal();
-        }
-        blockLoop = symBlockLoop->blockLoop;
-    } else {
-        blockLoop = symbolTable->getLastBlock()->blockLoop;
-    }
-    if (isGlobalScope() || blockLoop == nullptr) {
+    SymbolTable::Block *targetBlock;
+    if (hasName) targetBlock = getBlock(nodeName->codeLoc, name.value(), true);
+    else targetBlock = symbolTable->getLastBlock();
+    if (isGlobalScope() || targetBlock == nullptr) {
         msgs->errorLoopNowhere(ast->codeLoc);
         return NodeVal();
     }
+    llvm::BasicBlock *blockLoop = targetBlock->blockLoop;
 
     llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
 
@@ -629,23 +684,11 @@ NodeVal Codegen::codegenRet(const AstNode *ast) {
         return NodeVal();
     }
 
-    NodeVal retExpr = codegenNode(nodeVal);
-    if (!checkValueUnbroken(nodeVal->codeLoc, retExpr, true)) return NodeVal();
-    if (retExpr.isUntyVal() && !promoteUntyped(retExpr, currFunc.value().retType.value())) {
-        msgs->errorExprCannotPromote(nodeVal->codeLoc, currFunc.value().retType.value());
-        return NodeVal();
-    }
+    // TODO allow ret (); to be same as ret;
+    NodeVal retExpr = codegenConversion(nodeVal, currFunc.value().retType.value());
+    if (retExpr.isInvalid()) return NodeVal();
 
-    llvm::Value *retVal = retExpr.llvmVal.val;
-    if (retExpr.llvmVal.type != currFunc.value().retType.value()) {
-        if (!getTypeTable()->isImplicitCastable(retExpr.llvmVal.type, currFunc.value().retType.value())) {
-            msgs->errorExprCannotImplicitCast(nodeVal->codeLoc, retExpr.llvmVal.type, currFunc.value().retType.value());
-            return NodeVal();
-        }
-        createCast(retVal, retExpr.llvmVal.type, currFunc.value().retType.value());
-    }
-
-    llvmBuilder.CreateRet(retVal);
+    llvmBuilder.CreateRet(retExpr.llvmVal.val);
 
     return NodeVal();
 }
@@ -657,6 +700,7 @@ NodeVal Codegen::codegenBlock(const AstNode *ast) {
 
     bool hasName = ast->children.size() == 4;
 
+    // TODO make type optional when no name
     const AstNode *nodeName = hasName ? ast->children[1].get() : nullptr;
     const AstNode *nodeType = ast->children[hasName ? 2 : 1].get();
     const AstNode *nodeBody = ast->children[hasName ? 3 : 2].get();
@@ -672,6 +716,7 @@ NodeVal Codegen::codegenBlock(const AstNode *ast) {
         type = getType(nodeType, true);
         if (!type.has_value()) return NodeVal();
     }
+    bool hasType = type.has_value();
 
     llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
 
@@ -679,23 +724,47 @@ NodeVal Codegen::codegenBlock(const AstNode *ast) {
     llvm::BasicBlock *afterBlock = llvm::BasicBlock::Create(llvmContext, "after");
 
     llvmBuilder.CreateBr(bodyBlock);
+
+    llvm::PHINode *phi = nullptr;
+    if (hasType) {
+        llvmBuilder.SetInsertPoint(afterBlock);
+        phi = llvmBuilder.CreatePHI(getLlvmType(type.value()), 0, "block_val");
+    }
+
     llvmBuilder.SetInsertPoint(bodyBlock);
 
     {
         SymbolTable::Block blockOpen;
         if (hasName) blockOpen.name = name;
-        if (type.has_value()) blockOpen.type = type.value();
+        if (hasType) {
+            blockOpen.type = type.value();
+            blockOpen.phi = phi;
+        }
         blockOpen.blockExit = afterBlock;
         blockOpen.blockLoop = bodyBlock;
         BlockControl blockCtrl(symbolTable, blockOpen);
 
         codegenAll(nodeBody);
-        if (!isLlvmBlockTerminated()) llvmBuilder.CreateBr(afterBlock);
+
+        if (!isLlvmBlockTerminated()) {
+            if (hasType) {
+                msgs->errorBlockNoPass(nodeBody->codeLoc);
+                return NodeVal();
+            }
+
+            llvmBuilder.CreateBr(afterBlock);
+        }
     }
 
-    // TODO don't do this when nothing jumps into this block
     func->getBasicBlockList().push_back(afterBlock);
     llvmBuilder.SetInsertPoint(afterBlock);
+
+    if (hasType) {
+        NodeVal ret(NodeVal::Kind::kLlvmVal);
+        ret.llvmVal.type = type.value();
+        ret.llvmVal.val = phi;
+        return ret;
+    }
 
     return NodeVal();
 }
@@ -833,6 +902,7 @@ optional<FuncValue> Codegen::codegenFuncProto(const AstNode *ast, bool definitio
 }
 
 // TODO when 'while true { ret ...; }' is the final instruction in a function, llvm gives a warning
+//  that would require tracking if all code paths return, and there's the same problem with pass in blocks
 NodeVal Codegen::codegenFunc(const AstNode *ast) {
     if (!checkGlobalScope(ast->codeLoc, true) ||
         !checkAtLeastChildren(ast, 4, true)) {

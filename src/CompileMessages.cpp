@@ -191,25 +191,25 @@ void CompileMessages::errorUnexpectedNodeValue(CodeLoc loc) {
 
 void CompileMessages::errorChildrenNotEq(CodeLoc loc, std::size_t cnt) {
     stringstream ss;
-    ss << "Number of children notes must be exactly " << cnt << ".";
+    ss << "Number of children nodes must be exactly " << cnt << ".";
     error(loc, ss.str());
 }
 
 void CompileMessages::errorChildrenLessThan(CodeLoc loc, std::size_t cnt) {
     stringstream ss;
-    ss << "Number of children notes must be at least " << cnt << ".";
+    ss << "Number of children nodes must be at least " << cnt << ".";
     error(loc, ss.str());
 }
 
 void CompileMessages::errorChildrenMoreThan(CodeLoc loc, std::size_t cnt) {
     stringstream ss;
-    ss << "Number of children notes must be at most " << cnt << ".";
+    ss << "Number of children nodes must be at most " << cnt << ".";
     error(loc, ss.str());
 }
 
 void CompileMessages::errorChildrenNotBetween(CodeLoc loc, std::size_t lo, std::size_t hi) {
     stringstream ss;
-    ss << "Number of children notes must be between " << lo << " and " << hi << ".";
+    ss << "Number of children nodes must be between " << lo << " and " << hi << ".";
     error(loc, ss.str());
 }
 
@@ -316,6 +316,14 @@ void CompileMessages::errorExitNowhere(CodeLoc loc) {
     error(loc, "Exit statement has no enclosing block to exit from.");
 }
 
+void CompileMessages::errorExitPassingBlock(CodeLoc loc) {
+    error(loc, "Attempting to exit a passing block.");
+}
+
+void CompileMessages::errorPassNonPassingBlock(CodeLoc loc) {
+    error(loc, "Attempting to pass a value from a non-passing block.");
+}
+
 void CompileMessages::errorLoopNowhere(CodeLoc loc) {
     error(loc, "Loop statement has no enclosing block to loop in.");
 }
@@ -373,6 +381,10 @@ void CompileMessages::errorBlockNotFound(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "No enclosing blocks with name '" << namePool->get(name) << "' have been found.";
     error(loc, ss.str());
+}
+
+void CompileMessages::errorBlockNoPass(CodeLoc loc) {
+    error(loc, "End of passing block reached without a value being passed.");
 }
 
 void CompileMessages::errorMemberIndex(CodeLoc loc) {

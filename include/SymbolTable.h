@@ -96,6 +96,7 @@ public:
         std::optional<NamePool::Id> name;
         std::optional<TypeTable::Id> type;
         llvm::BasicBlock *blockExit = nullptr, *blockLoop = nullptr;
+        llvm::PHINode *phi = nullptr;
     };
 
 private:
@@ -149,7 +150,9 @@ public:
 
     bool inGlobalScope() const { return last == glob; }
     const Block* getLastBlock() const { return &last->block; }
+    Block* getLastBlock() { return &last->block; }
     const Block* getBlock(NamePool::Id name) const;
+    Block* getBlock(NamePool::Id name);
 
     std::optional<FuncValue> getCurrFunc() const;
 
