@@ -696,16 +696,29 @@ NodeVal Codegen::codegenRet(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenBlock(const AstNode *ast) {
-    if (!checkBetweenChildren(ast, 3, 4, true)) {
+    if (!checkBetweenChildren(ast, 2, 4, true)) {
         return NodeVal();
     }
 
-    bool hasName = ast->children.size() == 4;
+    bool hasName = false, hasType = false;
+    size_t indName, indType, indBody;
+    if (ast->children.size() == 2) {
+        indBody = 1;
+    } else if (ast->children.size() == 3) {
+        hasType = true;
+        indType = 1;
+        indBody = 2;
+    } else {
+        hasName = true;
+        hasType = true;
+        indName = 1;
+        indType = 2;
+        indBody = 3;
+    }
 
-    // TODO make type optional when no name
-    const AstNode *nodeName = hasName ? ast->children[1].get() : nullptr;
-    const AstNode *nodeType = ast->children[hasName ? 2 : 1].get();
-    const AstNode *nodeBody = ast->children[hasName ? 3 : 2].get();
+    const AstNode *nodeName = hasName ? ast->children[indName].get() : nullptr;
+    const AstNode *nodeType = hasType ? ast->children[indType].get() : nullptr;
+    const AstNode *nodeBody = ast->children[indBody].get();
 
     optional<NamePool::Id> name;
     if (hasName) {
@@ -714,11 +727,14 @@ NodeVal Codegen::codegenBlock(const AstNode *ast) {
     }
 
     optional<TypeTable::Id> type;
-    if (!checkEmptyTerminal(nodeType, false)) {
-        type = getType(nodeType, true);
-        if (!type.has_value()) return NodeVal();
+    if (hasType) {
+        if (!checkEmptyTerminal(nodeType, false)) {
+            type = getType(nodeType, true);
+            if (!type.has_value()) return NodeVal();
+        } else {
+            hasType = false;
+        }
     }
-    bool hasType = type.has_value();
 
     llvm::Function *func = llvmBuilder.GetInsertBlock()->getParent();
 

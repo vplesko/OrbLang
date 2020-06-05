@@ -192,7 +192,7 @@ fnc main() () {
     });
 
     println_i32 (block block1 i32 {
-        block () {
+        block {
             let (x:i16 301);
             pass block1 x;
         };
@@ -214,7 +214,7 @@ fnc main() () {
             exit x;
             pass block1 304;
         };
-        block () {
+        block {
             exit (! x);
             pass block1 305;
         };

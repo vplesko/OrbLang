@@ -8,23 +8,23 @@ mac forFirstStepTracker() _forFirstStepTracker;
 mac if(cond then) (
     block (ifOuterBlockName) () {
         exit (! cond);
-        block () then;
+        block then;
     }
 );
 
 mac if(cond then else) (
     block (ifOuterBlockName) () {
-        block () {
+        block {
             exit (! cond);
-            block () then;
+            block then;
             exit (ifOuterBlockName) true;
         };
-        block () else;
+        block else;
     }
 );
 
 mac for(init cond step) (
-    block () {
+    block {
         init
         (block (loopingBlocksName) () {
             (exit (! cond))
@@ -35,7 +35,7 @@ mac for(init cond step) (
 );
 
 mac for(init cond step body) (
-    block () {
+    block {
         init
         (let ((forFirstStepTracker):bool true))
         (block (loopingBlocksName) () {
@@ -45,7 +45,7 @@ mac for(init cond step body) (
                 step
             })
             (exit (! cond))
-            (block () body)
+            (block body)
             (loop true)
         })
     }
@@ -60,14 +60,14 @@ mac while(cond) (
 mac while(cond body) (
     block (loopingBlocksName) () {
         exit (! cond);
-        block () body;
+        block body;
         loop true;
     }
 );
 
 mac do(body cond) (
     block (loopingBlocksName) () {
-        block () body;
+        block body;
         exit (! cond);
         loop true;
     }
