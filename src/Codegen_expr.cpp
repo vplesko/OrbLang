@@ -20,20 +20,6 @@ NodeVal Codegen::codegenExpr(const AstNode *ast, const NodeVal &first) {
     }
 }
 
-NodeVal Codegen::codegenUntypedVal(const AstNode *ast) {
-    UntypedVal val = ast->terminal.value().val;
-
-    if (val.kind == UntypedVal::Kind::kNone) {
-        // should not happen
-        msgs->errorInternal(ast->codeLoc);
-        return NodeVal();
-    }
-
-    NodeVal ret(NodeVal::Kind::kUntyVal);
-    ret.untyVal = val;
-    return ret;
-}
-
 NodeVal Codegen::codegenVar(const AstNode *ast) {
     NamePool::Id name = ast->terminal.value().id;
 

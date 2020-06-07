@@ -34,7 +34,7 @@ CompilerAction Evaluator::evaluateGlobalNode(AstNode *ast) {
             return CompilerAction(CompilerAction::Kind::kNone);
         } else if (starting->terminal->keyword == Token::T_IMPORT) {
             NodeVal val = evaluateImport(ast);
-            
+
             CompilerAction importAction(CompilerAction::Kind::kImport);
             importAction.file = val.file;
             return importAction;
@@ -86,7 +86,11 @@ NodeVal Evaluator::evaluateNode(const AstNode *ast) {
         if (ret.kind == NodeVal::Kind::kId && !ast->escaped) {
             const TerminalVal &term = ast->terminal.value();
 
-            if (symbolTable->isMacroName(term.id)) {
+            if (getTypeTable()->isType(term.id)) {
+                TypeTable::Id type = getTypeTable()->getTypeId(term.id).value();
+                ret = NodeVal(NodeVal::Kind::kType);
+                ret.type = type;
+            } else if (symbolTable->isMacroName(term.id)) {
                 ret = NodeVal(NodeVal::Kind::kMacroId);
                 ret.id = term.id;
             } else {
@@ -104,15 +108,10 @@ NodeVal Evaluator::evaluateNode(const AstNode *ast) {
             return evaluateNode(expanded.get());
         }
 
-        if (starting.isOper()) {
-            if (ast->children.size() == 2) {
-                return evaluateOperUnary(ast, starting);
-            } else {
-                return evaluateOper(ast, starting);
-            }
+        if (starting.isType()) {
+            ret = evaluateType(ast, starting);
         } else {
-            msgs->errorEvaluationNotSupported(ast->children[0]->codeLoc);
-            return NodeVal();
+            ret = evaluateExpr(ast, starting);
         }
     }
 
@@ -122,6 +121,88 @@ NodeVal Evaluator::evaluateNode(const AstNode *ast) {
         return NodeVal();
     }
 
+    return ret;
+}
+
+optional<NodeVal> Evaluator::evaluateTypeDescr(const AstNode *ast, const NodeVal &first) {
+    if (ast->children.size() < 2) return nullopt;
+
+    const AstNode *nodeChild = ast->children[1].get();
+
+    optional<Token::Type> keyw = getKeyword(nodeChild, false);
+    optional<Token::Oper> op = getOper(nodeChild, false);
+    optional<UntypedVal> val = getUntypedVal(nodeChild, false);
+
+    if (!keyw.has_value() && !op.has_value() && !val.has_value())
+        return nullopt;
+    
+    TypeTable::TypeDescr typeDescr(first.type);
+    for (size_t i = 1; i < ast->children.size(); ++i) {
+        nodeChild = ast->children[i].get();
+
+        keyw = getKeyword(nodeChild, false);
+        op = getOper(nodeChild, false);
+        val = getUntypedVal(nodeChild, false);
+
+        if (op.has_value() && op == Token::O_MUL) {
+            typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_PTR});
+        } else if (op.has_value() && op == Token::O_IND) {
+            typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_ARR_PTR});
+        } else if (val.has_value()) {
+            if (val.value().kind != UntypedVal::Kind::kSint) {
+                msgs->errorInvalidTypeDecorator(nodeChild->codeLoc);
+                return NodeVal();
+            }
+            int64_t arrSize = val.value().val_si;
+            if (arrSize <= 0) {
+                msgs->errorBadArraySize(nodeChild->codeLoc, arrSize);
+                return NodeVal();
+            }
+
+            typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_ARR, (unsigned long) arrSize});
+        } else if (keyw.has_value() && keyw == Token::T_CN) {
+            typeDescr.setLastCn();
+        } else {
+            msgs->errorInvalidTypeDecorator(nodeChild->codeLoc);
+            return NodeVal();
+        }
+    }
+
+    TypeTable::Id typeId = symbolTable->getTypeTable()->addTypeDescr(move(typeDescr));
+
+    NodeVal ret(NodeVal::Kind::kType);
+    ret.type = typeId;
+    return ret;
+}
+
+NodeVal Evaluator::evaluateType(const AstNode *ast, const NodeVal &first) {
+    if (ast->children.size() == 1) {
+        NodeVal ret(NodeVal::Kind::kType);
+        ret.type = first.type;
+        return ret;
+    }
+    
+    optional<NodeVal> typeDescr = evaluateTypeDescr(ast, first);
+    if (typeDescr.has_value()) return typeDescr.value();
+
+    TypeTable::Tuple tup;
+    tup.members.resize(ast->children.size());
+
+    tup.members[0] = first.type;
+    for (size_t i = 1; i < ast->children.size(); ++i) {
+        const AstNode *nodeChild = ast->children[i].get();
+
+        optional<TypeTable::Id> memb = getType(nodeChild, true);
+        if (!memb.has_value()) return NodeVal();
+
+        tup.members[i] = memb.value();
+    }
+
+    optional<TypeTable::Id> tupTypeId = getTypeTable()->addTuple(move(tup));
+    if (!tupTypeId.has_value()) return NodeVal();
+
+    NodeVal ret(NodeVal::Kind::kType);
+    ret.type = tupTypeId.value();
     return ret;
 }
 

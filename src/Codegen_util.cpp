@@ -1,5 +1,6 @@
 #include "Codegen.h"
 #include <sstream>
+#include "Evaluator.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Host.h"
 #include "llvm/Support/raw_ostream.h"
@@ -449,13 +450,6 @@ optional<NamePool::Id> Codegen::getId(const AstNode *ast, bool orError) {
     return nodeVal.id;
 }
 
-optional<TypeTable::Id> Codegen::getType(const AstNode *ast, bool orError) {
-    NodeVal type = codegenNode(ast);
-    if (!checkIsType(ast->codeLoc, type, true)) return nullopt;
-
-    return type.type;
-}
-
 optional<Codegen::NameTypePair> Codegen::getIdTypePair(const AstNode *ast, bool orError) {
     optional<NamePool::Id> id = getId(ast, orError);
     if (!id.has_value()) return nullopt;
@@ -464,34 +458,13 @@ optional<Codegen::NameTypePair> Codegen::getIdTypePair(const AstNode *ast, bool 
         if (orError) msgs->errorMissingTypeAnnotation(ast->codeLoc);
         return nullopt;
     }
-    optional<TypeTable::Id> type = getType(ast->type.value().get(), orError);
+    optional<TypeTable::Id> type = evaluator->getType(ast->type.value().get(), orError);
     if (!type.has_value()) return nullopt;
 
     NameTypePair idType;
     idType.first = id.value();
     idType.second = type.value();
     return idType;
-}
-
-optional<Token::Type> Codegen::getKeyword(const AstNode *ast, bool orError) {
-    NodeVal nodeVal = codegenNode(ast);
-    if (!checkIsKeyword(ast->codeLoc, nodeVal, orError)) return nullopt;
-
-    return nodeVal.keyword;
-}
-
-optional<Token::Oper> Codegen::getOper(const AstNode *ast, bool orError) {
-    NodeVal nodeVal = codegenNode(ast);
-    if (!checkIsOper(ast->codeLoc, nodeVal, orError)) return nullopt;
-
-    return nodeVal.oper;
-}
-
-optional<UntypedVal> Codegen::getUntypedVal(const AstNode *ast, bool orError) {
-    NodeVal nodeVal = codegenNode(ast);
-    if (!checkIsUntyped(ast->codeLoc, nodeVal, orError)) return nullopt;
-
-    return nodeVal.untyVal;
 }
 
 optional<Token::Attr> Codegen::getAttr(const AstNode *ast, bool orError) {

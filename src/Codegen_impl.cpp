@@ -75,7 +75,7 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
                 return NodeVal();
             }
         } else if (starting.isType()) {
-            ret = codegenType(ast, starting);
+            ret = evaluator->evaluateType(ast, starting);
         } else {
             ret = codegenExpr(ast, starting);
         }
@@ -147,88 +147,6 @@ NodeVal Codegen::codegenConversion(const AstNode *ast, TypeTable::Id t) {
         }
     }
     return value;
-}
-
-optional<NodeVal> Codegen::codegenTypeDescr(const AstNode *ast, const NodeVal &first) {
-    if (ast->children.size() < 2) return nullopt;
-
-    const AstNode *nodeChild = ast->children[1].get();
-
-    optional<Token::Type> keyw = getKeyword(nodeChild, false);
-    optional<Token::Oper> op = getOper(nodeChild, false);
-    optional<UntypedVal> val = getUntypedVal(nodeChild, false);
-
-    if (!keyw.has_value() && !op.has_value() && !val.has_value())
-        return nullopt;
-    
-    TypeTable::TypeDescr typeDescr(first.type);
-    for (size_t i = 1; i < ast->children.size(); ++i) {
-        nodeChild = ast->children[i].get();
-
-        keyw = getKeyword(nodeChild, false);
-        op = getOper(nodeChild, false);
-        val = getUntypedVal(nodeChild, false);
-
-        if (op.has_value() && op == Token::O_MUL) {
-            typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_PTR});
-        } else if (op.has_value() && op == Token::O_IND) {
-            typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_ARR_PTR});
-        } else if (val.has_value()) {
-            if (val.value().kind != UntypedVal::Kind::kSint) {
-                msgs->errorInvalidTypeDecorator(nodeChild->codeLoc);
-                return NodeVal();
-            }
-            int64_t arrSize = val.value().val_si;
-            if (arrSize <= 0) {
-                msgs->errorBadArraySize(nodeChild->codeLoc, arrSize);
-                return NodeVal();
-            }
-
-            typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_ARR, (unsigned long) arrSize});
-        } else if (keyw.has_value() && keyw == Token::T_CN) {
-            typeDescr.setLastCn();
-        } else {
-            msgs->errorInvalidTypeDecorator(nodeChild->codeLoc);
-            return NodeVal();
-        }
-    }
-
-    TypeTable::Id typeId = symbolTable->getTypeTable()->addTypeDescr(move(typeDescr));
-
-    NodeVal ret(NodeVal::Kind::kType);
-    ret.type = typeId;
-    return ret;
-}
-
-NodeVal Codegen::codegenType(const AstNode *ast, const NodeVal &first) {
-    if (ast->children.size() == 1) {
-        NodeVal ret(NodeVal::Kind::kType);
-        ret.type = first.type;
-        return ret;
-    }
-    
-    optional<NodeVal> typeDescr = codegenTypeDescr(ast, first);
-    if (typeDescr.has_value()) return typeDescr.value();
-
-    TypeTable::Tuple tup;
-    tup.members.resize(ast->children.size());
-
-    tup.members[0] = first.type;
-    for (size_t i = 1; i < ast->children.size(); ++i) {
-        const AstNode *nodeChild = ast->children[i].get();
-
-        optional<TypeTable::Id> memb = getType(nodeChild, true);
-        if (!memb.has_value()) return NodeVal();
-
-        tup.members[i] = memb.value();
-    }
-
-    optional<TypeTable::Id> tupTypeId = getTypeTable()->addTuple(move(tup));
-    if (!tupTypeId.has_value()) return NodeVal();
-
-    NodeVal ret(NodeVal::Kind::kType);
-    ret.type = tupTypeId.value();
-    return ret;
 }
 
 bool Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId) {
@@ -380,7 +298,7 @@ NodeVal Codegen::codegenLet(const AstNode *ast) {
         optional<TypeTable::Id> optType;
         CodeLoc codeLocType;
         if (nameTypeNode->hasType()) {
-            optType = getType(nameTypeNode->type.value().get(), true);
+            optType = evaluator->getType(nameTypeNode->type.value().get(), true);
             codeLocType = nameTypeNode->type.value()->codeLoc;
             if (!optType.has_value()) continue;
 
@@ -673,7 +591,7 @@ NodeVal Codegen::codegenBlock(const AstNode *ast) {
     optional<TypeTable::Id> type;
     if (hasType) {
         if (!checkEmptyTerminal(nodeType, false)) {
-            type = getType(nodeType, true);
+            type = evaluator->getType(nodeType, true);
             if (!type.has_value()) return NodeVal();
         } else {
             hasType = false;

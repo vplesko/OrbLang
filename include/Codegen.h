@@ -77,16 +77,10 @@ class Codegen {
     bool checkGlobalScope(CodeLoc codeLoc, bool orError);
 
     std::optional<NamePool::Id> getId(const AstNode *ast, bool orError);
-    std::optional<TypeTable::Id> getType(const AstNode *ast, bool orError);
     std::optional<NameTypePair> getIdTypePair(const AstNode *ast, bool orError);
-    std::optional<Token::Type> getKeyword(const AstNode *ast, bool orError);
-    std::optional<Token::Oper> getOper(const AstNode *ast, bool orError);
-    // TODO! remove, should only be done inside Evaluator
-    std::optional<UntypedVal> getUntypedVal(const AstNode *ast, bool orError);
     std::optional<Token::Attr> getAttr(const AstNode *ast, bool orError);
     SymbolTable::Block* getBlock(CodeLoc codeLoc, NamePool::Id name, bool orError);
 
-    NodeVal codegenUntypedVal(const AstNode *ast);
     NodeVal codegenVar(const AstNode *ast);
     NodeVal codegenOperInd(CodeLoc codeLoc, const NodeVal &base, const NodeVal &ind);
     NodeVal codegenOperInd(const AstNode *ast);
@@ -108,9 +102,6 @@ class Codegen {
     NodeVal codegenFunc(const AstNode *ast);
 
     NodeVal codegenConversion(const AstNode *ast, TypeTable::Id t);
-
-    std::optional<NodeVal> codegenTypeDescr(const AstNode *ast, const NodeVal &first);
-    NodeVal codegenType(const AstNode *ast, const NodeVal &first);
 
     NodeVal codegenExpr(const AstNode *ast, const NodeVal &first);
 

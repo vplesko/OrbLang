@@ -2,6 +2,19 @@
 #include "Codegen.h"
 using namespace std;
 
+NodeVal Evaluator::evaluateExpr(const AstNode *ast, const NodeVal &first) {
+    if (first.isOper()) {
+        if (ast->children.size() == 2) {
+            return evaluateOperUnary(ast, first);
+        } else {
+            return evaluateOper(ast, first);
+        }
+    } else {
+        msgs->errorEvaluationNotSupported(ast->children[0]->codeLoc);
+        return NodeVal();
+    }
+}
+
 NodeVal Evaluator::evaluateUntypedVal(const AstNode *ast) {
     UntypedVal val = ast->terminal.value().val;
 
