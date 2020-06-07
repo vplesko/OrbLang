@@ -14,6 +14,7 @@ struct AstNode;
 struct FuncCallSite {
     NamePool::Id name;
     std::vector<TypeTable::Id> argTypes;
+    // TODO! no more untyped at call search
     std::vector<UntypedVal> untypedVals;
 
     FuncCallSite() {}

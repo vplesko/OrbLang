@@ -172,7 +172,7 @@ bool Compiler::parse(const vector<string> &inputs) {
                 unique_ptr<AstNode> node = par.parseNode();
                 if (msgs->isFail()) return false;
                 
-                bool forCompiler = !evaluator->evaluateNode(node.get());
+                bool forCompiler = !evaluator->evaluateGlobalNode(node.get());
                 if (msgs->isFail()) return false;
 
                 if (forCompiler) {

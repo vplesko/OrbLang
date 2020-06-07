@@ -39,6 +39,7 @@ public:
 
     void warnExprIndexOutOfBounds(CodeLoc loc);
 
+    // TODO! clear out untyped val errors
     void errorInputFileNotFound(const std::string &path);
     void errorBadToken(CodeLoc loc);
     void errorUnclosedMultilineComment(CodeLoc loc);
@@ -115,6 +116,8 @@ public:
     void errorMismatchTypeAnnotation(CodeLoc loc);
     void errorMissingTypeAnnotation(CodeLoc loc);
     void errorNotGlobalScope(CodeLoc loc);
+    // TODO replace with more specific errors
+    void errorEvaluationNotSupported(CodeLoc loc);
     // placeholder error, should not stay in code
     void errorUnknown(CodeLoc loc);
     void errorInternal(CodeLoc loc);

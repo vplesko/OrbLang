@@ -490,6 +490,10 @@ void CompileMessages::errorNotGlobalScope(CodeLoc loc) {
     error(loc, "This is only allowed in global scope.");
 }
 
+void CompileMessages::errorEvaluationNotSupported(CodeLoc loc) {
+    error(loc, "This evaluation is not supported.");
+}
+
 void CompileMessages::errorUnknown(CodeLoc loc) {
     error(loc, "Unknown error occured.");
 }

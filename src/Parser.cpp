@@ -77,6 +77,7 @@ unique_ptr<AstNode> Parser::parseTerm() {
         term->terminal = TerminalVal(tok.type);
         break;
     
+    // TODO! UntypedVal stays to be passed through TerminalVal, but gets promoted immeadiately
     case Token::T_NUM:
         val.kind = UntypedVal::Kind::kSint;
         val.val_si = tok.num;

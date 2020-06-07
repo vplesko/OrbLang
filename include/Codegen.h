@@ -32,6 +32,7 @@ class Codegen {
 
     bool isBool(const NodeVal &e) const;
 
+    // TODO! codegenKnownVal and make necessary only after calls to evaluateXXX
     bool promoteUntyped(NodeVal &e, TypeTable::Id t);
 
     TypeTable* getTypeTable() { return symbolTable->getTypeTable(); }
@@ -80,6 +81,7 @@ class Codegen {
     std::optional<NameTypePair> getIdTypePair(const AstNode *ast, bool orError);
     std::optional<Token::Type> getKeyword(const AstNode *ast, bool orError);
     std::optional<Token::Oper> getOper(const AstNode *ast, bool orError);
+    // TODO! remove, should only be done inside Evaluator
     std::optional<UntypedVal> getUntypedVal(const AstNode *ast, bool orError);
     std::optional<Token::Attr> getAttr(const AstNode *ast, bool orError);
     SymbolTable::Block* getBlock(CodeLoc codeLoc, NamePool::Id name, bool orError);
@@ -91,10 +93,8 @@ class Codegen {
     NodeVal codegenOperDot(CodeLoc codeLoc, const NodeVal &base, const NodeVal &memb);
     NodeVal codegenOperDot(const AstNode *ast);
     NodeVal codegenOperUnary(const AstNode *ast, const NodeVal &first);
-    NodeVal codegenOperUnaryUntyped(CodeLoc codeLoc, Token::Oper op, UntypedVal unty);
     NodeVal codegenOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs, const NodeVal &rhs);
     NodeVal codegenOper(const AstNode *ast, const NodeVal &first);
-    NodeVal codegenOperBinaryUntyped(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR);
     NodeVal codegenTuple(const AstNode *ast, const NodeVal &first);
     NodeVal codegenCall(const AstNode *ast, const NodeVal &first);
     NodeVal codegenCast(const AstNode *ast);
@@ -115,7 +115,6 @@ class Codegen {
 
     NodeVal codegenExpr(const AstNode *ast, const NodeVal &first);
 
-    NodeVal codegenTerminal(const AstNode *ast);
     NodeVal codegenAll(const AstNode *ast);
 
     std::optional<FuncValue> codegenFuncProto(const AstNode *ast, bool definition);

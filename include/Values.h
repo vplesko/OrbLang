@@ -6,6 +6,7 @@
 #include "TypeTable.h"
 
 // TODO get rid of these in favor of compile-time values
+// TODO! LiteralVal for passing from Parser to others, KnownVal for evaulated typed values
 struct UntypedVal {
     enum class Kind {
         kNone,
@@ -65,6 +66,7 @@ struct LlvmVal {
     bool refBroken() const { return ref == nullptr; }
 };
 
+// TODO add CodeLoc to this class, refactor functions which take CodeLoc arg just for the NodeVal arg
 struct NodeVal {
     enum class Kind {
         kInvalid,

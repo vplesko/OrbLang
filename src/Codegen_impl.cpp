@@ -5,25 +5,15 @@
 #include "llvm/IR/Verifier.h"
 using namespace std;
 
-NodeVal Codegen::codegenTerminal(const AstNode *ast) {
-    const TerminalVal &term = ast->terminal.value();
-
+NodeVal Codegen::codegenNode(const AstNode *ast) {
     NodeVal ret;
 
-    switch (term.kind) {
-    case TerminalVal::Kind::kKeyword:
-        ret = NodeVal(NodeVal::Kind::kKeyword);
-        ret.keyword = term.keyword;
-        break;
-    case TerminalVal::Kind::kOper:
-        ret = NodeVal(NodeVal::Kind::kOper);
-        ret.oper = term.oper;
-        break;
-    case TerminalVal::Kind::kId:
-        if (ast->escaped) {
-            ret = NodeVal(NodeVal::Kind::kId);
-            ret.id = term.id;
-        } else {
+    if (ast->kind == AstNode::Kind::kTerminal) {
+        ret = evaluator->evaluateTerminal(ast);
+
+        if (ret.kind == NodeVal::Kind::kId && !ast->escaped) {
+            const TerminalVal &term = ast->terminal.value();
+
             if (getTypeTable()->isType(term.id)) {
                 TypeTable::Id type = getTypeTable()->getTypeId(term.id).value();
                 ret = NodeVal(NodeVal::Kind::kType);
@@ -41,27 +31,6 @@ NodeVal Codegen::codegenTerminal(const AstNode *ast) {
                 return NodeVal();
             }
         }
-        break;
-    case TerminalVal::Kind::kAttribute:
-        ret = NodeVal(NodeVal::Kind::kAttribute);
-        ret.attribute = term.attribute;
-        break;
-    case TerminalVal::Kind::kVal:
-        ret = codegenUntypedVal(ast);
-        break;
-    case TerminalVal::Kind::kEmpty:
-        ret = NodeVal(NodeVal::Kind::kEmpty);
-        break;
-    };
-
-    return ret;
-}
-
-NodeVal Codegen::codegenNode(const AstNode *ast) {
-    NodeVal ret;
-
-    if (ast->kind == AstNode::Kind::kTerminal) {
-        ret = codegenTerminal(ast);
     } else {
         NodeVal starting = codegenNode(ast->children[0].get());
         if (starting.kind == NodeVal::Kind::kInvalid) return NodeVal();
@@ -188,7 +157,6 @@ optional<NodeVal> Codegen::codegenTypeDescr(const AstNode *ast, const NodeVal &f
 
     const AstNode *nodeChild = ast->children[1].get();
 
-    // TODO revisit when returning these values from nodes is possible
     optional<Token::Type> keyw = getKeyword(nodeChild, false);
     optional<Token::Oper> op = getOper(nodeChild, false);
     optional<UntypedVal> val = getUntypedVal(nodeChild, false);
@@ -452,17 +420,16 @@ NodeVal Codegen::codegenLet(const AstNode *ast) {
         TypeTable::Id initType;
         CodeLoc codeLocInit;
         if (hasInit) {
-            NodeVal initVal = codegenNode(childNode->children[1].get());
             codeLocInit = childNode->children[1]->codeLoc;
+
+            NodeVal initVal;
+            if (isGlobalScope()) initVal = evaluator->evaluateNode(childNode->children[1].get());
+            else initVal = codegenNode(childNode->children[1].get());
             if (!checkValueUnbroken(codeLocInit, initVal, true))
                 continue;
             
             if (!optType.has_value() && initVal.isUntyVal()) {
                 msgs->errorMissingTypeAnnotation(codeLocName);
-                continue;
-            }
-            if (isGlobalScope() && !initVal.isUntyVal()) {
-                msgs->errorExprNotBaked(codeLocInit);
                 continue;
             }
 

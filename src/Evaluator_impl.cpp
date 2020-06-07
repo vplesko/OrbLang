@@ -8,7 +8,7 @@ Evaluator::Evaluator(SymbolTable *symbolTable, AstStorage *astStorage, CompileMe
 }
 
 optional<NamePool::Id> Evaluator::getId(const AstNode *ast, bool orError) {
-    // TODO evaluate recursively
+    // TODO! evaluate recursively (look at Codegen::getId)
 
     if (!codegen->checkTerminal(ast, false) ||
         ast->terminal->kind != TerminalVal::Kind::kId) {
@@ -22,8 +22,7 @@ optional<NamePool::Id> Evaluator::getId(const AstNode *ast, bool orError) {
     return ast->terminal->id;
 }
 
-bool Evaluator::evaluateNode(AstNode *ast) {
-    // TODO should evaluate into NodeVal recursively
+bool Evaluator::evaluateGlobalNode(AstNode *ast) {
     if (ast->isTerminal()) return false;
 
     AstNode *starting = ast->children[0].get();
@@ -36,6 +35,87 @@ bool Evaluator::evaluateNode(AstNode *ast) {
     }
 
     return false;
+}
+
+NodeVal Evaluator::evaluateTerminal(const AstNode *ast) {
+    const TerminalVal &term = ast->terminal.value();
+
+    NodeVal ret;
+
+    switch (term.kind) {
+    case TerminalVal::Kind::kKeyword:
+        ret = NodeVal(NodeVal::Kind::kKeyword);
+        ret.keyword = term.keyword;
+        break;
+    case TerminalVal::Kind::kOper:
+        ret = NodeVal(NodeVal::Kind::kOper);
+        ret.oper = term.oper;
+        break;
+    case TerminalVal::Kind::kId:
+        ret = NodeVal(NodeVal::Kind::kId);
+        ret.id = term.id;
+        break;
+    case TerminalVal::Kind::kAttribute:
+        ret = NodeVal(NodeVal::Kind::kAttribute);
+        ret.attribute = term.attribute;
+        break;
+    case TerminalVal::Kind::kVal:
+        ret = evaluateUntypedVal(ast);
+        break;
+    case TerminalVal::Kind::kEmpty:
+        ret = NodeVal(NodeVal::Kind::kEmpty);
+        break;
+    };
+
+    return ret;
+}
+
+NodeVal Evaluator::evaluateNode(const AstNode *ast) {
+    NodeVal ret;
+
+    if (ast->kind == AstNode::Kind::kTerminal) {
+        ret = evaluateTerminal(ast);
+
+        if (ret.kind == NodeVal::Kind::kId && !ast->escaped) {
+            const TerminalVal &term = ast->terminal.value();
+
+            if (symbolTable->isMacroName(term.id)) {
+                ret = NodeVal(NodeVal::Kind::kMacroId);
+                ret.id = term.id;
+            } else {
+                msgs->errorEvaluationNotSupported(ast->codeLoc);
+                return NodeVal();
+            }
+        }
+    } else {
+        NodeVal starting = evaluateNode(ast->children[0].get());
+        if (starting.kind == NodeVal::Kind::kInvalid) return NodeVal();
+
+        if (starting.isMacroId()) {
+            unique_ptr<AstNode> expanded = evaluateInvoke(ast);
+            if (expanded == nullptr) return NodeVal();
+            return evaluateNode(expanded.get());
+        }
+
+        if (starting.isOper()) {
+            if (ast->children.size() == 2) {
+                return evaluateOperUnary(ast, starting);
+            } else {
+                return evaluateOper(ast, starting);
+            }
+        } else {
+            msgs->errorEvaluationNotSupported(ast->children[0]->codeLoc);
+            return NodeVal();
+        }
+    }
+
+    if (!ast->escaped && ast->type.has_value()) {
+        // TODO! replace codegenType with evaluateType, add type verification here
+        msgs->errorEvaluationNotSupported(ast->type.value()->codeLoc);
+        return NodeVal();
+    }
+
+    return ret;
 }
 
 void Evaluator::evaluateMac(AstNode *ast) {
