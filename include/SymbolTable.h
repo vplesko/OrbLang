@@ -14,15 +14,13 @@ struct AstNode;
 struct FuncCallSite {
     NamePool::Id name;
     std::vector<TypeTable::Id> argTypes;
-    // TODO! no more untyped at call search
-    std::vector<UntypedVal> untypedVals;
+    std::vector<std::optional<UntypedVal>> untypedVals;
 
     FuncCallSite() {}
     FuncCallSite(std::size_t sz) : argTypes(sz), untypedVals(sz) {}
 
     void set(std::size_t ind, TypeTable::Id t) {
         argTypes[ind] = t;
-        untypedVals[ind] = {UntypedVal::Kind::kNone};
     }
 
     void set(std::size_t ind, UntypedVal l) {
@@ -129,7 +127,7 @@ private:
     void endBlock();
 
     FuncSignature makeFuncSignature(NamePool::Id name, const std::vector<TypeTable::Id> &argTypes) const;
-    std::optional<FuncSignature> makeFuncSignature(const FuncCallSite &call) const;
+    FuncSignature makeFuncSignature(const FuncCallSite &call) const;
     bool isCallArgsOk(const FuncCallSite &call, const FuncValue &func) const;
 
     MacroSignature makeMacroSignature(const MacroValue &val) const;

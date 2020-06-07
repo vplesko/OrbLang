@@ -3,8 +3,8 @@
 #include "Codegen.h"
 using namespace std;
 
-Evaluator::Evaluator(SymbolTable *symbolTable, AstStorage *astStorage, CompileMessages *msgs)
-    : symbolTable(symbolTable), astStorage(astStorage), msgs(msgs), codegen(nullptr) {
+Evaluator::Evaluator(StringPool *stringPool, SymbolTable *symbolTable, AstStorage *astStorage, CompileMessages *msgs)
+    : stringPool(stringPool), symbolTable(symbolTable), astStorage(astStorage), msgs(msgs), codegen(nullptr) {
 }
 
 optional<NamePool::Id> Evaluator::getId(const AstNode *ast, bool orError) {
@@ -115,8 +115,8 @@ NodeVal Evaluator::evaluateNode(const AstNode *ast) {
         }
     }
 
-    if (!ast->escaped && ast->type.has_value()) {
-        // TODO! replace codegenType with evaluateType, add type verification here
+    if (!ast->escaped && ast->type.has_value() && !ret.isUntyVal()) {
+        // TODO! add type verification here
         msgs->errorEvaluationNotSupported(ast->type.value()->codeLoc);
         return NodeVal();
     }
@@ -149,11 +149,11 @@ optional<NodeVal> Evaluator::evaluateTypeDescr(const AstNode *ast, const NodeVal
         } else if (op.has_value() && op == Token::O_IND) {
             typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_ARR_PTR});
         } else if (val.has_value()) {
-            if (val.value().kind != UntypedVal::Kind::kSint) {
+            if (val.value().val.kind != LiteralVal::Kind::kSint) {
                 msgs->errorInvalidTypeDecorator(nodeChild->codeLoc);
                 return NodeVal();
             }
-            int64_t arrSize = val.value().val_si;
+            int64_t arrSize = val.value().val.val_si;
             if (arrSize <= 0) {
                 msgs->errorBadArraySize(nodeChild->codeLoc, arrSize);
                 return NodeVal();
@@ -299,13 +299,13 @@ NodeVal Evaluator::evaluateImport(AstNode *ast) {
     const AstNode *nodeFile = ast->children[1].get();
 
     NodeVal valFile = evaluateNode(nodeFile);
-    if (!valFile.isUntyVal() || valFile.untyVal.kind != UntypedVal::Kind::kString) {
+    if (!valFile.isUntyVal() || valFile.untyVal.val.kind != LiteralVal::Kind::kString) {
         msgs->errorImportNotString(nodeFile->codeLoc);
         return NodeVal();
     }
 
     NodeVal ret(NodeVal::Kind::kImport);
-    ret.file = valFile.untyVal.val_str;
+    ret.file = valFile.untyVal.val.val_str;
     return ret;
 }
 

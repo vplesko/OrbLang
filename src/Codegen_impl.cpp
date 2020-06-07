@@ -408,23 +408,16 @@ NodeVal Codegen::codegenExit(const AstNode *ast) {
     }
 
     if (valCond.isUntyVal()) {
-        if (valCond.untyVal.kind != UntypedVal::Kind::kBool) {
+        if (!promoteUntyped(valCond, getPrimTypeId(TypeTable::P_BOOL))) {
             msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
             return NodeVal();
         }
-
-        if (valCond.untyVal.val_b) {
-            llvm::BasicBlock *blockAfter = llvm::BasicBlock::Create(llvmContext, "after");
-            llvmBuilder.CreateBr(blockExit);
-            func->getBasicBlockList().push_back(blockAfter);
-            llvmBuilder.SetInsertPoint(blockAfter);
-        }
-    } else {
-        llvm::BasicBlock *blockAfter = llvm::BasicBlock::Create(llvmContext, "after");
-        llvmBuilder.CreateCondBr(valCond.llvmVal.val, blockExit, blockAfter);
-        func->getBasicBlockList().push_back(blockAfter);
-        llvmBuilder.SetInsertPoint(blockAfter);
     }
+
+    llvm::BasicBlock *blockAfter = llvm::BasicBlock::Create(llvmContext, "after");
+    llvmBuilder.CreateCondBr(valCond.llvmVal.val, blockExit, blockAfter);
+    func->getBasicBlockList().push_back(blockAfter);
+    llvmBuilder.SetInsertPoint(blockAfter);
 
     return NodeVal();
 }
@@ -501,23 +494,16 @@ NodeVal Codegen::codegenLoop(const AstNode *ast) {
     if (!checkValueUnbroken(nodeCond->codeLoc, valCond, true)) return NodeVal();
 
     if (valCond.isUntyVal()) {
-        if (valCond.untyVal.kind != UntypedVal::Kind::kBool) {
+        if (!promoteUntyped(valCond, getPrimTypeId(TypeTable::P_BOOL))) {
             msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
             return NodeVal();
         }
-
-        if (valCond.untyVal.val_b) {
-            llvm::BasicBlock *blockAfter = llvm::BasicBlock::Create(llvmContext, "after");
-            llvmBuilder.CreateBr(blockLoop);
-            func->getBasicBlockList().push_back(blockAfter);
-            llvmBuilder.SetInsertPoint(blockAfter);
-        }
-    } else {
-        llvm::BasicBlock *blockAfter = llvm::BasicBlock::Create(llvmContext, "after");
-        llvmBuilder.CreateCondBr(valCond.llvmVal.val, blockLoop, blockAfter);
-        func->getBasicBlockList().push_back(blockAfter);
-        llvmBuilder.SetInsertPoint(blockAfter);
     }
+
+    llvm::BasicBlock *blockAfter = llvm::BasicBlock::Create(llvmContext, "after");
+    llvmBuilder.CreateCondBr(valCond.llvmVal.val, blockLoop, blockAfter);
+    func->getBasicBlockList().push_back(blockAfter);
+    llvmBuilder.SetInsertPoint(blockAfter);
 
     return NodeVal();
 }

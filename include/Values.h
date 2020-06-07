@@ -20,8 +20,8 @@ struct CompilerAction {
 };
 
 // TODO get rid of these in favor of compile-time values
-// TODO! LiteralVal for passing from Parser to others, KnownVal for evaulated typed values
-struct UntypedVal {
+// TODO! LiteralVal for passing from Parser to others, KnownVal for evaluated typed values
+struct LiteralVal {
     enum class Kind {
         kNone,
         kSint,
@@ -44,6 +44,17 @@ struct UntypedVal {
     static std::size_t getStringLen(const std::string &str) { return str.size()+1; }
 };
 
+struct UntypedVal {
+    LiteralVal val;
+    TypeTable::Id type;
+
+    UntypedVal() { val.kind = LiteralVal::Kind::kNone; }
+    explicit UntypedVal(TypeTable::Id t) : type(t) {}
+};
+
+bool isImplicitCastable(const UntypedVal &val, TypeTable::Id t,
+    const StringPool *stringPool, const TypeTable *typeTable);
+
 struct TerminalVal {
     enum class Kind {
         kKeyword,
@@ -61,14 +72,14 @@ struct TerminalVal {
         NamePool::Id id;
         Token::Attr attribute;
     };
-    UntypedVal val = { .kind = UntypedVal::Kind::kNone };
+    LiteralVal val = { .kind = LiteralVal::Kind::kNone };
 
     TerminalVal() : kind(Kind::kEmpty) {}
     explicit TerminalVal(Token::Type k) : kind(Kind::kKeyword), keyword(k) {}
     explicit TerminalVal(Token::Oper o) : kind(Kind::kOper), oper(o) {}
     explicit TerminalVal(NamePool::Id n) : kind(Kind::kId), id(n) {}
     explicit TerminalVal(Token::Attr a) : kind(Kind::kAttribute), attribute(a) {}
-    explicit TerminalVal(UntypedVal v) : kind(Kind::kVal), val(v) {}
+    explicit TerminalVal(LiteralVal v) : kind(Kind::kVal), val(v) {}
 };
 
 struct LlvmVal {
@@ -128,6 +139,6 @@ struct NodeVal {
     bool valueBroken() const { return
         (!isLlvmVal() && !isUntyVal()) ||
         (isLlvmVal() && llvmVal.valBroken()) ||
-        (isUntyVal() && untyVal.kind == UntypedVal::Kind::kNone);
+        (isUntyVal() && untyVal.val.kind == LiteralVal::Kind::kNone);
     }
 };

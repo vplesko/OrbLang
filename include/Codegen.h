@@ -32,8 +32,8 @@ class Codegen {
 
     bool isBool(const NodeVal &e) const;
 
-    // TODO! codegenKnownVal and make necessary only after calls to evaluateXXX
     bool promoteUntyped(NodeVal &e, TypeTable::Id t);
+    bool promoteUntyped(NodeVal &e);
 
     TypeTable* getTypeTable() { return symbolTable->getTypeTable(); }
     const TypeTable* getTypeTable() const { return symbolTable->getTypeTable(); }

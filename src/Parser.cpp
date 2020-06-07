@@ -59,7 +59,7 @@ unique_ptr<AstNode> Parser::parseTerm() {
 
     unique_ptr<AstNode> term = make_unique<AstNode>(codeLocTok, AstNode::Kind::kTerminal);
 
-    UntypedVal val;
+    LiteralVal val;
     switch (tok.type) {
     case Token::T_ELLIPSIS:
     case Token::T_CN:
@@ -77,24 +77,24 @@ unique_ptr<AstNode> Parser::parseTerm() {
         term->terminal = TerminalVal(tok.type);
         break;
     
-    // TODO! UntypedVal stays to be passed through TerminalVal, but gets promoted immeadiately
+    // TODO! LiteralVal stays to be passed through TerminalVal, but gets promoted immeadiately
     case Token::T_NUM:
-        val.kind = UntypedVal::Kind::kSint;
+        val.kind = LiteralVal::Kind::kSint;
         val.val_si = tok.num;
         term->terminal = TerminalVal(val);
         break;
     case Token::T_FNUM:
-        val.kind = UntypedVal::Kind::kFloat;
+        val.kind = LiteralVal::Kind::kFloat;
         val.val_f = tok.fnum;
         term->terminal = TerminalVal(val);
         break;
     case Token::T_CHAR:
-        val.kind = UntypedVal::Kind::kChar;
+        val.kind = LiteralVal::Kind::kChar;
         val.val_c = tok.ch;
         term->terminal = TerminalVal(val);
         break;
     case Token::T_BVAL:
-        val.kind = UntypedVal::Kind::kBool;
+        val.kind = LiteralVal::Kind::kBool;
         val.val_b = tok.bval;
         term->terminal = TerminalVal(val);
         break;
@@ -105,14 +105,13 @@ unique_ptr<AstNode> Parser::parseTerm() {
             while (peek().type == Token::T_STRING) {
                 ss << stringPool->get(next().stringId);
             }
-            UntypedVal val;
-            val.kind = UntypedVal::Kind::kString;
+            val.kind = LiteralVal::Kind::kString;
             val.val_str = stringPool->add(ss.str());
             term->terminal = TerminalVal(val);
             break;
         }
     case Token::T_NULL:
-        val.kind = UntypedVal::Kind::kNull;
+        val.kind = LiteralVal::Kind::kNull;
         term->terminal = TerminalVal(val);
         break;
     

@@ -129,12 +129,12 @@ llvm::Type* Codegen::getLlvmType(TypeTable::Id typeId) {
 }
 
 bool Codegen::isBool(const NodeVal &e) const {
-    return (e.isUntyVal() && e.untyVal.kind == UntypedVal::Kind::kBool) ||
+    return (e.isUntyVal() && e.untyVal.val.kind == LiteralVal::Kind::kBool) ||
      (e.isLlvmVal() && getTypeTable()->worksAsTypeB(e.llvmVal.type));
 }
 
 bool Codegen::promoteUntyped(NodeVal &e, TypeTable::Id t) {
-    if (!e.isUntyVal()) {
+    if (!e.isUntyVal() || !isImplicitCastable(e.untyVal, t, stringPool, getTypeTable())) {
         return false;
     }
 
@@ -142,54 +142,31 @@ bool Codegen::promoteUntyped(NodeVal &e, TypeTable::Id t) {
     n.llvmVal.type = t;
     bool success = true;
 
-    switch (e.untyVal.kind) {
-    case UntypedVal::Kind::kBool:
-        if (!getTypeTable()->worksAsTypeB(t)) {
-            success = false;
-        } else {
-            n.llvmVal.val = getConstB(e.untyVal.val_b);
-        }
+    switch (e.untyVal.val.kind) {
+    case LiteralVal::Kind::kBool:
+        n.llvmVal.val = getConstB(e.untyVal.val.val_b);
         break;
-    case UntypedVal::Kind::kSint:
-        if ((!getTypeTable()->worksAsTypeI(t) && !getTypeTable()->worksAsTypeU(t)) || !getTypeTable()->fitsType(e.untyVal.val_si, t)) {
-            success = false;
-        } else {
-            n.llvmVal.val = llvm::ConstantInt::get(getLlvmType(t), e.untyVal.val_si, getTypeTable()->worksAsTypeI(t));
-        }
+    case LiteralVal::Kind::kSint:
+        n.llvmVal.val = llvm::ConstantInt::get(getLlvmType(t), e.untyVal.val.val_si, getTypeTable()->worksAsTypeI(t));
         break;
-    case UntypedVal::Kind::kChar:
-        if (!getTypeTable()->worksAsTypeC(t)) {
-            success = false;
-        } else {
-            n.llvmVal.val = llvm::ConstantInt::get(getLlvmType(t), (uint8_t) e.untyVal.val_c, false);
-        }
+    case LiteralVal::Kind::kChar:
+        n.llvmVal.val = llvm::ConstantInt::get(getLlvmType(t), (uint8_t) e.untyVal.val.val_c, false);
         break;
-    case UntypedVal::Kind::kFloat:
-        // no precision checks for float types, this makes float literals somewhat unsafe
-        if (!getTypeTable()->worksAsTypeF(t)) {
-            success = false;
-        } else {
-            n.llvmVal.val = llvm::ConstantFP::get(getLlvmType(t), e.untyVal.val_f);
-        }
+    case LiteralVal::Kind::kFloat:
+        n.llvmVal.val = llvm::ConstantFP::get(getLlvmType(t), e.untyVal.val.val_f);
         break;
-    case UntypedVal::Kind::kString:
+    case LiteralVal::Kind::kString:
         {
-            const std::string &str = stringPool->get(e.untyVal.val_str);
+            const std::string &str = stringPool->get(e.untyVal.val.val_str);
             if (getTypeTable()->worksAsTypeStr(t)) {
                 n.llvmVal.val = createString(str);
-            } else if (getTypeTable()->worksAsTypeCharArrOfLen(t, UntypedVal::getStringLen(str))) {
-                n.llvmVal.val = llvm::ConstantDataArray::getString(llvmContext, str, true);
             } else {
-                success = false;
+                n.llvmVal.val = llvm::ConstantDataArray::getString(llvmContext, str, true);
             }
             break;
         }
-    case UntypedVal::Kind::kNull:
-        if (!symbolTable->getTypeTable()->worksAsTypeAnyP(t)) {
-            success = false;
-        } else {
-            n.llvmVal.val = llvm::ConstantPointerNull::get((llvm::PointerType*)getLlvmType(t));
-        }
+    case LiteralVal::Kind::kNull:
+        n.llvmVal.val = llvm::ConstantPointerNull::get((llvm::PointerType*)getLlvmType(t));
         break;
     default:
         success = false;
@@ -197,6 +174,12 @@ bool Codegen::promoteUntyped(NodeVal &e, TypeTable::Id t) {
 
     e = n;
     return success;
+}
+
+bool Codegen::promoteUntyped(NodeVal &e) {
+    if (!e.isUntyVal()) return false;
+
+    return promoteUntyped(e, e.untyVal.type);
 }
 
 llvm::Value* Codegen::getConstB(bool val) {
@@ -267,7 +250,7 @@ llvm::GlobalValue* Codegen::createGlobal(llvm::Type *type, llvm::Constant *init,
 llvm::Constant* Codegen::createString(const std::string &str) {
     llvm::GlobalVariable *glob = new llvm::GlobalVariable(
         *llvmModule,
-        getLlvmType(getTypeTable()->getTypeCharArrOfLenId(UntypedVal::getStringLen(str))),
+        getLlvmType(getTypeTable()->getTypeCharArrOfLenId(LiteralVal::getStringLen(str))),
         true,
         llvm::GlobalValue::PrivateLinkage,
         nullptr,

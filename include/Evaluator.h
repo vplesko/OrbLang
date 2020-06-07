@@ -8,6 +8,7 @@
 class Codegen;
 
 class Evaluator {
+    StringPool *stringPool;
     SymbolTable *symbolTable;
     AstStorage *astStorage;
     CompileMessages *msgs;
@@ -18,6 +19,8 @@ class Evaluator {
     TypeTable* getTypeTable() { return symbolTable->getTypeTable(); }
     const TypeTable* getTypeTable() const { return symbolTable->getTypeTable(); }
 
+    TypeTable::Id getPrimTypeId(TypeTable::PrimIds primId) const { return getTypeTable()->getPrimTypeId(primId); }
+
 public:
     // TODO! unify with one from codegen
     std::optional<NamePool::Id> getId(const AstNode *ast, bool orError);
@@ -27,10 +30,14 @@ public:
     std::optional<UntypedVal> getUntypedVal(const AstNode *ast, bool orError);
     std::optional<TypeTable::Id> getType(const AstNode *ast, bool orError);
 
+    NodeVal calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal unty);
+    NodeVal calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR);
+
 private:
     NodeVal evaluateMac(AstNode *ast);
     NodeVal evaluateImport(AstNode *ast);
     NodeVal evaluateUntypedVal(const AstNode *ast);
+    // TODO! evaluateCast
     NodeVal evaluateOperUnary(const AstNode *ast, const NodeVal &first);
     NodeVal evaluateOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs, const NodeVal &rhs);
     NodeVal evaluateOper(const AstNode *ast, const NodeVal &first);
@@ -42,7 +49,7 @@ private:
     void substitute(std::unique_ptr<AstNode> &body, const std::vector<NamePool::Id> &names, const std::vector<const AstNode*> &values);
 
 public:
-    Evaluator(SymbolTable *symbolTable, AstStorage *astStorage, CompileMessages *msgs);
+    Evaluator(StringPool *stringPool, SymbolTable *symbolTable, AstStorage *astStorage, CompileMessages *msgs);
 
     void setCodegen(Codegen *c) { codegen = c; }
 
@@ -54,8 +61,4 @@ public:
     NodeVal evaluateNode(const AstNode *ast);
 
     std::unique_ptr<AstNode> evaluateInvoke(const AstNode *ast);
-
-    // TODO! if no longer called by Codegen, make private
-    NodeVal calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal unty);
-    NodeVal calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR);
 };

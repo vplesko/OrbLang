@@ -16,7 +16,7 @@ Compiler::Compiler(ostream &out) {
     astStorage = make_unique<AstStorage>();
     msgs = make_unique<CompileMessages>(namePool.get(), stringPool.get(), symbolTable.get(), out);
     codegen = make_unique<Codegen>(namePool.get(), stringPool.get(), symbolTable.get(), msgs.get());
-    evaluator = make_unique<Evaluator>(symbolTable.get(), astStorage.get(), msgs.get());
+    evaluator = make_unique<Evaluator>(stringPool.get(), symbolTable.get(), astStorage.get(), msgs.get());
 
     codegen->setEvaluator(evaluator.get());
     evaluator->setCodegen(codegen.get());

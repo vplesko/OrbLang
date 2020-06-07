@@ -67,12 +67,12 @@ FuncSignature SymbolTable::makeFuncSignature(NamePool::Id name, const std::vecto
     return sig;
 }
 
-optional<FuncSignature> SymbolTable::makeFuncSignature(const FuncCallSite &call) const {
-    for (const UntypedVal &it : call.untypedVals) {
-        if (it.kind != UntypedVal::Kind::kNone)
-            return nullopt;
+FuncSignature SymbolTable::makeFuncSignature(const FuncCallSite &call) const {
+    std::vector<TypeTable::Id> argTypes(call.argTypes.begin(), call.argTypes.end());
+    for (size_t i = 0; i < argTypes.size(); ++i) {
+        if (call.untypedVals[i].has_value()) argTypes[i] = call.untypedVals[i].value().type;
     }
-    return makeFuncSignature(call.name, call.argTypes);
+    return makeFuncSignature(call.name, argTypes);
 }
 
 bool nonConflicting(const FuncValue &f1, const FuncValue &f2) {
@@ -127,40 +127,13 @@ llvm::Function* SymbolTable::getFunction(const FuncValue &val) const {
 bool SymbolTable::isCallArgsOk(const FuncCallSite &call, const FuncValue &func) const {
     for (size_t i = 0; i < func.argTypes.size(); ++i) {
         // if arg of same or implicitly castable type, we're good
-        if (call.untypedVals[i].kind == UntypedVal::Kind::kNone) {
+        if (!call.untypedVals[i].has_value()) {
             if (!typeTable->isArgTypeProper(call.argTypes[i], func.argTypes[i]))
                 return false;
         } else {
             // otherwise, if untyped val which can be used for this func, we're also good
-            switch (call.untypedVals[i].kind) {
-            case UntypedVal::Kind::kBool:
-                if (!typeTable->worksAsTypeB(func.argTypes[i])) return false;
-                break;
-            case UntypedVal::Kind::kSint:
-                if (!typeTable->worksAsTypeI(func.argTypes[i]) &&
-                    !(typeTable->worksAsTypeU(func.argTypes[i]) && call.untypedVals[i].val_si >= 0))
-                    return false;
-                break;
-            case UntypedVal::Kind::kChar:
-                if (!typeTable->worksAsTypeC(func.argTypes[i])) return false;
-                break;
-            case UntypedVal::Kind::kFloat:
-                if (!typeTable->worksAsTypeF(func.argTypes[i])) return false;
-                break;
-            case UntypedVal::Kind::kNull:
-                if (!typeTable->worksAsTypeAnyP(func.argTypes[i])) return false;
-                break;
-            case UntypedVal::Kind::kString:
-                {
-                    const std::string &str = stringPool->get(call.untypedVals[i].val_str);
-                    if (!typeTable->worksAsTypeStr(func.argTypes[i]) &&
-                        !typeTable->worksAsTypeCharArrOfLen(func.argTypes[i], UntypedVal::getStringLen(str)))
-                        return false;
-                }
-                break;
-            default:
+            if (!isImplicitCastable(call.untypedVals[i].value(), func.argTypes[i], stringPool, typeTable))
                 return false;
-            }
         }
     }
 
@@ -169,13 +142,12 @@ bool SymbolTable::isCallArgsOk(const FuncCallSite &call, const FuncValue &func) 
 
 SymbolTable::FuncForCallPayload SymbolTable::getFuncForCall(const FuncCallSite &call) {
     optional<FuncSignature> sig = makeFuncSignature(call);
-    if (sig.has_value()) {
-        // if there's a single function and doesn't need casting, return it
-        auto loc = funcs.find(sig.value());
-        if (loc != funcs.end()) {
-            if (isCallArgsOk(call, loc->second)) return FuncForCallPayload(loc->second);
-            else return FuncForCallPayload(FuncForCallPayload::kNotFound);
-        }
+    // if there's a single function and doesn't need casting, return it
+    auto loc = funcs.find(sig.value());
+    if (loc != funcs.end()) {
+        // check still needed, because cn is not part of signatures
+        if (isCallArgsOk(call, loc->second)) return FuncForCallPayload(loc->second);
+        else return FuncForCallPayload(FuncForCallPayload::kNotFound);
     }
 
     const FuncSignature *foundSig = nullptr;

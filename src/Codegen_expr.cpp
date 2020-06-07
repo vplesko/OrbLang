@@ -42,7 +42,8 @@ NodeVal Codegen::codegenOperInd(CodeLoc codeLoc, const NodeVal &base, const Node
     NodeVal leftVal = base;
 
     if (leftVal.isUntyVal()) {
-        if (leftVal.untyVal.kind == UntypedVal::Kind::kString) {
+        // TODO! promote, then check
+        if (leftVal.untyVal.val.kind == LiteralVal::Kind::kString) {
             if (!promoteUntyped(leftVal, getTypeTable()->getTypeIdStr())) {
                 msgs->errorInternal(codeLoc);
                 return NodeVal();
@@ -58,8 +59,9 @@ NodeVal Codegen::codegenOperInd(CodeLoc codeLoc, const NodeVal &base, const Node
     NodeVal rightVal = ind;
 
     if (rightVal.isUntyVal()) {
-        if (rightVal.untyVal.kind == UntypedVal::Kind::kSint) {
-            int64_t untyInd = rightVal.untyVal.val_si;
+        // TODO! promote, then check in Evaluator
+        if (rightVal.untyVal.val.kind == LiteralVal::Kind::kSint) {
+            int64_t untyInd = rightVal.untyVal.val.val_si;
             if (!promoteUntyped(rightVal, getTypeTable()->shortestFittingTypeIId(untyInd))) {
                 msgs->errorInternal(codeLoc);
                 return NodeVal();
@@ -162,12 +164,13 @@ NodeVal Codegen::codegenOperDot(CodeLoc codeLoc, const NodeVal &base, const Node
     const TypeTable::Tuple &tuple = *(tupleOpt.value());
 
     UntypedVal membUntyVal = memb.untyVal;
-    if (membUntyVal.kind != UntypedVal::Kind::kSint ||
-        membUntyVal.val_si < 0 || membUntyVal.val_si >= tuple.members.size()) {
+    // TODO! check in Evaluator
+    if (membUntyVal.val.kind != LiteralVal::Kind::kSint ||
+        membUntyVal.val.val_si < 0 || membUntyVal.val.val_si >= tuple.members.size()) {
         msgs->errorMemberIndex(codeLoc);
         return NodeVal();
     }
-    size_t memberInd = (size_t) membUntyVal.val_si;
+    size_t memberInd = (size_t) membUntyVal.val.val_si;
 
     NodeVal exprRet(NodeVal::Kind::kLlvmVal);
 
@@ -705,55 +708,32 @@ NodeVal Codegen::codegenCast(const AstNode *ast) {
     const AstNode *nodeType = ast->children[1].get();
     const AstNode *nodeVal = ast->children[2].get();
 
-    NodeVal valTypeId = codegenNode(nodeType);
-    if (!checkIsType(nodeType->codeLoc, valTypeId, true)) return NodeVal();
+    optional<TypeTable::Id> valTypeId = evaluator->getType(nodeType, true);
+    if (!valTypeId.has_value()) return NodeVal();
 
-    llvm::Type *type = getLlvmType(valTypeId.type);
+    llvm::Type *type = getLlvmType(valTypeId.value());
     if (type == nullptr) return NodeVal();
 
     NodeVal exprVal = codegenNode(nodeVal);
     if (!checkValueUnbroken(nodeVal->codeLoc, exprVal, true)) return NodeVal();
 
     if (exprVal.isUntyVal()) {
-        TypeTable::Id promoType;
-        switch (exprVal.untyVal.kind) {
-        case UntypedVal::Kind::kBool:
-            promoType = getPrimTypeId(TypeTable::P_BOOL);
-            break;
-        case UntypedVal::Kind::kSint:
-            promoType = getTypeTable()->shortestFittingTypeIId(exprVal.untyVal.val_si);
-            break;
-        case UntypedVal::Kind::kChar:
-            promoType = getPrimTypeId(TypeTable::P_C8);
-            break;
-        case UntypedVal::Kind::kFloat:
-            // cast to widest float type
-            promoType = getPrimTypeId(TypeTable::WIDEST_F);
-            break;
-        case UntypedVal::Kind::kString:
-            promoType = getTypeTable()->getTypeIdStr();
-            break;
-        case UntypedVal::Kind::kNull:
-            promoType = getPrimTypeId(TypeTable::P_PTR);
-            break;
-        default:
-            msgs->errorInternal(ast->codeLoc);
-            return NodeVal();
-        }
-        if (!promoteUntyped(exprVal, promoType)) {
+        if (!promoteUntyped(exprVal)) {
             msgs->errorInternal(ast->codeLoc);
             return NodeVal();
         }
     }
     
     llvm::Value *val = exprVal.llvmVal.val;
-    if (!createCast(val, exprVal.llvmVal.type, type, valTypeId.type)) {
-        msgs->errorExprCannotCast(nodeVal->codeLoc, exprVal.llvmVal.type, valTypeId.type);
-        return NodeVal();
+    if (exprVal.llvmVal.type != valTypeId.value()) {
+        if (!createCast(val, exprVal.llvmVal.type, type, valTypeId.value())) {
+            msgs->errorExprCannotCast(nodeVal->codeLoc, exprVal.llvmVal.type, valTypeId.value());
+            return NodeVal();
+        }
     }
 
     NodeVal ret(NodeVal::Kind::kLlvmVal);
-    ret.llvmVal.type = valTypeId.type;
+    ret.llvmVal.type = valTypeId.value();
     ret.llvmVal.val = val;
     return ret;
 }

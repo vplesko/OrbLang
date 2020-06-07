@@ -39,7 +39,7 @@ public:
 
     void warnExprIndexOutOfBounds(CodeLoc loc);
 
-    // TODO! clear out untyped val errors
+    // TODO! clear out untyped val errors, remove all unty untyped untypedVal stuff from code
     void errorInputFileNotFound(const std::string &path);
     void errorBadToken(CodeLoc loc);
     void errorUnclosedMultilineComment(CodeLoc loc);

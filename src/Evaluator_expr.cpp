@@ -16,16 +16,45 @@ NodeVal Evaluator::evaluateExpr(const AstNode *ast, const NodeVal &first) {
 }
 
 NodeVal Evaluator::evaluateUntypedVal(const AstNode *ast) {
-    UntypedVal val = ast->terminal.value().val;
+    NodeVal ret(NodeVal::Kind::kUntyVal);
 
-    if (val.kind == UntypedVal::Kind::kNone) {
+    ret.untyVal.val = ast->terminal.value().val;
+    if (ret.untyVal.val.kind == LiteralVal::Kind::kNone) {
         // should not happen
         msgs->errorInternal(ast->codeLoc);
         return NodeVal();
     }
 
-    NodeVal ret(NodeVal::Kind::kUntyVal);
-    ret.untyVal = val;
+    if (ast->hasType()) {
+        optional<TypeTable::Id> ty = getType(ast->type.value().get(), true);
+        if (!ty.has_value()) return NodeVal();
+        ret.untyVal.type = ty.value();
+    } else {
+        switch (ret.untyVal.val.kind) {
+        case LiteralVal::Kind::kBool:
+            ret.untyVal.type = getPrimTypeId(TypeTable::P_BOOL);
+            break;
+        case LiteralVal::Kind::kSint:
+            ret.untyVal.type = getPrimTypeId(TypeTable::P_I32);
+            break;
+        case LiteralVal::Kind::kChar:
+            ret.untyVal.type = getPrimTypeId(TypeTable::P_C8);
+            break;
+        case LiteralVal::Kind::kFloat:
+            ret.untyVal.type = getPrimTypeId(TypeTable::P_F32);
+            break;
+        case LiteralVal::Kind::kString:
+            ret.untyVal.type = getTypeTable()->getTypeIdStr();
+            break;
+        case LiteralVal::Kind::kNull:
+            ret.untyVal.type = getPrimTypeId(TypeTable::P_PTR);
+            break;
+        default:
+            msgs->errorInternal(ast->codeLoc);
+            return NodeVal();
+        }
+    }
+
     return ret;
 }
 
@@ -96,38 +125,39 @@ NodeVal Evaluator::evaluateOper(const AstNode *ast, const NodeVal &first) {
 
 NodeVal Evaluator::calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal unty) {
     NodeVal exprRet(NodeVal::Kind::kUntyVal);
-    exprRet.untyVal.kind = unty.kind;
+    exprRet.untyVal.type = unty.type;
+    exprRet.untyVal.val.kind = unty.val.kind;
     if (op == Token::O_ADD) {
-        if (unty.kind != UntypedVal::Kind::kSint && unty.kind != UntypedVal::Kind::kFloat) {
+        if (unty.val.kind != LiteralVal::Kind::kSint && unty.val.kind != LiteralVal::Kind::kFloat) {
             msgs->errorExprUnBadType(codeLoc, op);
             return NodeVal();
         }
         exprRet.untyVal = unty;
     } else if (op == Token::O_SUB) {
-        if (unty.kind == UntypedVal::Kind::kSint) {
-            exprRet.untyVal.val_si = -unty.val_si;
-        } else if (unty.kind == UntypedVal::Kind::kFloat) {
-            exprRet.untyVal.val_f = -unty.val_f;
+        if (unty.val.kind == LiteralVal::Kind::kSint) {
+            exprRet.untyVal.val.val_si = -unty.val.val_si;
+        } else if (unty.val.kind == LiteralVal::Kind::kFloat) {
+            exprRet.untyVal.val.val_f = -unty.val.val_f;
         } else {
             msgs->errorExprUnBadType(codeLoc, op);
             return NodeVal();
         }
     } else if (op == Token::O_BIT_NOT) {
-        if (unty.kind == UntypedVal::Kind::kSint) {
-            exprRet.untyVal.val_si = ~unty.val_si;
+        if (unty.val.kind == LiteralVal::Kind::kSint) {
+            exprRet.untyVal.val.val_si = ~unty.val.val_si;
         } else {
             msgs->errorExprUnBadType(codeLoc, op);
             return NodeVal();
         }
     } else if (op == Token::O_NOT) {
-        if (unty.kind == UntypedVal::Kind::kBool) {
-            exprRet.untyVal.val_b = !unty.val_b;
+        if (unty.val.kind == LiteralVal::Kind::kBool) {
+            exprRet.untyVal.val.val_b = !unty.val.val_b;
         } else {
             msgs->errorExprUnBadType(codeLoc, op);
             return NodeVal();
         }
     } else {
-        if (op == Token::O_MUL && unty.kind == UntypedVal::Kind::kNull) {
+        if (op == Token::O_MUL && unty.val.kind == LiteralVal::Kind::kNull) {
             msgs->errorExprUnOnNull(codeLoc, op);
         } else if (op == Token::O_BIT_AND) {
             msgs->errorExprAddressOfNoRef(codeLoc);
@@ -139,55 +169,58 @@ NodeVal Evaluator::calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal unty) {
     return exprRet;
 }
 
+// TODO warn on over/underflow
 NodeVal Evaluator::calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR) {
-    if (untyL.kind != untyR.kind) {
+    if (untyL.val.kind != untyR.val.kind) {
         msgs->errorExprUntyMismatch(codeLoc);
         return NodeVal();
     }
-    if (untyL.kind == UntypedVal::Kind::kNone) {
+    if (untyL.val.kind == LiteralVal::Kind::kNone) {
         msgs->errorInternal(codeLoc);
         return NodeVal();
     }
 
-    UntypedVal untyValRet;
-    untyValRet.kind = untyL.kind;
+    UntypedVal untyValRet(untyL.type);
+    untyValRet.val.kind = untyL.val.kind;
 
-    if (untyValRet.kind == UntypedVal::Kind::kBool) {
+    if (untyValRet.val.kind == LiteralVal::Kind::kBool) {
         switch (op) {
         case Token::O_EQ:
-            untyValRet.val_b = untyL.val_b == untyR.val_b;
+            untyValRet.val.val_b = untyL.val.val_b == untyR.val.val_b;
             break;
         case Token::O_NEQ:
-            untyValRet.val_b = untyL.val_b != untyR.val_b;
+            untyValRet.val.val_b = untyL.val.val_b != untyR.val.val_b;
             break;
         // AND and OR handled with the non-untyVal cases
         default:
             msgs->errorExprUntyBinBadOp(codeLoc, op);
             return NodeVal();
         }
-    } else if (untyValRet.kind == UntypedVal::Kind::kNull) {
+    } else if (untyValRet.val.kind == LiteralVal::Kind::kNull) {
         // both are null
         switch (op) {
         case Token::O_EQ:
-            untyValRet.kind = UntypedVal::Kind::kBool;
-            untyValRet.val_b = true;
+            untyValRet.type = getPrimTypeId(TypeTable::P_BOOL);
+            untyValRet.val.kind = LiteralVal::Kind::kBool;
+            untyValRet.val.val_b = true;
             break;
         case Token::O_NEQ:
-            untyValRet.kind = UntypedVal::Kind::kBool;
-            untyValRet.val_b = false;
+            untyValRet.type = getPrimTypeId(TypeTable::P_BOOL);
+            untyValRet.val.kind = LiteralVal::Kind::kBool;
+            untyValRet.val.val_b = false;
             break;
         default:
             msgs->errorExprUntyBinBadOp(codeLoc, op);
             return NodeVal();
         }
     } else {
-        bool isTypeI = untyValRet.kind == UntypedVal::Kind::kSint;
-        bool isTypeC = untyValRet.kind == UntypedVal::Kind::kChar;
-        bool isTypeF = untyValRet.kind == UntypedVal::Kind::kFloat;
+        bool isTypeI = untyValRet.val.kind == LiteralVal::Kind::kSint;
+        bool isTypeC = untyValRet.val.kind == LiteralVal::Kind::kChar;
+        bool isTypeF = untyValRet.val.kind == LiteralVal::Kind::kFloat;
 
         if (!isTypeI && !isTypeC && !isTypeF) {
             // NOTE cannot == nor != on two string literals
-            if (untyValRet.kind == UntypedVal::Kind::kString) {
+            if (untyValRet.val.kind == LiteralVal::Kind::kString) {
                 msgs->errorExprCompareStringLits(codeLoc);
             } else {
                 msgs->errorExprUntyBinBadOp(codeLoc, op);
@@ -197,19 +230,19 @@ NodeVal Evaluator::calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, 
             switch (op) {
                 case Token::O_ADD:
                     if (isTypeF)
-                        untyValRet.val_f = untyL.val_f+untyR.val_f;
+                        untyValRet.val.val_f = untyL.val.val_f+untyR.val.val_f;
                     else if (isTypeI)
-                        untyValRet.val_si = untyL.val_si+untyR.val_si;
+                        untyValRet.val.val_si = untyL.val.val_si+untyR.val.val_si;
                     break;
                 case Token::O_SUB:
                     if (isTypeF)
-                        untyValRet.val_f = untyL.val_f-untyR.val_f;
+                        untyValRet.val.val_f = untyL.val.val_f-untyR.val.val_f;
                     else if (isTypeI)
-                        untyValRet.val_si = untyL.val_si-untyR.val_si;
+                        untyValRet.val.val_si = untyL.val.val_si-untyR.val.val_si;
                     break;
                 case Token::O_SHL:
                     if (isTypeI) {
-                        untyValRet.val_si = untyL.val_si<<untyR.val_si;
+                        untyValRet.val.val_si = untyL.val.val_si<<untyR.val.val_si;
                     } else {
                         msgs->errorExprUntyBinBadOp(codeLoc, op);
                         return NodeVal();
@@ -217,7 +250,7 @@ NodeVal Evaluator::calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, 
                     break;
                 case Token::O_SHR:
                     if (isTypeI) {
-                        untyValRet.val_si = untyL.val_si>>untyR.val_si;
+                        untyValRet.val.val_si = untyL.val.val_si>>untyR.val.val_si;
                     } else {
                         msgs->errorExprUntyBinBadOp(codeLoc, op);
                         return NodeVal();
@@ -225,7 +258,7 @@ NodeVal Evaluator::calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, 
                     break;
                 case Token::O_BIT_AND:
                     if (isTypeI) {
-                        untyValRet.val_si = untyL.val_si&untyR.val_si;
+                        untyValRet.val.val_si = untyL.val.val_si&untyR.val.val_si;
                     } else {
                         msgs->errorExprUntyBinBadOp(codeLoc, op);
                         return NodeVal();
@@ -233,7 +266,7 @@ NodeVal Evaluator::calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, 
                     break;
                 case Token::O_BIT_XOR:
                     if (isTypeI) {
-                        untyValRet.val_si = untyL.val_si^untyR.val_si;
+                        untyValRet.val.val_si = untyL.val.val_si^untyR.val.val_si;
                     } else {
                         msgs->errorExprUntyBinBadOp(codeLoc, op);
                         return NodeVal();
@@ -241,7 +274,7 @@ NodeVal Evaluator::calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, 
                     break;
                 case Token::O_BIT_OR:
                     if (isTypeI) {
-                        untyValRet.val_si = untyL.val_si|untyR.val_si;
+                        untyValRet.val.val_si = untyL.val.val_si|untyR.val.val_si;
                     } else {
                         msgs->errorExprUntyBinBadOp(codeLoc, op);
                         return NodeVal();
@@ -249,75 +282,81 @@ NodeVal Evaluator::calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, 
                     break;
                 case Token::O_MUL:
                     if (isTypeF)
-                        untyValRet.val_f = untyL.val_f*untyR.val_f;
+                        untyValRet.val.val_f = untyL.val.val_f*untyR.val.val_f;
                     else if (isTypeI)
-                        untyValRet.val_si = untyL.val_si*untyR.val_si;
+                        untyValRet.val.val_si = untyL.val.val_si*untyR.val.val_si;
                     break;
                 case Token::O_DIV:
                     if (isTypeF)
-                        untyValRet.val_f = untyL.val_f/untyR.val_f;
+                        untyValRet.val.val_f = untyL.val.val_f/untyR.val.val_f;
                     else if (isTypeI)
-                        untyValRet.val_si = untyL.val_si/untyR.val_si;
+                        untyValRet.val.val_si = untyL.val.val_si/untyR.val.val_si;
                     break;
                 case Token::O_REM:
                     if (isTypeF)
-                        untyValRet.val_f = fmod(untyL.val_f, untyR.val_f);
+                        untyValRet.val.val_f = fmod(untyL.val.val_f, untyR.val.val_f);
                     else if (isTypeI)
-                        untyValRet.val_si = untyL.val_si%untyR.val_si;
+                        untyValRet.val.val_si = untyL.val.val_si%untyR.val.val_si;
                     break;
                 case Token::O_EQ:
-                    untyValRet.kind = UntypedVal::Kind::kBool;
+                    untyValRet.type = getPrimTypeId(TypeTable::P_BOOL);
+                    untyValRet.val.kind = LiteralVal::Kind::kBool;
                     if (isTypeF)
-                        untyValRet.val_b = untyL.val_f == untyR.val_f;
+                        untyValRet.val.val_b = untyL.val.val_f == untyR.val.val_f;
                     else if (isTypeI)
-                        untyValRet.val_b = untyL.val_si == untyR.val_si;
+                        untyValRet.val.val_b = untyL.val.val_si == untyR.val.val_si;
                     else if (isTypeC)
-                        untyValRet.val_b = untyL.val_c == untyR.val_c;
+                        untyValRet.val.val_b = untyL.val.val_c == untyR.val.val_c;
                     break;
                 case Token::O_NEQ:
-                    untyValRet.kind = UntypedVal::Kind::kBool;
+                    untyValRet.type = getPrimTypeId(TypeTable::P_BOOL);
+                    untyValRet.val.kind = LiteralVal::Kind::kBool;
                     if (isTypeF)
-                        untyValRet.val_b = untyL.val_f != untyR.val_f;
+                        untyValRet.val.val_b = untyL.val.val_f != untyR.val.val_f;
                     else if (isTypeI)
-                        untyValRet.val_b = untyL.val_si != untyR.val_si;
+                        untyValRet.val.val_b = untyL.val.val_si != untyR.val.val_si;
                     else if (isTypeC)
-                        untyValRet.val_b = untyL.val_c != untyR.val_c;
+                        untyValRet.val.val_b = untyL.val.val_c != untyR.val.val_c;
                     break;
                 case Token::O_LT:
-                    untyValRet.kind = UntypedVal::Kind::kBool;
+                    untyValRet.type = getPrimTypeId(TypeTable::P_BOOL);
+                    untyValRet.val.kind = LiteralVal::Kind::kBool;
                     if (isTypeF)
-                        untyValRet.val_b = untyL.val_f < untyR.val_f;
+                        untyValRet.val.val_b = untyL.val.val_f < untyR.val.val_f;
                     else if (isTypeI)
-                        untyValRet.val_b = untyL.val_si < untyR.val_si;
+                        untyValRet.val.val_b = untyL.val.val_si < untyR.val.val_si;
                     else if (isTypeC)
-                        untyValRet.val_b = untyL.val_c < untyR.val_c;
+                        untyValRet.val.val_b = untyL.val.val_c < untyR.val.val_c;
                     break;
                 case Token::O_LTEQ:
-                    untyValRet.kind = UntypedVal::Kind::kBool;
+                    untyValRet.type = getPrimTypeId(TypeTable::P_BOOL);
+                    untyValRet.val.kind = LiteralVal::Kind::kBool;
                     if (isTypeF)
-                        untyValRet.val_b = untyL.val_f <= untyR.val_f;
+                        untyValRet.val.val_b = untyL.val.val_f <= untyR.val.val_f;
                     else if (isTypeI)
-                        untyValRet.val_b = untyL.val_si <= untyR.val_si;
+                        untyValRet.val.val_b = untyL.val.val_si <= untyR.val.val_si;
                     else if (isTypeC)
-                        untyValRet.val_b = untyL.val_c <= untyR.val_c;
+                        untyValRet.val.val_b = untyL.val.val_c <= untyR.val.val_c;
                     break;
                 case Token::O_GT:
-                    untyValRet.kind = UntypedVal::Kind::kBool;
+                    untyValRet.type = getPrimTypeId(TypeTable::P_BOOL);
+                    untyValRet.val.kind = LiteralVal::Kind::kBool;
                     if (isTypeF)
-                        untyValRet.val_b = untyL.val_f > untyR.val_f;
+                        untyValRet.val.val_b = untyL.val.val_f > untyR.val.val_f;
                     else if (isTypeI)
-                        untyValRet.val_b = untyL.val_si > untyR.val_si;
+                        untyValRet.val.val_b = untyL.val.val_si > untyR.val.val_si;
                     else if (isTypeC)
-                        untyValRet.val_b = untyL.val_c > untyR.val_c;
+                        untyValRet.val.val_b = untyL.val.val_c > untyR.val.val_c;
                     break;
                 case Token::O_GTEQ:
-                    untyValRet.kind = UntypedVal::Kind::kBool;
+                    untyValRet.type = getPrimTypeId(TypeTable::P_BOOL);
+                    untyValRet.val.kind = LiteralVal::Kind::kBool;
                     if (isTypeF)
-                        untyValRet.val_b = untyL.val_f >= untyR.val_f;
+                        untyValRet.val.val_b = untyL.val.val_f >= untyR.val.val_f;
                     else if (isTypeI)
-                        untyValRet.val_b = untyL.val_si >= untyR.val_si;
+                        untyValRet.val.val_b = untyL.val.val_si >= untyR.val.val_si;
                     else if (isTypeC)
-                        untyValRet.val_b = untyL.val_c >= untyR.val_c;
+                        untyValRet.val.val_b = untyL.val.val_c >= untyR.val.val_c;
                     break;
                 default:
                     msgs->errorExprUntyBinBadOp(codeLoc, op);
