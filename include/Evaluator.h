@@ -18,7 +18,8 @@ class Evaluator {
     TypeTable* getTypeTable() { return symbolTable->getTypeTable(); }
     const TypeTable* getTypeTable() const { return symbolTable->getTypeTable(); }
 
-    void evaluateMac(AstNode *ast);
+    NodeVal evaluateMac(AstNode *ast);
+    NodeVal evaluateImport(AstNode *ast);
 
     // TODO unify with one from codegen
     std::optional<NamePool::Id> getId(const AstNode *ast, bool orError);
@@ -36,8 +37,7 @@ public:
     void setCodegen(Codegen *c) { codegen = c; }
 
     // TODO unify with evaluateNode
-    // TODO! evaluate import
-    bool evaluateGlobalNode(AstNode *ast);
+    CompilerAction evaluateGlobalNode(AstNode *ast);
 
     NodeVal evaluateTerminal(const AstNode *ast);
     NodeVal evaluateNode(const AstNode *ast);

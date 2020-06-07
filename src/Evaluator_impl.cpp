@@ -22,19 +22,26 @@ optional<NamePool::Id> Evaluator::getId(const AstNode *ast, bool orError) {
     return ast->terminal->id;
 }
 
-bool Evaluator::evaluateGlobalNode(AstNode *ast) {
-    if (ast->isTerminal()) return false;
+CompilerAction Evaluator::evaluateGlobalNode(AstNode *ast) {
+    if (ast->isTerminal()) return CompilerAction(CompilerAction::Kind::kCodegen);
 
     AstNode *starting = ast->children[0].get();
 
     if (starting->isTerminal() &&
-        starting->terminal->kind == TerminalVal::Kind::kKeyword &&
-        starting->terminal->keyword == Token::T_MAC) {
-        evaluateMac(ast);
-        return true;
+        starting->terminal->kind == TerminalVal::Kind::kKeyword) {
+        if (starting->terminal->keyword == Token::T_MAC) {
+            evaluateMac(ast);
+            return CompilerAction(CompilerAction::Kind::kNone);
+        } else if (starting->terminal->keyword == Token::T_IMPORT) {
+            NodeVal val = evaluateImport(ast);
+            
+            CompilerAction importAction(CompilerAction::Kind::kImport);
+            importAction.file = val.file;
+            return importAction;
+        }
     }
 
-    return false;
+    return CompilerAction(CompilerAction::Kind::kCodegen);
 }
 
 NodeVal Evaluator::evaluateTerminal(const AstNode *ast) {
@@ -118,10 +125,10 @@ NodeVal Evaluator::evaluateNode(const AstNode *ast) {
     return ret;
 }
 
-void Evaluator::evaluateMac(AstNode *ast) {
+NodeVal Evaluator::evaluateMac(AstNode *ast) {
     if (!codegen->checkGlobalScope(ast->codeLoc, true) ||
         !codegen->checkExactlyChildren(ast, 4, true)) {
-        return;
+        return NodeVal();
     }
 
     const AstNode *nodeName = ast->children[1].get();
@@ -129,30 +136,30 @@ void Evaluator::evaluateMac(AstNode *ast) {
     unique_ptr<AstNode> &nodeBody = ast->children[3];
 
     optional<NamePool::Id> nameOpt = getId(nodeName, true);
-    if (!nameOpt.has_value()) return;
+    if (!nameOpt.has_value()) return NodeVal();
     NamePool::Id name = nameOpt.value();
 
     if (!symbolTable->macroMayTakeName(name)) {
         msgs->errorMacroNameTaken(nodeName->codeLoc, name);
-        return;
+        return NodeVal();
     }
 
     vector<NamePool::Id> args;
     if (!codegen->checkEmptyTerminal(nodeArgs, false)) {
-        if (!codegen->checkNotTerminal(nodeArgs, true)) return;
+        if (!codegen->checkNotTerminal(nodeArgs, true)) return NodeVal();
 
         for (size_t i = 0; i < nodeArgs->children.size(); ++i) {
             const AstNode *nodeArg = nodeArgs->children[i].get();
 
             optional<NamePool::Id> nameOpt = getId(nodeArg, true);
-            if (!nameOpt.has_value()) return;
+            if (!nameOpt.has_value()) return NodeVal();
 
             args.push_back(nameOpt.value());
         }
     }
     if (nodeArgs->hasType()) {
         msgs->errorMismatchTypeAnnotation(nodeArgs->codeLoc);
-        return;
+        return NodeVal();
     }
 
     // can't have args with same name
@@ -160,7 +167,7 @@ void Evaluator::evaluateMac(AstNode *ast) {
         for (size_t j = i+1; j < args.size(); ++j) {
             if (args[i] == args[j]) {
                 msgs->errorArgNameDuplicate(ast->codeLoc, args[j]);
-                return;
+                return NodeVal();
             }
         }
     }
@@ -172,16 +179,18 @@ void Evaluator::evaluateMac(AstNode *ast) {
 
     if (nodeBody->hasType()) {
         msgs->errorMismatchTypeAnnotation(nodeBody->codeLoc);
-        return;
+        return NodeVal();
     }
 
     if (!symbolTable->canRegisterMacro(val)) {
         msgs->errorSigConflict(ast->codeLoc);
-        return;
+        return NodeVal();
     } else {
         symbolTable->registerMacro(val);
         astStorage->store(move(nodeBody));
     }
+
+    return NodeVal();
 }
 
 void Evaluator::substitute(unique_ptr<AstNode> &body, const vector<NamePool::Id> &names, const vector<const AstNode*> &values) {
@@ -199,6 +208,24 @@ void Evaluator::substitute(unique_ptr<AstNode> &body, const vector<NamePool::Id>
     }
     
     if (body->hasType()) substitute(body->type.value(), names, values);
+}
+
+NodeVal Evaluator::evaluateImport(AstNode *ast) {
+    if (!codegen->checkGlobalScope(ast->codeLoc, true) ||
+        !codegen->checkExactlyChildren(ast, 2, true))
+        return NodeVal();
+    
+    const AstNode *nodeFile = ast->children[1].get();
+
+    NodeVal valFile = evaluateNode(nodeFile);
+    if (!valFile.isUntyVal() || valFile.untyVal.kind != UntypedVal::Kind::kString) {
+        msgs->errorImportNotString(nodeFile->codeLoc);
+        return NodeVal();
+    }
+
+    NodeVal ret(NodeVal::Kind::kImport);
+    ret.file = valFile.untyVal.val_str;
+    return ret;
 }
 
 unique_ptr<AstNode> Evaluator::evaluateInvoke(const AstNode *ast) {

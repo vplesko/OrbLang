@@ -5,6 +5,20 @@
 #include "StringPool.h"
 #include "TypeTable.h"
 
+struct CompilerAction {
+    enum class Kind {
+        kNone,
+        kCodegen,
+        kImport
+    };
+
+    Kind kind = Kind::kNone;
+    StringPool::Id file;
+
+    CompilerAction() {}
+    CompilerAction(Kind k) : kind(k) {}
+};
+
 // TODO get rid of these in favor of compile-time values
 // TODO! LiteralVal for passing from Parser to others, KnownVal for evaulated typed values
 struct UntypedVal {

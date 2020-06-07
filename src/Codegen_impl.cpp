@@ -43,9 +43,6 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
 
         if (starting.isKeyword()) {
             switch (starting.keyword) {
-            case Token::T_IMPORT:
-                ret = codegenImport(ast);
-                break;
             case Token::T_LET:
                 ret = codegenLet(ast);
                 break;
@@ -352,26 +349,6 @@ bool Codegen::createCast(NodeVal &e, TypeTable::Id t) {
     if (!createCast(e.llvmVal.val, e.llvmVal.type, t)) return false;
     e.llvmVal.type = t;
     return true;
-}
-
-NodeVal Codegen::codegenImport(const AstNode *ast) {
-    if (!checkGlobalScope(ast->codeLoc, true) ||
-        !checkExactlyChildren(ast, 2, true))
-        return NodeVal();
-    
-    const AstNode *nodeFile = ast->children[1].get();
-
-    optional<UntypedVal> val = getUntypedVal(nodeFile, true);
-    if (!val.has_value()) return NodeVal();
-
-    if (val.value().kind != UntypedVal::Kind::kString) {
-        msgs->errorImportNotString(nodeFile->codeLoc);
-        return NodeVal();
-    }
-
-    NodeVal ret(NodeVal::Kind::kImport);
-    ret.file = val.value().val_str;
-    return ret;
 }
 
 NodeVal Codegen::codegenLet(const AstNode *ast) {
