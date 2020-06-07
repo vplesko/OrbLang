@@ -35,9 +35,8 @@ public:
 
 private:
     NodeVal evaluateMac(AstNode *ast);
-    NodeVal evaluateImport(AstNode *ast);
+    NodeVal evaluateImport(const AstNode *ast);
     NodeVal evaluateUntypedVal(const AstNode *ast);
-    // TODO! evaluateCast
     NodeVal evaluateOperUnary(const AstNode *ast, const NodeVal &first);
     NodeVal evaluateOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs, const NodeVal &rhs);
     NodeVal evaluateOper(const AstNode *ast, const NodeVal &first);

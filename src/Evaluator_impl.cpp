@@ -291,7 +291,7 @@ void Evaluator::substitute(unique_ptr<AstNode> &body, const vector<NamePool::Id>
     if (body->hasType()) substitute(body->type.value(), names, values);
 }
 
-NodeVal Evaluator::evaluateImport(AstNode *ast) {
+NodeVal Evaluator::evaluateImport(const AstNode *ast) {
     if (!codegen->checkGlobalScope(ast->codeLoc, true) ||
         !codegen->checkExactlyChildren(ast, 2, true))
         return NodeVal();
