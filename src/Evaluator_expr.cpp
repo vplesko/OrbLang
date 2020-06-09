@@ -31,12 +31,17 @@ NodeVal Evaluator::evaluateUntypedVal(const AstNode *ast) {
         ret.untyVal.type = getPrimTypeId(TypeTable::P_BOOL);
         break;
     case LiteralVal::Kind::kSint:
-        ret.untyVal.type = getPrimTypeId(TypeTable::P_I32);
-        break;
+        {
+            TypeTable::PrimIds fitting = getTypeTable()->shortestFittingPrimTypeI(ret.untyVal.val.val_si);
+            TypeTable::PrimIds chosen = max(TypeTable::P_I32, fitting);
+            ret.untyVal.type = getPrimTypeId(chosen);
+            break;
+        }
     case LiteralVal::Kind::kChar:
         ret.untyVal.type = getPrimTypeId(TypeTable::P_C8);
         break;
     case LiteralVal::Kind::kFloat:
+        // TODO! f32 or f64 based on limit check, just like for ints
         ret.untyVal.type = getPrimTypeId(TypeTable::P_F32);
         break;
     case LiteralVal::Kind::kString:
