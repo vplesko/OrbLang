@@ -132,17 +132,22 @@ optional<NodeVal> Evaluator::evaluateTypeDescr(const AstNode *ast, const NodeVal
         } else if (descr.isOper() && descr.oper == Token::O_IND) {
             typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_ARR_PTR});
         } else if (descr.isUntyVal()) {
-            if (descr.untyVal.val.kind != LiteralVal::Kind::kSint) {
-                msgs->errorInvalidTypeDecorator(nodeChild->codeLoc);
-                return NodeVal();
-            }
-            int64_t arrSize = descr.untyVal.val.val_si;
-            if (arrSize <= 0) {
-                msgs->errorBadArraySize(nodeChild->codeLoc, arrSize);
+            optional<uint64_t> arrSize = UntypedVal::getValueNonNeg(descr.untyVal, getTypeTable());
+            if (!arrSize.has_value() || arrSize.value() == 0) {
+                if (arrSize.value() == 0) {
+                    msgs->errorBadArraySize(nodeChild->codeLoc, arrSize.value());
+                } else {
+                    optional<int64_t> integ = UntypedVal::getValueI(descr.untyVal, getTypeTable());
+                    if (integ.has_value()) {
+                        msgs->errorBadArraySize(nodeChild->codeLoc, integ.value());
+                    } else {
+                        msgs->errorInvalidTypeDecorator(nodeChild->codeLoc);
+                    }
+                }
                 return NodeVal();
             }
 
-            typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_ARR, (unsigned long) arrSize});
+            typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_ARR, arrSize.value()});
         } else if (descr.isKeyword() && descr.keyword == Token::T_CN) {
             typeDescr.setLastCn();
         } else {
@@ -282,13 +287,13 @@ NodeVal Evaluator::evaluateImport(const AstNode *ast) {
     const AstNode *nodeFile = ast->children[1].get();
 
     NodeVal valFile = evaluateNode(nodeFile);
-    if (!valFile.isUntyVal() || valFile.untyVal.val.kind != LiteralVal::Kind::kString) {
+    if (!valFile.isUntyVal() || !isStr(valFile.untyVal)) {
         msgs->errorImportNotString(nodeFile->codeLoc);
         return NodeVal();
     }
 
     NodeVal ret(NodeVal::Kind::kImport);
-    ret.file = valFile.untyVal.val.val_str;
+    ret.file = valFile.untyVal.str;
     return ret;
 }
 

@@ -45,15 +45,32 @@ struct LiteralVal {
 };
 
 struct UntypedVal {
-    LiteralVal val;
     TypeTable::Id type;
+    union {
+        std::int8_t i8;
+        std::int16_t i16;
+        std::int32_t i32;
+        std::int64_t i64;
+        std::uint8_t u8;
+        std::uint16_t u16;
+        std::uint32_t u32;
+        std::uint64_t u64;
+        float f32;
+        double f64;
+        char c8;
+        bool b;
+        StringPool::Id str;
+    };
 
-    UntypedVal() { val.kind = LiteralVal::Kind::kNone; }
+    UntypedVal() {}
     explicit UntypedVal(TypeTable::Id t) : type(t) {}
-};
 
-bool isImplicitCastable(const UntypedVal &val, TypeTable::Id t,
-    const StringPool *stringPool, const TypeTable *typeTable);
+    static std::optional<std::int64_t> getValueI(const UntypedVal &val, const TypeTable *typeTable);
+    static std::optional<std::uint64_t> getValueU(const UntypedVal &val, const TypeTable *typeTable);
+    static std::optional<double> getValueF(const UntypedVal &val, const TypeTable *typeTable);
+    static std::optional<std::uint64_t> getValueNonNeg(const UntypedVal &val, const TypeTable *typeTable);
+    static bool isImplicitCastable(const UntypedVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable);
+};
 
 struct TerminalVal {
     enum class Kind {
@@ -138,7 +155,6 @@ struct NodeVal {
     // returns true if this is not unty val nor llvm val with valid value
     bool valueBroken() const { return
         (!isLlvmVal() && !isUntyVal()) ||
-        (isLlvmVal() && llvmVal.valBroken()) ||
-        (isUntyVal() && untyVal.val.kind == LiteralVal::Kind::kNone);
+        (isLlvmVal() && llvmVal.valBroken());
     }
 };

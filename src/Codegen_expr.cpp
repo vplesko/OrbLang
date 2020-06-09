@@ -42,13 +42,12 @@ NodeVal Codegen::codegenOperInd(CodeLoc codeLoc, const NodeVal &base, const Node
     NodeVal leftVal = base;
 
     if (leftVal.isUntyVal()) {
-        // TODO! promote, then check
-        if (leftVal.untyVal.val.kind == LiteralVal::Kind::kString) {
-            if (!promoteUntyped(leftVal, getTypeTable()->getTypeIdStr())) {
-                msgs->errorInternal(codeLoc);
-                return NodeVal();
-            }
-        } else {
+        if (!promoteUntyped(leftVal)) {
+            msgs->errorInternal(codeLoc);
+            return NodeVal();
+        }
+        
+        if (!getTypeTable()->worksAsTypeStr(leftVal.llvmVal.type)) {
             msgs->errorExprIndexOnBadType(codeLoc);
             return NodeVal();
         }
@@ -59,21 +58,29 @@ NodeVal Codegen::codegenOperInd(CodeLoc codeLoc, const NodeVal &base, const Node
     NodeVal rightVal = ind;
 
     if (rightVal.isUntyVal()) {
-        // TODO! promote, then check in Evaluator
-        if (rightVal.untyVal.val.kind == LiteralVal::Kind::kSint) {
-            int64_t untyInd = rightVal.untyVal.val.val_si;
-            if (!promoteUntyped(rightVal, getTypeTable()->shortestFittingTypeIId(untyInd))) {
-                msgs->errorInternal(codeLoc);
-                return NodeVal();
-            }
+        if (evaluator->isI(rightVal.untyVal)) {
+            int64_t ind = UntypedVal::getValueI(rightVal.untyVal, getTypeTable()).value();
             if (getTypeTable()->worksAsTypeArr(leftVal.llvmVal.type)) {
                 size_t len = getTypeTable()->extractLenOfArr(leftVal.llvmVal.type).value();
-                if (untyInd < 0 || ((size_t) untyInd) >= len) {
+                if (ind < 0 || ind >= len) {
+                    msgs->warnExprIndexOutOfBounds(codeLoc);
+                }
+            }
+        } else if (evaluator->isU(rightVal.untyVal)) {
+            uint64_t ind = UntypedVal::getValueU(rightVal.untyVal, getTypeTable()).value();
+            if (getTypeTable()->worksAsTypeArr(leftVal.llvmVal.type)) {
+                size_t len = getTypeTable()->extractLenOfArr(leftVal.llvmVal.type).value();
+                if (ind >= len) {
                     msgs->warnExprIndexOutOfBounds(codeLoc);
                 }
             }
         } else {
             msgs->errorExprIndexNotIntegral(codeLoc);
+            return NodeVal();
+        }
+
+        if (!promoteUntyped(rightVal)) {
+            msgs->errorInternal(codeLoc);
             return NodeVal();
         }
     }
@@ -163,14 +170,12 @@ NodeVal Codegen::codegenOperDot(CodeLoc codeLoc, const NodeVal &base, const Node
     }
     const TypeTable::Tuple &tuple = *(tupleOpt.value());
 
-    UntypedVal membUntyVal = memb.untyVal;
-    // TODO! check in Evaluator
-    if (membUntyVal.val.kind != LiteralVal::Kind::kSint ||
-        membUntyVal.val.val_si < 0 || membUntyVal.val.val_si >= tuple.members.size()) {
+    optional<size_t> membIndOpt = UntypedVal::getValueNonNeg(memb.untyVal, getTypeTable());
+    if (!membIndOpt.has_value() || membIndOpt.value() >= tuple.members.size()) {
         msgs->errorMemberIndex(codeLoc);
         return NodeVal();
     }
-    size_t memberInd = (size_t) membUntyVal.val.val_si;
+    size_t memberInd = membIndOpt.value();
 
     NodeVal exprRet(NodeVal::Kind::kLlvmVal);
 

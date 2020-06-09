@@ -28,6 +28,15 @@ public:
     std::optional<UntypedVal> getUntypedVal(const AstNode *ast, bool orError);
     std::optional<TypeTable::Id> getType(const AstNode *ast, bool orError);
 
+    bool isI(const UntypedVal &val) const;
+    bool isU(const UntypedVal &val) const;
+    bool isF(const UntypedVal &val) const;
+    bool isB(const UntypedVal &val) const;
+    bool isC(const UntypedVal &val) const;
+    bool isStr(const UntypedVal &val) const;
+    bool isNull(const UntypedVal &val) const;
+    bool cast(UntypedVal &val, TypeTable::Id t) const;
+
     NodeVal calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal unty);
     NodeVal calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR);
 

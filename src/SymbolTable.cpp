@@ -132,7 +132,7 @@ bool SymbolTable::isCallArgsOk(const FuncCallSite &call, const FuncValue &func) 
                 return false;
         } else {
             // otherwise, if untyped val which can be used for this func, we're also good
-            if (!isImplicitCastable(call.untypedVals[i].value(), func.argTypes[i], stringPool, typeTable))
+            if (!UntypedVal::isImplicitCastable(call.untypedVals[i].value(), func.argTypes[i], stringPool, typeTable))
                 return false;
         }
     }

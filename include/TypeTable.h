@@ -116,9 +116,6 @@ private:
     std::unordered_map<NamePool::Id, Id> typeIds;
     std::unordered_map<Id, NamePool::Id, Id::Hasher> typeNames;
 
-    bool worksAsPrimitive(Id t, PrimIds p) const;
-    bool worksAsPrimitive(Id t, PrimIds lo, PrimIds hi) const;
-
     template <typename T>
     bool isTypeDescrSatisfyingCondition(Id t, T cond) const;
 
@@ -165,6 +162,8 @@ public:
     bool isTypeDescr(Id t) const;
     
     bool worksAsPrimitive(Id t) const;
+    bool worksAsPrimitive(Id t, PrimIds p) const;
+    bool worksAsPrimitive(Id t, PrimIds lo, PrimIds hi) const;
     bool worksAsTypeI(Id t) const { return worksAsPrimitive(t, P_I8, P_I64); }
     bool worksAsTypeU(Id t) const { return worksAsPrimitive(t, P_U8, P_U64); }
     bool worksAsTypeF(Id t) const { return worksAsPrimitive(t, P_F32, P_F64); }
@@ -184,7 +183,9 @@ public:
     std::optional<const Tuple*> extractTuple(Id t) const;
     std::optional<std::size_t> extractLenOfArr(Id arrTypeId) const;
 
-    bool fitsType(int64_t x, Id t) const;
+    bool fitsTypeI(int64_t x, Id t) const;
+    bool fitsTypeU(uint64_t x, Id t) const;
+    bool fitsTypeF(double x, Id t) const;
     Id shortestFittingTypeIId(int64_t x) const;
     bool isImplicitCastable(Id from, Id into) const;
     Id getTypeFuncSigParam(Id t) { return addTypeDropCnsOf(t); }

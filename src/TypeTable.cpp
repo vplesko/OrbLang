@@ -451,7 +451,7 @@ bool TypeTable::isDirectCn(Id t) const {
     }
 }
 
-bool TypeTable::fitsType(int64_t x, Id t) const {
+bool TypeTable::fitsTypeI(int64_t x, Id t) const {
     if (!worksAsPrimitive(t)) return false;
 
     PrimIds primId;
@@ -490,14 +490,65 @@ bool TypeTable::fitsType(int64_t x, Id t) const {
             break;
         case TypeTable::P_U64:
             lo = (int64_t) numeric_limits<uint64_t>::min();
-            // max of uint64_t wouldn't fit into int64_t
-            // this isn't strictly correct, but literals aren't allowed to exceed this value anyway
             hi = (int64_t) numeric_limits<int64_t>::max();
             break;
         default:
             return false;
     }
     return between(x, lo, hi);
+}
+
+bool TypeTable::fitsTypeU(uint64_t x, Id t) const {
+    if (!worksAsPrimitive(t)) return false;
+
+    PrimIds primId;
+    if (isPrimitive(t)) primId = (PrimIds) t.index;
+    else primId = (PrimIds) typeDescrs[t.index].first.base.index;
+    
+    uint64_t hi;
+    switch (primId) {
+        case TypeTable::P_I8:
+            hi = numeric_limits<int8_t>::max();
+            break;
+        case TypeTable::P_I16:
+            hi = numeric_limits<int16_t>::max();
+            break;
+        case TypeTable::P_I32:
+            hi = numeric_limits<int32_t>::max();
+            break;
+        case TypeTable::P_I64:
+            hi = numeric_limits<int64_t>::max();
+            break;
+        case TypeTable::P_U8:
+            hi = numeric_limits<uint8_t>::max();
+            break;
+        case TypeTable::P_U16:
+            hi = numeric_limits<uint16_t>::max();
+            break;
+        case TypeTable::P_U32:
+            hi = numeric_limits<uint32_t>::max();
+            break;
+        case TypeTable::P_U64:
+            hi = numeric_limits<uint64_t>::max();
+            break;
+        default:
+            return false;
+    }
+    return x <= hi;
+}
+
+bool TypeTable::fitsTypeF(double x, Id t) const {
+    if (!worksAsPrimitive(t)) return false;
+
+    PrimIds primId;
+    if (isPrimitive(t)) primId = (PrimIds) t.index;
+    else primId = (PrimIds) typeDescrs[t.index].first.base.index;
+
+    if (primId == P_F32) {
+        return std::isinf(x) || std::isnan(x) || (std::abs(x) <= numeric_limits<float>::max());
+    } else {
+        return true;
+    }
 }
 
 TypeTable::Id TypeTable::shortestFittingTypeIId(int64_t x) const {

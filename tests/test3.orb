@@ -95,12 +95,12 @@ fnc main() () {
         println_i8 1;
         println_i16 (<< 1 8);
         println_i32 (<< 1 16);
-        println_i64 (<< 1 32);
+        println_i64 (<< 1 32:i64);
 
         println_u8 1;
         println_u16 (<< 1 8);
         println_u32 (<< 1 16);
-        println_u64 (<< 1 32);
+        println_u64 (<< 1 32:i64);
     };
 
     block {
