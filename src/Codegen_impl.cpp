@@ -322,16 +322,15 @@ NodeVal Codegen::codegenLet(const AstNode *ast) {
             else initVal = codegenNode(childNode->children[1].get());
             if (!checkValueUnbroken(codeLocInit, initVal, true))
                 continue;
-            
-            if (!optType.has_value() && initVal.isUntyVal()) {
-                msgs->errorMissingTypeAnnotation(codeLocName);
-                continue;
-            }
 
             if (initVal.isUntyVal()) {
-                if (!promoteUntyped(initVal, optType.value())) {
-                    msgs->errorExprCannotPromote(codeLocInit, optType.value());
-                    continue;
+                if (optType.has_value()) {
+                    if (!promoteUntyped(initVal, optType.value())) {
+                        msgs->errorExprCannotPromote(codeLocInit, optType.value());
+                        continue;
+                    }
+                } else {
+                    promoteUntyped(initVal);
                 }
             }
 

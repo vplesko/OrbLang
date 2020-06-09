@@ -187,7 +187,7 @@ fnc main() () {
     };
 
     println_i32 (block i32 {
-        let (x:i32 300);
+        let (x 300);
         pass x;
     });
 
