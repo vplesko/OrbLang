@@ -22,9 +22,7 @@ class Evaluator {
     TypeTable::Id getPrimTypeId(TypeTable::PrimIds primId) const { return getTypeTable()->getPrimTypeId(primId); }
 
 public:
-    // TODO! unify with one from codegen
     std::optional<NamePool::Id> getId(const AstNode *ast, bool orError);
-
     std::optional<Token::Type> getKeyword(const AstNode *ast, bool orError);
     std::optional<Token::Oper> getOper(const AstNode *ast, bool orError);
     std::optional<UntypedVal> getUntypedVal(const AstNode *ast, bool orError);
@@ -59,5 +57,5 @@ public:
     NodeVal evaluateTerminal(const AstNode *ast);
     NodeVal evaluateNode(const AstNode *ast);
 
-    std::unique_ptr<AstNode> evaluateInvoke(const AstNode *ast);
+    std::unique_ptr<AstNode> evaluateInvoke(NamePool::Id macroName, const AstNode *ast);
 };

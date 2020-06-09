@@ -422,19 +422,8 @@ bool Codegen::checkGlobalScope(CodeLoc codeLoc, bool orError) {
     return true;
 }
 
-optional<NamePool::Id> Codegen::getId(const AstNode *ast, bool orError) {
-    AstNode *esc = const_cast<AstNode*>(ast);
-
-    esc->escaped = true;
-    
-    NodeVal nodeVal = codegenNode(esc);
-    if (!checkIsId(esc->codeLoc, nodeVal, orError)) return nullopt;
-
-    return nodeVal.id;
-}
-
 optional<Codegen::NameTypePair> Codegen::getIdTypePair(const AstNode *ast, bool orError) {
-    optional<NamePool::Id> id = getId(ast, orError);
+    optional<NamePool::Id> id = evaluator->getId(ast, orError);
     if (!id.has_value()) return nullopt;
 
     if (!ast->type.has_value()) {

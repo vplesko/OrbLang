@@ -7,21 +7,6 @@ Evaluator::Evaluator(StringPool *stringPool, SymbolTable *symbolTable, AstStorag
     : stringPool(stringPool), symbolTable(symbolTable), astStorage(astStorage), msgs(msgs), codegen(nullptr) {
 }
 
-optional<NamePool::Id> Evaluator::getId(const AstNode *ast, bool orError) {
-    // TODO! evaluate recursively (look at Codegen::getId)
-
-    if (!codegen->checkTerminal(ast, false) ||
-        ast->terminal->kind != TerminalVal::Kind::kId) {
-        if (orError) msgs->errorUnexpectedNotId(ast->codeLoc);
-        return nullopt;
-    }
-    if (ast->hasType()) {
-        if (orError) msgs->errorMismatchTypeAnnotation(ast->codeLoc);
-        return nullopt;
-    }
-    return ast->terminal->id;
-}
-
 CompilerAction Evaluator::evaluateGlobalNode(AstNode *ast) {
     if (ast->isTerminal()) return CompilerAction(CompilerAction::Kind::kCodegen);
 
@@ -103,7 +88,7 @@ NodeVal Evaluator::evaluateNode(const AstNode *ast) {
         if (starting.kind == NodeVal::Kind::kInvalid) return NodeVal();
 
         if (starting.isMacroId()) {
-            unique_ptr<AstNode> expanded = evaluateInvoke(ast);
+            unique_ptr<AstNode> expanded = evaluateInvoke(starting.id, ast);
             if (expanded == nullptr) return NodeVal();
             return evaluateNode(expanded.get());
         }
@@ -129,6 +114,7 @@ optional<NodeVal> Evaluator::evaluateTypeDescr(const AstNode *ast, const NodeVal
 
     const AstNode *nodeChild = ast->children[1].get();
 
+    // TODO optimize by evaluating node once, then looking at what was returned
     optional<Token::Type> keyw = getKeyword(nodeChild, false);
     optional<Token::Oper> op = getOper(nodeChild, false);
     optional<UntypedVal> val = getUntypedVal(nodeChild, false);
@@ -309,22 +295,16 @@ NodeVal Evaluator::evaluateImport(const AstNode *ast) {
     return ret;
 }
 
-unique_ptr<AstNode> Evaluator::evaluateInvoke(const AstNode *ast) {
+unique_ptr<AstNode> Evaluator::evaluateInvoke(NamePool::Id macroName, const AstNode *ast) {
     if (!codegen->checkNotTerminal(ast, true)) return nullptr;
 
-    const AstNode *nodeMacroName = ast->children[0].get();
-
-    optional<NamePool::Id> nameOpt = getId(nodeMacroName, true);
-    if (!nameOpt.has_value()) return nullptr;
-    NamePool::Id name = nameOpt.value();
-
     MacroSignature sig;
-    sig.name = name;
+    sig.name = macroName;
     sig.argCount = ast->children.size()-1;
 
     optional<MacroValue> macro = symbolTable->getMacro(sig);
     if (!macro.has_value()) {
-        msgs->errorMacroNotFound(ast->codeLoc, name);
+        msgs->errorMacroNotFound(ast->codeLoc, macroName);
         return nullptr;
     }
 

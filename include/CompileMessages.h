@@ -8,6 +8,7 @@
 
 class NamePool;
 
+// TODO fix the avalanche of errors in some cases
 class CompileMessages {
     enum Status {
         S_OK,

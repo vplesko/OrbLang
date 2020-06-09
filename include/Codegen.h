@@ -76,7 +76,6 @@ class Codegen {
     bool checkIsAttribute(CodeLoc codeLoc, const NodeVal &val, bool orError);
     bool checkGlobalScope(CodeLoc codeLoc, bool orError);
 
-    std::optional<NamePool::Id> getId(const AstNode *ast, bool orError);
     std::optional<NameTypePair> getIdTypePair(const AstNode *ast, bool orError);
     std::optional<Token::Attr> getAttr(const AstNode *ast, bool orError);
     SymbolTable::Block* getBlock(CodeLoc codeLoc, NamePool::Id name, bool orError);

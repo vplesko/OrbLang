@@ -36,7 +36,7 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
         if (starting.kind == NodeVal::Kind::kInvalid) return NodeVal();
 
         if (starting.isMacroId()) {
-            unique_ptr<AstNode> expanded = evaluator->evaluateInvoke(ast);
+            unique_ptr<AstNode> expanded = evaluator->evaluateInvoke(starting.id, ast);
             if (expanded == nullptr) return NodeVal();
             return codegenNode(expanded.get());
         }
@@ -285,7 +285,7 @@ NodeVal Codegen::codegenLet(const AstNode *ast) {
         NamePool::Id name;
         CodeLoc codeLocName = nameTypeNode->codeLoc;
         {
-            optional<NamePool::Id> optName = getId(nameTypeNode, true);
+            optional<NamePool::Id> optName = evaluator->getId(nameTypeNode, true);
             if (!optName.has_value()) continue;
 
             name = optName.value();
@@ -383,7 +383,7 @@ NodeVal Codegen::codegenExit(const AstNode *ast) {
 
     optional<NamePool::Id> name;
     if (hasName) {
-        name = getId(nodeName, true);
+        name = evaluator->getId(nodeName, true);
         if (!name.has_value()) return NodeVal();
     }
 
@@ -433,7 +433,7 @@ NodeVal Codegen::codegenPass(const AstNode *ast) {
 
     optional<NamePool::Id> name;
     if (hasName) {
-        name = getId(nodeName, true);
+        name = evaluator->getId(nodeName, true);
         if (!name.has_value()) return NodeVal();
     }
 
@@ -474,7 +474,7 @@ NodeVal Codegen::codegenLoop(const AstNode *ast) {
 
     optional<NamePool::Id> name;
     if (hasName) {
-        name = getId(nodeName, true);
+        name = evaluator->getId(nodeName, true);
         if (!name.has_value()) return NodeVal();
     }
 
@@ -569,7 +569,7 @@ NodeVal Codegen::codegenBlock(const AstNode *ast) {
 
     optional<NamePool::Id> name;
     if (hasName) {
-        name = getId(nodeName, true);
+        name = evaluator->getId(nodeName, true);
         if (!name.has_value()) return NodeVal();
     }
 
@@ -640,7 +640,7 @@ optional<FuncValue> Codegen::codegenFuncProto(const AstNode *ast, bool definitio
     const AstNode *nodeRet = ast->children[3].get();
 
     // func name
-    optional<NamePool::Id> name = getId(nodeName, true);
+    optional<NamePool::Id> name = evaluator->getId(nodeName, true);
     if (!name.has_value()) return nullopt;
 
     if (!symbolTable->funcMayTakeName(name.value())) {
