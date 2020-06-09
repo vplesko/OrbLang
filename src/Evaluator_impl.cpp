@@ -100,10 +100,27 @@ NodeVal Evaluator::evaluateNode(const AstNode *ast) {
         }
     }
 
-    if (!ast->escaped && ast->type.has_value() && !ret.isKnownVal()) {
-        // TODO! add type verification here
-        msgs->errorEvaluationNotSupported(ast->type.value()->codeLoc);
-        return NodeVal();
+    if (!ast->escaped && ast->type.has_value()) {
+        const AstNode *nodeType = ast->type.value().get();
+
+        NodeVal nodeTypeVal = evaluateNode(nodeType);
+        if (!codegen->checkIsType(nodeType->codeLoc, nodeTypeVal, true))
+            return NodeVal();
+
+        switch (ret.kind) {
+        case NodeVal::Kind::kKnownVal:
+            if (ret.knownVal.type != nodeTypeVal.type) {
+                msgs->errorMismatchTypeAnnotation(nodeType->codeLoc, nodeTypeVal.type);
+                return NodeVal();
+            }
+            break;
+        case NodeVal::Kind::kInvalid:
+            // do nothing
+            break;
+        default:
+            msgs->errorMismatchTypeAnnotation(nodeType->codeLoc, nodeTypeVal.type);
+            return NodeVal();
+        }
     }
 
     return ret;
