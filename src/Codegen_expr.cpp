@@ -586,17 +586,12 @@ NodeVal Codegen::codegenTuple(const AstNode *ast, const NodeVal &first) {
         const AstNode *nodeMemb = ast->children[i].get();
 
         NodeVal nodeValMemb = i == 0 ? first : codegenNode(nodeMemb);
-        if (nodeValMemb.kind != NodeVal::Kind::kLlvmVal) {
-            if (nodeValMemb.kind == NodeVal::Kind::kInvalid) {
-                return NodeVal();
-            } else if (nodeValMemb.kind == NodeVal::Kind::kUntyVal) {
-                msgs->errorMissingTypeAnnotation(nodeMemb->codeLoc);
-                return NodeVal();
-            } else {
-                msgs->errorTupleValueMember(nodeMemb->codeLoc);
-            }
-        }
+        if (!checkValueUnbroken(nodeMemb->codeLoc, nodeValMemb, true)) return NodeVal();
 
+        if (nodeValMemb.isUntyVal()) {
+            promoteUntyped(nodeValMemb);
+        }
+        
         tup.members[i] = nodeValMemb.llvmVal.type;
         llvmMembs[i] = nodeValMemb.llvmVal.val;
     }

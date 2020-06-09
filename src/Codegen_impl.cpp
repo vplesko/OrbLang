@@ -96,8 +96,8 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
             }
             break;
         case NodeVal::Kind::kUntyVal:
-            if (!promoteUntyped(ret, nodeTypeVal.type)) {
-                msgs->errorExprCannotPromote(ast->codeLoc, nodeTypeVal.type);
+            if (ret.untyVal.type != nodeTypeVal.type) {
+                msgs->errorMismatchTypeAnnotation(nodeType->codeLoc, nodeTypeVal.type);
                 return NodeVal();
             }
             break;

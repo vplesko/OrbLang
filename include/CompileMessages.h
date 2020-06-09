@@ -111,7 +111,6 @@ public:
     void errorBlockNotFound(CodeLoc loc, NamePool::Id name);
     void errorBlockNoPass(CodeLoc loc);
     void errorMemberIndex(CodeLoc loc);
-    void errorTupleValueMember(CodeLoc loc);
     void errorMismatchTypeAnnotation(CodeLoc loc, TypeTable::Id ty);
     void errorMismatchTypeAnnotation(CodeLoc loc);
     void errorMissingTypeAnnotation(CodeLoc loc);

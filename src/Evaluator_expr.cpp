@@ -15,7 +15,7 @@ NodeVal Evaluator::evaluateExpr(const AstNode *ast, const NodeVal &first) {
     }
 }
 
-// TODO! check explicit type is fitting; implicit is i64 if i32 doesn't fit
+// TODO! implicit is i64 if i32 doesn't fit
 NodeVal Evaluator::evaluateUntypedVal(const AstNode *ast) {
     NodeVal ret(NodeVal::Kind::kUntyVal);
 
@@ -26,34 +26,40 @@ NodeVal Evaluator::evaluateUntypedVal(const AstNode *ast) {
         return NodeVal();
     }
 
+    switch (ret.untyVal.val.kind) {
+    case LiteralVal::Kind::kBool:
+        ret.untyVal.type = getPrimTypeId(TypeTable::P_BOOL);
+        break;
+    case LiteralVal::Kind::kSint:
+        ret.untyVal.type = getPrimTypeId(TypeTable::P_I32);
+        break;
+    case LiteralVal::Kind::kChar:
+        ret.untyVal.type = getPrimTypeId(TypeTable::P_C8);
+        break;
+    case LiteralVal::Kind::kFloat:
+        ret.untyVal.type = getPrimTypeId(TypeTable::P_F32);
+        break;
+    case LiteralVal::Kind::kString:
+        ret.untyVal.type = getTypeTable()->getTypeIdStr();
+        break;
+    case LiteralVal::Kind::kNull:
+        ret.untyVal.type = getPrimTypeId(TypeTable::P_PTR);
+        break;
+    default:
+        msgs->errorInternal(ast->codeLoc);
+        return NodeVal();
+    }
+
     if (ast->hasType()) {
         optional<TypeTable::Id> ty = getType(ast->type.value().get(), true);
         if (!ty.has_value()) return NodeVal();
-        ret.untyVal.type = ty.value();
-    } else {
-        switch (ret.untyVal.val.kind) {
-        case LiteralVal::Kind::kBool:
-            ret.untyVal.type = getPrimTypeId(TypeTable::P_BOOL);
-            break;
-        case LiteralVal::Kind::kSint:
-            ret.untyVal.type = getPrimTypeId(TypeTable::P_I32);
-            break;
-        case LiteralVal::Kind::kChar:
-            ret.untyVal.type = getPrimTypeId(TypeTable::P_C8);
-            break;
-        case LiteralVal::Kind::kFloat:
-            ret.untyVal.type = getPrimTypeId(TypeTable::P_F32);
-            break;
-        case LiteralVal::Kind::kString:
-            ret.untyVal.type = getTypeTable()->getTypeIdStr();
-            break;
-        case LiteralVal::Kind::kNull:
-            ret.untyVal.type = getPrimTypeId(TypeTable::P_PTR);
-            break;
-        default:
-            msgs->errorInternal(ast->codeLoc);
+
+        if (!isImplicitCastable(ret.untyVal, ty.value(), stringPool, getTypeTable())) {
+            msgs->errorExprCannotPromote(ast->codeLoc, ty.value());
             return NodeVal();
         }
+
+        ret.untyVal.type = ty.value();
     }
 
     return ret;
