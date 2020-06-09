@@ -114,39 +114,36 @@ optional<NodeVal> Evaluator::evaluateTypeDescr(const AstNode *ast, const NodeVal
 
     const AstNode *nodeChild = ast->children[1].get();
 
-    // TODO optimize by evaluating node once, then looking at what was returned
-    optional<Token::Type> keyw = getKeyword(nodeChild, false);
-    optional<Token::Oper> op = getOper(nodeChild, false);
-    optional<UntypedVal> val = getUntypedVal(nodeChild, false);
+    NodeVal descr = evaluateNode(nodeChild);
 
-    if (!keyw.has_value() && !op.has_value() && !val.has_value())
+    if (!descr.isKeyword() && !descr.isOper() && !descr.isUntyVal())
         return nullopt;
     
     TypeTable::TypeDescr typeDescr(first.type);
     for (size_t i = 1; i < ast->children.size(); ++i) {
         nodeChild = ast->children[i].get();
 
-        keyw = getKeyword(nodeChild, false);
-        op = getOper(nodeChild, false);
-        val = getUntypedVal(nodeChild, false);
+        if (i > 1) {
+            descr = evaluateNode(nodeChild);
+        }
 
-        if (op.has_value() && op == Token::O_MUL) {
+        if (descr.isOper() && descr.oper == Token::O_MUL) {
             typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_PTR});
-        } else if (op.has_value() && op == Token::O_IND) {
+        } else if (descr.isOper() && descr.oper == Token::O_IND) {
             typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_ARR_PTR});
-        } else if (val.has_value()) {
-            if (val.value().val.kind != LiteralVal::Kind::kSint) {
+        } else if (descr.isUntyVal()) {
+            if (descr.untyVal.val.kind != LiteralVal::Kind::kSint) {
                 msgs->errorInvalidTypeDecorator(nodeChild->codeLoc);
                 return NodeVal();
             }
-            int64_t arrSize = val.value().val.val_si;
+            int64_t arrSize = descr.untyVal.val.val_si;
             if (arrSize <= 0) {
                 msgs->errorBadArraySize(nodeChild->codeLoc, arrSize);
                 return NodeVal();
             }
 
             typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_ARR, (unsigned long) arrSize});
-        } else if (keyw.has_value() && keyw == Token::T_CN) {
+        } else if (descr.isKeyword() && descr.keyword == Token::T_CN) {
             typeDescr.setLastCn();
         } else {
             msgs->errorInvalidTypeDecorator(nodeChild->codeLoc);
