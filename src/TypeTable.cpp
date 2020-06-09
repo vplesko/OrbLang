@@ -45,6 +45,13 @@ TypeTable::PrimIds TypeTable::shortestFittingPrimTypeI(int64_t x) {
     return P_I64;
 }
 
+TypeTable::PrimIds TypeTable::shortestFittingPrimTypeF(double x) {
+    if (std::isinf(x) || std::isnan(x)) return P_F32;
+
+    if (std::abs(x) <= numeric_limits<float>::max()) return P_F32;
+    return P_F64;
+}
+
 TypeTable::TypeTable() {
     addTypeStr();
 }

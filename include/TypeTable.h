@@ -104,6 +104,7 @@ public:
     static const PrimIds WIDEST_F = P_F64;
 
     static PrimIds shortestFittingPrimTypeI(int64_t x);
+    static PrimIds shortestFittingPrimTypeF(double x);
 
 private:
     Id strType;
