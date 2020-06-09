@@ -204,10 +204,6 @@ llvm::Type* Codegen::genPrimTypeC(unsigned bits) {
     return llvm::IntegerType::get(llvmContext, bits);
 }
 
-llvm::Type* Codegen::genPrimTypeF16() {
-    return llvm::Type::getHalfTy(llvmContext);
-}
-
 llvm::Type* Codegen::genPrimTypeF32() {
     return llvm::Type::getFloatTy(llvmContext);
 }

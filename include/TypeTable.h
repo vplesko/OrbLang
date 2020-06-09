@@ -81,6 +81,7 @@ public:
         bool eq(const TypeDescr &other) const;
     };
 
+    // TODO add i128, u128, f16, f128
     enum PrimIds {
         P_BOOL,
         P_I8,
@@ -91,7 +92,6 @@ public:
         P_U16,
         P_U32,
         P_U64,
-        P_F16,
         P_F32,
         P_F64,
         P_C8,
@@ -166,7 +166,7 @@ public:
     bool worksAsPrimitive(Id t) const;
     bool worksAsTypeI(Id t) const { return worksAsPrimitive(t, P_I8, P_I64); }
     bool worksAsTypeU(Id t) const { return worksAsPrimitive(t, P_U8, P_U64); }
-    bool worksAsTypeF(Id t) const { return worksAsPrimitive(t, P_F16, P_F64); }
+    bool worksAsTypeF(Id t) const { return worksAsPrimitive(t, P_F32, P_F64); }
     bool worksAsTypeC(Id t) const { return worksAsPrimitive(t, P_C8); }
     bool worksAsTypeB(Id t) const { return worksAsPrimitive(t, P_BOOL); }
     // specifically, P_PTR

@@ -15,7 +15,6 @@ NodeVal Evaluator::evaluateExpr(const AstNode *ast, const NodeVal &first) {
     }
 }
 
-// TODO! implicit is i64 if i32 doesn't fit
 NodeVal Evaluator::evaluateUntypedVal(const AstNode *ast) {
     NodeVal ret(NodeVal::Kind::kUntyVal);
 
