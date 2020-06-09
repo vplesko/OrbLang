@@ -15,8 +15,8 @@ NodeVal Evaluator::evaluateExpr(const AstNode *ast, const NodeVal &first) {
     }
 }
 
-NodeVal Evaluator::evaluateUntypedVal(const AstNode *ast) {
-    NodeVal ret(NodeVal::Kind::kUntyVal);
+NodeVal Evaluator::evaluateKnownVal(const AstNode *ast) {
+    NodeVal ret(NodeVal::Kind::kKnownVal);
 
     const LiteralVal &lit = ast->terminal.value().val;
 
@@ -28,37 +28,37 @@ NodeVal Evaluator::evaluateUntypedVal(const AstNode *ast) {
 
     switch (lit.kind) {
     case LiteralVal::Kind::kBool:
-        ret.untyVal.type = getPrimTypeId(TypeTable::P_BOOL);
-        ret.untyVal.b = lit.val_b;
+        ret.knownVal.type = getPrimTypeId(TypeTable::P_BOOL);
+        ret.knownVal.b = lit.val_b;
         break;
     case LiteralVal::Kind::kSint:
         {
             TypeTable::PrimIds fitting = getTypeTable()->shortestFittingPrimTypeI(lit.val_si);
             TypeTable::PrimIds chosen = max(TypeTable::P_I32, fitting);
-            ret.untyVal.type = getPrimTypeId(chosen);
-            if (chosen == TypeTable::P_I32) ret.untyVal.i32 = lit.val_si;
-            else ret.untyVal.i64 = lit.val_si;
+            ret.knownVal.type = getPrimTypeId(chosen);
+            if (chosen == TypeTable::P_I32) ret.knownVal.i32 = lit.val_si;
+            else ret.knownVal.i64 = lit.val_si;
             break;
         }
     case LiteralVal::Kind::kChar:
-        ret.untyVal.type = getPrimTypeId(TypeTable::P_C8);
-        ret.untyVal.c8 = lit.val_c;
+        ret.knownVal.type = getPrimTypeId(TypeTable::P_C8);
+        ret.knownVal.c8 = lit.val_c;
         break;
     case LiteralVal::Kind::kFloat:
         {
             TypeTable::PrimIds fitting = getTypeTable()->shortestFittingPrimTypeF(lit.val_f);
             TypeTable::PrimIds chosen = max(TypeTable::P_F32, fitting);
-            ret.untyVal.type = getPrimTypeId(chosen);
-            if (chosen == TypeTable::P_F32) ret.untyVal.f32 = lit.val_f;
-            else ret.untyVal.f64 = lit.val_f;
+            ret.knownVal.type = getPrimTypeId(chosen);
+            if (chosen == TypeTable::P_F32) ret.knownVal.f32 = lit.val_f;
+            else ret.knownVal.f64 = lit.val_f;
             break;
         }
     case LiteralVal::Kind::kString:
-        ret.untyVal.type = getTypeTable()->getTypeIdStr();
-        ret.untyVal.str = lit.val_str;
+        ret.knownVal.type = getTypeTable()->getTypeIdStr();
+        ret.knownVal.str = lit.val_str;
         break;
     case LiteralVal::Kind::kNull:
-        ret.untyVal.type = getPrimTypeId(TypeTable::P_PTR);
+        ret.knownVal.type = getPrimTypeId(TypeTable::P_PTR);
         break;
     default:
         msgs->errorInternal(ast->codeLoc);
@@ -69,13 +69,13 @@ NodeVal Evaluator::evaluateUntypedVal(const AstNode *ast) {
         optional<TypeTable::Id> ty = getType(ast->type.value().get(), true);
         if (!ty.has_value()) return NodeVal();
 
-        if (ret.untyVal.type != ty.value()) {
-            if (!UntypedVal::isImplicitCastable(ret.untyVal, ty.value(), stringPool, getTypeTable())) {
+        if (ret.knownVal.type != ty.value()) {
+            if (!KnownVal::isImplicitCastable(ret.knownVal, ty.value(), stringPool, getTypeTable())) {
                 msgs->errorExprCannotPromote(ast->codeLoc, ty.value());
                 return NodeVal();
             }
 
-            if (!cast(ret.untyVal, ty.value())) {
+            if (!cast(ret.knownVal, ty.value())) {
                 msgs->errorInternal(ast->codeLoc);
                 return NodeVal();
             }
@@ -95,21 +95,21 @@ NodeVal Evaluator::evaluateOperUnary(const AstNode *ast, const NodeVal &first) {
     Token::Oper op = first.oper;
 
     NodeVal exprPay = evaluateNode(nodeVal);
-    if (!codegen->checkIsUntyped(nodeVal->codeLoc, exprPay, true)) return NodeVal();
+    if (!codegen->checkIsKnown(nodeVal->codeLoc, exprPay, true)) return NodeVal();
 
-    return calculate(ast->codeLoc, op, exprPay.untyVal);
+    return calculate(ast->codeLoc, op, exprPay.knownVal);
 }
 
 NodeVal Evaluator::evaluateOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs, const NodeVal &rhs) {
     NodeVal exprPayL, exprPayR, exprPayRet;
 
     exprPayL = lhs;
-    if (!codegen->checkIsUntyped(codeLoc, exprPayL, true)) return NodeVal();
+    if (!codegen->checkIsKnown(codeLoc, exprPayL, true)) return NodeVal();
 
     exprPayR = rhs;
-    if (!codegen->checkIsUntyped(codeLoc, exprPayR, true)) return NodeVal();
+    if (!codegen->checkIsKnown(codeLoc, exprPayR, true)) return NodeVal();
 
-    return calculate(codeLoc, op, exprPayL.untyVal, exprPayR.untyVal);
+    return calculate(codeLoc, op, exprPayL.knownVal, exprPayR.knownVal);
 }
 
 NodeVal Evaluator::evaluateOper(const AstNode *ast, const NodeVal &first) {
@@ -150,31 +150,31 @@ NodeVal Evaluator::evaluateOper(const AstNode *ast, const NodeVal &first) {
     }
 }
 
-bool Evaluator::isI(const UntypedVal &val) const {
+bool Evaluator::isI(const KnownVal &val) const {
     return getTypeTable()->worksAsTypeI(val.type);
 }
 
-bool Evaluator::isU(const UntypedVal &val) const {
+bool Evaluator::isU(const KnownVal &val) const {
     return getTypeTable()->worksAsTypeU(val.type);
 }
 
-bool Evaluator::isF(const UntypedVal &val) const {
+bool Evaluator::isF(const KnownVal &val) const {
     return getTypeTable()->worksAsTypeF(val.type);
 }
 
-bool Evaluator::isB(const UntypedVal &val) const {
+bool Evaluator::isB(const KnownVal &val) const {
     return getTypeTable()->worksAsTypeB(val.type);
 }
 
-bool Evaluator::isC(const UntypedVal &val) const {
+bool Evaluator::isC(const KnownVal &val) const {
     return getTypeTable()->worksAsTypeC(val.type);
 }
 
-bool Evaluator::isStr(const UntypedVal &val) const {
+bool Evaluator::isStr(const KnownVal &val) const {
     return getTypeTable()->worksAsTypeStr(val.type);
 }
 
-bool Evaluator::isNull(const UntypedVal &val) const {
+bool Evaluator::isNull(const KnownVal &val) const {
     return getTypeTable()->worksAsTypeAnyP(val.type);
 }
 
@@ -212,23 +212,23 @@ bool Evaluator::isNull(const UntypedVal &val) const {
         val.b = x != 0; \
     }
 
-bool Evaluator::cast(UntypedVal &val, TypeTable::Id t) const {
+bool Evaluator::cast(KnownVal &val, TypeTable::Id t) const {
     if (val.type == t) return true;
 
     if (isI(val)) {
-        int64_t x = UntypedVal::getValueI(val, getTypeTable()).value();
+        int64_t x = KnownVal::getValueI(val, getTypeTable()).value();
         ASSIGN_BASED_ON_TYPE_IU(val, x, t)
         else ASSIGN_BASED_ON_TYPE_F(val, x, t)
         else ASSIGN_BASED_ON_TYPE_CB(val, x, t)
         else return false;
     } else if (isU(val)) {
-        uint64_t x = UntypedVal::getValueU(val, getTypeTable()).value();
+        uint64_t x = KnownVal::getValueU(val, getTypeTable()).value();
         ASSIGN_BASED_ON_TYPE_IU(val, x, t)
         else ASSIGN_BASED_ON_TYPE_F(val, x, t)
         else ASSIGN_BASED_ON_TYPE_CB(val, x, t)
         else return false;
     } else if (isF(val)) {
-        double x = UntypedVal::getValueF(val, getTypeTable()).value();
+        double x = KnownVal::getValueF(val, getTypeTable()).value();
         ASSIGN_BASED_ON_TYPE_IU(val, x, t)
         else ASSIGN_BASED_ON_TYPE_F(val, x, t)
         else return false;
@@ -255,51 +255,51 @@ bool Evaluator::cast(UntypedVal &val, TypeTable::Id t) const {
     return true;
 }
 
-NodeVal Evaluator::calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal unty) {
-    NodeVal exprRet(NodeVal::Kind::kUntyVal);
-    exprRet.untyVal.type = unty.type;
+NodeVal Evaluator::calculate(CodeLoc codeLoc, Token::Oper op, KnownVal known) {
+    NodeVal exprRet(NodeVal::Kind::kKnownVal);
+    exprRet.knownVal.type = known.type;
 
     if (op == Token::O_ADD) {
-        if (!isI(unty) && !isU(unty) && !isF(unty)) {
+        if (!isI(known) && !isU(known) && !isF(known)) {
             msgs->errorExprUnBadType(codeLoc, op);
             return NodeVal();
         }
-        exprRet.untyVal = unty;
+        exprRet.knownVal = known;
     } else if (op == Token::O_SUB) {
-        if (isI(unty)) {
-            int64_t x = UntypedVal::getValueI(unty, getTypeTable()).value();
+        if (isI(known)) {
+            int64_t x = KnownVal::getValueI(known, getTypeTable()).value();
             x = -x;
-            ASSIGN_BASED_ON_TYPE_IU(exprRet.untyVal, x, unty.type);
-        } else if (isF(unty)) {
-            double x = UntypedVal::getValueF(unty, getTypeTable()).value();
+            ASSIGN_BASED_ON_TYPE_IU(exprRet.knownVal, x, known.type);
+        } else if (isF(known)) {
+            double x = KnownVal::getValueF(known, getTypeTable()).value();
             x = -x;
-            ASSIGN_BASED_ON_TYPE_F(exprRet.untyVal, x, unty.type);
+            ASSIGN_BASED_ON_TYPE_F(exprRet.knownVal, x, known.type);
         } else {
             msgs->errorExprUnBadType(codeLoc, op);
             return NodeVal();
         }
     } else if (op == Token::O_BIT_NOT) {
-        if (isI(unty)) {
-            int64_t x = UntypedVal::getValueI(unty, getTypeTable()).value();
+        if (isI(known)) {
+            int64_t x = KnownVal::getValueI(known, getTypeTable()).value();
             x = ~x;
-            ASSIGN_BASED_ON_TYPE_IU(exprRet.untyVal, x, unty.type);
-        } else if (isU(unty)) {
-            uint64_t x = UntypedVal::getValueU(unty, getTypeTable()).value();
+            ASSIGN_BASED_ON_TYPE_IU(exprRet.knownVal, x, known.type);
+        } else if (isU(known)) {
+            uint64_t x = KnownVal::getValueU(known, getTypeTable()).value();
             x = ~x;
-            ASSIGN_BASED_ON_TYPE_IU(exprRet.untyVal, x, unty.type);
+            ASSIGN_BASED_ON_TYPE_IU(exprRet.knownVal, x, known.type);
         } else {
             msgs->errorExprUnBadType(codeLoc, op);
             return NodeVal();
         }
     } else if (op == Token::O_NOT) {
-        if (isB(unty)) {
-            exprRet.untyVal.b = !unty.b;
+        if (isB(known)) {
+            exprRet.knownVal.b = !known.b;
         } else {
             msgs->errorExprUnBadType(codeLoc, op);
             return NodeVal();
         }
     } else {
-        if (op == Token::O_MUL && isNull(unty)) {
+        if (op == Token::O_MUL && isNull(known)) {
             msgs->errorExprUnOnNull(codeLoc, op);
         } else if (op == Token::O_BIT_AND) {
             msgs->errorExprAddressOfNoRef(codeLoc);
@@ -368,199 +368,199 @@ NodeVal Evaluator::calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal unty) {
         valRet.b = valL.f64 op valR.f64;
 
 // TODO warn on over/underflow
-NodeVal Evaluator::calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR) {
-    if (untyL.type != untyR.type) {
-        if (getTypeTable()->isImplicitCastable(untyR.type, untyL.type)) {
-            if (!cast(untyR, untyL.type)) {
+NodeVal Evaluator::calculate(CodeLoc codeLoc, Token::Oper op, KnownVal knownL, KnownVal knownR) {
+    if (knownL.type != knownR.type) {
+        if (getTypeTable()->isImplicitCastable(knownR.type, knownL.type)) {
+            if (!cast(knownR, knownL.type)) {
                 msgs->errorInternal(codeLoc);
                 return NodeVal();
             }
-        } else if (getTypeTable()->isImplicitCastable(untyL.type, untyR.type)) {
-            if (!cast(untyL, untyR.type)) {
+        } else if (getTypeTable()->isImplicitCastable(knownL.type, knownR.type)) {
+            if (!cast(knownL, knownR.type)) {
                 msgs->errorInternal(codeLoc);
                 return NodeVal();
             }
         } else {
-            msgs->errorExprCannotImplicitCastEither(codeLoc, untyL.type, untyR.type);
+            msgs->errorExprCannotImplicitCastEither(codeLoc, knownL.type, knownR.type);
             return NodeVal();
         }
     }
 
-    UntypedVal untyRet(untyL.type);
+    KnownVal knownRet(knownL.type);
 
-    if (isB(untyRet)) {
+    if (isB(knownRet)) {
         switch (op) {
         case Token::O_EQ:
-            untyRet.b = untyL.b == untyR.b;
+            knownRet.b = knownL.b == knownR.b;
             break;
         case Token::O_NEQ:
-            untyRet.b = untyL.b != untyR.b;
+            knownRet.b = knownL.b != knownR.b;
             break;
         default:
-            msgs->errorExprUntyBinBadOp(codeLoc, op);
+            msgs->errorExprKnownBinBadOp(codeLoc, op);
             return NodeVal();
         }
-    } else if (isNull(untyRet)) {
+    } else if (isNull(knownRet)) {
         // both are null
         switch (op) {
         case Token::O_EQ:
-            untyRet.type = getPrimTypeId(TypeTable::P_BOOL);
-            untyRet.b = true;
+            knownRet.type = getPrimTypeId(TypeTable::P_BOOL);
+            knownRet.b = true;
             break;
         case Token::O_NEQ:
-            untyRet.type = getPrimTypeId(TypeTable::P_BOOL);
-            untyRet.b = false;
+            knownRet.type = getPrimTypeId(TypeTable::P_BOOL);
+            knownRet.b = false;
             break;
         default:
-            msgs->errorExprUntyBinBadOp(codeLoc, op);
+            msgs->errorExprKnownBinBadOp(codeLoc, op);
             return NodeVal();
         }
     } else {
-        bool isTypeI = isI(untyRet);
-        bool isTypeU = isU(untyRet);
-        bool isTypeF = isF(untyRet);
-        bool isTypeC = isC(untyRet);
+        bool isTypeI = isI(knownRet);
+        bool isTypeU = isU(knownRet);
+        bool isTypeF = isF(knownRet);
+        bool isTypeC = isC(knownRet);
 
         if (!isTypeI && !isTypeU && !isTypeC && !isTypeF) {
             // NOTE cannot == nor != on two string literals
-            if (isStr(untyRet)) {
+            if (isStr(knownRet)) {
                 msgs->errorExprCompareStringLits(codeLoc);
             } else {
-                msgs->errorExprUntyBinBadOp(codeLoc, op);
+                msgs->errorExprKnownBinBadOp(codeLoc, op);
             }
             return NodeVal();
         } else {
             switch (op) {
                 case Token::O_ADD:
-                    ASSIGN_CALC_BASED_ON_TYPE_IU(untyRet, untyL, untyR, +)
-                    else ASSIGN_CALC_BASED_ON_TYPE_F(untyRet, untyL, untyR, +)
+                    ASSIGN_CALC_BASED_ON_TYPE_IU(knownRet, knownL, knownR, +)
+                    else ASSIGN_CALC_BASED_ON_TYPE_F(knownRet, knownL, knownR, +)
                     else {
-                        msgs->errorExprUntyBinBadOp(codeLoc, op);
+                        msgs->errorExprKnownBinBadOp(codeLoc, op);
                     }
                     break;
                 case Token::O_SUB:
-                    ASSIGN_CALC_BASED_ON_TYPE_IU(untyRet, untyL, untyR, -)
-                    else ASSIGN_CALC_BASED_ON_TYPE_F(untyRet, untyL, untyR, -)
+                    ASSIGN_CALC_BASED_ON_TYPE_IU(knownRet, knownL, knownR, -)
+                    else ASSIGN_CALC_BASED_ON_TYPE_F(knownRet, knownL, knownR, -)
                     else {
-                        msgs->errorExprUntyBinBadOp(codeLoc, op);
+                        msgs->errorExprKnownBinBadOp(codeLoc, op);
                     }
                     break;
                 case Token::O_SHL:
-                    ASSIGN_CALC_BASED_ON_TYPE_IU(untyRet, untyL, untyR, <<)
+                    ASSIGN_CALC_BASED_ON_TYPE_IU(knownRet, knownL, knownR, <<)
                     else {
-                        msgs->errorExprUntyBinBadOp(codeLoc, op);
+                        msgs->errorExprKnownBinBadOp(codeLoc, op);
                     }
                     break;
                 case Token::O_SHR:
-                    ASSIGN_CALC_BASED_ON_TYPE_IU(untyRet, untyL, untyR, >>)
+                    ASSIGN_CALC_BASED_ON_TYPE_IU(knownRet, knownL, knownR, >>)
                     else {
-                        msgs->errorExprUntyBinBadOp(codeLoc, op);
+                        msgs->errorExprKnownBinBadOp(codeLoc, op);
                     }
                     break;
                 case Token::O_BIT_AND:
-                    ASSIGN_CALC_BASED_ON_TYPE_IU(untyRet, untyL, untyR, &)
+                    ASSIGN_CALC_BASED_ON_TYPE_IU(knownRet, knownL, knownR, &)
                     else {
-                        msgs->errorExprUntyBinBadOp(codeLoc, op);
+                        msgs->errorExprKnownBinBadOp(codeLoc, op);
                     }
                     break;
                 case Token::O_BIT_XOR:
-                    ASSIGN_CALC_BASED_ON_TYPE_IU(untyRet, untyL, untyR, ^)
+                    ASSIGN_CALC_BASED_ON_TYPE_IU(knownRet, knownL, knownR, ^)
                     else {
-                        msgs->errorExprUntyBinBadOp(codeLoc, op);
+                        msgs->errorExprKnownBinBadOp(codeLoc, op);
                     }
                     break;
                 case Token::O_BIT_OR:
-                    ASSIGN_CALC_BASED_ON_TYPE_IU(untyRet, untyL, untyR, |)
+                    ASSIGN_CALC_BASED_ON_TYPE_IU(knownRet, knownL, knownR, |)
                     else {
-                        msgs->errorExprUntyBinBadOp(codeLoc, op);
+                        msgs->errorExprKnownBinBadOp(codeLoc, op);
                     }
                     break;
                 case Token::O_MUL:
-                    ASSIGN_CALC_BASED_ON_TYPE_IU(untyRet, untyL, untyR, *)
-                    else ASSIGN_CALC_BASED_ON_TYPE_F(untyRet, untyL, untyR, *)
+                    ASSIGN_CALC_BASED_ON_TYPE_IU(knownRet, knownL, knownR, *)
+                    else ASSIGN_CALC_BASED_ON_TYPE_F(knownRet, knownL, knownR, *)
                     else {
-                        msgs->errorExprUntyBinBadOp(codeLoc, op);
+                        msgs->errorExprKnownBinBadOp(codeLoc, op);
                     }
                     break;
                 case Token::O_DIV:
-                    ASSIGN_CALC_BASED_ON_TYPE_IU(untyRet, untyL, untyR, /)
-                    else ASSIGN_CALC_BASED_ON_TYPE_F(untyRet, untyL, untyR, /)
+                    ASSIGN_CALC_BASED_ON_TYPE_IU(knownRet, knownL, knownR, /)
+                    else ASSIGN_CALC_BASED_ON_TYPE_F(knownRet, knownL, knownR, /)
                     else {
-                        msgs->errorExprUntyBinBadOp(codeLoc, op);
+                        msgs->errorExprKnownBinBadOp(codeLoc, op);
                     }
                     break;
                 case Token::O_REM:
-                    ASSIGN_CALC_BASED_ON_TYPE_IU(untyRet, untyL, untyR, %)
-                    else if (getTypeTable()->worksAsPrimitive(untyRet.type, TypeTable::P_F32)) {
-                        untyRet.f32 = fmod(untyL.f32, untyR.f32);
-                    } else if (getTypeTable()->worksAsPrimitive(untyRet.type, TypeTable::P_F64)) {
-                        untyRet.f32 = fmod(untyL.f64, untyR.f64);
+                    ASSIGN_CALC_BASED_ON_TYPE_IU(knownRet, knownL, knownR, %)
+                    else if (getTypeTable()->worksAsPrimitive(knownRet.type, TypeTable::P_F32)) {
+                        knownRet.f32 = fmod(knownL.f32, knownR.f32);
+                    } else if (getTypeTable()->worksAsPrimitive(knownRet.type, TypeTable::P_F64)) {
+                        knownRet.f32 = fmod(knownL.f64, knownR.f64);
                     } else {
-                        msgs->errorExprUntyBinBadOp(codeLoc, op);
+                        msgs->errorExprKnownBinBadOp(codeLoc, op);
                     }
                     break;
                 case Token::O_EQ:
-                    untyRet.type = getPrimTypeId(TypeTable::P_BOOL);
-                    ASSIGN_COMP_BASED_ON_TYPE_IU(untyRet, untyL, untyR, ==)
-                    else ASSIGN_COMP_BASED_ON_TYPE_F(untyRet, untyL, untyR, ==)
-                    else ASSIGN_COMP_BASED_ON_TYPE_C(untyRet, untyL, untyR, ==)
+                    knownRet.type = getPrimTypeId(TypeTable::P_BOOL);
+                    ASSIGN_COMP_BASED_ON_TYPE_IU(knownRet, knownL, knownR, ==)
+                    else ASSIGN_COMP_BASED_ON_TYPE_F(knownRet, knownL, knownR, ==)
+                    else ASSIGN_COMP_BASED_ON_TYPE_C(knownRet, knownL, knownR, ==)
                     else {
-                        msgs->errorExprUntyBinBadOp(codeLoc, op);
+                        msgs->errorExprKnownBinBadOp(codeLoc, op);
                     }
                     break;
                 case Token::O_NEQ:
-                    untyRet.type = getPrimTypeId(TypeTable::P_BOOL);
-                    ASSIGN_COMP_BASED_ON_TYPE_IU(untyRet, untyL, untyR, !=)
-                    else ASSIGN_COMP_BASED_ON_TYPE_F(untyRet, untyL, untyR, !=)
-                    else ASSIGN_COMP_BASED_ON_TYPE_C(untyRet, untyL, untyR, !=)
+                    knownRet.type = getPrimTypeId(TypeTable::P_BOOL);
+                    ASSIGN_COMP_BASED_ON_TYPE_IU(knownRet, knownL, knownR, !=)
+                    else ASSIGN_COMP_BASED_ON_TYPE_F(knownRet, knownL, knownR, !=)
+                    else ASSIGN_COMP_BASED_ON_TYPE_C(knownRet, knownL, knownR, !=)
                     else {
-                        msgs->errorExprUntyBinBadOp(codeLoc, op);
+                        msgs->errorExprKnownBinBadOp(codeLoc, op);
                     }
                     break;
                 case Token::O_LT:
-                    untyRet.type = getPrimTypeId(TypeTable::P_BOOL);
-                    ASSIGN_COMP_BASED_ON_TYPE_IU(untyRet, untyL, untyR, <)
-                    else ASSIGN_COMP_BASED_ON_TYPE_F(untyRet, untyL, untyR, <)
-                    else ASSIGN_COMP_BASED_ON_TYPE_C(untyRet, untyL, untyR, <)
+                    knownRet.type = getPrimTypeId(TypeTable::P_BOOL);
+                    ASSIGN_COMP_BASED_ON_TYPE_IU(knownRet, knownL, knownR, <)
+                    else ASSIGN_COMP_BASED_ON_TYPE_F(knownRet, knownL, knownR, <)
+                    else ASSIGN_COMP_BASED_ON_TYPE_C(knownRet, knownL, knownR, <)
                     else {
-                        msgs->errorExprUntyBinBadOp(codeLoc, op);
+                        msgs->errorExprKnownBinBadOp(codeLoc, op);
                     }
                     break;
                 case Token::O_LTEQ:
-                    untyRet.type = getPrimTypeId(TypeTable::P_BOOL);
-                    ASSIGN_COMP_BASED_ON_TYPE_IU(untyRet, untyL, untyR, <=)
-                    else ASSIGN_COMP_BASED_ON_TYPE_F(untyRet, untyL, untyR, <=)
-                    else ASSIGN_COMP_BASED_ON_TYPE_C(untyRet, untyL, untyR, <=)
+                    knownRet.type = getPrimTypeId(TypeTable::P_BOOL);
+                    ASSIGN_COMP_BASED_ON_TYPE_IU(knownRet, knownL, knownR, <=)
+                    else ASSIGN_COMP_BASED_ON_TYPE_F(knownRet, knownL, knownR, <=)
+                    else ASSIGN_COMP_BASED_ON_TYPE_C(knownRet, knownL, knownR, <=)
                     else {
-                        msgs->errorExprUntyBinBadOp(codeLoc, op);
+                        msgs->errorExprKnownBinBadOp(codeLoc, op);
                     }
                     break;
                 case Token::O_GT:
-                    untyRet.type = getPrimTypeId(TypeTable::P_BOOL);
-                    ASSIGN_COMP_BASED_ON_TYPE_IU(untyRet, untyL, untyR, >)
-                    else ASSIGN_COMP_BASED_ON_TYPE_F(untyRet, untyL, untyR, >)
-                    else ASSIGN_COMP_BASED_ON_TYPE_C(untyRet, untyL, untyR, >)
+                    knownRet.type = getPrimTypeId(TypeTable::P_BOOL);
+                    ASSIGN_COMP_BASED_ON_TYPE_IU(knownRet, knownL, knownR, >)
+                    else ASSIGN_COMP_BASED_ON_TYPE_F(knownRet, knownL, knownR, >)
+                    else ASSIGN_COMP_BASED_ON_TYPE_C(knownRet, knownL, knownR, >)
                     else {
-                        msgs->errorExprUntyBinBadOp(codeLoc, op);
+                        msgs->errorExprKnownBinBadOp(codeLoc, op);
                     }
                     break;
                 case Token::O_GTEQ:
-                    untyRet.type = getPrimTypeId(TypeTable::P_BOOL);
-                    ASSIGN_COMP_BASED_ON_TYPE_IU(untyRet, untyL, untyR, >=)
-                    else ASSIGN_COMP_BASED_ON_TYPE_F(untyRet, untyL, untyR, >=)
-                    else ASSIGN_COMP_BASED_ON_TYPE_C(untyRet, untyL, untyR, >=)
+                    knownRet.type = getPrimTypeId(TypeTable::P_BOOL);
+                    ASSIGN_COMP_BASED_ON_TYPE_IU(knownRet, knownL, knownR, >=)
+                    else ASSIGN_COMP_BASED_ON_TYPE_F(knownRet, knownL, knownR, >=)
+                    else ASSIGN_COMP_BASED_ON_TYPE_C(knownRet, knownL, knownR, >=)
                     else {
-                        msgs->errorExprUntyBinBadOp(codeLoc, op);
+                        msgs->errorExprKnownBinBadOp(codeLoc, op);
                     }
                     break;
                 default:
-                    msgs->errorExprUntyBinBadOp(codeLoc, op);
+                    msgs->errorExprKnownBinBadOp(codeLoc, op);
                     return NodeVal();
             }
         }
     }
 
-    NodeVal ret(NodeVal::Kind::kUntyVal);
-    ret.untyVal = untyRet;
+    NodeVal ret(NodeVal::Kind::kKnownVal);
+    ret.knownVal = knownRet;
     return ret;
 }

@@ -129,12 +129,12 @@ llvm::Type* Codegen::getLlvmType(TypeTable::Id typeId) {
 }
 
 bool Codegen::isBool(const NodeVal &e) const {
-    return (e.isUntyVal() && evaluator->isB(e.untyVal)) ||
+    return (e.isKnownVal() && evaluator->isB(e.knownVal)) ||
      (e.isLlvmVal() && getTypeTable()->worksAsTypeB(e.llvmVal.type));
 }
 
-bool Codegen::promoteUntyped(NodeVal &e, TypeTable::Id t) {
-    if (!e.isUntyVal() || !UntypedVal::isImplicitCastable(e.untyVal, t, stringPool, getTypeTable())) {
+bool Codegen::promoteKnownVal(NodeVal &e, TypeTable::Id t) {
+    if (!e.isKnownVal() || !KnownVal::isImplicitCastable(e.knownVal, t, stringPool, getTypeTable())) {
         return false;
     }
 
@@ -142,24 +142,24 @@ bool Codegen::promoteUntyped(NodeVal &e, TypeTable::Id t) {
     n.llvmVal.type = t;
     bool success = true;
 
-    if (evaluator->isI(e.untyVal)) {
-        n.llvmVal.val = llvm::ConstantInt::get(getLlvmType(t), UntypedVal::getValueI(e.untyVal, getTypeTable()).value(), true);
-    } else if (evaluator->isU(e.untyVal)) {
-        n.llvmVal.val = llvm::ConstantInt::get(getLlvmType(t), UntypedVal::getValueU(e.untyVal, getTypeTable()).value(), false);
-    } else if (evaluator->isF(e.untyVal)) {
-        n.llvmVal.val = llvm::ConstantFP::get(getLlvmType(t), UntypedVal::getValueF(e.untyVal, getTypeTable()).value());
-    } else if (evaluator->isC(e.untyVal)) {
-        n.llvmVal.val = llvm::ConstantInt::get(getLlvmType(t), (uint8_t) e.untyVal.c8, false);
-    } else if (evaluator->isB(e.untyVal)) {
-        n.llvmVal.val = getConstB(e.untyVal.b);
-    } else if (evaluator->isStr(e.untyVal)) {
-        const std::string &str = stringPool->get(e.untyVal.str);
+    if (evaluator->isI(e.knownVal)) {
+        n.llvmVal.val = llvm::ConstantInt::get(getLlvmType(t), KnownVal::getValueI(e.knownVal, getTypeTable()).value(), true);
+    } else if (evaluator->isU(e.knownVal)) {
+        n.llvmVal.val = llvm::ConstantInt::get(getLlvmType(t), KnownVal::getValueU(e.knownVal, getTypeTable()).value(), false);
+    } else if (evaluator->isF(e.knownVal)) {
+        n.llvmVal.val = llvm::ConstantFP::get(getLlvmType(t), KnownVal::getValueF(e.knownVal, getTypeTable()).value());
+    } else if (evaluator->isC(e.knownVal)) {
+        n.llvmVal.val = llvm::ConstantInt::get(getLlvmType(t), (uint8_t) e.knownVal.c8, false);
+    } else if (evaluator->isB(e.knownVal)) {
+        n.llvmVal.val = getConstB(e.knownVal.b);
+    } else if (evaluator->isStr(e.knownVal)) {
+        const std::string &str = stringPool->get(e.knownVal.str);
         if (getTypeTable()->worksAsTypeStr(t)) {
             n.llvmVal.val = createString(str);
         } else {
             n.llvmVal.val = llvm::ConstantDataArray::getString(llvmContext, str, true);
         }
-    } else if (evaluator->isNull(e.untyVal)) {
+    } else if (evaluator->isNull(e.knownVal)) {
         n.llvmVal.val = llvm::ConstantPointerNull::get((llvm::PointerType*)getLlvmType(t));
     } else {
         success = false;
@@ -169,10 +169,10 @@ bool Codegen::promoteUntyped(NodeVal &e, TypeTable::Id t) {
     return success;
 }
 
-bool Codegen::promoteUntyped(NodeVal &e) {
-    if (!e.isUntyVal()) return false;
+bool Codegen::promoteKnownVal(NodeVal &e) {
+    if (!e.isKnownVal()) return false;
 
-    return promoteUntyped(e, e.untyVal.type);
+    return promoteKnownVal(e, e.knownVal.type);
 }
 
 llvm::Value* Codegen::getConstB(bool val) {
@@ -384,8 +384,8 @@ bool Codegen::checkIsType(CodeLoc codeLoc, const NodeVal &val, bool orError) {
     return true;
 }
 
-bool Codegen::checkIsUntyped(CodeLoc codeLoc, const NodeVal &val, bool orError) {
-    if (!val.isUntyVal()) {
+bool Codegen::checkIsKnown(CodeLoc codeLoc, const NodeVal &val, bool orError) {
+    if (!val.isKnownVal()) {
         if (orError) msgs->errorExprNotBaked(codeLoc);
         return false;
     }

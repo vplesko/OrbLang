@@ -25,25 +25,25 @@ public:
     std::optional<NamePool::Id> getId(const AstNode *ast, bool orError);
     std::optional<Token::Type> getKeyword(const AstNode *ast, bool orError);
     std::optional<Token::Oper> getOper(const AstNode *ast, bool orError);
-    std::optional<UntypedVal> getUntypedVal(const AstNode *ast, bool orError);
+    std::optional<KnownVal> getKnownVal(const AstNode *ast, bool orError);
     std::optional<TypeTable::Id> getType(const AstNode *ast, bool orError);
 
-    bool isI(const UntypedVal &val) const;
-    bool isU(const UntypedVal &val) const;
-    bool isF(const UntypedVal &val) const;
-    bool isB(const UntypedVal &val) const;
-    bool isC(const UntypedVal &val) const;
-    bool isStr(const UntypedVal &val) const;
-    bool isNull(const UntypedVal &val) const;
-    bool cast(UntypedVal &val, TypeTable::Id t) const;
+    bool isI(const KnownVal &val) const;
+    bool isU(const KnownVal &val) const;
+    bool isF(const KnownVal &val) const;
+    bool isB(const KnownVal &val) const;
+    bool isC(const KnownVal &val) const;
+    bool isStr(const KnownVal &val) const;
+    bool isNull(const KnownVal &val) const;
+    bool cast(KnownVal &val, TypeTable::Id t) const;
 
-    NodeVal calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal unty);
-    NodeVal calculate(CodeLoc codeLoc, Token::Oper op, UntypedVal untyL, UntypedVal untyR);
+    NodeVal calculate(CodeLoc codeLoc, Token::Oper op, KnownVal known);
+    NodeVal calculate(CodeLoc codeLoc, Token::Oper op, KnownVal knownL, KnownVal knownR);
 
 private:
     NodeVal evaluateMac(AstNode *ast);
     NodeVal evaluateImport(const AstNode *ast);
-    NodeVal evaluateUntypedVal(const AstNode *ast);
+    NodeVal evaluateKnownVal(const AstNode *ast);
     NodeVal evaluateOperUnary(const AstNode *ast, const NodeVal &first);
     NodeVal evaluateOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs, const NodeVal &rhs);
     NodeVal evaluateOper(const AstNode *ast, const NodeVal &first);

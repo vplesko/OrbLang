@@ -77,7 +77,6 @@ unique_ptr<AstNode> Parser::parseTerm() {
         term->terminal = TerminalVal(tok.type);
         break;
     
-    // TODO! LiteralVal stays to be passed through TerminalVal, but gets promoted immeadiately
     case Token::T_NUM:
         val.kind = LiteralVal::Kind::kSint;
         val.val_si = tok.num;

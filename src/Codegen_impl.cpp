@@ -95,8 +95,8 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
                 return NodeVal();
             }
             break;
-        case NodeVal::Kind::kUntyVal:
-            if (ret.untyVal.type != nodeTypeVal.type) {
+        case NodeVal::Kind::kKnownVal:
+            if (ret.knownVal.type != nodeTypeVal.type) {
                 msgs->errorMismatchTypeAnnotation(nodeType->codeLoc, nodeTypeVal.type);
                 return NodeVal();
             }
@@ -132,7 +132,7 @@ NodeVal Codegen::codegenAll(const AstNode *ast) {
 NodeVal Codegen::codegenConversion(const AstNode *ast, TypeTable::Id t) {
     NodeVal value = codegenNode(ast);
     if (!checkValueUnbroken(ast->codeLoc, value, true)) return NodeVal();
-    if (value.isUntyVal() && !promoteUntyped(value, t)) {
+    if (value.isKnownVal() && !promoteKnownVal(value, t)) {
         msgs->errorExprCannotPromote(ast->codeLoc, t);
         return NodeVal();
     }
@@ -323,14 +323,14 @@ NodeVal Codegen::codegenLet(const AstNode *ast) {
             if (!checkValueUnbroken(codeLocInit, initVal, true))
                 continue;
 
-            if (initVal.isUntyVal()) {
+            if (initVal.isKnownVal()) {
                 if (optType.has_value()) {
-                    if (!promoteUntyped(initVal, optType.value())) {
+                    if (!promoteKnownVal(initVal, optType.value())) {
                         msgs->errorExprCannotPromote(codeLocInit, optType.value());
                         continue;
                     }
                 } else {
-                    promoteUntyped(initVal);
+                    promoteKnownVal(initVal);
                 }
             }
 
@@ -406,8 +406,8 @@ NodeVal Codegen::codegenExit(const AstNode *ast) {
         return NodeVal();
     }
 
-    if (valCond.isUntyVal()) {
-        if (!promoteUntyped(valCond, getPrimTypeId(TypeTable::P_BOOL))) {
+    if (valCond.isKnownVal()) {
+        if (!promoteKnownVal(valCond, getPrimTypeId(TypeTable::P_BOOL))) {
             msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
             return NodeVal();
         }
@@ -492,8 +492,8 @@ NodeVal Codegen::codegenLoop(const AstNode *ast) {
     NodeVal valCond = codegenNode(nodeCond);
     if (!checkValueUnbroken(nodeCond->codeLoc, valCond, true)) return NodeVal();
 
-    if (valCond.isUntyVal()) {
-        if (!promoteUntyped(valCond, getPrimTypeId(TypeTable::P_BOOL))) {
+    if (valCond.isKnownVal()) {
+        if (!promoteKnownVal(valCond, getPrimTypeId(TypeTable::P_BOOL))) {
             msgs->errorExprCannotPromote(nodeCond->codeLoc, getPrimTypeId(TypeTable::P_BOOL));
             return NodeVal();
         }
@@ -533,7 +533,6 @@ NodeVal Codegen::codegenRet(const AstNode *ast) {
         return NodeVal();
     }
 
-    // TODO allow ret (); to be same as ret;
     NodeVal retExpr = codegenConversion(nodeVal, currFunc.value().retType.value());
     if (retExpr.isInvalid()) return NodeVal();
 

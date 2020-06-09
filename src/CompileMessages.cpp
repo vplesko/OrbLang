@@ -277,13 +277,9 @@ void CompileMessages::errorExprCannotPromote(CodeLoc loc, TypeTable::Id into) {
     error(loc, ss.str());
 }
 
-void CompileMessages::errorExprUntyMismatch(CodeLoc loc) {
-    error(loc, "Binary operations cannot be performed on untyped operands of mismatching types.");
-}
-
-void CompileMessages::errorExprUntyBinBadOp(CodeLoc loc, Token::Oper op) {
+void CompileMessages::errorExprKnownBinBadOp(CodeLoc loc, Token::Oper op) {
     stringstream ss;
-    ss << "Binary operation '" << errorString(op) << "' is not defined for untyped values of this type.";
+    ss << "Binary operation '" << errorString(op) << "' is not defined for known values of this type.";
     error(loc, ss.str());
 }
 
@@ -359,7 +355,7 @@ void CompileMessages::errorArgNameDuplicate(CodeLoc loc, NamePool::Id name) {
 
 void CompileMessages::errorFuncNotFound(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
-    // TODO if untyped vals get removed, print the signature for attempted function call
+    // TODO print the signature for attempted function call
     ss << "No functions with name '" << namePool->get(name) << "' satisfying the call signature have been found.";
     error(loc, ss.str());
 }
@@ -389,12 +385,6 @@ void CompileMessages::errorBlockNoPass(CodeLoc loc) {
 
 void CompileMessages::errorMemberIndex(CodeLoc loc) {
     error(loc, "Invalid member index.");
-}
-
-void CompileMessages::errorExprCallVariadUnty(CodeLoc loc, NamePool::Id name) {
-    stringstream ss;
-    ss << "Attempting to call variadic function '" << namePool->get(name) << "' with an untyped value as variadic argument.";
-    error(loc, ss.str());
 }
 
 void CompileMessages::errorExprIndexOnBadType(CodeLoc loc) {

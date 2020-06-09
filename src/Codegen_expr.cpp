@@ -41,8 +41,8 @@ NodeVal Codegen::codegenOperInd(CodeLoc codeLoc, const NodeVal &base, const Node
 
     NodeVal leftVal = base;
 
-    if (leftVal.isUntyVal()) {
-        if (!promoteUntyped(leftVal)) {
+    if (leftVal.isKnownVal()) {
+        if (!promoteKnownVal(leftVal)) {
             msgs->errorInternal(codeLoc);
             return NodeVal();
         }
@@ -57,17 +57,17 @@ NodeVal Codegen::codegenOperInd(CodeLoc codeLoc, const NodeVal &base, const Node
 
     NodeVal rightVal = ind;
 
-    if (rightVal.isUntyVal()) {
-        if (evaluator->isI(rightVal.untyVal)) {
-            int64_t ind = UntypedVal::getValueI(rightVal.untyVal, getTypeTable()).value();
+    if (rightVal.isKnownVal()) {
+        if (evaluator->isI(rightVal.knownVal)) {
+            int64_t ind = KnownVal::getValueI(rightVal.knownVal, getTypeTable()).value();
             if (getTypeTable()->worksAsTypeArr(leftVal.llvmVal.type)) {
                 size_t len = getTypeTable()->extractLenOfArr(leftVal.llvmVal.type).value();
                 if (ind < 0 || ind >= len) {
                     msgs->warnExprIndexOutOfBounds(codeLoc);
                 }
             }
-        } else if (evaluator->isU(rightVal.untyVal)) {
-            uint64_t ind = UntypedVal::getValueU(rightVal.untyVal, getTypeTable()).value();
+        } else if (evaluator->isU(rightVal.knownVal)) {
+            uint64_t ind = KnownVal::getValueU(rightVal.knownVal, getTypeTable()).value();
             if (getTypeTable()->worksAsTypeArr(leftVal.llvmVal.type)) {
                 size_t len = getTypeTable()->extractLenOfArr(leftVal.llvmVal.type).value();
                 if (ind >= len) {
@@ -79,7 +79,7 @@ NodeVal Codegen::codegenOperInd(CodeLoc codeLoc, const NodeVal &base, const Node
             return NodeVal();
         }
 
-        if (!promoteUntyped(rightVal)) {
+        if (!promoteKnownVal(rightVal)) {
             msgs->errorInternal(codeLoc);
             return NodeVal();
         }
@@ -142,13 +142,13 @@ NodeVal Codegen::codegenOperInd(const AstNode *ast) {
 }
 
 NodeVal Codegen::codegenOperDot(CodeLoc codeLoc, const NodeVal &base, const NodeVal &memb) {
-    if (!checkValueUnbroken(codeLoc, base, false) || base.isUntyVal()) {
+    if (!checkValueUnbroken(codeLoc, base, false) || base.isKnownVal()) {
         msgs->errorExprDotInvalidBase(codeLoc);
         return NodeVal();
     }
 
     if (!checkValueUnbroken(codeLoc, memb, true)) return NodeVal();
-    if (!checkIsUntyped(codeLoc, memb, true)) return NodeVal();
+    if (!checkIsKnown(codeLoc, memb, true)) return NodeVal();
 
     NodeVal leftVal = base;
 
@@ -170,7 +170,7 @@ NodeVal Codegen::codegenOperDot(CodeLoc codeLoc, const NodeVal &base, const Node
     }
     const TypeTable::Tuple &tuple = *(tupleOpt.value());
 
-    optional<size_t> membIndOpt = UntypedVal::getValueNonNeg(memb.untyVal, getTypeTable());
+    optional<size_t> membIndOpt = KnownVal::getValueNonNeg(memb.knownVal, getTypeTable());
     if (!membIndOpt.has_value() || membIndOpt.value() >= tuple.members.size()) {
         msgs->errorMemberIndex(codeLoc);
         return NodeVal();
@@ -227,7 +227,7 @@ NodeVal Codegen::codegenOperUnary(const AstNode *ast, const NodeVal &first) {
     NodeVal exprPay = codegenNode(nodeVal);
     if (!checkValueUnbroken(nodeVal->codeLoc, exprPay, true)) return NodeVal();
 
-    if (exprPay.isUntyVal()) return evaluator->calculate(ast->codeLoc, op, exprPay.untyVal);
+    if (exprPay.isKnownVal()) return evaluator->calculate(ast->codeLoc, op, exprPay.knownVal);
 
     NodeVal exprRet(NodeVal::Kind::kLlvmVal);
     exprRet.llvmVal.type = exprPay.llvmVal.type;
@@ -334,18 +334,18 @@ NodeVal Codegen::codegenOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs
     exprPayR = rhs;
     if (!checkValueUnbroken(codeLoc, exprPayR, true)) return NodeVal();
 
-    if (exprPayL.isUntyVal() && !exprPayR.isUntyVal()) {
-        if (!promoteUntyped(exprPayL, exprPayR.llvmVal.type)) {
+    if (exprPayL.isKnownVal() && !exprPayR.isKnownVal()) {
+        if (!promoteKnownVal(exprPayL, exprPayR.llvmVal.type)) {
             msgs->errorExprCannotPromote(codeLoc, exprPayR.llvmVal.type);
             return NodeVal();
         }
-    } else if (!exprPayL.isUntyVal() && exprPayR.isUntyVal()) {
-        if (!promoteUntyped(exprPayR, exprPayL.llvmVal.type)) {
+    } else if (!exprPayL.isKnownVal() && exprPayR.isKnownVal()) {
+        if (!promoteKnownVal(exprPayR, exprPayL.llvmVal.type)) {
             msgs->errorExprCannotPromote(codeLoc, exprPayL.llvmVal.type);
             return NodeVal();
         }
-    } else if (exprPayL.isUntyVal() && exprPayR.isUntyVal()) {
-        return evaluator->calculate(codeLoc, op, exprPayL.untyVal, exprPayR.untyVal);
+    } else if (exprPayL.isKnownVal() && exprPayR.isKnownVal()) {
+        return evaluator->calculate(codeLoc, op, exprPayL.knownVal, exprPayR.knownVal);
     }
 
     exprPayRet = NodeVal(NodeVal::Kind::kLlvmVal);
@@ -593,8 +593,8 @@ NodeVal Codegen::codegenTuple(const AstNode *ast, const NodeVal &first) {
         NodeVal nodeValMemb = i == 0 ? first : codegenNode(nodeMemb);
         if (!checkValueUnbroken(nodeMemb->codeLoc, nodeValMemb, true)) return NodeVal();
 
-        if (nodeValMemb.isUntyVal()) {
-            promoteUntyped(nodeValMemb);
+        if (nodeValMemb.isKnownVal()) {
+            promoteKnownVal(nodeValMemb);
         }
         
         tup.members[i] = nodeValMemb.llvmVal.type;
@@ -647,7 +647,7 @@ NodeVal Codegen::codegenCall(const AstNode *ast, const NodeVal &first) {
             call.set(i, exprs[i].llvmVal.type);
             args[i] = exprs[i].llvmVal.val;
         } else {
-            call.set(i, exprs[i].untyVal);
+            call.set(i, exprs[i].knownVal);
         }
     }
 
@@ -666,15 +666,17 @@ NodeVal Codegen::codegenCall(const AstNode *ast, const NodeVal &first) {
 
         if (i >= func.argTypes.size()) {
             // variadic arguments
-            if (exprs[i].isUntyVal()) {
-                msgs->errorExprCallVariadUnty(nodeArg->codeLoc, funcName);
-                return NodeVal();
+            if (exprs[i].isKnownVal()) {
+                if (!promoteKnownVal(exprs[i])) {
+                    msgs->errorInternal(nodeArg->codeLoc);
+                    return NodeVal();
+                }
+                args[i] = exprs[i].llvmVal.val;
             }
-            // don't need to do anything in else case
         } else {
-            if (exprs[i].isUntyVal()) {
+            if (exprs[i].isKnownVal()) {
                 // this also checks whether sint/uint literals fit into the arg type size
-                if (!promoteUntyped(exprs[i], func.argTypes[i])) {
+                if (!promoteKnownVal(exprs[i], func.argTypes[i])) {
                     msgs->errorExprCannotPromote(nodeArg->codeLoc, func.argTypes[i]);
                     return NodeVal();
                 }
@@ -717,8 +719,8 @@ NodeVal Codegen::codegenCast(const AstNode *ast) {
     NodeVal exprVal = codegenNode(nodeVal);
     if (!checkValueUnbroken(nodeVal->codeLoc, exprVal, true)) return NodeVal();
 
-    if (exprVal.isUntyVal()) {
-        if (!promoteUntyped(exprVal)) {
+    if (exprVal.isKnownVal()) {
+        if (!promoteKnownVal(exprVal)) {
             msgs->errorInternal(ast->codeLoc);
             return NodeVal();
         }

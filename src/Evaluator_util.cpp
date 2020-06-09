@@ -26,11 +26,11 @@ optional<Token::Oper> Evaluator::getOper(const AstNode *ast, bool orError) {
     return nodeVal.oper;
 }
 
-optional<UntypedVal> Evaluator::getUntypedVal(const AstNode *ast, bool orError) {
+optional<KnownVal> Evaluator::getKnownVal(const AstNode *ast, bool orError) {
     NodeVal nodeVal = evaluateNode(ast);
-    if (!codegen->checkIsUntyped(ast->codeLoc, nodeVal, orError)) return nullopt;
+    if (!codegen->checkIsKnown(ast->codeLoc, nodeVal, orError)) return nullopt;
 
-    return nodeVal.untyVal;
+    return nodeVal.knownVal;
 }
 
 optional<TypeTable::Id> Evaluator::getType(const AstNode *ast, bool orError) {

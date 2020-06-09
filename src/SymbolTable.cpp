@@ -70,7 +70,7 @@ FuncSignature SymbolTable::makeFuncSignature(NamePool::Id name, const std::vecto
 FuncSignature SymbolTable::makeFuncSignature(const FuncCallSite &call) const {
     std::vector<TypeTable::Id> argTypes(call.argTypes.begin(), call.argTypes.end());
     for (size_t i = 0; i < argTypes.size(); ++i) {
-        if (call.untypedVals[i].has_value()) argTypes[i] = call.untypedVals[i].value().type;
+        if (call.knownVals[i].has_value()) argTypes[i] = call.knownVals[i].value().type;
     }
     return makeFuncSignature(call.name, argTypes);
 }
@@ -127,12 +127,11 @@ llvm::Function* SymbolTable::getFunction(const FuncValue &val) const {
 bool SymbolTable::isCallArgsOk(const FuncCallSite &call, const FuncValue &func) const {
     for (size_t i = 0; i < func.argTypes.size(); ++i) {
         // if arg of same or implicitly castable type, we're good
-        if (!call.untypedVals[i].has_value()) {
+        if (!call.knownVals[i].has_value()) {
             if (!typeTable->isArgTypeProper(call.argTypes[i], func.argTypes[i]))
                 return false;
         } else {
-            // otherwise, if untyped val which can be used for this func, we're also good
-            if (!UntypedVal::isImplicitCastable(call.untypedVals[i].value(), func.argTypes[i], stringPool, typeTable))
+            if (!KnownVal::isImplicitCastable(call.knownVals[i].value(), func.argTypes[i], stringPool, typeTable))
                 return false;
         }
     }

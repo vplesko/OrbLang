@@ -32,8 +32,8 @@ class Codegen {
 
     bool isBool(const NodeVal &e) const;
 
-    bool promoteUntyped(NodeVal &e, TypeTable::Id t);
-    bool promoteUntyped(NodeVal &e);
+    bool promoteKnownVal(NodeVal &e, TypeTable::Id t);
+    bool promoteKnownVal(NodeVal &e);
 
     TypeTable* getTypeTable() { return symbolTable->getTypeTable(); }
     const TypeTable* getTypeTable() const { return symbolTable->getTypeTable(); }
@@ -72,7 +72,7 @@ class Codegen {
     bool checkIsKeyword(CodeLoc codeLoc, const NodeVal &val, bool orError);
     bool checkIsOper(CodeLoc codeLoc, const NodeVal &val, bool orError);
     bool checkIsType(CodeLoc codeLoc, const NodeVal &val, bool orError);
-    bool checkIsUntyped(CodeLoc codeLoc, const NodeVal &val, bool orError);
+    bool checkIsKnown(CodeLoc codeLoc, const NodeVal &val, bool orError);
     bool checkIsAttribute(CodeLoc codeLoc, const NodeVal &val, bool orError);
     bool checkGlobalScope(CodeLoc codeLoc, bool orError);
 

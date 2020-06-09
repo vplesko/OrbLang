@@ -40,7 +40,6 @@ public:
 
     void warnExprIndexOutOfBounds(CodeLoc loc);
 
-    // TODO! clear out untyped val errors, remove all unty untyped untypedVal stuff from code
     void errorInputFileNotFound(const std::string &path);
     void errorBadToken(CodeLoc loc);
     void errorUnclosedMultilineComment(CodeLoc loc);
@@ -77,13 +76,11 @@ public:
     void errorCnNoInit(CodeLoc loc);
     void errorExprNotBaked(CodeLoc loc);
     void errorExprCannotPromote(CodeLoc loc, TypeTable::Id into);
-    void errorExprUntyMismatch(CodeLoc loc);
-    void errorExprUntyBinBadOp(CodeLoc loc, Token::Oper op);
+    void errorExprKnownBinBadOp(CodeLoc loc, Token::Oper op);
     void errorExprCompareStringLits(CodeLoc loc);
     void errorExprCannotCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into);
     void errorExprCannotImplicitCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into);
     void errorExprCannotImplicitCastEither(CodeLoc loc, TypeTable::Id ty1, TypeTable::Id ty2);
-    void errorExprCallVariadUnty(CodeLoc loc, NamePool::Id name);
     void errorExprIndexOnBadType(CodeLoc loc);
     void errorExprIndexOnBadType(CodeLoc loc, TypeTable::Id ty);
     void errorExprDerefOnBadType(CodeLoc loc, TypeTable::Id ty);

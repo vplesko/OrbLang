@@ -258,6 +258,8 @@ fnc main() () {
         println_i32 -9000;
     };
 
+    printf "%d\n" 10000;
+
     //println_i64 0;
     /* println_i64 0; */
     /*

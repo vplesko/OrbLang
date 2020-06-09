@@ -52,7 +52,7 @@ NodeVal Evaluator::evaluateTerminal(const AstNode *ast) {
         ret.attribute = term.attribute;
         break;
     case TerminalVal::Kind::kVal:
-        ret = evaluateUntypedVal(ast);
+        ret = evaluateKnownVal(ast);
         break;
     case TerminalVal::Kind::kEmpty:
         ret = NodeVal(NodeVal::Kind::kEmpty);
@@ -100,7 +100,7 @@ NodeVal Evaluator::evaluateNode(const AstNode *ast) {
         }
     }
 
-    if (!ast->escaped && ast->type.has_value() && !ret.isUntyVal()) {
+    if (!ast->escaped && ast->type.has_value() && !ret.isKnownVal()) {
         // TODO! add type verification here
         msgs->errorEvaluationNotSupported(ast->type.value()->codeLoc);
         return NodeVal();
@@ -116,7 +116,7 @@ optional<NodeVal> Evaluator::evaluateTypeDescr(const AstNode *ast, const NodeVal
 
     NodeVal descr = evaluateNode(nodeChild);
 
-    if (!descr.isKeyword() && !descr.isOper() && !descr.isUntyVal())
+    if (!descr.isKeyword() && !descr.isOper() && !descr.isKnownVal())
         return nullopt;
     
     TypeTable::TypeDescr typeDescr(first.type);
@@ -131,13 +131,13 @@ optional<NodeVal> Evaluator::evaluateTypeDescr(const AstNode *ast, const NodeVal
             typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_PTR});
         } else if (descr.isOper() && descr.oper == Token::O_IND) {
             typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_ARR_PTR});
-        } else if (descr.isUntyVal()) {
-            optional<uint64_t> arrSize = UntypedVal::getValueNonNeg(descr.untyVal, getTypeTable());
+        } else if (descr.isKnownVal()) {
+            optional<uint64_t> arrSize = KnownVal::getValueNonNeg(descr.knownVal, getTypeTable());
             if (!arrSize.has_value() || arrSize.value() == 0) {
                 if (arrSize.value() == 0) {
                     msgs->errorBadArraySize(nodeChild->codeLoc, arrSize.value());
                 } else {
-                    optional<int64_t> integ = UntypedVal::getValueI(descr.untyVal, getTypeTable());
+                    optional<int64_t> integ = KnownVal::getValueI(descr.knownVal, getTypeTable());
                     if (integ.has_value()) {
                         msgs->errorBadArraySize(nodeChild->codeLoc, integ.value());
                     } else {
@@ -287,13 +287,13 @@ NodeVal Evaluator::evaluateImport(const AstNode *ast) {
     const AstNode *nodeFile = ast->children[1].get();
 
     NodeVal valFile = evaluateNode(nodeFile);
-    if (!valFile.isUntyVal() || !isStr(valFile.untyVal)) {
+    if (!valFile.isKnownVal() || !isStr(valFile.knownVal)) {
         msgs->errorImportNotString(nodeFile->codeLoc);
         return NodeVal();
     }
 
     NodeVal ret(NodeVal::Kind::kImport);
-    ret.file = valFile.untyVal.str;
+    ret.file = valFile.knownVal.str;
     return ret;
 }
 

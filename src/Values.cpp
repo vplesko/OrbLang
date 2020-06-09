@@ -15,7 +15,7 @@ NodeVal::NodeVal(Kind k) : kind(k) {
     };
 }
 
-optional<int64_t> UntypedVal::getValueI(const UntypedVal &val, const TypeTable *typeTable) {
+optional<int64_t> KnownVal::getValueI(const KnownVal &val, const TypeTable *typeTable) {
     if (typeTable->worksAsPrimitive(val.type, TypeTable::P_I8)) return val.i8;
     if (typeTable->worksAsPrimitive(val.type, TypeTable::P_I16)) return val.i16;
     if (typeTable->worksAsPrimitive(val.type, TypeTable::P_I32)) return val.i32;
@@ -23,7 +23,7 @@ optional<int64_t> UntypedVal::getValueI(const UntypedVal &val, const TypeTable *
     return nullopt;
 }
 
-optional<uint64_t> UntypedVal::getValueU(const UntypedVal &val, const TypeTable *typeTable) {
+optional<uint64_t> KnownVal::getValueU(const KnownVal &val, const TypeTable *typeTable) {
     if (typeTable->worksAsPrimitive(val.type, TypeTable::P_U8)) return val.u8;
     if (typeTable->worksAsPrimitive(val.type, TypeTable::P_U16)) return val.u16;
     if (typeTable->worksAsPrimitive(val.type, TypeTable::P_U32)) return val.u32;
@@ -31,13 +31,13 @@ optional<uint64_t> UntypedVal::getValueU(const UntypedVal &val, const TypeTable 
     return nullopt;
 }
 
-optional<double> UntypedVal::getValueF(const UntypedVal &val, const TypeTable *typeTable) {
+optional<double> KnownVal::getValueF(const KnownVal &val, const TypeTable *typeTable) {
     if (typeTable->worksAsPrimitive(val.type, TypeTable::P_F32)) return val.f32;
     if (typeTable->worksAsPrimitive(val.type, TypeTable::P_F64)) return val.f64;
     return nullopt;
 }
 
-optional<uint64_t> UntypedVal::getValueNonNeg(const UntypedVal &val, const TypeTable *typeTable) {
+optional<uint64_t> KnownVal::getValueNonNeg(const KnownVal &val, const TypeTable *typeTable) {
     optional<int64_t> valI = getValueI(val, typeTable);
     if (valI.has_value()) {
         if (valI.value() < 0) return nullopt;
@@ -52,7 +52,7 @@ optional<uint64_t> UntypedVal::getValueNonNeg(const UntypedVal &val, const TypeT
     return nullopt;
 }
 
-bool UntypedVal::isImplicitCastable(const UntypedVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable) {
+bool KnownVal::isImplicitCastable(const KnownVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable) {
     if (typeTable->isImplicitCastable(val.type, t))
         return true;
 

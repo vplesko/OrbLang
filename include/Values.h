@@ -19,8 +19,6 @@ struct CompilerAction {
     CompilerAction(Kind k) : kind(k) {}
 };
 
-// TODO get rid of these in favor of compile-time values
-// TODO! LiteralVal for passing from Parser to others, KnownVal for evaluated typed values
 struct LiteralVal {
     enum class Kind {
         kNone,
@@ -44,7 +42,7 @@ struct LiteralVal {
     static std::size_t getStringLen(const std::string &str) { return str.size()+1; }
 };
 
-struct UntypedVal {
+struct KnownVal {
     TypeTable::Id type;
     union {
         std::int8_t i8;
@@ -62,14 +60,14 @@ struct UntypedVal {
         StringPool::Id str;
     };
 
-    UntypedVal() {}
-    explicit UntypedVal(TypeTable::Id t) : type(t) {}
+    KnownVal() {}
+    explicit KnownVal(TypeTable::Id t) : type(t) {}
 
-    static std::optional<std::int64_t> getValueI(const UntypedVal &val, const TypeTable *typeTable);
-    static std::optional<std::uint64_t> getValueU(const UntypedVal &val, const TypeTable *typeTable);
-    static std::optional<double> getValueF(const UntypedVal &val, const TypeTable *typeTable);
-    static std::optional<std::uint64_t> getValueNonNeg(const UntypedVal &val, const TypeTable *typeTable);
-    static bool isImplicitCastable(const UntypedVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable);
+    static std::optional<std::int64_t> getValueI(const KnownVal &val, const TypeTable *typeTable);
+    static std::optional<std::uint64_t> getValueU(const KnownVal &val, const TypeTable *typeTable);
+    static std::optional<double> getValueF(const KnownVal &val, const TypeTable *typeTable);
+    static std::optional<std::uint64_t> getValueNonNeg(const KnownVal &val, const TypeTable *typeTable);
+    static bool isImplicitCastable(const KnownVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable);
 };
 
 struct TerminalVal {
@@ -121,7 +119,7 @@ struct NodeVal {
         kAttribute,
         kImport,
         kLlvmVal,
-        kUntyVal,
+        kKnownVal,
         kType
     };
 
@@ -132,7 +130,7 @@ struct NodeVal {
         NamePool::Id id;
         Token::Attr attribute;
         LlvmVal llvmVal;
-        UntypedVal untyVal;
+        KnownVal knownVal;
         StringPool::Id file;
         TypeTable::Id type;
     };
@@ -148,13 +146,13 @@ struct NodeVal {
     bool isMacroId() const { return kind == Kind::kMacroId; }
     bool isAttribute() const { return kind == Kind::kAttribute; }
     bool isLlvmVal() const { return kind == Kind::kLlvmVal; }
-    bool isUntyVal() const { return kind == Kind::kUntyVal; }
+    bool isKnownVal() const { return kind == Kind::kKnownVal; }
     bool isType() const { return kind == Kind::kType; }
     bool isInvalid() const { return kind == Kind::kInvalid; }
 
-    // returns true if this is not unty val nor llvm val with valid value
+    // returns true if this is not known val nor llvm val with valid value
     bool valueBroken() const { return
-        (!isLlvmVal() && !isUntyVal()) ||
+        (!isLlvmVal() && !isKnownVal()) ||
         (isLlvmVal() && llvmVal.valBroken());
     }
 };

@@ -14,17 +14,17 @@ struct AstNode;
 struct FuncCallSite {
     NamePool::Id name;
     std::vector<TypeTable::Id> argTypes;
-    std::vector<std::optional<UntypedVal>> untypedVals;
+    std::vector<std::optional<KnownVal>> knownVals;
 
     FuncCallSite() {}
-    FuncCallSite(std::size_t sz) : argTypes(sz), untypedVals(sz) {}
+    FuncCallSite(std::size_t sz) : argTypes(sz), knownVals(sz) {}
 
     void set(std::size_t ind, TypeTable::Id t) {
         argTypes[ind] = t;
     }
 
-    void set(std::size_t ind, UntypedVal l) {
-        untypedVals[ind] = l;
+    void set(std::size_t ind, KnownVal l) {
+        knownVals[ind] = l;
     }
 };
 
