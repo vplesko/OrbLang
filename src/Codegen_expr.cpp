@@ -62,7 +62,7 @@ NodeVal Codegen::codegenOperInd(CodeLoc codeLoc, const NodeVal &base, const Node
             int64_t ind = KnownVal::getValueI(rightVal.knownVal, getTypeTable()).value();
             if (getTypeTable()->worksAsTypeArr(leftVal.llvmVal.type)) {
                 size_t len = getTypeTable()->extractLenOfArr(leftVal.llvmVal.type).value();
-                if (ind < 0 || ind >= len) {
+                if (ind < 0 || (size_t) ind >= len) {
                     msgs->warnExprIndexOutOfBounds(codeLoc);
                 }
             }

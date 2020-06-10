@@ -148,12 +148,12 @@ TypeTable::Id TypeTable::addTypeAddrOf(Id typeId) {
             typeAddrDescr.decors[i] = typeDescr.decors[i];
             typeAddrDescr.cns[i] = typeDescr.cns[i];
         }
-        typeAddrDescr.decors.back() = {TypeDescr::Decor::D_PTR};
+        typeAddrDescr.decors.back() = {.type=TypeDescr::Decor::D_PTR};
 
         return addTypeDescr(move(typeAddrDescr));
     } else {
         TypeDescr typeAddrDescr(typeId);
-        typeAddrDescr.addDecor({TypeDescr::Decor::D_PTR});
+        typeAddrDescr.addDecor({.type=TypeDescr::Decor::D_PTR});
 
         return addTypeDescr(move(typeAddrDescr));
     }
@@ -205,7 +205,7 @@ void TypeTable::addTypeStr() {
     Id c8Id{Id::kPrim, P_C8};
 
     TypeDescr typeDescr(c8Id, true);
-    typeDescr.addDecor({TypeDescr::Decor::D_ARR_PTR}, false);
+    typeDescr.addDecor({.type=TypeDescr::Decor::D_ARR_PTR}, false);
 
     strType = addTypeDescr(move(typeDescr));
 }

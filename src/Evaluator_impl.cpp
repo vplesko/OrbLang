@@ -145,9 +145,9 @@ optional<NodeVal> Evaluator::evaluateTypeDescr(const AstNode *ast, const NodeVal
         }
 
         if (descr.isOper() && descr.oper == Token::O_MUL) {
-            typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_PTR});
+            typeDescr.addDecor({.type=TypeTable::TypeDescr::Decor::D_PTR});
         } else if (descr.isOper() && descr.oper == Token::O_IND) {
-            typeDescr.addDecor({TypeTable::TypeDescr::Decor::D_ARR_PTR});
+            typeDescr.addDecor({.type=TypeTable::TypeDescr::Decor::D_ARR_PTR});
         } else if (descr.isKnownVal()) {
             optional<uint64_t> arrSize = KnownVal::getValueNonNeg(descr.knownVal, getTypeTable());
             if (!arrSize.has_value() || arrSize.value() == 0) {

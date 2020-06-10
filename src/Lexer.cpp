@@ -152,12 +152,12 @@ Token Lexer::next() {
                     nextCh();
                     if (peekCh() == '.') {
                         nextCh();
-                        tok = {Token::T_ELLIPSIS};
+                        tok = {.type=Token::T_ELLIPSIS};
                     } else {
-                        tok = {Token::T_UNKNOWN};
+                        tok = {.type=Token::T_UNKNOWN};
                     }
                 } else {
-                    tok = {Token::T_OPER, {Token::O_DOT}};
+                    tok = {.type=Token::T_OPER, .op=Token::O_DOT};
                 }
             } else {
                 lexNum(col-1);
@@ -165,135 +165,135 @@ Token Lexer::next() {
         } else if (ch == '+') {
             if (peekCh() == '+') {
                 nextCh();
-                tok = {Token::T_OPER, {Token::O_INC}};
+                tok = {.type=Token::T_OPER, .op=Token::O_INC};
             } else if (peekCh() == '=') {
                 nextCh();
-                tok = {Token::T_OPER, {Token::O_ADD_ASGN}};
+                tok = {.type=Token::T_OPER, .op=Token::O_ADD_ASGN};
             } else if (isdigit(peekCh())) {
                 lexNum(col);
             } else {
-                tok = {Token::T_OPER, {Token::O_ADD}};
+                tok = {.type=Token::T_OPER, .op=Token::O_ADD};
             }
         } else if (ch == '-') {
             if (peekCh() == '-') {
                 nextCh();
-                tok = {Token::T_OPER, {Token::O_DEC}};
+                tok = {.type=Token::T_OPER, .op=Token::O_DEC};
             } else if (peekCh() == '=') {
                 nextCh();
-                tok = {Token::T_OPER, {Token::O_SUB_ASGN}};
+                tok = {.type=Token::T_OPER, .op=Token::O_SUB_ASGN};
             } else if (isdigit(peekCh())) {
                 lexNum(col);
                 if (tok.type == Token::T_NUM) tok.num *= -1;
                 else if (tok.type == Token::T_FNUM) tok.fnum *= -1.0;
             } else {
-                tok = {Token::T_OPER, {Token::O_SUB}};
+                tok = {.type=Token::T_OPER, .op=Token::O_SUB};
             }
         } else if (ch == '*') {
             if (peekCh() == '=') {
                 nextCh();
-                tok = {Token::T_OPER, {Token::O_MUL_ASGN}};
+                tok = {.type=Token::T_OPER, .op=Token::O_MUL_ASGN};
             } else {
-                tok = {Token::T_OPER, {Token::O_MUL}};
+                tok = {.type=Token::T_OPER, .op=Token::O_MUL};
             }
         } else if (ch == '/') {
             if (peekCh() == '=') {
                 nextCh();
-                tok = {Token::T_OPER, {Token::O_DIV_ASGN}};
+                tok = {.type=Token::T_OPER, .op=Token::O_DIV_ASGN};
             } else {
-                tok = {Token::T_OPER, {Token::O_DIV}};
+                tok = {.type=Token::T_OPER, .op=Token::O_DIV};
             }
         } else if (ch == '%') {
             if (peekCh() == '=') {
                 nextCh();
-                tok = {Token::T_OPER, {Token::O_REM_ASGN}};
+                tok = {.type=Token::T_OPER, .op=Token::O_REM_ASGN};
             } else {
-                tok = {Token::T_OPER, {Token::O_REM}};
+                tok = {.type=Token::T_OPER, .op=Token::O_REM};
             }
         } else if (ch == '&') {
             if (peekCh() == '=') {
                 nextCh();
-                tok = {Token::T_OPER, {Token::O_BIT_AND_ASGN}};
+                tok = {.type=Token::T_OPER, .op=Token::O_BIT_AND_ASGN};
             } else {
-                tok = {Token::T_OPER, {Token::O_BIT_AND}};
+                tok = {.type=Token::T_OPER, .op=Token::O_BIT_AND};
             }
         } else if (ch == '^') {
             if (peekCh() == '=') {
                 nextCh();
-                tok = {Token::T_OPER, {Token::O_BIT_XOR_ASGN}};
+                tok = {.type=Token::T_OPER, .op=Token::O_BIT_XOR_ASGN};
             } else {
-                tok = {Token::T_OPER, {Token::O_BIT_XOR}};
+                tok = {.type=Token::T_OPER, .op=Token::O_BIT_XOR};
             }
         } else if (ch == '|') {
             if (peekCh() == '=') {
                 nextCh();
-                tok = {Token::T_OPER, {Token::O_BIT_OR_ASGN}};
+                tok = {.type=Token::T_OPER, .op=Token::O_BIT_OR_ASGN};
             } else {
-                tok = {Token::T_OPER, {Token::O_BIT_OR}};
+                tok = {.type=Token::T_OPER, .op=Token::O_BIT_OR};
             }
         } else if (ch == '=') {
             if (peekCh() == '=') {
                 nextCh();
-                tok = {Token::T_OPER, {Token::O_EQ}};
+                tok = {.type=Token::T_OPER, .op=Token::O_EQ};
             } else {
-                tok = {Token::T_OPER, {Token::O_ASGN}};
+                tok = {.type=Token::T_OPER, .op=Token::O_ASGN};
             }
         } else if (ch == '!') {
             if (peekCh() != '=') {
-                tok = {Token::T_OPER, {Token::O_NOT}};
+                tok = {.type=Token::T_OPER, .op=Token::O_NOT};
             } else {
                 nextCh();
-                tok = {Token::T_OPER, {Token::O_NEQ}};
+                tok = {.type=Token::T_OPER, .op=Token::O_NEQ};
             }
         } else if (ch == '~') {
-            tok = {Token::T_OPER, {Token::O_BIT_NOT}};
+            tok = {.type=Token::T_OPER, .op=Token::O_BIT_NOT};
         } else if (ch == '<') {
             if (peekCh() == '=') {
                 nextCh();
-                tok = {Token::T_OPER, {Token::O_LTEQ}};
+                tok = {.type=Token::T_OPER, .op=Token::O_LTEQ};
             } else if (peekCh() == '<') {
                 nextCh();
                 if (peekCh() == '=') {
                     nextCh();
-                    tok = {Token::T_OPER, {Token::O_SHL_ASGN}};
+                    tok = {.type=Token::T_OPER, .op=Token::O_SHL_ASGN};
                 } else {
-                    tok = {Token::T_OPER, {Token::O_SHL}};
+                    tok = {.type=Token::T_OPER, .op=Token::O_SHL};
                 }
             } else {
-                tok = {Token::T_OPER, {Token::O_LT}};
+                tok = {.type=Token::T_OPER, .op=Token::O_LT};
             }
         } else if (ch == '>') {
             if (peekCh() == '=') {
                 nextCh();
-                tok = {Token::T_OPER, {Token::O_GTEQ}};
+                tok = {.type=Token::T_OPER, .op=Token::O_GTEQ};
             } else if (peekCh() == '>') {
                 nextCh();
                 if (peekCh() == '=') {
                     nextCh();
-                    tok = {Token::T_OPER, {Token::O_SHR_ASGN}};
+                    tok = {.type=Token::T_OPER, .op=Token::O_SHR_ASGN};
                 } else {
-                    tok = {Token::T_OPER, {Token::O_SHR}};
+                    tok = {.type=Token::T_OPER, .op=Token::O_SHR};
                 }
             } else {
-                tok = {Token::T_OPER, {Token::O_GT}};
+                tok = {.type=Token::T_OPER, .op=Token::O_GT};
             }
         } else if (ch == ';') {
-            tok = {Token::T_SEMICOLON};
+            tok = {.type=Token::T_SEMICOLON};
         } else if (ch == ':') {
-            tok = {Token::T_COLON};
+            tok = {.type=Token::T_COLON};
         } else if (ch == '\\') {
-            tok = {Token::T_BACKSLASH};
+            tok = {.type=Token::T_BACKSLASH};
         } else if (ch == '(') {
-            tok = {Token::T_BRACE_L_REG};
+            tok = {.type=Token::T_BRACE_L_REG};
         } else if (ch == ')') {
-            tok = {Token::T_BRACE_R_REG};
+            tok = {.type=Token::T_BRACE_R_REG};
         } else if (ch == '{') {
-            tok = {Token::T_BRACE_L_CUR};
+            tok = {.type=Token::T_BRACE_L_CUR};
         } else if (ch == '}') {
-            tok = {Token::T_BRACE_R_CUR};
+            tok = {.type=Token::T_BRACE_R_CUR};
         } else if (ch == '[') {
             if (peekCh() == ']') {
                 nextCh();
-                tok = {Token::T_OPER, {Token::O_IND}};
+                tok = {.type=Token::T_OPER, .op=Token::O_IND};
             } else {
                 tok.type = Token::T_UNKNOWN;
             }

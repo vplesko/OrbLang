@@ -48,18 +48,18 @@ const unordered_map<string, Token> keywords = {
     {"INF", {.type=Token::T_FNUM, .fnum=INFINITY}},
     {"NAN", {.type=Token::T_FNUM, .fnum=NAN}},
     {"null", {.type=Token::T_NULL}},
-    {"cn", {Token::T_CN}},
-    {"fnc", {Token::T_FNC}},
-    {"mac", {Token::T_MAC}},
-    {"let", {Token::T_LET}},
-    {"arr", {Token::T_ARR}},
-    {"cast", {Token::T_CAST}},
-    {"block", {Token::T_BLOCK}},
-    {"exit", {Token::T_EXIT}},
-    {"pass", {Token::T_PASS}},
-    {"loop", {Token::T_LOOP}},
-    {"ret", {Token::T_RET}},
-    {"import", {Token::T_IMPORT}}
+    {"cn", {.type=Token::T_CN}},
+    {"fnc", {.type=Token::T_FNC}},
+    {"mac", {.type=Token::T_MAC}},
+    {"let", {.type=Token::T_LET}},
+    {"arr", {.type=Token::T_ARR}},
+    {"cast", {.type=Token::T_CAST}},
+    {"block", {.type=Token::T_BLOCK}},
+    {"exit", {.type=Token::T_EXIT}},
+    {"pass", {.type=Token::T_PASS}},
+    {"loop", {.type=Token::T_LOOP}},
+    {"ret", {.type=Token::T_RET}},
+    {"import", {.type=Token::T_IMPORT}}
 };
 
 std::string errorString(Token tok) {
