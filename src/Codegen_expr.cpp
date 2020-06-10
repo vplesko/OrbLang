@@ -227,7 +227,7 @@ NodeVal Codegen::codegenOperUnary(const AstNode *ast, const NodeVal &first) {
     NodeVal exprPay = codegenNode(nodeVal);
     if (!checkValueUnbroken(nodeVal->codeLoc, exprPay, true)) return NodeVal();
 
-    if (exprPay.isKnownVal()) return evaluator->calculate(ast->codeLoc, op, exprPay.knownVal);
+    if (exprPay.isKnownVal()) return evaluator->calculateOperUnary(ast->codeLoc, op, exprPay.knownVal);
 
     NodeVal exprRet(NodeVal::Kind::kLlvmVal);
     exprRet.llvmVal.type = exprPay.llvmVal.type;
@@ -345,7 +345,7 @@ NodeVal Codegen::codegenOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs
             return NodeVal();
         }
     } else if (exprPayL.isKnownVal() && exprPayR.isKnownVal()) {
-        return evaluator->calculate(codeLoc, op, exprPayL.knownVal, exprPayR.knownVal);
+        return evaluator->calculateOper(codeLoc, op, exprPayL.knownVal, exprPayR.knownVal);
     }
 
     exprPayRet = NodeVal(NodeVal::Kind::kLlvmVal);

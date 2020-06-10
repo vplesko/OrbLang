@@ -37,8 +37,8 @@ public:
     bool isNull(const KnownVal &val) const;
     bool cast(KnownVal &val, TypeTable::Id t) const;
 
-    NodeVal calculate(CodeLoc codeLoc, Token::Oper op, KnownVal known);
-    NodeVal calculate(CodeLoc codeLoc, Token::Oper op, KnownVal knownL, KnownVal knownR);
+    NodeVal calculateOperUnary(CodeLoc codeLoc, Token::Oper op, KnownVal known);
+    NodeVal calculateOper(CodeLoc codeLoc, Token::Oper op, KnownVal knownL, KnownVal knownR);
 
 private:
     NodeVal evaluateMac(AstNode *ast);

@@ -97,7 +97,7 @@ NodeVal Evaluator::evaluateOperUnary(const AstNode *ast, const NodeVal &first) {
     NodeVal exprPay = evaluateNode(nodeVal);
     if (!codegen->checkIsKnown(nodeVal->codeLoc, exprPay, true)) return NodeVal();
 
-    return calculate(ast->codeLoc, op, exprPay.knownVal);
+    return calculateOperUnary(ast->codeLoc, op, exprPay.knownVal);
 }
 
 NodeVal Evaluator::evaluateOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs, const NodeVal &rhs) {
@@ -109,7 +109,7 @@ NodeVal Evaluator::evaluateOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &
     exprPayR = rhs;
     if (!codegen->checkIsKnown(codeLoc, exprPayR, true)) return NodeVal();
 
-    return calculate(codeLoc, op, exprPayL.knownVal, exprPayR.knownVal);
+    return calculateOper(codeLoc, op, exprPayL.knownVal, exprPayR.knownVal);
 }
 
 NodeVal Evaluator::evaluateOper(const AstNode *ast, const NodeVal &first) {
@@ -255,7 +255,7 @@ bool Evaluator::cast(KnownVal &val, TypeTable::Id t) const {
     return true;
 }
 
-NodeVal Evaluator::calculate(CodeLoc codeLoc, Token::Oper op, KnownVal known) {
+NodeVal Evaluator::calculateOperUnary(CodeLoc codeLoc, Token::Oper op, KnownVal known) {
     NodeVal exprRet(NodeVal::Kind::kKnownVal);
     exprRet.knownVal.type = known.type;
 
@@ -368,7 +368,7 @@ NodeVal Evaluator::calculate(CodeLoc codeLoc, Token::Oper op, KnownVal known) {
         valRet.b = valL.f64 op valR.f64;
 
 // TODO warn on over/underflow
-NodeVal Evaluator::calculate(CodeLoc codeLoc, Token::Oper op, KnownVal knownL, KnownVal knownR) {
+NodeVal Evaluator::calculateOper(CodeLoc codeLoc, Token::Oper op, KnownVal knownL, KnownVal knownR) {
     if (knownL.type != knownR.type) {
         if (getTypeTable()->isImplicitCastable(knownR.type, knownL.type)) {
             if (!cast(knownR, knownL.type)) {
