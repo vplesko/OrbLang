@@ -1,4 +1,4 @@
 fnc main() () {
-    let x:i32;
-    let (x:ptr null);
+    sym x:i32;
+    sym (x:ptr null);
 };

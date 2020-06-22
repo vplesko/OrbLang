@@ -92,7 +92,7 @@ class Codegen {
     NodeVal codegenCall(const AstNode *ast, const NodeVal &first);
     NodeVal codegenCast(const AstNode *ast);
     NodeVal codegenArr(const AstNode *ast);
-    NodeVal codegenLet(const AstNode *ast);
+    NodeVal codegenSym(const AstNode *ast);
     NodeVal codegenExit(const AstNode *ast);
     NodeVal codegenPass(const AstNode *ast);
     NodeVal codegenLoop(const AstNode *ast);

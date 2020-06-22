@@ -1,4 +1,4 @@
 fnc main() () {
-    let f:(i32 i32);
+    sym f:(i32 i32);
     cast i32 f;
 };

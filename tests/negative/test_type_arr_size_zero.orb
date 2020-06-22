@@ -1,3 +1,3 @@
-let a:(i32 0);
+sym a:(i32 0);
 
 fnc main() () {};

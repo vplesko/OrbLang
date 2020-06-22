@@ -1,4 +1,4 @@
 fnc main() () {
-    let (x:ptr null);
+    sym (x:ptr null);
     + x;
 };

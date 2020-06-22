@@ -3,6 +3,6 @@ fnc foo(x:(i32 *)) () {
 };
 
 fnc main() () {
-    let (x:(i32 cn) 100);
+    sym (x:(i32 cn) 100);
     foo (& x);
 };

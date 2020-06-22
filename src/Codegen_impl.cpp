@@ -43,8 +43,8 @@ NodeVal Codegen::codegenNode(const AstNode *ast) {
 
         if (starting.isKeyword()) {
             switch (starting.keyword) {
-            case Token::T_LET:
-                ret = codegenLet(ast);
+            case Token::T_SYM:
+                ret = codegenSym(ast);
                 break;
             case Token::T_BLOCK:
                 ret = codegenBlock(ast);
@@ -269,7 +269,7 @@ bool Codegen::createCast(NodeVal &e, TypeTable::Id t) {
     return true;
 }
 
-NodeVal Codegen::codegenLet(const AstNode *ast) {
+NodeVal Codegen::codegenSym(const AstNode *ast) {
     if (!checkAtLeastChildren(ast, 2, true))
         return NodeVal();
     

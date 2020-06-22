@@ -38,7 +38,7 @@ mac for(init cond step) (
 mac for(init cond step body) (
     block {
         init
-        (let ((forFirstStepTracker):bool true))
+        (sym ((forFirstStepTracker):bool true))
         (block (loopingBlocksName) () {
             (if (forFirstStepTracker) {
                 (= (forFirstStepTracker) false)

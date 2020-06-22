@@ -28,13 +28,13 @@ fnc sameNamed(sameNamed:i32) () {
 };
 
 fnc main() () {
-    let (a:i64 1) (b 2:i64);
+    sym (a:i64 1) (b 2:i64);
     if (== a b) {(println_i64 101)};
     if (< a b) {(println_i64 102)};
     if (>= a b) {(println_i64 103)};
     if (> (+ a 3) (+ b 5)) {(println_i64 104)};
     block () {
-        let (x:i64 5);
+        sym (x:i64 5);
         if (> x a) { (println_i64 105) };
     };
     block blockName () {
@@ -64,14 +64,14 @@ fnc main() () {
         })
     };
 
-    for (let (i:i64 0) (j:i64 (- 1))) (< i 10) (++ i) {(println_i64 (+ i j))};
+    for (sym (i:i64 0) (j:i64 (- 1))) (< i 10) (++ i) {(println_i64 (+ i j))};
     for (= a 0) (< a 3) (++ a) {(println_i64 a)};
     for () (>= a 0) (-- a) {(println_i64 a)};
-    for (let (i:i32 10)) (> i 0) (-- i);
+    for (sym (i:i32 10)) (> i 0) (-- i);
 
     while (>= b 0) {(println_i64 (-- b))};
     do {
-        let (x:i64 2);
+        sym (x:i64 2);
         println_i64 b;
         = b (+ b x);
     } (< (+ b a) 8);
@@ -80,7 +80,7 @@ fnc main() () {
 
     bar;
 
-    for (let (i:i32 0)) (< i 10) (++ i) {
+    for (sym (i:i32 0)) (< i 10) (++ i) {
         break (>= i 3);
         println_i32 i;
     };
@@ -97,7 +97,7 @@ fnc main() () {
         = a 0;
     } (< a 1);
 
-    for (let (i:i32 0)) (< i 10) (++ i) {
+    for (sym (i:i32 0)) (< i 10) (++ i) {
         continue (>= i 2);
         println_i32 i;
     };
@@ -115,34 +115,34 @@ fnc main() () {
         = a 0;
     } (!= a 0);
 
-    for (let (i:i32 0)) (< i 2) (++ i) {
+    for (sym (i:i32 0)) (< i 2) (++ i) {
         println_i32 i;
-        for (let (j:i32 0)) (< j 5) (++ j) {
+        for (sym (j:i32 0)) (< j 5) (++ j) {
             println_i32 j;
             break (>= j 1);
         };
     };
 
-    for (let (i:i32 0)) (> i (- 2)) (-- i) {
+    for (sym (i:i32 0)) (> i (- 2)) (-- i) {
         println_i32 i;
-        for (let (j:i32 0)) (> j (- 5)) (-- j) {
+        for (sym (j:i32 0)) (> j (- 5)) (-- j) {
             continue (<= j (- 1));
             println_i32 j;
         };
     };
 
-    for (let (i:i32 10)) (< i 15) (++ i) {
+    for (sym (i:i32 10)) (< i 15) (++ i) {
         println_i32 i;
         break (>= i 11);
-        for (let (j:i32 10)) (< j 12) (++ j) {
+        for (sym (j:i32 10)) (< j 12) (++ j) {
             println_i32 j;
         };
     };
 
-    for (let (i:i32 (- 10))) (> i (- 13)) (-- i) {
+    for (sym (i:i32 (- 10))) (> i (- 13)) (-- i) {
         println_i32 i;
         continue (<= i (- 11));
-        for (let (j:i32 (- 10))) (> j (- 12)) (-- j) {
+        for (sym (j:i32 (- 10))) (> j (- 12)) (-- j) {
             println_i32 j;
         };
     };
@@ -156,7 +156,7 @@ fnc main() () {
     if (and false (== (blocker) 0)) {(println_i32 0)};
     if (or true (== (blocker) 0)) {(println_i32 0)};
 
-    let (bar:i32 200);
+    sym (bar:i32 200);
     println_i32 bar;
 
     sameNamed 201;
@@ -174,7 +174,7 @@ fnc main() () {
     };
 
     while false {
-        let (x:i32 1);
+        sym (x:i32 1);
         continue (> x 2);
     };
 
@@ -187,13 +187,13 @@ fnc main() () {
     };
 
     println_i32 (block i32 {
-        let (x 300);
+        sym (x 300);
         pass x;
     });
 
     println_i32 (block block1 i32 {
         block {
-            let (x:i16 301);
+            sym (x:i16 301);
             pass block1 x;
         };
         pass 0; // dummy TODO make this unnecessary
@@ -209,7 +209,7 @@ fnc main() () {
     };
 
     println_i32 (block block1 i32 {
-        let (x:bool true);
+        sym (x:bool true);
         block () {
             exit x;
             pass block1 304;

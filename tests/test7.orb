@@ -27,17 +27,17 @@ mac function() fnc;
 
 ((function) foo() () {})
 
-mac declaration() let;
+mac declaration() sym;
 
 mac zz() zz;
 
 fnc main() () {
     block {
-        let (a:i32 99) (b:i32 1);
+        sym (a:i32 99) (b:i32 1);
         println_i32 (add a b);
     };
     block {
-        let (a:i32 100) (b:i32 99) (c:i32 1);
+        sym (a:i32 100) (b:i32 99) (c:i32 1);
         println_i32 (makeCall add a b c);
         ++ c;
         println_i32 (makeCall + a b c);
@@ -49,22 +49,22 @@ fnc main() () {
         println_i32 (* 4 (hundred));
     };
     block {
-        let (x:i32 300) (y:i32 100);
+        sym (x:i32 300) (y:i32 100);
         println_i32 (add x (+ y 100));
     };
     block {
-        let (x:i32 600);
-        let (p1:(intPtr) (& x));
+        sym (x:i32 600);
+        sym (p1:(intPtr) (& x));
         println_i32 (* p1);
         ++ x;
-        let (p2:(i32 (asterisk)) (& x));
+        sym (p2:(i32 (asterisk)) (& x));
         println_i32 (* p2);
     };
     block {
         println_i32 (+ ((thyName)) 700);
     };
     block {
-        let ((zz):i32 800);
+        sym ((zz):i32 800);
         println_i32 (zz);
     };
 };

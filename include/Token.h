@@ -26,7 +26,7 @@ struct Token {
         T_BRACE_L_CUR,
         T_BRACE_R_CUR,
         T_ID,
-        T_LET,
+        T_SYM,
         T_ARR,
         T_CAST,
         T_BLOCK,

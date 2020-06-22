@@ -1,5 +1,5 @@
 fnc foo() (i32 i32) {
-    let f:(i32 i32);
+    sym f:(i32 i32);
     ret f;
 };
 

@@ -1,4 +1,4 @@
 fnc main() () {
-    let array:(i32 cn 4) (arr (i32 4) 0 1 2 3);
+    sym array:(i32 cn 4) (arr (i32 4) 0 1 2 3);
     = ([] array 0) 100;
 };
