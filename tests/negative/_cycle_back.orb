@@ -1,1 +1,1 @@
-import "tests/negative/test_import_cycle.orb";
+import "negative/test_import_cycle.orb";

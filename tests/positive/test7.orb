@@ -1,4 +1,4 @@
-import "tests/io.orb";
+import "util/io.orb";
 
 mac add(x y) (+ x y);
 

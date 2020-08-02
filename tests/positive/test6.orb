@@ -1,5 +1,5 @@
-import "tests/base.orb";
-import "tests/io.orb";
+import "util/base.orb";
+import "util/io.orb";
 
 fnc pair(x:i32 y:i32) (i32 i32) {
     sym r:(i32 i32);

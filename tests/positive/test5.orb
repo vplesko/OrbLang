@@ -1,0 +1,15 @@
+import "util/clib.orb";
+
+import "util/empty.orb";
+
+fnc putchar(x:c8) () __no_name_mangle;
+fnc putchar(x:c8) () __no_name_mangle;
+
+import "util/clib.orb";
+
+fnc main() () {
+};
+
+import "util/../util/io.orb";
+
+import "util/empty.orb";

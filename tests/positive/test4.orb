@@ -1,5 +1,5 @@
-import "tests/base.orb";
-import "tests/io.orb";
+import "util/base.orb";
+import "util/io.orb";
 
 // func decls test
 fnc free(addr:ptr) () __no_name_mangle;
@@ -251,4 +251,4 @@ fnc main() () {
 };
 
 // import test
-import "tests/clib.orb";
+import "util/clib.orb";

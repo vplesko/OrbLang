@@ -1,5 +1,5 @@
-import "tests/base.orb";
-import "tests/io.orb";
+import "util/base.orb";
+import "util/io.orb";
 
 fnc main() () {
     - 10;
