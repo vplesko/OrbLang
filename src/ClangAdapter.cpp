@@ -1,6 +1,7 @@
 #include "ClangAdapter.h"
 #include <cstdio>
 #include <vector>
+#include "llvm/Support/Host.h"
 #include "llvm/Support/Program.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/VirtualFileSystem.h"

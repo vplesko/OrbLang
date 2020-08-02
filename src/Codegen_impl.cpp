@@ -169,7 +169,7 @@ bool Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
             llvm::Value *z = llvmBuilder.CreateIntCast(getConstB(false), val->getType(), true);
             val = llvmBuilder.CreateICmpNE(val, z, "i2b_cast");
         } else if (symbolTable->getTypeTable()->worksAsTypeAnyP(dstTypeId)) {
-            val = llvmBuilder.CreatePointerCast(val, type, "i2p_cast");
+            val = llvmBuilder.CreateBitOrPointerCast(val, type, "i2p_cast");
         } else {
             val = nullptr;
             return false;
@@ -187,7 +187,7 @@ bool Codegen::createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type 
             llvm::Value *z = llvmBuilder.CreateIntCast(getConstB(false), val->getType(), false);
             val = llvmBuilder.CreateICmpNE(val, z, "u2b_cast");
         } else if (symbolTable->getTypeTable()->worksAsTypeAnyP(dstTypeId)) {
-            val = llvmBuilder.CreatePointerCast(val, type, "u2p_cast");
+            val = llvmBuilder.CreateBitOrPointerCast(val, type, "u2p_cast");
         } else {
             val = nullptr;
             return false;

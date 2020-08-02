@@ -231,7 +231,7 @@ llvm::Type* TypeTable::getPrimType(PrimIds id) const {
 }
 
 TypeTable::Id TypeTable::getPrimTypeId(PrimIds id) const {
-    return Id{Id::kPrim, id};
+    return Id{Id::kPrim, (size_t) id};
 }
 
 const TypeTable::Tuple& TypeTable::getTuple(Id id) const {

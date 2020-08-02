@@ -73,7 +73,7 @@ void Lexer::lexNum(CodeIndex from) {
             
             char *end;
             tok.fnum = strtod(lit.c_str(), &end);
-            if (end != lit.end().base() || errno == ERANGE) tok.type = Token::T_UNKNOWN;
+            if (end != &*lit.end() || errno == ERANGE) tok.type = Token::T_UNKNOWN;
         }
     } else {
         tok.type = Token::T_NUM;
@@ -100,8 +100,8 @@ void Lexer::lexNum(CodeIndex from) {
             }
         } else {
             char *end;
-            tok.num = strtol(lit.c_str(), &end, base);
-            if (end != lit.end().base() || errno == ERANGE) tok.type = Token::T_UNKNOWN;
+            tok.num = strtoll(lit.c_str(), &end, base);
+            if (end != &*lit.end() || errno == ERANGE) tok.type = Token::T_UNKNOWN;
         }
     }
 }

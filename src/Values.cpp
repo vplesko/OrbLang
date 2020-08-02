@@ -52,6 +52,7 @@ optional<uint64_t> KnownVal::getValueNonNeg(const KnownVal &val, const TypeTable
     return nullopt;
 }
 
+// TODO maybe make this same as regular isImplicitCastable? what about string to char arr? take care of lit:type
 bool KnownVal::isImplicitCastable(const KnownVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable) {
     if (typeTable->isImplicitCastable(val.type, t))
         return true;

@@ -32,7 +32,7 @@ struct LiteralVal {
 
     Kind kind = Kind::kNone;
     union {
-        int64_t val_si;
+        std::int64_t val_si;
         double val_f;
         char val_c;
         bool val_b;

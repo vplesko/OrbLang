@@ -82,7 +82,7 @@ struct Token {
 
     Type type;
     union {
-        long int num;
+        std::int64_t num;
         double fnum;
         char ch;
         bool bval;

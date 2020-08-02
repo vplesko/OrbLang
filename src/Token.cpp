@@ -45,6 +45,7 @@ const std::unordered_map<std::string, Token::Attr> attributes = {
 const unordered_map<string, Token> keywords = {
     {"true", {.type=Token::T_BVAL, .bval=true}},
     {"false", {.type=Token::T_BVAL, .bval=false}},
+    // TODO remove these two
     {"INF", {.type=Token::T_FNUM, .fnum=INFINITY}},
     {"NAN", {.type=Token::T_FNUM, .fnum=NAN}},
     {"null", {.type=Token::T_NULL}},
