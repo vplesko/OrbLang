@@ -39,12 +39,8 @@ def run_positive_test(case):
 
 def run_negative_test(case):
     src_file = TEST_NEG_DIR + '/' + case + '.orb'
-    exe_file = TEST_BIN_DIR + '/' + case  # dummy
-    if platform.system() == 'Windows':
-        exe_file += '.exe'
 
-    result = subprocess.run(
-        [ORBC_EXE, src_file, exe_file], stderr=subprocess.DEVNULL)
+    result = subprocess.run([ORBC_EXE, src_file], stderr=subprocess.DEVNULL)
     return result.returncode != 0
 
 

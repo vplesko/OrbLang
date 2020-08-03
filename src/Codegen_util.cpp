@@ -129,7 +129,7 @@ llvm::Type* Codegen::getLlvmType(TypeTable::Id typeId) {
 }
 
 bool Codegen::isBool(const NodeVal &e) const {
-    return (e.isKnownVal() && evaluator->isB(e.knownVal)) ||
+    return (e.isKnownVal() && KnownVal::isB(e.knownVal, getTypeTable())) ||
      (e.isLlvmVal() && getTypeTable()->worksAsTypeB(e.llvmVal.type));
 }
 
@@ -142,24 +142,24 @@ bool Codegen::promoteKnownVal(NodeVal &e, TypeTable::Id t) {
     n.llvmVal.type = t;
     bool success = true;
 
-    if (evaluator->isI(e.knownVal)) {
+    if (KnownVal::isI(e.knownVal, getTypeTable())) {
         n.llvmVal.val = llvm::ConstantInt::get(getLlvmType(t), KnownVal::getValueI(e.knownVal, getTypeTable()).value(), true);
-    } else if (evaluator->isU(e.knownVal)) {
+    } else if (KnownVal::isU(e.knownVal, getTypeTable())) {
         n.llvmVal.val = llvm::ConstantInt::get(getLlvmType(t), KnownVal::getValueU(e.knownVal, getTypeTable()).value(), false);
-    } else if (evaluator->isF(e.knownVal)) {
+    } else if (KnownVal::isF(e.knownVal, getTypeTable())) {
         n.llvmVal.val = llvm::ConstantFP::get(getLlvmType(t), KnownVal::getValueF(e.knownVal, getTypeTable()).value());
-    } else if (evaluator->isC(e.knownVal)) {
+    } else if (KnownVal::isC(e.knownVal, getTypeTable())) {
         n.llvmVal.val = llvm::ConstantInt::get(getLlvmType(t), (uint8_t) e.knownVal.c8, false);
-    } else if (evaluator->isB(e.knownVal)) {
+    } else if (KnownVal::isB(e.knownVal, getTypeTable())) {
         n.llvmVal.val = getConstB(e.knownVal.b);
-    } else if (evaluator->isStr(e.knownVal)) {
+    } else if (KnownVal::isStr(e.knownVal, getTypeTable())) {
         const std::string &str = stringPool->get(e.knownVal.str);
         if (getTypeTable()->worksAsTypeStr(t)) {
             n.llvmVal.val = createString(str);
         } else {
             n.llvmVal.val = llvm::ConstantDataArray::getString(llvmContext, str, true);
         }
-    } else if (evaluator->isNull(e.knownVal)) {
+    } else if (KnownVal::isNull(e.knownVal, getTypeTable())) {
         n.llvmVal.val = llvm::ConstantPointerNull::get((llvm::PointerType*)getLlvmType(t));
     } else {
         success = false;

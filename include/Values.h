@@ -63,10 +63,19 @@ struct KnownVal {
     KnownVal() {}
     explicit KnownVal(TypeTable::Id t) : type(t) {}
 
+    static bool isI(const KnownVal &val, const TypeTable *typeTable);
+    static bool isU(const KnownVal &val, const TypeTable *typeTable);
+    static bool isF(const KnownVal &val, const TypeTable *typeTable);
+    static bool isB(const KnownVal &val, const TypeTable *typeTable);
+    static bool isC(const KnownVal &val, const TypeTable *typeTable);
+    static bool isStr(const KnownVal &val, const TypeTable *typeTable);
+    static bool isNull(const KnownVal &val, const TypeTable *typeTable);
+
     static std::optional<std::int64_t> getValueI(const KnownVal &val, const TypeTable *typeTable);
     static std::optional<std::uint64_t> getValueU(const KnownVal &val, const TypeTable *typeTable);
     static std::optional<double> getValueF(const KnownVal &val, const TypeTable *typeTable);
     static std::optional<std::uint64_t> getValueNonNeg(const KnownVal &val, const TypeTable *typeTable);
+
     static bool isImplicitCastable(const KnownVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable);
 };
 

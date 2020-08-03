@@ -58,7 +58,7 @@ NodeVal Codegen::codegenOperInd(CodeLoc codeLoc, const NodeVal &base, const Node
     NodeVal rightVal = ind;
 
     if (rightVal.isKnownVal()) {
-        if (evaluator->isI(rightVal.knownVal)) {
+        if (KnownVal::isI(rightVal.knownVal, getTypeTable())) {
             int64_t ind = KnownVal::getValueI(rightVal.knownVal, getTypeTable()).value();
             if (getTypeTable()->worksAsTypeArr(leftVal.llvmVal.type)) {
                 size_t len = getTypeTable()->extractLenOfArr(leftVal.llvmVal.type).value();
@@ -66,7 +66,7 @@ NodeVal Codegen::codegenOperInd(CodeLoc codeLoc, const NodeVal &base, const Node
                     msgs->warnExprIndexOutOfBounds(codeLoc);
                 }
             }
-        } else if (evaluator->isU(rightVal.knownVal)) {
+        } else if (KnownVal::isU(rightVal.knownVal, getTypeTable())) {
             uint64_t ind = KnownVal::getValueU(rightVal.knownVal, getTypeTable()).value();
             if (getTypeTable()->worksAsTypeArr(leftVal.llvmVal.type)) {
                 size_t len = getTypeTable()->extractLenOfArr(leftVal.llvmVal.type).value();

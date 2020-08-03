@@ -37,15 +37,15 @@ set(SOURCE_FILES
     "src/AST.cpp"
     "src/ClangAdapter.cpp"
     "src/Codegen_expr.cpp"
-	"src/Codegen_impl.cpp"
-	"src/Codegen_util.cpp"
+    "src/Codegen_impl.cpp"
+    "src/Codegen_util.cpp"
     "src/CompileMessages.cpp"
     "src/Compiler.cpp"
     "src/Evaluator_expr.cpp"
-	"src/Evaluator_impl.cpp"
-	"src/Evaluator_util.cpp"
+    "src/Evaluator_impl.cpp"
+    "src/Evaluator_util.cpp"
     "src/Lexer.cpp"
-	"src/main.cpp"
+    "src/main.cpp"
     "src/NamePool.cpp"
     "src/Parser.cpp"
     "src/StringPool.cpp"
@@ -61,42 +61,42 @@ add_executable(orbc "${HEADER_FILES}" "${SOURCE_FILES}")
 target_include_directories(orbc PRIVATE "include")
 
 llvm_map_components_to_libnames(LLVM_LIBS
-	support
-	core
-	irreader
-	aarch64asmparser
-	aarch64codegen
-	amdgpuasmparser
-	amdgpucodegen
-	armasmparser
-	armcodegen
-	avrasmparser
-	avrcodegen
-	bpfasmparser
-	bpfcodegen
-	hexagonasmparser
-	hexagoncodegen
-	lanaiasmparser
-	lanaicodegen
-	mipsasmparser
-	mipscodegen
-	msp430asmparser
-	msp430codegen
-	nvptxcodegen
-	powerpcasmparser
-	powerpccodegen
-	riscvasmparser
-	riscvcodegen
-	sparcasmparser
-	sparccodegen
-	systemzasmparser
-	systemzcodegen
-	webassemblyasmparser
-	webassemblycodegen
-	x86asmparser
-	x86codegen
-	xcorecodegen
-	)
+    support
+    core
+    irreader
+    aarch64asmparser
+    aarch64codegen
+    amdgpuasmparser
+    amdgpucodegen
+    armasmparser
+    armcodegen
+    avrasmparser
+    avrcodegen
+    bpfasmparser
+    bpfcodegen
+    hexagonasmparser
+    hexagoncodegen
+    lanaiasmparser
+    lanaicodegen
+    mipsasmparser
+    mipscodegen
+    msp430asmparser
+    msp430codegen
+    nvptxcodegen
+    powerpcasmparser
+    powerpccodegen
+    riscvasmparser
+    riscvcodegen
+    sparcasmparser
+    sparccodegen
+    systemzasmparser
+    systemzcodegen
+    webassemblyasmparser
+    webassemblycodegen
+    x86asmparser
+    x86codegen
+    xcorecodegen
+    )
 
 # Link against LLVM libraries
 target_link_libraries(orbc ${LLVM_LIBS})

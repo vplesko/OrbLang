@@ -15,6 +15,34 @@ NodeVal::NodeVal(Kind k) : kind(k) {
     };
 }
 
+bool KnownVal::isI(const KnownVal &val, const TypeTable *typeTable) {
+    return typeTable->worksAsTypeI(val.type);
+}
+
+bool KnownVal::isU(const KnownVal &val, const TypeTable *typeTable) {
+    return typeTable->worksAsTypeU(val.type);
+}
+
+bool KnownVal::isF(const KnownVal &val, const TypeTable *typeTable) {
+    return typeTable->worksAsTypeF(val.type);
+}
+
+bool KnownVal::isB(const KnownVal &val, const TypeTable *typeTable) {
+    return typeTable->worksAsTypeB(val.type);
+}
+
+bool KnownVal::isC(const KnownVal &val, const TypeTable *typeTable) {
+    return typeTable->worksAsTypeC(val.type);
+}
+
+bool KnownVal::isStr(const KnownVal &val, const TypeTable *typeTable) {
+    return typeTable->worksAsTypeStr(val.type);
+}
+
+bool KnownVal::isNull(const KnownVal &val, const TypeTable *typeTable) {
+    return typeTable->worksAsTypeAnyP(val.type);
+}
+
 optional<int64_t> KnownVal::getValueI(const KnownVal &val, const TypeTable *typeTable) {
     if (typeTable->worksAsPrimitive(val.type, TypeTable::P_I8)) return val.i8;
     if (typeTable->worksAsPrimitive(val.type, TypeTable::P_I16)) return val.i16;
@@ -52,7 +80,6 @@ optional<uint64_t> KnownVal::getValueNonNeg(const KnownVal &val, const TypeTable
     return nullopt;
 }
 
-// TODO maybe make this same as regular isImplicitCastable? what about string to char arr? take care of lit:type
 bool KnownVal::isImplicitCastable(const KnownVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable) {
     if (typeTable->isImplicitCastable(val.type, t))
         return true;

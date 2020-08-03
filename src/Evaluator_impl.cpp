@@ -304,7 +304,7 @@ NodeVal Evaluator::evaluateImport(const AstNode *ast) {
     const AstNode *nodeFile = ast->children[1].get();
 
     NodeVal valFile = evaluateNode(nodeFile);
-    if (!valFile.isKnownVal() || !isStr(valFile.knownVal)) {
+    if (!valFile.isKnownVal() || !KnownVal::isStr(valFile.knownVal, getTypeTable())) {
         msgs->errorImportNotString(nodeFile->codeLoc);
         return NodeVal();
     }

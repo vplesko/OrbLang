@@ -215,6 +215,7 @@ llvm::Type* TypeTable::getType(Id id) {
     case Id::kPrim: return primTypes[id.index];
     case Id::kTuple: return tuples[id.index].second;
     case Id::kDescr: return typeDescrs[id.index].second;
+    default: return nullptr;
     }
 }
 
@@ -257,6 +258,7 @@ bool TypeTable::isValidType(Id t) const {
     case Id::kPrim: return t.index < primTypes.size();
     case Id::kTuple: return t.index < tuples.size();
     case Id::kDescr: return t.index < typeDescrs.size();
+    default: return false;
     }
 }
 

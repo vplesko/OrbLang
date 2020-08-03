@@ -150,34 +150,6 @@ NodeVal Evaluator::evaluateOper(const AstNode *ast, const NodeVal &first) {
     }
 }
 
-bool Evaluator::isI(const KnownVal &val) const {
-    return getTypeTable()->worksAsTypeI(val.type);
-}
-
-bool Evaluator::isU(const KnownVal &val) const {
-    return getTypeTable()->worksAsTypeU(val.type);
-}
-
-bool Evaluator::isF(const KnownVal &val) const {
-    return getTypeTable()->worksAsTypeF(val.type);
-}
-
-bool Evaluator::isB(const KnownVal &val) const {
-    return getTypeTable()->worksAsTypeB(val.type);
-}
-
-bool Evaluator::isC(const KnownVal &val) const {
-    return getTypeTable()->worksAsTypeC(val.type);
-}
-
-bool Evaluator::isStr(const KnownVal &val) const {
-    return getTypeTable()->worksAsTypeStr(val.type);
-}
-
-bool Evaluator::isNull(const KnownVal &val) const {
-    return getTypeTable()->worksAsTypeAnyP(val.type);
-}
-
 // using macros makes me feel naughty
 #define ASSIGN_BASED_ON_TYPE_IU(val, x, t) \
     if (getTypeTable()->worksAsPrimitive(t, TypeTable::P_I8)) { \
@@ -215,33 +187,33 @@ bool Evaluator::isNull(const KnownVal &val) const {
 bool Evaluator::cast(KnownVal &val, TypeTable::Id t) const {
     if (val.type == t) return true;
 
-    if (isI(val)) {
+    if (KnownVal::isI(val, getTypeTable())) {
         int64_t x = KnownVal::getValueI(val, getTypeTable()).value();
         ASSIGN_BASED_ON_TYPE_IU(val, x, t)
         else ASSIGN_BASED_ON_TYPE_F(val, x, t)
         else ASSIGN_BASED_ON_TYPE_CB(val, x, t)
         else return false;
-    } else if (isU(val)) {
+    } else if (KnownVal::isU(val, getTypeTable())) {
         uint64_t x = KnownVal::getValueU(val, getTypeTable()).value();
         ASSIGN_BASED_ON_TYPE_IU(val, x, t)
         else ASSIGN_BASED_ON_TYPE_F(val, x, t)
         else ASSIGN_BASED_ON_TYPE_CB(val, x, t)
         else return false;
-    } else if (isF(val)) {
+    } else if (KnownVal::isF(val, getTypeTable())) {
         double x = KnownVal::getValueF(val, getTypeTable()).value();
         ASSIGN_BASED_ON_TYPE_IU(val, x, t)
         else ASSIGN_BASED_ON_TYPE_F(val, x, t)
         else return false;
-    } else if (isC(val)) {
+    } else if (KnownVal::isC(val, getTypeTable())) {
         char x = val.c8;
         ASSIGN_BASED_ON_TYPE_IU(val, x, t)
         else ASSIGN_BASED_ON_TYPE_CB(val, x, t)
         else return false;
-    } else if (isB(val)) {
+    } else if (KnownVal::isB(val, getTypeTable())) {
         int8_t b = val.b ? 1 : 0;
         ASSIGN_BASED_ON_TYPE_IU(val, b, t)
         else return false;
-    } else if (isNull(val)) {
+    } else if (KnownVal::isNull(val, getTypeTable())) {
         if (getTypeTable()->worksAsPrimitive(t, TypeTable::P_BOOL)) {
             val.b = false; // only null is possible
         } else {
@@ -260,17 +232,19 @@ NodeVal Evaluator::calculateOperUnary(CodeLoc codeLoc, Token::Oper op, KnownVal 
     exprRet.knownVal.type = known.type;
 
     if (op == Token::O_ADD) {
-        if (!isI(known) && !isU(known) && !isF(known)) {
+        if (!KnownVal::isI(known, getTypeTable()) &&
+            !KnownVal::isU(known, getTypeTable()) &&
+            !KnownVal::isF(known, getTypeTable())) {
             msgs->errorExprUnBadType(codeLoc, op);
             return NodeVal();
         }
         exprRet.knownVal = known;
     } else if (op == Token::O_SUB) {
-        if (isI(known)) {
+        if (KnownVal::isI(known, getTypeTable())) {
             int64_t x = KnownVal::getValueI(known, getTypeTable()).value();
             x = -x;
             ASSIGN_BASED_ON_TYPE_IU(exprRet.knownVal, x, known.type);
-        } else if (isF(known)) {
+        } else if (KnownVal::isF(known, getTypeTable())) {
             double x = KnownVal::getValueF(known, getTypeTable()).value();
             x = -x;
             ASSIGN_BASED_ON_TYPE_F(exprRet.knownVal, x, known.type);
@@ -279,11 +253,11 @@ NodeVal Evaluator::calculateOperUnary(CodeLoc codeLoc, Token::Oper op, KnownVal 
             return NodeVal();
         }
     } else if (op == Token::O_BIT_NOT) {
-        if (isI(known)) {
+        if (KnownVal::isI(known, getTypeTable())) {
             int64_t x = KnownVal::getValueI(known, getTypeTable()).value();
             x = ~x;
             ASSIGN_BASED_ON_TYPE_IU(exprRet.knownVal, x, known.type);
-        } else if (isU(known)) {
+        } else if (KnownVal::isU(known, getTypeTable())) {
             uint64_t x = KnownVal::getValueU(known, getTypeTable()).value();
             x = ~x;
             ASSIGN_BASED_ON_TYPE_IU(exprRet.knownVal, x, known.type);
@@ -292,14 +266,14 @@ NodeVal Evaluator::calculateOperUnary(CodeLoc codeLoc, Token::Oper op, KnownVal 
             return NodeVal();
         }
     } else if (op == Token::O_NOT) {
-        if (isB(known)) {
+        if (KnownVal::isB(known, getTypeTable())) {
             exprRet.knownVal.b = !known.b;
         } else {
             msgs->errorExprUnBadType(codeLoc, op);
             return NodeVal();
         }
     } else {
-        if (op == Token::O_MUL && isNull(known)) {
+        if (op == Token::O_MUL && KnownVal::isNull(known, getTypeTable())) {
             msgs->errorExprUnOnNull(codeLoc, op);
         } else if (op == Token::O_BIT_AND) {
             msgs->errorExprAddressOfNoRef(codeLoc);
@@ -388,7 +362,7 @@ NodeVal Evaluator::calculateOper(CodeLoc codeLoc, Token::Oper op, KnownVal known
 
     KnownVal knownRet(knownL.type);
 
-    if (isB(knownRet)) {
+    if (KnownVal::isB(knownRet, getTypeTable())) {
         switch (op) {
         case Token::O_EQ:
             knownRet.b = knownL.b == knownR.b;
@@ -400,7 +374,7 @@ NodeVal Evaluator::calculateOper(CodeLoc codeLoc, Token::Oper op, KnownVal known
             msgs->errorExprKnownBinBadOp(codeLoc, op);
             return NodeVal();
         }
-    } else if (isNull(knownRet)) {
+    } else if (KnownVal::isNull(knownRet, getTypeTable())) {
         // both are null
         switch (op) {
         case Token::O_EQ:
@@ -416,14 +390,14 @@ NodeVal Evaluator::calculateOper(CodeLoc codeLoc, Token::Oper op, KnownVal known
             return NodeVal();
         }
     } else {
-        bool isTypeI = isI(knownRet);
-        bool isTypeU = isU(knownRet);
-        bool isTypeF = isF(knownRet);
-        bool isTypeC = isC(knownRet);
+        bool isTypeI = KnownVal::isI(knownRet, getTypeTable());
+        bool isTypeU = KnownVal::isU(knownRet, getTypeTable());
+        bool isTypeF = KnownVal::isF(knownRet, getTypeTable());
+        bool isTypeC = KnownVal::isC(knownRet, getTypeTable());
 
         if (!isTypeI && !isTypeU && !isTypeC && !isTypeF) {
             // NOTE cannot == nor != on two string literals
-            if (isStr(knownRet)) {
+            if (KnownVal::isStr(knownRet, getTypeTable())) {
                 msgs->errorExprCompareStringLits(codeLoc);
             } else {
                 msgs->errorExprKnownBinBadOp(codeLoc, op);

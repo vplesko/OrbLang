@@ -28,13 +28,6 @@ public:
     std::optional<KnownVal> getKnownVal(const AstNode *ast, bool orError);
     std::optional<TypeTable::Id> getType(const AstNode *ast, bool orError);
 
-    bool isI(const KnownVal &val) const;
-    bool isU(const KnownVal &val) const;
-    bool isF(const KnownVal &val) const;
-    bool isB(const KnownVal &val) const;
-    bool isC(const KnownVal &val) const;
-    bool isStr(const KnownVal &val) const;
-    bool isNull(const KnownVal &val) const;
     bool cast(KnownVal &val, TypeTable::Id t) const;
 
     NodeVal calculateOperUnary(CodeLoc codeLoc, Token::Oper op, KnownVal known);
