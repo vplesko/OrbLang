@@ -150,6 +150,23 @@ NodeVal Evaluator::evaluateOper(const AstNode *ast, const NodeVal &first) {
     }
 }
 
+NodeVal Evaluator::evaluateCast(const AstNode *ast) {
+    if (!codegen->checkExactlyChildren(ast, 3, true)) {
+        return NodeVal();
+    }
+
+    const AstNode *nodeType = ast->children[1].get();
+    const AstNode *nodeVal = ast->children[2].get();
+
+    optional<TypeTable::Id> valTypeId = getType(nodeType, true);
+    if (!valTypeId.has_value()) return NodeVal();
+
+    NodeVal exprVal = evaluateNode(nodeVal);
+    if (exprVal.isInvalid()) return NodeVal();
+
+    return calculateCast(ast->codeLoc, exprVal.knownVal, valTypeId.value());
+}
+
 // using macros makes me feel naughty
 #define ASSIGN_BASED_ON_TYPE_IU(val, x, t) \
     if (getTypeTable()->worksAsPrimitive(t, TypeTable::P_I8)) { \
@@ -214,7 +231,8 @@ bool Evaluator::cast(KnownVal &val, TypeTable::Id t) const {
         ASSIGN_BASED_ON_TYPE_IU(val, b, t)
         else return false;
     } else if (KnownVal::isNull(val, getTypeTable())) {
-        if (getTypeTable()->worksAsPrimitive(t, TypeTable::P_BOOL)) {
+        ASSIGN_BASED_ON_TYPE_IU(val, 0, t)
+        else if (getTypeTable()->worksAsPrimitive(t, TypeTable::P_BOOL)) {
             val.b = false; // only null is possible
         } else {
             return false;
@@ -536,5 +554,16 @@ NodeVal Evaluator::calculateOper(CodeLoc codeLoc, Token::Oper op, KnownVal known
 
     NodeVal ret(NodeVal::Kind::kKnownVal);
     ret.knownVal = knownRet;
+    return ret;
+}
+
+NodeVal Evaluator::calculateCast(CodeLoc codeLoc, KnownVal known, TypeTable::Id type) {
+    if (!cast(known, type)) {
+        msgs->errorExprCannotCast(codeLoc, known.type, type);
+        return NodeVal();
+    }
+
+    NodeVal ret(NodeVal::Kind::kKnownVal);
+    ret.knownVal = known;
     return ret;
 }

@@ -1,6 +1,8 @@
 import "util/base.orb";
 import "util/io.orb";
 
+sym (glob1 (cast u32 -1:i64)) (glob2 (cast i32 true)) (glob3 (+ 999 (cast i32 null)));
+
 fnc main() () {
     - 10;
     cast i64 0;
@@ -106,5 +108,11 @@ fnc main() () {
     block {
         sym (x 0x80000001);
         println_i64 x;
+    };
+
+    block {
+        println_u32 glob1;
+        println_i32 glob2;
+        println_i32 glob3;
     };
 };

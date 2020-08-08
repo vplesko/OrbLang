@@ -85,7 +85,7 @@ NodeVal Evaluator::evaluateNode(const AstNode *ast) {
         }
     } else {
         NodeVal starting = evaluateNode(ast->children[0].get());
-        if (starting.kind == NodeVal::Kind::kInvalid) return NodeVal();
+        if (starting.isInvalid()) return NodeVal();
 
         if (starting.isMacroId()) {
             unique_ptr<AstNode> expanded = evaluateInvoke(starting.id, ast);
@@ -95,6 +95,13 @@ NodeVal Evaluator::evaluateNode(const AstNode *ast) {
 
         if (starting.isType()) {
             ret = evaluateType(ast, starting);
+        } else if (starting.isKeyword()) {
+            if (starting.keyword == Token::T_CAST) {
+                ret = evaluateCast(ast);
+            } else {
+                msgs->errorUnexpectedKeyword(ast->children[0].get()->codeLoc, starting.keyword);
+                return NodeVal();
+            }
         } else {
             ret = evaluateExpr(ast, starting);
         }

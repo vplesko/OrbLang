@@ -720,9 +720,13 @@ NodeVal Codegen::codegenCast(const AstNode *ast) {
     if (!checkValueUnbroken(nodeVal->codeLoc, exprVal, true)) return NodeVal();
 
     if (exprVal.isKnownVal()) {
-        if (!promoteKnownVal(exprVal)) {
-            msgs->errorInternal(ast->codeLoc);
-            return NodeVal();
+        if (KnownVal::isStr(exprVal.knownVal, getTypeTable()) || getTypeTable()->worksAsTypeAnyP(valTypeId.value())) {
+            if (!promoteKnownVal(exprVal)) {
+                msgs->errorInternal(ast->codeLoc);
+                return NodeVal();
+            }
+        } else {
+            return evaluator->calculateCast(ast->codeLoc, exprVal.knownVal, valTypeId.value());
         }
     }
     

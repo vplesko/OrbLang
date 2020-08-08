@@ -32,6 +32,7 @@ public:
 
     NodeVal calculateOperUnary(CodeLoc codeLoc, Token::Oper op, KnownVal known);
     NodeVal calculateOper(CodeLoc codeLoc, Token::Oper op, KnownVal knownL, KnownVal knownR);
+    NodeVal calculateCast(CodeLoc codeLoc, KnownVal known, TypeTable::Id type);
 
 private:
     NodeVal evaluateMac(AstNode *ast);
@@ -40,6 +41,7 @@ private:
     NodeVal evaluateOperUnary(const AstNode *ast, const NodeVal &first);
     NodeVal evaluateOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs, const NodeVal &rhs);
     NodeVal evaluateOper(const AstNode *ast, const NodeVal &first);
+    NodeVal evaluateCast(const AstNode *ast);
 
     std::optional<NodeVal> evaluateTypeDescr(const AstNode *ast, const NodeVal &first);
 
