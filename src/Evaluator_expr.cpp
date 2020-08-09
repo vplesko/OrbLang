@@ -95,7 +95,7 @@ NodeVal Evaluator::evaluateOperUnary(const AstNode *ast, const NodeVal &first) {
     Token::Oper op = first.oper;
 
     NodeVal exprPay = evaluateNode(nodeVal);
-    if (!codegen->checkIsKnown(nodeVal->codeLoc, exprPay, true)) return NodeVal();
+    if (isGotoIssued() || !codegen->checkIsKnown(nodeVal->codeLoc, exprPay, true)) return NodeVal();
 
     return calculateOperUnary(ast->codeLoc, op, exprPay.knownVal);
 }
@@ -124,11 +124,14 @@ NodeVal Evaluator::evaluateOper(const AstNode *ast, const NodeVal &first) {
     if (opInfo.l_assoc) {
         const AstNode *nodeLhs = ast->children[1].get();
         NodeVal lhsVal = evaluateNode(nodeLhs);
+        if (isGotoIssued()) return NodeVal();
 
         for (size_t i = 2; i < ast->children.size(); ++i) {
             const AstNode *nodeRhs = ast->children[i].get();
+            NodeVal rhsVal = evaluateNode(nodeRhs);
+            if (isGotoIssued()) return NodeVal();
 
-            lhsVal = evaluateOper(nodeRhs->codeLoc, first.oper, lhsVal, evaluateNode(nodeRhs));
+            lhsVal = evaluateOper(nodeRhs->codeLoc, first.oper, lhsVal, rhsVal);
             if (lhsVal.isInvalid()) return NodeVal();
         }
 
@@ -136,11 +139,14 @@ NodeVal Evaluator::evaluateOper(const AstNode *ast, const NodeVal &first) {
     } else {
         const AstNode *nodeRhs = ast->children.back().get();
         NodeVal rhsVal = evaluateNode(nodeRhs);
+        if (isGotoIssued()) return NodeVal();
 
         for (size_t i = ast->children.size()-2;; --i) {
             const AstNode *nodeLhs = ast->children[i].get();
+            NodeVal lhsVal = evaluateNode(nodeLhs);
+            if (isGotoIssued()) return NodeVal();
 
-            rhsVal = evaluateOper(nodeLhs->codeLoc, first.oper, evaluateNode(nodeLhs), rhsVal);
+            rhsVal = evaluateOper(nodeLhs->codeLoc, first.oper, lhsVal, rhsVal);
             if (rhsVal.isInvalid()) return NodeVal();
 
             if (i == 1) break;
@@ -162,7 +168,7 @@ NodeVal Evaluator::evaluateCast(const AstNode *ast) {
     if (!valTypeId.has_value()) return NodeVal();
 
     NodeVal exprVal = evaluateNode(nodeVal);
-    if (exprVal.isInvalid()) return NodeVal();
+    if (isGotoIssued() || exprVal.isInvalid()) return NodeVal();
 
     return calculateCast(ast->codeLoc, exprVal.knownVal, valTypeId.value());
 }

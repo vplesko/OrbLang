@@ -16,10 +16,25 @@ class Evaluator {
     // TODO refactor out
     Codegen *codegen;
 
+    bool loopIssued, exitIssued;
+    std::optional<NamePool::Id> blockGoto;
+    std::optional<NodeVal> blockPassVal;
+
     TypeTable* getTypeTable() { return symbolTable->getTypeTable(); }
     const TypeTable* getTypeTable() const { return symbolTable->getTypeTable(); }
 
     TypeTable::Id getPrimTypeId(TypeTable::PrimIds primId) const { return getTypeTable()->getPrimTypeId(primId); }
+
+    bool isGotoIssued() const {
+        return loopIssued || exitIssued || blockPassVal.has_value();
+    }
+
+    void resetGotoIssuing() {
+        loopIssued = false;
+        exitIssued = false;
+        blockGoto.reset();
+        blockPassVal.reset();
+    }
 
 public:
     std::optional<NamePool::Id> getId(const AstNode *ast, bool orError);
@@ -42,10 +57,16 @@ private:
     NodeVal evaluateOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs, const NodeVal &rhs);
     NodeVal evaluateOper(const AstNode *ast, const NodeVal &first);
     NodeVal evaluateCast(const AstNode *ast);
+    NodeVal evaluateExit(const AstNode *ast);
+    NodeVal evaluatePass(const AstNode *ast);
+    NodeVal evaluateLoop(const AstNode *ast);
+    NodeVal evaluateBlock(const AstNode *ast);
 
     std::optional<NodeVal> evaluateTypeDescr(const AstNode *ast, const NodeVal &first);
 
     NodeVal evaluateExpr(const AstNode *ast, const NodeVal &first);
+
+    NodeVal evaluateAll(const AstNode *ast);
 
     void substitute(std::unique_ptr<AstNode> &body, const std::vector<NamePool::Id> &names, const std::vector<const AstNode*> &values);
 

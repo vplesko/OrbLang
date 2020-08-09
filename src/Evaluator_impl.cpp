@@ -5,6 +5,7 @@ using namespace std;
 
 Evaluator::Evaluator(StringPool *stringPool, SymbolTable *symbolTable, AstStorage *astStorage, CompileMessages *msgs)
     : stringPool(stringPool), symbolTable(symbolTable), astStorage(astStorage), msgs(msgs), codegen(nullptr) {
+    resetGotoIssuing();
 }
 
 CompilerAction Evaluator::evaluateGlobalNode(AstNode *ast) {
@@ -96,9 +97,23 @@ NodeVal Evaluator::evaluateNode(const AstNode *ast) {
         if (starting.isType()) {
             ret = evaluateType(ast, starting);
         } else if (starting.isKeyword()) {
-            if (starting.keyword == Token::T_CAST) {
+            switch (starting.keyword) {
+            case Token::T_BLOCK:
+                ret = evaluateBlock(ast);
+                break;
+            case Token::T_EXIT:
+                ret = evaluateExit(ast);
+                break;
+            case Token::T_PASS:
+                ret = evaluatePass(ast);
+                break;
+            case Token::T_LOOP:
+                ret = evaluateLoop(ast);
+                break;
+            case Token::T_CAST:
                 ret = evaluateCast(ast);
-            } else {
+                break;
+            default:
                 msgs->errorUnexpectedKeyword(ast->children[0].get()->codeLoc, starting.keyword);
                 return NodeVal();
             }
@@ -131,6 +146,23 @@ NodeVal Evaluator::evaluateNode(const AstNode *ast) {
     }
 
     return ret;
+}
+
+NodeVal Evaluator::evaluateAll(const AstNode *ast) {
+    if (!codegen->checkBlock(ast, true)) return NodeVal();
+    if (ast->type.has_value()) {
+        msgs->errorMismatchTypeAnnotation(ast->type.value()->codeLoc);
+        return NodeVal();
+    }
+
+    for (const std::unique_ptr<AstNode> &child : ast->children) {
+        if (!codegen->checkEmptyTerminal(child.get(), false) && !codegen->checkNotTerminal(child.get(), true)) return NodeVal();
+        
+        evaluateNode(child.get());
+        if (isGotoIssued()) return NodeVal();
+    }
+
+    return NodeVal();
 }
 
 optional<NodeVal> Evaluator::evaluateTypeDescr(const AstNode *ast, const NodeVal &first) {
@@ -342,4 +374,211 @@ unique_ptr<AstNode> Evaluator::evaluateInvoke(NamePool::Id macroName, const AstN
     substitute(expanded, macro.value().argNames, values);
     if (ast->escaped) expanded->escaped = true;
     return expanded;
+}
+
+NodeVal Evaluator::evaluateExit(const AstNode *ast) {
+    if (!codegen->checkBetweenChildren(ast, 2, 3, true)) {
+        return NodeVal();
+    }
+
+    bool hasName = ast->children.size() == 3;
+
+    const AstNode *nodeName = hasName ? ast->children[1].get() : nullptr;
+    const AstNode *nodeCond = ast->children[hasName ? 2 : 1].get();
+
+    optional<NamePool::Id> name;
+    if (hasName) {
+        name = getId(nodeName, true);
+        if (!name.has_value()) return NodeVal();
+    }
+
+    SymbolTable::Block *targetBlock;
+    if (hasName) targetBlock = codegen->getBlock(nodeName->codeLoc, name.value(), true);
+    else targetBlock = symbolTable->getLastBlock();
+    if (symbolTable->inGlobalScope() || targetBlock == nullptr) {
+        msgs->errorExitNowhere(ast->codeLoc);
+        return NodeVal();
+    }
+
+    NodeVal valCond = evaluateNode(nodeCond);
+    if (isGotoIssued() || !codegen->checkIsKnown(nodeCond->codeLoc, valCond, true)) return NodeVal();
+
+    if (targetBlock->type.has_value()) {
+        msgs->errorExitPassingBlock(ast->codeLoc);
+        return NodeVal();
+    }
+
+    if (!KnownVal::isB(valCond.knownVal, getTypeTable())) {
+        msgs->errorExprCannotImplicitCast(nodeCond->codeLoc, valCond.knownVal.type, getPrimTypeId(TypeTable::P_BOOL));
+        return NodeVal();
+    }
+
+    if (valCond.knownVal.b) {
+        exitIssued = true;
+        if (hasName) blockGoto = name;
+    }
+
+    return NodeVal();
+}
+
+NodeVal Evaluator::evaluatePass(const AstNode *ast) {
+    if (!codegen->checkBetweenChildren(ast, 2, 3, true)) {
+        return NodeVal();
+    }
+
+    bool hasName = ast->children.size() == 3;
+
+    const AstNode *nodeName = hasName ? ast->children[1].get() : nullptr;
+    const AstNode *nodeValue = ast->children[hasName ? 2 : 1].get();
+
+    optional<NamePool::Id> name;
+    if (hasName) {
+        name = getId(nodeName, true);
+        if (!name.has_value()) return NodeVal();
+    }
+
+    SymbolTable::Block *targetBlock;
+    if (hasName) targetBlock = codegen->getBlock(nodeName->codeLoc, name.value(), true);
+    else targetBlock = symbolTable->getLastBlock();
+    if (symbolTable->inGlobalScope() || targetBlock == nullptr) {
+        msgs->errorExitNowhere(ast->codeLoc);
+        return NodeVal();
+    }
+
+    if (!targetBlock->type.has_value()) {
+        msgs->errorPassNonPassingBlock(nodeValue->codeLoc);
+        return NodeVal();
+    }
+
+    TypeTable::Id expectedType = targetBlock->type.value();
+
+    NodeVal value = evaluateNode(nodeValue);
+    if (isGotoIssued() || !codegen->checkIsKnown(nodeValue->codeLoc, value, true)) return NodeVal();
+    if (!getTypeTable()->isImplicitCastable(value.knownVal.type, expectedType)) {
+        msgs->errorExprCannotImplicitCast(ast->codeLoc, value.knownVal.type, expectedType);
+        return NodeVal();
+    }
+    if (!cast(value.knownVal, expectedType)) {
+        msgs->errorInternal(ast->codeLoc);
+        return NodeVal();
+    }
+
+    blockPassVal = value;
+    if (hasName) blockGoto = name;
+
+    return NodeVal();
+}
+
+NodeVal Evaluator::evaluateLoop(const AstNode *ast) {
+    if (!codegen->checkBetweenChildren(ast, 2, 3, true)) {
+        return NodeVal();
+    }
+
+    bool hasName = ast->children.size() == 3;
+
+    const AstNode *nodeName = hasName ? ast->children[1].get() : nullptr;
+    const AstNode *nodeCond = ast->children[hasName ? 2 : 1].get();
+
+    optional<NamePool::Id> name;
+    if (hasName) {
+        name = getId(nodeName, true);
+        if (!name.has_value()) return NodeVal();
+    }
+
+    SymbolTable::Block *targetBlock;
+    if (hasName) targetBlock = codegen->getBlock(nodeName->codeLoc, name.value(), true);
+    else targetBlock = symbolTable->getLastBlock();
+    if (symbolTable->inGlobalScope() || targetBlock == nullptr) {
+        msgs->errorLoopNowhere(ast->codeLoc);
+        return NodeVal();
+    }
+
+    NodeVal valCond = evaluateNode(nodeCond);
+    if (isGotoIssued() || !codegen->checkIsKnown(nodeCond->codeLoc, valCond, true)) return NodeVal();
+
+    if (!KnownVal::isB(valCond.knownVal, getTypeTable())) {
+        msgs->errorExprCannotImplicitCast(nodeCond->codeLoc, valCond.knownVal.type, getPrimTypeId(TypeTable::P_BOOL));
+        return NodeVal();
+    }
+
+    if (valCond.knownVal.b) {
+        loopIssued = true;
+        if (hasName) blockGoto = name;
+    }
+
+    return NodeVal();
+}
+
+NodeVal Evaluator::evaluateBlock(const AstNode *ast) {
+    if (!codegen->checkBetweenChildren(ast, 2, 4, true)) {
+        return NodeVal();
+    }
+
+    bool hasName = false, hasType = false;
+    size_t indName, indType, indBody;
+    if (ast->children.size() == 2) {
+        indBody = 1;
+    } else if (ast->children.size() == 3) {
+        hasType = true;
+        indType = 1;
+        indBody = 2;
+    } else {
+        hasName = true;
+        hasType = true;
+        indName = 1;
+        indType = 2;
+        indBody = 3;
+    }
+
+    const AstNode *nodeName = hasName ? ast->children[indName].get() : nullptr;
+    const AstNode *nodeType = hasType ? ast->children[indType].get() : nullptr;
+    const AstNode *nodeBody = ast->children[indBody].get();
+
+    optional<NamePool::Id> name;
+    if (hasName) {
+        name = getId(nodeName, true);
+        if (!name.has_value()) return NodeVal();
+    }
+
+    optional<TypeTable::Id> type;
+    if (hasType) {
+        if (!codegen->checkEmptyTerminal(nodeType, false)) {
+            type = getType(nodeType, true);
+            if (!type.has_value()) return NodeVal();
+        } else {
+            hasType = false;
+        }
+    }
+
+    {
+        SymbolTable::Block blockOpen;
+        if (hasName) blockOpen.name = name;
+        if (hasType) {
+            blockOpen.type = type.value();
+        }
+
+        do {
+            resetGotoIssuing();
+
+            BlockControl blockCtrl(symbolTable, blockOpen);
+            evaluateAll(nodeBody);
+        } while (loopIssued && (!blockGoto.has_value() || blockGoto == name));
+
+        if (isGotoIssued() && (!blockGoto.has_value() || blockGoto == name)) {
+            if (blockPassVal.has_value()) {
+                NodeVal ret = blockPassVal.value();
+                resetGotoIssuing();
+                return ret;
+            } else {
+                resetGotoIssuing();
+            }
+        }
+
+        if (!isGotoIssued() && type.has_value()) {
+            msgs->errorBlockNoPass(nodeBody->codeLoc);
+            return NodeVal();
+        }
+    }
+
+    return NodeVal();
 }

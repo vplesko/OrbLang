@@ -27,6 +27,30 @@ fnc sameNamed(sameNamed:i32) () {
     println_i32 sameNamed;
 };
 
+// TODO test of loop evaluation after implementing evaluation of sym (+ maybe more exit tests)
+sym (glob1
+        (block i32 { pass 500; }))
+    (glob2
+        (block block1 i32 {
+            if (> 1 2)
+                { pass block1 -1; }
+                { pass block1 501; };
+            pass block1 -1;
+        }))
+    (glob3
+        (block block1 i32 {
+            loop (block bool { pass block1 502; pass true; });
+            pass -1;
+        }))
+    (glob4
+        (block block1 i32 {
+            block {
+                exit true;
+                pass block1 -1;
+            };
+            pass 503;
+        }));
+
 fnc main() () {
     sym (a:i64 1) (b 2:i64);
     if (== a b) {(println_i64 101)};
@@ -222,4 +246,23 @@ fnc main() () {
     });
 
     loneRet;
+
+    block block1 () {
+        sym x:i32;
+        block block2 () {
+            // TODO make the same test for evaluation of block
+            + (= x 400) (block i32 { exit block2 true; = x -1; pass 0; }) (= x -1);
+        };
+        println_i32 x;
+    };
+
+    block block1 () {
+        println_i32 401;
+        loop (block bool { exit block1 true; pass true; });
+    };
+
+    println_i32 glob1;
+    println_i32 glob2;
+    println_i32 glob3;
+    println_i32 glob4;
 };
