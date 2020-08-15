@@ -1,7 +1,7 @@
 import "util/base.orb";
 import "util/io.orb";
 
-// func decls test
+# func decls test
 fnc free(addr:ptr) () __no_name_mangle;
 fnc free() ();
 fnc foo_var(...) ();
@@ -146,7 +146,7 @@ fnc main() () {
     println_i32 ([] h (- j 1));
     free g;
 
-    = i (cast (i32 [] []) (malloc 32)); // some number larger than size of pointer
+    = i (cast (i32 [] []) (malloc 32)); # some number larger than size of pointer
     = ([] i 0) (cast (i32 []) (malloc 4));
     = ([] i 0 0) 400;
     println_i32 ([] i 0 0);
@@ -250,5 +250,5 @@ fnc main() () {
     };
 };
 
-// import test
+# import test
 import "util/clib.orb";

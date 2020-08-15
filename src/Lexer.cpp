@@ -124,26 +124,27 @@ Token Lexer::next() {
             return old;
         }
 
-        if (ch == '/' && peekCh() == '/') {
-            skipLine();
-            continue;
-        }
-        if (ch == '/' && peekCh() == '*') {
-            nextCh();
-            do {
+        if (ch == '#') {
+            if (peekCh() == '*') {
+                nextCh();
                 do {
-                    ch = nextCh();
-                } while (ch != '*' && !over());
-            } while (peekCh() != '/' && !over());
+                    do {
+                        ch = nextCh();
+                    } while (ch != '*' && !over());
+                } while (peekCh() != '#' && !over());
 
-            if (over()) {
-                tok.type = Token::T_UNKNOWN;
-                msgs->errorUnclosedMultilineComment(codeLoc);
-                return tok; // unclosed comment error, so skip old token
+                if (over()) {
+                    tok.type = Token::T_UNKNOWN;
+                    msgs->errorUnclosedMultilineComment(codeLoc);
+                    return tok; // unclosed comment error, so skip old token
+                }
+
+                nextCh(); // eat '#'
+                continue;
+            } else {
+                skipLine();
+                continue;
             }
-
-            nextCh(); // eat '/'
-            continue;
         }
         
         if (isdigit(ch) || ch == '.') {

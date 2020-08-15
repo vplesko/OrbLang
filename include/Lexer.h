@@ -4,7 +4,7 @@
 #include <string>
 #include <fstream>
 #include "CodeLoc.h"
-#include "SymbolTable.h"
+#include "NamePool.h"
 #include "Token.h"
 #include "CompileMessages.h"
 

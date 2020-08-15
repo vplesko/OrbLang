@@ -256,9 +256,9 @@ fnc main() () {
 
     printf "%d\n" 10000;
 
-    //println_i64 0;
-    /* println_i64 0; */
-    /*
+    #println_i64 0;
+    #* println_i64 0; *#
+    #*
     println_i64 0;
-    */
+    *#
 };
