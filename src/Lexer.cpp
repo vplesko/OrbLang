@@ -147,22 +147,20 @@ Token Lexer::next() {
             }
         }
         
-        if (isdigit(ch) || ch == '.') {
-            if (ch == '.') {
+        if (ch == '.') {
+            if (peekCh() == '.') {
+                nextCh();
                 if (peekCh() == '.') {
                     nextCh();
-                    if (peekCh() == '.') {
-                        nextCh();
-                        tok = {.type=Token::T_ELLIPSIS};
-                    } else {
-                        tok = {.type=Token::T_UNKNOWN};
-                    }
+                    tok = {.type=Token::T_ELLIPSIS};
                 } else {
-                    tok = {.type=Token::T_OPER, .op=Token::O_DOT};
+                    tok = {.type=Token::T_UNKNOWN};
                 }
             } else {
-                lexNum(col-1);
+                tok = {.type=Token::T_OPER, .op=Token::O_DOT};
             }
+        } else if (isdigit(ch)) {
+            lexNum(col-1);
         } else if (ch == '+') {
             if (peekCh() == '+') {
                 nextCh();
