@@ -16,10 +16,9 @@ Compiler::Compiler(ostream &out) {
     astStorage = make_unique<AstStorage>();
     msgs = make_unique<CompileMessages>(namePool.get(), stringPool.get(), symbolTable.get(), out);
     codegen = make_unique<Codegen>(namePool.get(), stringPool.get(), symbolTable.get(), msgs.get());
-    evaluator = make_unique<Evaluator>(stringPool.get(), symbolTable.get(), astStorage.get(), msgs.get());
+    evaluator = make_unique<Evaluator>(namePool.get(), stringPool.get(), symbolTable.get(), msgs.get(), astStorage.get());
 
     codegen->setEvaluator(evaluator.get());
-    evaluator->setCodegen(codegen.get());
 
     genPrimTypes();
 }
@@ -166,15 +165,12 @@ bool Compiler::parse(const vector<string> &inputs) {
 
                 unique_ptr<AstNode> node = par.parseNode();
                 if (msgs->isFail()) return false;
-                
-                CompilerAction action = evaluator->evaluateGlobalNode(node.get());
+
+                NodeVal val = codegen->processNode(node.get());
                 if (msgs->isFail()) return false;
 
-                if (action.kind == CompilerAction::Kind::kCodegen) {
-                    codegen->codegenNode(node.get());
-                    if (msgs->isFail()) return false;
-                } else if (action.kind == CompilerAction::Kind::kImport) {
-                    const string &file = stringPool->get(action.file);
+                if (val.isImport()) {
+                    const string &file = stringPool->get(val.file);
                     if (!exists(file)) {
                         msgs->errorImportNotFound(node->codeLoc, file);
                         return false;

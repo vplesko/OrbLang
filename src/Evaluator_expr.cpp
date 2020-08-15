@@ -1,21 +1,8 @@
 #include "Evaluator.h"
-#include "Codegen.h"
 using namespace std;
 
-NodeVal Evaluator::evaluateExpr(const AstNode *ast, const NodeVal &first) {
-    if (first.isOper()) {
-        if (ast->children.size() == 2) {
-            return evaluateOperUnary(ast, first);
-        } else {
-            return evaluateOper(ast, first);
-        }
-    } else {
-        msgs->errorEvaluationNotSupported(ast->children[0]->codeLoc);
-        return NodeVal();
-    }
-}
-
-NodeVal Evaluator::evaluateKnownVal(const AstNode *ast) {
+// TODO rethink the rules after introducing named types
+NodeVal Evaluator::processKnownVal(const AstNode *ast) {
     NodeVal ret(NodeVal::Kind::kKnownVal);
 
     const LiteralVal &lit = ast->terminal.value().val;
@@ -85,8 +72,8 @@ NodeVal Evaluator::evaluateKnownVal(const AstNode *ast) {
     return ret;
 }
 
-NodeVal Evaluator::evaluateOperUnary(const AstNode *ast, const NodeVal &first) {
-    if (!codegen->checkExactlyChildren(ast, 2, true)) {
+NodeVal Evaluator::processOperUnary(const AstNode *ast, const NodeVal &first) {
+    if (!checkExactlyChildren(ast, 2, true)) {
         return NodeVal();
     }
 
@@ -94,70 +81,26 @@ NodeVal Evaluator::evaluateOperUnary(const AstNode *ast, const NodeVal &first) {
 
     Token::Oper op = first.oper;
 
-    NodeVal exprPay = evaluateNode(nodeVal);
-    if (isGotoIssued() || !codegen->checkIsKnown(nodeVal->codeLoc, exprPay, true)) return NodeVal();
+    NodeVal exprPay = processNode(nodeVal);
+    if (isGotoIssued() || !checkIsKnown(nodeVal->codeLoc, exprPay, true)) return NodeVal();
 
     return calculateOperUnary(ast->codeLoc, op, exprPay.knownVal);
 }
 
-NodeVal Evaluator::evaluateOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs, const NodeVal &rhs) {
+NodeVal Evaluator::handleOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs, const NodeVal &rhs) {
     NodeVal exprPayL, exprPayR, exprPayRet;
 
     exprPayL = lhs;
-    if (!codegen->checkIsKnown(codeLoc, exprPayL, true)) return NodeVal();
+    if (!checkIsKnown(codeLoc, exprPayL, true)) return NodeVal();
 
     exprPayR = rhs;
-    if (!codegen->checkIsKnown(codeLoc, exprPayR, true)) return NodeVal();
+    if (!checkIsKnown(codeLoc, exprPayR, true)) return NodeVal();
 
     return calculateOper(codeLoc, op, exprPayL.knownVal, exprPayR.knownVal);
 }
 
-NodeVal Evaluator::evaluateOper(const AstNode *ast, const NodeVal &first) {
-    OperInfo opInfo = operInfos.at(first.oper);
-
-    if (opInfo.variadic ?
-        !codegen->checkAtLeastChildren(ast, 3, true) :
-        !codegen->checkExactlyChildren(ast, 3, true)) {
-        return NodeVal();
-    }
-
-    if (opInfo.l_assoc) {
-        const AstNode *nodeLhs = ast->children[1].get();
-        NodeVal lhsVal = evaluateNode(nodeLhs);
-        if (isGotoIssued()) return NodeVal();
-
-        for (size_t i = 2; i < ast->children.size(); ++i) {
-            const AstNode *nodeRhs = ast->children[i].get();
-            NodeVal rhsVal = evaluateNode(nodeRhs);
-            if (isGotoIssued()) return NodeVal();
-
-            lhsVal = evaluateOper(nodeRhs->codeLoc, first.oper, lhsVal, rhsVal);
-            if (lhsVal.isInvalid()) return NodeVal();
-        }
-
-        return lhsVal;
-    } else {
-        const AstNode *nodeRhs = ast->children.back().get();
-        NodeVal rhsVal = evaluateNode(nodeRhs);
-        if (isGotoIssued()) return NodeVal();
-
-        for (size_t i = ast->children.size()-2;; --i) {
-            const AstNode *nodeLhs = ast->children[i].get();
-            NodeVal lhsVal = evaluateNode(nodeLhs);
-            if (isGotoIssued()) return NodeVal();
-
-            rhsVal = evaluateOper(nodeLhs->codeLoc, first.oper, lhsVal, rhsVal);
-            if (rhsVal.isInvalid()) return NodeVal();
-
-            if (i == 1) break;
-        }
-
-        return rhsVal;
-    }
-}
-
-NodeVal Evaluator::evaluateCast(const AstNode *ast) {
-    if (!codegen->checkExactlyChildren(ast, 3, true)) {
+NodeVal Evaluator::processCast(const AstNode *ast) {
+    if (!checkExactlyChildren(ast, 3, true)) {
         return NodeVal();
     }
 
@@ -167,7 +110,7 @@ NodeVal Evaluator::evaluateCast(const AstNode *ast) {
     optional<TypeTable::Id> valTypeId = getType(nodeType, true);
     if (!valTypeId.has_value()) return NodeVal();
 
-    NodeVal exprVal = evaluateNode(nodeVal);
+    NodeVal exprVal = processNode(nodeVal);
     if (isGotoIssued() || exprVal.isInvalid()) return NodeVal();
 
     return calculateCast(ast->codeLoc, exprVal.knownVal, valTypeId.value());
@@ -207,6 +150,7 @@ NodeVal Evaluator::evaluateCast(const AstNode *ast) {
         val.b = x != 0; \
     }
 
+// TODO warn on lossy
 bool Evaluator::cast(KnownVal &val, TypeTable::Id t) const {
     if (val.type == t) return true;
 

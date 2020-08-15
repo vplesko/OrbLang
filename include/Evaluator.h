@@ -1,29 +1,13 @@
 #pragma once
 
-#include "SymbolTable.h"
-#include "AST.h"
-#include "Values.h"
-#include "CompileMessages.h"
+#include "CodeProcessor.h"
 
-class Codegen;
-
-class Evaluator {
-    StringPool *stringPool;
-    SymbolTable *symbolTable;
+class Evaluator : public CodeProcessor {
     AstStorage *astStorage;
-    CompileMessages *msgs;
-
-    // TODO refactor out
-    Codegen *codegen;
 
     bool loopIssued, exitIssued;
     std::optional<NamePool::Id> blockGoto;
     std::optional<NodeVal> blockPassVal;
-
-    TypeTable* getTypeTable() { return symbolTable->getTypeTable(); }
-    const TypeTable* getTypeTable() const { return symbolTable->getTypeTable(); }
-
-    TypeTable::Id getPrimTypeId(TypeTable::PrimIds primId) const { return getTypeTable()->getPrimTypeId(primId); }
 
     bool isGotoIssued() const {
         return loopIssued || exitIssued || blockPassVal.has_value();
@@ -37,50 +21,43 @@ class Evaluator {
     }
 
 public:
-    std::optional<NamePool::Id> getId(const AstNode *ast, bool orError);
-    std::optional<Token::Type> getKeyword(const AstNode *ast, bool orError);
-    std::optional<Token::Oper> getOper(const AstNode *ast, bool orError);
-    std::optional<KnownVal> getKnownVal(const AstNode *ast, bool orError);
-    std::optional<TypeTable::Id> getType(const AstNode *ast, bool orError);
-
-    bool cast(KnownVal &val, TypeTable::Id t) const;
-
     NodeVal calculateOperUnary(CodeLoc codeLoc, Token::Oper op, KnownVal known);
     NodeVal calculateOper(CodeLoc codeLoc, Token::Oper op, KnownVal knownL, KnownVal knownR);
     NodeVal calculateCast(CodeLoc codeLoc, KnownVal known, TypeTable::Id type);
 
-private:
-    NodeVal evaluateMac(AstNode *ast);
-    NodeVal evaluateImport(const AstNode *ast);
-    NodeVal evaluateKnownVal(const AstNode *ast);
-    NodeVal evaluateOperUnary(const AstNode *ast, const NodeVal &first);
-    NodeVal evaluateOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs, const NodeVal &rhs);
-    NodeVal evaluateOper(const AstNode *ast, const NodeVal &first);
-    NodeVal evaluateCast(const AstNode *ast);
-    NodeVal evaluateExit(const AstNode *ast);
-    NodeVal evaluatePass(const AstNode *ast);
-    NodeVal evaluateLoop(const AstNode *ast);
-    NodeVal evaluateBlock(const AstNode *ast);
+protected:
+    bool isSkippingProcessing() const { return isGotoIssued(); }
 
+    NodeVal processVar(const AstNode *ast) { msgs->errorEvaluationNotSupported(ast->codeLoc); return NodeVal(); }
+    NodeVal processOperUnary(const AstNode *ast, const NodeVal &first);
+    NodeVal processOperInd(const AstNode *ast) { msgs->errorEvaluationNotSupported(ast->codeLoc); return NodeVal(); }
+    NodeVal processOperDot(const AstNode *ast) { msgs->errorEvaluationNotSupported(ast->codeLoc); return NodeVal(); }
+    NodeVal handleOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs, const NodeVal &rhs);
+    NodeVal processTuple(const AstNode *ast, const NodeVal &first) { msgs->errorEvaluationNotSupported(ast->codeLoc); return NodeVal(); }
+    NodeVal processCall(const AstNode *ast, const NodeVal &first) { msgs->errorEvaluationNotSupported(ast->codeLoc); return NodeVal(); }
+    NodeVal processCast(const AstNode *ast);
+    NodeVal processArr(const AstNode *ast) { msgs->errorEvaluationNotSupported(ast->codeLoc); return NodeVal(); }
+    NodeVal processSym(const AstNode *ast) { msgs->errorEvaluationNotSupported(ast->codeLoc); return NodeVal(); }
+    void handleExit(const SymbolTable::Block *targetBlock, CodeLoc condCodeLoc, NodeVal cond);
+    void handleLoop(const SymbolTable::Block *targetBlock, CodeLoc condCodeLoc, NodeVal cond);
+    void handlePass(const SymbolTable::Block *targetBlock, CodeLoc valCodeLoc, NodeVal val, TypeTable::Id expectedType);
+    NodeVal handleBlock(std::optional<NamePool::Id> name, std::optional<TypeTable::Id> type, const AstNode *nodeBody);
+    NodeVal processRet(const AstNode *ast) { msgs->errorEvaluationNotSupported(ast->codeLoc); return NodeVal(); }
+    NodeVal processFunc(const AstNode *ast) { msgs->errorEvaluationNotSupported(ast->codeLoc); return NodeVal(); }
+    NodeVal processEvalNode(const AstNode *ast) { return processNode(ast); }
+
+public:
+    NodeVal processKnownVal(const AstNode *ast);
+    NodeVal processType(const AstNode *ast, const NodeVal &first);
+    NodeVal processMac(AstNode *ast);
+    std::unique_ptr<AstNode> processInvoke(NamePool::Id macroName, const AstNode *ast);
+
+private:
     std::optional<NodeVal> evaluateTypeDescr(const AstNode *ast, const NodeVal &first);
 
-    NodeVal evaluateExpr(const AstNode *ast, const NodeVal &first);
-
-    NodeVal evaluateAll(const AstNode *ast);
-
+    bool cast(KnownVal &val, TypeTable::Id t) const;
     void substitute(std::unique_ptr<AstNode> &body, const std::vector<NamePool::Id> &names, const std::vector<const AstNode*> &values);
 
 public:
-    Evaluator(StringPool *stringPool, SymbolTable *symbolTable, AstStorage *astStorage, CompileMessages *msgs);
-
-    void setCodegen(Codegen *c) { codegen = c; }
-
-    // TODO unify with evaluateNode
-    CompilerAction evaluateGlobalNode(AstNode *ast);
-
-    NodeVal evaluateType(const AstNode *ast, const NodeVal &first);
-    NodeVal evaluateTerminal(const AstNode *ast);
-    NodeVal evaluateNode(const AstNode *ast);
-
-    std::unique_ptr<AstNode> evaluateInvoke(NamePool::Id macroName, const AstNode *ast);
+    Evaluator(NamePool *namePool, StringPool *stringPool, SymbolTable *symbolTable, CompileMessages *msgs, AstStorage *astStorage);
 };

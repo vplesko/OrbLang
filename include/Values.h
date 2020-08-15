@@ -5,20 +5,6 @@
 #include "StringPool.h"
 #include "TypeTable.h"
 
-struct CompilerAction {
-    enum class Kind {
-        kNone,
-        kCodegen,
-        kImport
-    };
-
-    Kind kind = Kind::kNone;
-    StringPool::Id file;
-
-    CompilerAction() {}
-    CompilerAction(Kind k) : kind(k) {}
-};
-
 struct LiteralVal {
     enum class Kind {
         kNone,
@@ -154,6 +140,7 @@ struct NodeVal {
     bool isFuncId() const { return kind == Kind::kFuncId; }
     bool isMacroId() const { return kind == Kind::kMacroId; }
     bool isAttribute() const { return kind == Kind::kAttribute; }
+    bool isImport() const { return kind == Kind::kImport; }
     bool isLlvmVal() const { return kind == Kind::kLlvmVal; }
     bool isKnownVal() const { return kind == Kind::kKnownVal; }
     bool isType() const { return kind == Kind::kType; }

@@ -583,6 +583,7 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
     } else if (isTuple(from)) {
         if (!isTuple(into)) return false;
 
+        // TODO rethink the rules
         return from.index == into.index;
     } else if (isTypeDescr(from)) {
         if (!isTypeDescr(into)) return false;

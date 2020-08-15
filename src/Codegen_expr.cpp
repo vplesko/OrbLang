@@ -2,25 +2,11 @@
 #include "Evaluator.h"
 using namespace std;
 
-NodeVal Codegen::codegenExpr(const AstNode *ast, const NodeVal &first) {
-    if (first.isFuncId()) {
-        return codegenCall(ast, first);
-    } else if (first.isOper()) {
-        if (first.oper == Token::O_DOT) {
-            return codegenOperDot(ast);
-        } else if (first.oper == Token::O_IND) {
-            return codegenOperInd(ast);
-        } else if (ast->children.size() == 2) {
-            return codegenOperUnary(ast, first);
-        } else {
-            return codegenOper(ast, first);
-        }
-    } else {
-        return codegenTuple(ast, first);
-    }
+NodeVal Codegen::processKnownVal(const AstNode *ast) {
+    return evaluator->processKnownVal(ast);
 }
 
-NodeVal Codegen::codegenVar(const AstNode *ast) {
+NodeVal Codegen::processVar(const AstNode *ast) {
     NamePool::Id name = ast->terminal.value().id;
 
     optional<SymbolTable::VarPayload> var = symbolTable->getVar(name);
@@ -36,7 +22,7 @@ NodeVal Codegen::codegenVar(const AstNode *ast) {
     return ret;
 }
 
-NodeVal Codegen::codegenOperInd(CodeLoc codeLoc, const NodeVal &base, const NodeVal &ind) {
+NodeVal Codegen::processOperInd(CodeLoc codeLoc, const NodeVal &base, const NodeVal &ind) {
     if (!checkValueUnbroken(codeLoc, base, true)) return NodeVal();
 
     NodeVal leftVal = base;
@@ -123,32 +109,31 @@ NodeVal Codegen::codegenOperInd(CodeLoc codeLoc, const NodeVal &base, const Node
     return retPay;
 }
 
-NodeVal Codegen::codegenOperInd(const AstNode *ast) {
+NodeVal Codegen::processOperInd(const AstNode *ast) {
     if (!checkAtLeastChildren(ast, 3, true)) {
         return NodeVal();
     }
 
     const AstNode *nodeBase = ast->children[1].get();
-    NodeVal baseVal = codegenNode(nodeBase);
+    NodeVal baseVal = processNode(nodeBase);
 
     for (size_t i = 2; i < ast->children.size(); ++i) {
         const AstNode *nodeInd = ast->children[i].get();
 
-        baseVal = codegenOperInd(nodeInd->codeLoc, baseVal, codegenNode(nodeInd));
+        baseVal = processOperInd(nodeInd->codeLoc, baseVal, processNode(nodeInd));
         if (baseVal.isInvalid()) return NodeVal();
     }
 
     return baseVal;
 }
 
-NodeVal Codegen::codegenOperDot(CodeLoc codeLoc, const NodeVal &base, const NodeVal &memb) {
+NodeVal Codegen::processOperDot(CodeLoc codeLoc, const NodeVal &base, const AstNode *astMemb) {
     if (!checkValueUnbroken(codeLoc, base, false) || base.isKnownVal()) {
         msgs->errorExprDotInvalidBase(codeLoc);
         return NodeVal();
     }
 
-    if (!checkValueUnbroken(codeLoc, memb, true)) return NodeVal();
-    if (!checkIsKnown(codeLoc, memb, true)) return NodeVal();
+    optional<KnownVal> membVal = getKnownVal(astMemb, true);
 
     NodeVal leftVal = base;
 
@@ -170,7 +155,7 @@ NodeVal Codegen::codegenOperDot(CodeLoc codeLoc, const NodeVal &base, const Node
     }
     const TypeTable::Tuple &tuple = *(tupleOpt.value());
 
-    optional<size_t> membIndOpt = KnownVal::getValueNonNeg(memb.knownVal, getTypeTable());
+    optional<size_t> membIndOpt = KnownVal::getValueNonNeg(membVal.value(), getTypeTable());
     if (!membIndOpt.has_value() || membIndOpt.value() >= tuple.members.size()) {
         msgs->errorMemberIndex(codeLoc);
         return NodeVal();
@@ -197,25 +182,25 @@ NodeVal Codegen::codegenOperDot(CodeLoc codeLoc, const NodeVal &base, const Node
     return exprRet;
 }
 
-NodeVal Codegen::codegenOperDot(const AstNode *ast) {
+NodeVal Codegen::processOperDot(const AstNode *ast) {
     if (!checkAtLeastChildren(ast, 3, true)) {
         return NodeVal();
     }
 
     const AstNode *nodeBase = ast->children[1].get();
-    NodeVal baseVal = codegenNode(nodeBase);
+    NodeVal baseVal = processNode(nodeBase);
 
     for (size_t i = 2; i < ast->children.size(); ++i) {
         const AstNode *nodeMemb = ast->children[i].get();
 
-        baseVal = codegenOperDot(nodeMemb->codeLoc, baseVal, evaluator->evaluateNode(nodeMemb));
+        baseVal = processOperDot(nodeMemb->codeLoc, baseVal, nodeMemb);
         if (baseVal.isInvalid()) return NodeVal();
     }
 
     return baseVal;
 }
 
-NodeVal Codegen::codegenOperUnary(const AstNode *ast, const NodeVal &first) {
+NodeVal Codegen::processOperUnary(const AstNode *ast, const NodeVal &first) {
     if (!checkExactlyChildren(ast, 2, true)) {
         return NodeVal();
     }
@@ -224,7 +209,7 @@ NodeVal Codegen::codegenOperUnary(const AstNode *ast, const NodeVal &first) {
 
     Token::Oper op = first.oper;
 
-    NodeVal exprPay = codegenNode(nodeVal);
+    NodeVal exprPay = processNode(nodeVal);
     if (!checkValueUnbroken(nodeVal->codeLoc, exprPay, true)) return NodeVal();
 
     if (exprPay.isKnownVal()) return evaluator->calculateOperUnary(ast->codeLoc, op, exprPay.knownVal);
@@ -312,7 +297,7 @@ NodeVal Codegen::codegenOperUnary(const AstNode *ast, const NodeVal &first) {
     return exprRet;
 }
 
-NodeVal Codegen::codegenOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs, const NodeVal &rhs) {
+NodeVal Codegen::handleOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs, const NodeVal &rhs) {
     NodeVal exprPayL, exprPayR, exprPayRet;
 
     bool assignment = operInfos.at(op).assignment;
@@ -537,45 +522,7 @@ NodeVal Codegen::codegenOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs
     return exprPayRet;
 }
 
-NodeVal Codegen::codegenOper(const AstNode *ast, const NodeVal &first) {
-    OperInfo opInfo = operInfos.at(first.oper);
-
-    if (opInfo.variadic ?
-        !checkAtLeastChildren(ast, 3, true) :
-        !checkExactlyChildren(ast, 3, true)) {
-        return NodeVal();
-    }
-
-    if (opInfo.l_assoc) {
-        const AstNode *nodeLhs = ast->children[1].get();
-        NodeVal lhsVal = codegenNode(nodeLhs);
-
-        for (size_t i = 2; i < ast->children.size(); ++i) {
-            const AstNode *nodeRhs = ast->children[i].get();
-
-            lhsVal = codegenOper(nodeRhs->codeLoc, first.oper, lhsVal, codegenNode(nodeRhs));
-            if (lhsVal.isInvalid()) return NodeVal();
-        }
-
-        return lhsVal;
-    } else {
-        const AstNode *nodeRhs = ast->children.back().get();
-        NodeVal rhsVal = codegenNode(nodeRhs);
-
-        for (size_t i = ast->children.size()-2;; --i) {
-            const AstNode *nodeLhs = ast->children[i].get();
-
-            rhsVal = codegenOper(nodeLhs->codeLoc, first.oper, codegenNode(nodeLhs), rhsVal);
-            if (rhsVal.isInvalid()) return NodeVal();
-
-            if (i == 1) break;
-        }
-
-        return rhsVal;
-    }
-}
-
-NodeVal Codegen::codegenTuple(const AstNode *ast, const NodeVal &first) {
+NodeVal Codegen::processTuple(const AstNode *ast, const NodeVal &first) {
     if (ast->children.size() == 1) {
         if (!checkValueUnbroken(ast->codeLoc, first, true)) return NodeVal();
         
@@ -590,7 +537,7 @@ NodeVal Codegen::codegenTuple(const AstNode *ast, const NodeVal &first) {
     for (size_t i = 0; i < ast->children.size(); ++i) {
         const AstNode *nodeMemb = ast->children[i].get();
 
-        NodeVal nodeValMemb = i == 0 ? first : codegenNode(nodeMemb);
+        NodeVal nodeValMemb = i == 0 ? first : processNode(nodeMemb);
         if (!checkValueUnbroken(nodeMemb->codeLoc, nodeValMemb, true)) return NodeVal();
 
         if (nodeValMemb.isKnownVal()) {
@@ -626,7 +573,7 @@ NodeVal Codegen::codegenTuple(const AstNode *ast, const NodeVal &first) {
     return ret;
 }
 
-NodeVal Codegen::codegenCall(const AstNode *ast, const NodeVal &first) {
+NodeVal Codegen::processCall(const AstNode *ast, const NodeVal &first) {
     size_t argCnt = ast->children.size()-1;
 
     NamePool::Id funcName = first.id;
@@ -640,7 +587,7 @@ NodeVal Codegen::codegenCall(const AstNode *ast, const NodeVal &first) {
     for (size_t i = 0; i < argCnt; ++i) {
         const AstNode *nodeArg = ast->children[i+1].get();
 
-        exprs[i] = codegenNode(nodeArg);
+        exprs[i] = processNode(nodeArg);
         if (!checkValueUnbroken(nodeArg->codeLoc, exprs[i], true)) return NodeVal();
 
         if (exprs[i].isLlvmVal()) {
@@ -702,7 +649,7 @@ NodeVal Codegen::codegenCall(const AstNode *ast, const NodeVal &first) {
     return ret;
 }
 
-NodeVal Codegen::codegenCast(const AstNode *ast) {
+NodeVal Codegen::processCast(const AstNode *ast) {
     if (!checkExactlyChildren(ast, 3, true)) {
         return NodeVal();
     }
@@ -710,13 +657,13 @@ NodeVal Codegen::codegenCast(const AstNode *ast) {
     const AstNode *nodeType = ast->children[1].get();
     const AstNode *nodeVal = ast->children[2].get();
 
-    optional<TypeTable::Id> valTypeId = evaluator->getType(nodeType, true);
+    optional<TypeTable::Id> valTypeId = getType(nodeType, true);
     if (!valTypeId.has_value()) return NodeVal();
 
     llvm::Type *type = getLlvmType(valTypeId.value());
     if (type == nullptr) return NodeVal();
 
-    NodeVal exprVal = codegenNode(nodeVal);
+    NodeVal exprVal = processNode(nodeVal);
     if (!checkValueUnbroken(nodeVal->codeLoc, exprVal, true)) return NodeVal();
 
     if (exprVal.isKnownVal()) {
@@ -744,7 +691,7 @@ NodeVal Codegen::codegenCast(const AstNode *ast) {
     return ret;
 }
 
-NodeVal Codegen::codegenArr(const AstNode *ast) {
+NodeVal Codegen::processArr(const AstNode *ast) {
     if (!checkAtLeastChildren(ast, 3, true)) {
         return NodeVal();
     }
@@ -753,7 +700,7 @@ NodeVal Codegen::codegenArr(const AstNode *ast) {
 
     size_t arrLen = ast->children.size()-2;
 
-    NodeVal arrDeclTypeId = codegenNode(nodeArrType);
+    NodeVal arrDeclTypeId = processNode(nodeArrType);
     if (!checkIsType(nodeArrType->codeLoc, arrDeclTypeId, true)) return NodeVal();
 
     if (!getTypeTable()->worksAsTypeArrP(arrDeclTypeId.type) &&
@@ -784,7 +731,7 @@ NodeVal Codegen::codegenArr(const AstNode *ast) {
     for (size_t i = 0; i < arrLen; ++i) {
         const AstNode *nodeElem = ast->children[i+2].get();
 
-        NodeVal exprPay = codegenConversion(nodeElem, elemTypeId);
+        NodeVal exprPay = handleImplicitConversion(nodeElem, elemTypeId);
         if (exprPay.isInvalid()) return NodeVal();
 
         llvm::Value *elemRef = llvmBuilder.CreateGEP(arrRef, 

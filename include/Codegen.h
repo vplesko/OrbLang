@@ -2,10 +2,7 @@
 
 #include <stack>
 #include <optional>
-#include "SymbolTable.h"
-#include "AST.h"
-#include "Values.h"
-#include "CompileMessages.h"
+#include "CodeProcessor.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
@@ -14,15 +11,8 @@
 
 class Evaluator;
 
-class Codegen {
-    // TODO evaluator may call some utility methods from Codegen, factor them out of this class and break this friendship
-    friend class Evaluator;
-
-    NamePool *namePool;
-    StringPool *stringPool;
-    SymbolTable *symbolTable;
+class Codegen : public CodeProcessor {
     Evaluator *evaluator;
-    CompileMessages *msgs;
 
     llvm::LLVMContext llvmContext;
     llvm::IRBuilder<> llvmBuilder, llvmBuilderAlloca;
@@ -30,13 +20,8 @@ class Codegen {
     std::unique_ptr<llvm::PassManagerBuilder> llvmPMB;
     std::unique_ptr<llvm::legacy::FunctionPassManager> llvmFPM;
 
-    bool isBool(const NodeVal &e) const;
-
     bool promoteKnownVal(NodeVal &e, TypeTable::Id t);
     bool promoteKnownVal(NodeVal &e);
-
-    TypeTable* getTypeTable() { return symbolTable->getTypeTable(); }
-    const TypeTable* getTypeTable() const { return symbolTable->getTypeTable(); }
 
     llvm::Value* getConstB(bool val);
 
@@ -48,65 +33,44 @@ class Codegen {
     std::optional<NamePool::Id> mangleName(const FuncValue &f);
 
     llvm::Type* getLlvmType(TypeTable::Id typeId);
-    TypeTable::Id getPrimTypeId(TypeTable::PrimIds primId) const { return getTypeTable()->getPrimTypeId(primId); }
     bool createCast(llvm::Value *&val, TypeTable::Id srcTypeId, llvm::Type *type, TypeTable::Id dstTypeId);
     bool createCast(llvm::Value *&val, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
+    // TODO make the arg immutable; have dependant funcs take const refs; same for Evaluator
     bool createCast(NodeVal &e, TypeTable::Id t);
 
-    bool isGlobalScope() const;
     bool isLlvmBlockTerminated() const;
 
-    typedef std::pair<NamePool::Id, TypeTable::Id> NameTypePair;
+    NodeVal handleImplicitConversion(CodeLoc codeLoc, NodeVal val, TypeTable::Id t);
+    NodeVal handleImplicitConversion(const AstNode *ast, TypeTable::Id t);
 
-    bool checkEmptyTerminal(const AstNode *ast, bool orError);
-    bool checkEllipsis(const AstNode *ast, bool orError);
-    bool checkTerminal(const AstNode *ast, bool orError);
-    bool checkNotTerminal(const AstNode *ast, bool orError);
-    bool checkBlock(const AstNode *ast, bool orError);
-    bool checkExactlyChildren(const AstNode *ast, std::size_t n, bool orError);
-    bool checkAtLeastChildren(const AstNode *ast, std::size_t n, bool orError);
-    bool checkAtMostChildren(const AstNode *ast, std::size_t n, bool orError);
-    bool checkBetweenChildren(const AstNode *ast, std::size_t nLo, std::size_t nHi, bool orError);
-    bool checkValueUnbroken(CodeLoc codeLoc, const NodeVal &val, bool orError);
-    bool checkIsId(CodeLoc codeLoc, const NodeVal &val, bool orError);
-    bool checkIsKeyword(CodeLoc codeLoc, const NodeVal &val, bool orError);
-    bool checkIsOper(CodeLoc codeLoc, const NodeVal &val, bool orError);
-    bool checkIsType(CodeLoc codeLoc, const NodeVal &val, bool orError);
-    bool checkIsKnown(CodeLoc codeLoc, const NodeVal &val, bool orError);
-    bool checkIsAttribute(CodeLoc codeLoc, const NodeVal &val, bool orError);
-    bool checkGlobalScope(CodeLoc codeLoc, bool orError);
+    std::optional<FuncValue> calculateFuncProto(const AstNode *ast, bool definition);
 
-    std::optional<NameTypePair> getIdTypePair(const AstNode *ast, bool orError);
-    std::optional<Token::Attr> getAttr(const AstNode *ast, bool orError);
-    SymbolTable::Block* getBlock(CodeLoc codeLoc, NamePool::Id name, bool orError);
+    bool isSkippingProcessing() const { return false; }
 
-    NodeVal codegenVar(const AstNode *ast);
-    NodeVal codegenOperInd(CodeLoc codeLoc, const NodeVal &base, const NodeVal &ind);
-    NodeVal codegenOperInd(const AstNode *ast);
-    NodeVal codegenOperDot(CodeLoc codeLoc, const NodeVal &base, const NodeVal &memb);
-    NodeVal codegenOperDot(const AstNode *ast);
-    NodeVal codegenOperUnary(const AstNode *ast, const NodeVal &first);
-    NodeVal codegenOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs, const NodeVal &rhs);
-    NodeVal codegenOper(const AstNode *ast, const NodeVal &first);
-    NodeVal codegenTuple(const AstNode *ast, const NodeVal &first);
-    NodeVal codegenCall(const AstNode *ast, const NodeVal &first);
-    NodeVal codegenCast(const AstNode *ast);
-    NodeVal codegenArr(const AstNode *ast);
-    NodeVal codegenSym(const AstNode *ast);
-    NodeVal codegenExit(const AstNode *ast);
-    NodeVal codegenPass(const AstNode *ast);
-    NodeVal codegenLoop(const AstNode *ast);
-    NodeVal codegenRet(const AstNode *ast);
-    NodeVal codegenBlock(const AstNode *ast);
-    NodeVal codegenFunc(const AstNode *ast);
-
-    NodeVal codegenConversion(const AstNode *ast, TypeTable::Id t);
-
-    NodeVal codegenExpr(const AstNode *ast, const NodeVal &first);
-
-    NodeVal codegenAll(const AstNode *ast);
-
-    std::optional<FuncValue> codegenFuncProto(const AstNode *ast, bool definition);
+    NodeVal processKnownVal(const AstNode *ast);
+    NodeVal processType(const AstNode *ast, const NodeVal &first);
+    NodeVal processVar(const AstNode *ast);
+    NodeVal processOperUnary(const AstNode *ast, const NodeVal &first);
+    NodeVal processOperInd(CodeLoc codeLoc, const NodeVal &base, const NodeVal &ind);
+    NodeVal processOperInd(const AstNode *ast);
+    NodeVal processOperDot(CodeLoc codeLoc, const NodeVal &base, const AstNode *astMemb);
+    NodeVal processOperDot(const AstNode *ast);
+    NodeVal handleOper(CodeLoc codeLoc, Token::Oper op, const NodeVal &lhs, const NodeVal &rhs);
+    NodeVal processTuple(const AstNode *ast, const NodeVal &first);
+    NodeVal processCall(const AstNode *ast, const NodeVal &first);
+    NodeVal processCast(const AstNode *ast);
+    NodeVal processArr(const AstNode *ast);
+    NodeVal processSym(const AstNode *ast);
+    void handleExit(const SymbolTable::Block *targetBlock, CodeLoc condCodeLoc, NodeVal cond);
+    void handleLoop(const SymbolTable::Block *targetBlock, CodeLoc condCodeLoc, NodeVal cond);
+    void handlePass(const SymbolTable::Block *targetBlock, CodeLoc valCodeLoc, NodeVal val, TypeTable::Id expectedType);
+    NodeVal handleBlock(std::optional<NamePool::Id> name, std::optional<TypeTable::Id> type, const AstNode *nodeBody);
+    NodeVal processBlock(const AstNode *ast);
+    NodeVal processRet(const AstNode *ast);
+    NodeVal processFunc(const AstNode *ast);
+    NodeVal processMac(AstNode *ast);
+    NodeVal processEvalNode(const AstNode *ast);
+    std::unique_ptr<AstNode> processInvoke(NamePool::Id macroName, const AstNode *ast);
 
 public:
     Codegen(NamePool *namePool, StringPool *stringPool, SymbolTable *symbolTable, CompileMessages *msgs);
@@ -121,9 +85,6 @@ public:
     llvm::Type* genPrimTypeF64();
     llvm::Type* genPrimTypePtr();
 
-    NodeVal codegenNode(const AstNode *ast);
-
     void printout() const;
-
     bool binary(const std::string &filename);
 };

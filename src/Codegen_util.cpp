@@ -11,7 +11,7 @@
 using namespace std;
 
 Codegen::Codegen(NamePool *namePool, StringPool *stringPool, SymbolTable *symbolTable, CompileMessages *msgs)
-    : namePool(namePool), stringPool(stringPool), symbolTable(symbolTable), msgs(msgs),
+    : CodeProcessor(namePool, stringPool, symbolTable, msgs),
     llvmBuilder(llvmContext), llvmBuilderAlloca(llvmContext) {
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("test"), llvmContext);
 
@@ -128,11 +128,6 @@ llvm::Type* Codegen::getLlvmType(TypeTable::Id typeId) {
     return llvmType;
 }
 
-bool Codegen::isBool(const NodeVal &e) const {
-    return (e.isKnownVal() && KnownVal::isB(e.knownVal, getTypeTable())) ||
-     (e.isLlvmVal() && getTypeTable()->worksAsTypeB(e.llvmVal.type));
-}
-
 bool Codegen::promoteKnownVal(NodeVal &e, TypeTable::Id t) {
     if (!e.isKnownVal() || !KnownVal::isImplicitCastable(e.knownVal, t, stringPool, getTypeTable())) {
         return false;
@@ -213,10 +208,6 @@ llvm::AllocaInst* Codegen::createAlloca(llvm::Type *type, const string &name) {
     return llvmBuilderAlloca.CreateAlloca(type, 0, name);
 }
 
-bool Codegen::isGlobalScope() const {
-    return symbolTable->inGlobalScope();
-}
-
 bool Codegen::isLlvmBlockTerminated() const {
     return !llvmBuilder.GetInsertBlock()->empty() && llvmBuilder.GetInsertBlock()->back().isTerminator();
 }
@@ -249,197 +240,6 @@ llvm::Constant* Codegen::createString(const std::string &str) {
     llvm::Constant *arr = llvm::ConstantDataArray::getString(llvmContext, str, true);
     glob->setInitializer(arr);
     return llvm::ConstantExpr::getPointerCast(glob, getLlvmType(getTypeTable()->getTypeIdStr()));
-}
-
-bool Codegen::checkEmptyTerminal(const AstNode *ast, bool orError) {
-    if (!ast->isTerminal() || ast->terminal->kind != TerminalVal::Kind::kEmpty) {
-        if (orError) msgs->errorUnknown(ast->codeLoc);
-        return false;
-    }
-
-    return true;
-}
-
-bool Codegen::checkEllipsis(const AstNode *ast, bool orError) {
-    if (!ast->isTerminal() ||
-        ast->terminal->kind != TerminalVal::Kind::kKeyword ||
-        ast->terminal->keyword != Token::T_ELLIPSIS) {
-        if (orError) msgs->errorUnknown(ast->codeLoc);
-        return false;
-    }
-
-    return true;
-}
-
-bool Codegen::checkTerminal(const AstNode *ast, bool orError) {
-    if (!ast->isTerminal()) {
-        if (orError) msgs->errorUnexpectedIsNotTerminal(ast->codeLoc);
-        return false;
-    }
-
-    return true;
-}
-
-bool Codegen::checkNotTerminal(const AstNode *ast, bool orError) {
-    if (ast->isTerminal()) {
-        if (orError) msgs->errorUnexpectedIsTerminal(ast->codeLoc);
-        return false;
-    }
-
-    return true;
-}
-
-bool Codegen::checkBlock(const AstNode *ast, bool orError) {
-    if (ast->isTerminal() && ast->terminal->kind != TerminalVal::Kind::kEmpty) {
-        if (orError) msgs->errorUnexpectedNotBlock(ast->codeLoc);
-        return false;
-    }
-
-    return true;
-}
-
-bool Codegen::checkExactlyChildren(const AstNode *ast, size_t n, bool orError) {
-    if (ast->kind != AstNode::Kind::kTuple ||
-        ast->children.size() != n) {
-        if (orError) msgs->errorChildrenNotEq(ast->codeLoc, n);
-        return false;
-    }
-
-    return true;
-}
-
-bool Codegen::checkAtLeastChildren(const AstNode *ast, size_t n, bool orError) {
-    if (ast->kind != AstNode::Kind::kTuple ||
-        ast->children.size() < n) {
-        if (orError) msgs->errorChildrenLessThan(ast->codeLoc, n);
-        return false;
-    }
-
-    return true;
-}
-
-bool Codegen::checkAtMostChildren(const AstNode *ast, size_t n, bool orError) {
-    if (ast->kind != AstNode::Kind::kTuple ||
-        ast->children.size() > n) {
-        if (orError) msgs->errorChildrenMoreThan(ast->codeLoc, n);
-        return false;
-    }
-
-    return true;
-}
-
-bool Codegen::checkBetweenChildren(const AstNode *ast, std::size_t nLo, std::size_t nHi, bool orError) {
-    if (ast->kind != AstNode::Kind::kTuple ||
-        !between(ast->children.size(), nLo, nHi)) {
-        if (orError) msgs->errorChildrenNotBetween(ast->codeLoc, nLo, nHi);
-        return false;
-    }
-
-    return true;
-}
-
-bool Codegen::checkValueUnbroken(CodeLoc codeLoc, const NodeVal &val, bool orError) {
-    if (val.valueBroken()) {
-        // if NodeVal::kInvalid, an error was probably already reported somewhere
-        if (orError && !val.isInvalid()) msgs->errorExprNotValue(codeLoc);
-        return false;
-    }
-
-    return true;
-}
-
-bool Codegen::checkIsId(CodeLoc codeLoc, const NodeVal &val, bool orError) {
-    if (!val.isId()) {
-        if (orError) msgs->errorUnexpectedNotId(codeLoc);
-        return false;
-    }
-
-    return true;
-}
-
-bool Codegen::checkIsKeyword(CodeLoc codeLoc, const NodeVal &val, bool orError) {
-    if (!val.isKeyword()) {
-        if (orError) msgs->errorUnexpectedNotKeyword(codeLoc);
-        return false;
-    }
-
-    return true;
-}
-
-bool Codegen::checkIsOper(CodeLoc codeLoc, const NodeVal &val, bool orError) {
-    if (!val.isOper()) {
-        if (orError) msgs->errorUnknown(codeLoc);
-        return false;
-    }
-
-    return true;
-}
-
-bool Codegen::checkIsType(CodeLoc codeLoc, const NodeVal &val, bool orError) {
-    if (!val.isType()) {
-        if (orError) msgs->errorUnexpectedNotType(codeLoc);
-        return false;
-    }
-
-    return true;
-}
-
-bool Codegen::checkIsKnown(CodeLoc codeLoc, const NodeVal &val, bool orError) {
-    if (!val.isKnownVal()) {
-        if (orError) msgs->errorExprNotBaked(codeLoc);
-        return false;
-    }
-
-    return true;
-}
-
-bool Codegen::checkIsAttribute(CodeLoc codeLoc, const NodeVal &val, bool orError) {
-    if (!val.isAttribute()) {
-        if (orError) msgs->errorUnexpectedNotAttribute(codeLoc);
-        return false;
-    }
-
-    return true;
-}
-
-bool Codegen::checkGlobalScope(CodeLoc codeLoc, bool orError) {
-    if (!isGlobalScope()) {
-        if (orError) msgs->errorNotGlobalScope(codeLoc);
-        return false;
-    }
-
-    return true;
-}
-
-optional<Codegen::NameTypePair> Codegen::getIdTypePair(const AstNode *ast, bool orError) {
-    optional<NamePool::Id> id = evaluator->getId(ast, orError);
-    if (!id.has_value()) return nullopt;
-
-    if (!ast->type.has_value()) {
-        if (orError) msgs->errorMissingTypeAnnotation(ast->codeLoc);
-        return nullopt;
-    }
-    optional<TypeTable::Id> type = evaluator->getType(ast->type.value().get(), orError);
-    if (!type.has_value()) return nullopt;
-
-    NameTypePair idType;
-    idType.first = id.value();
-    idType.second = type.value();
-    return idType;
-}
-
-optional<Token::Attr> Codegen::getAttr(const AstNode *ast, bool orError) {
-    NodeVal nodeVal = codegenNode(ast);
-    if (!checkIsAttribute(ast->codeLoc, nodeVal, orError)) return nullopt;
-
-    return nodeVal.attribute;
-}
-
-SymbolTable::Block* Codegen::getBlock(CodeLoc codeLoc, NamePool::Id name, bool orError) {
-    SymbolTable::Block *block = symbolTable->getBlock(name);
-    if (block == nullptr && orError)
-        msgs->errorBlockNotFound(codeLoc, name);
-    return block;
 }
 
 void Codegen::printout() const {
