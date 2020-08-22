@@ -9,10 +9,10 @@ string CompileMessages::errorStringOfType(TypeTable::Id ty) const {
 
     stringstream ss;
 
-    if (symbolTable->getTypeTable()->isTypeDescr(ty)) {
+    if (typeTable->isTypeDescr(ty)) {
         ss << '(';
 
-        const TypeTable::TypeDescr &descr = getTypeTable()->getTypeDescr(ty);
+        const TypeTable::TypeDescr &descr = typeTable->getTypeDescr(ty);
 
         ss << errorStringOfType(descr.base);
         if (descr.cn) ss << " cn";
@@ -35,10 +35,10 @@ string CompileMessages::errorStringOfType(TypeTable::Id ty) const {
         }
 
         ss << ')';
-    } else if (getTypeTable()->isTuple(ty)) {
+    } else if (typeTable->isTuple(ty)) {
         ss << '(';
 
-        const TypeTable::Tuple &tuple = getTypeTable()->getTuple(ty);
+        const TypeTable::Tuple &tuple = typeTable->getTuple(ty);
 
         for (size_t i = 0; i < tuple.members.size(); ++i) {
             if (i > 0) ss << ' ';
@@ -47,7 +47,7 @@ string CompileMessages::errorStringOfType(TypeTable::Id ty) const {
 
         ss << ')';
     } else {
-        optional<NamePool::Id> name = symbolTable->getTypeTable()->getTypeName(ty);
+        optional<NamePool::Id> name = typeTable->getTypeName(ty);
         if (!name.has_value()) return fallback;
 
         ss << namePool->get(name.value());
@@ -88,7 +88,7 @@ inline void CompileMessages::error(CodeLoc loc, const string &str) {
     error(str);
 }
 
-void CompileMessages::errorInputFileNotFound(const string &path) {
+/*void CompileMessages::errorInputFileNotFound(const string &path) {
     stringstream ss;
     ss << "Input file " << path << " does not exists.";
     error(ss.str());
@@ -478,7 +478,7 @@ void CompileMessages::errorNotGlobalScope(CodeLoc loc) {
 
 void CompileMessages::errorEvaluationNotSupported(CodeLoc loc) {
     error(loc, "This evaluation is not supported.");
-}
+}*/
 
 void CompileMessages::errorUnknown(CodeLoc loc) {
     error(loc, "Unknown error occured.");

@@ -1,5 +1,0 @@
-fnc foo() i32 {
-    ret;
-};
-
-fnc main() () {};

@@ -1,5 +1,0 @@
-fnc foo(x:u32) () {};
-
-fnc main() () {
-    foo (- 1);
-};

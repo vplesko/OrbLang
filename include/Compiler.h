@@ -14,11 +14,11 @@ class Compiler {
     std::unique_ptr<StringPool> stringPool;
     std::unique_ptr<TypeTable> typeTable;
     std::unique_ptr<SymbolTable> symbolTable;
-    std::unique_ptr<AstStorage> astStorage;
     std::unique_ptr<CompileMessages> msgs;
     std::unique_ptr<Codegen> codegen;
     std::unique_ptr<Evaluator> evaluator;
 
+    void genReserved();
     void genPrimTypes();
 
 public:

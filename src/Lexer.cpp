@@ -5,6 +5,7 @@
 using namespace std;
 
 const string numLitChars = "0123456789abcdefABCDEF.xXeEpP_";
+const string idSpecialChars = "=+-*/%<>&|!~[]._";
 
 Lexer::Lexer(NamePool *namePool, StringPool *stringPool, CompileMessages *msgs, const std::string &file)
     : namePool(namePool), stringPool(stringPool), msgs(msgs), in(file) {
@@ -147,140 +148,18 @@ Token Lexer::next() {
             }
         }
         
-        if (ch == '.') {
-            if (peekCh() == '.') {
-                nextCh();
-                if (peekCh() == '.') {
-                    nextCh();
-                    tok = {.type=Token::T_ELLIPSIS};
-                } else {
-                    tok = {.type=Token::T_UNKNOWN};
-                }
-            } else {
-                tok = {.type=Token::T_OPER, .op=Token::O_DOT};
-            }
-        } else if (isdigit(ch)) {
+        if (isdigit(ch)) {
             lexNum(col-1);
-        } else if (ch == '+') {
-            if (peekCh() == '+') {
-                nextCh();
-                tok = {.type=Token::T_OPER, .op=Token::O_INC};
-            } else if (peekCh() == '=') {
-                nextCh();
-                tok = {.type=Token::T_OPER, .op=Token::O_ADD_ASGN};
-            } else if (isdigit(peekCh())) {
-                lexNum(col);
-            } else {
-                tok = {.type=Token::T_OPER, .op=Token::O_ADD};
-            }
-        } else if (ch == '-') {
-            if (peekCh() == '-') {
-                nextCh();
-                tok = {.type=Token::T_OPER, .op=Token::O_DEC};
-            } else if (peekCh() == '=') {
-                nextCh();
-                tok = {.type=Token::T_OPER, .op=Token::O_SUB_ASGN};
-            } else if (isdigit(peekCh())) {
-                lexNum(col);
-                if (tok.type == Token::T_NUM) tok.num *= -1;
-                else if (tok.type == Token::T_FNUM) tok.fnum *= -1.0;
-            } else {
-                tok = {.type=Token::T_OPER, .op=Token::O_SUB};
-            }
-        } else if (ch == '*') {
-            if (peekCh() == '=') {
-                nextCh();
-                tok = {.type=Token::T_OPER, .op=Token::O_MUL_ASGN};
-            } else {
-                tok = {.type=Token::T_OPER, .op=Token::O_MUL};
-            }
-        } else if (ch == '/') {
-            if (peekCh() == '=') {
-                nextCh();
-                tok = {.type=Token::T_OPER, .op=Token::O_DIV_ASGN};
-            } else {
-                tok = {.type=Token::T_OPER, .op=Token::O_DIV};
-            }
-        } else if (ch == '%') {
-            if (peekCh() == '=') {
-                nextCh();
-                tok = {.type=Token::T_OPER, .op=Token::O_REM_ASGN};
-            } else {
-                tok = {.type=Token::T_OPER, .op=Token::O_REM};
-            }
-        } else if (ch == '&') {
-            if (peekCh() == '=') {
-                nextCh();
-                tok = {.type=Token::T_OPER, .op=Token::O_BIT_AND_ASGN};
-            } else {
-                tok = {.type=Token::T_OPER, .op=Token::O_BIT_AND};
-            }
-        } else if (ch == '^') {
-            if (peekCh() == '=') {
-                nextCh();
-                tok = {.type=Token::T_OPER, .op=Token::O_BIT_XOR_ASGN};
-            } else {
-                tok = {.type=Token::T_OPER, .op=Token::O_BIT_XOR};
-            }
-        } else if (ch == '|') {
-            if (peekCh() == '=') {
-                nextCh();
-                tok = {.type=Token::T_OPER, .op=Token::O_BIT_OR_ASGN};
-            } else {
-                tok = {.type=Token::T_OPER, .op=Token::O_BIT_OR};
-            }
-        } else if (ch == '=') {
-            if (peekCh() == '=') {
-                nextCh();
-                tok = {.type=Token::T_OPER, .op=Token::O_EQ};
-            } else {
-                tok = {.type=Token::T_OPER, .op=Token::O_ASGN};
-            }
-        } else if (ch == '!') {
-            if (peekCh() != '=') {
-                tok = {.type=Token::T_OPER, .op=Token::O_NOT};
-            } else {
-                nextCh();
-                tok = {.type=Token::T_OPER, .op=Token::O_NEQ};
-            }
-        } else if (ch == '~') {
-            tok = {.type=Token::T_OPER, .op=Token::O_BIT_NOT};
-        } else if (ch == '<') {
-            if (peekCh() == '=') {
-                nextCh();
-                tok = {.type=Token::T_OPER, .op=Token::O_LTEQ};
-            } else if (peekCh() == '<') {
-                nextCh();
-                if (peekCh() == '=') {
-                    nextCh();
-                    tok = {.type=Token::T_OPER, .op=Token::O_SHL_ASGN};
-                } else {
-                    tok = {.type=Token::T_OPER, .op=Token::O_SHL};
-                }
-            } else {
-                tok = {.type=Token::T_OPER, .op=Token::O_LT};
-            }
-        } else if (ch == '>') {
-            if (peekCh() == '=') {
-                nextCh();
-                tok = {.type=Token::T_OPER, .op=Token::O_GTEQ};
-            } else if (peekCh() == '>') {
-                nextCh();
-                if (peekCh() == '=') {
-                    nextCh();
-                    tok = {.type=Token::T_OPER, .op=Token::O_SHR_ASGN};
-                } else {
-                    tok = {.type=Token::T_OPER, .op=Token::O_SHR};
-                }
-            } else {
-                tok = {.type=Token::T_OPER, .op=Token::O_GT};
-            }
+        } else if (ch == '+' && isdigit(peekCh())) {
+            lexNum(col);
+        } else if (ch == '-' && isdigit(peekCh())) {
+            lexNum(col);
+            if (tok.type == Token::T_NUM) tok.num *= -1;
+            else if (tok.type == Token::T_FNUM) tok.fnum *= -1.0;
         } else if (ch == ';') {
             tok = {.type=Token::T_SEMICOLON};
         } else if (ch == ':') {
             tok = {.type=Token::T_COLON};
-        } else if (ch == '\\') {
-            tok = {.type=Token::T_BACKSLASH};
         } else if (ch == '(') {
             tok = {.type=Token::T_BRACE_L_REG};
         } else if (ch == ')') {
@@ -289,13 +168,6 @@ Token Lexer::next() {
             tok = {.type=Token::T_BRACE_L_CUR};
         } else if (ch == '}') {
             tok = {.type=Token::T_BRACE_R_CUR};
-        } else if (ch == '[') {
-            if (peekCh() == ']') {
-                nextCh();
-                tok = {.type=Token::T_OPER, .op=Token::O_IND};
-            } else {
-                tok.type = Token::T_UNKNOWN;
-            }
         } else if (ch == '\'') {
             UnescapePayload unesc = unescape(line, col-1, true);
 
@@ -322,35 +194,24 @@ Token Lexer::next() {
             col = unesc.nextIndex-1;
             ch = line[col];
             nextCh();
-        } else if (isalpha(ch) || ch == '_') {
+        } else if (ch == '\\') {
+            tok.type = Token::T_BACKSLASH;
+        } else if (isalnum(ch) || !idSpecialChars.find(ch) != idSpecialChars.npos) {
             int l = col-1;
-            int firstAlnum = ch == '_' ? -1 : 0;
-            while (isalnum(peekCh()) || peekCh() == '_') {
-                if (isalnum(peekCh()) && firstAlnum < 0) firstAlnum = col-l;
+            while (isalnum(ch) || !idSpecialChars.find(ch) != idSpecialChars.npos) {
                 nextCh();
             }
 
             string id = line.substr(l, col-l);
 
-            if (firstAlnum < 0) {
-                // all _ is not allowed
-                tok.type = Token::T_UNKNOWN;
-            } else if (firstAlnum >= 2) {
-                auto loc = attributes.find(id);
-                if (loc != attributes.end()) {
-                    tok.type = Token::T_ATTRIBUTE;
-                    tok.attr = loc->second;
-                } else {
-                    tok.type = Token::T_UNKNOWN;
-                }
+            if (id == "true" || id == "false") {
+                tok.type = Token::T_BVAL;
+                tok.bval = id == "true";
+            } else if (id == "null") {
+                tok.type = Token::T_NULL;
             } else {
-                auto loc = keywords.find(id);
-                if (loc != keywords.end()) {
-                    tok = loc->second;
-                } else {
-                    tok.type = Token::T_ID;
-                    tok.nameId = namePool->add(id);
-                }
+                tok.type = Token::T_ID;
+                tok.nameId = namePool->add(id);
             }
         } else {
             tok.type = Token::T_UNKNOWN;

@@ -1,4 +1,0 @@
-fnc main() () {
-    sym array:(i32 4 cn) (arr (i32 4) 0 1 2 3);
-    = ([] array 0) 100;
-};

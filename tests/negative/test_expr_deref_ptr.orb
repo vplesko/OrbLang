@@ -1,5 +1,0 @@
-fnc main() () {
-    sym x:i32;
-    sym p:ptr (cast ptr (& x));
-    * p;
-};

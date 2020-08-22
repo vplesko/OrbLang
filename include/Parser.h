@@ -1,18 +1,13 @@
 #pragma once
 
-#include <memory>
-#include "Lexer.h"
-#include "AST.h"
 #include "CompileMessages.h"
+#include "Lexer.h"
+#include "NodeVal.h"
 
 class Parser {
     StringPool *stringPool;
-    SymbolTable *symbolTable;
     Lexer *lex;
     CompileMessages *msgs;
-
-    TypeTable* getTypeTable() { return symbolTable->getTypeTable(); }
-    const TypeTable* getTypeTable() const { return symbolTable->getTypeTable(); }
 
     const Token& peek() const;
     Token next();
@@ -20,18 +15,18 @@ class Parser {
     bool matchOrError(Token::Type type);
     CodeLoc loc() const;
 
-    std::unique_ptr<AstNode> makeEmptyTerm();
+    NodeVal makeEmptyTerm();
 
-    std::unique_ptr<AstNode> parseType();
-    std::unique_ptr<AstNode> parseTerm();
+    NodeVal parseType();
+    NodeVal parseTerm();
 
 public:
-    Parser(StringPool *stringPool, SymbolTable *symbolTable, CompileMessages *msgs);
+    Parser(StringPool *stringPool, CompileMessages *msgs);
 
     void setLexer(Lexer *lex_) { lex = lex_; }
     Lexer* getLexer() const { return lex; }
 
-    std::unique_ptr<AstNode> parseNode();
+    NodeVal parseNode();
 
     bool isOver() const { return peek().type == Token::T_END; }
 };

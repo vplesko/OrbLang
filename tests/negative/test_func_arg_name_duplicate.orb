@@ -1,3 +1,0 @@
-fnc foo(x:i32 y:u32 x:f32) () {};
-
-fnc main() () {};

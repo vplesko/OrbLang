@@ -1,7 +1,0 @@
-fnc calc(a:i32 b:i32) i32 {
-    ret (+ a b);
-};
-
-mac calc(c d) (- c d);
-
-fnc main() () {};

@@ -2,11 +2,10 @@
 #include <iostream>
 #include <sstream>
 #include <cstdint>
-#include "AST.h"
 using namespace std;
 
-Parser::Parser(StringPool *stringPool, SymbolTable *symbolTable, CompileMessages *msgs) 
-    : stringPool(stringPool), symbolTable(symbolTable), lex(nullptr), msgs(msgs) {
+Parser::Parser(StringPool *stringPool, CompileMessages *msgs) 
+    : stringPool(stringPool), lex(nullptr), msgs(msgs) {
 }
 
 const Token& Parser::peek() const {
@@ -39,48 +38,31 @@ CodeLoc Parser::loc() const {
     return lex->loc();
 }
 
-unique_ptr<AstNode> Parser::makeEmptyTerm() {
-    unique_ptr<AstNode> empty = make_unique<AstNode>(loc(), AstNode::Kind::kTerminal);
-    empty->terminal = TerminalVal();
-    return empty;
+NodeVal Parser::makeEmptyTerm() {
+    return NodeVal(loc());
 }
 
 // cannot be semicolon-terminated
-unique_ptr<AstNode> Parser::parseType() {
+NodeVal Parser::parseType() {
     if (peek().type == Token::T_BRACE_L_REG || peek().type == Token::T_BRACE_L_CUR)
         return parseNode();
     else
         return parseTerm();
 }
 
-unique_ptr<AstNode> Parser::parseTerm() {
+NodeVal Parser::parseTerm() {
     CodeLoc codeLocTok = loc();
     Token tok = next();
 
-    unique_ptr<AstNode> term = make_unique<AstNode>(codeLocTok, AstNode::Kind::kTerminal);
-
     LiteralVal val;
     switch (tok.type) {
-    case Token::T_ELLIPSIS:
-    case Token::T_CN:
-    case Token::T_FNC:
-    case Token::T_MAC:
-    case Token::T_SYM:
-    case Token::T_ARR:
-    case Token::T_CAST:
-    case Token::T_BLOCK:
-    case Token::T_EXIT:
-    case Token::T_PASS:
-    case Token::T_LOOP:
-    case Token::T_RET:
-    case Token::T_IMPORT:
-        term->terminal = TerminalVal(tok.type);
+    case Token::T_ID:
+        val.kind = LiteralVal::Kind::kId;
+        val.val_id = tok.nameId;
         break;
-    
     case Token::T_NUM:
         val.kind = LiteralVal::Kind::kSint;
         val.val_si = tok.num;
-        term->terminal = TerminalVal(val);
         break;
     case Token::T_FNUM:
         val.kind = LiteralVal::Kind::kFloat;
@@ -90,12 +72,10 @@ unique_ptr<AstNode> Parser::parseTerm() {
     case Token::T_CHAR:
         val.kind = LiteralVal::Kind::kChar;
         val.val_c = tok.ch;
-        term->terminal = TerminalVal(val);
         break;
     case Token::T_BVAL:
         val.kind = LiteralVal::Kind::kBool;
         val.val_b = tok.bval;
-        term->terminal = TerminalVal(val);
         break;
     case Token::T_STRING:
         {
@@ -106,78 +86,61 @@ unique_ptr<AstNode> Parser::parseTerm() {
             }
             val.kind = LiteralVal::Kind::kString;
             val.val_str = stringPool->add(ss.str());
-            term->terminal = TerminalVal(val);
             break;
         }
     case Token::T_NULL:
         val.kind = LiteralVal::Kind::kNull;
-        term->terminal = TerminalVal(val);
-        break;
-    
-    case Token::T_OPER:
-        term->terminal = TerminalVal(tok.op);
-        break;
-
-    case Token::T_ID:
-        term->terminal = TerminalVal(tok.nameId);
-        break;
-    
-    case Token::T_ATTRIBUTE:
-        term->terminal = TerminalVal(tok.attr);
-        break;
-    
+        break;    
     default:
         msgs->errorUnexpectedTokenType(codeLocTok, {Token::T_BRACE_L_REG, Token::T_BRACE_L_CUR}, tok);
-        return nullptr;
+        return NodeVal();
     }
+
+    NodeVal ret(codeLocTok, val);
 
     if (match(Token::T_COLON)) {
-        term->type = parseType();
+        ret.typeAnnot = parseType();
+
+        // type annotation on type annotation is not allowed (unless bracketed)
+        if (ret.typeAnnot.isInvalid || ret.typeAnnot.typeAnnot.has_value()) return NodeVal();
     }
 
-    return term;
+    return ret;
 }
 
-unique_ptr<AstNode> Parser::parseNode() {
+NodeVal Parser::parseNode() {
     if (lex == nullptr) {
         return nullptr;
     }
 
     CodeLoc codeLocNode = loc();
-    unique_ptr<AstNode> node = make_unique<AstNode>(codeLocNode, AstNode::Kind::kTuple);
+    NodeVal node;
 
     bool escaped = match(Token::T_BACKSLASH);
 
     if (peek().type == Token::T_BRACE_L_REG || peek().type == Token::T_BRACE_L_CUR) {
         Token openBrace = next();
 
-        vector<unique_ptr<AstNode>> children;
+        vector<NodeVal> children;
+        node = NodeVal(codeLocNode, children);
 
         while (peek().type != Token::T_BRACE_R_REG && peek().type != Token::T_BRACE_R_CUR) {
             if (peek().type == Token::T_SEMICOLON) {
                 next();
 
-                if (children.empty()) {
-                    node->children.push_back(makeEmptyTerm());
-                } else {
-                    unique_ptr<AstNode> tuple = make_unique<AstNode>(children[0]->codeLoc, AstNode::Kind::kTuple);
-                    tuple->children = move(children);
-
-                    node->children.push_back(move(tuple));
-                }
+                NodeVal tuple = NodeVal(children[0]->codeLoc, children);
+                node->children.push_back(tuple);
             } else {
                 bool escaped = match(Token::T_BACKSLASH);
+                NodeVal child;
                 if (peek().type == Token::T_BRACE_L_REG || peek().type == Token::T_BRACE_L_CUR) {
-                    unique_ptr<AstNode> child = parseNode();
-                    if (child == nullptr) return nullptr;
-                    child->escaped = escaped;
-                    children.push_back(move(child));
+                    child = parseNode();
                 } else {
-                    unique_ptr<AstNode> child = parseTerm();
-                    if (child == nullptr) return nullptr;
-                    child->escaped = escaped;
-                    children.push_back(move(child));
+                    child = parseTerm();
                 }
+                if (child.isInvalid) return NodeVal();
+                if (escaped) child.escape();
+                children.push_back(child);
             }
         }
         
@@ -198,25 +161,22 @@ unique_ptr<AstNode> Parser::parseNode() {
     } else {
         while (peek().type != Token::T_SEMICOLON) {
             if (!escaped) escaped = match(Token::T_BACKSLASH);
+            NodeVal child;
             if (peek().type == Token::T_BRACE_L_REG || peek().type == Token::T_BRACE_L_CUR) {
-                unique_ptr<AstNode> child = parseNode();
-                if (child == nullptr) return nullptr;
-                child->escaped = escaped;
-                escaped = false;
-                node->children.push_back(move(child));
+                child = parseNode();
             } else {
-                unique_ptr<AstNode> child = parseTerm();
-                if (child == nullptr) return nullptr;
-                child->escaped = escaped;
-                escaped = false;
-                node->children.push_back(move(child));
+                child = parseTerm();
             }
+            if (child.isInvalid) return NodeVal();
+            if (escaped) child.escape();
+            escaped = false;
+            node.getChildren().push_back(child);
         }
         next();
     }
 
     if (escaped) {
-        node->escaped = true;
+        node.escape();
         escaped = false;
     }
 
@@ -225,7 +185,10 @@ unique_ptr<AstNode> Parser::parseNode() {
     }
 
     if (match(Token::T_COLON)) {
-        node->type = parseType();
+        node.typeAnnot = parseType();
+
+        // type annotation on type annotation is not allowed (unless bracketed)
+        if (ret.typeAnnot.isInvalid || ret.typeAnnot.typeAnnot.has_value()) return NodeVal();
     }
 
     return node;

@@ -1,3 +1,0 @@
-sym x:(i32 cn);
-
-fnc main() () {};

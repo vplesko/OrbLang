@@ -1,4 +1,0 @@
-fnc main() () {
-    sym (x:ptr null);
-    + x;
-};

@@ -1,9 +1,0 @@
-fnc makeFoo() (i32 i32) {
-    sym f:(i32 i32);
-    ret f;
-};
-
-fnc main() () {
-    sym (f:((i32 i32) cn) (makeFoo));
-    = (. f 0) 1;
-};

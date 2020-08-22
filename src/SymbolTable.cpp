@@ -2,31 +2,7 @@
 #include "utils.h"
 using namespace std;
 
-bool FuncSignature::operator==(const FuncSignature &other) const {
-    if (name != other.name) return false;
-    if (argTypes.size() != other.argTypes.size()) return false;
-    for (size_t i = 0; i < argTypes.size(); ++i)
-        if (argTypes[i] != other.argTypes[i]) return false;
-    
-    return true;
-}
-
-size_t FuncSignature::Hasher::operator()(const FuncSignature &k) const {
-    size_t sum = k.argTypes.size();
-    for (const auto &it : k.argTypes) sum += TypeTable::Id::Hasher()(it);
-    return leNiceHasheFunctione(k.name, sum);
-}
-
-bool MacroSignature::operator==(const MacroSignature &other) const {
-    return name == other.name && argCount == other.argCount;
-}
-
-size_t MacroSignature::Hasher::operator()(const MacroSignature &k) const {
-    return leNiceHasheFunctione(k.name, k.argCount);
-}
-
-SymbolTable::SymbolTable(StringPool *stringPool, TypeTable *typeTable)
-    : stringPool(stringPool), typeTable(typeTable), inFunc(false) {
+SymbolTable::SymbolTable() : inFunc(false) {
     last = glob = new BlockInternal();
     glob->prev = nullptr;
 }
@@ -45,162 +21,44 @@ void SymbolTable::endBlock() {
     delete s;
 }
 
-void SymbolTable::addVar(NamePool::Id name, const VarPayload &var) {
+void SymbolTable::addVar(NamePool::Id name, const NodeVal &var) {
     last->vars.insert(make_pair(name, var));
 }
 
-optional<SymbolTable::VarPayload> SymbolTable::getVar(NamePool::Id name) const {
+const NodeVal* SymbolTable::getVar(NamePool::Id name) const {
     for (BlockInternal *s = last; s != nullptr; s = s->prev) {
         auto loc = s->vars.find(name);
-        if (loc != s->vars.end()) return loc->second;
+        if (loc != s->vars.end()) return &loc->second;
     }
 
-    return nullopt;
+    return nullptr;
 }
 
-FuncSignature SymbolTable::makeFuncSignature(NamePool::Id name, const std::vector<TypeTable::Id> &argTypes) const {
-    FuncSignature sig;
-    sig.name = name;
-    sig.argTypes = std::vector<TypeTable::Id>(argTypes.size());
-    for (size_t i = 0; i < sig.argTypes.size(); ++i)
-        sig.argTypes[i] = typeTable->getTypeFuncSigParam(argTypes[i]);
-    return sig;
-}
-
-FuncSignature SymbolTable::makeFuncSignature(const FuncCallSite &call) const {
-    std::vector<TypeTable::Id> argTypes(call.argTypes.begin(), call.argTypes.end());
-    for (size_t i = 0; i < argTypes.size(); ++i) {
-        if (call.knownVals[i].has_value()) argTypes[i] = call.knownVals[i].value().type;
-    }
-    return makeFuncSignature(call.name, argTypes);
-}
-
-bool nonConflicting(const FuncValue &f1, const FuncValue &f2) {
-    if (f1.name != f2.name) return true;
-
-    if (f1.defined && f2.defined) return false;
-    if (f1.hasRet() != f2.hasRet()) return false;
-    if (f1.hasRet() && f1.retType.value() != f2.retType.value()) return false;
-    if (f1.variadic != f2.variadic) return false;
-    if (f1.noNameMangle != f2.noNameMangle) return false;
-
-    if (f1.argTypes.size() != f2.argTypes.size()) return false;
-    // cn is not part of func sig, but all decls and def must agree on this
-    for (size_t i = 0; i < f1.argTypes.size(); ++i) {
-        if (f1.argTypes[i] != f2.argTypes[i]) return false;
+NodeVal* SymbolTable::getVar(NamePool::Id name) {
+    for (BlockInternal *s = last; s != nullptr; s = s->prev) {
+        auto loc = s->vars.find(name);
+        if (loc != s->vars.end()) return &loc->second;
     }
 
-    return true;
+    return nullptr;
 }
 
-bool SymbolTable::canRegisterFunc(const FuncValue &val) const {
-    if (val.noNameMangle) {
-        auto loc = funcsNoNameMangle.find(val.name);
-        if (loc != funcsNoNameMangle.end() && !nonConflicting(val, loc->second))
-            return false;
-    }
-
-    FuncSignature sig = makeFuncSignature(val.name, val.argTypes);
-    auto loc = funcs.find(sig);
-
-    if (loc == funcs.end()) return true;
-
-    if (!nonConflicting(val, loc->second)) return false;
-
-    return true;
+void SymbolTable::registerFunc(const FuncValue &val) {
+    funcs[val.name] = val;
 }
 
-FuncValue SymbolTable::registerFunc(const FuncValue &val) {
-    FuncSignature sig = makeFuncSignature(val.name, val.argTypes);
-    funcs[sig] = val;
-    if (val.noNameMangle) funcsNoNameMangle[val.name] = val;
-    return funcs[sig];
-}
-
-llvm::Function* SymbolTable::getFunction(const FuncValue &val) const {
-    FuncSignature sig = makeFuncSignature(val.name, val.argTypes);
-    auto loc = funcs.find(sig);
+llvm::Function* SymbolTable::getFunction(NamePool::Id name) const {
+    auto loc = funcs.find(name);
     if (loc == funcs.end()) return nullptr;
     return loc->second.func;
 }
 
-bool SymbolTable::isCallArgsOk(const FuncCallSite &call, const FuncValue &func) const {
-    for (size_t i = 0; i < func.argTypes.size(); ++i) {
-        // if arg of same or implicitly castable type, we're good
-        if (!call.knownVals[i].has_value()) {
-            if (!typeTable->isArgTypeProper(call.argTypes[i], func.argTypes[i]))
-                return false;
-        } else {
-            if (!KnownVal::isImplicitCastable(call.knownVals[i].value(), func.argTypes[i], stringPool, typeTable))
-                return false;
-        }
-    }
-
-    return true;
-}
-
-SymbolTable::FuncForCallPayload SymbolTable::getFuncForCall(const FuncCallSite &call) {
-    optional<FuncSignature> sig = makeFuncSignature(call);
-    // if there's a single function and doesn't need casting, return it
-    auto loc = funcs.find(sig.value());
-    if (loc != funcs.end()) {
-        // check still needed, because cn is not part of signatures
-        if (isCallArgsOk(call, loc->second)) return FuncForCallPayload(loc->second);
-        else return FuncForCallPayload(FuncForCallPayload::kNotFound);
-    }
-
-    const FuncSignature *foundSig = nullptr;
-    FuncValue *foundVal = nullptr;
-
-    for (auto &it : funcs) {
-        // need func with that name
-        if (it.second.name != call.name) continue;
-        // and that num of args, unless variadic
-        if (it.second.argTypes.size() != call.argTypes.size() &&
-            (!it.second.variadic || it.second.argTypes.size() > call.argTypes.size())) continue;
-
-        const FuncSignature *candSig = &it.first;
-        FuncValue *candVal = &it.second;
-
-        if (!isCallArgsOk(call, *candVal)) {
-            candSig = nullptr;
-            candVal = nullptr;
-        }
-
-        // found no suitable functions
-        if (candVal == nullptr) continue;
-
-        // in case of multiple possible funcs, error due to ambiguity
-        if (foundVal != nullptr) return FuncForCallPayload(FuncForCallPayload::kAmbigious);
-        
-        // found a function that fits this description (which may or may not require casts)
-        foundSig = candSig;
-        foundVal = candVal;
-    }
-
-    if (foundVal) return FuncForCallPayload(*foundVal);
-    else return FuncForCallPayload(FuncForCallPayload::kNotFound);
-}
-
-MacroSignature SymbolTable::makeMacroSignature(const MacroValue &val) const {
-    MacroSignature sig;
-    sig.name = val.name;
-    sig.argCount = val.argNames.size();
-    return sig;
-}
-
-bool SymbolTable::canRegisterMacro(const MacroValue &val) const {
-    MacroSignature sig = makeMacroSignature(val);
-    return macros.find(sig) == macros.end();
-}
-
 void SymbolTable::registerMacro(const MacroValue &val) {
-    MacroSignature sig = makeMacroSignature(val);
-    macros[sig] = val;
+    macros[val.name] = val;
 }
 
-optional<MacroValue> SymbolTable::getMacro(const MacroSignature &sig) const {
-    auto loc = macros.find(sig);
+optional<MacroValue> SymbolTable::getMacro(NamePool::Id name) const {
+    auto loc = macros.find(name);
     if (loc == macros.end()) return nullopt;
     return loc->second;
 }
@@ -227,38 +85,22 @@ optional<FuncValue> SymbolTable::getCurrFunc() const {
 }
 
 bool SymbolTable::isFuncName(NamePool::Id name) const {
-    for (const auto &p : funcs)
-        if (p.first.name == name)
-            return true;
-    
-    return false;
+    return getFunction(name) != nullptr;
 }
 
 bool SymbolTable::isMacroName(NamePool::Id name) const {
-    for (const auto &p : macros)
-        if (p.first.name == name)
-            return true;
-    
-    return false;
+    return getMacro(name).has_value();
 }
 
-bool SymbolTable::varMayTakeName(NamePool::Id name) const {
-    if (typeTable->isType(name)) return false;
+bool SymbolTable::nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable) const {
+    if (namePool->isReserved(name) || typeTable->isType(name)) return false;
 
     if (last == glob) {
         // you can have vars with same name as funcs, except in global
-        if (isFuncName(name)) return false;
+        if (isFuncName(name) || isMacroName(name)) return false;
     }
 
     return last->vars.find(name) == last->vars.end();
-}
-
-bool SymbolTable::funcMayTakeName(NamePool::Id name) const {
-    return !typeTable->isType(name) && !isMacroName(name) && last->vars.find(name) == last->vars.end();
-}
-
-bool SymbolTable::macroMayTakeName(NamePool::Id name) const {
-    return !typeTable->isType(name) && !isFuncName(name) && last->vars.find(name) == last->vars.end();
 }
 
 SymbolTable::~SymbolTable() {

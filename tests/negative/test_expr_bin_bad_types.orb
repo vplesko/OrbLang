@@ -1,5 +1,0 @@
-fnc main() () {
-    sym (x:i32 1);
-    sym (a:c8 'a');
-    + x a;
-};

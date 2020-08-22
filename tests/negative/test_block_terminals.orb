@@ -1,5 +1,0 @@
-fnc main() () {
-    block {
-        exit true
-    };
-};

@@ -3,7 +3,6 @@ using namespace std;
 
 NamePool::NamePool() {
     next = 0;
-    main = add("main");
 }
 
 NamePool::Id NamePool::add(const string &name) {
@@ -15,4 +14,8 @@ NamePool::Id NamePool::add(const string &name) {
     names[next] = name;
     next += 1;
     return next-1;
+}
+
+bool NamePool::isReserved(Id id) const {
+    return isKeyword(id) || isOper(id);
 }

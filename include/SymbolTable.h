@@ -4,93 +4,31 @@
 #include <vector>
 #include <string>
 #include "NamePool.h"
-#include "StringPool.h"
-#include "Values.h"
 #include "TypeTable.h"
+#include "NodeVal.h"
 #include "llvm/IR/Instructions.h"
-
-struct AstNode;
-
-struct FuncCallSite {
-    NamePool::Id name;
-    std::vector<TypeTable::Id> argTypes;
-    std::vector<std::optional<KnownVal>> knownVals;
-
-    FuncCallSite() {}
-    FuncCallSite(std::size_t sz) : argTypes(sz), knownVals(sz) {}
-
-    void set(std::size_t ind, TypeTable::Id t) {
-        argTypes[ind] = t;
-    }
-
-    void set(std::size_t ind, KnownVal l) {
-        knownVals[ind] = l;
-    }
-};
-
-struct FuncSignature {
-    NamePool::Id name;
-    std::vector<TypeTable::Id> argTypes;
-    
-    bool operator==(const FuncSignature &other) const;
-
-    struct Hasher {
-        std::size_t operator()(const FuncSignature &k) const;
-    };
-};
 
 struct FuncValue {
     NamePool::Id name;
     bool variadic;
-    bool noNameMangle;
     std::vector<NamePool::Id> argNames;
     std::vector<TypeTable::Id> argTypes;
     std::optional<TypeTable::Id> retType;
     bool defined;
+
     llvm::Function *func;
 
     bool hasRet() const { return retType.has_value(); }
 };
 
-struct MacroSignature {
-    NamePool::Id name;
-    std::size_t argCount;
-    
-    bool operator==(const MacroSignature &other) const;
-
-    struct Hasher {
-        std::size_t operator()(const MacroSignature &k) const;
-    };
-};
-
 struct MacroValue {
     NamePool::Id name;
     std::vector<NamePool::Id> argNames;
-    const AstNode *body;
+    NodeVal body;
 };
 
 class SymbolTable {
 public:
-    struct VarPayload {
-        TypeTable::Id type;
-        llvm::Value *val;
-    };
-
-    struct FuncForCallPayload {
-        enum Result {
-            kFound,
-            kAmbigious,
-            kNotFound
-        };
-
-        Result res;
-
-        std::optional<FuncValue> funcVal;
-
-        explicit FuncForCallPayload(Result res) : res(res) {}
-        explicit FuncForCallPayload(const FuncValue &funcVal) : res(kFound), funcVal(funcVal) {}
-    };
-
     struct Block {
         std::optional<NamePool::Id> name;
         std::optional<TypeTable::Id> type;
@@ -101,19 +39,14 @@ public:
 private:
     struct BlockInternal {
         Block block;
-        std::unordered_map<NamePool::Id, VarPayload> vars;
+        std::unordered_map<NamePool::Id, NodeVal> vars;
         BlockInternal *prev;
     };
 
     friend class BlockControl;
 
-    StringPool *stringPool;
-    TypeTable *typeTable;
-
-    std::unordered_map<FuncSignature, FuncValue, FuncSignature::Hasher> funcs;
-    std::unordered_map<NamePool::Id, FuncValue> funcsNoNameMangle;
-
-    std::unordered_map<MacroSignature, MacroValue, MacroSignature::Hasher> macros;
+    std::unordered_map<NamePool::Id, FuncValue> funcs;
+    std::unordered_map<NamePool::Id, MacroValue> macros;
 
     BlockInternal *last, *glob;
 
@@ -126,26 +59,18 @@ private:
     void newBlock(Block b);
     void endBlock();
 
-    FuncSignature makeFuncSignature(NamePool::Id name, const std::vector<TypeTable::Id> &argTypes) const;
-    FuncSignature makeFuncSignature(const FuncCallSite &call) const;
-    bool isCallArgsOk(const FuncCallSite &call, const FuncValue &func) const;
-
-    MacroSignature makeMacroSignature(const MacroValue &val) const;
-
 public:
-    SymbolTable(StringPool *stringPool, TypeTable *typeTable);
+    SymbolTable();
 
-    void addVar(NamePool::Id name, const VarPayload &var);
-    std::optional<VarPayload> getVar(NamePool::Id name) const;
+    void addVar(NamePool::Id name, const NodeVal &var);
+    const NodeVal* getVar(NamePool::Id name) const;
+    NodeVal* getVar(NamePool::Id name);
 
-    bool canRegisterFunc(const FuncValue &val) const;
-    FuncValue registerFunc(const FuncValue &val);
-    llvm::Function* getFunction(const FuncValue &val) const;
-    FuncForCallPayload getFuncForCall(const FuncCallSite &call);
+    void registerFunc(const FuncValue &val);
+    llvm::Function* getFunction(NamePool::Id name) const;
 
-    bool canRegisterMacro(const MacroValue &val) const;
     void registerMacro(const MacroValue &val);
-    std::optional<MacroValue> getMacro(const MacroSignature &sig) const;
+    std::optional<MacroValue> getMacro(NamePool::Id name) const;
 
     bool inGlobalScope() const { return last == glob; }
     const Block* getLastBlock() const { return &last->block; }
@@ -155,17 +80,11 @@ public:
 
     std::optional<FuncValue> getCurrFunc() const;
 
-    bool isVarName(NamePool::Id name) const { return getVar(name).has_value(); }
+    bool isVarName(NamePool::Id name) const { return getVar(name) != nullptr; }
     bool isFuncName(NamePool::Id name) const;
     bool isMacroName(NamePool::Id name) const;
     
-    bool varMayTakeName(NamePool::Id name) const;
-    // only checks for name collisions with global vars, macros and datas, NOT with funcs of same sig!
-    bool funcMayTakeName(NamePool::Id name) const;
-    // only checks for name collisions with global vars, functions and datas, NOT with macros of same sig!
-    bool macroMayTakeName(NamePool::Id name) const;
-
-    TypeTable* getTypeTable() { return typeTable; }
+    bool nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable) const;
 
     ~SymbolTable();
 };

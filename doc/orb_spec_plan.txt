@@ -10,6 +10,7 @@ expr_walled ::= expr_walled_bare ':' expr_walled_bare;
 
 expr_walled_bare ::= '(' exprs ')' |
 	'{' exprs '}' |
+	'\\' expr_walled_bare |
 	ID |
 	INT |
 	FLOAT |
@@ -20,37 +21,178 @@ expr_walled_bare ::= '(' exprs ')' |
 
 _ALPHA is [a-zA-Z]
 _DIGIT is [0-9]
-_PLUS is +
-_MINUS is -
-_SIGNS_OTHER are =+-*/%<>&|!~[]._
-_SIGNS is [:_PLUS::_MINUS::_SIGNS_OTHER:]
-ID is [:_ALPHA::SIGNS_OTHER:][:_ALPHA::_DIGIT::SIGNS:]* or [:_PLUS::_MINUS:] or [:_PLUS::_MINUS:][:_ALPHA::SIGNS:][:_ALPHA::_DIGIT::SIGNS:]*
-INT and FLOAT need to start with + or - or _DIGIT, can contain 0123456789abcdefABCDEF.xXeEpP_
-CHAR is within '', STRING is within "", escaping applies
+_SIGNS is [=+-*/%<>&|!~[]._]
+ID is [:_ALPHA::_DIGIT::SIGNS:]* that does not start with :_DIGIT: nor +:_DIGIT: nor -:_DIGIT:
+INT and FLOAT are ([+-]?:_DIGIT:)[0123456789abcdefABCDEF.xXeEpP_]*
+CHAR is within '', STRING is within "
 BOOL is true or false
 NULL is null
 
 comments are # for single line, #* ... *# for multiline
 
+Unescape sequences are: \', \", \?, \\, \a, \b, \f, \n, \r, \t, \v, and \xNN (where N is a hex digit in [0-9a-fA-F]).
+
 ********************
 
+class LiteralVal:
+	literal stuff
+
 class KnownVal:
+	TypeTable::Id
 	oneof:
 		prim stuff
 		id
 		type
+		repeated KnownVal
 	optional ref
 
 class LlvmVal:
+	TypeTable::Id
 	val
 	ref
 
 class NodeVal:
 	CodeLoc
-	optional<TypeTable::Id>
 	oneof:
-		known val
-		llvm val
-		children nodes
+		LiteralVal
+		KnownVal
+		LlvmVal
+		repeated NodeVal
 	type node
 	is import
+	is invalid
+
+********************
+
+processing leaf:
+	if empty:
+		return empty
+	if literal:
+		promote to known
+	if id and not escaped:
+		process as var
+	else:
+		return as is
+
+processing non-leaf:
+	process starting
+	if starting is macro:
+		invoke
+		process new node
+	else:
+		depending on what starting is (type, function, keyword, oper), process as that, or as tuple
+
+processing node:
+	if empty or no children:
+		process as leaf
+	else:
+		process as non-leaf
+
+when promoting literal to known, type annotation is respected
+codegen cannot gen type and id vars, cannot gen code in global
+evaluator can have pointers only be null, strings may be non-null or null
+
+sym
+	sym a:t OR sym (a b) OR sym (a:t b), variadic
+	a is id, t is type, b is init value
+	if a is leaf id, it is evaluated as that id
+	b cast to t, if no t then a is type of b
+
+cast
+	cast t a
+
+block
+	block body OR block t body OR block name t body
+	body is repeated instructions
+	t is return type or () for no ret
+	name is block name
+	if name is leaf id, it is evaluated as that id
+	opens new scope, goes through body, closes scope
+	if has ret type, expects value passed
+
+exit
+	exit cond OR exit name cond
+	if name is leaf id, it is evaluated as that id
+	exits a block if cond is true
+	if name given, exits that block, otherwise innermost enclosing block
+	has to be non-retting block
+
+loop
+	loop cond OR loop name cond
+	if name is leaf id, it is evaluated as that id
+	re-enters a block if cond is true, clearing scopes
+	if name given, re-enters that block, otherwise innermost enclosing block
+
+pass
+	pass val OR pass name val
+	if name is leaf id, it is evaluated as that id
+	exits a block, yielding val as ret
+	if name given, exits that block, otherwise innermost enclosing block
+	has to be retting block
+
+fnc
+	fnc name args type OR fnc name args type body
+	first declares, second defines a function
+	if name is leaf id, it is evaluated as that id
+	args is list of args as a:t, if a is leaf id, it is evaluated as that id
+	type is ret type or no ret if it's ()
+	fnc has its own scope, goes through body
+	if retting, expects ret
+
+ret
+	ret OR ret val
+	returns from function
+	has to be in function
+
+mac
+	mac name args subst
+	if name is leaf id, it is evaluated as that id
+	args is list of args, if any is leaf id, it is evaluated as that id
+	invoked not evaluating its args, invocations repeteadly resolved until no longer macro invocation, after code processed normally
+	when invoked, replaces invoke node with subst, but appearances of any arg replaced with passed node
+
+eval
+	eval inst
+	evaluates instruction
+
+import
+	import a
+	a is known string
+	compiler processes the file, then returns here
+	rules about no cyclical dependencies, etc.
+	// TODO import ...a
+
+=
+	= ...a
+	r-assoc
+	assigns val of right to left
+	returns ref-val
+	may cast right to left
+
++ - * / % & ^ |
+	op ...a
+	calcs in pairs
+	may cast left to right, on fail right to left
+	+ - * & can be unary, others not
+	^ not variadic
+
+<< >>
+	op a b
+	calcs in pairs
+
+== != < <= > >=
+	op a ...b
+	compares in pairs
+	breaks on first false and rets false, otherwise true
+
+! ~
+	op a
+
+[] .
+	op a ...b
+	goes in pairs
+	. works on pointers also
+
+type
+	type ...a
+	if past first is leaf and not escaped, escape, then if id of type, get that type

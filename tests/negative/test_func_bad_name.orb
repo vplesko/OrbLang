@@ -1,5 +1,0 @@
-sym (foo:i32 100);
-
-fnc foo() () {};
-
-fnc main() () {};
