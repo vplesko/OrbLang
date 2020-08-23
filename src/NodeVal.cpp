@@ -4,6 +4,9 @@ using namespace std;
 NodeVal::NodeVal() : kind(Kind::kInvalid) {
 }
 
+NodeVal::NodeVal(CodeLoc codeLoc, NamePool::Id import) : codeLoc(codeLoc), kind(Kind::kImport), importFile(import) {
+}
+
 NodeVal::NodeVal(CodeLoc codeLoc) : codeLoc(codeLoc), kind(Kind::kComposite) {
 }
 
@@ -16,7 +19,41 @@ NodeVal::NodeVal(CodeLoc codeLoc, const KnownVal &val) : codeLoc(codeLoc), kind(
 NodeVal::NodeVal(CodeLoc codeLoc, const LlvmVal &val) : codeLoc(codeLoc), kind(Kind::kLlvm), llvm(val) {
 }
 
-NodeVal::NodeVal(CodeLoc codeLoc, const std::vector<NodeVal> &nodes) : codeLoc(codeLoc), kind(Kind::kComposite), children(nodes) {
+NodeVal::NodeVal(const NodeVal &other) : NodeVal() {
+    codeLoc = other.codeLoc;
+    kind = other.kind;
+    importFile = other.importFile;
+    literal = other.literal;
+    known = other.known;
+    llvm = other.llvm;
+    
+    children.reserve(other.children.size());
+    for (const auto &it : other.children) {
+        children.push_back(make_unique<NodeVal>(*it));
+    }
+    
+    if (other.hasTypeAnnot()) {
+        typeAnnot = make_unique<NodeVal>(*other.typeAnnot);
+    }
+
+    escaped = other.escaped;
+}
+
+void swap(NodeVal &lhs, NodeVal &rhs) {
+    swap(lhs.codeLoc, rhs.codeLoc);
+    swap(lhs.kind, rhs.kind);
+    swap(lhs.importFile, rhs.importFile);
+    swap(lhs.literal, rhs.literal);
+    swap(lhs.known, rhs.known);
+    swap(lhs.llvm, rhs.llvm);
+    swap(lhs.children, rhs.children);
+    swap(lhs.typeAnnot, rhs.typeAnnot);
+    swap(lhs.escaped, rhs.escaped);
+}
+
+NodeVal& NodeVal::operator=(NodeVal other) {
+    swap(*this, other);
+    return *this;
 }
 
 std::size_t NodeVal::getLength() const {
@@ -25,11 +62,26 @@ std::size_t NodeVal::getLength() const {
     return 1;
 }
 
+void NodeVal::addChild(NodeVal &&c) {
+    children.push_back(make_unique<NodeVal>(move(c)));
+}
+
+void NodeVal::addChildren(std::vector<NodeVal> &&c) {
+    children.reserve(children.size()+c.size());
+    for (auto &it : c) {
+        addChild(move(it));
+    }
+}
+
+void NodeVal::setTypeAnnot(NodeVal &&t) {
+    typeAnnot = make_unique<NodeVal>(move(t));
+}
+
 void NodeVal::escape() {
-    isEscaped = true;
+    escaped = true;
     if (isComposite()) {
-        for (NodeVal &child : getChildren()) {
-            child.escape();
+        for (auto &child : children) {
+            child->escape();
         }
     }
 }

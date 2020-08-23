@@ -11,6 +11,9 @@
 class Codegen : public Processor {
     Evaluator *evaluator;
 
+    // TODO!
+    NodeVal cast(const NodeVal &node, TypeTable::Id ty) { return NodeVal(); }
+
 public:
     Codegen(Evaluator *evaluator, NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs);
 

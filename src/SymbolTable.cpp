@@ -53,14 +53,14 @@ llvm::Function* SymbolTable::getFunction(NamePool::Id name) const {
     return loc->second.func;
 }
 
-void SymbolTable::registerMacro(const MacroValue &val) {
-    macros[val.name] = val;
+void SymbolTable::registerMacro(MacroValue &&val) {
+    macros[val.name] = move(val);
 }
 
-optional<MacroValue> SymbolTable::getMacro(NamePool::Id name) const {
+const MacroValue* SymbolTable::getMacro(NamePool::Id name) const {
     auto loc = macros.find(name);
-    if (loc == macros.end()) return nullopt;
-    return loc->second;
+    if (loc == macros.end()) return nullptr;
+    return &loc->second;
 }
 
 const SymbolTable::Block* SymbolTable::getBlock(NamePool::Id name) const {
@@ -89,7 +89,7 @@ bool SymbolTable::isFuncName(NamePool::Id name) const {
 }
 
 bool SymbolTable::isMacroName(NamePool::Id name) const {
-    return getMacro(name).has_value();
+    return getMacro(name) != nullptr;
 }
 
 bool SymbolTable::nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable) const {

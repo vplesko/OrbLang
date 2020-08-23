@@ -38,7 +38,7 @@ CodeLoc Parser::loc() const {
     return lex->loc();
 }
 
-NodeVal Parser::makeEmptyTerm() {
+NodeVal Parser::makeEmpty() {
     return NodeVal(loc());
 }
 
@@ -67,7 +67,6 @@ NodeVal Parser::parseTerm() {
     case Token::T_FNUM:
         val.kind = LiteralVal::Kind::kFloat;
         val.val_f = tok.fnum;
-        term->terminal = TerminalVal(val);
         break;
     case Token::T_CHAR:
         val.kind = LiteralVal::Kind::kChar;
@@ -99,10 +98,10 @@ NodeVal Parser::parseTerm() {
     NodeVal ret(codeLocTok, val);
 
     if (match(Token::T_COLON)) {
-        ret.typeAnnot = parseType();
+        ret.setTypeAnnot(parseType());
 
         // type annotation on type annotation is not allowed (unless bracketed)
-        if (ret.typeAnnot.isInvalid || ret.typeAnnot.typeAnnot.has_value()) return NodeVal();
+        if (ret.getTypeAnnot().isInvalid() || ret.getTypeAnnot().hasTypeAnnot()) return NodeVal();
     }
 
     return ret;
@@ -110,7 +109,7 @@ NodeVal Parser::parseTerm() {
 
 NodeVal Parser::parseNode() {
     if (lex == nullptr) {
-        return nullptr;
+        return NodeVal();
     }
 
     CodeLoc codeLocNode = loc();
@@ -122,14 +121,19 @@ NodeVal Parser::parseNode() {
         Token openBrace = next();
 
         vector<NodeVal> children;
-        node = NodeVal(codeLocNode, children);
+        node = NodeVal(codeLocNode);
 
         while (peek().type != Token::T_BRACE_R_REG && peek().type != Token::T_BRACE_R_CUR) {
             if (peek().type == Token::T_SEMICOLON) {
                 next();
 
-                NodeVal tuple = NodeVal(children[0]->codeLoc, children);
-                node->children.push_back(tuple);
+                if (children.empty()) {
+                    node.addChild(makeEmpty());
+                } else {
+                    NodeVal tuple = NodeVal(children[0].getCodeLoc());
+                    tuple.addChildren(move(children)); // children is emptied here
+                    node.addChild(move(tuple));
+                }
             } else {
                 bool escaped = match(Token::T_BACKSLASH);
                 NodeVal child;
@@ -138,9 +142,9 @@ NodeVal Parser::parseNode() {
                 } else {
                     child = parseTerm();
                 }
-                if (child.isInvalid) return NodeVal();
+                if (child.isInvalid()) return NodeVal();
                 if (escaped) child.escape();
-                children.push_back(child);
+                children.push_back(move(child));
             }
         }
         
@@ -149,15 +153,13 @@ NodeVal Parser::parseNode() {
 
         if (openBrace.type == Token::T_BRACE_L_REG && closeBrace.type != Token::T_BRACE_R_REG) {
             msgs->errorUnexpectedTokenType(codeLocCloseBrace, Token::T_BRACE_R_REG, closeBrace);
-            return nullptr;
+            return NodeVal();
         } else if (openBrace.type == Token::T_BRACE_L_CUR && closeBrace.type != Token::T_BRACE_R_CUR) {
             msgs->errorUnexpectedTokenType(codeLocCloseBrace, Token::T_BRACE_R_CUR, closeBrace);
-            return nullptr;
+            return NodeVal();
         }
 
-        for (size_t i = 0; i < children.size(); ++i) {
-            node->children.push_back(move(children[i]));
-        }
+        node.addChildren(move(children));
     } else {
         while (peek().type != Token::T_SEMICOLON) {
             if (!escaped) escaped = match(Token::T_BACKSLASH);
@@ -167,10 +169,10 @@ NodeVal Parser::parseNode() {
             } else {
                 child = parseTerm();
             }
-            if (child.isInvalid) return NodeVal();
+            if (child.isInvalid()) return NodeVal();
             if (escaped) child.escape();
             escaped = false;
-            node.getChildren().push_back(child);
+            node.addChild(move(child));
         }
         next();
     }
@@ -180,15 +182,11 @@ NodeVal Parser::parseNode() {
         escaped = false;
     }
 
-    if (node->children.empty()) {
-        node = makeEmptyTerm();
-    }
-
     if (match(Token::T_COLON)) {
-        node.typeAnnot = parseType();
+        node.setTypeAnnot(parseType());
 
         // type annotation on type annotation is not allowed (unless bracketed)
-        if (ret.typeAnnot.isInvalid || ret.typeAnnot.typeAnnot.has_value()) return NodeVal();
+        if (node.getTypeAnnot().isInvalid() || node.getTypeAnnot().hasTypeAnnot()) return NodeVal();
     }
 
     return node;

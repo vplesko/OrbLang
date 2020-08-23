@@ -1,12 +1,14 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include "CodeLoc.h"
 #include "LiteralVal.h"
 #include "KnownVal.h"
 #include "LlvmVal.h"
 
-struct NodeVal {
+class NodeVal {
+public:
     enum class Kind {
         kInvalid,
         kImport,
@@ -16,34 +18,45 @@ struct NodeVal {
         kComposite
     };
 
+private:
     CodeLoc codeLoc;
 
     Kind kind;
-    union {
-        NamePool::Id importFile;
-        LiteralVal literal;
-        LlvmVal llvm;
-    };
+    NamePool::Id importFile;
+    LiteralVal literal;
+    LlvmVal llvm;
     KnownVal known;
-    std::vector<NodeVal> children;
+    std::vector<std::unique_ptr<NodeVal>> children;
 
-    std::optional<NodeVal> typeAnnot;
+    std::unique_ptr<NodeVal> typeAnnot;
 
-    bool isEscaped = false;
+    bool escaped = false;
 
+    friend void swap(NodeVal &lhs, NodeVal &rhs);
+
+public:
     // Invalid value.
     NodeVal();
     // Empty terminal.
     NodeVal(CodeLoc codeLoc);
+    NodeVal(CodeLoc codeLoc, NamePool::Id import);
     NodeVal(CodeLoc codeLoc, const LiteralVal &val);
     NodeVal(CodeLoc codeLoc, const KnownVal &val);
     NodeVal(CodeLoc codeLoc, const LlvmVal &val);
-    NodeVal(CodeLoc codeLoc, const std::vector<NodeVal> &nodes);
 
+    NodeVal(const NodeVal &other);
+    NodeVal& operator=(NodeVal other);
+
+    CodeLoc getCodeLoc() const { return codeLoc; }
+    bool isEscaped() const { return escaped; }
     std::size_t getLength() const;
     bool isEmpty() const { return isComposite() && getChildrenCnt() == 0; }
     bool isLeaf() const { return !isComposite() || isEmpty(); }
+
     bool isInvalid() const { return kind == Kind::kInvalid; }
+
+    bool isImport() const { return kind == Kind::kImport; }
+    NamePool::Id getImportFile() const { return importFile; }
 
     bool isLiteralVal() const { return kind == Kind::kLiteral; }
     LiteralVal& getLiteralVal() { return literal; }
@@ -58,9 +71,16 @@ struct NodeVal {
     const LlvmVal& getLlvmVal() const { return llvm; }
 
     bool isComposite() const  { return kind == Kind::kComposite; }
-    std::vector<NodeVal>& getChildren() { return children; }
-    const std::vector<NodeVal>& getChildren() const { return children; }
-    std::size_t getChildrenCnt() const { return getChildren().size(); }
+    NodeVal& getChild(std::size_t ind) { return *children[ind]; }
+    const NodeVal& getChild(std::size_t ind) const { return *children[ind]; }
+    void addChild(NodeVal &&c);
+    void addChildren(std::vector<NodeVal> &&c);
+    std::size_t getChildrenCnt() const { return children.size(); }
+
+    bool hasTypeAnnot() const { return typeAnnot != nullptr; }
+    NodeVal& getTypeAnnot() { return *typeAnnot; }
+    const NodeVal& getTypeAnnot() const { return *typeAnnot; }
+    void setTypeAnnot(NodeVal &&t);
 
     void escape();
 };

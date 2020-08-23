@@ -66,20 +66,6 @@ extern std::unordered_map<NamePool::Id, Keyword> keywords;
 extern std::unordered_map<NamePool::Id, Oper> opers;
 extern const std::unordered_map<Oper, OperInfo> operInfos;
 
-std::optional<Meaningful> getMeaningful(NamePool::Id name) {
-    auto loc = meaningfuls.find(name);
-    if (loc == meaningfuls.end()) return nullopt;
-    return loc->second;
-}
-
-std::optional<Keyword> getKeyword(NamePool::Id name) {
-    auto loc = keywords.find(name);
-    if (loc == keywords.end()) return nullopt;
-    return loc->second;
-}
-
-std::optional<Oper> getOper(NamePool::Id name) {
-    auto loc = opers.find(name);
-    if (loc == opers.end()) return nullopt;
-    return loc->second;
-}
+std::optional<Meaningful> getMeaningful(NamePool::Id name);
+std::optional<Keyword> getKeyword(NamePool::Id name);
+std::optional<Oper> getOper(NamePool::Id name);

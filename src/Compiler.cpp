@@ -240,10 +240,10 @@ bool Compiler::parse(const vector<string> &inputs) {
                 NodeVal val = codegen->processNode(node);
                 if (msgs->isFail()) return false;
 
-                if (val.importFile.has_value()) {
-                    const string &file = stringPool->get(val.importFile.value());
+                if (val.isImport()) {
+                    const string &file = stringPool->get(val.getImportFile());
                     if (!exists(file)) {
-                        msgs->errorImportNotFound(node.codeLoc, file);
+                        msgs->errorImportNotFound(node.getCodeLoc(), file);
                         return false;
                     }
                     string path = canonical(file);
@@ -251,7 +251,7 @@ bool Compiler::parse(const vector<string> &inputs) {
                     if (imres == ITR_FAIL) {
                         return false;
                     } else if (imres == ITR_CYCLICAL) {
-                        msgs->errorImportCyclical(node.codeLoc, path);
+                        msgs->errorImportCyclical(node.getCodeLoc(), path);
                         return false;
                     }
                         

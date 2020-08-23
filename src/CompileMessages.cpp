@@ -88,7 +88,7 @@ inline void CompileMessages::error(CodeLoc loc, const string &str) {
     error(str);
 }
 
-/*void CompileMessages::errorInputFileNotFound(const string &path) {
+void CompileMessages::errorInputFileNotFound(const string &path) {
     stringstream ss;
     ss << "Input file " << path << " does not exists.";
     error(ss.str());
@@ -119,41 +119,31 @@ void CompileMessages::errorImportCyclical(CodeLoc loc, const string &path) {
 }
 
 void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp) {
-    stringstream ss;
-    ss << "Unexpected symbol found. Expected '" << errorString(exp) << "'.";
-    error(loc, ss.str());
+    // TODO better msg
+    error(loc, "Unexpected symbol found.");
 }
 
 void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token::Type see) {
-    stringstream ss;
-    ss << "Unexpected symbol found. Expected '" << errorString(exp) << "', instead found '" << errorString(see) << "'.";
-    error(loc, ss.str());
+    // TODO better msg
+    error(loc, "Unexpected symbol found.");
 }
 
 void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token see) {
-    stringstream ss;
-    ss << "Unexpected symbol found. Expected '" << errorString(exp) << "', instead found '" << errorString(see) << "'.";
-    error(loc, ss.str());
+    // TODO better msg
+    error(loc, "Unexpected symbol found.");
 }
 
 void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, vector<Token::Type> exp, Token see) {
-    stringstream ss;
-    ss << "Unexpected symbol found. Expected ";
-    for (size_t i = 0; i < exp.size(); ++i) {
-        if (i > 0) ss << " or ";
-        ss << "'" << errorString(exp[i]) << "'";
-    }
-    ss << ", instead found '" << errorString(see) << "'.";
-    error(loc, ss.str());
+    // TODO better msg
+    error(loc, "Unexpected symbol found.");
 }
 
-void CompileMessages::errorUnexpectedKeyword(CodeLoc loc, Token::Type keyw) {
-    stringstream ss;
-    ss << "Unexpected keyword '" << errorString(keyw) << "' found.";
-    error(loc, ss.str());
+void CompileMessages::errorUnexpectedKeyword(CodeLoc loc, Keyword keyw) {
+    // TODO better msg
+    error(loc, "Unexpected keyword found.");
 }
 
-void CompileMessages::errorUnexpectedIsNotTerminal(CodeLoc loc) {
+/*void CompileMessages::errorUnexpectedIsNotTerminal(CodeLoc loc) {
     error(loc, "Non-terminal was not expected at this location.");
 }
 
@@ -171,7 +161,7 @@ void CompileMessages::errorUnexpectedNotId(CodeLoc loc) {
 
 void CompileMessages::errorUnexpectedNotFunc(CodeLoc loc) {
     error(loc, "Result does not present a function.");
-}
+}*/
 
 void CompileMessages::errorUnexpectedNotType(CodeLoc loc) {
     error(loc, "Result does not present a type.");
@@ -227,7 +217,7 @@ void CompileMessages::errorNotLastParam(CodeLoc loc) {
     error(loc, "No further parameters are allowed in this function signature.");
 }
 
-void CompileMessages::errorBadAttr(CodeLoc loc, Token::Attr attr) {
+/*void CompileMessages::errorBadAttr(CodeLoc loc, Token::Attr attr) {
     stringstream ss;
     ss << "Attribute '" << errorString(attr) << "' is not recognized in this context.";
     error(loc, ss.str());
@@ -269,7 +259,7 @@ void CompileMessages::errorCnNoInit(CodeLoc loc) {
 
 void CompileMessages::errorExprNotBaked(CodeLoc loc) {
     error(loc, "Expression cannot be evaluated at compile time.");
-}
+}*/
 
 void CompileMessages::errorExprCannotPromote(CodeLoc loc, TypeTable::Id into) {
     stringstream ss;
@@ -277,7 +267,7 @@ void CompileMessages::errorExprCannotPromote(CodeLoc loc, TypeTable::Id into) {
     error(loc, ss.str());
 }
 
-void CompileMessages::errorExprKnownBinBadOp(CodeLoc loc, Token::Oper op) {
+/*void CompileMessages::errorExprKnownBinBadOp(CodeLoc loc, Token::Oper op) {
     stringstream ss;
     ss << "Binary operation '" << errorString(op) << "' is not defined for known values of this type.";
     error(loc, ss.str());

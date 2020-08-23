@@ -69,8 +69,8 @@ public:
     void registerFunc(const FuncValue &val);
     llvm::Function* getFunction(NamePool::Id name) const;
 
-    void registerMacro(const MacroValue &val);
-    std::optional<MacroValue> getMacro(NamePool::Id name) const;
+    void registerMacro(MacroValue &&val);
+    const MacroValue* getMacro(NamePool::Id name) const;
 
     bool inGlobalScope() const { return last == glob; }
     const Block* getLastBlock() const { return &last->block; }

@@ -15,7 +15,7 @@ class Parser {
     bool matchOrError(Token::Type type);
     CodeLoc loc() const;
 
-    NodeVal makeEmptyTerm();
+    NodeVal makeEmpty();
 
     NodeVal parseType();
     NodeVal parseTerm();

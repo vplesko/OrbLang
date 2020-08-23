@@ -28,3 +28,21 @@ const unordered_map<Oper, OperInfo> operInfos = {
     {Oper::IND, {}},
     {Oper::DOT, {}}
 };
+
+optional<Meaningful> getMeaningful(NamePool::Id name) {
+    auto loc = meaningfuls.find(name);
+    if (loc == meaningfuls.end()) return nullopt;
+    return loc->second;
+}
+
+optional<Keyword> getKeyword(NamePool::Id name) {
+    auto loc = keywords.find(name);
+    if (loc == keywords.end()) return nullopt;
+    return loc->second;
+}
+
+optional<Oper> getOper(NamePool::Id name) {
+    auto loc = opers.find(name);
+    if (loc == opers.end()) return nullopt;
+    return loc->second;
+}

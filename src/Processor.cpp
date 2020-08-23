@@ -16,7 +16,7 @@ NodeVal Processor::processLeaf(const NodeVal &node) {
 
     NodeVal prom = node.isLiteralVal() ? promoteLiteralVal(node) : node;
 
-    if (!prom.isEscaped && prom.isKnownVal() && KnownVal::isId(prom.getKnownVal(), typeTable)) {
+    if (!prom.isEscaped() && prom.isKnownVal() && KnownVal::isId(prom.getKnownVal(), typeTable)) {
         return processId(prom);
     }
 
@@ -24,7 +24,7 @@ NodeVal Processor::processLeaf(const NodeVal &node) {
 }
 
 NodeVal Processor::processNonLeaf(const NodeVal &node) {
-    NodeVal starting = processNode(node.getChildren()[0]);
+    NodeVal starting = processNode(node.getChild(0));
 
     if (starting.isKnownVal() && KnownVal::isMacro(starting.getKnownVal(), symbolTable)) {
         NodeVal invoked = processInvoke(node, starting);
@@ -69,7 +69,7 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
             case Keyword::IMPORT:
                 return processImport(node);
             default:
-                msgs->errorUnexpectedKeyword(starting.codeLoc, keyw.value());
+                msgs->errorUnexpectedKeyword(starting.getCodeLoc(), keyw.value());
                 return NodeVal();
             }
         }
@@ -79,43 +79,47 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
             return processOper(node, op.value());
         }
 
-        msgs->errorInternal(node.codeLoc);
+        msgs->errorInternal(node.getCodeLoc());
         return NodeVal();
     }
 
     return processTuple(node, starting);
 }
 
+NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
+    return NodeVal(); // TODO!
+}
+
 NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
     if (node.getLength() == 1) return starting;
 
-    NodeVal second = processWithEscapeIfLeafUnlessType(node.getChildren()[1]);
+    NodeVal second = processWithEscapeIfLeafUnlessType(node.getChild(1));
 
     KnownVal knownTy(typeTable->getPrimTypeId(TypeTable::P_TYPE));
 
-    if (second.isKnownVal() && KnownVal::isType(second.known, typeTable)) {
+    if (second.isKnownVal() && KnownVal::isType(second.getKnownVal(), typeTable)) {
         TypeTable::Tuple tup;
         tup.members.resize(node.getChildrenCnt());
-        tup.members[0] = starting.known.ty;
-        tup.members[1] = second.known.ty;
+        tup.members[0] = starting.getKnownVal().ty;
+        tup.members[1] = second.getKnownVal().ty;
         for (size_t i = 2; i < node.getChildrenCnt(); ++i) {
-            NodeVal ty = processAndExpectType(node.getChildren()[i]);
+            NodeVal ty = processAndExpectType(node.getChild(i));
             if (ty.isInvalid()) return NodeVal();
-            tup.members[i] = ty.known.ty;
+            tup.members[i] = ty.getKnownVal().ty;
         }
 
         optional<TypeTable::Id> tupTypeId = typeTable->addTuple(tup);
         if (!tupTypeId.has_value()) {
-            msgs->errorInternal(node.codeLoc);
+            msgs->errorInternal(node.getCodeLoc());
             return NodeVal();
         }
 
         knownTy.ty = tupTypeId.value();
     } else {
-        TypeTable::TypeDescr descr(starting.known.ty);
+        TypeTable::TypeDescr descr(starting.getKnownVal().ty);
         if (!applyTypeDescrDecorOrFalse(descr, second)) return NodeVal();
         for (size_t i = 2; i < node.getChildrenCnt(); ++i) {
-            NodeVal decor = processWithEscapeIfLeaf(node.getChildren()[i]);
+            NodeVal decor = processWithEscapeIfLeaf(node.getChild(i));
             if (decor.isInvalid()) return NodeVal();
             if (!applyTypeDescrDecorOrFalse(descr, decor)) return NodeVal();
         }
@@ -123,16 +127,79 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
         knownTy.ty = typeTable->addTypeDescr(move(descr));
     }
 
-    return NodeVal(node.codeLoc, knownTy);
+    return NodeVal(node.getCodeLoc(), knownTy);
+}
+
+NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
+    return NodeVal(); // TODO!
+}
+
+NodeVal Processor::processId(const NodeVal &node) {
+    return NodeVal(); // TODO!
+}
+
+NodeVal Processor::processSym(const NodeVal &node) {
+    return NodeVal(); // TODO!
+}
+
+NodeVal Processor::processCast(const NodeVal &node) {
+    return NodeVal(); // TODO!
+}
+
+NodeVal Processor::processBlock(const NodeVal &node) {
+    return NodeVal(); // TODO!
+}
+
+NodeVal Processor::processExit(const NodeVal &node) {
+    return NodeVal(); // TODO!
+}
+
+NodeVal Processor::processLoop(const NodeVal &node) {
+    return NodeVal(); // TODO!
+}
+
+NodeVal Processor::processPass(const NodeVal &node) {
+    return NodeVal(); // TODO!
+}
+
+NodeVal Processor::processFnc(const NodeVal &node) {
+    return NodeVal(); // TODO!
+}
+
+NodeVal Processor::processRet(const NodeVal &node) {
+    return NodeVal(); // TODO!
+}
+
+NodeVal Processor::processMac(const NodeVal &node) {
+    return NodeVal(); // TODO!
+}
+
+NodeVal Processor::processEval(const NodeVal &node) {
+    return NodeVal(); // TODO!
+}
+
+NodeVal Processor::processImport(const NodeVal &node) {
+    return NodeVal(); // TODO!
+}
+
+NodeVal Processor::processOper(const NodeVal &node, Oper op) {
+    return NodeVal(); // TODO!
+}
+
+NodeVal Processor::processTuple(const NodeVal &node, const NodeVal &starting) {
+    return NodeVal(); // TODO!
 }
 
 NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
+    bool isId = false;
+
     KnownVal known;
     LiteralVal lit = node.getLiteralVal();
     switch (lit.kind) {
     case LiteralVal::Kind::kId:
         known.type = typeTable->getPrimTypeId(TypeTable::P_ID);
         known.id = lit.val_id;
+        isId = true;
         break;
     case LiteralVal::Kind::kSint:
         {
@@ -168,20 +235,20 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
         known.type = typeTable->getPrimTypeId(TypeTable::P_PTR);
         break;
     default:
-        msgs->errorInternal(node.codeLoc);
+        msgs->errorInternal(node.getCodeLoc());
         return NodeVal();
     }
-    NodeVal prom(node.codeLoc, known);
+    NodeVal prom(node.getCodeLoc(), known);
 
-    if (node.isEscaped) prom.escape();
+    if (node.isEscaped()) prom.escape();
     
-    if (node.typeAnnot.has_value()) {
-        NodeVal nodeTy = processAndExpectType(node.typeAnnot.value());
+    if (node.hasTypeAnnot() && !isId) {
+        NodeVal nodeTy = processAndExpectType(node.getTypeAnnot());
         if (nodeTy.isInvalid()) return NodeVal();
         TypeTable::Id ty = nodeTy.getKnownVal().ty;
 
         if (!KnownVal::isImplicitCastable(known, ty, stringPool, typeTable)) {
-            msgs->errorExprCannotPromote(node.codeLoc, ty);
+            msgs->errorExprCannotPromote(node.getCodeLoc(), ty);
             return NodeVal();
         }
         prom = cast(prom, ty);
@@ -194,24 +261,28 @@ NodeVal Processor::processAndExpectType(const NodeVal &node) {
     NodeVal ty = processNode(node);
     if (ty.isInvalid()) return NodeVal();
     if (!ty.isKnownVal() || !KnownVal::isType(ty.getKnownVal(), typeTable)) {
-        msgs->errorUnexpectedNotType(node.codeLoc);
+        msgs->errorUnexpectedNotType(node.getCodeLoc());
         return NodeVal();
     }
     return ty;
 }
 
 NodeVal Processor::processWithEscapeIfLeaf(const NodeVal &node) {
-    NodeVal esc = node;
-    if (esc.isLeaf()) esc.escape();
-    return processNode(esc);
+    if (node.isLeaf()) {
+        NodeVal esc = node;
+        esc.escape();
+        return processNode(esc);
+    } else {
+        return processNode(node);
+    }
 }
 
 NodeVal Processor::processWithEscapeIfLeafUnlessType(const NodeVal &node) {
-    if (node.isLeaf() && !node.isEscaped) {
+    if (node.isLeaf() && !node.isEscaped()) {
         NodeVal esc = processWithEscapeIfLeaf(node);
         if (esc.isInvalid()) return NodeVal();
-        if (esc.isKnownVal() && KnownVal::isId(esc.known, typeTable) &&
-            typeTable->isType(esc.known.id)) {
+        if (esc.isKnownVal() && KnownVal::isId(esc.getKnownVal(), typeTable) &&
+            typeTable->isType(esc.getKnownVal().id)) {
             return processNode(esc);
         } else {
             return esc;
@@ -224,8 +295,8 @@ NodeVal Processor::processWithEscapeIfLeafUnlessType(const NodeVal &node) {
 bool Processor::applyTypeDescrDecorOrFalse(TypeTable::TypeDescr &descr, const NodeVal &node) {
     if (!node.isKnownVal()) return false;
 
-    if (KnownVal::isId(node.known, typeTable)) {
-        optional<Meaningful> mean = getMeaningful(node.known.id);
+    if (KnownVal::isId(node.getKnownVal(), typeTable)) {
+        optional<Meaningful> mean = getMeaningful(node.getKnownVal().id);
         if (!mean.has_value()) return false;
 
         if (mean == Meaningful::CN)
@@ -237,16 +308,16 @@ bool Processor::applyTypeDescrDecorOrFalse(TypeTable::TypeDescr &descr, const No
         else
             return false;
     } else {
-        optional<uint64_t> arrSize = KnownVal::getValueNonNeg(node.known, typeTable);
+        optional<uint64_t> arrSize = KnownVal::getValueNonNeg(node.getKnownVal(), typeTable);
         if (!arrSize.has_value() || arrSize.value() == 0) {
             if (arrSize.value() == 0) {
-                msgs->errorBadArraySize(node.codeLoc, arrSize.value());
+                msgs->errorBadArraySize(node.getCodeLoc(), arrSize.value());
             } else {
-                optional<int64_t> integ = KnownVal::getValueI(node.known, typeTable);
+                optional<int64_t> integ = KnownVal::getValueI(node.getKnownVal(), typeTable);
                 if (integ.has_value()) {
-                    msgs->errorBadArraySize(node.codeLoc, integ.value());
+                    msgs->errorBadArraySize(node.getCodeLoc(), integ.value());
                 } else {
-                    msgs->errorInvalidTypeDecorator(node.codeLoc);
+                    msgs->errorInvalidTypeDecorator(node.getCodeLoc());
                 }
             }
             return false;

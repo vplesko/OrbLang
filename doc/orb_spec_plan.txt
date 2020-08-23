@@ -88,7 +88,7 @@ processing node:
 	else:
 		process as non-leaf
 
-when promoting literal to known, type annotation is respected
+when promoting literal to known, type annotation is respected as impl cast, unless id
 codegen cannot gen type and id vars, cannot gen code in global
 evaluator can have pointers only be null, strings may be non-null or null
 
