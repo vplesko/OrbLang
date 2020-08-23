@@ -13,6 +13,7 @@ class Codegen : public Processor {
 
     // TODO!
     NodeVal cast(const NodeVal &node, TypeTable::Id ty) { return NodeVal(); }
+    NodeVal loadSymbol(NamePool::Id id) { return NodeVal(); }
 
 public:
     Codegen(Evaluator *evaluator, NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs);

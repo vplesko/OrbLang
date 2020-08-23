@@ -233,7 +233,7 @@ void CompileMessages::errorNonBinOp(CodeLoc loc, Token::Oper op) {
     stringstream ss;
     ss << "Operation '" << errorString(op) << "' is not binary.";
     error(loc, ss.str());
-}
+}*/
 
 void CompileMessages::errorVarNameTaken(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
@@ -259,7 +259,7 @@ void CompileMessages::errorCnNoInit(CodeLoc loc) {
 
 void CompileMessages::errorExprNotBaked(CodeLoc loc) {
     error(loc, "Expression cannot be evaluated at compile time.");
-}*/
+}
 
 void CompileMessages::errorExprCannotPromote(CodeLoc loc, TypeTable::Id into) {
     stringstream ss;
@@ -271,7 +271,7 @@ void CompileMessages::errorExprCannotPromote(CodeLoc loc, TypeTable::Id into) {
     stringstream ss;
     ss << "Binary operation '" << errorString(op) << "' is not defined for known values of this type.";
     error(loc, ss.str());
-}
+}*/
 
 void CompileMessages::errorExprCompareStringLits(CodeLoc loc) {
     error(loc, "String literals cannot directly be compared for pointer (in)equality.");
@@ -401,7 +401,7 @@ void CompileMessages::errorExprIndexNotIntegral(CodeLoc loc) {
     error(loc, "Index must be of integer or unsigned type.");
 }
 
-void CompileMessages::errorExprUnBadType(CodeLoc loc, Token::Oper op) {
+/*void CompileMessages::errorExprUnBadType(CodeLoc loc, Token::Oper op) {
     stringstream ss;
     ss << "Unary operation '" << errorString(op) << "' is not allowed on this value.";
     error(loc, ss.str());

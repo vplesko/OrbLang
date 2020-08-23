@@ -18,6 +18,7 @@ protected:
 protected:
     // TODO don't forget str to char arr
     virtual NodeVal cast(const NodeVal &node, TypeTable::Id ty) =0;
+    virtual NodeVal loadSymbol(NamePool::Id id) =0;
 
 private:
     NodeVal processAndExpectType(const NodeVal &node);

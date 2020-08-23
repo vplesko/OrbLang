@@ -135,7 +135,36 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
 }
 
 NodeVal Processor::processId(const NodeVal &node) {
-    return NodeVal(); // TODO!
+    NamePool::Id id = node.getKnownVal().id;
+
+    if (symbolTable->isFuncName(id) || symbolTable->isMacroName(id)) {
+        // TODO these as first-class values, with ref
+        KnownVal known;
+        known.id = id;
+
+        return NodeVal(node.getCodeLoc(), known);
+    } else if (typeTable->isType(id)) {
+        // TODO ref for types
+        KnownVal known(typeTable->getPrimTypeId(TypeTable::P_TYPE));
+        known.ty = typeTable->getTypeId(id).value();
+
+        return NodeVal(node.getCodeLoc(), known);
+    } else {
+        NodeVal *value = symbolTable->getVar(id);
+        if (value == nullptr) {
+            msgs->errorVarNameTaken(node.getCodeLoc(), id);
+            return NodeVal();
+        }
+
+        if (value->isKnownVal()) {
+            KnownVal known(value->getKnownVal());
+            known.ref = &value->getKnownVal();
+
+            return NodeVal(node.getCodeLoc(), known);
+        } else {
+            return loadSymbol(id);
+        }
+    }
 }
 
 NodeVal Processor::processSym(const NodeVal &node) {
