@@ -21,6 +21,11 @@ protected:
     virtual NodeVal loadSymbol(NamePool::Id id) =0;
 
 private:
+    bool checkExactlyChildren(const NodeVal &node, std::size_t n, bool orError);
+    bool checkAtLeastChildren(const NodeVal &node, std::size_t n, bool orError);
+    bool checkAtMostChildren(const NodeVal &node, std::size_t n, bool orError);
+    bool checkBetweenChildren(const NodeVal &node, std::size_t nLo, std::size_t nHi, bool orError);
+
     NodeVal processAndExpectType(const NodeVal &node);
     NodeVal processWithEscapeIfLeaf(const NodeVal &node);
     NodeVal processWithEscapeIfLeafUnlessType(const NodeVal &node);

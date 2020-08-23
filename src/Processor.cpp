@@ -172,7 +172,17 @@ NodeVal Processor::processSym(const NodeVal &node) {
 }
 
 NodeVal Processor::processCast(const NodeVal &node) {
-    return NodeVal(); // TODO!
+    if (!checkExactlyChildren(node, 3, true)) {
+        return NodeVal();
+    }
+
+    NodeVal ty = processAndExpectType(node.getChild(1));
+    if (ty.isInvalid()) return NodeVal();
+
+    NodeVal value = processNode(node.getChild(2));
+    if (value.isInvalid()) return NodeVal();
+
+    return cast(value, ty.getKnownVal().ty);
 }
 
 NodeVal Processor::processBlock(const NodeVal &node) {
@@ -355,5 +365,37 @@ bool Processor::applyTypeDescrDecorOrFalse(TypeTable::TypeDescr &descr, const No
         descr.addDecor({.type=TypeTable::TypeDescr::Decor::D_ARR, .len=arrSize.value()});
     }
 
+    return true;
+}
+
+bool Processor::checkExactlyChildren(const NodeVal &node, std::size_t n, bool orError) {
+    if (!node.isComposite() || node.getChildrenCnt() != n) {
+        if (orError) msgs->errorChildrenNotEq(node.getCodeLoc(), n);
+        return false;
+    }
+    return true;
+}
+
+bool Processor::checkAtLeastChildren(const NodeVal &node, std::size_t n, bool orError) {
+    if (!node.isComposite() || node.getChildrenCnt() < n) {
+        if (orError) msgs->errorChildrenLessThan(node.getCodeLoc(), n);
+        return false;
+    }
+    return true;
+}
+
+bool Processor::checkAtMostChildren(const NodeVal &node, std::size_t n, bool orError) {
+    if (!node.isComposite() || node.getChildrenCnt() > n) {
+        if (orError) msgs->errorChildrenMoreThan(node.getCodeLoc(), n);
+        return false;
+    }
+    return true;
+}
+
+bool Processor::checkBetweenChildren(const NodeVal &node, std::size_t nLo, std::size_t nHi, bool orError) {
+    if (!node.isComposite() || !between(node.getChildrenCnt(), nLo, nHi)) {
+        if (orError) msgs->errorChildrenNotBetween(node.getCodeLoc(), nLo, nHi);
+        return false;
+    }
     return true;
 }
