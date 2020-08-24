@@ -214,7 +214,11 @@ NodeVal Processor::processMac(const NodeVal &node) {
 }
 
 NodeVal Processor::processEval(const NodeVal &node) {
-    return NodeVal(); // TODO!
+    if (!checkExactlyChildren(node, 2, true)) {
+        return NodeVal();
+    }
+
+    return evaluateNode(node.getChild(1));
 }
 
 NodeVal Processor::processImport(const NodeVal &node) {
