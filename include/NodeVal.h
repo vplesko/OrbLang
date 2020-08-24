@@ -35,7 +35,7 @@ private:
     friend void swap(NodeVal &lhs, NodeVal &rhs);
 
 public:
-    // Invalid value.
+    // Invalid value. Remember to set code loc before returning if meant to be valid.
     NodeVal();
     // Empty terminal.
     NodeVal(CodeLoc codeLoc);
@@ -53,6 +53,7 @@ public:
     bool isEmpty() const { return isComposite() && getChildrenCnt() == 0; }
     bool isLeaf() const { return !isComposite() || isEmpty(); }
 
+    // Remember to check when returned to you before any other checks or usages.
     bool isInvalid() const { return kind == Kind::kInvalid; }
 
     bool isImport() const { return kind == Kind::kImport; }

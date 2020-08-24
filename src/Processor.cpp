@@ -137,7 +137,8 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
 NodeVal Processor::processId(const NodeVal &node) {
     NamePool::Id id = node.getKnownVal().id;
 
-    if (symbolTable->isFuncName(id) || symbolTable->isMacroName(id)) {
+    if (symbolTable->isFuncName(id) || symbolTable->isMacroName(id) ||
+        isKeyword(id) || isOper(id)) {
         // TODO these as first-class values, with ref
         KnownVal known;
         known.id = id;
