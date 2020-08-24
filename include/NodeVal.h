@@ -22,7 +22,7 @@ private:
     CodeLoc codeLoc;
 
     Kind kind;
-    NamePool::Id importFile;
+    StringPool::Id importFile;
     LiteralVal literal;
     LlvmVal llvm;
     KnownVal known;
@@ -39,7 +39,7 @@ public:
     NodeVal();
     // Empty terminal.
     NodeVal(CodeLoc codeLoc);
-    NodeVal(CodeLoc codeLoc, NamePool::Id import);
+    NodeVal(CodeLoc codeLoc, StringPool::Id import);
     NodeVal(CodeLoc codeLoc, const LiteralVal &val);
     NodeVal(CodeLoc codeLoc, const KnownVal &val);
     NodeVal(CodeLoc codeLoc, const LlvmVal &val);
@@ -56,7 +56,7 @@ public:
     bool isInvalid() const { return kind == Kind::kInvalid; }
 
     bool isImport() const { return kind == Kind::kImport; }
-    NamePool::Id getImportFile() const { return importFile; }
+    StringPool::Id getImportFile() const { return importFile; }
 
     bool isLiteralVal() const { return kind == Kind::kLiteral; }
     LiteralVal& getLiteralVal() { return literal; }

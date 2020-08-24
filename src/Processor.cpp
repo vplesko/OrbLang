@@ -218,7 +218,19 @@ NodeVal Processor::processEval(const NodeVal &node) {
 }
 
 NodeVal Processor::processImport(const NodeVal &node) {
-    return NodeVal(); // TODO!
+    if (!checkInGlobalScope(node.getCodeLoc(), true) ||
+        !checkExactlyChildren(node, 2, true)) {
+        return NodeVal();
+    }
+
+    NodeVal file = processNode(node.getChild(1));
+    if (file.isInvalid()) return NodeVal();
+    if (!file.isKnownVal() || !KnownVal::isStr(file.getKnownVal(), typeTable)) {
+        msgs->errorImportNotString(file.getCodeLoc());
+        return NodeVal();
+    }
+
+    return NodeVal(node.getCodeLoc(), file.getKnownVal().str);
 }
 
 NodeVal Processor::processOper(const NodeVal &node, Oper op) {
@@ -299,10 +311,7 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
 NodeVal Processor::processAndExpectType(const NodeVal &node) {
     NodeVal ty = processNode(node);
     if (ty.isInvalid()) return NodeVal();
-    if (!ty.isKnownVal() || !KnownVal::isType(ty.getKnownVal(), typeTable)) {
-        msgs->errorUnexpectedNotType(node.getCodeLoc());
-        return NodeVal();
-    }
+    if (!checkIsType(ty, true)) return NodeVal();
     return ty;
 }
 
@@ -365,6 +374,22 @@ bool Processor::applyTypeDescrDecorOrFalse(TypeTable::TypeDescr &descr, const No
         descr.addDecor({.type=TypeTable::TypeDescr::Decor::D_ARR, .len=arrSize.value()});
     }
 
+    return true;
+}
+
+bool Processor::checkInGlobalScope(CodeLoc codeLoc, bool orError) {
+    if (!symbolTable->inGlobalScope()) {
+        if (orError) msgs->errorNotGlobalScope(codeLoc);
+        return false;
+    }
+    return true;
+}
+
+bool Processor::checkIsType(const NodeVal &node, bool orError) {
+    if (!node.isKnownVal() || !KnownVal::isType(node.getKnownVal(), typeTable)) {
+        if (orError) msgs->errorUnexpectedNotType(node.getCodeLoc());
+        return false;
+    }
     return true;
 }
 

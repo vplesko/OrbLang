@@ -21,6 +21,8 @@ protected:
     virtual NodeVal loadSymbol(NamePool::Id id) =0;
 
 private:
+    bool checkInGlobalScope(CodeLoc codeLoc, bool orError);
+    bool checkIsType(const NodeVal &node, bool orError);
     bool checkExactlyChildren(const NodeVal &node, std::size_t n, bool orError);
     bool checkAtLeastChildren(const NodeVal &node, std::size_t n, bool orError);
     bool checkAtMostChildren(const NodeVal &node, std::size_t n, bool orError);

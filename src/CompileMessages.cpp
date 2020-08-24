@@ -436,7 +436,7 @@ void CompileMessages::errorExprAsgnOnCn(CodeLoc loc, Token::Oper op) {
     stringstream ss;
     ss << "Operation '" << errorString(op) << "' and other assignment operations cannot assign to constant types.";
     error(loc, ss.str());
-}
+}*/
 
 void CompileMessages::errorExprDotInvalidBase(CodeLoc loc) {
     error(loc, "Invalid expression on left side of dot operator.");
@@ -468,7 +468,7 @@ void CompileMessages::errorNotGlobalScope(CodeLoc loc) {
 
 void CompileMessages::errorEvaluationNotSupported(CodeLoc loc) {
     error(loc, "This evaluation is not supported.");
-}*/
+}
 
 void CompileMessages::errorUnknown(CodeLoc loc) {
     error(loc, "Unknown error occured.");
