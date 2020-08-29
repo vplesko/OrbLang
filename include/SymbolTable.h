@@ -39,6 +39,7 @@ public:
 private:
     struct BlockInternal {
         Block block;
+        //  Guarantees pointer stability of values.
         std::unordered_map<NamePool::Id, NodeVal> vars;
         BlockInternal *prev;
     };

@@ -34,7 +34,7 @@ private:
     NodeVal processWithEscapeIfLeafUnlessType(const NodeVal &node);
 
     NodeVal promoteLiteralVal(const NodeVal &node);
-    bool applyTypeDescrDecorOrFalse(TypeTable::TypeDescr &descr, const NodeVal &node);
+    bool applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &node);
 
     NodeVal processInvoke(const NodeVal &node, const NodeVal &starting);
     NodeVal processType(const NodeVal &node, const NodeVal &starting);

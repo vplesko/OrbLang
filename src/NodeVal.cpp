@@ -62,18 +62,18 @@ std::size_t NodeVal::getLength() const {
     return 1;
 }
 
-void NodeVal::addChild(NodeVal &&c) {
+void NodeVal::addChild(NodeVal c) {
     children.push_back(make_unique<NodeVal>(move(c)));
 }
 
-void NodeVal::addChildren(std::vector<NodeVal> &&c) {
+void NodeVal::addChildren(std::vector<NodeVal> c) {
     children.reserve(children.size()+c.size());
     for (auto &it : c) {
         addChild(move(it));
     }
 }
 
-void NodeVal::setTypeAnnot(NodeVal &&t) {
+void NodeVal::setTypeAnnot(NodeVal t) {
     typeAnnot = make_unique<NodeVal>(move(t));
 }
 

@@ -117,11 +117,11 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
         knownTy.ty = tupTypeId.value();
     } else {
         TypeTable::TypeDescr descr(starting.getKnownVal().ty);
-        if (!applyTypeDescrDecorOrFalse(descr, second)) return NodeVal();
+        if (!applyTypeDescrDecor(descr, second)) return NodeVal();
         for (size_t i = 2; i < node.getChildrenCnt(); ++i) {
             NodeVal decor = processWithEscapeIfLeaf(node.getChild(i));
             if (decor.isInvalid()) return NodeVal();
-            if (!applyTypeDescrDecorOrFalse(descr, decor)) return NodeVal();
+            if (!applyTypeDescrDecor(descr, decor)) return NodeVal();
         }
 
         knownTy.ty = typeTable->addTypeDescr(move(descr));
@@ -158,10 +158,7 @@ NodeVal Processor::processId(const NodeVal &node) {
         }
 
         if (value->isKnownVal()) {
-            KnownVal known(value->getKnownVal());
-            known.ref = &value->getKnownVal();
-
-            return NodeVal(node.getCodeLoc(), known);
+            return NodeVal(node.getCodeLoc(), value->getKnownVal());
         } else {
             return loadSymbol(id);
         }
@@ -345,7 +342,7 @@ NodeVal Processor::processWithEscapeIfLeafUnlessType(const NodeVal &node) {
     }
 }
 
-bool Processor::applyTypeDescrDecorOrFalse(TypeTable::TypeDescr &descr, const NodeVal &node) {
+bool Processor::applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &node) {
     if (!node.isKnownVal()) return false;
 
     if (KnownVal::isId(node.getKnownVal(), typeTable)) {
