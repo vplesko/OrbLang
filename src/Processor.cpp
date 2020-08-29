@@ -200,7 +200,73 @@ NodeVal Processor::processPass(const NodeVal &node) {
 }
 
 NodeVal Processor::processFnc(const NodeVal &node) {
-    return NodeVal(); // TODO!
+    if (!checkInGlobalScope(node.getCodeLoc(), true) ||
+        !checkBetweenChildren(node, 4, 5, true)) {
+        return NodeVal();
+    }
+
+    FuncValue val;
+    val.defined = node.getChildrenCnt() == 5;
+
+    // name
+    NodeVal name = processWithEscapeIfLeafAndExpectId(node.getChild(1));
+    if (name.isInvalid()) return NodeVal();
+    if (!symbolTable->nameAvailable(name.getKnownVal().id, namePool, typeTable)) {
+        msgs->errorFuncNameTaken(name.getCodeLoc(), name.getKnownVal().id);
+        return NodeVal();
+    }
+    val.name = name.getKnownVal().id;
+
+    // arguments
+    const NodeVal &nodeArgs = node.getChild(2);
+    if (!checkIsComposite(nodeArgs, true)) return NodeVal();
+    val.variadic = false;
+    for (size_t i = 0; i < nodeArgs.getChildrenCnt(); ++i) {
+        const NodeVal &nodeArg = nodeArgs.getChild(i);
+
+        if (val.variadic) {
+            msgs->errorNotLastParam(nodeArg.getCodeLoc());
+            return NodeVal();
+        }
+
+        pair<NodeVal, optional<NodeVal>> arg = processForIdTypePair(nodeArg);
+        if (arg.first.isInvalid()) return NodeVal();
+        NamePool::Id argId = arg.first.getKnownVal().id;
+        if (isMeaningful(argId) && getMeaningful(argId) == Meaningful::ELLIPSIS) {
+            val.variadic = true;
+        } else {
+            if (!arg.second.has_value()) {
+                msgs->errorMissingTypeAnnotation(nodeArg.getCodeLoc());
+                return NodeVal();
+            }
+            val.argNames.push_back(argId);
+            val.argTypes.push_back(arg.second.value().getKnownVal().ty);
+        }
+    }
+
+    // check no arg name duplicates
+    for (size_t i = 0; i+1 < nodeArgs.getChildrenCnt(); ++i) {
+        for (size_t j = i+1; j < nodeArgs.getChildrenCnt(); ++j) {
+            if (val.argNames[i] == val.argNames[j]) {
+                msgs->errorArgNameDuplicate(nodeArgs.getChild(j).getCodeLoc(), val.argNames[j]);
+                return NodeVal();
+            }
+        }
+    }
+
+    // ret type
+    const NodeVal &nodeRetType = node.getChild(2);
+    if (!nodeRetType.isEmpty()) {
+        NodeVal ty = processAndExpectType(nodeRetType);
+        if (ty.isInvalid()) return NodeVal();
+        val.retType = ty.getKnownVal().ty;
+    }
+
+    if (!makeFunction(node, val)) return NodeVal();
+
+    symbolTable->registerFunc(val);
+
+    return NodeVal(node.getCodeLoc());
 }
 
 NodeVal Processor::processRet(const NodeVal &node) {
@@ -327,6 +393,13 @@ NodeVal Processor::processWithEscapeIfLeaf(const NodeVal &node) {
     }
 }
 
+NodeVal Processor::processWithEscapeIfLeafAndExpectId(const NodeVal &node) {
+    NodeVal id = processWithEscapeIfLeaf(node);
+    if (id.isInvalid()) return NodeVal();
+    if (!checkIsId(id, true)) return NodeVal();
+    return id;
+}
+
 NodeVal Processor::processWithEscapeIfLeafUnlessType(const NodeVal &node) {
     if (node.isLeaf() && !node.isEscaped()) {
         NodeVal esc = processWithEscapeIfLeaf(node);
@@ -340,6 +413,21 @@ NodeVal Processor::processWithEscapeIfLeafUnlessType(const NodeVal &node) {
     } else {
         return processNode(node);
     }
+}
+
+pair<NodeVal, optional<NodeVal>> Processor::processForIdTypePair(const NodeVal &node) {
+    const pair<NodeVal, optional<NodeVal>> invalidRet = make_pair<NodeVal, optional<NodeVal>>(NodeVal(), nullopt);
+    
+    NodeVal id = processWithEscapeIfLeafAndExpectId(node);
+    if (id.isInvalid()) return invalidRet;
+
+    optional<NodeVal> ty;
+    if (node.hasTypeAnnot()) {
+        ty = processAndExpectType(node.getTypeAnnot());
+        if (ty.value().isInvalid()) return invalidRet;
+    }
+
+    return make_pair<NodeVal, optional<NodeVal>>(move(id), move(ty));
 }
 
 bool Processor::applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &node) {
@@ -387,9 +475,25 @@ bool Processor::checkInGlobalScope(CodeLoc codeLoc, bool orError) {
     return true;
 }
 
+bool Processor::checkIsId(const NodeVal &node, bool orError) {
+    if (!node.isKnownVal() || !KnownVal::isId(node.getKnownVal(), typeTable)) {
+        if (orError) msgs->errorUnexpectedNotId(node.getCodeLoc());
+        return false;
+    }
+    return true;
+}
+
 bool Processor::checkIsType(const NodeVal &node, bool orError) {
     if (!node.isKnownVal() || !KnownVal::isType(node.getKnownVal(), typeTable)) {
         if (orError) msgs->errorUnexpectedNotType(node.getCodeLoc());
+        return false;
+    }
+    return true;
+}
+
+bool Processor::checkIsComposite(const NodeVal &node, bool orError) {
+    if (!node.isComposite()) {
+        if (orError) msgs->errorUnexpectedIsTerminal(node.getCodeLoc());
         return false;
     }
     return true;

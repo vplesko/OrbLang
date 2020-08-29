@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include "NodeVal.h"
 #include "NamePool.h"
 #include "StringPool.h"
@@ -20,10 +21,13 @@ protected:
     // TODO don't forget str to char arr
     virtual NodeVal cast(const NodeVal &node, TypeTable::Id ty) =0;
     virtual NodeVal evaluateNode(const NodeVal &node) =0;
+    virtual bool makeFunction(const NodeVal &node, FuncValue &func) =0;
 
 private:
     bool checkInGlobalScope(CodeLoc codeLoc, bool orError);
+    bool checkIsId(const NodeVal &node, bool orError);
     bool checkIsType(const NodeVal &node, bool orError);
+    bool checkIsComposite(const NodeVal &node, bool orError);
     bool checkExactlyChildren(const NodeVal &node, std::size_t n, bool orError);
     bool checkAtLeastChildren(const NodeVal &node, std::size_t n, bool orError);
     bool checkAtMostChildren(const NodeVal &node, std::size_t n, bool orError);
@@ -31,7 +35,9 @@ private:
 
     NodeVal processAndExpectType(const NodeVal &node);
     NodeVal processWithEscapeIfLeaf(const NodeVal &node);
+    NodeVal processWithEscapeIfLeafAndExpectId(const NodeVal &node);
     NodeVal processWithEscapeIfLeafUnlessType(const NodeVal &node);
+    std::pair<NodeVal, std::optional<NodeVal>> processForIdTypePair(const NodeVal &node);
 
     NodeVal promoteLiteralVal(const NodeVal &node);
     bool applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &node);

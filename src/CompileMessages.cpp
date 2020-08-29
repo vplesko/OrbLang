@@ -143,7 +143,7 @@ void CompileMessages::errorUnexpectedKeyword(CodeLoc loc, Keyword keyw) {
     error(loc, "Unexpected keyword found.");
 }
 
-/*void CompileMessages::errorUnexpectedIsNotTerminal(CodeLoc loc) {
+void CompileMessages::errorUnexpectedIsNotTerminal(CodeLoc loc) {
     error(loc, "Non-terminal was not expected at this location.");
 }
 
@@ -161,7 +161,7 @@ void CompileMessages::errorUnexpectedNotId(CodeLoc loc) {
 
 void CompileMessages::errorUnexpectedNotFunc(CodeLoc loc) {
     error(loc, "Result does not present a function.");
-}*/
+}
 
 void CompileMessages::errorUnexpectedNotType(CodeLoc loc) {
     error(loc, "Result does not present a type.");
