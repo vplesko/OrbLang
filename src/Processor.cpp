@@ -321,12 +321,13 @@ NodeVal Processor::processImport(const NodeVal &node) {
 
     NodeVal file = processNode(node.getChild(1));
     if (file.isInvalid()) return NodeVal();
-    if (!file.isKnownVal() || !KnownVal::isStr(file.getKnownVal(), typeTable)) {
+    if (!file.isKnownVal() || !KnownVal::isStr(file.getKnownVal(), typeTable) ||
+        KnownVal::isNull(file.getKnownVal(), typeTable)) {
         msgs->errorImportNotString(file.getCodeLoc());
         return NodeVal();
     }
 
-    return NodeVal(node.getCodeLoc(), file.getKnownVal().str);
+    return NodeVal(node.getCodeLoc(), file.getKnownVal().str.value());
 }
 
 NodeVal Processor::processOper(const NodeVal &node, Oper op) {

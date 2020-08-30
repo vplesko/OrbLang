@@ -23,7 +23,7 @@ struct KnownVal {
         double f64;
         char c8;
         bool b;
-        StringPool::Id str;
+        std::optional<StringPool::Id> str;
         NamePool::Id id;
         TypeTable::Id ty;
     };
@@ -52,6 +52,9 @@ struct KnownVal {
     static bool isC(const KnownVal &val, const TypeTable *typeTable);
     static bool isStr(const KnownVal &val, const TypeTable *typeTable);
     static bool isAnyP(const KnownVal &val, const TypeTable *typeTable);
+    static bool isArr(const KnownVal &val, const TypeTable *typeTable);
+    static bool isTuple(const KnownVal &val, const TypeTable *typeTable);
+    static bool isNull(const KnownVal &val, const TypeTable *typeTable);
 
     static std::optional<std::int64_t> getValueI(const KnownVal &val, const TypeTable *typeTable);
     static std::optional<std::uint64_t> getValueU(const KnownVal &val, const TypeTable *typeTable);

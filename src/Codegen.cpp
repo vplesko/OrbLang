@@ -104,6 +104,48 @@ NodeVal Codegen::evaluateNode(const NodeVal &node) {
     return evaluator->processNode(node);
 }
 
+NodeVal Codegen::promoteKnownVal(const NodeVal &node) {
+    const KnownVal &known = node.getKnownVal();
+    if (!node.getKnownVal().type.has_value()) {
+        msgs->errorExprCannotPromote(node.getCodeLoc());
+        return NodeVal();
+    }
+    TypeTable::Id ty = node.getKnownVal().type.value();
+
+    llvm::Constant *llvmConst = nullptr;
+    if (KnownVal::isI(known, typeTable)) {
+        llvmConst = llvm::ConstantInt::get(getLlvmType(ty), KnownVal::getValueI(known, typeTable).value(), true);
+    } else if (KnownVal::isU(known, typeTable)) {
+        llvmConst = llvm::ConstantInt::get(getLlvmType(ty), KnownVal::getValueU(known, typeTable).value(), false);
+    } else if (KnownVal::isF(known, typeTable)) {
+        llvmConst = llvm::ConstantFP::get(getLlvmType(ty), KnownVal::getValueF(known, typeTable).value());
+    } else if (KnownVal::isC(known, typeTable)) {
+        llvmConst = llvm::ConstantInt::get(getLlvmType(ty), (uint8_t) known.c8, false);
+    } else if (KnownVal::isB(known, typeTable)) {
+        llvmConst = getConstB(known.b);
+    } else if (KnownVal::isNull(known, typeTable)) {
+        llvmConst = llvm::ConstantPointerNull::get((llvm::PointerType*)getLlvmType(ty));
+    } else if (KnownVal::isStr(known, typeTable)) {
+        const std::string &str = stringPool->get(known.str.value());
+        llvmConst = getConstString(str);
+    } else if (KnownVal::isArr(known, typeTable)) {
+        // TODO!
+    } else if (KnownVal::isTuple(known, typeTable)) {
+        // TODO!
+    }
+
+    if (llvmConst == nullptr) {
+        msgs->errorExprCannotPromote(node.getCodeLoc());
+        return NodeVal();
+    }
+
+    LlvmVal llvmVal;
+    llvmVal.type = ty;
+    llvmVal.val = llvmConst;
+
+    return NodeVal(node.getCodeLoc(), llvmVal);
+}
+
 llvm::Type* Codegen::getLlvmType(TypeTable::Id typeId) {
     llvm::Type *llvmType = typeTable->getType(typeId);
     if (llvmType != nullptr) return llvmType;

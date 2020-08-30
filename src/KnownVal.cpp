@@ -61,6 +61,21 @@ bool KnownVal::isAnyP(const KnownVal &val, const TypeTable *typeTable) {
     return type.has_value() && typeTable->worksAsTypeAnyP(type.value());
 }
 
+bool KnownVal::isArr(const KnownVal &val, const TypeTable *typeTable) {
+    optional<TypeTable::Id> type = val.getType();
+    return type.has_value() && typeTable->worksAsTypeArr(type.value());
+}
+
+bool KnownVal::isTuple(const KnownVal &val, const TypeTable *typeTable) {
+    optional<TypeTable::Id> type = val.getType();
+    return type.has_value() && typeTable->worksAsTuple(type.value());
+}
+
+bool KnownVal::isNull(const KnownVal &val, const TypeTable *typeTable) {
+    if (isStr(val, typeTable)) return !val.str.has_value();
+    return isAnyP(val, typeTable);
+}
+
 optional<int64_t> KnownVal::getValueI(const KnownVal &val, const TypeTable *typeTable) {
     if (!val.getType().has_value()) return nullopt;
     if (typeTable->worksAsPrimitive(val.getType().value(), TypeTable::P_I8)) return val.i8;
@@ -114,9 +129,9 @@ bool KnownVal::isImplicitCastable(const KnownVal &val, TypeTable::Id t, const St
     optional<double> valF = getValueF(val, typeTable);
     if (valF.has_value()) return typeTable->fitsTypeF(valF.value(), t);
     
-    if (typeTable->worksAsTypeStr(val.getType().value()))
+    if (isStr(val, typeTable) && !isNull(val, typeTable))
         return typeTable->worksAsTypeStr(t) ||
-            typeTable->worksAsTypeCharArrOfLen(t, LiteralVal::getStringLen(stringPool->get(val.str)));
+            typeTable->worksAsTypeCharArrOfLen(t, LiteralVal::getStringLen(stringPool->get(val.str.value())));
 
     return false;
 }

@@ -261,6 +261,10 @@ void CompileMessages::errorExprNotBaked(CodeLoc loc) {
     error(loc, "Expression cannot be evaluated at compile time.");
 }
 
+void CompileMessages::errorExprCannotPromote(CodeLoc loc) {
+    error(loc, "Expression cannot be promoted.");
+}
+
 void CompileMessages::errorExprCannotPromote(CodeLoc loc, TypeTable::Id into) {
     stringstream ss;
     ss << "Expression cannot be promoted to expected type '" << errorStringOfType(into) << "'.";

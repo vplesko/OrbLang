@@ -23,6 +23,8 @@ class Codegen : public Processor {
 
     llvm::Type* getLlvmType(TypeTable::Id typeId);
 
+    NodeVal promoteKnownVal(const NodeVal &node);
+
     // TODO!
     NodeVal loadSymbol(NamePool::Id id) { return NodeVal(); }
     NodeVal cast(const NodeVal &node, TypeTable::Id ty) { return NodeVal(); }

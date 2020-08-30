@@ -288,7 +288,7 @@ bool TypeTable::worksAsPrimitive(Id t) const {
     } else {
         const TypeDescr &descr = typeDescrs[t.index].first;
         if (!descr.decors.empty()) return false;
-        return isPrimitive(descr.base);
+        return worksAsPrimitive(descr.base);
     }
 }
 
@@ -302,8 +302,7 @@ bool TypeTable::worksAsPrimitive(Id t, PrimIds p) const {
     } else {
         const TypeDescr &descr = typeDescrs[t.index].first;
         if (!descr.decors.empty()) return false;
-        if (!isPrimitive(descr.base)) return false;
-        return descr.base.index == p;
+        return worksAsPrimitive(descr.base);
     }
 }
 
@@ -317,8 +316,21 @@ bool TypeTable::worksAsPrimitive(Id t, PrimIds lo, PrimIds hi) const {
     } else {
         const TypeDescr &descr = typeDescrs[t.index].first;
         if (!descr.decors.empty()) return false;
-        if (!isPrimitive(descr.base)) return false;
-        return between((PrimIds) descr.base.index, lo, hi);
+        return worksAsPrimitive(descr.base, lo, hi);
+    }
+}
+
+bool TypeTable::worksAsTuple(Id t) const {
+    if (!isValidType(t)) return false;
+    
+    if (isPrimitive(t)) {
+        return false;
+    } else if (isTuple(t)) {
+        return true;
+    } else {
+        const TypeDescr &descr = typeDescrs[t.index].first;
+        if (!descr.decors.empty()) return false;
+        return worksAsTuple(descr.base);
     }
 }
 
@@ -372,9 +384,7 @@ bool TypeTable::worksAsTypePtr(Id t) const {
         return t.index == P_PTR;
     } else if (isTypeDescr(t)) {
         const TypeDescr &descr = getTypeDescr(t);
-
-        return descr.decors.empty() &&
-            isPrimitive(descr.base) && descr.base.index == P_PTR;
+        return descr.decors.empty() && worksAsTypePtr(descr.base);
     }
     
     return false;

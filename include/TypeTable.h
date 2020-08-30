@@ -166,6 +166,7 @@ public:
     bool worksAsPrimitive(Id t) const;
     bool worksAsPrimitive(Id t, PrimIds p) const;
     bool worksAsPrimitive(Id t, PrimIds lo, PrimIds hi) const;
+    bool worksAsTuple(Id t) const;
     bool worksAsTypeI(Id t) const { return worksAsPrimitive(t, P_I8, P_I64); }
     bool worksAsTypeU(Id t) const { return worksAsPrimitive(t, P_U8, P_U64); }
     bool worksAsTypeF(Id t) const { return worksAsPrimitive(t, P_F32, P_F64); }

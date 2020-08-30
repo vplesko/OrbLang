@@ -75,6 +75,7 @@ public:
     void errorCnNoInit(CodeLoc loc, NamePool::Id name);
     void errorCnNoInit(CodeLoc loc);
     void errorExprNotBaked(CodeLoc loc);
+    void errorExprCannotPromote(CodeLoc loc);
     void errorExprCannotPromote(CodeLoc loc, TypeTable::Id into);
     void errorExprKnownBinBadOp(CodeLoc loc, Oper op);
     void errorExprCompareStringLits(CodeLoc loc);
