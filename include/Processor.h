@@ -19,7 +19,6 @@ protected:
 
 protected:
     virtual NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id) =0;
-    // TODO don't forget str to char arr
     virtual NodeVal performCast(const NodeVal &node, TypeTable::Id ty) =0;
     virtual NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) =0;
     virtual bool performFunctionMake(const NodeVal &node, FuncValue &func) =0;
@@ -47,7 +46,6 @@ private:
 
     NodeVal processInvoke(const NodeVal &node, const NodeVal &starting);
     NodeVal processType(const NodeVal &node, const NodeVal &starting);
-    // TODO don't forget types, funcs, macros are vars
     NodeVal processId(const NodeVal &node);
     NodeVal processSym(const NodeVal &node);
     NodeVal processCast(const NodeVal &node);

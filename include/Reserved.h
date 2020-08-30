@@ -68,7 +68,10 @@ extern const std::unordered_map<Oper, OperInfo> operInfos;
 
 bool isMeaningful(NamePool::Id name);
 std::optional<Meaningful> getMeaningful(NamePool::Id name);
+bool isMeaningful(NamePool::Id name, Meaningful m);
 bool isKeyword(NamePool::Id name);
 std::optional<Keyword> getKeyword(NamePool::Id name);
+bool isKeyword(NamePool::Id name, Keyword k);
 bool isOper(NamePool::Id name);
 std::optional<Oper> getOper(NamePool::Id name);
+bool isOper(NamePool::Id name, Oper o);

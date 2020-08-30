@@ -39,6 +39,11 @@ optional<Meaningful> getMeaningful(NamePool::Id name) {
     return loc->second;
 }
 
+bool isMeaningful(NamePool::Id name, Meaningful m) {
+    optional<Meaningful> opt = getMeaningful(name);
+    return opt.has_value() && opt.value() == m;
+}
+
 bool isKeyword(NamePool::Id name) {
     return keywords.contains(name);
 }
@@ -49,6 +54,11 @@ optional<Keyword> getKeyword(NamePool::Id name) {
     return loc->second;
 }
 
+bool isKeyword(NamePool::Id name, Keyword k) {
+    optional<Keyword> opt = getKeyword(name);
+    return opt.has_value() && opt.value() == k;
+}
+
 bool isOper(NamePool::Id name) {
     return opers.contains(name);
 }
@@ -57,4 +67,9 @@ optional<Oper> getOper(NamePool::Id name) {
     auto loc = opers.find(name);
     if (loc == opers.end()) return nullopt;
     return loc->second;
+}
+
+bool isOper(NamePool::Id name, Oper o) {
+    optional<Oper> opt = getOper(name);
+    return opt.has_value() && opt.value() == o;
 }

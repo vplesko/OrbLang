@@ -27,7 +27,6 @@ class Codegen : public Processor {
 
     // TODO!    
     NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id) { return NodeVal(); }
-    // TODO don't forget str to char arr
     NodeVal performCast(const NodeVal &node, TypeTable::Id ty);
     NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) { return NodeVal(); }
     bool performFunctionMake(const NodeVal &node, FuncValue &func) { return false; }

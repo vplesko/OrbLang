@@ -106,6 +106,7 @@ NodeVal Codegen::performCast(const NodeVal &node, TypeTable::Id ty) {
     }
 
     // TODO!
+    // TODO don't forget str to char arr
     return NodeVal();
 }
 
