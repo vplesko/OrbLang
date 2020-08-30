@@ -47,10 +47,10 @@ void SymbolTable::registerFunc(const FuncValue &val) {
     funcs[val.name] = val;
 }
 
-llvm::Function* SymbolTable::getFunction(NamePool::Id name) const {
+const FuncValue* SymbolTable::getFunction(NamePool::Id name) const {
     auto loc = funcs.find(name);
     if (loc == funcs.end()) return nullptr;
-    return loc->second.func;
+    return &loc->second;
 }
 
 void SymbolTable::registerMacro(MacroValue &&val) {

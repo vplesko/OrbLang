@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <vector>
 #include "NodeVal.h"
 #include "NamePool.h"
 #include "StringPool.h"
@@ -22,6 +23,7 @@ protected:
     virtual NodeVal cast(const NodeVal &node, TypeTable::Id ty) =0;
     virtual NodeVal evaluateNode(const NodeVal &node) =0;
     virtual bool makeFunction(const NodeVal &node, FuncValue &func) =0;
+    virtual NodeVal createCall(const FuncValue &func, const std::vector<NodeVal> &args) =0;
 
 private:
     bool checkInGlobalScope(CodeLoc codeLoc, bool orError);

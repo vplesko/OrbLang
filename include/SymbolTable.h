@@ -18,6 +18,7 @@ struct FuncValue {
 
     llvm::Function *func;
 
+    std::size_t argCnt() const { return argNames.size(); }
     bool hasRet() const { return retType.has_value(); }
 };
 
@@ -70,7 +71,7 @@ public:
     NodeVal* getVar(NamePool::Id name);
 
     void registerFunc(const FuncValue &val);
-    llvm::Function* getFunction(NamePool::Id name) const;
+    const FuncValue* getFunction(NamePool::Id name) const;
 
     void registerMacro(MacroValue &&val);
     const MacroValue* getMacro(NamePool::Id name) const;

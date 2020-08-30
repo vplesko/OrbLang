@@ -196,9 +196,9 @@ Token Lexer::next() {
             nextCh();
         } else if (ch == '\\') {
             tok.type = Token::T_BACKSLASH;
-        } else if (isalnum(ch) || !idSpecialChars.find(ch) != idSpecialChars.npos) {
+        } else if (isalnum(ch) || idSpecialChars.find(ch) != idSpecialChars.npos) {
             int l = col-1;
-            while (isalnum(ch) || !idSpecialChars.find(ch) != idSpecialChars.npos) {
+            while (isalnum(ch) || idSpecialChars.find(ch) != idSpecialChars.npos) {
                 nextCh();
             }
 

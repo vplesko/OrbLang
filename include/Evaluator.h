@@ -8,6 +8,7 @@ class Evaluator : public Processor {
     NodeVal cast(const NodeVal &node, TypeTable::Id ty) { return NodeVal(); }
     NodeVal evaluateNode(const NodeVal &node) { return NodeVal(); }
     bool makeFunction(const NodeVal &node, FuncValue &func) { return false; }
+    NodeVal createCall(const FuncValue &func, const std::vector<NodeVal> &args) { return NodeVal(); }
 
 public:
     Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs);
