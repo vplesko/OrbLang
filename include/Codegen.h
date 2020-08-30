@@ -11,6 +11,18 @@
 class Codegen : public Processor {
     Evaluator *evaluator;
 
+    llvm::LLVMContext llvmContext;
+    llvm::IRBuilder<> llvmBuilder, llvmBuilderAlloca;
+    std::unique_ptr<llvm::Module> llvmModule;
+    std::unique_ptr<llvm::PassManagerBuilder> llvmPMB;
+    std::unique_ptr<llvm::legacy::FunctionPassManager> llvmFPM;
+
+    llvm::Constant* getConstB(bool val);
+    // generates a constant for a string literal
+    llvm::Constant* getConstString(const std::string &str);
+
+    llvm::Type* getLlvmType(TypeTable::Id typeId);
+
     // TODO!
     NodeVal loadSymbol(NamePool::Id id) { return NodeVal(); }
     NodeVal cast(const NodeVal &node, TypeTable::Id ty) { return NodeVal(); }
@@ -22,14 +34,13 @@ class Codegen : public Processor {
 public:
     Codegen(Evaluator *evaluator, NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs);
 
-    // TODO!
-    llvm::Type* genPrimTypeBool() { return false; }
-    llvm::Type* genPrimTypeI(unsigned bits) { return false; }
-    llvm::Type* genPrimTypeU(unsigned bits) { return false; }
-    llvm::Type* genPrimTypeC(unsigned bits) { return false; }
-    llvm::Type* genPrimTypeF32() { return false; }
-    llvm::Type* genPrimTypeF64() { return false; }
-    llvm::Type* genPrimTypePtr() { return false; }
+    llvm::Type* genPrimTypeBool();
+    llvm::Type* genPrimTypeI(unsigned bits);
+    llvm::Type* genPrimTypeU(unsigned bits);
+    llvm::Type* genPrimTypeC(unsigned bits);
+    llvm::Type* genPrimTypeF32();
+    llvm::Type* genPrimTypeF64();
+    llvm::Type* genPrimTypePtr();
 
     // TODO!
     void printout() const {}
