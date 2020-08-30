@@ -49,6 +49,7 @@ public:
 
     CodeLoc getCodeLoc() const { return codeLoc; }
     bool isEscaped() const { return escaped; }
+    std::optional<TypeTable::Id> getType() const;
     std::size_t getLength() const;
     bool isEmpty() const { return isComposite() && getChildrenCnt() == 0; }
     bool isLeaf() const { return !isComposite() || isEmpty(); }

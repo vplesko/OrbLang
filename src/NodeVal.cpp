@@ -56,6 +56,12 @@ NodeVal& NodeVal::operator=(NodeVal other) {
     return *this;
 }
 
+optional<TypeTable::Id> NodeVal::getType() const {
+    if (isKnownVal()) return getKnownVal().getType();
+    if (isLlvmVal()) return getLlvmVal().type;
+    return nullopt;
+}
+
 std::size_t NodeVal::getLength() const {
     if (isInvalid()) return 0;
     if (isComposite()) return getChildrenCnt();

@@ -130,37 +130,6 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
     return NodeVal(node.getCodeLoc(), knownTy);
 }
 
-NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
-    NamePool::Id name = starting.getKnownVal().getCallableId().value();
-    const FuncValue *funcVal = symbolTable->getFunction(name);
-    if (funcVal == nullptr) {
-        msgs->errorFuncNotFound(starting.getCodeLoc(), name);
-        return NodeVal();
-    }
-    
-    size_t providedArgCnt = node.getChildrenCnt()-1;
-    if (funcVal->argCnt() > providedArgCnt ||
-        (funcVal->argCnt() < providedArgCnt && !funcVal->variadic)) {
-        msgs->errorUnknown(node.getCodeLoc());
-        return NodeVal();    
-    }
-
-    vector<NodeVal> args;
-    for (size_t i = 0; i < providedArgCnt; ++i) {
-        NodeVal arg = processNode(node.getChild(i+1));
-        if (arg.isInvalid()) return NodeVal();
-
-        if (i <= providedArgCnt) {
-            TypeTable::Id argCastType = funcVal->argTypes[i];
-            arg = cast(arg, argCastType);
-            if (arg.isInvalid()) return NodeVal();
-        }
-        args.push_back(move(arg));
-    }
-    
-    return createCall(*funcVal, args);
-}
-
 NodeVal Processor::processId(const NodeVal &node) {
     NamePool::Id id = node.getKnownVal().id;
 
@@ -224,6 +193,38 @@ NodeVal Processor::processLoop(const NodeVal &node) {
 
 NodeVal Processor::processPass(const NodeVal &node) {
     return NodeVal(); // TODO!
+}
+
+NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
+    NamePool::Id name = starting.getKnownVal().getCallableId().value();
+    const FuncValue *funcVal = symbolTable->getFunction(name);
+    if (funcVal == nullptr) {
+        msgs->errorFuncNotFound(starting.getCodeLoc(), name);
+        return NodeVal();
+    }
+    
+    size_t providedArgCnt = node.getChildrenCnt()-1;
+    if (funcVal->argCnt() > providedArgCnt ||
+        (funcVal->argCnt() < providedArgCnt && !funcVal->variadic)) {
+        msgs->errorUnknown(node.getCodeLoc());
+        return NodeVal();    
+    }
+
+    vector<NodeVal> args;
+    for (size_t i = 0; i < providedArgCnt; ++i) {
+        NodeVal arg = processNode(node.getChild(i+1));
+        if (arg.isInvalid()) return NodeVal();
+
+        if (i <= providedArgCnt) {
+            TypeTable::Id argCastType = funcVal->argTypes[i];
+            if (!checkImplicitCastable(arg, argCastType, true)) return NodeVal();
+            arg = cast(arg, argCastType);
+            if (arg.isInvalid()) return NodeVal();
+        }
+        args.push_back(move(arg));
+    }
+    
+    return createCall(*funcVal, args);
 }
 
 NodeVal Processor::processFnc(const NodeVal &node) {
@@ -554,6 +555,26 @@ bool Processor::checkBetweenChildren(const NodeVal &node, std::size_t nLo, std::
     if (!node.isComposite() || !between(node.getChildrenCnt(), nLo, nHi)) {
         if (orError) msgs->errorChildrenNotBetween(node.getCodeLoc(), nLo, nHi);
         return false;
+    }
+    return true;
+}
+
+bool Processor::checkImplicitCastable(const NodeVal &node, TypeTable::Id ty, bool orError) {
+    optional<TypeTable::Id> nodeTy = node.getType();
+    if (!nodeTy.has_value()) {
+        if (orError) msgs->errorUnknown(node.getCodeLoc());
+        return false;
+    }
+    if (node.isKnownVal()) {
+        if (!KnownVal::isImplicitCastable(node.getKnownVal(), ty, stringPool, typeTable)) {
+            if (orError) msgs->errorExprCannotImplicitCast(node.getCodeLoc(), nodeTy.value(), ty);
+            return false;
+        }
+    } else {
+        if (!typeTable->isImplicitCastable(nodeTy.value(), ty)) {
+            if (orError) msgs->errorExprCannotImplicitCast(node.getCodeLoc(), nodeTy.value(), ty);
+            return false;
+        }
     }
     return true;
 }
