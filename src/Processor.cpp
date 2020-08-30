@@ -260,7 +260,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         pair<NodeVal, optional<NodeVal>> arg = processForIdTypePair(nodeArg);
         if (arg.first.isInvalid()) return NodeVal();
         NamePool::Id argId = arg.first.getKnownVal().id;
-        if (isMeaningful(argId) && getMeaningful(argId) == Meaningful::ELLIPSIS) {
+        if (isMeaningful(argId, Meaningful::ELLIPSIS)) {
             val.variadic = true;
         } else {
             if (!arg.second.has_value()) {
