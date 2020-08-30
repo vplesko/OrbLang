@@ -14,8 +14,8 @@ class Codegen : public Processor {
     llvm::LLVMContext llvmContext;
     llvm::IRBuilder<> llvmBuilder, llvmBuilderAlloca;
     std::unique_ptr<llvm::Module> llvmModule;
-    std::unique_ptr<llvm::PassManagerBuilder> llvmPMB;
-    std::unique_ptr<llvm::legacy::FunctionPassManager> llvmFPM;
+    std::unique_ptr<llvm::PassManagerBuilder> llvmPmb;
+    std::unique_ptr<llvm::legacy::FunctionPassManager> llvmFpm;
 
     llvm::Constant* getConstB(bool val);
     // generates a constant for a string literal
@@ -42,7 +42,6 @@ public:
     llvm::Type* genPrimTypeF64();
     llvm::Type* genPrimTypePtr();
 
-    // TODO!
-    void printout() const {}
-    bool binary(const std::string &filename) { return false; }
+    void printout() const;
+    bool binary(const std::string &filename);
 };
