@@ -25,13 +25,13 @@ class Codegen : public Processor {
 
     NodeVal promoteKnownVal(const NodeVal &node);
 
-    // TODO!
-    NodeVal loadSymbol(NamePool::Id id) { return NodeVal(); }
-    NodeVal cast(const NodeVal &node, TypeTable::Id ty) { return NodeVal(); }
-    NodeVal createCall(const FuncValue &func, const std::vector<NodeVal> &args) { return NodeVal(); }
-    bool makeFunction(const NodeVal &node, FuncValue &func) { return false; }
-    
-    NodeVal evaluateNode(const NodeVal &node);
+    // TODO!    
+    NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id) { return NodeVal(); }
+    // TODO don't forget str to char arr
+    NodeVal performCast(const NodeVal &node, TypeTable::Id ty);
+    NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) { return NodeVal(); }
+    bool performFunctionMake(const NodeVal &node, FuncValue &func) { return false; }
+    NodeVal performEvaluation(const NodeVal &node);
 
 public:
     Codegen(Evaluator *evaluator, NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs);

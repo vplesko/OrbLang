@@ -100,7 +100,16 @@ llvm::Type* Codegen::genPrimTypePtr() {
     return llvm::Type::getInt8PtrTy(llvmContext);
 }
 
-NodeVal Codegen::evaluateNode(const NodeVal &node) {
+NodeVal Codegen::performCast(const NodeVal &node, TypeTable::Id ty) {
+    if (node.getType().has_value() && node.getType().value() == ty) {
+        return node;
+    }
+
+    // TODO!
+    return NodeVal();
+}
+
+NodeVal Codegen::performEvaluation(const NodeVal &node) {
     return evaluator->processNode(node);
 }
 

@@ -156,7 +156,7 @@ NodeVal Processor::processId(const NodeVal &node) {
         if (value->isKnownVal()) {
             return NodeVal(node.getCodeLoc(), value->getKnownVal());
         } else {
-            return loadSymbol(id);
+            return performLoad(node.getCodeLoc(), id);
         }
     }
 }
@@ -176,7 +176,7 @@ NodeVal Processor::processCast(const NodeVal &node) {
     NodeVal value = processNode(node.getChild(2));
     if (value.isInvalid()) return NodeVal();
 
-    return cast(value, ty.getKnownVal().ty);
+    return performCast(value, ty.getKnownVal().ty);
 }
 
 NodeVal Processor::processBlock(const NodeVal &node) {
@@ -218,13 +218,13 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
         if (i <= providedArgCnt) {
             TypeTable::Id argCastType = funcVal->argTypes[i];
             if (!checkImplicitCastable(arg, argCastType, true)) return NodeVal();
-            arg = cast(arg, argCastType);
+            arg = performCast(arg, argCastType);
             if (arg.isInvalid()) return NodeVal();
         }
         args.push_back(move(arg));
     }
     
-    return createCall(*funcVal, args);
+    return performCall(node.getCodeLoc(), *funcVal, args);
 }
 
 NodeVal Processor::processFnc(const NodeVal &node) {
@@ -290,7 +290,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         val.retType = ty.getKnownVal().ty;
     }
 
-    if (!makeFunction(node, val)) return NodeVal();
+    if (!performFunctionMake(node, val)) return NodeVal();
 
     symbolTable->registerFunc(val);
 
@@ -310,7 +310,7 @@ NodeVal Processor::processEval(const NodeVal &node) {
         return NodeVal();
     }
 
-    return evaluateNode(node.getChild(1));
+    return performEvaluation(node.getChild(1));
 }
 
 NodeVal Processor::processImport(const NodeVal &node) {
@@ -399,7 +399,7 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
             msgs->errorExprCannotPromote(node.getCodeLoc(), ty);
             return NodeVal();
         }
-        prom = cast(prom, ty);
+        prom = performCast(prom, ty);
     }
 
     return prom;

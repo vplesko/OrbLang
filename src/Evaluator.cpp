@@ -5,6 +5,6 @@ Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *type
     : Processor(namePool, stringPool, typeTable, symbolTable, msgs) {
 }
 
-NodeVal Evaluator::evaluateNode(const NodeVal &node) {
+NodeVal Evaluator::performEvaluation(const NodeVal &node) {
     return processNode(node);
 }
