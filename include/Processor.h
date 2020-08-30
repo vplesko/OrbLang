@@ -21,9 +21,9 @@ protected:
     virtual NodeVal loadSymbol(NamePool::Id id) =0;
     // TODO don't forget str to char arr
     virtual NodeVal cast(const NodeVal &node, TypeTable::Id ty) =0;
-    virtual NodeVal evaluateNode(const NodeVal &node) =0;
     virtual bool makeFunction(const NodeVal &node, FuncValue &func) =0;
     virtual NodeVal createCall(const FuncValue &func, const std::vector<NodeVal> &args) =0;
+    virtual NodeVal evaluateNode(const NodeVal &node) =0;
 
 private:
     bool checkInGlobalScope(CodeLoc codeLoc, bool orError);

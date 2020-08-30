@@ -14,9 +14,10 @@ class Codegen : public Processor {
     // TODO!
     NodeVal loadSymbol(NamePool::Id id) { return NodeVal(); }
     NodeVal cast(const NodeVal &node, TypeTable::Id ty) { return NodeVal(); }
-    NodeVal evaluateNode(const NodeVal &node) { return NodeVal(); }
     bool makeFunction(const NodeVal &node, FuncValue &func) { return false; }
     NodeVal createCall(const FuncValue &func, const std::vector<NodeVal> &args) { return NodeVal(); }
+    
+    NodeVal evaluateNode(const NodeVal &node);
 
 public:
     Codegen(Evaluator *evaluator, NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs);
