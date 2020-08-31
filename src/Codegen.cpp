@@ -113,6 +113,32 @@ NodeVal Codegen::performCast(const NodeVal &node, TypeTable::Id ty) {
     return NodeVal();
 }
 
+NodeVal Codegen::performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) {
+    vector<llvm::Value*> llvmArgValues(args.size());
+    for (size_t i = 0; i < args.size(); ++i) {
+        if (args[i].isKnownVal()) {
+            NodeVal llvmArg = promoteKnownVal(args[i]);
+            if (llvmArg.isInvalid()) return NodeVal();
+            llvmArgValues[i] = llvmArg.getLlvmVal().val;
+        } else if (args[i].isLlvmVal()) {
+            llvmArgValues[i] = args[i].getLlvmVal().val;
+        } else {
+            msgs->errorUnknown(args[i].getCodeLoc());
+            return NodeVal();
+        }
+    }
+
+    if (func.hasRet()) {
+        LlvmVal retLlvmVal;
+        retLlvmVal.type = func.retType.value();
+        retLlvmVal.val = llvmBuilder.CreateCall(func.func, llvmArgValues, "call_tmp");
+        return NodeVal(codeLoc, retLlvmVal);
+    } else {
+        llvmBuilder.CreateCall(func.func, llvmArgValues, "call_tmp");
+        return NodeVal(codeLoc);
+    }
+}
+
 bool Codegen::performFunctionDeclaration(FuncValue &func) {
     vector<llvm::Type*> llvmArgTypes(func.argCnt());
     for (size_t i = 0; i < func.argCnt(); ++i) {

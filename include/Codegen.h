@@ -32,7 +32,7 @@ class Codegen : public Processor {
     // TODO!    
     NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id) { return NodeVal(); }
     NodeVal performCast(const NodeVal &node, TypeTable::Id ty);
-    NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) { return NodeVal(); }
+    NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args);
     bool performFunctionDeclaration(FuncValue &func);
     bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func);
     NodeVal performEvaluation(const NodeVal &node);
