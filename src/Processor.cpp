@@ -290,9 +290,22 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         val.retType = ty.getKnownVal().ty;
     }
 
-    if (!performFunctionMake(node, val)) return NodeVal();
+    // body
+    optional<NodeVal> nodeBodyOpt;
+    if (val.defined) {
+        nodeBodyOpt = node.getChild(4);
+        if (!nodeBodyOpt.value().isComposite()) {
+            msgs->errorUnexpectedIsTerminal(nodeBodyOpt.value().getCodeLoc());
+            return NodeVal();
+        }
+    }
 
+    if (!performFunctionDeclaration(val)) return NodeVal();
     symbolTable->registerFunc(val);
+
+    if (val.defined) {
+        if (!performFunctionDefinition(nodeArgs, nodeBodyOpt.value(), val)) return NodeVal();
+    }
 
     return NodeVal(node.getCodeLoc());
 }
@@ -403,6 +416,15 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
     }
 
     return prom;
+}
+
+bool Processor::processChildNodes(const NodeVal &node) {
+    for (size_t i = 0; i < node.getChildrenCnt(); ++i) {
+        NodeVal tmp = processNode(node.getChild(i));
+        if (tmp.isInvalid()) return false;
+    }
+
+    return true;
 }
 
 NodeVal Processor::processAndExpectType(const NodeVal &node) {

@@ -1,4 +1,7 @@
 #include "Codegen.h"
+#include <iostream>
+#include <sstream>
+#include "llvm/IR/Verifier.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Host.h"
 #include "llvm/Support/raw_ostream.h"
@@ -110,6 +113,64 @@ NodeVal Codegen::performCast(const NodeVal &node, TypeTable::Id ty) {
     return NodeVal();
 }
 
+bool Codegen::performFunctionDeclaration(FuncValue &func) {
+    vector<llvm::Type*> llvmArgTypes(func.argCnt());
+    for (size_t i = 0; i < func.argCnt(); ++i) {
+        llvmArgTypes[i] = getLlvmType(func.argTypes[i]);
+        if (llvmArgTypes[i] == nullptr) return false;
+    }
+    
+    llvm::Type *llvmRetType = func.retType.has_value() ? getLlvmType(func.retType.value()) : llvm::Type::getVoidTy(llvmContext);
+    if (llvmRetType == nullptr) return false;
+
+    llvm::FunctionType *llvmFuncType = llvm::FunctionType::get(llvmRetType, llvmArgTypes, func.variadic);
+
+    func.func = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage, getNameForLlvm(func.name), llvmModule.get());
+
+    return true;
+}
+
+bool Codegen::performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func) {
+    BlockControl blockCtrl(*symbolTable, func);
+
+    llvmBuilderAlloca.SetInsertPoint(llvm::BasicBlock::Create(llvmContext, "alloca", func.func));
+
+    llvm::BasicBlock *llvmBlockBody = llvm::BasicBlock::Create(llvmContext, "entry", func.func);
+    llvmBuilder.SetInsertPoint(llvmBlockBody);
+
+    size_t i = 0;
+    for (auto &llvmFuncArg : func.func->args()) {
+        llvm::Type *llvmArgType = getLlvmType(func.argTypes[i]);
+        if (llvmArgType == nullptr) return false;
+        
+        llvm::AllocaInst *llvmAlloca = makeLlvmAlloca(llvmArgType, getNameForLlvm(func.argNames[i]));
+        llvmBuilder.CreateStore(&llvmFuncArg, llvmAlloca);
+
+        LlvmVal varLlvmVal;
+        varLlvmVal.type = func.argTypes[i];
+        varLlvmVal.ref = llvmAlloca;
+        NodeVal varNodeVal(args.getChild(i).getCodeLoc(), varLlvmVal);
+        symbolTable->addVar(func.argNames[i], move(varNodeVal));
+
+        ++i;
+    }
+
+    if (!processChildNodes(body)) {
+        func.func->eraseFromParent();
+        return false;
+    }
+
+    llvmBuilderAlloca.CreateBr(llvmBlockBody);
+
+    if (!func.hasRet() && !isLlvmBlockTerminated())
+        llvmBuilder.CreateRetVoid();
+
+    if (llvm::verifyFunction(*func.func, &llvm::errs())) cerr << endl;
+    llvmFpm->run(*func.func);
+
+    return true;
+}
+
 NodeVal Codegen::performEvaluation(const NodeVal &node) {
     return evaluator->processNode(node);
 }
@@ -132,12 +193,12 @@ NodeVal Codegen::promoteKnownVal(const NodeVal &node) {
     } else if (KnownVal::isC(known, typeTable)) {
         llvmConst = llvm::ConstantInt::get(getLlvmType(ty), (uint8_t) known.c8, false);
     } else if (KnownVal::isB(known, typeTable)) {
-        llvmConst = getConstB(known.b);
+        llvmConst = getLlvmConstB(known.b);
     } else if (KnownVal::isNull(known, typeTable)) {
         llvmConst = llvm::ConstantPointerNull::get((llvm::PointerType*)getLlvmType(ty));
     } else if (KnownVal::isStr(known, typeTable)) {
         const std::string &str = stringPool->get(known.str.value());
-        llvmConst = getConstString(str);
+        llvmConst = getLlvmConstString(str);
     } else if (KnownVal::isArr(known, typeTable)) {
         // TODO!
     } else if (KnownVal::isTuple(known, typeTable)) {
@@ -154,6 +215,36 @@ NodeVal Codegen::promoteKnownVal(const NodeVal &node) {
     llvmVal.val = llvmConst;
 
     return NodeVal(node.getCodeLoc(), llvmVal);
+}
+
+string Codegen::getNameForLlvm(NamePool::Id name) const {
+    stringstream ss;
+    ss << "\"" << namePool->get(name) << "\"";
+    return ss.str();
+}
+
+bool Codegen::isLlvmBlockTerminated() const {
+    return !llvmBuilder.GetInsertBlock()->empty() && llvmBuilder.GetInsertBlock()->back().isTerminator();
+}
+
+llvm::Constant* Codegen::getLlvmConstB(bool val) {
+    if (val) return llvm::ConstantInt::getTrue(llvmContext);
+    else return llvm::ConstantInt::getFalse(llvmContext);
+}
+
+llvm::Constant* Codegen::getLlvmConstString(const std::string &str) {
+    llvm::GlobalVariable *glob = new llvm::GlobalVariable(
+        *llvmModule,
+        getLlvmType(typeTable->getTypeCharArrOfLenId(LiteralVal::getStringLen(str))),
+        true,
+        llvm::GlobalValue::PrivateLinkage,
+        nullptr,
+        "str_lit"
+    );
+
+    llvm::Constant *arr = llvm::ConstantDataArray::getString(llvmContext, str, true);
+    glob->setInitializer(arr);
+    return llvm::ConstantExpr::getPointerCast(glob, getLlvmType(typeTable->getTypeIdStr()));
 }
 
 llvm::Type* Codegen::getLlvmType(TypeTable::Id typeId) {
@@ -202,22 +293,6 @@ llvm::Type* Codegen::getLlvmType(TypeTable::Id typeId) {
     return llvmType;
 }
 
-llvm::Constant* Codegen::getConstB(bool val) {
-    if (val) return llvm::ConstantInt::getTrue(llvmContext);
-    else return llvm::ConstantInt::getFalse(llvmContext);
-}
-
-llvm::Constant* Codegen::getConstString(const std::string &str) {
-    llvm::GlobalVariable *glob = new llvm::GlobalVariable(
-        *llvmModule,
-        getLlvmType(typeTable->getTypeCharArrOfLenId(LiteralVal::getStringLen(str))),
-        true,
-        llvm::GlobalValue::PrivateLinkage,
-        nullptr,
-        "str_lit"
-    );
-
-    llvm::Constant *arr = llvm::ConstantDataArray::getString(llvmContext, str, true);
-    glob->setInitializer(arr);
-    return llvm::ConstantExpr::getPointerCast(glob, getLlvmType(typeTable->getTypeIdStr()));
+llvm::AllocaInst* Codegen::makeLlvmAlloca(llvm::Type *type, const std::string &name) {
+    return llvmBuilderAlloca.CreateAlloca(type, nullptr, name);
 }

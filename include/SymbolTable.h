@@ -66,7 +66,7 @@ private:
 public:
     SymbolTable();
 
-    void addVar(NamePool::Id name, const NodeVal &var);
+    void addVar(NamePool::Id name, NodeVal var);
     const NodeVal* getVar(NamePool::Id name) const;
     NodeVal* getVar(NamePool::Id name);
 

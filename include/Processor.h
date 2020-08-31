@@ -21,7 +21,8 @@ protected:
     virtual NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id) =0;
     virtual NodeVal performCast(const NodeVal &node, TypeTable::Id ty) =0;
     virtual NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) =0;
-    virtual bool performFunctionMake(const NodeVal &node, FuncValue &func) =0;
+    virtual bool performFunctionDeclaration(FuncValue &func) =0;
+    virtual bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func) =0;
     virtual NodeVal performEvaluation(const NodeVal &node) =0;
 
 private:
@@ -41,6 +42,10 @@ private:
     NodeVal processWithEscapeIfLeafUnlessType(const NodeVal &node);
     std::pair<NodeVal, std::optional<NodeVal>> processForIdTypePair(const NodeVal &node);
 
+protected:
+    bool processChildNodes(const NodeVal &node);
+
+private:
     NodeVal promoteLiteralVal(const NodeVal &node);
     bool applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &node);
 

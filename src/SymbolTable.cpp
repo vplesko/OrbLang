@@ -21,8 +21,8 @@ void SymbolTable::endBlock() {
     delete s;
 }
 
-void SymbolTable::addVar(NamePool::Id name, const NodeVal &var) {
-    last->vars.insert(make_pair(name, var));
+void SymbolTable::addVar(NamePool::Id name, NodeVal var) {
+    last->vars.insert(make_pair(name, move(var)));
 }
 
 const NodeVal* SymbolTable::getVar(NamePool::Id name) const {
