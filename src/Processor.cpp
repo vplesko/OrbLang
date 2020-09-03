@@ -149,7 +149,7 @@ NodeVal Processor::processId(const NodeVal &node) {
     } else {
         NodeVal *value = symbolTable->getVar(id);
         if (value == nullptr) {
-            msgs->errorVarNameTaken(node.getCodeLoc(), id);
+            msgs->errorVarNotFound(node.getCodeLoc(), id);
             return NodeVal();
         }
 
@@ -283,7 +283,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     }
 
     // ret type
-    const NodeVal &nodeRetType = node.getChild(2);
+    const NodeVal &nodeRetType = node.getChild(3);
     if (!nodeRetType.isEmpty()) {
         NodeVal ty = processAndExpectType(nodeRetType);
         if (ty.isInvalid()) return NodeVal();
@@ -482,20 +482,28 @@ pair<NodeVal, optional<NodeVal>> Processor::processForIdTypePair(const NodeVal &
 }
 
 bool Processor::applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &node) {
-    if (!node.isKnownVal()) return false;
+    if (!node.isKnownVal()) {
+        msgs->errorInvalidTypeDecorator(node.getCodeLoc());
+        return false;
+    }
 
     if (KnownVal::isId(node.getKnownVal(), typeTable)) {
         optional<Meaningful> mean = getMeaningful(node.getKnownVal().id);
-        if (!mean.has_value()) return false;
-
-        if (mean == Meaningful::CN)
-            descr.setLastCn();
-        else if (mean == Meaningful::ASTERISK)
-            descr.addDecor({.type=TypeTable::TypeDescr::Decor::D_PTR});
-        else if (mean == Meaningful::SQUARE)
-            descr.addDecor({.type=TypeTable::TypeDescr::Decor::D_ARR_PTR});
-        else
+        if (!mean.has_value()) {
+            msgs->errorInvalidTypeDecorator(node.getCodeLoc());
             return false;
+        }
+
+        if (mean == Meaningful::CN) {
+            descr.setLastCn();
+        } else if (mean == Meaningful::ASTERISK) {
+            descr.addDecor({.type=TypeTable::TypeDescr::Decor::D_PTR});
+        } else if (mean == Meaningful::SQUARE) {
+            descr.addDecor({.type=TypeTable::TypeDescr::Decor::D_ARR_PTR});
+        } else {
+            msgs->errorInvalidTypeDecorator(node.getCodeLoc());
+            return false;
+        }
     } else {
         optional<uint64_t> arrSize = KnownVal::getValueNonNeg(node.getKnownVal(), typeTable);
         if (!arrSize.has_value() || arrSize.value() == 0) {

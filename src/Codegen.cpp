@@ -134,7 +134,7 @@ NodeVal Codegen::performCall(CodeLoc codeLoc, const FuncValue &func, const std::
         retLlvmVal.val = llvmBuilder.CreateCall(func.func, llvmArgValues, "call_tmp");
         return NodeVal(codeLoc, retLlvmVal);
     } else {
-        llvmBuilder.CreateCall(func.func, llvmArgValues, "call_tmp");
+        llvmBuilder.CreateCall(func.func, llvmArgValues, "");
         return NodeVal(codeLoc);
     }
 }
@@ -244,9 +244,8 @@ NodeVal Codegen::promoteKnownVal(const NodeVal &node) {
 }
 
 string Codegen::getNameForLlvm(NamePool::Id name) const {
-    stringstream ss;
-    ss << "\"" << namePool->get(name) << "\"";
-    return ss.str();
+    // LLVM is smart enough to put quotes around IDs with special chars, but let's keep this method in anyway.
+    return namePool->get(name);
 }
 
 bool Codegen::isLlvmBlockTerminated() const {

@@ -16,6 +16,10 @@ Token Parser::next() {
     return lex->next();
 }
 
+CodeLoc Parser::loc() const {
+    return lex->loc();
+}
+
 // If the next token matches the type, eats it and returns true.
 // Otherwise, returns false.
 bool Parser::match(Token::Type type) {
@@ -34,12 +38,37 @@ bool Parser::matchOrError(Token::Type type) {
     return true;
 }
 
-CodeLoc Parser::loc() const {
-    return lex->loc();
+bool Parser::matchCloseBraceOrError(Token openBrace) {
+    CodeLoc codeLocCloseBrace = loc();
+    Token closeBrace = next();
+
+    if (openBrace.type == Token::T_BRACE_L_REG && closeBrace.type != Token::T_BRACE_R_REG) {
+        msgs->errorUnexpectedTokenType(codeLocCloseBrace, Token::T_BRACE_R_REG, closeBrace);
+        return false;
+    } else if (openBrace.type == Token::T_BRACE_L_CUR && closeBrace.type != Token::T_BRACE_R_CUR) {
+        msgs->errorUnexpectedTokenType(codeLocCloseBrace, Token::T_BRACE_R_CUR, closeBrace);
+        return false;
+    }
+
+    return true;
 }
 
 NodeVal Parser::makeEmpty() {
     return NodeVal(loc());
+}
+
+bool Parser::parseTypeAnnot(NodeVal &node) {
+    if (match(Token::T_COLON)) {
+        node.setTypeAnnot(parseType());
+
+        // type annotation on type annotation is not allowed (unless bracketed)
+        if (node.getTypeAnnot().isInvalid() || node.getTypeAnnot().hasTypeAnnot()) {
+            msgs->errorUnknown(node.getTypeAnnot().getCodeLoc());
+            return false;
+        }
+    }
+
+    return true;
 }
 
 // cannot be semicolon-terminated
@@ -97,23 +126,14 @@ NodeVal Parser::parseTerm() {
 
     NodeVal ret(codeLocTok, val);
 
-    if (match(Token::T_COLON)) {
-        ret.setTypeAnnot(parseType());
-
-        // type annotation on type annotation is not allowed (unless bracketed)
-        if (ret.getTypeAnnot().isInvalid() || ret.getTypeAnnot().hasTypeAnnot()) return NodeVal();
-    }
+    if (!parseTypeAnnot(ret)) return NodeVal();
 
     return ret;
 }
 
 NodeVal Parser::parseNode() {
-    if (lex == nullptr) {
-        return NodeVal();
-    }
-
     CodeLoc codeLocNode = loc();
-    NodeVal node;
+    NodeVal node(codeLocNode);
 
     bool escaped = match(Token::T_BACKSLASH);
 
@@ -121,7 +141,6 @@ NodeVal Parser::parseNode() {
         Token openBrace = next();
 
         vector<NodeVal> children;
-        node = NodeVal(codeLocNode);
 
         while (peek().type != Token::T_BRACE_R_REG && peek().type != Token::T_BRACE_R_CUR) {
             if (peek().type == Token::T_SEMICOLON) {
@@ -148,16 +167,7 @@ NodeVal Parser::parseNode() {
             }
         }
         
-        CodeLoc codeLocCloseBrace = loc();
-        Token closeBrace = next();
-
-        if (openBrace.type == Token::T_BRACE_L_REG && closeBrace.type != Token::T_BRACE_R_REG) {
-            msgs->errorUnexpectedTokenType(codeLocCloseBrace, Token::T_BRACE_R_REG, closeBrace);
-            return NodeVal();
-        } else if (openBrace.type == Token::T_BRACE_L_CUR && closeBrace.type != Token::T_BRACE_R_CUR) {
-            msgs->errorUnexpectedTokenType(codeLocCloseBrace, Token::T_BRACE_R_CUR, closeBrace);
-            return NodeVal();
-        }
+        if (!matchCloseBraceOrError(openBrace)) return NodeVal();
 
         node.addChildren(move(children));
     } else {
@@ -182,12 +192,7 @@ NodeVal Parser::parseNode() {
         escaped = false;
     }
 
-    if (match(Token::T_COLON)) {
-        node.setTypeAnnot(parseType());
-
-        // type annotation on type annotation is not allowed (unless bracketed)
-        if (node.getTypeAnnot().isInvalid() || node.getTypeAnnot().hasTypeAnnot()) return NodeVal();
-    }
+    if (!parseTypeAnnot(node)) return NodeVal();
 
     return node;
 }

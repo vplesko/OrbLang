@@ -11,11 +11,15 @@ class Parser {
 
     const Token& peek() const;
     Token next();
+    CodeLoc loc() const;
+    
     bool match(Token::Type type);
     bool matchOrError(Token::Type type);
-    CodeLoc loc() const;
+    bool matchCloseBraceOrError(Token openBrace);
 
     NodeVal makeEmpty();
+    // Returns false on error, otherwise true.
+    bool parseTypeAnnot(NodeVal &node);
 
     NodeVal parseType();
     NodeVal parseTerm();

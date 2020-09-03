@@ -198,8 +198,8 @@ Token Lexer::next() {
             tok.type = Token::T_BACKSLASH;
         } else if (isalnum(ch) || idSpecialChars.find(ch) != idSpecialChars.npos) {
             int l = col-1;
-            while (isalnum(ch) || idSpecialChars.find(ch) != idSpecialChars.npos) {
-                nextCh();
+            while (isalnum(peekCh()) || idSpecialChars.find(peekCh()) != idSpecialChars.npos) {
+                ch = nextCh();
             }
 
             string id = line.substr(l, col-l);
