@@ -103,15 +103,32 @@ llvm::Type* Codegen::genPrimTypePtr() {
     return llvm::Type::getInt8PtrTy(llvmContext);
 }
 
-NodeVal Codegen::performCast(const NodeVal &node, TypeTable::Id ty) {
+NodeVal Codegen::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
     if (node.getType().has_value() && node.getType().value() == ty) {
         return node;
     }
 
-    // TODO!
-    // TODO don't forget str to char arr
-    msgs->errorInternal(node.getCodeLoc());
-    return NodeVal();
+    NodeVal promo = node.isKnownVal() ? promoteKnownVal(node) : node;
+    if (promo.isInvalid()) return NodeVal();
+
+    if (!promo.isLlvmVal()) {
+        msgs->errorUnknown(promo.getCodeLoc());
+        return NodeVal();
+    }
+
+    llvm::Type *llvmType = getLlvmTypeOrError(codeLoc, ty);
+    if (llvmType == nullptr) return NodeVal();
+
+    llvm::Value *llvmValueCast = makeLlvmCast(promo.getLlvmVal().val, promo.getLlvmVal().type, llvmType, ty);
+    if (llvmValueCast == nullptr) {
+        msgs->errorExprCannotCast(codeLoc, promo.getLlvmVal().type, ty);
+        return NodeVal();
+    }
+
+    LlvmVal llvmVal;
+    llvmVal.type = ty;
+    llvmVal.val = llvmValueCast;
+    return NodeVal(codeLoc, llvmVal);
 }
 
 NodeVal Codegen::performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) {
@@ -140,14 +157,14 @@ NodeVal Codegen::performCall(CodeLoc codeLoc, const FuncValue &func, const std::
     }
 }
 
-bool Codegen::performFunctionDeclaration(FuncValue &func) {
+bool Codegen::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
     vector<llvm::Type*> llvmArgTypes(func.argCnt());
     for (size_t i = 0; i < func.argCnt(); ++i) {
-        llvmArgTypes[i] = getLlvmType(func.argTypes[i]);
+        llvmArgTypes[i] = getLlvmTypeOrError(codeLoc, func.argTypes[i]);
         if (llvmArgTypes[i] == nullptr) return false;
     }
     
-    llvm::Type *llvmRetType = func.retType.has_value() ? getLlvmType(func.retType.value()) : llvm::Type::getVoidTy(llvmContext);
+    llvm::Type *llvmRetType = func.retType.has_value() ? getLlvmTypeOrError(codeLoc, func.retType.value()) : llvm::Type::getVoidTy(llvmContext);
     if (llvmRetType == nullptr) return false;
 
     llvm::FunctionType *llvmFuncType = llvm::FunctionType::get(llvmRetType, llvmArgTypes, func.variadic);
@@ -167,7 +184,7 @@ bool Codegen::performFunctionDefinition(const NodeVal &args, const NodeVal &body
 
     size_t i = 0;
     for (auto &llvmFuncArg : func.func->args()) {
-        llvm::Type *llvmArgType = getLlvmType(func.argTypes[i]);
+        llvm::Type *llvmArgType = getLlvmTypeOrError(args.getChild(i).getCodeLoc(), func.argTypes[i]);
         if (llvmArgType == nullptr) return false;
         
         llvm::AllocaInst *llvmAlloca = makeLlvmAlloca(llvmArgType, getNameForLlvm(func.argNames[i]));
@@ -319,6 +336,96 @@ llvm::Type* Codegen::getLlvmType(TypeTable::Id typeId) {
     return llvmType;
 }
 
+llvm::Type* Codegen::getLlvmTypeOrError(CodeLoc codeLoc, TypeTable::Id typeId) {
+    llvm::Type *ret = getLlvmType(typeId);
+    if (ret == nullptr) {
+        msgs->errorUnknown(codeLoc);
+    }
+    return ret;
+}
+
 llvm::AllocaInst* Codegen::makeLlvmAlloca(llvm::Type *type, const std::string &name) {
     return llvmBuilderAlloca.CreateAlloca(type, nullptr, name);
+}
+
+llvm::Value* Codegen::makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTypeId, llvm::Type *dstLlvmType, TypeTable::Id dstTypeId) {
+    llvm::Value *dstLlvmVal = nullptr;
+
+    if (typeTable->worksAsTypeI(srcTypeId)) {
+        if (typeTable->worksAsTypeI(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.CreateIntCast(srcLlvmVal, dstLlvmType, true, "i2i_cast");
+        } else if (typeTable->worksAsTypeU(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.CreateIntCast(srcLlvmVal, dstLlvmType, false, "i2u_cast");
+        } else if (typeTable->worksAsTypeF(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::SIToFP, srcLlvmVal, dstLlvmType, "i2f_cast"));
+        } else if (typeTable->worksAsTypeC(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.CreateIntCast(srcLlvmVal, dstLlvmType, false, "i2c_cast");
+        } else if (typeTable->worksAsTypeB(dstTypeId)) {
+            llvm::Value *zero = llvm::Constant::getNullValue(srcLlvmVal->getType());
+            dstLlvmVal = llvmBuilder.CreateICmpNE(srcLlvmVal, zero, "i2b_cast");
+        } else if (typeTable->worksAsTypeAnyP(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.CreateBitOrPointerCast(srcLlvmVal, dstLlvmType, "i2p_cast");
+        }
+    } else if (typeTable->worksAsTypeU(srcTypeId)) {
+        if (typeTable->worksAsTypeI(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.CreateIntCast(srcLlvmVal, dstLlvmType, true, "u2i_cast");
+        } else if (typeTable->worksAsTypeU(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.CreateIntCast(srcLlvmVal, dstLlvmType, false, "u2u_cast");
+        } else if (typeTable->worksAsTypeF(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::UIToFP, srcLlvmVal, dstLlvmType, "u2f_cast"));
+        } else if (typeTable->worksAsTypeC(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.CreateIntCast(srcLlvmVal, dstLlvmType, false, "u2c_cast");
+        } else if (typeTable->worksAsTypeB(dstTypeId)) {
+            llvm::Value *zero = llvm::Constant::getNullValue(srcLlvmVal->getType());
+            dstLlvmVal = llvmBuilder.CreateICmpNE(srcLlvmVal, zero, "u2b_cast");
+        } else if (typeTable->worksAsTypeAnyP(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.CreateBitOrPointerCast(srcLlvmVal, dstLlvmType, "u2p_cast");
+        }
+    } else if (typeTable->worksAsTypeF(srcTypeId)) {
+        if (typeTable->worksAsTypeI(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::FPToSI, srcLlvmVal, dstLlvmType, "f2i_cast"));
+        } else if (typeTable->worksAsTypeU(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.Insert(llvm::CastInst::Create(llvm::Instruction::FPToUI, srcLlvmVal, dstLlvmType, "f2u_cast"));
+        } else if (typeTable->worksAsTypeF(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.CreateFPCast(srcLlvmVal, dstLlvmType, "f2f_cast");
+        }
+    } else if (typeTable->worksAsTypeC(srcTypeId)) {
+        if (typeTable->worksAsTypeI(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.CreateIntCast(srcLlvmVal, dstLlvmType, true, "c2i_cast");
+        } else if (typeTable->worksAsTypeU(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.CreateIntCast(srcLlvmVal, dstLlvmType, false, "c2u_cast");
+        } else if (typeTable->worksAsTypeC(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.CreateIntCast(srcLlvmVal, dstLlvmType, false, "c2c_cast");
+        } else if (typeTable->worksAsTypeB(dstTypeId)) {
+            llvm::Value *zero = llvm::Constant::getNullValue(srcLlvmVal->getType());
+            dstLlvmVal = llvmBuilder.CreateICmpNE(srcLlvmVal, zero, "c2b_cast");
+        }
+    } else if (typeTable->worksAsTypeB(srcTypeId)) {
+        if (typeTable->worksAsTypeI(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.CreateIntCast(srcLlvmVal, dstLlvmType, false, "b2i_cast");
+        } else if (typeTable->worksAsTypeU(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.CreateIntCast(srcLlvmVal, dstLlvmType, false, "b2u_cast");
+        }
+    } else if (typeTable->worksAsTypeAnyP(srcTypeId)) {
+        if (typeTable->worksAsTypeI(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.CreatePtrToInt(srcLlvmVal, dstLlvmType, "p2i_cast");
+        } else if (typeTable->worksAsTypeU(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.CreatePtrToInt(srcLlvmVal, dstLlvmType, "p2u_cast");
+        } else if (typeTable->worksAsTypeAnyP(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.CreatePointerCast(srcLlvmVal, dstLlvmType, "p2p_cast");
+        } else if (typeTable->worksAsTypeB(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.CreateICmpNE(
+                llvmBuilder.CreatePtrToInt(srcLlvmVal, getLlvmType(typeTable->getPrimTypeId(TypeTable::WIDEST_I))),
+                llvm::ConstantInt::getNullValue(getLlvmType(typeTable->getPrimTypeId(TypeTable::WIDEST_I))),
+                "p2b_cast");
+        }
+    } else if (typeTable->worksAsTypeArr(srcTypeId) || typeTable->worksAsTuple(srcTypeId)) {
+        // tuples and arrs are only castable when changing constness
+        if (typeTable->isImplicitCastable(srcTypeId, dstTypeId)) {
+            // no action is needed in case of a cast
+            dstLlvmVal = srcLlvmVal;
+        }
+    }
+
+    return dstLlvmVal;
 }

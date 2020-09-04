@@ -9,6 +9,7 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
+// TODO! if operands are known, pass result as known (where allowed)
 class Codegen : public Processor {
     Evaluator *evaluator;
 
@@ -23,7 +24,9 @@ class Codegen : public Processor {
     // generates a constant for a string literal
     llvm::Constant* getLlvmConstString(const std::string &str);
     llvm::Type* getLlvmType(TypeTable::Id typeId);
+    llvm::Type* getLlvmTypeOrError(CodeLoc codeLoc, TypeTable::Id typeId);
     llvm::AllocaInst* makeLlvmAlloca(llvm::Type *type, const std::string &name);
+    llvm::Value* makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTypeId, llvm::Type *dstLlvmType, TypeTable::Id dstTypeId);
 
     std::string getNameForLlvm(NamePool::Id name) const;
 
@@ -31,9 +34,9 @@ class Codegen : public Processor {
 
     // TODO!    
     NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id) { msgs->errorInternal(codeLoc); return NodeVal(); }
-    NodeVal performCast(const NodeVal &node, TypeTable::Id ty);
+    NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty);
     NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args);
-    bool performFunctionDeclaration(FuncValue &func);
+    bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func);
     bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func);
     NodeVal performEvaluation(const NodeVal &node);
 

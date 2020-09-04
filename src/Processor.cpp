@@ -176,7 +176,7 @@ NodeVal Processor::processCast(const NodeVal &node) {
     NodeVal value = processNode(node.getChild(2));
     if (value.isInvalid()) return NodeVal();
 
-    return performCast(value, ty.getKnownVal().ty);
+    return performCast(node.getCodeLoc(), value, ty.getKnownVal().ty);
 }
 
 NodeVal Processor::processBlock(const NodeVal &node) {
@@ -218,7 +218,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
         if (i < funcVal->argCnt()) {
             TypeTable::Id argCastType = funcVal->argTypes[i];
             if (!checkImplicitCastable(arg, argCastType, true)) return NodeVal();
-            arg = performCast(arg, argCastType);
+            arg = performCast(arg.getCodeLoc(), arg, argCastType);
             if (arg.isInvalid()) return NodeVal();
         }
         args.push_back(move(arg));
@@ -300,7 +300,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         }
     }
 
-    if (!performFunctionDeclaration(val)) return NodeVal();
+    if (!performFunctionDeclaration(node.getCodeLoc(), val)) return NodeVal();
     symbolTable->registerFunc(val);
 
     if (val.defined) {
@@ -412,7 +412,7 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
             msgs->errorExprCannotPromote(node.getCodeLoc(), ty);
             return NodeVal();
         }
-        prom = performCast(prom, ty);
+        prom = performCast(prom.getCodeLoc(), prom, ty);
     }
 
     return prom;

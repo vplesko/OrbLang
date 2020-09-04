@@ -19,9 +19,9 @@ protected:
 
 protected:
     virtual NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id) =0;
-    virtual NodeVal performCast(const NodeVal &node, TypeTable::Id ty) =0;
+    virtual NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) =0;
     virtual NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) =0;
-    virtual bool performFunctionDeclaration(FuncValue &func) =0;
+    virtual bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) =0;
     virtual bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func) =0;
     virtual NodeVal performEvaluation(const NodeVal &node) =0;
 
