@@ -215,6 +215,24 @@ bool Codegen::performFunctionDefinition(const NodeVal &args, const NodeVal &body
     return true;
 }
 
+bool Codegen::performRet(CodeLoc codeLoc) {
+    llvmBuilder.CreateRetVoid();
+    return true;
+}
+
+bool Codegen::performRet(CodeLoc codeLoc, const NodeVal &node) {
+    NodeVal promo = node.isKnownVal() ? promoteKnownVal(node) : node;
+    if (promo.isInvalid()) return false;
+
+    if (!promo.isLlvmVal()) {
+        msgs->errorUnknown(promo.getCodeLoc());
+        return false;
+    }
+
+    llvmBuilder.CreateRet(promo.getLlvmVal().val);
+    return true;
+}
+
 NodeVal Codegen::performEvaluation(const NodeVal &node) {
     return evaluator->processNode(node);
 }

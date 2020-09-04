@@ -38,8 +38,8 @@ class Codegen : public Processor {
     NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args);
     bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func);
     bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func);
-    bool performRet(CodeLoc codeLoc) { return false; }
-    bool performRet(CodeLoc codeLoc, const NodeVal &node) { return false; }
+    bool performRet(CodeLoc codeLoc);
+    bool performRet(CodeLoc codeLoc, const NodeVal &node);
     NodeVal performEvaluation(const NodeVal &node);
 
 public:
