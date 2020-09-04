@@ -23,6 +23,8 @@ protected:
     virtual NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) =0;
     virtual bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) =0;
     virtual bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func) =0;
+    virtual bool performRet(CodeLoc codeLoc) =0;
+    virtual bool performRet(CodeLoc codeLoc, const NodeVal &node) =0;
     virtual NodeVal performEvaluation(const NodeVal &node) =0;
 
 private:
@@ -41,6 +43,7 @@ private:
     NodeVal processWithEscapeIfLeafAndExpectId(const NodeVal &node);
     NodeVal processWithEscapeIfLeafUnlessType(const NodeVal &node);
     std::pair<NodeVal, std::optional<NodeVal>> processForIdTypePair(const NodeVal &node);
+    NodeVal processAndImplicitCast(const NodeVal &node, TypeTable::Id ty);
 
 protected:
     bool processChildNodes(const NodeVal &node);

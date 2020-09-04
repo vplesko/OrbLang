@@ -212,15 +212,11 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
 
     vector<NodeVal> args;
     for (size_t i = 0; i < providedArgCnt; ++i) {
-        NodeVal arg = processNode(node.getChild(i+1));
+        NodeVal arg = i < funcVal->argCnt() ?
+            processAndImplicitCast(node.getChild(i+1), funcVal->argTypes[i]) :
+            processNode(node.getChild(i+1));
         if (arg.isInvalid()) return NodeVal();
 
-        if (i < funcVal->argCnt()) {
-            TypeTable::Id argCastType = funcVal->argTypes[i];
-            if (!checkImplicitCastable(arg, argCastType, true)) return NodeVal();
-            arg = performCast(arg.getCodeLoc(), arg, argCastType);
-            if (arg.isInvalid()) return NodeVal();
-        }
         args.push_back(move(arg));
     }
     
@@ -311,7 +307,37 @@ NodeVal Processor::processFnc(const NodeVal &node) {
 }
 
 NodeVal Processor::processRet(const NodeVal &node) {
-    return NodeVal(); // TODO!
+    if (!checkBetweenChildren(node, 1, 2, true)) {
+        return NodeVal();
+    }
+
+    optional<FuncValue> optFuncValue = symbolTable->getCurrFunc();
+    if (!optFuncValue.has_value()) {
+        msgs->errorUnknown(node.getCodeLoc());
+        return NodeVal();
+    }
+
+    bool retsVal = node.getChildrenCnt() == 2;
+    if (retsVal) {
+        if (!optFuncValue.value().hasRet()) {
+            msgs->errorUnknown(node.getCodeLoc());
+            return NodeVal();
+        }
+
+        NodeVal val = processAndImplicitCast(node.getChild(1), optFuncValue.value().retType.value());
+        if (val.isInvalid()) return NodeVal();
+
+        if (!performRet(node.getCodeLoc(), val)) return NodeVal();
+    } else {
+        if (optFuncValue.value().hasRet()) {
+            msgs->errorRetNoValue(node.getCodeLoc(), optFuncValue.value().retType.value());
+            return NodeVal();
+        }
+
+        if (!performRet(node.getCodeLoc())) return NodeVal();
+    }
+
+    return NodeVal(node.getCodeLoc());
 }
 
 NodeVal Processor::processMac(const NodeVal &node) {
@@ -479,6 +505,14 @@ pair<NodeVal, optional<NodeVal>> Processor::processForIdTypePair(const NodeVal &
     }
 
     return make_pair<NodeVal, optional<NodeVal>>(move(id), move(ty));
+}
+
+NodeVal Processor::processAndImplicitCast(const NodeVal &node, TypeTable::Id ty) {
+    NodeVal proc = processNode(node);
+    if (proc.isInvalid()) return NodeVal();
+
+    if (!checkImplicitCastable(proc, ty, true)) return NodeVal();
+    return performCast(proc.getCodeLoc(), proc, ty);
 }
 
 bool Processor::applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &node) {
