@@ -16,7 +16,7 @@ Codegen::Codegen(Evaluator *evaluator, NamePool *namePool, StringPool *stringPoo
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("module"), llvmContext);
 
     llvmPmb = make_unique<llvm::PassManagerBuilder>();
-    llvmPmb->OptLevel = 3;
+    llvmPmb->OptLevel = 0; // TODO! change to 3
 
     llvmFpm = make_unique<llvm::legacy::FunctionPassManager>(llvmModule.get());
     llvmPmb->populateFunctionPassManager(*llvmFpm);
@@ -110,6 +110,7 @@ NodeVal Codegen::performCast(const NodeVal &node, TypeTable::Id ty) {
 
     // TODO!
     // TODO don't forget str to char arr
+    msgs->errorInternal(node.getCodeLoc());
     return NodeVal();
 }
 

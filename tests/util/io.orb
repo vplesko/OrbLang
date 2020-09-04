@@ -46,5 +46,5 @@ fnc print_c8(x:c8) () { putchar x; };
 fnc println_c8(x:c8) () { putchar x; println; };
 #fnc scan_c8() c8 { ret (getchar); };
 
-fnc print_str(str:(c8 cn[])) () { printf str; };
-fnc println_str(str:(c8 cn[])) () { printf str; println; };
+fnc print_str(str:(c8 cn [])) () { printf str; };
+fnc println_str(str:(c8 cn [])) () { printf str; println; };

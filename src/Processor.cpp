@@ -215,7 +215,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
         NodeVal arg = processNode(node.getChild(i+1));
         if (arg.isInvalid()) return NodeVal();
 
-        if (i <= providedArgCnt) {
+        if (i < funcVal->argCnt()) {
             TypeTable::Id argCastType = funcVal->argTypes[i];
             if (!checkImplicitCastable(arg, argCastType, true)) return NodeVal();
             arg = performCast(arg, argCastType);

@@ -1,11 +1,11 @@
-fnc putchar(x:c8) () __no_name_mangle;
-fnc getchar() c8 __no_name_mangle;
+fnc putchar(x:c8) ();
+fnc getchar() c8;
 
 # C library on Windows aggressively inlines these, making them hard to link in
 # printf works, but not scanf
 # TODO find a workaround
-fnc printf(fmt:(c8 cn[]) ...) () __no_name_mangle;
-#fnc scanf(fmt:(c8 cn[]) ...) () __no_name_mangle;
+fnc printf(fmt:(c8 cn []) ...) ();
+#fnc scanf(fmt:(c8 cn []) ...) ();
 
-fnc malloc(size:u64) ptr __no_name_mangle;
-fnc free(addr:ptr) () __no_name_mangle;
+fnc malloc(size:u64) ptr;
+fnc free(addr:ptr) ();
