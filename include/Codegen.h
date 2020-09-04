@@ -32,8 +32,10 @@ class Codegen : public Processor {
 
     NodeVal promoteKnownVal(const NodeVal &node);
 
-    // TODO!    
-    NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id) { msgs->errorInternal(codeLoc); return NodeVal(); }
+    bool checkIsLlvmVal(const NodeVal &node, bool orError);
+
+    // TODO!
+    NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, const NodeVal &val);
     NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty);
     NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args);
     bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func);

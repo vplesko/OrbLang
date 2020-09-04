@@ -103,6 +103,18 @@ llvm::Type* Codegen::genPrimTypePtr() {
     return llvm::Type::getInt8PtrTy(llvmContext);
 }
 
+NodeVal Codegen::performLoad(CodeLoc codeLoc, NamePool::Id id, const NodeVal &val) {
+    if (!checkInLocalScope(codeLoc, true)) return NodeVal();
+
+    if (!checkIsLlvmVal(val, true)) return NodeVal();
+
+    LlvmVal loadLlvmVal;
+    loadLlvmVal.type = val.getLlvmVal().type;
+    loadLlvmVal.ref = val.getLlvmVal().ref;
+    loadLlvmVal.val = llvmBuilder.CreateLoad(val.getLlvmVal().ref, getNameForLlvm(id));
+    return NodeVal(codeLoc, loadLlvmVal);
+}
+
 NodeVal Codegen::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
     if (node.getType().has_value() && node.getType().value() == ty) {
         return node;
@@ -111,10 +123,9 @@ NodeVal Codegen::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id
     NodeVal promo = node.isKnownVal() ? promoteKnownVal(node) : node;
     if (promo.isInvalid()) return NodeVal();
 
-    if (!promo.isLlvmVal()) {
-        msgs->errorUnknown(promo.getCodeLoc());
-        return NodeVal();
-    }
+    if (!checkInLocalScope(codeLoc, true)) return NodeVal();
+
+    if (!checkIsLlvmVal(promo, true)) return NodeVal();
 
     llvm::Type *llvmType = getLlvmTypeOrError(codeLoc, ty);
     if (llvmType == nullptr) return NodeVal();
@@ -132,6 +143,8 @@ NodeVal Codegen::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id
 }
 
 NodeVal Codegen::performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) {
+    if (!checkInLocalScope(codeLoc, true)) return NodeVal();
+
     vector<llvm::Value*> llvmArgValues(args.size());
     for (size_t i = 0; i < args.size(); ++i) {
         if (args[i].isKnownVal()) {
@@ -224,10 +237,7 @@ bool Codegen::performRet(CodeLoc codeLoc, const NodeVal &node) {
     NodeVal promo = node.isKnownVal() ? promoteKnownVal(node) : node;
     if (promo.isInvalid()) return false;
 
-    if (!promo.isLlvmVal()) {
-        msgs->errorUnknown(promo.getCodeLoc());
-        return false;
-    }
+    if (!checkIsLlvmVal(promo, true)) return false;
 
     llvmBuilder.CreateRet(promo.getLlvmVal().val);
     return true;
@@ -235,6 +245,14 @@ bool Codegen::performRet(CodeLoc codeLoc, const NodeVal &node) {
 
 NodeVal Codegen::performEvaluation(const NodeVal &node) {
     return evaluator->processNode(node);
+}
+
+bool Codegen::checkIsLlvmVal(const NodeVal &node, bool orError) {
+    if (!node.isLlvmVal()) {
+        if (orError) msgs->errorUnknown(node.getCodeLoc());
+        return false;
+    }
+    return true;
 }
 
 NodeVal Codegen::promoteKnownVal(const NodeVal &node) {

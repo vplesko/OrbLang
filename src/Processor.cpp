@@ -147,7 +147,7 @@ NodeVal Processor::processId(const NodeVal &node) {
 
         return NodeVal(node.getCodeLoc(), known);
     } else {
-        NodeVal *value = symbolTable->getVar(id);
+        const NodeVal *value = symbolTable->getVar(id);
         if (value == nullptr) {
             msgs->errorVarNotFound(node.getCodeLoc(), id);
             return NodeVal();
@@ -156,7 +156,7 @@ NodeVal Processor::processId(const NodeVal &node) {
         if (value->isKnownVal()) {
             return NodeVal(node.getCodeLoc(), value->getKnownVal());
         } else {
-            return performLoad(node.getCodeLoc(), id);
+            return performLoad(node.getCodeLoc(), id, *value);
         }
     }
 }
@@ -563,6 +563,14 @@ bool Processor::applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &
 bool Processor::checkInGlobalScope(CodeLoc codeLoc, bool orError) {
     if (!symbolTable->inGlobalScope()) {
         if (orError) msgs->errorNotGlobalScope(codeLoc);
+        return false;
+    }
+    return true;
+}
+
+bool Processor::checkInLocalScope(CodeLoc codeLoc, bool orError) {
+    if (symbolTable->inGlobalScope()) {
+        if (orError) msgs->errorUnknown(codeLoc);
         return false;
     }
     return true;
