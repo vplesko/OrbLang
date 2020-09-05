@@ -162,7 +162,49 @@ NodeVal Processor::processId(const NodeVal &node) {
 }
 
 NodeVal Processor::processSym(const NodeVal &node) {
-    return NodeVal(); // TODO!
+    if (!checkAtLeastChildren(node, 2, true)) return NodeVal();
+
+    for (size_t i = 1; i < node.getChildrenCnt(); ++i) {
+        const NodeVal &entry = node.getChild(i);
+        // continue with the other sym entries to minimize the number of errors printed out
+        if (!entry.isLeaf() && !checkExactlyChildren(entry, 2, true)) continue;
+
+        bool hasInit = !entry.isLeaf();
+
+        const NodeVal &nodePair = hasInit ? entry.getChild(0) : entry;
+        pair<NodeVal, optional<NodeVal>> pair = processForIdTypePair(nodePair);
+        if (pair.first.isInvalid()) continue;
+        NamePool::Id id = pair.first.getKnownVal().id;
+        if (!symbolTable->nameAvailable(id, namePool, typeTable)) {
+            msgs->errorVarNameTaken(nodePair.getCodeLoc(), id);
+            continue;
+        }
+        optional<TypeTable::Id> optType;
+        if (pair.second.has_value()) optType = pair.second.value().getKnownVal().ty;
+
+        bool hasType = optType.has_value();
+
+        if (hasInit) {
+            const NodeVal &nodeInit = entry.getChild(1);
+            NodeVal init = hasType ? processAndImplicitCast(nodeInit, optType.value()) : processNode(nodeInit);
+            if (init.isInvalid()) continue;
+
+            if (!performRegister(entry.getCodeLoc(), id, nodeInit)) continue;
+        } else {
+            if (!hasType) {
+                msgs->errorMissingTypeAnnotation(nodePair.getCodeLoc());
+                continue;
+            }
+            if (typeTable->worksAsTypeCn(optType.value())) {
+                msgs->errorUnknown(entry.getCodeLoc());
+                continue;
+            }
+
+            if (!performRegister(entry.getCodeLoc(), id, optType.value())) continue;
+        }
+    }
+
+    return NodeVal(node.getCodeLoc());
 }
 
 NodeVal Processor::processCast(const NodeVal &node) {

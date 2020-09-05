@@ -5,6 +5,8 @@
 class Evaluator : public Processor {
     // TODO!
     NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, const NodeVal &val) { msgs->errorInternal(codeLoc); return NodeVal(); }
+    bool performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) { return false; }
+    bool performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) { return false; }
     NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty);
     NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) { msgs->errorInternal(codeLoc); return NodeVal(); }
     bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) { return false; }
