@@ -45,6 +45,7 @@ class Codegen : public Processor {
     bool performRet(CodeLoc codeLoc);
     bool performRet(CodeLoc codeLoc, const NodeVal &node);
     NodeVal performEvaluation(const NodeVal &node);
+    NodeVal performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) { msgs->errorInternal(codeLoc); return NodeVal(); }
 
 public:
     Codegen(Evaluator *evaluator, NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs);

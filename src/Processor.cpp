@@ -99,16 +99,16 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
 
     if (second.isKnownVal() && KnownVal::isType(second.getKnownVal(), typeTable)) {
         TypeTable::Tuple tup;
-        tup.members.resize(node.getChildrenCnt());
-        tup.members[0] = starting.getKnownVal().ty;
-        tup.members[1] = second.getKnownVal().ty;
+        tup.members.reserve(node.getChildrenCnt());
+        tup.members.push_back(starting.getKnownVal().ty);
+        tup.members.push_back(second.getKnownVal().ty);
         for (size_t i = 2; i < node.getChildrenCnt(); ++i) {
             NodeVal ty = processAndExpectType(node.getChild(i));
             if (ty.isInvalid()) return NodeVal();
-            tup.members[i] = ty.getKnownVal().ty;
+            tup.members.push_back(ty.getKnownVal().ty);
         }
 
-        optional<TypeTable::Id> tupTypeId = typeTable->addTuple(tup);
+        optional<TypeTable::Id> tupTypeId = typeTable->addTuple(move(tup));
         if (!tupTypeId.has_value()) {
             msgs->errorInternal(node.getCodeLoc());
             return NodeVal();
@@ -420,7 +420,34 @@ NodeVal Processor::processOper(const NodeVal &node, Oper op) {
 }
 
 NodeVal Processor::processTuple(const NodeVal &node, const NodeVal &starting) {
-    return NodeVal(); // TODO!
+    if (node.getChildrenCnt() == 1) return starting;
+
+    vector<NodeVal> membs;
+    membs.reserve(node.getChildrenCnt());
+    membs.push_back(starting);
+    for (size_t i = 1; i < node.getChildrenCnt(); ++i) {
+        NodeVal memb = processNode(node.getChild(i));
+        if (memb.isInvalid()) return NodeVal();
+        membs.push_back(move(memb));
+    }
+
+    TypeTable::Tuple tup;
+    tup.members.reserve(membs.size());
+    for (const NodeVal &memb : membs) {
+        optional<TypeTable::Id> membType = memb.getType();
+        if (!membType.has_value()) {
+            msgs->errorUnknown(memb.getCodeLoc());
+            return NodeVal();
+        }
+        tup.addMember(membType.value());
+    }
+    optional<TypeTable::Id> tupTypeIdOpt = typeTable->addTuple(move(tup));
+    if (!tupTypeIdOpt.has_value()) {
+        msgs->errorInternal(node.getCodeLoc());
+        return NodeVal();
+    }
+
+    return performTuple(node.getCodeLoc(), tupTypeIdOpt.value(), membs);
 }
 
 NodeVal Processor::promoteLiteralVal(const NodeVal &node) {

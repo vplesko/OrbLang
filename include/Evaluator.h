@@ -14,6 +14,7 @@ class Evaluator : public Processor {
     bool performRet(CodeLoc codeLoc) { return false; }
     bool performRet(CodeLoc codeLoc, const NodeVal &node) { return false; }
     NodeVal performEvaluation(const NodeVal &node);
+    NodeVal performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) { msgs->errorInternal(codeLoc); return NodeVal(); }
 
 public:
     Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs);

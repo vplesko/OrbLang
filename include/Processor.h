@@ -28,6 +28,7 @@ protected:
     virtual bool performRet(CodeLoc codeLoc) =0;
     virtual bool performRet(CodeLoc codeLoc, const NodeVal &node) =0;
     virtual NodeVal performEvaluation(const NodeVal &node) =0;
+    virtual NodeVal performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) =0;
 
 protected:
     bool checkInGlobalScope(CodeLoc codeLoc, bool orError);
