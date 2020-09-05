@@ -189,7 +189,9 @@ NodeVal Processor::processSym(const NodeVal &node) {
             NodeVal init = hasType ? processAndImplicitCast(nodeInit, optType.value()) : processNode(nodeInit);
             if (init.isInvalid()) continue;
 
-            if (!performRegister(entry.getCodeLoc(), id, nodeInit)) continue;
+            NodeVal nodeReg = performRegister(entry.getCodeLoc(), id, init);
+            if (nodeReg.isInvalid()) continue;
+            symbolTable->addVar(id, move(nodeReg));
         } else {
             if (!hasType) {
                 msgs->errorMissingTypeAnnotation(nodePair.getCodeLoc());
@@ -200,7 +202,9 @@ NodeVal Processor::processSym(const NodeVal &node) {
                 continue;
             }
 
-            if (!performRegister(entry.getCodeLoc(), id, optType.value())) continue;
+            NodeVal nodeReg = performRegister(entry.getCodeLoc(), id, optType.value());
+            if (nodeReg.isInvalid()) continue;
+            symbolTable->addVar(id, move(nodeReg));
         }
     }
 

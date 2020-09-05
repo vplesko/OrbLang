@@ -25,6 +25,7 @@ class Codegen : public Processor {
     llvm::Constant* getLlvmConstString(const std::string &str);
     llvm::Type* getLlvmType(TypeTable::Id typeId);
     llvm::Type* getLlvmTypeOrError(CodeLoc codeLoc, TypeTable::Id typeId);
+    llvm::GlobalValue* makeLlvmGlobal(llvm::Type *type, llvm::Constant *init, bool isConstant, const std::string &name);
     llvm::AllocaInst* makeLlvmAlloca(llvm::Type *type, const std::string &name);
     llvm::Value* makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTypeId, llvm::Type *dstLlvmType, TypeTable::Id dstTypeId);
 
@@ -34,10 +35,9 @@ class Codegen : public Processor {
 
     bool checkIsLlvmVal(const NodeVal &node, bool orError);
 
-    // TODO!
     NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, const NodeVal &val);
-    bool performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) { return false; }
-    bool performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) { return false; }
+    NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty);
+    NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init);
     NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty);
     NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args);
     bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func);

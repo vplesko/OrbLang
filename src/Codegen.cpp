@@ -116,6 +116,43 @@ NodeVal Codegen::performLoad(CodeLoc codeLoc, NamePool::Id id, const NodeVal &va
     return NodeVal(codeLoc, loadLlvmVal);
 }
 
+NodeVal Codegen::performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) {
+    llvm::Type *llvmType = getLlvmTypeOrError(codeLoc, ty);
+    if (llvmType == nullptr) return NodeVal();
+    
+    LlvmVal llvmVal;
+    llvmVal.type = ty;
+    if (symbolTable->inGlobalScope()) {
+        llvmVal.ref = makeLlvmGlobal(llvmType, nullptr, typeTable->worksAsTypeCn(ty), getNameForLlvm(id));
+    } else {
+        llvmVal.ref = makeLlvmAlloca(llvmType, getNameForLlvm(id));
+    }
+
+    return NodeVal(codeLoc, llvmVal);
+}
+
+NodeVal Codegen::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) {
+    NodeVal promo = init.isKnownVal() ? promoteKnownVal(init) : init;
+    if (promo.isInvalid()) return NodeVal();
+    if (!checkIsLlvmVal(promo, true)) return NodeVal();
+
+    TypeTable::Id ty = promo.getLlvmVal().type;
+    llvm::Type *llvmType = getLlvmTypeOrError(promo.getCodeLoc(), ty);
+    if (llvmType == nullptr) return NodeVal();
+
+    LlvmVal llvmVal;
+    llvmVal.type = ty;
+    if (symbolTable->inGlobalScope()) {
+        // TODO is the cast to llvm::Constant* always correct?
+        llvmVal.ref = makeLlvmGlobal(llvmType, (llvm::Constant*) promo.getLlvmVal().val, typeTable->worksAsTypeCn(ty), getNameForLlvm(id));
+    } else {
+        llvmVal.ref = makeLlvmAlloca(llvmType, getNameForLlvm(id));
+        llvmBuilder.CreateStore(promo.getLlvmVal().val, llvmVal.ref);
+    }
+
+    return NodeVal(codeLoc, llvmVal);
+}
+
 NodeVal Codegen::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
     if (node.getType().has_value() && node.getType().value() == ty) {
         return node;
@@ -379,6 +416,18 @@ llvm::Type* Codegen::getLlvmTypeOrError(CodeLoc codeLoc, TypeTable::Id typeId) {
         msgs->errorUnknown(codeLoc);
     }
     return ret;
+}
+
+llvm::GlobalValue* Codegen::makeLlvmGlobal(llvm::Type *type, llvm::Constant *init, bool isConstant, const std::string &name) {
+    if (init == nullptr) init = llvm::Constant::getNullValue(type);
+
+    return new llvm::GlobalVariable(
+        *llvmModule,
+        type,
+        isConstant,
+        llvm::GlobalValue::PrivateLinkage,
+        init,
+        name);
 }
 
 llvm::AllocaInst* Codegen::makeLlvmAlloca(llvm::Type *type, const std::string &name) {
