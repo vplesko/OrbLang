@@ -31,9 +31,10 @@ class Codegen : public Processor {
 
     std::string getNameForLlvm(NamePool::Id name) const;
 
-    NodeVal promoteKnownVal(const NodeVal &node);
-
     bool checkIsLlvmVal(const NodeVal &node, bool orError);
+
+    NodeVal promoteKnownVal(const NodeVal &node);
+    NodeVal promoteIfKnownValAndCheckIsLlvmVal(const NodeVal &node, bool orError);
 
     NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, const NodeVal &val);
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty);
@@ -45,7 +46,7 @@ class Codegen : public Processor {
     bool performRet(CodeLoc codeLoc);
     bool performRet(CodeLoc codeLoc, const NodeVal &node);
     NodeVal performEvaluation(const NodeVal &node);
-    NodeVal performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) { msgs->errorInternal(codeLoc); return NodeVal(); }
+    NodeVal performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs);
 
 public:
     Codegen(Evaluator *evaluator, NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs);
