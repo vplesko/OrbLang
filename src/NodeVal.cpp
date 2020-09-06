@@ -62,6 +62,12 @@ optional<TypeTable::Id> NodeVal::getType() const {
     return nullopt;
 }
 
+bool NodeVal::hasRef() const {
+    if (isKnownVal()) return getKnownVal().ref != nullptr;
+    if (isLlvmVal()) return getLlvmVal().ref != nullptr;
+    return false;
+}
+
 std::size_t NodeVal::getLength() const {
     if (isInvalid()) return 0;
     if (isComposite()) return getChildrenCnt();

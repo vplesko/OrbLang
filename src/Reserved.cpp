@@ -6,27 +6,27 @@ std::unordered_map<NamePool::Id, Keyword> keywords;
 std::unordered_map<NamePool::Id, Oper> opers;
 
 const unordered_map<Oper, OperInfo> operInfos = {
-    {Oper::ASGN, {.assignment=true, .l_assoc=false}},
-    {Oper::BIT_OR, {}},
-    {Oper::BIT_XOR, {.variadic=false}},
-    {Oper::BIT_AND, {.unary=true}},
-    {Oper::EQ, {.variadic=false}},
-    {Oper::NEQ, {.variadic=false}},
-    {Oper::LT, {.variadic=false}},
-    {Oper::LTEQ, {.variadic=false}},
-    {Oper::GT, {.variadic=false}},
-    {Oper::GTEQ, {.variadic=false}},
-    {Oper::SHL, {}},
-    {Oper::SHR, {}},
-    {Oper::ADD, {.unary=true}},
-    {Oper::SUB, {.unary=true}},
-    {Oper::MUL, {.unary=true}},
-    {Oper::DIV, {}},
-    {Oper::REM, {}},
-    {Oper::NOT, {.unary=true, .binary=false, .variadic=false}},
-    {Oper::BIT_NOT, {.unary=true, .binary=false, .variadic=false}},
-    {Oper::IND, {}},
-    {Oper::DOT, {}}
+    {Oper::ASGN, {.binary=true, .assignment=true}},
+    {Oper::NOT, {.unary=true}},
+    {Oper::BIT_NOT, {.unary=true}},
+    {Oper::EQ, {.binary=true, .comparison=true}},
+    {Oper::NEQ, {.binary=true, .comparison=true}},
+    {Oper::LT, {.binary=true, .comparison=true}},
+    {Oper::LTEQ, {.binary=true, .comparison=true}},
+    {Oper::GT, {.binary=true, .comparison=true}},
+    {Oper::GTEQ, {.binary=true, .comparison=true}},
+    {Oper::ADD, {.unary=true, .binary=true}},
+    {Oper::SUB, {.unary=true, .binary=true}},
+    {Oper::MUL, {.unary=true, .binary=true}},
+    {Oper::DIV, {.binary=true}},
+    {Oper::REM, {.binary=true}},
+    {Oper::BIT_OR, {.binary=true}},
+    {Oper::BIT_XOR, {.binary=true}},
+    {Oper::BIT_AND, {.unary=true, .binary=true}},
+    {Oper::SHL, {.binary=true, .noCast=true}},
+    {Oper::SHR, {.binary=true, .noCast=true}},
+    {Oper::IND, {.binary=true, .noCast=true}},
+    {Oper::DOT, {.binary=true, .noCast=true}}
 };
 
 bool isMeaningful(NamePool::Id name) {

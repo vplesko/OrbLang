@@ -29,25 +29,25 @@ enum class Keyword {
 };
 
 enum class Oper {
-    ADD,
-    SUB,
-    MUL,
-    DIV,
-    REM,
-    SHL,
-    SHR,
-    BIT_AND,
-    BIT_XOR,
-    BIT_OR,
+    ASGN,
+    NOT,
+    BIT_NOT,
     EQ,
     NEQ,
     LT,
     LTEQ,
     GT,
     GTEQ,
-    ASGN,
-    NOT,
-    BIT_NOT,
+    ADD,
+    SUB,
+    MUL,
+    DIV,
+    REM,
+    BIT_AND,
+    BIT_XOR,
+    BIT_OR,
+    SHL,
+    SHR,
     IND,
     DOT,
     UNKNOWN
@@ -55,10 +55,10 @@ enum class Oper {
 
 struct OperInfo {
     bool unary = false;
-    bool binary = true;
-    bool variadic = true;
+    bool binary = false;
+    bool comparison = false;
     bool assignment = false;
-    bool l_assoc = true;
+    bool noCast = false;
 };
 
 extern std::unordered_map<NamePool::Id, Meaningful> meaningfuls;

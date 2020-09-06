@@ -91,8 +91,8 @@ public:
     void errorExprUnBadType(CodeLoc loc, Oper op, TypeTable::Id ty);
     void errorExprUnOnCn(CodeLoc loc, Oper op);
     void errorExprUnOnNull(CodeLoc loc, Oper op);
-    void errorExprAsgnNonRef(CodeLoc loc, Oper op);
-    void errorExprAsgnOnCn(CodeLoc loc, Oper op);
+    void errorExprAsgnNonRef(CodeLoc loc);
+    void errorExprAsgnOnCn(CodeLoc loc);
     void errorExprDotInvalidBase(CodeLoc loc);
     void errorExprNotValue(CodeLoc loc);
     void errorExitNowhere(CodeLoc loc);

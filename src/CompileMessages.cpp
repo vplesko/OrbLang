@@ -221,19 +221,15 @@ void CompileMessages::errorNotLastParam(CodeLoc loc) {
     stringstream ss;
     ss << "Attribute '" << errorString(attr) << "' is not recognized in this context.";
     error(loc, ss.str());
-}
-
-void CompileMessages::errorNonUnOp(CodeLoc loc, Token::Oper op) {
-    stringstream ss;
-    ss << "Operation '" << errorString(op) << "' is not unary.";
-    error(loc, ss.str());
-}
-
-void CompileMessages::errorNonBinOp(CodeLoc loc, Token::Oper op) {
-    stringstream ss;
-    ss << "Operation '" << errorString(op) << "' is not binary.";
-    error(loc, ss.str());
 }*/
+
+void CompileMessages::errorNonUnOp(CodeLoc loc, Oper op) {
+    error(loc, "Operation is not unary.");
+}
+
+void CompileMessages::errorNonBinOp(CodeLoc loc, Oper op) {
+    error(loc, "Operation is not binary.");
+}
 
 void CompileMessages::errorVarNameTaken(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
@@ -426,19 +422,15 @@ void CompileMessages::errorExprUnOnNull(CodeLoc loc, Token::Oper op) {
     stringstream ss;
     ss << "Operation '" << errorString(op) << "' is not allowed on null literal.";
     error(loc, ss.str());
-}
-
-void CompileMessages::errorExprAsgnNonRef(CodeLoc loc, Token::Oper op) {
-    stringstream ss;
-    ss << "Operation '" << errorString(op) << "' and other assignment operations must assign to ref values.";
-    error(loc, ss.str());
-}
-
-void CompileMessages::errorExprAsgnOnCn(CodeLoc loc, Token::Oper op) {
-    stringstream ss;
-    ss << "Operation '" << errorString(op) << "' and other assignment operations cannot assign to constant types.";
-    error(loc, ss.str());
 }*/
+
+void CompileMessages::errorExprAsgnNonRef(CodeLoc loc) {
+    error(loc, "Assignment must assign to ref values.");
+}
+
+void CompileMessages::errorExprAsgnOnCn(CodeLoc loc) {
+    error(loc, "Assignment cannot assign to constant types.");
+}
 
 void CompileMessages::errorExprDotInvalidBase(CodeLoc loc) {
     error(loc, "Invalid expression on left side of dot operator.");

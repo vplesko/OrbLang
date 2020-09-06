@@ -14,6 +14,12 @@ class Evaluator : public Processor {
     bool performRet(CodeLoc codeLoc) { return false; }
     bool performRet(CodeLoc codeLoc, const NodeVal &node) { return false; }
     NodeVal performEvaluation(const NodeVal &node);
+    NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) { msgs->errorInternal(codeLoc); return NodeVal(); }
+    void* performOperComparisonSetUp() { return nullptr; }
+    bool performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) { return false; }
+    NodeVal performOperComparisonTearDown(CodeLoc codeLoc, void *signal) { msgs->errorInternal(codeLoc); return NodeVal(); }
+    NodeVal performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs) { msgs->errorInternal(codeLoc); return NodeVal(); }
+    NodeVal performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op) { msgs->errorInternal(codeLoc); return NodeVal(); }
     NodeVal performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) { msgs->errorInternal(codeLoc); return NodeVal(); }
 
 public:

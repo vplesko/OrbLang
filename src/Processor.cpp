@@ -416,7 +416,27 @@ NodeVal Processor::processImport(const NodeVal &node) {
 }
 
 NodeVal Processor::processOper(const NodeVal &node, Oper op) {
-    return NodeVal(); // TODO!
+    if (!checkAtLeastChildren(node, 2, true)) return NodeVal();
+
+    if (checkExactlyChildren(node, 2, false)) {
+        return processOperUnary(node.getCodeLoc(), node.getChild(1), op);
+    }
+
+    OperInfo operInfo = operInfos.find(op)->second;
+
+    vector<const NodeVal*> operands;
+    operands.reserve(node.getChildrenCnt()-1);
+    for (size_t i = 1; i < node.getChildrenCnt(); ++i) {
+        operands.push_back(&node.getChild(i));
+    }
+    
+    if (operInfo.comparison) {
+        return processOperComparison(node.getCodeLoc(), operands, op);
+    } else if (operInfo.assignment) {
+        return processOperAssignment(node.getCodeLoc(), operands);
+    } else {
+        return processOperRegular(node.getCodeLoc(), operands, op);
+    }
 }
 
 NodeVal Processor::processTuple(const NodeVal &node, const NodeVal &starting) {
@@ -526,6 +546,90 @@ bool Processor::processChildNodes(const NodeVal &node) {
     return true;
 }
 
+NodeVal Processor::processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) {
+    OperInfo operInfo = operInfos.find(op)->second;
+    if (!operInfo.unary) {
+        msgs->errorNonUnOp(codeLoc, op);
+        return NodeVal();
+    }
+
+    NodeVal operProc = processNode(oper);
+    if (operProc.isInvalid()) return NodeVal();
+
+    return processOperUnary(codeLoc, operProc, op);
+}
+
+NodeVal Processor::processOperComparison(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op) {
+    void *signal = performOperComparisonSetUp();
+
+    NodeVal lhs = processAndCheckIsValue(*opers[0]);
+    if (lhs.isInvalid()) return NodeVal();
+
+    for (size_t i = 1; i < opers.size(); ++i) {
+        NodeVal rhs = processAndCheckIsValue(*opers[i]);
+        if (rhs.isInvalid()) return NodeVal();
+
+        if (!implicitCastOperands(lhs, rhs, false)) return NodeVal();
+
+        if (performOperComparison(codeLoc, lhs, rhs, op, signal)) break;
+
+        lhs = move(rhs);
+    }
+
+    return performOperComparisonTearDown(codeLoc, signal);
+}
+
+NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
+    NodeVal rhs = processAndCheckIsValue(*opers.back());
+    if (rhs.isInvalid()) return NodeVal();
+
+    for (size_t i = opers.size()-2;; --i) {
+        NodeVal lhs = processAndCheckIsValue(*opers[i]);
+        if (lhs.isInvalid()) return NodeVal();
+
+        if (!lhs.hasRef()) {
+            msgs->errorExprAsgnNonRef(lhs.getCodeLoc());
+            return NodeVal();
+        }
+        if (typeTable->worksAsTypeCn(lhs.getType().value())) {
+            msgs->errorExprAsgnOnCn(lhs.getCodeLoc());
+            return NodeVal();
+        }
+
+        if (!implicitCastOperands(lhs, rhs, true)) return NodeVal();
+
+        rhs = performOperAssignment(codeLoc, lhs, rhs);
+        if (rhs.isInvalid()) return NodeVal();
+
+        if (i == 0) break;
+    }
+
+    return rhs;
+}
+
+NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op) {
+    OperInfo operInfo = operInfos.find(op)->second;
+    if (!operInfo.binary) {
+        msgs->errorNonBinOp(codeLoc, op);
+        return NodeVal();
+    }
+
+    NodeVal lhs = processAndCheckIsValue(*opers[0]);
+    if (lhs.isInvalid()) return NodeVal();
+
+    for (size_t i = 1; i < opers.size(); ++i) {
+        NodeVal rhs = processAndCheckIsValue(*opers[i]);
+        if (rhs.isInvalid()) return NodeVal();
+
+        if (!operInfo.noCast && !implicitCastOperands(lhs, rhs, false)) return NodeVal();
+
+        lhs = performOperRegular(codeLoc, lhs, rhs, op);
+        if (lhs.isInvalid()) return NodeVal();
+    }
+
+    return lhs;
+}
+
 NodeVal Processor::processAndExpectType(const NodeVal &node) {
     NodeVal ty = processNode(node);
     if (ty.isInvalid()) return NodeVal();
@@ -578,6 +682,13 @@ pair<NodeVal, optional<NodeVal>> Processor::processForIdTypePair(const NodeVal &
     }
 
     return make_pair<NodeVal, optional<NodeVal>>(move(id), move(ty));
+}
+
+NodeVal Processor::processAndCheckIsValue(const NodeVal &node) {
+    NodeVal proc = processNode(node);
+    if (proc.isInvalid()) return NodeVal();
+    if (!checkIsValue(proc, true)) return NodeVal();
+    return proc;
 }
 
 NodeVal Processor::processAndImplicitCast(const NodeVal &node, TypeTable::Id ty) {
@@ -633,6 +744,22 @@ bool Processor::applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &
     return true;
 }
 
+bool Processor::implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly) {
+    if (lhs.getType().value() == rhs.getType().value()) return true;
+
+    if (checkImplicitCastable(rhs, lhs.getType().value(), false)) {
+        rhs = performCast(rhs.getCodeLoc(), rhs, lhs.getType().value());
+        return !rhs.isInvalid();
+    } else if (!oneWayOnly && checkImplicitCastable(lhs, rhs.getType().value(), false)) {
+        lhs = performCast(lhs.getCodeLoc(), lhs, rhs.getType().value());
+        return !lhs.isInvalid();
+    } else {
+        if (oneWayOnly) msgs->errorExprCannotImplicitCast(rhs.getCodeLoc(), rhs.getType().value(), lhs.getType().value());
+        else msgs->errorExprCannotImplicitCastEither(rhs.getCodeLoc(), rhs.getType().value(), lhs.getType().value());
+        return false;
+    }
+}
+
 bool Processor::checkInGlobalScope(CodeLoc codeLoc, bool orError) {
     if (!symbolTable->inGlobalScope()) {
         if (orError) msgs->errorNotGlobalScope(codeLoc);
@@ -668,6 +795,14 @@ bool Processor::checkIsType(const NodeVal &node, bool orError) {
 bool Processor::checkIsComposite(const NodeVal &node, bool orError) {
     if (!node.isComposite()) {
         if (orError) msgs->errorUnexpectedIsTerminal(node.getCodeLoc());
+        return false;
+    }
+    return true;
+}
+
+bool Processor::checkIsValue(const NodeVal &node, bool orError) {
+    if (!node.getType().has_value()) {
+        if (orError) msgs->errorUnknown(node.getCodeLoc());
         return false;
     }
     return true;

@@ -28,6 +28,12 @@ protected:
     virtual bool performRet(CodeLoc codeLoc) =0;
     virtual bool performRet(CodeLoc codeLoc, const NodeVal &node) =0;
     virtual NodeVal performEvaluation(const NodeVal &node) =0;
+    virtual NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) =0;
+    virtual void* performOperComparisonSetUp() =0;
+    virtual bool performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) =0;
+    virtual NodeVal performOperComparisonTearDown(CodeLoc codeLoc, void *signal) =0;
+    virtual NodeVal performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs) =0;
+    virtual NodeVal performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op) =0;
     virtual NodeVal performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) =0;
 
 protected:
@@ -37,6 +43,8 @@ private:
     bool checkIsId(const NodeVal &node, bool orError);
     bool checkIsType(const NodeVal &node, bool orError);
     bool checkIsComposite(const NodeVal &node, bool orError);
+    // Checks that the node is KnownVal or LlvmVal.
+    bool checkIsValue(const NodeVal &node, bool orError);
     bool checkExactlyChildren(const NodeVal &node, std::size_t n, bool orError);
     bool checkAtLeastChildren(const NodeVal &node, std::size_t n, bool orError);
     bool checkAtMostChildren(const NodeVal &node, std::size_t n, bool orError);
@@ -48,7 +56,13 @@ private:
     NodeVal processWithEscapeIfLeafAndExpectId(const NodeVal &node);
     NodeVal processWithEscapeIfLeafUnlessType(const NodeVal &node);
     std::pair<NodeVal, std::optional<NodeVal>> processForIdTypePair(const NodeVal &node);
+    NodeVal processAndCheckIsValue(const NodeVal &node);
     NodeVal processAndImplicitCast(const NodeVal &node, TypeTable::Id ty);
+
+    NodeVal processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op);
+    NodeVal processOperComparison(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op);
+    NodeVal processOperAssignment(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers);
+    NodeVal processOperRegular(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op);
 
 protected:
     bool processChildNodes(const NodeVal &node);
@@ -56,6 +70,7 @@ protected:
 private:
     NodeVal promoteLiteralVal(const NodeVal &node);
     bool applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &node);
+    bool implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly);
 
     NodeVal processInvoke(const NodeVal &node, const NodeVal &starting);
     NodeVal processType(const NodeVal &node, const NodeVal &starting);
