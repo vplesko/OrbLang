@@ -280,6 +280,60 @@ NodeVal Codegen::performEvaluation(const NodeVal &node) {
     return evaluator->processNode(node);
 }
 
+NodeVal Codegen::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) {
+    if (!checkInLocalScope(codeLoc, true)) return NodeVal();
+    
+    NodeVal promo = promoteIfKnownValAndCheckIsLlvmVal(oper, true);
+    if (promo.isInvalid()) return NodeVal();
+
+    TypeTable::Id operTy = promo.getLlvmVal().type;
+
+    llvm::Value *llvmIn = promo.getLlvmVal().val, *llvmInRef = promo.getLlvmVal().ref;
+    LlvmVal llvmVal;
+    llvmVal.type = operTy;
+    if (op == Oper::ADD) {
+        if (typeTable->worksAsTypeI(operTy) ||
+            typeTable->worksAsTypeU(operTy) ||
+            typeTable->worksAsTypeF(operTy)) {
+            llvmVal.val = llvmIn;
+        }
+    } else if (op == Oper::SUB) {
+        if (typeTable->worksAsTypeI(operTy)) {
+            llvmVal.val = llvmBuilder.CreateNeg(llvmIn, "sneg_tmp");
+        } else if (typeTable->worksAsTypeF(operTy)) {
+            llvmVal.val = llvmBuilder.CreateFNeg(llvmIn, "fneg_tmp");
+        }
+    } else if (op == Oper::BIT_NOT) {
+        if (typeTable->worksAsTypeI(operTy) ||
+            typeTable->worksAsTypeU(operTy)) {
+            llvmVal.val = llvmBuilder.CreateNot(llvmIn, "bit_not_tmp");
+        }
+    } else if (op == Oper::NOT) {
+        if (typeTable->worksAsTypeB(operTy)) {
+            llvmVal.val = llvmBuilder.CreateNot(llvmIn, "not_tmp");
+        }
+    } else if (op == Oper::MUL) {
+        optional<TypeTable::Id> typeId = typeTable->addTypeDerefOf(operTy);
+        if (typeId.has_value()) {
+            llvmVal.type = typeId.value();
+            llvmVal.val = llvmBuilder.CreateLoad(llvmIn, "deref_tmp");
+            llvmVal.ref = llvmIn;
+        }
+    } else if (op == Oper::BIT_AND) {
+        if (llvmInRef != nullptr) {
+            llvmVal.type = typeTable->addTypeAddrOf(operTy);
+            llvmVal.val = llvmInRef;
+        }
+    }
+
+    if (llvmVal.val == nullptr) {
+        msgs->errorUnknown(codeLoc);
+        return NodeVal();
+    }
+
+    return NodeVal(codeLoc, llvmVal);
+}
+
 NodeVal Codegen::performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
