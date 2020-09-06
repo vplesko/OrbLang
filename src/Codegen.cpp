@@ -280,6 +280,23 @@ NodeVal Codegen::performEvaluation(const NodeVal &node) {
     return evaluator->processNode(node);
 }
 
+NodeVal Codegen::performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs) {
+    if (!checkInLocalScope(codeLoc, true)) return NodeVal();
+
+    if (!checkIsLlvmVal(lhs, true)) return NodeVal();
+    
+    NodeVal rhsPromo = promoteIfKnownValAndCheckIsLlvmVal(rhs, true);
+    if (rhsPromo.isInvalid()) return NodeVal();
+
+    llvmBuilder.CreateStore(rhsPromo.getLlvmVal().val, lhs.getLlvmVal().ref);
+
+    LlvmVal llvmVal;
+    llvmVal.type = lhs.getType().value();
+    llvmVal.val = rhsPromo.getLlvmVal().val;
+    llvmVal.ref = lhs.getLlvmVal().ref;
+    return NodeVal(lhs.getCodeLoc(), llvmVal);
+}
+
 NodeVal Codegen::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
