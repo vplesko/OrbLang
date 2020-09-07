@@ -57,7 +57,6 @@ struct OperInfo {
     bool unary = false;
     bool binary = false;
     bool comparison = false;
-    bool assignment = false;
     bool noCast = false;
 };
 

@@ -6,7 +6,7 @@ std::unordered_map<NamePool::Id, Keyword> keywords;
 std::unordered_map<NamePool::Id, Oper> opers;
 
 const unordered_map<Oper, OperInfo> operInfos = {
-    {Oper::ASGN, {.binary=true, .assignment=true}},
+    {Oper::ASGN, {.binary=true}},
     {Oper::NOT, {.unary=true}},
     {Oper::BIT_NOT, {.unary=true}},
     {Oper::EQ, {.binary=true, .comparison=true}},

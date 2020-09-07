@@ -10,7 +10,7 @@
 
 class NamePool;
 
-// TODO fix the avalanche of errors in some cases
+// TODO! clean up after the rewrite
 class CompileMessages {
     enum Status {
         S_OK,

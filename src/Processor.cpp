@@ -432,8 +432,10 @@ NodeVal Processor::processOper(const NodeVal &node, Oper op) {
     
     if (operInfo.comparison) {
         return processOperComparison(node.getCodeLoc(), operands, op);
-    } else if (operInfo.assignment) {
+    } else if (op == Oper::ASGN) {
         return processOperAssignment(node.getCodeLoc(), operands);
+    } else if (op == Oper::DOT) {
+        return processOperMember(node.getCodeLoc(), operands);
     } else {
         return processOperRegular(node.getCodeLoc(), operands, op);
     }
@@ -605,6 +607,25 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
     }
 
     return rhs;
+}
+
+NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
+    NodeVal base = processNode(*opers[0]);
+    if (base.isInvalid()) return NodeVal();
+
+    for (size_t i = 1; i < opers.size(); ++i) {
+        NodeVal index = processNode(*opers[i]);
+        if (index.isInvalid()) return NodeVal();
+        if (!index.isKnownVal()) {
+            msgs->errorMemberIndex(index.getCodeLoc());
+            return NodeVal();
+        }
+
+        base = performOperMember(codeLoc, base, index);
+        if (base.isInvalid()) return NodeVal();
+    }
+
+    return base;
 }
 
 NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op) {
