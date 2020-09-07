@@ -397,12 +397,10 @@ NodeVal Codegen::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vect
         llvmMembVals.push_back(promo.getLlvmVal().val);
     }
 
-    // TODO use insertvalue instead
-    llvm::Value *llvmTupRef = makeLlvmAlloca(llvmTupType, "tup");
+    llvm::Value *llvmTupVal = llvm::UndefValue::get(llvmTupType);
     for (size_t i = 0; i < llvmMembVals.size(); ++i) {
-        llvmBuilder.CreateStore(llvmMembVals[i], llvmBuilder.CreateStructGEP(llvmTupRef, i));
+        llvmTupVal = llvmBuilder.CreateInsertValue(llvmTupVal, llvmMembVals[i], {(unsigned) i});
     }
-    llvm::Value *llvmTupVal = llvmBuilder.CreateLoad(llvmTupRef, "tmp_tup");
 
     LlvmVal llvmVal;
     llvmVal.type = ty;
