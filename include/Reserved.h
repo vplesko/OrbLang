@@ -57,7 +57,6 @@ struct OperInfo {
     bool unary = false;
     bool binary = false;
     bool comparison = false;
-    bool noCast = false;
 };
 
 extern std::unordered_map<NamePool::Id, Meaningful> meaningfuls;

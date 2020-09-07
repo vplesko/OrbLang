@@ -434,6 +434,8 @@ NodeVal Processor::processOper(const NodeVal &node, Oper op) {
         return processOperComparison(node.getCodeLoc(), operands, op);
     } else if (op == Oper::ASGN) {
         return processOperAssignment(node.getCodeLoc(), operands);
+    } else if (op == Oper::IND) {
+        return processOperIndex(node.getCodeLoc(), operands);
     } else if (op == Oper::DOT) {
         return processOperMember(node.getCodeLoc(), operands);
     } else {
@@ -609,6 +611,32 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
     return rhs;
 }
 
+NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
+    NodeVal base = processAndCheckIsValue(*opers[0]);
+    if (base.isInvalid()) return NodeVal();
+
+    for (size_t i = 1; i < opers.size(); ++i) {
+        optional<TypeTable::Id> elemType = typeTable->addTypeIndexOf(base.getType().value());
+        if (!elemType.has_value()) {
+            msgs->errorExprIndexOnBadType(base.getCodeLoc(), base.getType().value());
+            return NodeVal();
+        }
+
+        // TODO if base is arr and index is known and out of bounds, give a warning
+        NodeVal index = processAndCheckIsValue(*opers[i]);
+        if (index.isInvalid()) return NodeVal();
+        if (!typeTable->worksAsTypeI(index.getType().value()) && !typeTable->worksAsTypeU(index.getType().value())) {
+            msgs->errorExprIndexNotIntegral(index.getCodeLoc());
+            return NodeVal();
+        }
+
+        base = performOperIndex(base.getCodeLoc(), base, index, elemType.value());
+        if (base.isInvalid()) return NodeVal();
+    }
+
+    return base;
+}
+
 NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
     NodeVal base = processAndCheckIsValue(*opers[0]);
     if (base.isInvalid()) return NodeVal();
@@ -669,7 +697,7 @@ NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const N
         NodeVal rhs = processAndCheckIsValue(*opers[i]);
         if (rhs.isInvalid()) return NodeVal();
 
-        if (!operInfo.noCast && !implicitCastOperands(lhs, rhs, false)) return NodeVal();
+        if (!implicitCastOperands(lhs, rhs, false)) return NodeVal();
 
         lhs = performOperRegular(codeLoc, lhs, rhs, op);
         if (lhs.isInvalid()) return NodeVal();

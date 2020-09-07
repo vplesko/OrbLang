@@ -34,6 +34,7 @@ protected:
     virtual bool performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) =0;
     virtual NodeVal performOperComparisonTearDown(CodeLoc codeLoc, void *signal) =0;
     virtual NodeVal performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs) =0;
+    virtual NodeVal performOperIndex(CodeLoc codeLoc, const NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) =0;
     virtual NodeVal performOperMember(CodeLoc codeLoc, const NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) =0;
     virtual NodeVal performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op) =0;
     virtual NodeVal performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) =0;
@@ -64,6 +65,7 @@ private:
     NodeVal processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op);
     NodeVal processOperComparison(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op);
     NodeVal processOperAssignment(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers);
+    NodeVal processOperIndex(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers);
     NodeVal processOperMember(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers);
     NodeVal processOperRegular(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op);
 
