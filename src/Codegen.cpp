@@ -480,19 +480,7 @@ llvm::Constant* Codegen::getLlvmConstB(bool val) {
 }
 
 llvm::Constant* Codegen::getLlvmConstString(const std::string &str) {
-    llvm::GlobalVariable *glob = new llvm::GlobalVariable(
-        *llvmModule,
-        getLlvmType(typeTable->getTypeCharArrOfLenId(LiteralVal::getStringLen(str))),
-        true,
-        llvm::GlobalValue::PrivateLinkage,
-        nullptr,
-        "str_lit"
-    );
-
-    // TODO use llvmBuilder.CreateGlobalString instead?
-    llvm::Constant *arr = llvm::ConstantDataArray::getString(llvmContext, str, true);
-    glob->setInitializer(arr);
-    return llvm::ConstantExpr::getPointerCast(glob, getLlvmType(typeTable->getTypeIdStr()));
+    return llvmBuilder.CreateGlobalStringPtr(str, "str_lit");
 }
 
 llvm::Type* Codegen::getLlvmType(TypeTable::Id typeId) {
