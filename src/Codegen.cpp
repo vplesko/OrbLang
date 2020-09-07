@@ -366,6 +366,46 @@ NodeVal Codegen::performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, cons
     return NodeVal(lhs.getCodeLoc(), llvmVal);
 }
 
+NodeVal Codegen::performOperIndex(CodeLoc codeLoc, const NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) {
+    if (!checkInLocalScope(codeLoc, true)) return NodeVal();
+    
+    NodeVal basePromo = promoteIfKnownValAndCheckIsLlvmVal(base, true);
+    if (basePromo.isInvalid()) return NodeVal();
+    
+    NodeVal indPromo = promoteIfKnownValAndCheckIsLlvmVal(ind, true);
+    if (ind.isInvalid()) return NodeVal();
+
+    LlvmVal llvmVal;
+    llvmVal.type = resTy;
+    if (typeTable->worksAsTypeArrP(basePromo.getType().value())) {
+        llvmVal.ref = llvmBuilder.CreateGEP(basePromo.getLlvmVal().val, indPromo.getLlvmVal().val);
+        llvmVal.val = llvmBuilder.CreateLoad(llvmVal.ref, "index_tmp");
+    } else if (typeTable->worksAsTypeArr(basePromo.getType().value())) {
+        llvm::Type *llvmTypeInd = getLlvmTypeOrError(indPromo.getCodeLoc(), indPromo.getType().value());
+        if (llvmTypeInd == nullptr) return NodeVal();
+        
+        if (basePromo.hasRef()) {
+            llvmVal.ref = llvmBuilder.CreateGEP(basePromo.getLlvmVal().ref,
+                {llvm::ConstantInt::get(llvmTypeInd, 0), indPromo.getLlvmVal().val});
+            llvmVal.val = llvmBuilder.CreateLoad(llvmVal.ref, "index_tmp");
+        } else {
+            llvm::Type *llvmTypeBase = getLlvmTypeOrError(basePromo.getCodeLoc(), basePromo.getType().value());
+            if (llvmTypeBase == nullptr) return NodeVal();
+
+            // llvm's extractvalue would require compile-time constant indices
+            llvm::Value *tmp = makeLlvmAlloca(llvmTypeBase, "tmp");
+            llvmBuilder.CreateStore(basePromo.getLlvmVal().val, tmp);
+            tmp = llvmBuilder.CreateGEP(tmp,
+                {llvm::ConstantInt::get(llvmTypeInd, 0), indPromo.getLlvmVal().val});
+            llvmVal.val = llvmBuilder.CreateLoad(tmp, "index_tmp");
+        }
+    } else {
+        msgs->errorInternal(codeLoc);
+        return NodeVal();
+    }
+    return NodeVal(codeLoc, llvmVal);
+}
+
 NodeVal Codegen::performOperMember(CodeLoc codeLoc, const NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     
@@ -619,9 +659,12 @@ llvm::Value* Codegen::makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTyp
         } else if (typeTable->worksAsTypeAnyP(dstTypeId)) {
             dstLlvmVal = llvmBuilder.CreatePointerCast(srcLlvmVal, dstLlvmType, "p2p_cast");
         } else if (typeTable->worksAsTypeB(dstTypeId)) {
+            llvm::Type *llvmTypeI = getLlvmType(typeTable->getPrimTypeId(TypeTable::WIDEST_I));
+            if (llvmTypeI == nullptr) return nullptr;
+
             dstLlvmVal = llvmBuilder.CreateICmpNE(
-                llvmBuilder.CreatePtrToInt(srcLlvmVal, getLlvmType(typeTable->getPrimTypeId(TypeTable::WIDEST_I))),
-                llvm::ConstantInt::getNullValue(getLlvmType(typeTable->getPrimTypeId(TypeTable::WIDEST_I))),
+                llvmBuilder.CreatePtrToInt(srcLlvmVal, llvmTypeI),
+                llvm::ConstantInt::getNullValue(llvmTypeI),
                 "p2b_cast");
         }
     } else if (typeTable->worksAsTypeArr(srcTypeId) || typeTable->worksAsTuple(srcTypeId)) {
