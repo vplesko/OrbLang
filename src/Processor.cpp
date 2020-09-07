@@ -558,7 +558,7 @@ NodeVal Processor::processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper o
     NodeVal operProc = processNode(oper);
     if (operProc.isInvalid()) return NodeVal();
 
-    return performOperUnary(codeLoc, operProc, op);
+    return op == Oper::MUL ? performOperUnaryDeref(codeLoc, operProc) : performOperUnary(codeLoc, operProc, op);
 }
 
 NodeVal Processor::processOperComparison(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op) {

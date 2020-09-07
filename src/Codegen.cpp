@@ -312,13 +312,6 @@ NodeVal Codegen::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op)
         if (typeTable->worksAsTypeB(operTy)) {
             llvmVal.val = llvmBuilder.CreateNot(llvmIn, "not_tmp");
         }
-    } else if (op == Oper::MUL) {
-        optional<TypeTable::Id> typeId = typeTable->addTypeDerefOf(operTy);
-        if (typeId.has_value()) {
-            llvmVal.type = typeId.value();
-            llvmVal.val = llvmBuilder.CreateLoad(llvmIn, "deref_tmp");
-            llvmVal.ref = llvmIn;
-        }
     } else if (op == Oper::BIT_AND) {
         if (llvmInRef != nullptr) {
             llvmVal.type = typeTable->addTypeAddrOf(operTy);
@@ -331,6 +324,28 @@ NodeVal Codegen::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op)
         return NodeVal();
     }
 
+    return NodeVal(codeLoc, llvmVal);
+}
+
+NodeVal Codegen::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
+    if (!checkInLocalScope(codeLoc, true)) return NodeVal();
+    
+    NodeVal promo = promoteIfKnownValAndCheckIsLlvmVal(oper, true);
+    if (promo.isInvalid()) return NodeVal();
+
+    TypeTable::Id operTy = promo.getLlvmVal().type;
+    llvm::Value *llvmIn = promo.getLlvmVal().val;
+    
+    optional<TypeTable::Id> typeId = typeTable->addTypeDerefOf(operTy);
+    if (!typeId.has_value()) {
+        msgs->errorUnknown(codeLoc);
+        return NodeVal();
+    }
+
+    LlvmVal llvmVal;
+    llvmVal.type = typeId.value();
+    llvmVal.val = llvmBuilder.CreateLoad(llvmIn, "deref_tmp");
+    llvmVal.ref = llvmIn;
     return NodeVal(codeLoc, llvmVal);
 }
 

@@ -47,6 +47,7 @@ class Codegen : public Processor {
     bool performRet(CodeLoc codeLoc, const NodeVal &node);
     NodeVal performEvaluation(const NodeVal &node);
     NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op);
+    NodeVal performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
     void* performOperComparisonSetUp() { return nullptr; }
     bool performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) { return false; }
     NodeVal performOperComparisonTearDown(CodeLoc codeLoc, void *signal) { msgs->errorInternal(codeLoc); return NodeVal(); }

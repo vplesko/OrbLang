@@ -29,6 +29,7 @@ protected:
     virtual bool performRet(CodeLoc codeLoc, const NodeVal &node) =0;
     virtual NodeVal performEvaluation(const NodeVal &node) =0;
     virtual NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) =0;
+    virtual NodeVal performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) =0;
     virtual void* performOperComparisonSetUp() =0;
     virtual bool performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) =0;
     virtual NodeVal performOperComparisonTearDown(CodeLoc codeLoc, void *signal) =0;
