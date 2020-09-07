@@ -184,6 +184,7 @@ public:
     bool worksAsTypeCn(Id t) const;
 
     std::optional<const Tuple*> extractTuple(Id t) const;
+    std::optional<Id> extractMemberType(Id t, std::size_t ind);
     std::optional<std::size_t> extractLenOfArr(Id arrTypeId) const;
 
     bool fitsTypeI(int64_t x, Id t) const;

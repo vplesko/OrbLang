@@ -610,10 +610,17 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
 }
 
 NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
-    NodeVal base = processNode(*opers[0]);
+    NodeVal base = processAndCheckIsValue(*opers[0]);
     if (base.isInvalid()) return NodeVal();
 
     for (size_t i = 1; i < opers.size(); ++i) {
+        if (typeTable->worksAsTypeP(base.getType().value())) {
+            base = performOperUnaryDeref(base.getCodeLoc(), base);
+            if (base.isInvalid()) return NodeVal();
+            if (!checkIsValue(base, true)) return NodeVal();
+        }
+        TypeTable::Id baseType = base.getType().value();
+
         NodeVal index = processNode(*opers[i]);
         if (index.isInvalid()) return NodeVal();
         if (!index.isKnownVal()) {
@@ -621,7 +628,27 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
             return NodeVal();
         }
 
-        base = performOperMember(codeLoc, base, index);
+        optional<const TypeTable::Tuple*> tupleOpt = typeTable->extractTuple(baseType);
+        if (!tupleOpt.has_value()) {
+            msgs->errorExprDotInvalidBase(base.getCodeLoc());
+            return NodeVal();
+        }
+        const TypeTable::Tuple &tuple = *tupleOpt.value();
+
+        optional<uint64_t> indexValOpt = KnownVal::getValueNonNeg(index.getKnownVal(), typeTable);
+        if (!indexValOpt.has_value() || indexValOpt.value() >= tuple.members.size()) {
+            msgs->errorMemberIndex(index.getCodeLoc());
+            return NodeVal();
+        }
+        uint64_t indexVal = indexValOpt.value();
+
+        optional<TypeTable::Id> resType = typeTable->extractMemberType(baseType, (size_t) indexVal);
+        if (!resType.has_value()) {
+            msgs->errorInternal(base.getCodeLoc());
+            return NodeVal();
+        }
+
+        base = performOperMember(base.getCodeLoc(), base, indexVal, resType.value());
         if (base.isInvalid()) return NodeVal();
     }
 

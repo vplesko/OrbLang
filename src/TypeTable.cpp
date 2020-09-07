@@ -362,6 +362,16 @@ optional<const TypeTable::Tuple*> TypeTable::extractTuple(Id t) const {
     return nullopt;
 }
 
+optional<TypeTable::Id> TypeTable::extractMemberType(Id t, size_t ind) {
+    optional<const Tuple*> tup = extractTuple(t);
+    if (!tup.has_value()) return nullopt;
+
+    if (ind >= tup.value()->members.size()) return nullopt;
+
+    Id id = tup.value()->members[ind];
+    return isDirectCn(t) ? addTypeCnOf(id) : id;
+}
+
 bool TypeTable::worksAsTypeAnyP(Id t) const {
     return worksAsTypeP(t) || worksAsTypeArrP(t);
 }

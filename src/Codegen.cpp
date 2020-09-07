@@ -335,7 +335,7 @@ NodeVal Codegen::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
 
     TypeTable::Id operTy = promo.getLlvmVal().type;
     llvm::Value *llvmIn = promo.getLlvmVal().val;
-    
+
     optional<TypeTable::Id> typeId = typeTable->addTypeDerefOf(operTy);
     if (!typeId.has_value()) {
         msgs->errorUnknown(codeLoc);
@@ -366,6 +366,23 @@ NodeVal Codegen::performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, cons
     return NodeVal(lhs.getCodeLoc(), llvmVal);
 }
 
+NodeVal Codegen::performOperMember(CodeLoc codeLoc, const NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
+    if (!checkInLocalScope(codeLoc, true)) return NodeVal();
+    
+    NodeVal basePromo = promoteIfKnownValAndCheckIsLlvmVal(base, true);
+    if (basePromo.isInvalid()) return NodeVal();
+
+    LlvmVal llvmVal;
+    llvmVal.type = resTy;
+    if (basePromo.hasRef()) {
+        llvmVal.ref = llvmBuilder.CreateStructGEP(basePromo.getLlvmVal().ref, ind);
+        llvmVal.val = llvmBuilder.CreateLoad(llvmVal.ref, "dot_tmp");
+    } else {
+        llvmVal.val = llvmBuilder.CreateExtractValue(basePromo.getLlvmVal().val, {(unsigned) ind}, "dot_tmp");
+    }
+    return NodeVal(codeLoc, llvmVal);
+}
+
 NodeVal Codegen::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
@@ -380,6 +397,7 @@ NodeVal Codegen::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vect
         llvmMembVals.push_back(promo.getLlvmVal().val);
     }
 
+    // TODO use insertvalue instead
     llvm::Value *llvmTupRef = makeLlvmAlloca(llvmTupType, "tup");
     for (size_t i = 0; i < llvmMembVals.size(); ++i) {
         llvmBuilder.CreateStore(llvmMembVals[i], llvmBuilder.CreateStructGEP(llvmTupRef, i));
@@ -473,6 +491,7 @@ llvm::Constant* Codegen::getLlvmConstString(const std::string &str) {
         "str_lit"
     );
 
+    // TODO use llvmBuilder.CreateGlobalString instead?
     llvm::Constant *arr = llvm::ConstantDataArray::getString(llvmContext, str, true);
     glob->setInitializer(arr);
     return llvm::ConstantExpr::getPointerCast(glob, getLlvmType(typeTable->getTypeIdStr()));
