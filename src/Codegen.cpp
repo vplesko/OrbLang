@@ -423,6 +423,99 @@ NodeVal Codegen::performOperMember(CodeLoc codeLoc, const NodeVal &base, std::ui
     return NodeVal(codeLoc, llvmVal);
 }
 
+NodeVal Codegen::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op) {
+    if (!checkInLocalScope(codeLoc, true)) return NodeVal();
+    
+    NodeVal lhsPromo = promoteIfKnownValAndCheckIsLlvmVal(lhs, true);
+    if (lhs.isInvalid()) return NodeVal();
+    
+    NodeVal rhsPromo = promoteIfKnownValAndCheckIsLlvmVal(rhs, true);
+    if (rhs.isInvalid()) return NodeVal();
+
+    LlvmVal llvmVal;
+    llvmVal.type = lhs.getType().value();
+    
+    bool isTypeI = typeTable->worksAsTypeI(llvmVal.type);
+    bool isTypeU = typeTable->worksAsTypeU(llvmVal.type);
+    bool isTypeF = typeTable->worksAsTypeF(llvmVal.type);
+    
+    switch (op) {
+    case Oper::ADD:
+        if (isTypeI || isTypeU) {
+            llvmVal.val = llvmBuilder.CreateAdd(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "add_tmp");
+        } else if (isTypeF) {
+            llvmVal.val = llvmBuilder.CreateFAdd(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fadd_tmp");
+        }
+        break;
+    case Oper::SUB:
+        if (isTypeI || isTypeU) {
+            llvmVal.val = llvmBuilder.CreateSub(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "sub_tmp");
+        } else if (isTypeF) {
+            llvmVal.val = llvmBuilder.CreateFSub(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fsub_tmp");
+        }
+        break;
+    case Oper::MUL:
+        if (isTypeI || isTypeU) {
+            llvmVal.val = llvmBuilder.CreateMul(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "mul_tmp");
+        } else if (isTypeF) {
+            llvmVal.val = llvmBuilder.CreateFMul(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fmul_tmp");
+        }
+        break;
+    case Oper::DIV:
+        if (isTypeI) {
+            llvmVal.val = llvmBuilder.CreateSDiv(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "sdiv_tmp");
+        } else if (isTypeU) {
+            llvmVal.val = llvmBuilder.CreateUDiv(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "udiv_tmp");
+        } else if (isTypeF) {
+            llvmVal.val = llvmBuilder.CreateFDiv(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fdiv_tmp");
+        }
+        break;
+    case Oper::REM:
+        if (isTypeI) {
+            llvmVal.val = llvmBuilder.CreateSRem(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "srem_tmp");
+        } else if (isTypeU) {
+            llvmVal.val = llvmBuilder.CreateURem(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "urem_tmp");
+        } else if (isTypeF) {
+            llvmVal.val = llvmBuilder.CreateFRem(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "frem_tmp");
+        }
+        break;
+    case Oper::SHL:
+        if (isTypeI || isTypeU) {
+            llvmVal.val = llvmBuilder.CreateShl(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "shl_tmp");
+        }
+        break;
+    case Oper::SHR:
+        if (isTypeI) {
+            llvmVal.val = llvmBuilder.CreateAShr(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "ashr_tmp");
+        } else if (isTypeU) {
+            llvmVal.val = llvmBuilder.CreateLShr(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "lshr_tmp");
+        }
+        break;
+    case Oper::BIT_AND:
+        if (isTypeI || isTypeU) {
+            llvmVal.val = llvmBuilder.CreateAnd(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "and_tmp");
+        }
+        break;
+    case Oper::BIT_OR:
+        if (isTypeI || isTypeU) {
+            llvmVal.val = llvmBuilder.CreateOr(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "or_tmp");
+        }
+        break;
+    case Oper::BIT_XOR:
+        if (isTypeI || isTypeU) {
+            llvmVal.val = llvmBuilder.CreateXor(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "xor_tmp");
+        }
+        break;
+    }
+    
+    if (llvmVal.val == nullptr) {
+        msgs->errorUnknown(rhs.getCodeLoc());
+        return NodeVal();
+    }
+
+    return NodeVal(rhs.getCodeLoc(), llvmVal);
+}
+
 NodeVal Codegen::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 

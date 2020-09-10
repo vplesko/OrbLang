@@ -399,6 +399,7 @@ NodeVal Processor::processEval(const NodeVal &node) {
 }
 
 NodeVal Processor::processImport(const NodeVal &node) {
+    // TODO import isn't just about global scope
     if (!checkInGlobalScope(node.getCodeLoc(), true) ||
         !checkExactlyChildren(node, 2, true)) {
         return NodeVal();
@@ -676,6 +677,7 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
             return NodeVal();
         }
 
+        // TODO if variadic, base codeLoc of all is going to be the same, maybe send index's codeLoc (similar for other opers)
         base = performOperMember(base.getCodeLoc(), base, indexVal, resType.value());
         if (base.isInvalid()) return NodeVal();
     }

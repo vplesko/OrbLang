@@ -21,7 +21,7 @@ expr_walled_bare ::= '(' exprs ')' |
 
 _ALPHA is [a-zA-Z]
 _DIGIT is [0-9]
-_SIGNS is [=+-*/%<>&|!~[]._]
+_SIGNS is [=+-*/%<>&|^!~[]._?]
 ID is [:_ALPHA::_DIGIT::SIGNS:]* that does not start with :_DIGIT: nor +:_DIGIT: nor -:_DIGIT:
 INT and FLOAT are ([+-]?:_DIGIT:)[0123456789abcdefABCDEF.xXeEpP_]*
 CHAR is within '', STRING is within "
