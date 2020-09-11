@@ -48,9 +48,9 @@ class Codegen : public Processor {
     NodeVal performEvaluation(const NodeVal &node);
     NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op);
     NodeVal performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
-    void* performOperComparisonSetUp() { return nullptr; }
-    bool performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) { return false; }
-    NodeVal performOperComparisonTearDown(CodeLoc codeLoc, void *signal) { msgs->errorInternal(codeLoc); return NodeVal(); }
+    void* performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt);
+    std::optional<bool> performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal);
+    NodeVal performOperComparisonTearDown(CodeLoc codeLoc, bool success, void *signal);
     NodeVal performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs);
     NodeVal performOperIndex(CodeLoc codeLoc, const NodeVal &base, const NodeVal &ind, TypeTable::Id resTy);
     NodeVal performOperMember(CodeLoc codeLoc, const NodeVal &base, std::uint64_t ind, TypeTable::Id resTy);

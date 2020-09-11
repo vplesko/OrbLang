@@ -60,6 +60,7 @@ void Lexer::skipLine() {
 void Lexer::lexNum(CodeIndex from) {
     CodeIndex l = from;
     while (numLitChars.find(peekCh()) != numLitChars.npos) nextCh();
+    // TODO!! check that there is a token separator
     CodeIndex r = col-1;
 
     size_t dotIndex = line.find(".", l);

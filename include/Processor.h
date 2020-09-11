@@ -30,9 +30,10 @@ protected:
     virtual NodeVal performEvaluation(const NodeVal &node) =0;
     virtual NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) =0;
     virtual NodeVal performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) =0;
-    virtual void* performOperComparisonSetUp() =0;
-    virtual bool performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) =0;
-    virtual NodeVal performOperComparisonTearDown(CodeLoc codeLoc, void *signal) =0;
+    virtual void* performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt) =0;
+    // Returns nullopt in case of fail. Otherwise, returns whether the variadic comparison may exit early.
+    virtual std::optional<bool> performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) =0;
+    virtual NodeVal performOperComparisonTearDown(CodeLoc codeLoc, bool success, void *signal) =0;
     virtual NodeVal performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs) =0;
     virtual NodeVal performOperIndex(CodeLoc codeLoc, const NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) =0;
     virtual NodeVal performOperMember(CodeLoc codeLoc, const NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) =0;

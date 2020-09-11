@@ -33,7 +33,7 @@ enum class Oper {
     NOT,
     BIT_NOT,
     EQ,
-    NEQ,
+    NEQ, // TODO!! rename
     LT,
     LTEQ,
     GT,

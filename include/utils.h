@@ -35,6 +35,7 @@ struct UnescapePayload {
 // and \xNN (where N is a hex digit in [0-9a-fA-F]).
 UnescapePayload unescape(const std::string &str, std::size_t indexStartingQuote, bool isSingleQuote);
 
+// TODO!! rename to DeferredCallback
 class DeferredFallback {
     std::function<void(void)> func;
 

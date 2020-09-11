@@ -11,6 +11,11 @@
 #include "llvm/Target/TargetOptions.h"
 using namespace std;
 
+struct ComparisonSignal {
+    llvm::BasicBlock *llvmBlock = nullptr;
+    llvm::PHINode *llvmPhi = nullptr;
+};
+
 Codegen::Codegen(Evaluator *evaluator, NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs)
     : Processor(namePool, stringPool, typeTable, symbolTable, msgs), evaluator(evaluator), llvmBuilder(llvmContext), llvmBuilderAlloca(llvmContext) {
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("module"), llvmContext);
@@ -346,6 +351,138 @@ NodeVal Codegen::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
     llvmVal.type = typeId.value();
     llvmVal.val = llvmBuilder.CreateLoad(llvmIn, "deref_tmp");
     llvmVal.ref = llvmIn;
+    return NodeVal(codeLoc, llvmVal);
+}
+
+void* Codegen::performOperComparisonSetUp(CodeLoc codeLoc, size_t opersCnt) {
+    if (!checkInLocalScope(codeLoc, true)) return nullptr;
+
+    llvm::BasicBlock *llvmBlockCurr = llvmBuilder.GetInsertBlock();
+
+    llvm::BasicBlock *llvmBlockRes = llvm::BasicBlock::Create(llvmContext, "comparison");
+    llvmBuilder.SetInsertPoint(llvmBlockRes);
+    llvm::PHINode *llvmPhiRes = llvmBuilder.CreatePHI(getLlvmType(typeTable->getPrimTypeId(TypeTable::P_BOOL)), opersCnt); // TODO!! make getLlvmPrimType
+
+    llvmBuilder.SetInsertPoint(llvmBlockCurr);
+
+    ComparisonSignal *compSignal = new ComparisonSignal;
+    compSignal->llvmBlock = llvmBlockRes;
+    compSignal->llvmPhi = llvmPhiRes;
+    return compSignal;
+}
+
+optional<bool> Codegen::performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) {
+    ComparisonSignal *compSignal = (ComparisonSignal*) signal;
+    
+    NodeVal lhsPromo = promoteIfKnownValAndCheckIsLlvmVal(lhs, true);
+    if (lhsPromo.isInvalid()) return nullopt;
+    
+    NodeVal rhsPromo = promoteIfKnownValAndCheckIsLlvmVal(rhs, true);
+    if (rhsPromo.isInvalid()) return nullopt;
+    
+    bool isTypeI = typeTable->worksAsTypeI(lhsPromo.getType().value());
+    bool isTypeU = typeTable->worksAsTypeU(lhsPromo.getType().value());
+    bool isTypeC = typeTable->worksAsTypeC(lhsPromo.getType().value());
+    bool isTypeF = typeTable->worksAsTypeF(lhsPromo.getType().value());
+    bool isTypeP = typeTable->worksAsTypeAnyP(lhsPromo.getType().value());
+    bool isTypeB = typeTable->worksAsTypeB(lhsPromo.getType().value());
+
+    llvm::Value *llvmValueRes = nullptr;
+
+    switch (op) {
+    case Oper::EQ:
+        if (isTypeI || isTypeU || isTypeC) {
+            llvmValueRes = llvmBuilder.CreateICmpEQ(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "cmp_eq_tmp");
+        } else if (isTypeF) {
+            llvmValueRes = llvmBuilder.CreateFCmpOEQ(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fcmp_eq_tmp");
+        } else if (isTypeP) {
+            llvmValueRes = llvmBuilder.CreateICmpEQ(
+                llvmBuilder.CreatePtrToInt(lhsPromo.getLlvmVal().val, getLlvmType(typeTable->getPrimTypeId(TypeTable::WIDEST_I))),
+                llvmBuilder.CreatePtrToInt(rhsPromo.getLlvmVal().val, getLlvmType(typeTable->getPrimTypeId(TypeTable::WIDEST_I))),
+                "pcmp_eq_tmp");
+        }
+        break;
+    case Oper::NEQ:
+        if (isTypeI || isTypeU || isTypeC) {
+            llvmValueRes = llvmBuilder.CreateICmpNE(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "cmp_ne_tmp");
+        } else if (isTypeF) {
+            llvmValueRes = llvmBuilder.CreateFCmpONE(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fcmp_ne_tmp");
+        } else if (isTypeP) {
+            llvmValueRes = llvmBuilder.CreateICmpNE(
+                llvmBuilder.CreatePtrToInt(lhsPromo.getLlvmVal().val, getLlvmType(typeTable->getPrimTypeId(TypeTable::WIDEST_I))),
+                llvmBuilder.CreatePtrToInt(rhsPromo.getLlvmVal().val, getLlvmType(typeTable->getPrimTypeId(TypeTable::WIDEST_I))),
+                "pcmp_ne_tmp");
+        }
+        break;
+    case Oper::LT:
+        if (isTypeI) {
+            llvmValueRes = llvmBuilder.CreateICmpSLT(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "scmp_lt_tmp");
+        } else if (isTypeU || isTypeC) {
+            llvmValueRes = llvmBuilder.CreateICmpULT(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "ucmp_lt_tmp");
+        } else if (isTypeF) {
+            llvmValueRes = llvmBuilder.CreateFCmpOLT(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fcmp_lt_tmp");
+        }
+        break;
+    case Oper::LTEQ:
+        if (isTypeI) {
+            llvmValueRes = llvmBuilder.CreateICmpSLE(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "scmp_le_tmp");
+        } else if (isTypeU || isTypeC) {
+            llvmValueRes = llvmBuilder.CreateICmpULE(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "ucmp_le_tmp");
+        } else if (isTypeF) {
+            llvmValueRes = llvmBuilder.CreateFCmpOLE(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fcmp_le_tmp");
+        }
+        break;
+    case Oper::GT:
+        if (isTypeI) {
+            llvmValueRes = llvmBuilder.CreateICmpSGT(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "scmp_gt_tmp");
+        } else if (isTypeU || isTypeC) {
+            llvmValueRes = llvmBuilder.CreateICmpUGT(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "ucmp_gt_tmp");
+        } else if (isTypeF) {
+            llvmValueRes = llvmBuilder.CreateFCmpOGT(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fcmp_gt_tmp");
+        }
+        break;
+    case Oper::GTEQ:
+        if (isTypeI) {
+            llvmValueRes = llvmBuilder.CreateICmpSGE(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "scmp_ge_tmp");
+        } else if (isTypeU || isTypeC) {
+            llvmValueRes = llvmBuilder.CreateICmpUGE(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "ucmp_ge_tmp");
+        } else if (isTypeF) {
+            llvmValueRes = llvmBuilder.CreateFCmpOGE(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fcmp_ge_tmp");
+        }
+        break;
+    }
+
+    if (llvmValueRes == nullptr) {
+        msgs->errorUnknown(rhs.getCodeLoc());
+        return nullopt;
+    }
+
+    compSignal->llvmPhi->addIncoming(getLlvmConstB(false), llvmBuilder.GetInsertBlock());
+
+    llvm::BasicBlock *llvmBlockNext = llvm::BasicBlock::Create(llvmContext, "next", llvmBuilder.GetInsertBlock()->getParent()); // TODO!! make getCurrLlvmFunction
+    llvmBuilder.CreateCondBr(llvmValueRes, llvmBlockNext, compSignal->llvmBlock);
+
+    llvmBuilder.SetInsertPoint(llvmBlockNext);
+
+    return false;
+}
+
+NodeVal Codegen::performOperComparisonTearDown(CodeLoc codeLoc, bool success, void *signal) {
+    ComparisonSignal *compSignal = (ComparisonSignal*) signal;
+    if (!success) {
+        if (compSignal->llvmPhi != nullptr) compSignal->llvmPhi->eraseFromParent();
+        return NodeVal();
+    }
+
+    compSignal->llvmPhi->addIncoming(getLlvmConstB(true), llvmBuilder.GetInsertBlock());
+    llvmBuilder.CreateBr(compSignal->llvmBlock);
+    
+    llvmBuilder.GetInsertBlock()->getParent()->getBasicBlockList().push_back(compSignal->llvmBlock);
+    llvmBuilder.SetInsertPoint(compSignal->llvmBlock);
+
+    LlvmVal llvmVal;
+    llvmVal.type = typeTable->getPrimTypeId(TypeTable::P_BOOL);
+    llvmVal.val = compSignal->llvmPhi;
     return NodeVal(codeLoc, llvmVal);
 }
 

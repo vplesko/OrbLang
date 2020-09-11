@@ -565,23 +565,27 @@ NodeVal Processor::processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper o
 }
 
 NodeVal Processor::processOperComparison(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op) {
-    void *signal = performOperComparisonSetUp();
+    void *signal = performOperComparisonSetUp(codeLoc, opers.size());
+    if (signal == nullptr) return NodeVal();
+    DeferredFallback signalDeleteGuard([=] { delete signal; });
 
     NodeVal lhs = processAndCheckIsValue(*opers[0]);
-    if (lhs.isInvalid()) return NodeVal();
+    if (lhs.isInvalid()) return performOperComparisonTearDown(codeLoc, false, signal);
 
     for (size_t i = 1; i < opers.size(); ++i) {
         NodeVal rhs = processAndCheckIsValue(*opers[i]);
-        if (rhs.isInvalid()) return NodeVal();
+        if (rhs.isInvalid()) return performOperComparisonTearDown(codeLoc, false, signal);
 
-        if (!implicitCastOperands(lhs, rhs, false)) return NodeVal();
+        if (!implicitCastOperands(lhs, rhs, false)) return performOperComparisonTearDown(codeLoc, false, signal);
 
-        if (performOperComparison(codeLoc, lhs, rhs, op, signal)) break;
+        optional<bool> compSuccess = performOperComparison(codeLoc, lhs, rhs, op, signal);
+        if (!compSuccess.has_value()) return performOperComparisonTearDown(codeLoc, false, signal);
+        if (compSuccess.value()) break;
 
         lhs = move(rhs);
     }
 
-    return performOperComparisonTearDown(codeLoc, signal);
+    return performOperComparisonTearDown(codeLoc, true, signal);
 }
 
 NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
