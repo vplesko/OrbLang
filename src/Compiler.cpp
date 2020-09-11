@@ -70,11 +70,11 @@ void Compiler::genReserved() {
     ADD_OPER("^", BIT_XOR);
     ADD_OPER("|", BIT_OR);
     ADD_OPER("==", EQ);
-    ADD_OPER("!=", NEQ);
+    ADD_OPER("!=", NE);
     ADD_OPER("<", LT);
-    ADD_OPER("<=", LTEQ);
+    ADD_OPER("<=", LE);
     ADD_OPER(">", GT);
-    ADD_OPER(">=", GTEQ);
+    ADD_OPER(">=", GE);
     ADD_OPER("=", ASGN);
     ADD_OPER("!", NOT);
     ADD_OPER("~", BIT_NOT);
@@ -277,7 +277,7 @@ bool Compiler::compile(const std::string &output, bool exe) {
     } else {
         const static string tempObjName = isOsWindows ? "a.obj" : "a.o";
         // TODO doesn't get called on linker failure
-        DeferredFallback delObjTemp([&] { remove(tempObjName.c_str()); });
+        DeferredCallback delObjTemp([&] { remove(tempObjName.c_str()); });
 
         if (!codegen->binary(tempObjName)) return false;
         

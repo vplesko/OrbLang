@@ -35,17 +35,16 @@ struct UnescapePayload {
 // and \xNN (where N is a hex digit in [0-9a-fA-F]).
 UnescapePayload unescape(const std::string &str, std::size_t indexStartingQuote, bool isSingleQuote);
 
-// TODO!! rename to DeferredCallback
-class DeferredFallback {
+class DeferredCallback {
     std::function<void(void)> func;
 
 public:
-    DeferredFallback(std::function<void(void)> func_) : func(func_) {}
+    DeferredCallback(std::function<void(void)> func_) : func(func_) {}
 
-    DeferredFallback(const DeferredFallback&) = delete;
-    void operator=(const DeferredFallback&) = delete;
+    DeferredCallback(const DeferredCallback&) = delete;
+    void operator=(const DeferredCallback&) = delete;
 
-    virtual ~DeferredFallback() { func(); }
+    virtual ~DeferredCallback() { func(); }
 };
 
 std::size_t leNiceHasheFunctione(std::size_t x, std::size_t y);
