@@ -263,7 +263,19 @@ NodeVal Processor::processExit(const NodeVal &node) {
 }
 
 NodeVal Processor::processLoop(const NodeVal &node) {
-    return NodeVal(); // TODO!
+    if (!checkExactlyChildren(node, 2, true)) return NodeVal();
+
+    NodeVal nodeCond = processNode(node.getChild(1));
+    if (nodeCond.isInvalid() || !checkIsBool(nodeCond, true)) return NodeVal();
+
+    SymbolTable::Block *targetBlock = symbolTable->getLastBlock();
+    if (checkInGlobalScope(node.getCodeLoc(), false) || targetBlock == nullptr) {
+        msgs->errorLoopNowhere(node.getCodeLoc());
+        return NodeVal();
+    }
+
+    if (!performLoop(node.getCodeLoc(), *targetBlock, nodeCond)) return NodeVal();
+    return NodeVal(node.getCodeLoc());
 }
 
 NodeVal Processor::processPass(const NodeVal &node) {
