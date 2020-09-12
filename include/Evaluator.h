@@ -8,11 +8,13 @@ class Evaluator : public Processor {
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) { msgs->errorInternal(codeLoc); return NodeVal(); }
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) { msgs->errorInternal(codeLoc); return NodeVal(); }
     NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty);
+    bool performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) { msgs->errorInternal(codeLoc); return false; }
+    void performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) { msgs->errorInternal(codeLoc); }
     NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) { msgs->errorInternal(codeLoc); return NodeVal(); }
-    bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) { return false; }
-    bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func) { return false; }
-    bool performRet(CodeLoc codeLoc) { return false; }
-    bool performRet(CodeLoc codeLoc, const NodeVal &node) { return false; }
+    bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) { msgs->errorInternal(codeLoc); return false; }
+    bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func) { msgs->errorInternal(body.getCodeLoc()); return false; }
+    bool performRet(CodeLoc codeLoc) { msgs->errorInternal(codeLoc); return false; }
+    bool performRet(CodeLoc codeLoc, const NodeVal &node) { msgs->errorInternal(codeLoc); return false; }
     NodeVal performEvaluation(const NodeVal &node);
     NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) { msgs->errorInternal(codeLoc); return NodeVal(); }
     NodeVal performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) { msgs->errorInternal(codeLoc); return NodeVal(); }

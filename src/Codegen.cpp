@@ -182,6 +182,32 @@ NodeVal Codegen::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id
     return NodeVal(codeLoc, llvmVal);
 }
 
+bool Codegen::performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) {
+    if (!checkInLocalScope(codeLoc, true)) return false;
+    
+    llvm::BasicBlock *llvmBlockBody = llvm::BasicBlock::Create(llvmContext, "body", getLlvmCurrFunction());
+    llvm::BasicBlock *llvmBlockAfter = llvm::BasicBlock::Create(llvmContext, "after");
+
+    llvmBuilder.CreateBr(llvmBlockBody);
+    llvmBuilder.SetInsertPoint(llvmBlockBody);
+
+    block.blockLoop = llvmBlockBody;
+    block.blockExit = llvmBlockAfter;
+
+    return true;
+}
+
+void Codegen::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) {
+    if (!success) return;
+
+    if (!isLlvmBlockTerminated()) {
+        llvmBuilder.CreateBr(block.blockExit);
+    }
+
+    getLlvmCurrFunction()->getBasicBlockList().push_back(block.blockExit);
+    llvmBuilder.SetInsertPoint(block.blockExit);
+}
+
 NodeVal Codegen::performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 

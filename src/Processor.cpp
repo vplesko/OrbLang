@@ -226,7 +226,24 @@ NodeVal Processor::processCast(const NodeVal &node) {
 }
 
 NodeVal Processor::processBlock(const NodeVal &node) {
-    return NodeVal(); // TODO!
+    if (!checkExactlyChildren(node, 2, true)) return NodeVal();
+
+    const NodeVal &nodeBlock = node.getChild(1);
+    if (!checkIsComposite(nodeBlock, true)) return NodeVal();
+
+    SymbolTable::Block block;
+    if (!performBlockSetUp(node.getCodeLoc(), block)) return NodeVal();
+
+    {
+        BlockControl blockCtrl(symbolTable, block);
+        if (!processChildNodes(nodeBlock)) {
+            performBlockTearDown(node.getCodeLoc(), block, false);
+            return NodeVal();
+        }
+    }
+
+    performBlockTearDown(node.getCodeLoc(), block, true);
+    return NodeVal(node.getCodeLoc());
 }
 
 NodeVal Processor::processExit(const NodeVal &node) {
@@ -336,8 +353,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     optional<NodeVal> nodeBodyOpt;
     if (val.defined) {
         nodeBodyOpt = node.getChild(4);
-        if (!nodeBodyOpt.value().isComposite()) {
-            msgs->errorUnexpectedIsTerminal(nodeBodyOpt.value().getCodeLoc());
+        if (!checkIsComposite(nodeBodyOpt.value(), true)) {
             return NodeVal();
         }
     }
