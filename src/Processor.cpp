@@ -3,10 +3,14 @@
 using namespace std;
 
 Processor::Processor(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs)
-    : namePool(namePool), stringPool(stringPool), typeTable(typeTable), symbolTable(symbolTable), msgs(msgs) {
+    : namePool(namePool), stringPool(stringPool), typeTable(typeTable), symbolTable(symbolTable), msgs(msgs), topmost(0) {
 }
 
 NodeVal Processor::processNode(const NodeVal &node) {
+    unsigned oldTopmost = topmost;
+    if (topmost < 2) ++topmost;
+    DeferredCallback guard([&, oldTopmost] { topmost = oldTopmost; });
+
     if (node.isLeaf()) return processLeaf(node);
     else return processNonLeaf(node);
 }
@@ -471,8 +475,7 @@ NodeVal Processor::processEval(const NodeVal &node) {
 }
 
 NodeVal Processor::processImport(const NodeVal &node) {
-    // TODO import isn't just about global scope
-    if (!checkInGlobalScope(node.getCodeLoc(), true) ||
+    if (!checkIsTopmost(node.getCodeLoc(), true) ||
         !checkExactlyChildren(node, 2, true)) {
         return NodeVal();
     }
@@ -693,18 +696,35 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
     if (base.isInvalid()) return NodeVal();
 
     for (size_t i = 1; i < opers.size(); ++i) {
-        optional<TypeTable::Id> elemType = typeTable->addTypeIndexOf(base.getType().value());
+        TypeTable::Id baseType = base.getType().value();
+
+        optional<TypeTable::Id> elemType = typeTable->addTypeIndexOf(baseType);
         if (!elemType.has_value()) {
-            msgs->errorExprIndexOnBadType(base.getCodeLoc(), base.getType().value());
+            msgs->errorExprIndexOnBadType(base.getCodeLoc(), baseType);
             return NodeVal();
         }
 
-        // TODO if base is arr and index is known and out of bounds, give a warning
         NodeVal index = processAndCheckIsValue(*opers[i]);
         if (index.isInvalid()) return NodeVal();
         if (!typeTable->worksAsTypeI(index.getType().value()) && !typeTable->worksAsTypeU(index.getType().value())) {
             msgs->errorExprIndexNotIntegral(index.getCodeLoc());
             return NodeVal();
+        }
+
+        if (index.isKnownVal() && typeTable->worksAsTypeArr(baseType)) {
+            if (KnownVal::isI(index.getKnownVal(), typeTable)) {
+                int64_t ind = KnownVal::getValueI(index.getKnownVal(), typeTable).value();
+                size_t len = typeTable->extractLenOfArr(baseType).value();
+                if (ind < 0 || (size_t) ind >= len) {
+                    msgs->warnExprIndexOutOfBounds(index.getCodeLoc());
+                }
+            } else if (KnownVal::isU(index.getKnownVal(), typeTable)) {
+                uint64_t ind = KnownVal::getValueU(index.getKnownVal(), typeTable).value();
+                size_t len = typeTable->extractLenOfArr(baseType).value();
+                if (ind >= len) {
+                    msgs->warnExprIndexOutOfBounds(index.getCodeLoc());
+                }
+            }
         }
 
         base = performOperIndex(base.getCodeLoc(), base, index, elemType.value());
@@ -753,8 +773,7 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
             return NodeVal();
         }
 
-        // TODO if variadic, base codeLoc of all is going to be the same, maybe send index's codeLoc (similar for other opers)
-        base = performOperMember(base.getCodeLoc(), base, indexVal, resType.value());
+        base = performOperMember(index.getCodeLoc(), base, indexVal, resType.value());
         if (base.isInvalid()) return NodeVal();
     }
 
@@ -925,6 +944,14 @@ bool Processor::checkInGlobalScope(CodeLoc codeLoc, bool orError) {
 bool Processor::checkInLocalScope(CodeLoc codeLoc, bool orError) {
     if (symbolTable->inGlobalScope()) {
         if (orError) msgs->errorUnknown(codeLoc);
+        return false;
+    }
+    return true;
+}
+
+bool Processor::checkIsTopmost(CodeLoc codeLoc, bool orError) {
+    if (topmost != 1) {
+        if (orError) msgs->errorNotTopmost(codeLoc);
         return false;
     }
     return true;

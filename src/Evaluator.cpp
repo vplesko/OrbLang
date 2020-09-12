@@ -7,7 +7,7 @@ Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *type
 
 NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
     // TODO!
-    // TODO don't forget str to char arr
+    // TODO! don't forget str to char arr
     msgs->errorInternal(node.getCodeLoc());
     return NodeVal();
 }

@@ -9,6 +9,7 @@
 #include "SymbolTable.h"
 #include "CompileMessages.h"
 
+// TODO! add tests
 class Processor {
 protected:
     NamePool *namePool;
@@ -16,6 +17,8 @@ protected:
     TypeTable *typeTable;
     SymbolTable *symbolTable;
     CompileMessages *msgs;
+
+    unsigned topmost;
 
 protected:
     virtual NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, const NodeVal &val) =0;
@@ -49,6 +52,7 @@ protected:
     bool checkInGlobalScope(CodeLoc codeLoc, bool orError);
     bool checkInLocalScope(CodeLoc codeLoc, bool orError);
 private:
+    bool checkIsTopmost(CodeLoc codeLoc, bool orError);
     bool checkIsId(const NodeVal &node, bool orError);
     bool checkIsType(const NodeVal &node, bool orError);
     bool checkIsBool(const NodeVal &node, bool orError);

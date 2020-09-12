@@ -205,7 +205,6 @@ void TypeTable::addTypeStr() {
     Id c8Id{Id::kPrim, P_C8};
 
     TypeDescr typeDescr(c8Id, true);
-    // TODO should it be c8 cn [] cn?
     typeDescr.addDecor({.type=TypeDescr::Decor::D_ARR_PTR}, false);
 
     strType = addTypeDescr(move(typeDescr));

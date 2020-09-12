@@ -460,6 +460,10 @@ void CompileMessages::errorNotGlobalScope(CodeLoc loc) {
     error(loc, "This is only allowed in global scope.");
 }
 
+void CompileMessages::errorNotTopmost(CodeLoc loc) {
+    error(loc, "This is only allowed at the topmost code level.");
+}
+
 void CompileMessages::errorEvaluationNotSupported(CodeLoc loc) {
     error(loc, "This evaluation is not supported.");
 }

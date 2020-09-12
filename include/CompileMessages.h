@@ -114,6 +114,7 @@ public:
     void errorMismatchTypeAnnotation(CodeLoc loc);
     void errorMissingTypeAnnotation(CodeLoc loc);
     void errorNotGlobalScope(CodeLoc loc);
+    void errorNotTopmost(CodeLoc loc);
     // TODO replace with more specific errors
     void errorEvaluationNotSupported(CodeLoc loc);
     // placeholder error, should not stay in code
