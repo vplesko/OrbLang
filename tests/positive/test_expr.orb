@@ -1,0 +1,26 @@
+import "util/io.orb";
+
+fnc main() () {
+    println_i32 100;
+    println_i32 (+ 101);
+    println_i32 (- 102);
+    println_f32 (+ 103.0);
+    println_i32 (+ 103 (cast i32 (! false)));
+    println_i8 (~ 104:i8);
+
+    println_i32 (+ 200 (cast i32 (!= 1 1)));
+    println_i32 (+ 200 (cast i32 (== 1 1)));
+    println_i32 (+ 201 (cast i32 (< 1 2 3 4 5)));
+    println_i32 (+ 203 (cast i32 (>= 3 (- 3 1) (+ 1 2))));
+
+    println_i32 (+ 200 100 0);
+    println_i32 (/ 905 3);
+    println_f32 (/ 906.0 3.0);
+    println_i32 (+ 300 (>> 6 1));
+    println_i32 (+ 300 (% 10 6));
+    println_i32 (+ 301 (<< 1 2));
+    println_u32 (+ 300:u32 (<< 3:u32 1:u32));
+    println_i32 (- 301 (<< -3 1));
+    println_i32 (+ 300 (& 0b1010 0b1101));
+    println_i32 (+ 300 (^ 0b1100 0b0101));
+};

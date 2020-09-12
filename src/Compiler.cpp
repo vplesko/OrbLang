@@ -272,6 +272,7 @@ void Compiler::printout() const {
 }
 
 bool Compiler::compile(const std::string &output, bool exe) {
+    // TODO print error if no main
     if (!exe) {
         return codegen->binary(output);
     } else {

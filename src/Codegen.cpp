@@ -21,7 +21,7 @@ Codegen::Codegen(Evaluator *evaluator, NamePool *namePool, StringPool *stringPoo
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("module"), llvmContext);
 
     llvmPmb = make_unique<llvm::PassManagerBuilder>();
-    llvmPmb->OptLevel = 0; // TODO! change to 3
+    llvmPmb->OptLevel = 3;
 
     llvmFpm = make_unique<llvm::legacy::FunctionPassManager>(llvmModule.get());
     llvmPmb->populateFunctionPassManager(*llvmFpm);

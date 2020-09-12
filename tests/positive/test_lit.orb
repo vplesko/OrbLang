@@ -1,0 +1,25 @@
+import "util/io.orb";
+
+fnc main () () {
+    println_i32 100;
+    println_u32 101:u32;
+    println_i32 0146;
+    println_i32 0x67;
+    println_i32 0b1101000;
+    println_i32 -105;
+    println_f32 106.0;
+    println_f32 -107.0;
+    println_i32 10_8_;
+
+    println_c8 'a';
+    println_c8 '\\';
+    print_c8 '\n';
+
+    println_str "hello";
+    println_str "";
+
+    println_i32 (cast i32 false);
+    println_i32 (cast i32 true);
+    
+    println_i32 (cast i32 null);
+};

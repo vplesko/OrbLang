@@ -50,9 +50,8 @@ int main(int argc,  char** argv) {
         return PARSE_FAIL;
     }
     
-    // TODO! comment out
-    cout << "Code printout:" << endl;
-    compiler.printout();
+    /*cout << "Code printout:" << endl;
+    compiler.printout();*/
 
     if (!output.empty()) {
         string ext = filesystem::path(output).extension().string();
