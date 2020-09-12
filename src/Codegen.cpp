@@ -703,7 +703,19 @@ NodeVal Codegen::promoteKnownVal(const NodeVal &node) {
         const std::string &str = stringPool->get(known.str.value());
         llvmConst = getLlvmConstString(str);
     } else if (KnownVal::isArr(known, typeTable)) {
-        // TODO!
+        // TODO! test this
+        llvm::ArrayType *llvmArrayType = (llvm::ArrayType*) getLlvmTypeOrError(node.getCodeLoc(), known.type.value());
+        if (llvmArrayType == nullptr) return NodeVal();
+
+        vector<llvm::Constant*> llvmConsts;
+        llvmConsts.reserve(known.elems.size());
+        for (const NodeVal &elem : known.elems) {
+            NodeVal elemPromo = promoteKnownVal(elem);
+            if (elemPromo.isInvalid()) return NodeVal();
+            llvmConsts.push_back((llvm::Constant*) elemPromo.getLlvmVal().val);
+        }
+
+        llvmConst = llvm::ConstantArray::get(llvmArrayType, llvmConsts);
     } else if (KnownVal::isTuple(known, typeTable)) {
         // TODO! test this
         vector<llvm::Constant*> llvmConsts;
@@ -713,6 +725,7 @@ NodeVal Codegen::promoteKnownVal(const NodeVal &node) {
             if (elemPromo.isInvalid()) return NodeVal();
             llvmConsts.push_back((llvm::Constant*) elemPromo.getLlvmVal().val);
         }
+
         llvmConst = llvm::ConstantStruct::getAnon(llvmContext, llvmConsts);
     }
 
