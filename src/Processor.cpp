@@ -226,12 +226,25 @@ NodeVal Processor::processCast(const NodeVal &node) {
 }
 
 NodeVal Processor::processBlock(const NodeVal &node) {
-    if (!checkExactlyChildren(node, 2, true)) return NodeVal();
+    if (!checkBetweenChildren(node, 2, 3, true)) return NodeVal();
 
-    const NodeVal &nodeBlock = node.getChild(1);
+    bool hasType = node.getChildrenCnt() > 2;
+
+    size_t indType = 1;
+    size_t indBody = hasType ? 2 : 1;
+
+    const NodeVal &nodeBlock = node.getChild(indBody);
     if (!checkIsComposite(nodeBlock, true)) return NodeVal();
 
+    optional<TypeTable::Id> type;
+    if (hasType) {
+        NodeVal nodeType = processAndExpectType(node.getChild(indType));
+        if (nodeType.isInvalid()) return NodeVal();
+        type = nodeType.getKnownVal().ty;
+    }
+
     SymbolTable::Block block;
+    block.type = type;
     if (!performBlockSetUp(node.getCodeLoc(), block)) return NodeVal();
 
     {
@@ -242,8 +255,7 @@ NodeVal Processor::processBlock(const NodeVal &node) {
         }
     }
 
-    performBlockTearDown(node.getCodeLoc(), block, true);
-    return NodeVal(node.getCodeLoc());
+    return performBlockTearDown(node.getCodeLoc(), block, true);
 }
 
 NodeVal Processor::processExit(const NodeVal &node) {
@@ -255,6 +267,10 @@ NodeVal Processor::processExit(const NodeVal &node) {
     SymbolTable::Block *targetBlock = symbolTable->getLastBlock();
     if (checkInGlobalScope(node.getCodeLoc(), false) || targetBlock == nullptr) {
         msgs->errorExitNowhere(node.getCodeLoc());
+        return NodeVal();
+    }
+    if (targetBlock->type.has_value()) {
+        msgs->errorExitPassingBlock(node.getCodeLoc());
         return NodeVal();
     }
 
@@ -279,7 +295,23 @@ NodeVal Processor::processLoop(const NodeVal &node) {
 }
 
 NodeVal Processor::processPass(const NodeVal &node) {
-    return NodeVal(); // TODO!
+    if (!checkExactlyChildren(node, 2, true)) return NodeVal();
+
+    SymbolTable::Block *targetBlock = symbolTable->getLastBlock();
+    if (checkInGlobalScope(node.getCodeLoc(), false) || targetBlock == nullptr) {
+        msgs->errorPassNonPassingBlock(node.getCodeLoc());
+        return NodeVal();
+    }
+    if (!targetBlock->type.has_value()) {
+        msgs->errorPassNonPassingBlock(node.getCodeLoc());
+        return NodeVal();
+    }
+
+    NodeVal nodeValue = processAndImplicitCast(node.getChild(1), targetBlock->type.value());
+    if (nodeValue.isInvalid()) return NodeVal();
+
+    if (!performPass(node.getCodeLoc(), *targetBlock, nodeValue)) return NodeVal();
+    return NodeVal(node.getCodeLoc());
 }
 
 NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {

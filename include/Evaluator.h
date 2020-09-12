@@ -9,9 +9,10 @@ class Evaluator : public Processor {
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) { msgs->errorInternal(codeLoc); return NodeVal(); }
     NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty);
     bool performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) { msgs->errorInternal(codeLoc); return false; }
-    void performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) { msgs->errorInternal(codeLoc); }
+    NodeVal performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) { msgs->errorInternal(codeLoc); return NodeVal(); }
     bool performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) { msgs->errorInternal(codeLoc); return false; }
     bool performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) { msgs->errorInternal(codeLoc); return false; }
+    bool performPass(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &val) { msgs->errorInternal(codeLoc); return false; }
     NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) { msgs->errorInternal(codeLoc); return NodeVal(); }
     bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) { msgs->errorInternal(codeLoc); return false; }
     bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func) { msgs->errorInternal(body.getCodeLoc()); return false; }

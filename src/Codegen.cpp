@@ -189,23 +189,48 @@ bool Codegen::performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) {
     llvm::BasicBlock *llvmBlockAfter = llvm::BasicBlock::Create(llvmContext, "after");
 
     llvmBuilder.CreateBr(llvmBlockBody);
+
+    llvm::PHINode *llvmPhi = nullptr;
+    if (block.type.has_value()) {
+        llvm::Type *llvmType = getLlvmTypeOrError(codeLoc, block.type.value());
+        if (llvmType == nullptr) return false;
+
+        llvmBuilder.SetInsertPoint(llvmBlockAfter);
+        llvmPhi = llvmBuilder.CreatePHI(llvmType, 0, "block_val");
+    }
+
     llvmBuilder.SetInsertPoint(llvmBlockBody);
 
     block.blockLoop = llvmBlockBody;
     block.blockExit = llvmBlockAfter;
+    block.phi = llvmPhi;
 
     return true;
 }
 
-void Codegen::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) {
-    if (!success) return;
+NodeVal Codegen::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) {
+    if (!success) return NodeVal();
 
     if (!isLlvmBlockTerminated()) {
+        if (block.type.has_value()) {
+            msgs->errorBlockNoPass(codeLoc);
+            return NodeVal();
+        }
+
         llvmBuilder.CreateBr(block.blockExit);
     }
 
     getLlvmCurrFunction()->getBasicBlockList().push_back(block.blockExit);
     llvmBuilder.SetInsertPoint(block.blockExit);
+
+    if (block.type.has_value()) {
+        LlvmVal llvmVal;
+        llvmVal.type = block.type.value();
+        llvmVal.val = block.phi;
+        return NodeVal(codeLoc, llvmVal);
+    } else {
+        return NodeVal(codeLoc);
+    }
 }
 
 bool Codegen::performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) {
@@ -232,6 +257,19 @@ bool Codegen::performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, cons
     llvmBuilder.CreateCondBr(condPromo.getLlvmVal().val, block.blockLoop, llvmBlockAfter);
     getLlvmCurrFunction()->getBasicBlockList().push_back(llvmBlockAfter);
     llvmBuilder.SetInsertPoint(llvmBlockAfter);
+
+    return true;
+}
+
+bool Codegen::performPass(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &val) {
+    if (!checkInLocalScope(codeLoc, true)) return false;
+
+    NodeVal valPromo = promoteIfKnownValAndCheckIsLlvmVal(val, true);
+    if (valPromo.isInvalid()) return false;
+    
+    llvm::BasicBlock *llvmBlockExit = block.blockExit;
+    block.phi->addIncoming(valPromo.getLlvmVal().val, llvmBuilder.GetInsertBlock());
+    llvmBuilder.CreateBr(llvmBlockExit);
 
     return true;
 }
