@@ -705,7 +705,15 @@ NodeVal Codegen::promoteKnownVal(const NodeVal &node) {
     } else if (KnownVal::isArr(known, typeTable)) {
         // TODO!
     } else if (KnownVal::isTuple(known, typeTable)) {
-        // TODO!
+        // TODO! test this
+        vector<llvm::Constant*> llvmConsts;
+        llvmConsts.reserve(known.elems.size());
+        for (const NodeVal &elem : known.elems) {
+            NodeVal elemPromo = promoteKnownVal(elem);
+            if (elemPromo.isInvalid()) return NodeVal();
+            llvmConsts.push_back((llvm::Constant*) elemPromo.getLlvmVal().val);
+        }
+        llvmConst = llvm::ConstantStruct::getAnon(llvmContext, llvmConsts);
     }
 
     if (llvmConst == nullptr) {

@@ -102,7 +102,7 @@ private:
 public:
     Processor(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs);
 
-    // TODO check for is skipping processing
+    // TODO! check for is skipping processing
     NodeVal processNode(const NodeVal &node);
 
     virtual ~Processor() {}

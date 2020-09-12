@@ -6,6 +6,7 @@
 #include "StringPool.h"
 #include "TypeTable.h"
 
+class NodeVal;
 class SymbolTable;
 
 struct KnownVal {
@@ -27,7 +28,7 @@ struct KnownVal {
         NamePool::Id id;
         TypeTable::Id ty;
     };
-    std::vector<KnownVal> elems;
+    std::vector<NodeVal> elems;
     
     KnownVal *ref = nullptr;
 
