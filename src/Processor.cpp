@@ -247,7 +247,19 @@ NodeVal Processor::processBlock(const NodeVal &node) {
 }
 
 NodeVal Processor::processExit(const NodeVal &node) {
-    return NodeVal(); // TODO!
+    if (!checkExactlyChildren(node, 2, true)) return NodeVal();
+
+    NodeVal nodeCond = processNode(node.getChild(1));
+    if (nodeCond.isInvalid() || !checkIsBool(nodeCond, true)) return NodeVal();
+
+    SymbolTable::Block *targetBlock = symbolTable->getLastBlock();
+    if (checkInGlobalScope(node.getCodeLoc(), false) || targetBlock == nullptr) {
+        msgs->errorExitNowhere(node.getCodeLoc());
+        return NodeVal();
+    }
+
+    if (!performExit(node.getCodeLoc(), *targetBlock, nodeCond)) return NodeVal();
+    return NodeVal(node.getCodeLoc());
 }
 
 NodeVal Processor::processLoop(const NodeVal &node) {
@@ -885,6 +897,14 @@ bool Processor::checkIsId(const NodeVal &node, bool orError) {
 bool Processor::checkIsType(const NodeVal &node, bool orError) {
     if (!node.isKnownVal() || !KnownVal::isType(node.getKnownVal(), typeTable)) {
         if (orError) msgs->errorUnexpectedNotType(node.getCodeLoc());
+        return false;
+    }
+    return true;
+}
+
+bool Processor::checkIsBool(const NodeVal &node, bool orError) {
+    if (!node.getType().has_value() || !typeTable->worksAsTypeB(node.getType().value())) {
+        if (orError) msgs->errorUnknown(node.getCodeLoc());
         return false;
     }
     return true;

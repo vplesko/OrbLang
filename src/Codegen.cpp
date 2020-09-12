@@ -208,6 +208,20 @@ void Codegen::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &bl
     llvmBuilder.SetInsertPoint(block.blockExit);
 }
 
+bool Codegen::performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) {
+    if (!checkInLocalScope(codeLoc, true)) return false;
+
+    NodeVal condPromo = promoteIfKnownValAndCheckIsLlvmVal(cond, true);
+    if (condPromo.isInvalid()) return false;
+
+    llvm::BasicBlock *llvmBlockAfter = llvm::BasicBlock::Create(llvmContext, "after");
+    llvmBuilder.CreateCondBr(condPromo.getLlvmVal().val, block.blockExit, llvmBlockAfter);
+    getLlvmCurrFunction()->getBasicBlockList().push_back(llvmBlockAfter);
+    llvmBuilder.SetInsertPoint(llvmBlockAfter);
+
+    return true;
+}
+
 NodeVal Codegen::performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 

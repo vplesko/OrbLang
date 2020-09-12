@@ -44,6 +44,7 @@ class Codegen : public Processor {
     NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty);
     bool performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block);
     void performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success);
+    bool performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond);
     NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args);
     bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func);
     bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func);
