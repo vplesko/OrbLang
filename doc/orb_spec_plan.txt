@@ -82,6 +82,7 @@ processing non-leaf:
 	else:
 		depending on what starting is (type, function, keyword, oper), process as that, or as tuple
 
+// TODO! rethink when type annotations are processed
 processing node:
 	if empty or no children:
 		process as leaf

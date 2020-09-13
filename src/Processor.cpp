@@ -230,24 +230,37 @@ NodeVal Processor::processCast(const NodeVal &node) {
 }
 
 NodeVal Processor::processBlock(const NodeVal &node) {
-    if (!checkBetweenChildren(node, 2, 3, true)) return NodeVal();
+    if (!checkBetweenChildren(node, 2, 4, true)) return NodeVal();
 
+    bool hasName = node.getChildrenCnt() > 3;
     bool hasType = node.getChildrenCnt() > 2;
 
-    size_t indType = 1;
-    size_t indBody = hasType ? 2 : 1;
+    size_t indName = 1;
+    size_t indType = hasName ? 2 : 1;
+    size_t indBody = hasName ? 3 : (hasType ? 2 : 1);
 
     const NodeVal &nodeBlock = node.getChild(indBody);
     if (!checkIsComposite(nodeBlock, true)) return NodeVal();
 
+    optional<NamePool::Id> name;
+    if (hasName) {
+        NodeVal nodeName = processWithEscapeIfLeafAndExpectId(node.getChild(indName));
+        if (nodeName.isInvalid()) return NodeVal();
+        name = nodeName.getKnownVal().id;
+    }
+
     optional<TypeTable::Id> type;
     if (hasType) {
-        NodeVal nodeType = processAndExpectType(node.getChild(indType));
+        NodeVal nodeType = processNode(node.getChild(indType));
         if (nodeType.isInvalid()) return NodeVal();
-        type = nodeType.getKnownVal().ty;
+        if (!nodeType.isEmpty()) {
+            if (!checkIsType(nodeType, true)) return NodeVal();
+            type = nodeType.getKnownVal().ty;
+        }
     }
 
     SymbolTable::Block block;
+    block.name = name;
     block.type = type;
     if (!performBlockSetUp(node.getCodeLoc(), block)) return NodeVal();
 
@@ -263,15 +276,36 @@ NodeVal Processor::processBlock(const NodeVal &node) {
 }
 
 NodeVal Processor::processExit(const NodeVal &node) {
-    if (!checkExactlyChildren(node, 2, true)) return NodeVal();
+    if (!checkBetweenChildren(node, 2, 3, true)) return NodeVal();
 
-    NodeVal nodeCond = processNode(node.getChild(1));
+    bool hasName = node.getChildrenCnt() > 2;
+
+    size_t indName = 1;
+    size_t indCond = hasName ? 2 : 1;
+
+    optional<NamePool::Id> name;
+    if (hasName) {
+        NodeVal nodeName = processWithEscapeIfLeafAndExpectId(node.getChild(indName));
+        if (nodeName.isInvalid()) return NodeVal();
+        name = nodeName.getKnownVal().id;
+    }
+
+    NodeVal nodeCond = processNode(node.getChild(indCond));
     if (nodeCond.isInvalid() || !checkIsBool(nodeCond, true)) return NodeVal();
 
-    SymbolTable::Block *targetBlock = symbolTable->getLastBlock();
-    if (checkInGlobalScope(node.getCodeLoc(), false) || targetBlock == nullptr) {
-        msgs->errorExitNowhere(node.getCodeLoc());
-        return NodeVal();
+    const SymbolTable::Block *targetBlock;
+    if (hasName) {
+        targetBlock = symbolTable->getBlock(name.value());
+        if (targetBlock == nullptr) {
+            msgs->errorBlockNotFound(node.getChild(indName).getCodeLoc(), name.value());
+            return NodeVal();
+        }
+    } else {
+        targetBlock = symbolTable->getLastBlock();
+        if (checkInGlobalScope(node.getCodeLoc(), false) || targetBlock == nullptr) {
+            msgs->errorExitNowhere(node.getCodeLoc());
+            return NodeVal();
+        }
     }
     if (targetBlock->type.has_value()) {
         msgs->errorExitPassingBlock(node.getCodeLoc());
@@ -283,15 +317,36 @@ NodeVal Processor::processExit(const NodeVal &node) {
 }
 
 NodeVal Processor::processLoop(const NodeVal &node) {
-    if (!checkExactlyChildren(node, 2, true)) return NodeVal();
+    if (!checkBetweenChildren(node, 2, 3, true)) return NodeVal();
 
-    NodeVal nodeCond = processNode(node.getChild(1));
+    bool hasName = node.getChildrenCnt() > 2;
+
+    size_t indName = 1;
+    size_t indCond = hasName ? 2 : 1;
+
+    optional<NamePool::Id> name;
+    if (hasName) {
+        NodeVal nodeName = processWithEscapeIfLeafAndExpectId(node.getChild(indName));
+        if (nodeName.isInvalid()) return NodeVal();
+        name = nodeName.getKnownVal().id;
+    }
+
+    NodeVal nodeCond = processNode(node.getChild(indCond));
     if (nodeCond.isInvalid() || !checkIsBool(nodeCond, true)) return NodeVal();
 
-    SymbolTable::Block *targetBlock = symbolTable->getLastBlock();
-    if (checkInGlobalScope(node.getCodeLoc(), false) || targetBlock == nullptr) {
-        msgs->errorLoopNowhere(node.getCodeLoc());
-        return NodeVal();
+    const SymbolTable::Block *targetBlock;
+    if (hasName) {
+        targetBlock = symbolTable->getBlock(name.value());
+        if (targetBlock == nullptr) {
+            msgs->errorBlockNotFound(node.getChild(indName).getCodeLoc(), name.value());
+            return NodeVal();
+        }
+    } else {
+        targetBlock = symbolTable->getLastBlock();
+        if (checkInGlobalScope(node.getCodeLoc(), false) || targetBlock == nullptr) {
+            msgs->errorLoopNowhere(node.getCodeLoc());
+            return NodeVal();
+        }
     }
 
     if (!performLoop(node.getCodeLoc(), *targetBlock, nodeCond)) return NodeVal();
@@ -299,19 +354,40 @@ NodeVal Processor::processLoop(const NodeVal &node) {
 }
 
 NodeVal Processor::processPass(const NodeVal &node) {
-    if (!checkExactlyChildren(node, 2, true)) return NodeVal();
+    if (!checkBetweenChildren(node, 2, 3, true)) return NodeVal();
 
-    SymbolTable::Block *targetBlock = symbolTable->getLastBlock();
-    if (checkInGlobalScope(node.getCodeLoc(), false) || targetBlock == nullptr) {
-        msgs->errorPassNonPassingBlock(node.getCodeLoc());
-        return NodeVal();
+    bool hasName = node.getChildrenCnt() > 2;
+
+    size_t indName = 1;
+    size_t indVal = hasName ? 2 : 1;
+
+    optional<NamePool::Id> name;
+    if (hasName) {
+        NodeVal nodeName = processWithEscapeIfLeafAndExpectId(node.getChild(indName));
+        if (nodeName.isInvalid()) return NodeVal();
+        name = nodeName.getKnownVal().id;
+    }
+
+    const SymbolTable::Block *targetBlock;
+    if (hasName) {
+        targetBlock = symbolTable->getBlock(name.value());
+        if (targetBlock == nullptr) {
+            msgs->errorBlockNotFound(node.getChild(indName).getCodeLoc(), name.value());
+            return NodeVal();
+        }
+    } else {
+        targetBlock = symbolTable->getLastBlock();
+        if (checkInGlobalScope(node.getCodeLoc(), false) || targetBlock == nullptr) {
+            msgs->errorPassNonPassingBlock(node.getCodeLoc());
+            return NodeVal();
+        }
     }
     if (!targetBlock->type.has_value()) {
         msgs->errorPassNonPassingBlock(node.getCodeLoc());
         return NodeVal();
     }
 
-    NodeVal nodeValue = processAndImplicitCast(node.getChild(1), targetBlock->type.value());
+    NodeVal nodeValue = processAndImplicitCast(node.getChild(indVal), targetBlock->type.value());
     if (nodeValue.isInvalid()) return NodeVal();
 
     if (!performPass(node.getCodeLoc(), *targetBlock, nodeValue)) return NodeVal();
