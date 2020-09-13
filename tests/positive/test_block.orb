@@ -1,0 +1,64 @@
+import "util/io.orb";
+
+fnc main () () {
+    sym (a null);
+    block {
+        sym (a 100);
+        println_i32 a;
+    };
+
+    block () {
+        println_i32 101;
+    };
+
+    block {
+        println_i32 200;
+        exit false;
+        println_i32 201;
+        exit true;
+        println_i32 -1;
+    };
+
+    sym (b 300);
+    block {
+        loop false;
+        println_i32 b;
+        loop (< (= b (+ b 1)) 303);
+    };
+
+    println_i32 (
+        block i32 { pass 400; }
+    );
+
+    println_i32 (
+        block i32 { pass 401:i16; }
+    );
+
+    block b0 () {
+        block {
+            println_i32 500;
+            exit b0 true;
+        };
+        println_i32 -1;
+    };
+
+    sym (c false);
+    block b0 () {
+        exit c;
+        = c true;
+        block {
+            println_i32 501;
+            loop b0 true;
+        };
+        println_i32 -1;
+    };
+
+    println_i32 (
+        block b0 i32 {
+            block {
+                pass b0 502;
+            };
+            pass -1;
+        };
+    );
+};
