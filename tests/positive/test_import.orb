@@ -1,0 +1,8 @@
+import "util/io.orb";
+import "util/clib.orb";
+import "util/io.orb";
+
+fnc main () () {};
+
+import "util/io.orb";
+import "util/base.orb";

@@ -2,6 +2,18 @@
 #include "utils.h"
 using namespace std;
 
+bool FuncValue::sameSignature(const FuncValue &fl, const FuncValue &fr) {
+    if (fl.name != fr.name) return false;
+    if (fl.variadic != fr.variadic) return false;
+    if (fl.argCnt() != fr.argCnt()) return false;
+    for (size_t i = 0; i < fl.argCnt(); ++i) {
+        if (fl.argTypes[i] != fr.argTypes[i]) return false;
+    }
+    if (fl.retType != fr.retType) return false;
+
+    return true;
+}
+
 SymbolTable::SymbolTable() : inFunc(false) {
     last = glob = new BlockInternal();
     glob->prev = nullptr;

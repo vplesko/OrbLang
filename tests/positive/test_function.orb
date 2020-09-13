@@ -1,0 +1,27 @@
+import "util/io.orb";
+
+fnc f0 () i32 {
+    ret 100;
+};
+
+fnc f1 (x:i32 y:i32) i32 {
+    ret (+ x y);
+};
+
+fnc f2 () i64 {
+    ret 103;
+};
+
+fnc f3 (x:i32) () {
+    println_i32 x;
+};
+
+fnc noo () ();
+
+fnc main () () {
+    println_i32 (f0);
+    println_i32 (f1 100 1);
+    println_i32 (f1 100 2:i8);
+    println_i64 (f2);
+    f3 104;
+};

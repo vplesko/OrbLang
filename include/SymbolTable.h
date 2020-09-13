@@ -20,6 +20,8 @@ struct FuncValue {
 
     std::size_t argCnt() const { return argNames.size(); }
     bool hasRet() const { return retType.has_value(); }
+
+    static bool sameSignature(const FuncValue &fl, const FuncValue &fr);
 };
 
 struct MacroValue {

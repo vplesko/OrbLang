@@ -422,6 +422,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
     return performCall(node.getCodeLoc(), *funcVal, args);
 }
 
+// TODO allow function definition after declaration
 NodeVal Processor::processFnc(const NodeVal &node) {
     if (!checkInGlobalScope(node.getCodeLoc(), true) ||
         !checkBetweenChildren(node, 4, 5, true)) {
