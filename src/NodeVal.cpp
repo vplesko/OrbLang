@@ -97,3 +97,12 @@ void NodeVal::escape() {
         }
     }
 }
+
+void NodeVal::unescape() {
+    if (isComposite()) {
+        for (auto it = children.rbegin(); it != children.rend(); ++it) {
+            (*it)->unescape();
+        }
+    }
+    escaped = false;
+}

@@ -1,8 +1,10 @@
 import "util/io.orb";
 import "util/clib.orb";
 import "util/io.orb";
+import "util/empty.orb";
 
 fnc main () () {};
 
+import "util/../util/io.orb";
 import "util/io.orb";
 import "util/base.orb";

@@ -16,7 +16,18 @@ fnc f3 (x:i32) () {
     println_i32 x;
 };
 
-fnc noo () ();
+fnc f4 () () {
+};
+
+fnc f5 () () {
+    ret;
+};
+
+fnc f6 () ();
+
+fnc f7(f7:i32) () {
+    println_i32 f7;
+};
 
 fnc main () () {
     println_i32 (f0);
@@ -24,4 +35,7 @@ fnc main () () {
     println_i32 (f1 100 2:i8);
     println_i64 (f2);
     f3 104;
+    f4;
+    f5;
+    f7 105;
 };

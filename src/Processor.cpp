@@ -136,8 +136,16 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
 
 NodeVal Processor::processId(const NodeVal &node) {
     NamePool::Id id = node.getKnownVal().id;
-
-    if (symbolTable->isFuncName(id) || symbolTable->isMacroName(id) ||
+    
+    const NodeVal *value = symbolTable->getVar(id);
+    
+    if (value != nullptr) {
+        if (value->isKnownVal()) {
+            return NodeVal(node.getCodeLoc(), value->getKnownVal());
+        } else {
+            return performLoad(node.getCodeLoc(), id, *value);
+        }
+    } else if (symbolTable->isFuncName(id) || symbolTable->isMacroName(id) ||
         isKeyword(id) || isOper(id)) {
         // TODO these as first-class values, with ref
         KnownVal known;
@@ -151,17 +159,8 @@ NodeVal Processor::processId(const NodeVal &node) {
 
         return NodeVal(node.getCodeLoc(), known);
     } else {
-        const NodeVal *value = symbolTable->getVar(id);
-        if (value == nullptr) {
-            msgs->errorVarNotFound(node.getCodeLoc(), id);
-            return NodeVal();
-        }
-
-        if (value->isKnownVal()) {
-            return NodeVal(node.getCodeLoc(), value->getKnownVal());
-        } else {
-            return performLoad(node.getCodeLoc(), id, *value);
-        }
+        msgs->errorVarNotFound(node.getCodeLoc(), id);
+        return NodeVal();
     }
 }
 
@@ -910,6 +909,7 @@ NodeVal Processor::processWithEscapeIfLeafUnlessType(const NodeVal &node) {
         if (esc.isInvalid()) return NodeVal();
         if (esc.isKnownVal() && KnownVal::isId(esc.getKnownVal(), typeTable) &&
             typeTable->isType(esc.getKnownVal().id)) {
+            esc.unescape();
             return processNode(esc);
         } else {
             return esc;

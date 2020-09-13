@@ -4,7 +4,7 @@
 #include <sstream>
 using namespace std;
 
-const string numLitChars = "0123456789abcdefABCDEF.xXeEpP_";
+const string numLitChars = "0123456789abcdefABCDEF.xXpP_";
 const string idSpecialChars = "=+-*/%<>&|^!~[]._?";
 
 Lexer::Lexer(NamePool *namePool, StringPool *stringPool, CompileMessages *msgs, const std::string &file)

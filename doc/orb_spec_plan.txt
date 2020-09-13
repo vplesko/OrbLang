@@ -30,7 +30,7 @@ NULL is null
 
 comments are # for single line, #* ... *# for multiline
 
-Unescape sequences are: \', \", \?, \\, \a, \b, \f, \n, \r, \t, \v, and \xNN (where N is a hex digit in [0-9a-fA-F]).
+Unescape sequences are: \', \", \?, \\, \a, \b, \f, \n, \r, \t, \v, \0, and \xNN (where N is a hex digit in [0-9a-fA-F]).
 
 ********************
 

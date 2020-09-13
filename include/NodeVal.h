@@ -86,4 +86,5 @@ public:
     void setTypeAnnot(NodeVal t);
 
     void escape();
+    void unescape();
 };

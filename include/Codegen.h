@@ -20,13 +20,13 @@ class Codegen : public Processor {
     std::unique_ptr<llvm::legacy::FunctionPassManager> llvmFpm;
 
     bool isLlvmBlockTerminated() const;
+    llvm::Function* getLlvmCurrFunction() { return llvmBuilder.GetInsertBlock()->getParent(); }
     llvm::Constant* getLlvmConstB(bool val);
     // generates a constant for a string literal
-    llvm::Constant* getLlvmConstString(const std::string &str);
-    llvm::Type* getLlvmType(TypeTable::Id typeId);
-    llvm::Type* getLlvmPrimType(TypeTable::PrimIds primTypeId) { return getLlvmType(typeTable->getPrimTypeId(primTypeId)); }
-    llvm::Type* getLlvmTypeOrError(CodeLoc codeLoc, TypeTable::Id typeId);
-    llvm::Function* getLlvmCurrFunction() { return llvmBuilder.GetInsertBlock()->getParent(); }
+    llvm::Constant* makeLlvmConstString(const std::string &str);
+    llvm::Type* makeLlvmType(TypeTable::Id typeId);
+    llvm::Type* makeLlvmPrimType(TypeTable::PrimIds primTypeId) { return makeLlvmType(typeTable->getPrimTypeId(primTypeId)); }
+    llvm::Type* makeLlvmTypeOrError(CodeLoc codeLoc, TypeTable::Id typeId);
     llvm::GlobalValue* makeLlvmGlobal(llvm::Type *type, llvm::Constant *init, bool isConstant, const std::string &name);
     llvm::AllocaInst* makeLlvmAlloca(llvm::Type *type, const std::string &name);
     llvm::Value* makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTypeId, llvm::Type *dstLlvmType, TypeTable::Id dstTypeId);

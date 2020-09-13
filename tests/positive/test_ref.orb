@@ -1,0 +1,49 @@
+import "util/io.orb";
+
+fnc main () () {
+    sym a:i32;
+    = a 100;
+    println_i32 a;
+    = (* (& a)) 101;
+    println_i32 a;
+
+    sym b:(i32 2);
+    = ([] b 0) 200;
+    println_i32 ([] b 0);
+    = ([] b 0) 201;
+    println_i32 ([] b 0);
+    = ([] b 1) 202;
+    println_i32 ([] b 1);
+
+    sym (c (cast (i32 []) (& b)));
+    = ([] c 0) 300;
+    println_i32 ([] b 0);
+    = ([] c 0) 301;
+    println_i32 ([] c 0);
+
+    sym (d (& b));
+    = ([] (* d) 1) 400;
+    println_i32 ([] b 1);
+    = ([] (* d) 1) 401;
+    println_i32 ([] (* d) 1);
+
+    sym (e (& a));
+    = (* e) 500;
+    println_i32 a;
+    = (* e) 501;
+    println_i32 (* e);
+
+    sym f:(i32 i32);
+    = (. f 0) 600;
+    println_i32 (. f 0);
+    = (. f 0) 601;
+    println_i32 (. f 0);
+    = (. f 1) 602;
+    println_i32 (. f 1);
+
+    sym (g (0 (& f)));
+    = (. g 1 0) 700;
+    println_i32 (. g 1 0);
+    = (. f 0) 701;
+    println_i32 (. g 1 0);
+};

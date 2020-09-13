@@ -31,7 +31,7 @@ struct UnescapePayload {
 // On success, returns the unescaped string and the index one after the closing quote.
 // On fail, returns the index one after the last successfully unescaped char.
 //
-// Unescape sequences are: \', \", \?, \\, \a, \b, \f, \n, \r, \t, \v,
+// Unescape sequences are: \', \", \?, \\, \a, \b, \f, \n, \r, \t, \v, \0,
 // and \xNN (where N is a hex digit in [0-9a-fA-F]).
 UnescapePayload unescape(const std::string &str, std::size_t indexStartingQuote, bool isSingleQuote);
 

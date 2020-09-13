@@ -122,7 +122,7 @@ NodeVal Codegen::performLoad(CodeLoc codeLoc, NamePool::Id id, const NodeVal &va
 }
 
 NodeVal Codegen::performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) {
-    llvm::Type *llvmType = getLlvmTypeOrError(codeLoc, ty);
+    llvm::Type *llvmType = makeLlvmTypeOrError(codeLoc, ty);
     if (llvmType == nullptr) return NodeVal();
     
     LlvmVal llvmVal;
@@ -141,7 +141,7 @@ NodeVal Codegen::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal
     if (promo.isInvalid()) return NodeVal();
 
     TypeTable::Id ty = promo.getLlvmVal().type;
-    llvm::Type *llvmType = getLlvmTypeOrError(promo.getCodeLoc(), ty);
+    llvm::Type *llvmType = makeLlvmTypeOrError(promo.getCodeLoc(), ty);
     if (llvmType == nullptr) return NodeVal();
 
     LlvmVal llvmVal;
@@ -167,7 +167,7 @@ NodeVal Codegen::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id
 
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
-    llvm::Type *llvmType = getLlvmTypeOrError(codeLoc, ty);
+    llvm::Type *llvmType = makeLlvmTypeOrError(codeLoc, ty);
     if (llvmType == nullptr) return NodeVal();
 
     llvm::Value *llvmValueCast = makeLlvmCast(promo.getLlvmVal().val, promo.getLlvmVal().type, llvmType, ty);
@@ -192,7 +192,7 @@ bool Codegen::performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) {
 
     llvm::PHINode *llvmPhi = nullptr;
     if (block.type.has_value()) {
-        llvm::Type *llvmType = getLlvmTypeOrError(codeLoc, block.type.value());
+        llvm::Type *llvmType = makeLlvmTypeOrError(codeLoc, block.type.value());
         if (llvmType == nullptr) return false;
 
         llvmBuilder.SetInsertPoint(llvmBlockAfter);
@@ -305,11 +305,11 @@ NodeVal Codegen::performCall(CodeLoc codeLoc, const FuncValue &func, const std::
 bool Codegen::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
     vector<llvm::Type*> llvmArgTypes(func.argCnt());
     for (size_t i = 0; i < func.argCnt(); ++i) {
-        llvmArgTypes[i] = getLlvmTypeOrError(codeLoc, func.argTypes[i]);
+        llvmArgTypes[i] = makeLlvmTypeOrError(codeLoc, func.argTypes[i]);
         if (llvmArgTypes[i] == nullptr) return false;
     }
     
-    llvm::Type *llvmRetType = func.retType.has_value() ? getLlvmTypeOrError(codeLoc, func.retType.value()) : llvm::Type::getVoidTy(llvmContext);
+    llvm::Type *llvmRetType = func.retType.has_value() ? makeLlvmTypeOrError(codeLoc, func.retType.value()) : llvm::Type::getVoidTy(llvmContext);
     if (llvmRetType == nullptr) return false;
 
     llvm::FunctionType *llvmFuncType = llvm::FunctionType::get(llvmRetType, llvmArgTypes, func.variadic);
@@ -329,7 +329,7 @@ bool Codegen::performFunctionDefinition(const NodeVal &args, const NodeVal &body
 
     size_t i = 0;
     for (auto &llvmFuncArg : func.func->args()) {
-        llvm::Type *llvmArgType = getLlvmTypeOrError(args.getChild(i).getCodeLoc(), func.argTypes[i]);
+        llvm::Type *llvmArgType = makeLlvmTypeOrError(args.getChild(i).getCodeLoc(), func.argTypes[i]);
         if (llvmArgType == nullptr) return false;
         
         llvm::AllocaInst *llvmAlloca = makeLlvmAlloca(llvmArgType, getNameForLlvm(func.argNames[i]));
@@ -453,7 +453,7 @@ void* Codegen::performOperComparisonSetUp(CodeLoc codeLoc, size_t opersCnt) {
 
     llvm::BasicBlock *llvmBlockRes = llvm::BasicBlock::Create(llvmContext, "comparison");
     llvmBuilder.SetInsertPoint(llvmBlockRes);
-    llvm::PHINode *llvmPhiRes = llvmBuilder.CreatePHI(getLlvmPrimType(TypeTable::P_BOOL), opersCnt);
+    llvm::PHINode *llvmPhiRes = llvmBuilder.CreatePHI(makeLlvmPrimType(TypeTable::P_BOOL), opersCnt);
 
     llvmBuilder.SetInsertPoint(llvmBlockCurr);
 
@@ -489,8 +489,8 @@ optional<bool> Codegen::performOperComparison(CodeLoc codeLoc, const NodeVal &lh
             llvmValueRes = llvmBuilder.CreateFCmpOEQ(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fcmp_eq_tmp");
         } else if (isTypeP) {
             llvmValueRes = llvmBuilder.CreateICmpEQ(
-                llvmBuilder.CreatePtrToInt(lhsPromo.getLlvmVal().val, getLlvmPrimType(TypeTable::WIDEST_I)),
-                llvmBuilder.CreatePtrToInt(rhsPromo.getLlvmVal().val, getLlvmPrimType(TypeTable::WIDEST_I)),
+                llvmBuilder.CreatePtrToInt(lhsPromo.getLlvmVal().val, makeLlvmPrimType(TypeTable::WIDEST_I)),
+                llvmBuilder.CreatePtrToInt(rhsPromo.getLlvmVal().val, makeLlvmPrimType(TypeTable::WIDEST_I)),
                 "pcmp_eq_tmp");
         }
         break;
@@ -501,8 +501,8 @@ optional<bool> Codegen::performOperComparison(CodeLoc codeLoc, const NodeVal &lh
             llvmValueRes = llvmBuilder.CreateFCmpONE(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fcmp_ne_tmp");
         } else if (isTypeP) {
             llvmValueRes = llvmBuilder.CreateICmpNE(
-                llvmBuilder.CreatePtrToInt(lhsPromo.getLlvmVal().val, getLlvmPrimType(TypeTable::WIDEST_I)),
-                llvmBuilder.CreatePtrToInt(rhsPromo.getLlvmVal().val, getLlvmPrimType(TypeTable::WIDEST_I)),
+                llvmBuilder.CreatePtrToInt(lhsPromo.getLlvmVal().val, makeLlvmPrimType(TypeTable::WIDEST_I)),
+                llvmBuilder.CreatePtrToInt(rhsPromo.getLlvmVal().val, makeLlvmPrimType(TypeTable::WIDEST_I)),
                 "pcmp_ne_tmp");
         }
         break;
@@ -610,7 +610,7 @@ NodeVal Codegen::performOperIndex(CodeLoc codeLoc, const NodeVal &base, const No
         llvmVal.ref = llvmBuilder.CreateGEP(basePromo.getLlvmVal().val, indPromo.getLlvmVal().val);
         llvmVal.val = llvmBuilder.CreateLoad(llvmVal.ref, "index_tmp");
     } else if (typeTable->worksAsTypeArr(basePromo.getType().value())) {
-        llvm::Type *llvmTypeInd = getLlvmTypeOrError(indPromo.getCodeLoc(), indPromo.getType().value());
+        llvm::Type *llvmTypeInd = makeLlvmTypeOrError(indPromo.getCodeLoc(), indPromo.getType().value());
         if (llvmTypeInd == nullptr) return NodeVal();
         
         if (basePromo.hasRef()) {
@@ -618,7 +618,7 @@ NodeVal Codegen::performOperIndex(CodeLoc codeLoc, const NodeVal &base, const No
                 {llvm::ConstantInt::get(llvmTypeInd, 0), indPromo.getLlvmVal().val});
             llvmVal.val = llvmBuilder.CreateLoad(llvmVal.ref, "index_tmp");
         } else {
-            llvm::Type *llvmTypeBase = getLlvmTypeOrError(basePromo.getCodeLoc(), basePromo.getType().value());
+            llvm::Type *llvmTypeBase = makeLlvmTypeOrError(basePromo.getCodeLoc(), basePromo.getType().value());
             if (llvmTypeBase == nullptr) return NodeVal();
 
             // llvm's extractvalue would require compile-time constant indices
@@ -748,7 +748,7 @@ NodeVal Codegen::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const N
 NodeVal Codegen::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
-    llvm::StructType *llvmTupType = (llvm::StructType*) getLlvmTypeOrError(codeLoc, ty);
+    llvm::StructType *llvmTupType = (llvm::StructType*) makeLlvmTypeOrError(codeLoc, ty);
     if (llvmTupType == nullptr) return NodeVal();
 
     vector<llvm::Value*> llvmMembVals;
@@ -780,23 +780,23 @@ NodeVal Codegen::promoteKnownVal(const NodeVal &node) {
 
     llvm::Constant *llvmConst = nullptr;
     if (KnownVal::isI(known, typeTable)) {
-        llvmConst = llvm::ConstantInt::get(getLlvmType(ty), KnownVal::getValueI(known, typeTable).value(), true);
+        llvmConst = llvm::ConstantInt::get(makeLlvmType(ty), KnownVal::getValueI(known, typeTable).value(), true);
     } else if (KnownVal::isU(known, typeTable)) {
-        llvmConst = llvm::ConstantInt::get(getLlvmType(ty), KnownVal::getValueU(known, typeTable).value(), false);
+        llvmConst = llvm::ConstantInt::get(makeLlvmType(ty), KnownVal::getValueU(known, typeTable).value(), false);
     } else if (KnownVal::isF(known, typeTable)) {
-        llvmConst = llvm::ConstantFP::get(getLlvmType(ty), KnownVal::getValueF(known, typeTable).value());
+        llvmConst = llvm::ConstantFP::get(makeLlvmType(ty), KnownVal::getValueF(known, typeTable).value());
     } else if (KnownVal::isC(known, typeTable)) {
-        llvmConst = llvm::ConstantInt::get(getLlvmType(ty), (uint8_t) known.c8, false);
+        llvmConst = llvm::ConstantInt::get(makeLlvmType(ty), (uint8_t) known.c8, false);
     } else if (KnownVal::isB(known, typeTable)) {
         llvmConst = getLlvmConstB(known.b);
     } else if (KnownVal::isNull(known, typeTable)) {
-        llvmConst = llvm::ConstantPointerNull::get((llvm::PointerType*)getLlvmType(ty));
+        llvmConst = llvm::ConstantPointerNull::get((llvm::PointerType*)makeLlvmType(ty));
     } else if (KnownVal::isStr(known, typeTable)) {
         const std::string &str = stringPool->get(known.str.value());
-        llvmConst = getLlvmConstString(str);
+        llvmConst = makeLlvmConstString(str);
     } else if (KnownVal::isArr(known, typeTable)) {
         // TODO! test this
-        llvm::ArrayType *llvmArrayType = (llvm::ArrayType*) getLlvmTypeOrError(node.getCodeLoc(), known.type.value());
+        llvm::ArrayType *llvmArrayType = (llvm::ArrayType*) makeLlvmTypeOrError(node.getCodeLoc(), known.type.value());
         if (llvmArrayType == nullptr) return NodeVal();
 
         vector<llvm::Constant*> llvmConsts;
@@ -862,18 +862,18 @@ llvm::Constant* Codegen::getLlvmConstB(bool val) {
     else return llvm::ConstantInt::getFalse(llvmContext);
 }
 
-llvm::Constant* Codegen::getLlvmConstString(const std::string &str) {
+llvm::Constant* Codegen::makeLlvmConstString(const std::string &str) {
     return llvmBuilder.CreateGlobalStringPtr(str, "str_lit");
 }
 
-llvm::Type* Codegen::getLlvmType(TypeTable::Id typeId) {
+llvm::Type* Codegen::makeLlvmType(TypeTable::Id typeId) {
     llvm::Type *llvmType = typeTable->getType(typeId);
     if (llvmType != nullptr) return llvmType;
 
     if (typeTable->isTypeDescr(typeId)) {
         const TypeTable::TypeDescr &descr = typeTable->getTypeDescr(typeId);
 
-        llvmType = getLlvmType(descr.base);
+        llvmType = makeLlvmType(descr.base);
         if (llvmType == nullptr) return nullptr;
 
         for (const TypeTable::TypeDescr::Decor &decor : descr.decors) {
@@ -896,7 +896,7 @@ llvm::Type* Codegen::getLlvmType(TypeTable::Id typeId) {
 
         vector<llvm::Type*> memberTypes(tup.members.size());
         for (size_t i = 0; i < tup.members.size(); ++i) {
-            llvm::Type *memberType = getLlvmType(tup.members[i]);
+            llvm::Type *memberType = makeLlvmType(tup.members[i]);
             if (memberType == nullptr) return nullptr;
             memberTypes[i] = memberType;
         }
@@ -912,8 +912,8 @@ llvm::Type* Codegen::getLlvmType(TypeTable::Id typeId) {
     return llvmType;
 }
 
-llvm::Type* Codegen::getLlvmTypeOrError(CodeLoc codeLoc, TypeTable::Id typeId) {
-    llvm::Type *ret = getLlvmType(typeId);
+llvm::Type* Codegen::makeLlvmTypeOrError(CodeLoc codeLoc, TypeTable::Id typeId) {
+    llvm::Type *ret = makeLlvmType(typeId);
     if (ret == nullptr) {
         msgs->errorUnknown(codeLoc);
     }
@@ -1002,7 +1002,7 @@ llvm::Value* Codegen::makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTyp
         } else if (typeTable->worksAsTypeAnyP(dstTypeId)) {
             dstLlvmVal = llvmBuilder.CreatePointerCast(srcLlvmVal, dstLlvmType, "p2p_cast");
         } else if (typeTable->worksAsTypeB(dstTypeId)) {
-            llvm::Type *llvmTypeI = getLlvmPrimType(TypeTable::WIDEST_I);
+            llvm::Type *llvmTypeI = makeLlvmPrimType(TypeTable::WIDEST_I);
             if (llvmTypeI == nullptr) return nullptr;
 
             dstLlvmVal = llvmBuilder.CreateICmpNE(

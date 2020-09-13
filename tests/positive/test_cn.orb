@@ -1,0 +1,17 @@
+import "util/io.orb";
+
+fnc main () () {
+    sym (a:(i32 cn) 100);
+    println_i32 a;
+    sym (b:(i32 cn) 101:i16);
+    println_i32 b;
+
+    sym (t0 200) (t1 201);
+    sym (c:(i32 cn *) (& t0));
+    println_i32 (* c);
+    = c (& t1);
+    println_i32 (* c);
+    = t0 202;
+    sym (d:(i32 * cn) (& t0));
+    println_i32 (* d);
+};

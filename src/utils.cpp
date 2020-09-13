@@ -98,6 +98,9 @@ UnescapePayload unescape(const string &str, std::size_t indexStartingQuote, bool
                 case 'v':
                     out.push_back('\v');
                     break;
+                case '0':
+                    out.push_back('\0');
+                    break;
                 default:
                     return UnescapePayload(afterLastSuccessful);
                 }
