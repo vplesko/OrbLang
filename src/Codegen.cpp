@@ -770,13 +770,12 @@ NodeVal Codegen::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vect
     return NodeVal(codeLoc, llvmVal);
 }
 
-NodeVal Codegen::promoteKnownVal(const NodeVal &node) {
-    const KnownVal &known = node.getKnownVal();
-    if (!node.getKnownVal().type.has_value()) {
-        msgs->errorExprCannotPromote(node.getCodeLoc());
+NodeVal Codegen::promoteKnownVal(CodeLoc codeLoc, const KnownVal &known) {
+    if (!known.type.has_value()) {
+        msgs->errorExprCannotPromote(codeLoc);
         return NodeVal();
     }
-    TypeTable::Id ty = node.getKnownVal().type.value();
+    TypeTable::Id ty = known.type.value();
 
     llvm::Constant *llvmConst = nullptr;
     if (KnownVal::isI(known, typeTable)) {
@@ -796,13 +795,13 @@ NodeVal Codegen::promoteKnownVal(const NodeVal &node) {
         llvmConst = makeLlvmConstString(str);
     } else if (KnownVal::isArr(known, typeTable)) {
         // TODO! test this
-        llvm::ArrayType *llvmArrayType = (llvm::ArrayType*) makeLlvmTypeOrError(node.getCodeLoc(), known.type.value());
+        llvm::ArrayType *llvmArrayType = (llvm::ArrayType*) makeLlvmTypeOrError(codeLoc, known.type.value());
         if (llvmArrayType == nullptr) return NodeVal();
 
         vector<llvm::Constant*> llvmConsts;
         llvmConsts.reserve(known.elems.size());
-        for (const NodeVal &elem : known.elems) {
-            NodeVal elemPromo = promoteKnownVal(elem);
+        for (const KnownVal &elem : known.elems) {
+            NodeVal elemPromo = promoteKnownVal(codeLoc, elem);
             if (elemPromo.isInvalid()) return NodeVal();
             llvmConsts.push_back((llvm::Constant*) elemPromo.getLlvmVal().val);
         }
@@ -812,8 +811,8 @@ NodeVal Codegen::promoteKnownVal(const NodeVal &node) {
         // TODO! test this
         vector<llvm::Constant*> llvmConsts;
         llvmConsts.reserve(known.elems.size());
-        for (const NodeVal &elem : known.elems) {
-            NodeVal elemPromo = promoteKnownVal(elem);
+        for (const KnownVal &elem : known.elems) {
+            NodeVal elemPromo = promoteKnownVal(codeLoc, elem);
             if (elemPromo.isInvalid()) return NodeVal();
             llvmConsts.push_back((llvm::Constant*) elemPromo.getLlvmVal().val);
         }
@@ -822,7 +821,7 @@ NodeVal Codegen::promoteKnownVal(const NodeVal &node) {
     }
 
     if (llvmConst == nullptr) {
-        msgs->errorExprCannotPromote(node.getCodeLoc());
+        msgs->errorExprCannotPromote(codeLoc);
         return NodeVal();
     }
 
@@ -830,7 +829,11 @@ NodeVal Codegen::promoteKnownVal(const NodeVal &node) {
     llvmVal.type = ty;
     llvmVal.val = llvmConst;
 
-    return NodeVal(node.getCodeLoc(), llvmVal);
+    return NodeVal(codeLoc, llvmVal);
+}
+
+NodeVal Codegen::promoteKnownVal(const NodeVal &node) {
+    return promoteKnownVal(node.getCodeLoc(), node.getKnownVal());
 }
 
 NodeVal Codegen::promoteIfKnownValAndCheckIsLlvmVal(const NodeVal &node, bool orError) {
@@ -937,6 +940,8 @@ llvm::AllocaInst* Codegen::makeLlvmAlloca(llvm::Type *type, const std::string &n
 }
 
 llvm::Value* Codegen::makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTypeId, llvm::Type *dstLlvmType, TypeTable::Id dstTypeId) {
+    if (srcTypeId == dstTypeId) return srcLlvmVal;
+
     llvm::Value *dstLlvmVal = nullptr;
 
     if (typeTable->worksAsTypeI(srcTypeId)) {
@@ -993,6 +998,8 @@ llvm::Value* Codegen::makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTyp
             dstLlvmVal = llvmBuilder.CreateIntCast(srcLlvmVal, dstLlvmType, false, "b2i_cast");
         } else if (typeTable->worksAsTypeU(dstTypeId)) {
             dstLlvmVal = llvmBuilder.CreateIntCast(srcLlvmVal, dstLlvmType, false, "b2u_cast");
+        } else if (typeTable->worksAsTypeB(dstTypeId)) {
+            dstLlvmVal = srcLlvmVal;
         }
     } else if (typeTable->worksAsTypeAnyP(srcTypeId)) {
         if (typeTable->worksAsTypeI(dstTypeId)) {

@@ -3,6 +3,17 @@
 #include "Processor.h"
 
 class Evaluator : public Processor {
+    bool assignBasedOnTypeI(KnownVal &val, std::int64_t x, TypeTable::Id ty);
+    bool assignBasedOnTypeU(KnownVal &val, std::uint64_t x, TypeTable::Id ty);
+    bool assignBasedOnTypeF(KnownVal &val, double x, TypeTable::Id ty);
+    bool assignBasedOnTypeC(KnownVal &val, char x, TypeTable::Id ty);
+    bool assignBasedOnTypeB(KnownVal &val, bool x, TypeTable::Id ty);
+
+    std::optional<KnownVal> makeCast(const KnownVal &srcKnownVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
+    std::optional<KnownVal> makeArray(TypeTable::Id arrTypeId);
+    
+    bool checkIsKnownVal(const NodeVal &node, bool orError);
+
     // TODO!
     NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, const NodeVal &val) { msgs->errorInternal(codeLoc); return NodeVal(); }
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) { msgs->errorInternal(codeLoc); return NodeVal(); }

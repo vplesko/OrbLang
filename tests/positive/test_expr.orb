@@ -1,6 +1,8 @@
 import "util/io.orb";
 
 fnc main() () {
+    # TODO! after Codegen calls Evaluator when all Known, rework all affected tests
+
     println_i32 100;
     println_i32 (+ 101);
     println_i32 (- 102);

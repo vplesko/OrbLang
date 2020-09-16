@@ -35,6 +35,7 @@ class Codegen : public Processor {
 
     bool checkIsLlvmVal(const NodeVal &node, bool orError);
 
+    NodeVal promoteKnownVal(CodeLoc codeLoc, const KnownVal &known);
     NodeVal promoteKnownVal(const NodeVal &node);
     NodeVal promoteIfKnownValAndCheckIsLlvmVal(const NodeVal &node, bool orError);
 
