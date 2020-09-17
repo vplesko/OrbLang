@@ -138,6 +138,19 @@ optional<KnownVal> Evaluator::makeCast(const KnownVal &srcKnownVal, TypeTable::I
     return dstKnownVal;
 }
 
+NodeVal Evaluator::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) {
+    KnownVal knownVal(ty);
+
+    knownVal.elems.reserve(membs.size());
+    for (const NodeVal &memb : membs) {
+        if (!checkIsKnownVal(memb, true)) return NodeVal();
+        // TODO! break ref
+        knownVal.elems.push_back(memb.getKnownVal());
+    }
+
+    return NodeVal(codeLoc, knownVal);
+}
+
 optional<KnownVal> Evaluator::makeArray(TypeTable::Id arrTypeId) {
     optional<TypeTable::Id> elemTypeId = typeTable->addTypeIndexOf(arrTypeId);
     if (!elemTypeId.has_value()) return nullopt;

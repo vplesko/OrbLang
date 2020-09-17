@@ -794,7 +794,6 @@ NodeVal Codegen::promoteKnownVal(CodeLoc codeLoc, const KnownVal &known) {
         const std::string &str = stringPool->get(known.str.value());
         llvmConst = makeLlvmConstString(str);
     } else if (KnownVal::isArr(known, typeTable)) {
-        // TODO! test this
         llvm::ArrayType *llvmArrayType = (llvm::ArrayType*) makeLlvmTypeOrError(codeLoc, known.type.value());
         if (llvmArrayType == nullptr) return NodeVal();
 
@@ -808,7 +807,6 @@ NodeVal Codegen::promoteKnownVal(CodeLoc codeLoc, const KnownVal &known) {
 
         llvmConst = llvm::ConstantArray::get(llvmArrayType, llvmConsts);
     } else if (KnownVal::isTuple(known, typeTable)) {
-        // TODO! test this
         vector<llvm::Constant*> llvmConsts;
         llvmConsts.reserve(known.elems.size());
         for (const KnownVal &elem : known.elems) {
