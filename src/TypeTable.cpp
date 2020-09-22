@@ -586,6 +586,7 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
     if (isTypeDescr(into) && typeDescrs[into.index].first.decors.empty())
         into = typeDescrs[into.index].first.base;
     
+    // TODO allow only for direction T * (or T []) -> ptr
     if ((worksAsTypePtr(from) && worksAsTypeAnyP(into)) ||
         (worksAsTypePtr(into) && worksAsTypeAnyP(from)))
         return true;

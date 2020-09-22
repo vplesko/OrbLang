@@ -42,16 +42,16 @@ public:
 private:
     struct BlockInternal {
         Block block;
-        //  Guarantees pointer stability of values.
+        // Guarantees pointer stability of values.
         std::unordered_map<NamePool::Id, NodeVal> vars;
         BlockInternal *prev;
     };
 
     friend class BlockControl;
 
-    //  Guarantees pointer stability of values.
+    // Guarantees pointer stability of values.
     std::unordered_map<NamePool::Id, FuncValue> funcs;
-    //  Guarantees pointer stability of values.
+    // Guarantees pointer stability of values.
     std::unordered_map<NamePool::Id, MacroValue> macros;
 
     BlockInternal *last, *glob;

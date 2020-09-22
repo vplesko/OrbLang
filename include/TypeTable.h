@@ -192,7 +192,6 @@ public:
     bool fitsTypeF(double x, Id t) const;
     Id shortestFittingTypeIId(int64_t x) const;
     bool isImplicitCastable(Id from, Id into) const;
-    bool isArgTypeProper(Id callArg, Id fncParam) const { return isImplicitCastable(callArg, fncParam); }
     bool isDirectCn(Id t) const;
 };
 
