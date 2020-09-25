@@ -66,7 +66,7 @@ const FuncValue* SymbolTable::getFunction(NamePool::Id name) const {
     return &loc->second;
 }
 
-void SymbolTable::registerMacro(MacroValue &&val) {
+void SymbolTable::registerMacro(const MacroValue &val) {
     macros[val.name] = move(val);
 }
 

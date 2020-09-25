@@ -9,7 +9,7 @@
 #include "SymbolTable.h"
 #include "CompileMessages.h"
 
-// TODO! add tests
+// TODO! add ref returning where left out
 class Processor {
 protected:
     NamePool *namePool;

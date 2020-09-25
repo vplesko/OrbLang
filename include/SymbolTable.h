@@ -75,7 +75,7 @@ public:
     void registerFunc(const FuncValue &val);
     const FuncValue* getFunction(NamePool::Id name) const;
 
-    void registerMacro(MacroValue &&val);
+    void registerMacro(const MacroValue &val);
     const MacroValue* getMacro(NamePool::Id name) const;
 
     bool inGlobalScope() const { return last == glob; }

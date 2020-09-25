@@ -111,7 +111,7 @@ llvm::Type* Codegen::genPrimTypePtr() {
 NodeVal Codegen::performLoad(CodeLoc codeLoc, NamePool::Id id, const NodeVal &val) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
-    // TODO load KnownVal as non-ref?
+    // TODO load KnownVal if known
     if (!checkIsLlvmVal(val, true)) return NodeVal();
 
     LlvmVal loadLlvmVal;
