@@ -73,3 +73,7 @@ bool isOper(NamePool::Id name, Oper o) {
     optional<Oper> opt = getOper(name);
     return opt.has_value() && opt.value() == o;
 }
+
+bool isReserved(NamePool::Id name) {
+    return isKeyword(name) || isOper(name);
+}

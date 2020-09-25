@@ -25,19 +25,16 @@ Compiler::Compiler(ostream &out) {
 #define ADD_MEANINGFUL(str, enum) { \
     NamePool::Id name = namePool->add(str); \
     meaningfuls.insert(make_pair(name, Meaningful::enum)); \
-    namePool->addMeaningful(name); \
     }
 
 #define ADD_KEYWORD(str, enum) { \
     NamePool::Id name = namePool->add(str); \
     keywords.insert(make_pair(name, Keyword::enum)); \
-    namePool->addKeyword(name); \
     }
 
 #define ADD_OPER(str, enum) { \
     NamePool::Id name = namePool->add(str); \
     opers.insert(make_pair(name, Oper::enum)); \
-    namePool->addOper(name); \
     }
 
 void Compiler::genReserved() {

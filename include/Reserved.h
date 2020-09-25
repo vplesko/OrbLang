@@ -73,3 +73,4 @@ bool isKeyword(NamePool::Id name, Keyword k);
 bool isOper(NamePool::Id name);
 std::optional<Oper> getOper(NamePool::Id name);
 bool isOper(NamePool::Id name, Oper o);
+bool isReserved(NamePool::Id name);

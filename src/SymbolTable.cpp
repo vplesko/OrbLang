@@ -1,4 +1,5 @@
 #include "SymbolTable.h"
+#include "Reserved.h"
 #include "utils.h"
 using namespace std;
 
@@ -105,7 +106,7 @@ bool SymbolTable::isMacroName(NamePool::Id name) const {
 }
 
 bool SymbolTable::nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable) const {
-    if (namePool->isReserved(name) || typeTable->isType(name)) return false;
+    if (isReserved(name) || typeTable->isType(name)) return false;
 
     if (last == glob) {
         // you can have vars with same name as funcs, except in global

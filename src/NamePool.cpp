@@ -15,7 +15,3 @@ NamePool::Id NamePool::add(const string &name) {
     next += 1;
     return next-1;
 }
-
-bool NamePool::isReserved(Id id) const {
-    return isKeyword(id) || isOper(id);
-}
