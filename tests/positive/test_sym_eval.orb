@@ -1,30 +1,30 @@
 import "util/io.orb";
 
-#eval (sym g0:i32);
+eval (sym g0:i32);
 eval (sym (g1:i32 101));
 eval (sym (g2:i32 102) (g3:i32 103));
 eval (sym (g4 104));
 eval (sym (g5:i32 105:i32));
 
 fnc main () () {
-    #eval (sym a0:i32);
+    eval (sym a0:i32);
     eval (sym (a1:i32 201));
     eval (sym (a2:i32 202) (a3:i32 203));
     eval (sym (a4 204));
     eval (sym (a5:i32 205:i32));
     eval (sym (a6:i64 206:i32));
 
-    #= g0 100;
-    #= a0 200;
+    eval (= g0 100);
+    eval (= a0 200);
 
-    #println_i32 (eval g0);
+    println_i32 (eval g0);
     println_i32 (eval g1);
     println_i32 (eval g2);
     println_i32 (eval g3);
     println_i32 (eval g4);
     println_i32 (eval g5);
     
-    #println_i32 (eval a0);
+    println_i32 (eval a0);
     println_i32 (eval a1);
     println_i32 (eval a2);
     println_i32 (eval a3);

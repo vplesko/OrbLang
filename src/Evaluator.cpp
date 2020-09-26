@@ -14,8 +14,7 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
 }
 
 NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) {
-    KnownVal knownVal(ty);
-    return NodeVal(codeLoc, knownVal);
+    return NodeVal(codeLoc, KnownVal::makeVal(ty, typeTable));
 }
 
 NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) {
@@ -66,7 +65,7 @@ optional<KnownVal> Evaluator::makeCast(const KnownVal &srcKnownVal, TypeTable::I
     // TODO! may pass ref value
     if (srcTypeId == dstTypeId) return srcKnownVal;
 
-    optional<KnownVal> dstKnownVal = KnownVal(dstTypeId);
+    optional<KnownVal> dstKnownVal = KnownVal::makeVal(dstTypeId, typeTable);
 
     if (typeTable->worksAsTypeI(srcTypeId)) {
         int64_t x = KnownVal::getValueI(srcKnownVal, typeTable).value();
@@ -159,31 +158,74 @@ optional<KnownVal> Evaluator::makeCast(const KnownVal &srcKnownVal, TypeTable::I
     return dstKnownVal;
 }
 
-NodeVal Evaluator::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) {
-    KnownVal knownVal(ty);
+NodeVal Evaluator::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) {
+    if (!checkIsKnownVal(lhs, true) || !checkIsKnownVal(rhs, true)) return NodeVal();
 
-    knownVal.elems.reserve(membs.size());
-    for (const NodeVal &memb : membs) {
+    *lhs.getKnownVal().ref = rhs.getKnownVal();
+    lhs.getKnownVal().ref->ref = nullptr;
+
+    KnownVal knownVal(rhs.getKnownVal());
+    knownVal.ref = lhs.getKnownVal().ref;
+    return NodeVal(codeLoc, knownVal);
+}
+
+NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) {
+    if (!checkIsKnownVal(base, true) || !checkIsKnownVal(ind, true)) return NodeVal();
+
+    optional<size_t> index = KnownVal::getValueNonNeg(ind.getKnownVal(), typeTable);
+    if (!index.has_value()) {
+        msgs->errorInternal(codeLoc);
+        return NodeVal();
+    }
+
+    KnownVal knownVal;
+    if (typeTable->worksAsTypeArr(base.getType().value())) {
+        knownVal = KnownVal(base.getKnownVal().elems[index.value()]);
+        if (base.hasRef()) {
+            knownVal.ref = &base.getKnownVal().ref->elems[index.value()];
+        } else {
+            knownVal.ref = nullptr;
+        }
+    } else if (typeTable->worksAsTypeArrP(base.getType().value())) {
+        msgs->errorUnknown(codeLoc);
+        return NodeVal();
+    } else {
+        msgs->errorInternal(codeLoc);
+        return NodeVal();
+    }
+    return NodeVal(codeLoc, knownVal);
+}
+
+NodeVal Evaluator::performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
+    if (!checkIsKnownVal(base, true)) return NodeVal();
+
+    KnownVal knownVal(base.getKnownVal().elems[ind]);
+    if (base.hasRef()) {
+        knownVal.ref = &base.getKnownVal().ref->elems[ind];
+    } else {
+        knownVal.ref = nullptr;
+    }
+    return NodeVal(codeLoc, knownVal);
+}
+
+NodeVal Evaluator::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) {
+    KnownVal knownVal = KnownVal::makeVal(ty, typeTable);
+
+    for (size_t i = 0; i < membs.size(); ++i) {
+        const NodeVal &memb = membs[i];
         if (!checkIsKnownVal(memb, true)) return NodeVal();
-        // TODO! break ref
-        knownVal.elems.push_back(memb.getKnownVal());
+        
+        knownVal.elems[i] = memb.getKnownVal();
+        knownVal.elems[i].ref = nullptr;
     }
 
     return NodeVal(codeLoc, knownVal);
 }
 
 optional<KnownVal> Evaluator::makeArray(TypeTable::Id arrTypeId) {
-    optional<TypeTable::Id> elemTypeId = typeTable->addTypeIndexOf(arrTypeId);
-    if (!elemTypeId.has_value()) return nullopt;
+    if (!typeTable->worksAsTypeArr(arrTypeId)) return nullopt;
 
-    optional<size_t> len = typeTable->extractLenOfArr(arrTypeId);
-    if (!len.has_value()) return nullopt;
-
-    KnownVal knownVal(arrTypeId);
-    KnownVal knownValElem(elemTypeId.value());
-    knownVal.elems = vector<KnownVal>(len.value(), knownValElem);
-
-    return knownVal;
+    return KnownVal::makeVal(arrTypeId, typeTable);
 }
 
 bool Evaluator::assignBasedOnTypeI(KnownVal &val, int64_t x, TypeTable::Id ty) {

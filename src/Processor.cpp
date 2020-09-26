@@ -99,7 +99,7 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
 
     NodeVal second = processWithEscapeIfLeafUnlessType(node.getChild(1));
 
-    KnownVal knownTy(typeTable->getPrimTypeId(TypeTable::P_TYPE));
+    KnownVal knownTy = KnownVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
 
     if (second.isKnownVal() && KnownVal::isType(second.getKnownVal(), typeTable)) {
         TypeTable::Tuple tup;
@@ -140,11 +140,7 @@ NodeVal Processor::processId(const NodeVal &node) {
     NodeVal *value = symbolTable->getVar(id);
     
     if (value != nullptr) {
-        if (value->isKnownVal()) {
-            return NodeVal(node.getCodeLoc(), value->getKnownVal());
-        } else {
-            return performLoad(node.getCodeLoc(), id, *value);
-        }
+        return performLoad(node.getCodeLoc(), id, *value);
     } else if (symbolTable->isFuncName(id) || symbolTable->isMacroName(id) ||
         isKeyword(id) || isOper(id)) {
         // TODO these as first-class values, with ref
@@ -154,7 +150,7 @@ NodeVal Processor::processId(const NodeVal &node) {
         return NodeVal(node.getCodeLoc(), known);
     } else if (typeTable->isType(id)) {
         // TODO ref for types
-        KnownVal known(typeTable->getPrimTypeId(TypeTable::P_TYPE));
+        KnownVal known = KnownVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
         known.ty = typeTable->getTypeId(id).value();
 
         return NodeVal(node.getCodeLoc(), known);

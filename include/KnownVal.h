@@ -32,7 +32,6 @@ struct KnownVal {
     KnownVal *ref = nullptr;
 
     KnownVal() {}
-    KnownVal(TypeTable::Id ty) : type(ty) {}
 
     std::optional<TypeTable::Id> getType() const { return type; }
 
@@ -40,6 +39,8 @@ struct KnownVal {
     // TODO after callables are first-class, rework that
     bool isCallable() const { return !type.has_value(); }
     std::optional<NamePool::Id> getCallableId() const;
+
+    static KnownVal makeVal(TypeTable::Id t, TypeTable *typeTable);
 
     static bool isId(const KnownVal &val, const TypeTable *typeTable);
     static bool isType(const KnownVal &val, const TypeTable *typeTable);

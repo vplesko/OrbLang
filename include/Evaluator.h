@@ -35,9 +35,9 @@ class Evaluator : public Processor {
     void* performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt) { return nullptr; }
     std::optional<bool> performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) { return std::nullopt; }
     NodeVal performOperComparisonTearDown(CodeLoc codeLoc, bool success, void *signal) { msgs->errorInternal(codeLoc); return NodeVal(); }
-    NodeVal performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs) { msgs->errorInternal(codeLoc); return NodeVal(); }
-    NodeVal performOperIndex(CodeLoc codeLoc, const NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) { msgs->errorInternal(codeLoc); return NodeVal(); }
-    NodeVal performOperMember(CodeLoc codeLoc, const NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) { msgs->errorInternal(codeLoc); return NodeVal(); }
+    NodeVal performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs);
+    NodeVal performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy);
+    NodeVal performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy);
     NodeVal performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op) { msgs->errorInternal(codeLoc); return NodeVal(); }
     NodeVal performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs);
 

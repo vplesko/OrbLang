@@ -1,0 +1,50 @@
+import "util/io.orb";
+
+# TODO uncomment after known vals can be non-null ptrs
+fnc main () () {
+    eval (sym a:i32);
+    eval (= a 100);
+    println_i32 (eval a);
+    #eval (= (* (& a)) 101);
+    #println_i32 (eval a);
+
+    eval (sym b:(i32 2));
+    eval (= ([] b 0) 200);
+    println_i32 (eval ([] b 0));
+    eval (= ([] b 0) 201);
+    println_i32 (eval ([] b 0));
+    eval (= ([] b 1) 202);
+    println_i32 (eval ([] b 1));
+
+    #eval (sym (c (cast (i32 []) (& b))));
+    #eval (= ([] c 0) 300);
+    #println_i32 (eval ([] b 0));
+    #eval (= ([] c 0) 301);
+    #println_i32 (eval ([] c 0));
+
+    #eval (sym (d (& b)));
+    #eval (= ([] (* d) 1) 400);
+    #println_i32 (eval ([] b 1));
+    #eval (= ([] (* d) 1) 401);
+    #println_i32 (eval ([] (* d) 1));
+
+    #eval (sym (e (& a)));
+    #eval (= (* e) 500);
+    #println_i32 (eval a);
+    #eval (= (* e) 501);
+    #println_i32 (eval (* e));
+
+    eval (sym f:(i32 i32));
+    eval (= (. f 0) 600);
+    println_i32 (eval (. f 0));
+    eval (= (. f 0) 601);
+    println_i32 (eval (. f 0));
+    eval (= (. f 1) 602);
+    println_i32 (eval (. f 1));
+
+    #eval (sym (g (0 (& f))));
+    #eval (= (. g 1 0) 700);
+    #println_i32 (eval (. g 1 0));
+    #eval (= (. f 0) 701);
+    #println_i32 (eval (. g 1 0));
+};

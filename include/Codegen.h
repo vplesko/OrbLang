@@ -10,6 +10,7 @@
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
 // TODO! if operands are known, pass result as known (where allowed)
+// TODO! ref breaking
 class Codegen : public Processor {
     Evaluator *evaluator;
 
@@ -59,9 +60,9 @@ class Codegen : public Processor {
     void* performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt);
     std::optional<bool> performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal);
     NodeVal performOperComparisonTearDown(CodeLoc codeLoc, bool success, void *signal);
-    NodeVal performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs);
-    NodeVal performOperIndex(CodeLoc codeLoc, const NodeVal &base, const NodeVal &ind, TypeTable::Id resTy);
-    NodeVal performOperMember(CodeLoc codeLoc, const NodeVal &base, std::uint64_t ind, TypeTable::Id resTy);
+    NodeVal performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs);
+    NodeVal performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy);
+    NodeVal performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy);
     NodeVal performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op);
     NodeVal performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs);
 

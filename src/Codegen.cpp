@@ -568,7 +568,7 @@ NodeVal Codegen::performOperComparisonTearDown(CodeLoc codeLoc, bool success, vo
     return NodeVal(codeLoc, llvmVal);
 }
 
-NodeVal Codegen::performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs) {
+NodeVal Codegen::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
     if (!checkIsLlvmVal(lhs, true)) return NodeVal();
@@ -584,7 +584,7 @@ NodeVal Codegen::performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, cons
     return NodeVal(lhs.getCodeLoc(), llvmVal);
 }
 
-NodeVal Codegen::performOperIndex(CodeLoc codeLoc, const NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) {
+NodeVal Codegen::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     
     NodeVal basePromo = promoteIfKnownValAndCheckIsLlvmVal(base, true);
@@ -623,7 +623,7 @@ NodeVal Codegen::performOperIndex(CodeLoc codeLoc, const NodeVal &base, const No
     return NodeVal(codeLoc, llvmVal);
 }
 
-NodeVal Codegen::performOperMember(CodeLoc codeLoc, const NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
+NodeVal Codegen::performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     
     NodeVal basePromo = promoteIfKnownValAndCheckIsLlvmVal(base, true);

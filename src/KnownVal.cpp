@@ -8,6 +8,25 @@ optional<NamePool::Id> KnownVal::getCallableId() const {
     return id;
 }
 
+KnownVal KnownVal::makeVal(TypeTable::Id t, TypeTable *typeTable) {
+    KnownVal knownVal;
+    knownVal.type = t;
+
+    if (typeTable->worksAsTuple(t)) {
+        const TypeTable::Tuple *tup = typeTable->extractTuple(t).value();
+        knownVal.elems.reserve(tup->members.size());
+        for (TypeTable::Id membType : tup->members) {
+            knownVal.elems.push_back(makeVal(membType, typeTable));
+        }
+    } else if (typeTable->worksAsTypeArr(t)) {
+        size_t len = typeTable->extractLenOfArr(t).value();
+        TypeTable::Id elemType = typeTable->addTypeIndexOf(t).value();
+        knownVal.elems = vector<KnownVal>(len, makeVal(elemType, typeTable));
+    }
+
+    return knownVal;
+}
+
 bool KnownVal::isId(const KnownVal &val, const TypeTable *typeTable) {
     optional<TypeTable::Id> type = val.getType();
     return type.has_value() && typeTable->worksAsPrimitive(type.value(), TypeTable::P_ID);
