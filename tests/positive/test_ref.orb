@@ -1,5 +1,6 @@
 import "util/io.orb";
 
+# TODO! same tests for eval
 fnc main () () {
     sym a:i32;
     = a 100;

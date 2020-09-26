@@ -108,16 +108,15 @@ llvm::Type* Codegen::genPrimTypePtr() {
     return llvm::Type::getInt8PtrTy(llvmContext);
 }
 
-NodeVal Codegen::performLoad(CodeLoc codeLoc, NamePool::Id id, const NodeVal &val) {
+NodeVal Codegen::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
     // TODO load KnownVal if known
-    if (!checkIsLlvmVal(val, true)) return NodeVal();
+    if (!checkIsLlvmVal(ref, true)) return NodeVal();
 
-    LlvmVal loadLlvmVal;
-    loadLlvmVal.type = val.getLlvmVal().type;
-    loadLlvmVal.ref = val.getLlvmVal().ref;
-    loadLlvmVal.val = llvmBuilder.CreateLoad(val.getLlvmVal().ref, getNameForLlvm(id));
+    LlvmVal loadLlvmVal(ref.getLlvmVal().type);
+    loadLlvmVal.ref = ref.getLlvmVal().ref;
+    loadLlvmVal.val = llvmBuilder.CreateLoad(ref.getLlvmVal().ref, getNameForLlvm(id));
     return NodeVal(codeLoc, loadLlvmVal);
 }
 
@@ -125,8 +124,7 @@ NodeVal Codegen::performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id
     llvm::Type *llvmType = makeLlvmTypeOrError(codeLoc, ty);
     if (llvmType == nullptr) return NodeVal();
     
-    LlvmVal llvmVal;
-    llvmVal.type = ty;
+    LlvmVal llvmVal(ty);
     if (symbolTable->inGlobalScope()) {
         llvmVal.ref = makeLlvmGlobal(llvmType, nullptr, typeTable->worksAsTypeCn(ty), getNameForLlvm(id));
     } else {
@@ -144,8 +142,7 @@ NodeVal Codegen::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal
     llvm::Type *llvmType = makeLlvmTypeOrError(promo.getCodeLoc(), ty);
     if (llvmType == nullptr) return NodeVal();
 
-    LlvmVal llvmVal;
-    llvmVal.type = ty;
+    LlvmVal llvmVal(ty);
     if (symbolTable->inGlobalScope()) {
         // TODO is the cast to llvm::Constant* always correct?
         llvmVal.ref = makeLlvmGlobal(llvmType, (llvm::Constant*) promo.getLlvmVal().val, typeTable->worksAsTypeCn(ty), getNameForLlvm(id));
@@ -176,8 +173,7 @@ NodeVal Codegen::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id
         return NodeVal();
     }
 
-    LlvmVal llvmVal;
-    llvmVal.type = ty;
+    LlvmVal llvmVal(ty);
     llvmVal.val = llvmValueCast;
     return NodeVal(codeLoc, llvmVal);
 }
@@ -224,8 +220,7 @@ NodeVal Codegen::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block 
     llvmBuilder.SetInsertPoint(block.blockExit);
 
     if (block.type.has_value()) {
-        LlvmVal llvmVal;
-        llvmVal.type = block.type.value();
+        LlvmVal llvmVal(block.type.value());
         llvmVal.val = block.phi;
         return NodeVal(codeLoc, llvmVal);
     } else {
@@ -292,8 +287,7 @@ NodeVal Codegen::performCall(CodeLoc codeLoc, const FuncValue &func, const std::
     }
 
     if (func.hasRet()) {
-        LlvmVal retLlvmVal;
-        retLlvmVal.type = func.retType.value();
+        LlvmVal retLlvmVal(func.retType.value());
         retLlvmVal.val = llvmBuilder.CreateCall(func.func, llvmArgValues, "call_tmp");
         return NodeVal(codeLoc, retLlvmVal);
     } else {
@@ -335,8 +329,7 @@ bool Codegen::performFunctionDefinition(const NodeVal &args, const NodeVal &body
         llvm::AllocaInst *llvmAlloca = makeLlvmAlloca(llvmArgType, getNameForLlvm(func.argNames[i]));
         llvmBuilder.CreateStore(&llvmFuncArg, llvmAlloca);
 
-        LlvmVal varLlvmVal;
-        varLlvmVal.type = func.argTypes[i];
+        LlvmVal varLlvmVal(func.argTypes[i]);
         varLlvmVal.ref = llvmAlloca;
         NodeVal varNodeVal(args.getChild(i).getCodeLoc(), varLlvmVal);
         symbolTable->addVar(func.argNames[i], move(varNodeVal));
@@ -386,8 +379,7 @@ NodeVal Codegen::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op)
     TypeTable::Id operTy = promo.getLlvmVal().type;
 
     llvm::Value *llvmIn = promo.getLlvmVal().val, *llvmInRef = promo.getLlvmVal().ref;
-    LlvmVal llvmVal;
-    llvmVal.type = operTy;
+    LlvmVal llvmVal(operTy);
     if (op == Oper::ADD) {
         if (typeTable->worksAsTypeI(operTy) ||
             typeTable->worksAsTypeU(operTy) ||
@@ -439,8 +431,7 @@ NodeVal Codegen::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
         return NodeVal();
     }
 
-    LlvmVal llvmVal;
-    llvmVal.type = typeId.value();
+    LlvmVal llvmVal(typeId.value());
     llvmVal.val = llvmBuilder.CreateLoad(llvmIn, "deref_tmp");
     llvmVal.ref = llvmIn;
     return NodeVal(codeLoc, llvmVal);
@@ -572,8 +563,7 @@ NodeVal Codegen::performOperComparisonTearDown(CodeLoc codeLoc, bool success, vo
     getLlvmCurrFunction()->getBasicBlockList().push_back(compSignal->llvmBlock);
     llvmBuilder.SetInsertPoint(compSignal->llvmBlock);
 
-    LlvmVal llvmVal;
-    llvmVal.type = typeTable->getPrimTypeId(TypeTable::P_BOOL);
+    LlvmVal llvmVal(typeTable->getPrimTypeId(TypeTable::P_BOOL));
     llvmVal.val = compSignal->llvmPhi;
     return NodeVal(codeLoc, llvmVal);
 }
@@ -588,8 +578,7 @@ NodeVal Codegen::performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, cons
 
     llvmBuilder.CreateStore(rhsPromo.getLlvmVal().val, lhs.getLlvmVal().ref);
 
-    LlvmVal llvmVal;
-    llvmVal.type = lhs.getType().value();
+    LlvmVal llvmVal(lhs.getType().value());
     llvmVal.val = rhsPromo.getLlvmVal().val;
     llvmVal.ref = lhs.getLlvmVal().ref;
     return NodeVal(lhs.getCodeLoc(), llvmVal);
@@ -604,8 +593,7 @@ NodeVal Codegen::performOperIndex(CodeLoc codeLoc, const NodeVal &base, const No
     NodeVal indPromo = promoteIfKnownValAndCheckIsLlvmVal(ind, true);
     if (ind.isInvalid()) return NodeVal();
 
-    LlvmVal llvmVal;
-    llvmVal.type = resTy;
+    LlvmVal llvmVal(resTy);
     if (typeTable->worksAsTypeArrP(basePromo.getType().value())) {
         llvmVal.ref = llvmBuilder.CreateGEP(basePromo.getLlvmVal().val, indPromo.getLlvmVal().val);
         llvmVal.val = llvmBuilder.CreateLoad(llvmVal.ref, "index_tmp");
@@ -641,8 +629,7 @@ NodeVal Codegen::performOperMember(CodeLoc codeLoc, const NodeVal &base, std::ui
     NodeVal basePromo = promoteIfKnownValAndCheckIsLlvmVal(base, true);
     if (basePromo.isInvalid()) return NodeVal();
 
-    LlvmVal llvmVal;
-    llvmVal.type = resTy;
+    LlvmVal llvmVal(resTy);
     if (basePromo.hasRef()) {
         llvmVal.ref = llvmBuilder.CreateStructGEP(basePromo.getLlvmVal().ref, ind);
         llvmVal.val = llvmBuilder.CreateLoad(llvmVal.ref, "dot_tmp");
@@ -661,8 +648,7 @@ NodeVal Codegen::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const N
     NodeVal rhsPromo = promoteIfKnownValAndCheckIsLlvmVal(rhs, true);
     if (rhs.isInvalid()) return NodeVal();
 
-    LlvmVal llvmVal;
-    llvmVal.type = lhs.getType().value();
+    LlvmVal llvmVal(lhs.getType().value());
     
     bool isTypeI = typeTable->worksAsTypeI(llvmVal.type);
     bool isTypeU = typeTable->worksAsTypeU(llvmVal.type);
@@ -764,8 +750,7 @@ NodeVal Codegen::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vect
         llvmTupVal = llvmBuilder.CreateInsertValue(llvmTupVal, llvmMembVals[i], {(unsigned) i});
     }
 
-    LlvmVal llvmVal;
-    llvmVal.type = ty;
+    LlvmVal llvmVal(ty);
     llvmVal.val = llvmTupVal;
     return NodeVal(codeLoc, llvmVal);
 }
@@ -823,8 +808,7 @@ NodeVal Codegen::promoteKnownVal(CodeLoc codeLoc, const KnownVal &known) {
         return NodeVal();
     }
 
-    LlvmVal llvmVal;
-    llvmVal.type = ty;
+    LlvmVal llvmVal(ty);
     llvmVal.val = llvmConst;
 
     return NodeVal(codeLoc, llvmVal);

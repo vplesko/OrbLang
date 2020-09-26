@@ -21,7 +21,7 @@ protected:
     unsigned topmost;
 
 protected:
-    virtual NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, const NodeVal &val) =0;
+    virtual NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) =0;
     virtual NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) =0;
     virtual NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) =0;
     virtual NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) =0;

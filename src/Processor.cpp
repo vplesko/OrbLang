@@ -137,7 +137,7 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
 NodeVal Processor::processId(const NodeVal &node) {
     NamePool::Id id = node.getKnownVal().id;
     
-    const NodeVal *value = symbolTable->getVar(id);
+    NodeVal *value = symbolTable->getVar(id);
     
     if (value != nullptr) {
         if (value->isKnownVal()) {

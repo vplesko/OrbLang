@@ -27,8 +27,4 @@ fnc main() () {
     println_i32 (- 301 (<< -3 1));
     println_i32 (+ 300 (& 0b1010 0b1101));
     println_i32 (+ 300 (^ 0b1100 0b0101));
-
-    # TODO! rework tests for [] and ., for evaluator and codegen
-    println_i32 (. (eval (1 2 3 400)) 3);
-    println_f32 (. (eval (1 401.0)) 1);
 };

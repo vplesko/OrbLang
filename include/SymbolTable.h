@@ -8,6 +8,7 @@
 #include "NodeVal.h"
 #include "llvm/IR/Instructions.h"
 
+// TODO consider renaming, may create confusion when first-class functions are introduces
 struct FuncValue {
     NamePool::Id name;
     bool variadic;
@@ -24,6 +25,7 @@ struct FuncValue {
     static bool sameSignature(const FuncValue &fl, const FuncValue &fr);
 };
 
+// TODO consider renaming, may create confusion when first-class macros are introduces
 struct MacroValue {
     NamePool::Id name;
     std::vector<NamePool::Id> argNames;

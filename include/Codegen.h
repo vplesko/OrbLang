@@ -39,7 +39,7 @@ class Codegen : public Processor {
     NodeVal promoteKnownVal(const NodeVal &node);
     NodeVal promoteIfKnownValAndCheckIsLlvmVal(const NodeVal &node, bool orError);
 
-    NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, const NodeVal &val);
+    NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref);
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty);
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init);
     NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty);

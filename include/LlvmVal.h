@@ -7,6 +7,9 @@ struct LlvmVal {
     llvm::Value *val = nullptr;
     llvm::Value *ref = nullptr;
 
+    LlvmVal() {}
+    LlvmVal(TypeTable::Id ty) : type(ty) {}
+
     bool valBroken() const { return val == nullptr; }
     bool refBroken() const { return ref == nullptr; }
 };

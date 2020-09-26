@@ -15,9 +15,9 @@ class Evaluator : public Processor {
     bool checkIsKnownVal(const NodeVal &node, bool orError);
 
     // TODO!
-    NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, const NodeVal &val) { msgs->errorInternal(codeLoc); return NodeVal(); }
-    NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) { msgs->errorInternal(codeLoc); return NodeVal(); }
-    NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) { msgs->errorInternal(codeLoc); return NodeVal(); }
+    NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref);
+    NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty);
+    NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init);
     NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty);
     bool performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) { msgs->errorInternal(codeLoc); return false; }
     NodeVal performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) { msgs->errorInternal(codeLoc); return NodeVal(); }

@@ -5,6 +5,27 @@ Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *type
     : Processor(namePool, stringPool, typeTable, symbolTable, msgs) {
 }
 
+NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
+    if (!checkIsKnownVal(ref, true)) return NodeVal();
+
+    KnownVal knownVal(ref.getKnownVal());
+    knownVal.ref = &ref.getKnownVal();
+    return NodeVal(codeLoc, knownVal);
+}
+
+NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) {
+    KnownVal knownVal(ty);
+    return NodeVal(codeLoc, knownVal);
+}
+
+NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) {
+    if (!checkIsKnownVal(init, true)) return NodeVal();
+
+    KnownVal knownVal(init.getKnownVal());
+    knownVal.ref = nullptr;
+    return NodeVal(codeLoc, init.getKnownVal());
+}
+
 NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
     if (node.getType().has_value() && node.getType().value() == ty) {
         // TODO this may give back a ref value, is that wanted? what about other similar cases?
