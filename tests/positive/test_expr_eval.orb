@@ -1,0 +1,7 @@
+import "util/io.orb";
+
+fnc main() () {
+    # TODO! rework tests for [] and ., for evaluator and codegen
+    println_i32 (. (eval (1 2 3 100)) 3);
+    println_f32 (. (eval (1 101.0)) 1);
+};
