@@ -201,6 +201,30 @@ TypeTable::Id TypeTable::addTypeCnOf(Id typeId) {
     }
 }
 
+TypeTable::Id TypeTable::addTypeDropCnsOf(Id t) {
+    if (isTypeDescr(t)) {
+        const TypeDescr &old = getTypeDescr(t);
+
+        TypeDescr now(addTypeDropCnsOf(old.base), false);
+        now.decors = vector<TypeDescr::Decor>(old.decors.begin(), old.decors.end());
+        now.cns = vector<bool>(old.cns.size(), false);
+
+        return addTypeDescr(move(now));
+    } else if (isTuple(t)) {
+        const Tuple &old = getTuple(t);
+
+        Tuple now;
+        now.members.resize(old.members.size());
+        for (size_t i = 0; i < old.members.size(); ++i) {
+            now.members[i] = addTypeDropCnsOf(old.members[i]);
+        }
+
+        return addTuple(move(now)).value();
+    } else {
+        return t;
+    }
+}
+
 void TypeTable::addTypeStr() {
     Id c8Id{Id::kPrim, P_C8};
 
@@ -463,16 +487,6 @@ bool TypeTable::worksAsTypeCn(Id t) const {
     }
 }
 
-bool TypeTable::isDirectCn(Id t) const {
-    if (isTypeDescr(t)) {
-        const TypeDescr &descr = getTypeDescr(t);
-
-        return descr.cns.empty() ? descr.cn : descr.cns.back();
-    } else {
-        return false;
-    }
-}
-
 bool TypeTable::fitsTypeI(int64_t x, Id t) const {
     if (!worksAsPrimitive(t)) return false;
 
@@ -577,6 +591,16 @@ TypeTable::Id TypeTable::shortestFittingTypeIId(int64_t x) const {
     return getPrimTypeId(shortestFittingPrimTypeI(x));
 }
 
+bool TypeTable::isDirectCn(Id t) const {
+    if (isTypeDescr(t)) {
+        const TypeDescr &descr = getTypeDescr(t);
+
+        return descr.cns.empty() ? descr.cn : descr.cns.back();
+    } else {
+        return false;
+    }
+}
+
 bool TypeTable::isImplicitCastable(Id from, Id into) const {
     if (from == into) return true;
 
@@ -585,11 +609,6 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
         from = typeDescrs[from.index].first.base;
     if (isTypeDescr(into) && typeDescrs[into.index].first.decors.empty())
         into = typeDescrs[into.index].first.base;
-    
-    // TODO allow only for direction T * (or T []) -> ptr
-    if ((worksAsTypePtr(from) && worksAsTypeAnyP(into)) ||
-        (worksAsTypePtr(into) && worksAsTypeAnyP(from)))
-        return true;
 
     if (isPrimitive(from)) {
         if (!isPrimitive(into)) return false;
@@ -628,29 +647,5 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
         return true;
     } else {
         return false;
-    }
-}
-
-TypeTable::Id TypeTable::addTypeDropCnsOf(Id t) {
-    if (isTypeDescr(t)) {
-        const TypeDescr &old = getTypeDescr(t);
-
-        TypeDescr now(addTypeDropCnsOf(old.base), false);
-        now.decors = vector<TypeDescr::Decor>(old.decors.begin(), old.decors.end());
-        now.cns = vector<bool>(old.cns.size(), false);
-
-        return addTypeDescr(move(now));
-    } else if (isTuple(t)) {
-        const Tuple &old = getTuple(t);
-
-        Tuple now;
-        now.members.resize(old.members.size());
-        for (size_t i = 0; i < old.members.size(); ++i) {
-            now.members[i] = addTypeDropCnsOf(old.members[i]);
-        }
-
-        return addTuple(move(now)).value();
-    } else {
-        return t;
     }
 }

@@ -191,8 +191,9 @@ public:
     bool fitsTypeU(uint64_t x, Id t) const;
     bool fitsTypeF(double x, Id t) const;
     Id shortestFittingTypeIId(int64_t x) const;
-    bool isImplicitCastable(Id from, Id into) const;
     bool isDirectCn(Id t) const;
+    
+    bool isImplicitCastable(Id from, Id into) const;
 };
 
 template <typename T>

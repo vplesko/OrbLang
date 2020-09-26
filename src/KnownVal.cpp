@@ -147,6 +147,9 @@ bool KnownVal::isImplicitCastable(const KnownVal &val, TypeTable::Id t, const St
     
     optional<double> valF = getValueF(val, typeTable);
     if (valF.has_value()) return typeTable->fitsTypeF(valF.value(), t);
+
+    // if a known val is ptr, it has to be null
+    if (typeTable->worksAsTypePtr(val.getType().value()) && typeTable->worksAsTypeAnyP(t)) return true;
     
     if (isStr(val, typeTable) && !isNull(val, typeTable))
         return typeTable->worksAsTypeStr(t) ||

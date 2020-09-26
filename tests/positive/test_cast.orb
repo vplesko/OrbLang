@@ -1,7 +1,7 @@
 import "util/io.orb";
 
 fnc main () () {
-    sym (nonNullPtr:(i32 *) null);
+    sym (nonNullPtr (cast (i32 *) null));
     = nonNullPtr (cast (i32 *) (+ (cast u64 nonNullPtr) 1));
 
     println_i32 (cast i32 100);
