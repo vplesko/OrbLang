@@ -444,7 +444,7 @@ void* Codegen::performOperComparisonSetUp(CodeLoc codeLoc, size_t opersCnt) {
 
     llvm::BasicBlock *llvmBlockRes = llvm::BasicBlock::Create(llvmContext, "comparison");
     llvmBuilder.SetInsertPoint(llvmBlockRes);
-    llvm::PHINode *llvmPhiRes = llvmBuilder.CreatePHI(makeLlvmPrimType(TypeTable::P_BOOL), opersCnt);
+    llvm::PHINode *llvmPhiRes = llvmBuilder.CreatePHI(makeLlvmPrimType(TypeTable::P_BOOL), (unsigned) opersCnt);
 
     llvmBuilder.SetInsertPoint(llvmBlockCurr);
 
@@ -631,7 +631,7 @@ NodeVal Codegen::performOperMember(CodeLoc codeLoc, const NodeVal &base, std::ui
 
     LlvmVal llvmVal(resTy);
     if (basePromo.hasRef()) {
-        llvmVal.ref = llvmBuilder.CreateStructGEP(basePromo.getLlvmVal().ref, ind);
+        llvmVal.ref = llvmBuilder.CreateStructGEP(basePromo.getLlvmVal().ref, (unsigned) ind);
         llvmVal.val = llvmBuilder.CreateLoad(llvmVal.ref, "dot_tmp");
     } else {
         llvmVal.val = llvmBuilder.CreateExtractValue(basePromo.getLlvmVal().val, {(unsigned) ind}, "dot_tmp");

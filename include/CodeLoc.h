@@ -3,7 +3,7 @@
 #include <string>
 #include "StringPool.h"
 
-typedef unsigned CodeIndex;
+typedef std::size_t CodeIndex;
 
 struct CodeLoc {
     StringPool::Id file;
