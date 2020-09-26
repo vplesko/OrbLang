@@ -22,61 +22,61 @@ Compiler::Compiler(ostream &out) {
     genPrimTypes();
 }
 
-#define ADD_MEANINGFUL(str, enum) { \
-    NamePool::Id name = namePool->add(str); \
-    meaningfuls.insert(make_pair(name, Meaningful::enum)); \
-    }
+void addMeaningful(NamePool *namePool, const std::string &str, Meaningful m) {
+    NamePool::Id name = namePool->add(str);
+    meaningfuls.insert(make_pair(name, m));
+}
 
-#define ADD_KEYWORD(str, enum) { \
-    NamePool::Id name = namePool->add(str); \
-    keywords.insert(make_pair(name, Keyword::enum)); \
-    }
+void addKeyword(NamePool *namePool, const std::string &str, Keyword k) {
+    NamePool::Id name = namePool->add(str);
+    keywords.insert(make_pair(name, k));
+}
 
-#define ADD_OPER(str, enum) { \
-    NamePool::Id name = namePool->add(str); \
-    opers.insert(make_pair(name, Oper::enum)); \
-    }
+void addOper(NamePool *namePool, const std::string &str, Oper o) {
+    NamePool::Id name = namePool->add(str);
+    opers.insert(make_pair(name, o));
+}
 
 void Compiler::genReserved() {
-    ADD_MEANINGFUL("main", MAIN);
-    ADD_MEANINGFUL("cn", CN);
-    ADD_MEANINGFUL("*", ASTERISK);
-    ADD_MEANINGFUL("[]", SQUARE);
-    ADD_MEANINGFUL("...", ELLIPSIS);
+    addMeaningful(namePool.get(), "main", Meaningful::MAIN);
+    addMeaningful(namePool.get(), "cn", Meaningful::CN);
+    addMeaningful(namePool.get(), "*", Meaningful::ASTERISK);
+    addMeaningful(namePool.get(), "[]", Meaningful::SQUARE);
+    addMeaningful(namePool.get(), "...", Meaningful::ELLIPSIS);
 
-    ADD_KEYWORD("sym", SYM);
-    ADD_KEYWORD("cast", CAST);
-    ADD_KEYWORD("block", BLOCK);
-    ADD_KEYWORD("exit", EXIT);
-    ADD_KEYWORD("loop", LOOP);
-    ADD_KEYWORD("pass", PASS);
-    ADD_KEYWORD("fnc", FNC);
-    ADD_KEYWORD("ret", RET);
-    ADD_KEYWORD("mac", MAC);
-    ADD_KEYWORD("eval", EVAL);
-    ADD_KEYWORD("import", IMPORT);
+    addKeyword(namePool.get(), "sym", Keyword::SYM);
+    addKeyword(namePool.get(), "cast", Keyword::CAST);
+    addKeyword(namePool.get(), "block", Keyword::BLOCK);
+    addKeyword(namePool.get(), "exit", Keyword::EXIT);
+    addKeyword(namePool.get(), "loop", Keyword::LOOP);
+    addKeyword(namePool.get(), "pass", Keyword::PASS);
+    addKeyword(namePool.get(), "fnc", Keyword::FNC);
+    addKeyword(namePool.get(), "ret", Keyword::RET);
+    addKeyword(namePool.get(), "mac", Keyword::MAC);
+    addKeyword(namePool.get(), "eval", Keyword::EVAL);
+    addKeyword(namePool.get(), "import", Keyword::IMPORT);
 
-    ADD_OPER("+", ADD);
-    ADD_OPER("-", SUB);
-    ADD_OPER("*", MUL);
-    ADD_OPER("/", DIV);
-    ADD_OPER("%", REM);
-    ADD_OPER("<<", SHL);
-    ADD_OPER(">>", SHR);
-    ADD_OPER("&", BIT_AND);
-    ADD_OPER("^", BIT_XOR);
-    ADD_OPER("|", BIT_OR);
-    ADD_OPER("==", EQ);
-    ADD_OPER("!=", NE);
-    ADD_OPER("<", LT);
-    ADD_OPER("<=", LE);
-    ADD_OPER(">", GT);
-    ADD_OPER(">=", GE);
-    ADD_OPER("=", ASGN);
-    ADD_OPER("!", NOT);
-    ADD_OPER("~", BIT_NOT);
-    ADD_OPER("[]", IND);
-    ADD_OPER(".", DOT);
+    addOper(namePool.get(), "+", Oper::ADD);
+    addOper(namePool.get(), "-", Oper::SUB);
+    addOper(namePool.get(), "*", Oper::MUL);
+    addOper(namePool.get(), "/", Oper::DIV);
+    addOper(namePool.get(), "%", Oper::REM);
+    addOper(namePool.get(), "<<", Oper::SHL);
+    addOper(namePool.get(), ">>", Oper::SHR);
+    addOper(namePool.get(), "&", Oper::BIT_AND);
+    addOper(namePool.get(), "^", Oper::BIT_XOR);
+    addOper(namePool.get(), "|", Oper::BIT_OR);
+    addOper(namePool.get(), "==", Oper::EQ);
+    addOper(namePool.get(), "!=", Oper::NE);
+    addOper(namePool.get(), "<", Oper::LT);
+    addOper(namePool.get(), "<=", Oper::LE);
+    addOper(namePool.get(), ">", Oper::GT);
+    addOper(namePool.get(), ">=", Oper::GE);
+    addOper(namePool.get(), "=", Oper::ASGN);
+    addOper(namePool.get(), "!", Oper::NOT);
+    addOper(namePool.get(), "~", Oper::BIT_NOT);
+    addOper(namePool.get(), "[]", Oper::IND);
+    addOper(namePool.get(), ".", Oper::DOT);
 }
 
 void Compiler::genPrimTypes() {
