@@ -9,7 +9,7 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
-// TODO! if operands are known, pass result as known (where allowed)
+// TODO! if operands are known, pass result as known (where allowed) (do that in Processor instead?)
 // TODO! ref breaking
 class Codegen : public Processor {
     Evaluator *evaluator;
