@@ -95,6 +95,11 @@ NodeVal Evaluator::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper o
     return NodeVal(codeLoc, knownVal);
 }
 
+NodeVal Evaluator::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
+    msgs->errorEvaluationNotSupported(codeLoc);
+    return NodeVal();
+}
+
 bool Evaluator::checkIsKnownVal(const NodeVal &node, bool orError) {
     if (!node.isKnownVal()) {
         if (orError) msgs->errorUnknown(node.getCodeLoc());
@@ -247,6 +252,128 @@ NodeVal Evaluator::performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64
     } else {
         knownVal.ref = nullptr;
     }
+    return NodeVal(codeLoc, knownVal);
+}
+
+// TODO warn on over/underflow; are results correct in these cases?
+NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op) {
+    if (!checkIsKnownVal(lhs, true) || !checkIsKnownVal(rhs, true)) return NodeVal();
+    
+    TypeTable::Id ty = lhs.getType().value();
+    KnownVal knownVal = KnownVal::makeVal(ty, typeTable);
+    bool success = false, errorGiven = false;
+
+    bool isTypeI = typeTable->worksAsTypeI(ty);
+    bool isTypeU = typeTable->worksAsTypeU(ty);
+    bool isTypeF = typeTable->worksAsTypeF(ty);
+
+    optional<int64_t> il, ir;
+    optional<uint64_t> ul, ur;
+    optional<double> fl, fr;
+    if (isTypeI) {
+        il = KnownVal::getValueI(lhs.getKnownVal(), typeTable).value();
+        ir = KnownVal::getValueI(rhs.getKnownVal(), typeTable).value();
+    } else if (isTypeU) {
+        ul = KnownVal::getValueU(lhs.getKnownVal(), typeTable).value();
+        ur = KnownVal::getValueU(rhs.getKnownVal(), typeTable).value();
+    } else if (isTypeF) {
+        fl = KnownVal::getValueF(lhs.getKnownVal(), typeTable).value();
+        fr = KnownVal::getValueF(rhs.getKnownVal(), typeTable).value();
+    }
+    
+    switch (op) {
+    case Oper::ADD:
+        if (isTypeI) {
+            if (assignBasedOnTypeI(knownVal, il.value()+ir.value(), ty)) success = true;
+        } else if (isTypeU) {
+            if (assignBasedOnTypeU(knownVal, ul.value()+ur.value(), ty)) success = true;
+        } else if (isTypeF) {
+            if (assignBasedOnTypeF(knownVal, fl.value()+fr.value(), ty)) success = true;
+        }
+        break;
+    case Oper::SUB:
+        if (isTypeI) {
+            if (assignBasedOnTypeI(knownVal, il.value()-ir.value(), ty)) success = true;
+        } else if (isTypeU) {
+            if (assignBasedOnTypeU(knownVal, ul.value()-ur.value(), ty)) success = true;
+        } else if (isTypeF) {
+            if (assignBasedOnTypeF(knownVal, fl.value()-fr.value(), ty)) success = true;
+        }
+        break;
+    case Oper::MUL:
+        if (isTypeI) {
+            if (assignBasedOnTypeI(knownVal, il.value()*ir.value(), ty)) success = true;
+        } else if (isTypeU) {
+            if (assignBasedOnTypeU(knownVal, ul.value()*ur.value(), ty)) success = true;
+        } else if (isTypeF) {
+            if (assignBasedOnTypeF(knownVal, fl.value()*fr.value(), ty)) success = true;
+        }
+        break;
+    case Oper::DIV:
+        if (isTypeI) {
+            if (assignBasedOnTypeI(knownVal, il.value()/ir.value(), ty)) success = true;
+        } else if (isTypeU) {
+            if (assignBasedOnTypeU(knownVal, ul.value()/ur.value(), ty)) success = true;
+        } else if (isTypeF) {
+            if (assignBasedOnTypeF(knownVal, fl.value()/fr.value(), ty)) success = true;
+        }
+        break;
+    case Oper::REM:
+        if (isTypeI) {
+            if (assignBasedOnTypeI(knownVal, il.value()%ir.value(), ty)) success = true;
+        } else if (isTypeU) {
+            if (assignBasedOnTypeU(knownVal, ul.value()%ur.value(), ty)) success = true;
+        } else if (isTypeF) {
+            if (typeTable->worksAsPrimitive(ty, TypeTable::P_F32)) {
+                knownVal.f32 = fmod(lhs.getKnownVal().f32, rhs.getKnownVal().f32);
+            } else if (typeTable->worksAsPrimitive(ty, TypeTable::P_F64)) {
+                knownVal.f64 = fmod(lhs.getKnownVal().f64, rhs.getKnownVal().f64);
+            }
+            success = true;
+        }
+        break;
+    case Oper::SHL:
+        if (isTypeI) {
+            if (assignBasedOnTypeI(knownVal, il.value()<<ir.value(), ty)) success = true;
+        } else if (isTypeU) {
+            if (assignBasedOnTypeU(knownVal, ul.value()<<ur.value(), ty)) success = true;
+        }
+        break;
+    case Oper::SHR:
+        if (isTypeI) {
+            if (assignBasedOnTypeI(knownVal, il.value()>>ir.value(), ty)) success = true;
+        } else if (isTypeU) {
+            if (assignBasedOnTypeU(knownVal, ul.value()>>ur.value(), ty)) success = true;
+        }
+        break;
+    case Oper::BIT_AND:
+        if (isTypeI) {
+            if (assignBasedOnTypeI(knownVal, il.value()&ir.value(), ty)) success = true;
+        } else if (isTypeU) {
+            if (assignBasedOnTypeU(knownVal, ul.value()&ur.value(), ty)) success = true;
+        }
+        break;
+    case Oper::BIT_OR:
+        if (isTypeI) {
+            if (assignBasedOnTypeI(knownVal, il.value()|ir.value(), ty)) success = true;
+        } else if (isTypeU) {
+            if (assignBasedOnTypeU(knownVal, ul.value()|ur.value(), ty)) success = true;
+        }
+        break;
+    case Oper::BIT_XOR:
+        if (isTypeI) {
+            if (assignBasedOnTypeI(knownVal, il.value()^ir.value(), ty)) success = true;
+        } else if (isTypeU) {
+            if (assignBasedOnTypeU(knownVal, ul.value()^ur.value(), ty)) success = true;
+        }
+        break;
+    }
+
+    if (!success) {
+        if (!errorGiven) msgs->errorExprKnownBinBadOp(codeLoc);
+        return NodeVal();
+    }
+
     return NodeVal(codeLoc, knownVal);
 }
 

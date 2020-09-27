@@ -77,7 +77,7 @@ public:
     void errorExprNotBaked(CodeLoc loc);
     void errorExprCannotPromote(CodeLoc loc);
     void errorExprCannotPromote(CodeLoc loc, TypeTable::Id into);
-    void errorExprKnownBinBadOp(CodeLoc loc, Oper op);
+    void errorExprKnownBinBadOp(CodeLoc loc);
     void errorExprCompareStringLits(CodeLoc loc);
     void errorExprCannotCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into);
     void errorExprCannotImplicitCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into);

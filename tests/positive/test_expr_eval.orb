@@ -5,7 +5,7 @@ fnc main() () {
     println_i32 (eval (+ 101));
     println_i32 (eval (- 102));
     println_f32 (eval (+ 103.0));
-    #println_i32 (eval (+ 103 (cast i32 (! false))));
+    println_i32 (eval (+ 103 (cast i32 (! false))));
     println_i8 (eval (~ 104:i8));
 
     #println_i32 (eval (+ 200 (cast i32 (!= 1 1))));
@@ -15,17 +15,17 @@ fnc main() () {
     #(eval sym (s 0) (p (& s)));
     #println_i32 (eval (+ 203 (cast i32 (== p (& s)))));
 
-    #println_i32 (eval (+ 200 100 0));
-    #println_i32 (eval (/ 905 3));
-    #println_f32 (eval (/ 906.0 3.0));
-    #println_i32 (eval (+ 300 (>> 6 1)));
-    #println_i32 (eval (+ 300 (% 10 6)));
-    #println_i32 (eval (+ 301 (<< 1 2)));
-    #println_u32 (eval (+ 300:u32 (<< 3:u32 1:u32)));
-    #println_i32 (eval (- 301 (<< -3 1)));
-    #println_i32 (eval (+ 300 (& 0b1010 0b1101)));
-    #println_i32 (eval (+ 300 (^ 0b1100 0b0101)));
+    println_i32 (eval (+ 200 100 0));
+    println_i32 (eval (/ 905 3));
+    println_f32 (eval (/ 906.0 3.0));
+    println_i32 (eval (+ 300 (>> 6 1)));
+    println_i32 (eval (+ 300 (% 10 6)));
+    println_i32 (eval (+ 301 (<< 1 2)));
+    println_u32 (eval (+ 300:u32 (<< 3:u32 1:u32)));
+    println_i32 (eval (- 301 (<< -3 1)));
+    println_i32 (eval (+ 300 (& 0b1010 0b1101)));
+    println_i32 (eval (+ 300 (^ 0b1100 0b0101)));
     
-    #println_i32 (eval (+ 400 (+ 1 -1 1 -1)));
-    #println_i32 (eval (+ 400 (- 3 1 1)));
+    println_i32 (eval (+ 400 (+ 1 -1 1 -1)));
+    println_i32 (eval (+ 400 (- 3 1 1)));
 };

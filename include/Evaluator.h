@@ -31,14 +31,14 @@ class Evaluator : public Processor {
     bool performRet(CodeLoc codeLoc, const NodeVal &node) { msgs->errorInternal(codeLoc); return false; }
     NodeVal performEvaluation(const NodeVal &node);
     NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op);
-    NodeVal performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) { msgs->errorInternal(codeLoc); return NodeVal(); }
+    NodeVal performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
     void* performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt) { return nullptr; }
     std::optional<bool> performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) { return std::nullopt; }
     NodeVal performOperComparisonTearDown(CodeLoc codeLoc, bool success, void *signal) { msgs->errorInternal(codeLoc); return NodeVal(); }
     NodeVal performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs);
     NodeVal performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy);
     NodeVal performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy);
-    NodeVal performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op) { msgs->errorInternal(codeLoc); return NodeVal(); }
+    NodeVal performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op);
     NodeVal performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs);
 
 public:

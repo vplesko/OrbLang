@@ -267,11 +267,9 @@ void CompileMessages::errorExprCannotPromote(CodeLoc loc, TypeTable::Id into) {
     error(loc, ss.str());
 }
 
-/*void CompileMessages::errorExprKnownBinBadOp(CodeLoc loc, Token::Oper op) {
-    stringstream ss;
-    ss << "Binary operation '" << errorString(op) << "' is not defined for known values of this type.";
-    error(loc, ss.str());
-}*/
+void CompileMessages::errorExprKnownBinBadOp(CodeLoc loc) {
+    error(loc, "Binary operation is not defined for known values of this type.");
+}
 
 void CompileMessages::errorExprCompareStringLits(CodeLoc loc) {
     error(loc, "String literals cannot directly be compared for pointer (in)equality.");
