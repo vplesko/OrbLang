@@ -27,6 +27,12 @@ KnownVal KnownVal::makeVal(TypeTable::Id t, TypeTable *typeTable) {
     return knownVal;
 }
 
+KnownVal KnownVal::copyNoRef(const KnownVal &k) {
+    KnownVal knownVal(k);
+    knownVal.ref = nullptr;
+    return knownVal;
+}
+
 bool KnownVal::isId(const KnownVal &val, const TypeTable *typeTable) {
     optional<TypeTable::Id> type = val.getType();
     return type.has_value() && typeTable->worksAsPrimitive(type.value(), TypeTable::P_ID);

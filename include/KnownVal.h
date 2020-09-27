@@ -41,6 +41,7 @@ struct KnownVal {
     std::optional<NamePool::Id> getCallableId() const;
 
     static KnownVal makeVal(TypeTable::Id t, TypeTable *typeTable);
+    static KnownVal copyNoRef(const KnownVal &k);
 
     static bool isId(const KnownVal &val, const TypeTable *typeTable);
     static bool isType(const KnownVal &val, const TypeTable *typeTable);

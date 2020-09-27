@@ -87,10 +87,9 @@ public:
     void errorExprDerefOnBadType(CodeLoc loc, TypeTable::Id ty);
     void errorExprAddressOfNoRef(CodeLoc loc);
     void errorExprIndexNotIntegral(CodeLoc loc);
-    void errorExprUnBadType(CodeLoc loc, Oper op);
-    void errorExprUnBadType(CodeLoc loc, Oper op, TypeTable::Id ty);
-    void errorExprUnOnCn(CodeLoc loc, Oper op);
-    void errorExprUnOnNull(CodeLoc loc, Oper op);
+    void errorExprUnBadType(CodeLoc loc);
+    void errorExprUnOnCn(CodeLoc loc);
+    void errorExprUnOnNull(CodeLoc loc);
     void errorExprAsgnNonRef(CodeLoc loc);
     void errorExprAsgnOnCn(CodeLoc loc);
     void errorExprDotInvalidBase(CodeLoc loc);

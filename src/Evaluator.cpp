@@ -20,9 +20,7 @@ NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::
 NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) {
     if (!checkIsKnownVal(init, true)) return NodeVal();
 
-    KnownVal knownVal(init.getKnownVal());
-    knownVal.ref = nullptr;
-    return NodeVal(codeLoc, init.getKnownVal());
+    return NodeVal(codeLoc, KnownVal::copyNoRef(init.getKnownVal()));
 }
 
 NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
@@ -31,13 +29,7 @@ NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::
         return node;
     }
 
-    if (!checkIsKnownVal(node, true)) return NodeVal();
-
-    // TODO remove when KnownVal's type no longer optional
-    if (!node.getKnownVal().type.has_value()) {
-        msgs->errorUnknown(node.getCodeLoc());
-        return NodeVal();
-    }
+    if (!checkIsKnownVal(node, true) || !checkHasType(node, true)) return NodeVal();
 
     optional<KnownVal> knownValCast = makeCast(node.getKnownVal(), node.getKnownVal().type.value(), ty);
     if (!knownValCast.has_value()) {
@@ -50,6 +42,57 @@ NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::
 
 NodeVal Evaluator::performEvaluation(const NodeVal &node) {
     return processNode(node);
+}
+
+NodeVal Evaluator::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) {
+    if (!checkIsKnownVal(oper, true) || !checkHasType(oper, true)) return NodeVal();
+
+    KnownVal knownVal = KnownVal::copyNoRef(oper.getKnownVal());
+    TypeTable::Id ty = knownVal.type.value();
+    bool success = false, errorGiven = false;
+    if (op == Oper::ADD) {
+        if (KnownVal::isI(knownVal, typeTable) ||
+            KnownVal::isU(knownVal, typeTable) ||
+            KnownVal::isF(knownVal, typeTable)) {
+            // do nothing to operand
+            success = true;
+        }
+    } else if (op == Oper::SUB) {
+        if (KnownVal::isI(knownVal, typeTable)) {
+            int64_t x = KnownVal::getValueI(knownVal, typeTable).value();
+            x = -x;
+            if (assignBasedOnTypeI(knownVal, (int64_t) x, ty)) success = true;
+        } else if (KnownVal::isF(knownVal, typeTable)) {
+            double x = KnownVal::getValueF(knownVal, typeTable).value();
+            x = -x;
+            if (assignBasedOnTypeF(knownVal, x, ty)) success = true;
+        }
+    } else if (op == Oper::BIT_NOT) {
+        if (KnownVal::isI(knownVal, typeTable)) {
+            int64_t x = KnownVal::getValueI(knownVal, typeTable).value();
+            x = ~x;
+            if (assignBasedOnTypeI(knownVal, (int64_t) x, ty)) success = true;
+        } else if (KnownVal::isU(knownVal, typeTable)) {
+            uint64_t x = KnownVal::getValueU(knownVal, typeTable).value();
+            x = ~x;
+            if (assignBasedOnTypeU(knownVal, (uint64_t) x, ty)) success = true;
+        }
+    } else if (op == Oper::NOT) {
+        if (KnownVal::isB(knownVal, typeTable)) {
+            knownVal.b = !knownVal.b;
+            success = true;
+        }
+    } else if (op == Oper::BIT_AND) {
+        msgs->errorEvaluationNotSupported(codeLoc);
+        errorGiven = true;
+    }
+
+    if (!success) {
+        if (!errorGiven) msgs->errorExprUnBadType(codeLoc);
+        return NodeVal();
+    }
+
+    return NodeVal(codeLoc, knownVal);
 }
 
 bool Evaluator::checkIsKnownVal(const NodeVal &node, bool orError) {
@@ -161,8 +204,7 @@ optional<KnownVal> Evaluator::makeCast(const KnownVal &srcKnownVal, TypeTable::I
 NodeVal Evaluator::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) {
     if (!checkIsKnownVal(lhs, true) || !checkIsKnownVal(rhs, true)) return NodeVal();
 
-    *lhs.getKnownVal().ref = rhs.getKnownVal();
-    lhs.getKnownVal().ref->ref = nullptr;
+    *lhs.getKnownVal().ref = KnownVal::copyNoRef(rhs.getKnownVal());
 
     KnownVal knownVal(rhs.getKnownVal());
     knownVal.ref = lhs.getKnownVal().ref;
@@ -215,8 +257,7 @@ NodeVal Evaluator::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::ve
         const NodeVal &memb = membs[i];
         if (!checkIsKnownVal(memb, true)) return NodeVal();
         
-        knownVal.elems[i] = memb.getKnownVal();
-        knownVal.elems[i].ref = nullptr;
+        knownVal.elems[i] = KnownVal::copyNoRef(memb.getKnownVal());
     }
 
     return NodeVal(codeLoc, knownVal);

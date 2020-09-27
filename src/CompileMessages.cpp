@@ -399,30 +399,17 @@ void CompileMessages::errorExprIndexNotIntegral(CodeLoc loc) {
     error(loc, "Index must be of integer or unsigned type.");
 }
 
-/*void CompileMessages::errorExprUnBadType(CodeLoc loc, Token::Oper op) {
-    stringstream ss;
-    ss << "Unary operation '" << errorString(op) << "' is not allowed on this value.";
-    error(loc, ss.str());
+void CompileMessages::errorExprUnBadType(CodeLoc loc) {
+    error(loc, "Unary operation is not allowed on this value.");
 }
 
-void CompileMessages::errorExprUnBadType(CodeLoc loc, Token::Oper op, TypeTable::Id ty) {
-    stringstream ss;
-    ss << "Unary operation '" << errorString(op) << "' is not allowed on type '"
-        << errorStringOfType(ty) << "'.";
-    error(loc, ss.str());
+void CompileMessages::errorExprUnOnCn(CodeLoc loc) {
+    error(loc, "Operation modifies its operand and cannot be called on a constant type.");
 }
 
-void CompileMessages::errorExprUnOnCn(CodeLoc loc, Token::Oper op) {
-    stringstream ss;
-    ss << "Operation '" << errorString(op) << "' modifies its operand and cannot be called on a constant type.";
-    error(loc, ss.str());
+void CompileMessages::errorExprUnOnNull(CodeLoc loc) {
+    error(loc, "Operation is not allowed on null literal.");
 }
-
-void CompileMessages::errorExprUnOnNull(CodeLoc loc, Token::Oper op) {
-    stringstream ss;
-    ss << "Operation '" << errorString(op) << "' is not allowed on null literal.";
-    error(loc, ss.str());
-}*/
 
 void CompileMessages::errorExprAsgnNonRef(CodeLoc loc) {
     error(loc, "Assignment must assign to ref values.");

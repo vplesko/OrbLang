@@ -51,6 +51,7 @@ protected:
 protected:
     bool checkInGlobalScope(CodeLoc codeLoc, bool orError);
     bool checkInLocalScope(CodeLoc codeLoc, bool orError);
+    bool checkHasType(const NodeVal &node, bool orError);
 private:
     bool checkIsTopmost(CodeLoc codeLoc, bool orError);
     bool checkIsId(const NodeVal &node, bool orError);
@@ -70,7 +71,7 @@ private:
     NodeVal processWithEscapeIfLeafAndExpectId(const NodeVal &node);
     NodeVal processWithEscapeIfLeafUnlessType(const NodeVal &node);
     std::pair<NodeVal, std::optional<NodeVal>> processForIdTypePair(const NodeVal &node);
-    NodeVal processAndCheckIsValue(const NodeVal &node);
+    NodeVal processAndCheckHasType(const NodeVal &node);
     NodeVal processAndImplicitCast(const NodeVal &node, TypeTable::Id ty);
 
     NodeVal processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op);
