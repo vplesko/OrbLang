@@ -37,7 +37,6 @@ fnc main () () {
     
     println_str (eval (cast (c8 cn []) "hello"));
 
-    # TODO! move [] and cast inside eval
-    println_c8 ([] (eval (cast (c8 6) "hello")) 1);
-    println_i32 (cast i32 ([] (eval (cast (c8 6) "hello")) 5));
+    println_c8 (eval ([] (cast (c8 6) "hello") 1));
+    println_i32 (eval (cast i32 ([] (cast (c8 6) "hello") 5)));
 };

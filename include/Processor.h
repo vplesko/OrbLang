@@ -51,7 +51,7 @@ protected:
 protected:
     bool checkInGlobalScope(CodeLoc codeLoc, bool orError);
     bool checkInLocalScope(CodeLoc codeLoc, bool orError);
-    // TODO! recheck where in Evaluator this check needs to be added
+    // TODO recheck where in Evaluator this check needs to be added
     bool checkHasType(const NodeVal &node, bool orError);
 private:
     bool checkIsTopmost(CodeLoc codeLoc, bool orError);

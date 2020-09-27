@@ -91,7 +91,7 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
 }
 
 NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
-    return NodeVal(); // TODO!
+    return NodeVal(); // TODO
 }
 
 NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
@@ -535,7 +535,7 @@ NodeVal Processor::processRet(const NodeVal &node) {
 }
 
 NodeVal Processor::processMac(const NodeVal &node) {
-    return NodeVal(); // TODO!
+    return NodeVal(); // TODO
 }
 
 NodeVal Processor::processEval(const NodeVal &node) {

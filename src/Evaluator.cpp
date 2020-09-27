@@ -351,7 +351,7 @@ optional<KnownVal> Evaluator::makeCast(const KnownVal &srcKnownVal, TypeTable::I
         // these types are only castable when changing constness
         if (typeTable->isImplicitCastable(srcTypeId, dstTypeId)) {
             // no action is needed in case of a cast
-            // TODO! may pass ref value
+            // TODO! break ref
             dstKnownVal = srcKnownVal;
         } else {
             dstKnownVal.reset();
