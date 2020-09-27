@@ -82,7 +82,7 @@ processing non-leaf:
 	else:
 		depending on what starting is (type, function, keyword, oper), process as that, or as tuple
 
-// TODO! rethink when type annotations are processed
+// TODO type annotations should be processed before the node itself
 processing node:
 	if empty or no children:
 		process as leaf
@@ -183,7 +183,7 @@ import
 
 == != < <= > >=
 	op a ...b
-	compares in pairs
+	compares in pairs (this means that (!= 1 2 1) gives true)
 	breaks on first false and rets false, otherwise true
 
 ! ~

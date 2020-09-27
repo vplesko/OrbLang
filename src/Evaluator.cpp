@@ -100,6 +100,163 @@ NodeVal Evaluator::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
     return NodeVal();
 }
 
+void* Evaluator::performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt) {
+    return new bool(true);
+}
+
+optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) {
+    bool *result = (bool*) signal;
+
+    if (!checkIsKnownVal(lhs, true) || !checkIsKnownVal(rhs, true)) return nullopt;
+
+    TypeTable::Id ty = lhs.getType().value();
+    
+    bool isTypeI = typeTable->worksAsTypeI(ty);
+    bool isTypeU = typeTable->worksAsTypeU(ty);
+    bool isTypeC = typeTable->worksAsTypeC(ty);
+    bool isTypeF = typeTable->worksAsTypeF(ty);
+    bool isTypeP = typeTable->worksAsTypeAnyP(ty);
+    bool isTypeB = typeTable->worksAsTypeB(ty);
+
+    optional<int64_t> il, ir;
+    optional<uint64_t> ul, ur;
+    optional<char> cl, cr;
+    optional<double> fl, fr;
+    optional<bool> bl, br;
+    if (isTypeI) {
+        il = KnownVal::getValueI(lhs.getKnownVal(), typeTable).value();
+        ir = KnownVal::getValueI(rhs.getKnownVal(), typeTable).value();
+    } else if (isTypeU) {
+        ul = KnownVal::getValueU(lhs.getKnownVal(), typeTable).value();
+        ur = KnownVal::getValueU(rhs.getKnownVal(), typeTable).value();
+    } else if (isTypeC) {
+        cl = lhs.getKnownVal().c8;
+        cr = rhs.getKnownVal().c8;
+    } else if (isTypeF) {
+        fl = KnownVal::getValueF(lhs.getKnownVal(), typeTable).value();
+        fr = KnownVal::getValueF(rhs.getKnownVal(), typeTable).value();
+    } else if (isTypeB) {
+        bl = lhs.getKnownVal().b;
+        br = rhs.getKnownVal().b;
+    }
+
+    switch (op) {
+    case Oper::EQ:
+        if (isTypeI) {
+            *result = il.value()==ir.value();
+            return !*result;
+        } else if (isTypeU) {
+            *result = ul.value()==ur.value();
+            return !*result;
+        } else if (isTypeC) {
+            *result = cl.value()==cr.value();
+            return !*result;
+        } else if (isTypeF) {
+            *result = fl.value()==fr.value();
+            return !*result;
+        } else if (isTypeP) {
+            *result = true; // null == null
+            return !*result;
+        } else if (isTypeB) {
+            *result = bl.value()==br.value();
+            return !*result;
+        }
+        break;
+    case Oper::NE:
+        if (isTypeI) {
+            *result = il.value()!=ir.value();
+            return !*result;
+        } else if (isTypeU) {
+            *result = ul.value()!=ur.value();
+            return !*result;
+        } else if (isTypeC) {
+            *result = cl.value()!=cr.value();
+            return !*result;
+        } else if (isTypeF) {
+            *result = fl.value()!=fr.value();
+            return !*result;
+        } else if (isTypeP) {
+            *result = false; // null != null
+            return !*result;
+        } else if (isTypeB) {
+            *result = bl.value()!=br.value();
+            return !*result;
+        }
+        break;
+    case Oper::LT:
+        if (isTypeI) {
+            *result = il.value()<ir.value();
+            return !*result;
+        } else if (isTypeU) {
+            *result = ul.value()<ur.value();
+            return !*result;
+        } else if (isTypeC) {
+            *result = cl.value()<cr.value();
+            return !*result;
+        } else if (isTypeF) {
+            *result = fl.value()<fr.value();
+            return !*result;
+        }
+        break;
+    case Oper::LE:
+        if (isTypeI) {
+            *result = il.value()<=ir.value();
+            return !*result;
+        } else if (isTypeU) {
+            *result = ul.value()<=ur.value();
+            return !*result;
+        } else if (isTypeC) {
+            *result = cl.value()<=cr.value();
+            return !*result;
+        } else if (isTypeF) {
+            *result = fl.value()<=fr.value();
+            return !*result;
+        }
+        break;
+    case Oper::GT:
+        if (isTypeI) {
+            *result = il.value()>ir.value();
+            return !*result;
+        } else if (isTypeU) {
+            *result = ul.value()>ur.value();
+            return !*result;
+        } else if (isTypeC) {
+            *result = cl.value()>cr.value();
+            return !*result;
+        } else if (isTypeF) {
+            *result = fl.value()>fr.value();
+            return !*result;
+        }
+        break;
+    case Oper::GE:
+        if (isTypeI) {
+            *result = il.value()>=ir.value();
+            return !*result;
+        } else if (isTypeU) {
+            *result = ul.value()>=ur.value();
+            return !*result;
+        } else if (isTypeC) {
+            *result = cl.value()>=cr.value();
+            return !*result;
+        } else if (isTypeF) {
+            *result = fl.value()>=fr.value();
+            return !*result;
+        }
+        break;
+    }
+
+    msgs->errorExprKnownBinBadOp(codeLoc);
+    return nullopt;    
+}
+
+NodeVal Evaluator::performOperComparisonTearDown(CodeLoc codeLoc, bool success, void *signal) {
+    if (!success) return NodeVal();
+
+    KnownVal knownVal = KnownVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_BOOL), typeTable);
+    knownVal.b = *((bool*) signal);
+    return NodeVal(codeLoc, knownVal);
+}
+
 bool Evaluator::checkIsKnownVal(const NodeVal &node, bool orError) {
     if (!node.isKnownVal()) {
         if (orError) msgs->errorUnknown(node.getCodeLoc());
@@ -110,7 +267,7 @@ bool Evaluator::checkIsKnownVal(const NodeVal &node, bool orError) {
 
 // TODO warn on lossy
 optional<KnownVal> Evaluator::makeCast(const KnownVal &srcKnownVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId) {
-    // TODO! may pass ref value
+    // TODO! ref break
     if (srcTypeId == dstTypeId) return srcKnownVal;
 
     optional<KnownVal> dstKnownVal = KnownVal::makeVal(dstTypeId, typeTable);

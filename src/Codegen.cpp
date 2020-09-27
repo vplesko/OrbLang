@@ -474,7 +474,7 @@ optional<bool> Codegen::performOperComparison(CodeLoc codeLoc, const NodeVal &lh
 
     switch (op) {
     case Oper::EQ:
-        if (isTypeI || isTypeU || isTypeC) {
+        if (isTypeI || isTypeU || isTypeC || isTypeB) {
             llvmValueRes = llvmBuilder.CreateICmpEQ(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "cmp_eq_tmp");
         } else if (isTypeF) {
             llvmValueRes = llvmBuilder.CreateFCmpOEQ(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fcmp_eq_tmp");
@@ -486,7 +486,7 @@ optional<bool> Codegen::performOperComparison(CodeLoc codeLoc, const NodeVal &lh
         }
         break;
     case Oper::NE:
-        if (isTypeI || isTypeU || isTypeC) {
+        if (isTypeI || isTypeU || isTypeC || isTypeB) {
             llvmValueRes = llvmBuilder.CreateICmpNE(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "cmp_ne_tmp");
         } else if (isTypeF) {
             llvmValueRes = llvmBuilder.CreateFCmpONE(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fcmp_ne_tmp");
