@@ -19,7 +19,7 @@ class Parser {
 
     NodeVal makeEmpty();
     // Returns false on error, otherwise true.
-    bool parseTypeAnnot(NodeVal &node);
+    bool parseTypeAttr(NodeVal &node);
 
     NodeVal parseType();
     NodeVal parseTerm();

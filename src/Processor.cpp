@@ -193,7 +193,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
             symbolTable->addVar(id, move(nodeReg));
         } else {
             if (!hasType) {
-                msgs->errorMissingTypeAnnotation(nodePair.getCodeLoc());
+                msgs->errorMissingTypeAttribute(nodePair.getCodeLoc());
                 continue;
             }
             if (typeTable->worksAsTypeCn(optType.value())) {
@@ -455,7 +455,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
             val.variadic = true;
         } else {
             if (!arg.second.has_value()) {
-                msgs->errorMissingTypeAnnotation(nodeArg.getCodeLoc());
+                msgs->errorMissingTypeAttribute(nodeArg.getCodeLoc());
                 return NodeVal();
             }
             val.argNames.push_back(argId);
@@ -674,8 +674,8 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
 
     if (node.isEscaped()) prom.escape();
     
-    if (node.hasTypeAnnot() && !isId) {
-        NodeVal nodeTy = processAndExpectType(node.getTypeAnnot());
+    if (node.hasTypeAttr() && !isId) {
+        NodeVal nodeTy = processAndExpectType(node.getTypeAttr());
         if (nodeTy.isInvalid()) return NodeVal();
         TypeTable::Id ty = nodeTy.getKnownVal().ty;
 
@@ -918,12 +918,14 @@ NodeVal Processor::processWithEscapeIfLeafUnlessType(const NodeVal &node) {
 pair<NodeVal, optional<NodeVal>> Processor::processForIdTypePair(const NodeVal &node) {
     const pair<NodeVal, optional<NodeVal>> invalidRet = make_pair<NodeVal, optional<NodeVal>>(NodeVal(), nullopt);
     
-    NodeVal id = processWithEscapeIfLeafAndExpectId(node);
+    NodeVal id = node;
+    id.clearTypeAttr();
+    id = processWithEscapeIfLeafAndExpectId(id);
     if (id.isInvalid()) return invalidRet;
 
     optional<NodeVal> ty;
-    if (node.hasTypeAnnot()) {
-        ty = processAndExpectType(node.getTypeAnnot());
+    if (node.hasTypeAttr()) {
+        ty = processAndExpectType(node.getTypeAttr());
         if (ty.value().isInvalid()) return invalidRet;
     }
 

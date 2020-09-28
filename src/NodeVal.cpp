@@ -32,8 +32,8 @@ NodeVal::NodeVal(const NodeVal &other) : NodeVal() {
         children.push_back(make_unique<NodeVal>(*it));
     }
     
-    if (other.hasTypeAnnot()) {
-        typeAnnot = make_unique<NodeVal>(*other.typeAnnot);
+    if (other.hasTypeAttr()) {
+        typeAttr = make_unique<NodeVal>(*other.typeAttr);
     }
 
     escaped = other.escaped;
@@ -47,7 +47,7 @@ void swap(NodeVal &lhs, NodeVal &rhs) {
     swap(lhs.known, rhs.known);
     swap(lhs.llvm, rhs.llvm);
     swap(lhs.children, rhs.children);
-    swap(lhs.typeAnnot, rhs.typeAnnot);
+    swap(lhs.typeAttr, rhs.typeAttr);
     swap(lhs.escaped, rhs.escaped);
 }
 
@@ -85,8 +85,8 @@ void NodeVal::addChildren(std::vector<NodeVal> c) {
     }
 }
 
-void NodeVal::setTypeAnnot(NodeVal t) {
-    typeAnnot = make_unique<NodeVal>(move(t));
+void NodeVal::setTypeAttr(NodeVal t) {
+    typeAttr = make_unique<NodeVal>(move(t));
 }
 
 void NodeVal::escape() {

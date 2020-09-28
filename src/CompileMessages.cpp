@@ -425,20 +425,20 @@ void CompileMessages::errorExprNotValue(CodeLoc loc) {
     error(loc, "Result does not present a value.");
 }
 
-void CompileMessages::errorMismatchTypeAnnotation(CodeLoc loc, TypeTable::Id ty) {
+void CompileMessages::errorMismatchTypeAttribute(CodeLoc loc, TypeTable::Id ty) {
     stringstream ss;
-    ss << "Type annotation '" << errorStringOfType(ty) << "' does not match the type of the value.";
+    ss << "Type attribute '" << errorStringOfType(ty) << "' does not match the type of the value.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorMismatchTypeAnnotation(CodeLoc loc) {
+void CompileMessages::errorMismatchTypeAttribute(CodeLoc loc) {
     stringstream ss;
-    ss << "Type annotation does not match the type of the value.";
+    ss << "Type attribute does not match the type of the value.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorMissingTypeAnnotation(CodeLoc loc) {
-    error(loc, "Type annotation was expected on this node.");
+void CompileMessages::errorMissingTypeAttribute(CodeLoc loc) {
+    error(loc, "Type attribute was expected on this node.");
 }
 
 void CompileMessages::errorNotGlobalScope(CodeLoc loc) {

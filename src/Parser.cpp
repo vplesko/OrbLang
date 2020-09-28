@@ -57,13 +57,13 @@ NodeVal Parser::makeEmpty() {
     return NodeVal(loc());
 }
 
-bool Parser::parseTypeAnnot(NodeVal &node) {
+bool Parser::parseTypeAttr(NodeVal &node) {
     if (match(Token::T_COLON)) {
-        node.setTypeAnnot(parseType());
+        node.setTypeAttr(parseType());
 
-        // type annotation on type annotation is not allowed (unless bracketed)
-        if (node.getTypeAnnot().isInvalid() || node.getTypeAnnot().hasTypeAnnot()) {
-            msgs->errorUnknown(node.getTypeAnnot().getCodeLoc());
+        // type attribute on type attribute is not allowed (unless bracketed)
+        if (node.getTypeAttr().isInvalid() || node.getTypeAttr().hasTypeAttr()) {
+            msgs->errorUnknown(node.getTypeAttr().getCodeLoc());
             return false;
         }
     }
@@ -126,7 +126,7 @@ NodeVal Parser::parseTerm() {
 
     NodeVal ret(codeLocTok, val);
 
-    if (!parseTypeAnnot(ret)) return NodeVal();
+    if (!parseTypeAttr(ret)) return NodeVal();
 
     return ret;
 }
@@ -192,7 +192,7 @@ NodeVal Parser::parseNode() {
         escaped = false;
     }
 
-    if (!parseTypeAnnot(node)) return NodeVal();
+    if (!parseTypeAttr(node)) return NodeVal();
 
     return node;
 }

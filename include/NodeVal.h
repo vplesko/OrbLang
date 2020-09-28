@@ -28,7 +28,7 @@ private:
     KnownVal known;
     std::vector<std::unique_ptr<NodeVal>> children;
 
-    std::unique_ptr<NodeVal> typeAnnot;
+    std::unique_ptr<NodeVal> typeAttr;
 
     bool escaped = false;
 
@@ -80,10 +80,11 @@ public:
     void addChildren(std::vector<NodeVal> c);
     std::size_t getChildrenCnt() const { return children.size(); }
 
-    bool hasTypeAnnot() const { return typeAnnot != nullptr; }
-    NodeVal& getTypeAnnot() { return *typeAnnot; }
-    const NodeVal& getTypeAnnot() const { return *typeAnnot; }
-    void setTypeAnnot(NodeVal t);
+    bool hasTypeAttr() const { return typeAttr != nullptr; }
+    NodeVal& getTypeAttr() { return *typeAttr; }
+    const NodeVal& getTypeAttr() const { return *typeAttr; }
+    void setTypeAttr(NodeVal t);
+    void clearTypeAttr() { typeAttr.reset(); }
 
     void escape();
     void unescape();

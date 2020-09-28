@@ -109,9 +109,9 @@ public:
     void errorBlockNotFound(CodeLoc loc, NamePool::Id name);
     void errorBlockNoPass(CodeLoc loc);
     void errorMemberIndex(CodeLoc loc);
-    void errorMismatchTypeAnnotation(CodeLoc loc, TypeTable::Id ty);
-    void errorMismatchTypeAnnotation(CodeLoc loc);
-    void errorMissingTypeAnnotation(CodeLoc loc);
+    void errorMismatchTypeAttribute(CodeLoc loc, TypeTable::Id ty);
+    void errorMismatchTypeAttribute(CodeLoc loc);
+    void errorMissingTypeAttribute(CodeLoc loc);
     void errorNotGlobalScope(CodeLoc loc);
     void errorNotTopmost(CodeLoc loc);
     // TODO replace with more specific errors
