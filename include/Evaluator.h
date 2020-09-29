@@ -15,6 +15,7 @@ class Evaluator : public Processor {
     bool checkIsKnownVal(const NodeVal &node, bool orError);
 
     // TODO!
+    bool isSkippingProcessing() const { return false; }
     NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref);
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty);
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init);
