@@ -2,14 +2,14 @@
 
 #include <string>
 #include "Processor.h"
-#include "Evaluator.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
-// TODO! if operands are known, pass result as known (where allowed) (do that in Processor instead?)
+class Evaluator;
+
 // TODO! ref breaking
 class Codegen : public Processor {
     Evaluator *evaluator;
@@ -55,7 +55,6 @@ class Codegen : public Processor {
     bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func);
     bool performRet(CodeLoc codeLoc);
     bool performRet(CodeLoc codeLoc, const NodeVal &node);
-    NodeVal performEvaluation(const NodeVal &node);
     NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op);
     NodeVal performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
     void* performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt);
@@ -68,7 +67,7 @@ class Codegen : public Processor {
     NodeVal performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs);
 
 public:
-    Codegen(Evaluator *evaluator, NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs);
+    Codegen(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs, Evaluator *evaluator);
 
     llvm::Type* genPrimTypeBool();
     llvm::Type* genPrimTypeI(unsigned bits);

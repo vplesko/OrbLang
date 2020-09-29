@@ -2,7 +2,7 @@
 using namespace std;
 
 Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs)
-    : Processor(namePool, stringPool, typeTable, symbolTable, msgs) {
+    : Processor(namePool, stringPool, typeTable, symbolTable, msgs, this) {
 }
 
 NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
@@ -38,10 +38,6 @@ NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::
     }
 
     return NodeVal(codeLoc, knownValCast.value());
-}
-
-NodeVal Evaluator::performEvaluation(const NodeVal &node) {
-    return processNode(node);
 }
 
 NodeVal Evaluator::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) {

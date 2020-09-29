@@ -16,8 +16,8 @@ struct ComparisonSignal {
     llvm::PHINode *llvmPhi = nullptr;
 };
 
-Codegen::Codegen(Evaluator *evaluator, NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs)
-    : Processor(namePool, stringPool, typeTable, symbolTable, msgs), evaluator(evaluator), llvmBuilder(llvmContext), llvmBuilderAlloca(llvmContext) {
+Codegen::Codegen(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs, Evaluator *evaluator)
+    : Processor(namePool, stringPool, typeTable, symbolTable, msgs, evaluator), llvmBuilder(llvmContext), llvmBuilderAlloca(llvmContext) {
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("module"), llvmContext);
 
     llvmPmb = make_unique<llvm::PassManagerBuilder>();
@@ -364,10 +364,6 @@ bool Codegen::performRet(CodeLoc codeLoc, const NodeVal &node) {
 
     llvmBuilder.CreateRet(promo.getLlvmVal().val);
     return true;
-}
-
-NodeVal Codegen::performEvaluation(const NodeVal &node) {
-    return evaluator->processNode(node);
 }
 
 NodeVal Codegen::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) {

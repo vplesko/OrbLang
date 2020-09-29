@@ -9,6 +9,9 @@
 #include "SymbolTable.h"
 #include "CompileMessages.h"
 
+class Evaluator;
+
+// TODO! if operands are known, pass result as known (where allowed)
 // TODO! add ref returning where left out
 class Processor {
 protected:
@@ -17,6 +20,7 @@ protected:
     TypeTable *typeTable;
     SymbolTable *symbolTable;
     CompileMessages *msgs;
+    Evaluator *evaluator;
 
     unsigned topmost;
 
@@ -36,7 +40,6 @@ protected:
     virtual bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func) =0;
     virtual bool performRet(CodeLoc codeLoc) =0;
     virtual bool performRet(CodeLoc codeLoc, const NodeVal &node) =0;
-    virtual NodeVal performEvaluation(const NodeVal &node) =0;
     virtual NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) =0;
     virtual NodeVal performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) =0;
     virtual void* performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt) =0;
@@ -113,7 +116,7 @@ private:
     NodeVal processNonLeaf(const NodeVal &node);
 
 public:
-    Processor(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs);
+    Processor(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs, Evaluator *evaluator);
 
     // TODO! check for is skipping processing
     NodeVal processNode(const NodeVal &node);

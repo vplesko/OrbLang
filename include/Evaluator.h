@@ -30,7 +30,6 @@ class Evaluator : public Processor {
     bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func) { msgs->errorInternal(body.getCodeLoc()); return false; }
     bool performRet(CodeLoc codeLoc) { msgs->errorInternal(codeLoc); return false; }
     bool performRet(CodeLoc codeLoc, const NodeVal &node) { msgs->errorInternal(codeLoc); return false; }
-    NodeVal performEvaluation(const NodeVal &node);
     NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op);
     NodeVal performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
     void* performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt);

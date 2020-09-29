@@ -1,9 +1,10 @@
 #include "Processor.h"
 #include "Reserved.h"
+#include "Evaluator.h"
 using namespace std;
 
-Processor::Processor(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs)
-    : namePool(namePool), stringPool(stringPool), typeTable(typeTable), symbolTable(symbolTable), msgs(msgs), topmost(0) {
+Processor::Processor(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs, Evaluator *evaluator)
+    : namePool(namePool), stringPool(stringPool), typeTable(typeTable), symbolTable(symbolTable), msgs(msgs), evaluator(evaluator), topmost(0) {
 }
 
 NodeVal Processor::processNode(const NodeVal &node) {
@@ -567,7 +568,7 @@ NodeVal Processor::processEval(const NodeVal &node) {
         return NodeVal();
     }
 
-    return performEvaluation(node.getChild(1));
+    return evaluator->processNode(node.getChild(1));
 }
 
 NodeVal Processor::processImport(const NodeVal &node) {

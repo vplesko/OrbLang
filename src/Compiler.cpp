@@ -16,7 +16,7 @@ Compiler::Compiler(ostream &out) {
     symbolTable = make_unique<SymbolTable>();
     msgs = make_unique<CompileMessages>(namePool.get(), stringPool.get(), typeTable.get(), symbolTable.get(), out);
     evaluator = make_unique<Evaluator>(namePool.get(), stringPool.get(), typeTable.get(), symbolTable.get(), msgs.get());
-    codegen = make_unique<Codegen>(evaluator.get(), namePool.get(), stringPool.get(), typeTable.get(), symbolTable.get(), msgs.get());
+    codegen = make_unique<Codegen>(namePool.get(), stringPool.get(), typeTable.get(), symbolTable.get(), msgs.get(), evaluator.get());
 
     genReserved();
     genPrimTypes();
