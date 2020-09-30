@@ -582,8 +582,10 @@ bool TypeTable::fitsTypeF(double x, Id t) const {
 
     if (primId == P_F32) {
         return std::isinf(x) || std::isnan(x) || (std::abs(x) <= numeric_limits<float>::max());
-    } else {
+    } else if (primId == P_F64) {
         return true;
+    } else {
+        return false;
     }
 }
 
