@@ -5,6 +5,7 @@ eval (sym (g1:i32 101));
 eval (sym (g2:i32 102) (g3:i32 103));
 eval (sym (g4 104));
 eval (sym (g5:i32 105:i32));
+eval (sym (g6:i32));
 
 fnc main () () {
     eval (sym a0:i32);
@@ -13,9 +14,12 @@ fnc main () () {
     eval (sym (a4 204));
     eval (sym (a5:i32 205:i32));
     eval (sym (a6:i64 206:i32));
+    eval (sym (a7:i32));
 
     eval (= g0 100);
+    eval (= g6 106);
     eval (= a0 200);
+    eval (= a7 207);
 
     println_i32 (eval g0);
     println_i32 (eval g1);
@@ -23,6 +27,7 @@ fnc main () () {
     println_i32 (eval g3);
     println_i32 (eval g4);
     println_i32 (eval g5);
+    println_i32 (eval g6);
     
     println_i32 (eval a0);
     println_i32 (eval a1);
@@ -31,4 +36,5 @@ fnc main () () {
     println_i32 (eval a4);
     println_i32 (eval a5);
     println_i64 (eval a6);
+    println_i64 (eval a7);
 };

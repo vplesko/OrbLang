@@ -1,6 +1,6 @@
 import "util/io.orb";
 
-# TODO enable deref id? define in Processor?
+# TODO enable deref id? define in Processor? don't forget to update spec plan
 fnc main () () {
     #eval (sym (a 100));
     #eval (sym (id0 \a));

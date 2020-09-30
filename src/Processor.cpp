@@ -173,11 +173,11 @@ NodeVal Processor::processSym(const NodeVal &node) {
     for (size_t i = 1; i < node.getChildrenCnt(); ++i) {
         const NodeVal &entry = node.getChild(i);
         // continue with the other sym entries to minimize the number of errors printed out
-        if (!entry.isLeaf() && !checkExactlyChildren(entry, 2, true)) continue;
+        if (!entry.isLeaf() && !checkBetweenChildren(entry, 1, 2, true)) continue;
 
-        bool hasInit = !entry.isLeaf();
+        bool hasInit = checkExactlyChildren(entry, 2, false);
 
-        const NodeVal &nodePair = hasInit ? entry.getChild(0) : entry;
+        const NodeVal &nodePair = entry.isLeaf() ? entry : entry.getChild(0);
         pair<NodeVal, optional<NodeVal>> pair = processForIdTypePair(nodePair);
         if (pair.first.isInvalid()) continue;
         if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());

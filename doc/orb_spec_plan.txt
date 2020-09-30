@@ -93,7 +93,7 @@ codegen cannot gen type and id vars, cannot gen code in global
 evaluator can have pointers only be null, strings may be non-null or null
 
 sym
-	sym a:t OR sym (a b) OR sym (a:t b), variadic
+	sym a:t OR sym (a:t) OR sym (a b) OR sym (a:t b), variadic
 	a is id, t is type, b is init value
 	if a is leaf id, it is evaluated as that id
 	b cast to t, if no t then a is type of b

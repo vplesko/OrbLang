@@ -5,8 +5,8 @@ sym (g1:i32 101);
 sym (g2:i32 102) (g3:i32 103);
 sym (g4 104);
 sym (g5:i32 105:i32);
+sym (g6:i32);
 
-# TODO! sym (c);
 fnc main () () {
     sym a0:i32;
     sym (a1:i32 201);
@@ -14,9 +14,12 @@ fnc main () () {
     sym (a4 204);
     sym (a5:i32 205:i32);
     sym (a6:i64 206:i32);
+    sym (a7:i32);
 
     = g0 100;
+    = g6 106;
     = a0 200;
+    = a7 207;
 
     println_i32 g0;
     println_i32 g1;
@@ -24,6 +27,7 @@ fnc main () () {
     println_i32 g3;
     println_i32 g4;
     println_i32 g5;
+    println_i32 g6;
     
     println_i32 a0;
     println_i32 a1;
@@ -32,4 +36,5 @@ fnc main () () {
     println_i32 a4;
     println_i32 a5;
     println_i64 a6;
+    println_i64 a7;
 };
