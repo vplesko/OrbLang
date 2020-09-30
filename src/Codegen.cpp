@@ -112,7 +112,7 @@ NodeVal Codegen::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
     // TODO load KnownVal if known
-    if (!checkIsLlvmVal(ref, true)) return NodeVal();
+    if (!checkIsLlvmVal(codeLoc, ref, true)) return NodeVal();
 
     LlvmVal loadLlvmVal(ref.getLlvmVal().type);
     loadLlvmVal.ref = ref.getLlvmVal().ref;
@@ -821,9 +821,9 @@ NodeVal Codegen::promoteIfKnownValAndCheckIsLlvmVal(const NodeVal &node, bool or
     return promo;
 }
 
-bool Codegen::checkIsLlvmVal(const NodeVal &node, bool orError) {
+bool Codegen::checkIsLlvmVal(CodeLoc codeLoc, const NodeVal &node, bool orError) {
     if (!node.isLlvmVal()) {
-        if (orError) msgs->errorUnknown(node.getCodeLoc());
+        if (orError) msgs->errorUnknown(codeLoc);
         return false;
     }
     return true;

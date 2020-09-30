@@ -34,7 +34,8 @@ class Codegen : public Processor {
 
     std::string getNameForLlvm(NamePool::Id name) const;
 
-    bool checkIsLlvmVal(const NodeVal &node, bool orError);
+    bool checkIsLlvmVal(CodeLoc codeLoc, const NodeVal &node, bool orError);
+    bool checkIsLlvmVal(const NodeVal &node, bool orError) { return checkIsLlvmVal(node.getCodeLoc(), node, orError); }
 
     NodeVal promoteKnownVal(CodeLoc codeLoc, const KnownVal &known);
     NodeVal promoteKnownVal(const NodeVal &node);

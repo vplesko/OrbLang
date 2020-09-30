@@ -12,7 +12,8 @@ class Evaluator : public Processor {
     std::optional<KnownVal> makeCast(const KnownVal &srcKnownVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
     std::optional<KnownVal> makeArray(TypeTable::Id arrTypeId);
     
-    bool checkIsKnownVal(const NodeVal &node, bool orError);
+    bool checkIsKnownVal(CodeLoc codeLoc, const NodeVal &node, bool orError);
+    bool checkIsKnownVal(const NodeVal &node, bool orError) { return checkIsKnownVal(node.getCodeLoc(), node, orError); }
 
     // TODO!
     bool isSkippingProcessing() const { return false; }

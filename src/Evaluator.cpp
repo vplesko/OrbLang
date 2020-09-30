@@ -6,7 +6,7 @@ Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *type
 }
 
 NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
-    if (!checkIsKnownVal(ref, true)) return NodeVal();
+    if (!checkIsKnownVal(codeLoc, ref, true)) return NodeVal();
 
     KnownVal knownVal(ref.getKnownVal());
     knownVal.ref = &ref.getKnownVal();
@@ -253,9 +253,9 @@ NodeVal Evaluator::performOperComparisonTearDown(CodeLoc codeLoc, bool success, 
     return NodeVal(codeLoc, knownVal);
 }
 
-bool Evaluator::checkIsKnownVal(const NodeVal &node, bool orError) {
+bool Evaluator::checkIsKnownVal(CodeLoc codeLoc, const NodeVal &node, bool orError) {
     if (!node.isKnownVal()) {
-        if (orError) msgs->errorUnknown(node.getCodeLoc());
+        if (orError) msgs->errorUnknown(codeLoc);
         return false;
     }
     return true;
