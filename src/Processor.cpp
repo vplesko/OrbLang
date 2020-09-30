@@ -100,7 +100,7 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
 NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
     if (node.getLength() == 1) return starting;
 
-    NodeVal second = processWithEscapeIfLeafUnlessType(node.getChild(1));
+    NodeVal second = processForTypeArg(node.getChild(1));
     if (second.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
 
@@ -727,7 +727,7 @@ bool Processor::applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &
 
     if (KnownVal::isId(node.getKnownVal(), typeTable)) {
         optional<Meaningful> mean = getMeaningful(node.getKnownVal().id);
-        if (!mean.has_value()) {
+        if (!mean.has_value() || !isTypeDescr(mean.value())) {
             msgs->errorInvalidTypeDecorator(node.getCodeLoc());
             return false;
         }
@@ -1010,21 +1010,19 @@ NodeVal Processor::processWithEscapeIfLeafAndExpectId(const NodeVal &node) {
     return id;
 }
 
-NodeVal Processor::processWithEscapeIfLeafUnlessType(const NodeVal &node) {
-    if (node.isLeaf() && !node.isEscaped()) {
-        NodeVal esc = processWithEscapeIfLeaf(node);
-        if (esc.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
-        if (esc.isKnownVal() && KnownVal::isId(esc.getKnownVal(), typeTable) &&
-            typeTable->isType(esc.getKnownVal().id)) {
-            esc.unescape();
-            return processNode(esc);
-        } else {
-            return esc;
-        }
-    } else {
-        return processNode(node);
+NodeVal Processor::processForTypeArg(const NodeVal &node) {
+    if (!node.isLeaf() || node.isEscaped()) return processNode(node);
+    
+    NodeVal esc = processWithEscapeIfLeaf(node);
+    if (esc.isInvalid()) return NodeVal();
+
+    if (esc.isKnownVal() && KnownVal::isId(esc.getKnownVal(), typeTable) &&
+        !isTypeDescr(esc.getKnownVal().id)) {
+        esc.unescape();
+        esc = processNode(esc);
     }
+
+    return esc;
 }
 
 pair<NodeVal, optional<NodeVal>> Processor::processForIdTypePair(const NodeVal &node) {
