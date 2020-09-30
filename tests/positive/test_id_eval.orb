@@ -1,0 +1,19 @@
+import "util/io.orb";
+
+# TODO enable deref id? define in Processor?
+fnc main () () {
+    #eval (sym (a 100));
+    #eval (sym (id0 \a));
+    #println_i32 (eval (* id0));
+
+    #eval (= a 101);
+    #println_i32 (eval (* \a));
+    
+    #eval (sym (id1 \id0));
+    #eval (= a 102);
+    #println_i32 (eval (* (* id1)));
+
+    #eval (sym (id2 \=));
+    #eval ((* id2) a 103);
+    #println_i32 (eval a);
+};

@@ -1,0 +1,24 @@
+import "util/io.orb";
+
+fnc main () () {
+    #sym (a 100);
+    #eval (sym (id0 \a));
+    #println_i32 (* (eval id0));
+
+    #eval (= a 101);
+    #println_i32 (* \a);
+    
+    #eval (sym (id1 \id0));
+    #= a 102;
+    #println_i32 (* (* (eval id1)));
+
+    #eval (sym (id2 \=));
+    #(* (eval id2)) a 103;
+    #println_i32 a;
+
+    #eval (sym (id3 \println_i32));
+    #(* (eval id3)) 104;
+
+    sym (b=+-*/%<>&|^!~[]._?0123456789:i32 200);
+    println_i32 b=+-*/%<>&|^!~[]._?0123456789;
+};

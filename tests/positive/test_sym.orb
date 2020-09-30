@@ -6,6 +6,7 @@ sym (g2:i32 102) (g3:i32 103);
 sym (g4 104);
 sym (g5:i32 105:i32);
 
+# TODO! sym (c);
 fnc main () () {
     sym a0:i32;
     sym (a1:i32 201);
