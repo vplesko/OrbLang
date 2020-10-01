@@ -253,112 +253,6 @@ NodeVal Evaluator::performOperComparisonTearDown(CodeLoc codeLoc, bool success, 
     return NodeVal(codeLoc, knownVal);
 }
 
-bool Evaluator::checkIsKnownVal(CodeLoc codeLoc, const NodeVal &node, bool orError) {
-    if (!node.isKnownVal()) {
-        if (orError) msgs->errorUnknown(codeLoc);
-        return false;
-    }
-    return true;
-}
-
-// TODO warn on lossy
-optional<KnownVal> Evaluator::makeCast(const KnownVal &srcKnownVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId) {
-    // TODO! ref break
-    if (srcTypeId == dstTypeId) return srcKnownVal;
-
-    optional<KnownVal> dstKnownVal = KnownVal::makeVal(dstTypeId, typeTable);
-
-    if (typeTable->worksAsTypeI(srcTypeId)) {
-        int64_t x = KnownVal::getValueI(srcKnownVal, typeTable).value();
-        if (!assignBasedOnTypeI(dstKnownVal.value(), (int64_t) x, dstTypeId) &&
-            !assignBasedOnTypeU(dstKnownVal.value(), (uint64_t) x, dstTypeId) &&
-            !assignBasedOnTypeF(dstKnownVal.value(), (double) x, dstTypeId) &&
-            !assignBasedOnTypeC(dstKnownVal.value(), (char) x, dstTypeId) &&
-            !assignBasedOnTypeB(dstKnownVal.value(), (bool) x, dstTypeId) &&
-            !(typeTable->worksAsTypeStr(dstTypeId) && x == 0) &&
-            !(typeTable->worksAsTypeAnyP(dstTypeId) && x == 0)) {
-            dstKnownVal.reset();
-        }
-    } else if (typeTable->worksAsTypeU(srcTypeId)) {
-        uint64_t x = KnownVal::getValueU(srcKnownVal, typeTable).value();
-        if (!assignBasedOnTypeI(dstKnownVal.value(), (int64_t) x, dstTypeId) &&
-            !assignBasedOnTypeU(dstKnownVal.value(), (uint64_t) x, dstTypeId) &&
-            !assignBasedOnTypeF(dstKnownVal.value(), (double) x, dstTypeId) &&
-            !assignBasedOnTypeC(dstKnownVal.value(), (char) x, dstTypeId) &&
-            !assignBasedOnTypeB(dstKnownVal.value(), (bool) x, dstTypeId) &&
-            !(typeTable->worksAsTypeStr(dstTypeId) && x == 0) &&
-            !(typeTable->worksAsTypeAnyP(dstTypeId) && x == 0)) {
-            dstKnownVal.reset();
-        }
-    } else if (typeTable->worksAsTypeF(srcTypeId)) {
-        double x = KnownVal::getValueF(srcKnownVal, typeTable).value();
-        if (!assignBasedOnTypeI(dstKnownVal.value(), (int64_t) x, dstTypeId) &&
-            !assignBasedOnTypeU(dstKnownVal.value(), (uint64_t) x, dstTypeId) &&
-            !assignBasedOnTypeF(dstKnownVal.value(), (double) x, dstTypeId)) {
-            dstKnownVal.reset();
-        }
-    } else if (typeTable->worksAsTypeC(srcTypeId)) {
-        if (!assignBasedOnTypeI(dstKnownVal.value(), (int64_t) srcKnownVal.c8, dstTypeId) &&
-            !assignBasedOnTypeU(dstKnownVal.value(), (uint64_t) srcKnownVal.c8, dstTypeId) &&
-            !assignBasedOnTypeC(dstKnownVal.value(), srcKnownVal.c8, dstTypeId) &&
-            !assignBasedOnTypeB(dstKnownVal.value(), (bool) srcKnownVal.c8, dstTypeId)) {
-            dstKnownVal.reset();
-        }
-    } else if (typeTable->worksAsTypeB(srcTypeId)) {
-        if (!assignBasedOnTypeI(dstKnownVal.value(), srcKnownVal.b ? 1 : 0, dstTypeId) &&
-            !assignBasedOnTypeU(dstKnownVal.value(), srcKnownVal.b ? 1 : 0, dstTypeId) &&
-            !assignBasedOnTypeB(dstKnownVal.value(), srcKnownVal.b, dstTypeId)) {
-            dstKnownVal.reset();
-        }
-    } else if (typeTable->worksAsTypeStr(srcTypeId)) {
-        if (srcKnownVal.str.has_value()) {
-            const string &str = stringPool->get(srcKnownVal.str.value());
-            if (typeTable->worksAsTypeStr(dstTypeId)) {
-                dstKnownVal.value().str = srcKnownVal.str;
-            } else if (typeTable->worksAsTypeB(dstTypeId)) {
-                dstKnownVal.value().b = true;
-            } else if (typeTable->worksAsTypeCharArrOfLen(dstTypeId, LiteralVal::getStringLen(str))) {
-                dstKnownVal = makeArray(dstTypeId);
-                if (dstKnownVal.has_value()) {
-                    for (size_t i = 0; i < LiteralVal::getStringLen(str); ++i) {
-                        dstKnownVal.value().elems[i].c8 = str[i];
-                    }
-                }
-            } else {
-                dstKnownVal.reset();
-            }
-        } else {
-            if (!assignBasedOnTypeI(dstKnownVal.value(), 0, dstTypeId) &&
-                !assignBasedOnTypeU(dstKnownVal.value(), 0, dstTypeId) &&
-                !assignBasedOnTypeB(dstKnownVal.value(), false, dstTypeId) &&
-                !typeTable->worksAsTypeAnyP(dstTypeId)) {
-                dstKnownVal.reset();
-            }
-        }
-    } else if (typeTable->worksAsTypeAnyP(srcTypeId)) {
-        if (!assignBasedOnTypeI(dstKnownVal.value(), 0, dstTypeId) &&
-            !assignBasedOnTypeU(dstKnownVal.value(), 0, dstTypeId) &&
-            !assignBasedOnTypeB(dstKnownVal.value(), false, dstTypeId) &&
-            !typeTable->worksAsTypeAnyP(dstTypeId)) {
-            dstKnownVal.reset();
-        }
-    } else if (typeTable->worksAsTypeArr(srcTypeId) || typeTable->worksAsTuple(srcTypeId) ||
-        typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_ID) || typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE)) {
-        // these types are only castable when changing constness
-        if (typeTable->isImplicitCastable(srcTypeId, dstTypeId)) {
-            // no action is needed in case of a cast
-            // TODO! break ref
-            dstKnownVal = srcKnownVal;
-        } else {
-            dstKnownVal.reset();
-        }
-    } else {
-        dstKnownVal.reset();
-    }
-
-    return dstKnownVal;
-}
-
 NodeVal Evaluator::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) {
     if (!checkIsKnownVal(lhs, true) || !checkIsKnownVal(rhs, true)) return NodeVal();
 
@@ -541,6 +435,112 @@ NodeVal Evaluator::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::ve
     }
 
     return NodeVal(codeLoc, knownVal);
+}
+
+bool Evaluator::checkIsKnownVal(CodeLoc codeLoc, const NodeVal &node, bool orError) {
+    if (!node.isKnownVal()) {
+        if (orError) msgs->errorUnknown(codeLoc);
+        return false;
+    }
+    return true;
+}
+
+// TODO warn on lossy
+optional<KnownVal> Evaluator::makeCast(const KnownVal &srcKnownVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId) {
+    // TODO! ref break
+    if (srcTypeId == dstTypeId) return srcKnownVal;
+
+    optional<KnownVal> dstKnownVal = KnownVal::makeVal(dstTypeId, typeTable);
+
+    if (typeTable->worksAsTypeI(srcTypeId)) {
+        int64_t x = KnownVal::getValueI(srcKnownVal, typeTable).value();
+        if (!assignBasedOnTypeI(dstKnownVal.value(), (int64_t) x, dstTypeId) &&
+            !assignBasedOnTypeU(dstKnownVal.value(), (uint64_t) x, dstTypeId) &&
+            !assignBasedOnTypeF(dstKnownVal.value(), (double) x, dstTypeId) &&
+            !assignBasedOnTypeC(dstKnownVal.value(), (char) x, dstTypeId) &&
+            !assignBasedOnTypeB(dstKnownVal.value(), (bool) x, dstTypeId) &&
+            !(typeTable->worksAsTypeStr(dstTypeId) && x == 0) &&
+            !(typeTable->worksAsTypeAnyP(dstTypeId) && x == 0)) {
+            dstKnownVal.reset();
+        }
+    } else if (typeTable->worksAsTypeU(srcTypeId)) {
+        uint64_t x = KnownVal::getValueU(srcKnownVal, typeTable).value();
+        if (!assignBasedOnTypeI(dstKnownVal.value(), (int64_t) x, dstTypeId) &&
+            !assignBasedOnTypeU(dstKnownVal.value(), (uint64_t) x, dstTypeId) &&
+            !assignBasedOnTypeF(dstKnownVal.value(), (double) x, dstTypeId) &&
+            !assignBasedOnTypeC(dstKnownVal.value(), (char) x, dstTypeId) &&
+            !assignBasedOnTypeB(dstKnownVal.value(), (bool) x, dstTypeId) &&
+            !(typeTable->worksAsTypeStr(dstTypeId) && x == 0) &&
+            !(typeTable->worksAsTypeAnyP(dstTypeId) && x == 0)) {
+            dstKnownVal.reset();
+        }
+    } else if (typeTable->worksAsTypeF(srcTypeId)) {
+        double x = KnownVal::getValueF(srcKnownVal, typeTable).value();
+        if (!assignBasedOnTypeI(dstKnownVal.value(), (int64_t) x, dstTypeId) &&
+            !assignBasedOnTypeU(dstKnownVal.value(), (uint64_t) x, dstTypeId) &&
+            !assignBasedOnTypeF(dstKnownVal.value(), (double) x, dstTypeId)) {
+            dstKnownVal.reset();
+        }
+    } else if (typeTable->worksAsTypeC(srcTypeId)) {
+        if (!assignBasedOnTypeI(dstKnownVal.value(), (int64_t) srcKnownVal.c8, dstTypeId) &&
+            !assignBasedOnTypeU(dstKnownVal.value(), (uint64_t) srcKnownVal.c8, dstTypeId) &&
+            !assignBasedOnTypeC(dstKnownVal.value(), srcKnownVal.c8, dstTypeId) &&
+            !assignBasedOnTypeB(dstKnownVal.value(), (bool) srcKnownVal.c8, dstTypeId)) {
+            dstKnownVal.reset();
+        }
+    } else if (typeTable->worksAsTypeB(srcTypeId)) {
+        if (!assignBasedOnTypeI(dstKnownVal.value(), srcKnownVal.b ? 1 : 0, dstTypeId) &&
+            !assignBasedOnTypeU(dstKnownVal.value(), srcKnownVal.b ? 1 : 0, dstTypeId) &&
+            !assignBasedOnTypeB(dstKnownVal.value(), srcKnownVal.b, dstTypeId)) {
+            dstKnownVal.reset();
+        }
+    } else if (typeTable->worksAsTypeStr(srcTypeId)) {
+        if (srcKnownVal.str.has_value()) {
+            const string &str = stringPool->get(srcKnownVal.str.value());
+            if (typeTable->worksAsTypeStr(dstTypeId)) {
+                dstKnownVal.value().str = srcKnownVal.str;
+            } else if (typeTable->worksAsTypeB(dstTypeId)) {
+                dstKnownVal.value().b = true;
+            } else if (typeTable->worksAsTypeCharArrOfLen(dstTypeId, LiteralVal::getStringLen(str))) {
+                dstKnownVal = makeArray(dstTypeId);
+                if (dstKnownVal.has_value()) {
+                    for (size_t i = 0; i < LiteralVal::getStringLen(str); ++i) {
+                        dstKnownVal.value().elems[i].c8 = str[i];
+                    }
+                }
+            } else {
+                dstKnownVal.reset();
+            }
+        } else {
+            if (!assignBasedOnTypeI(dstKnownVal.value(), 0, dstTypeId) &&
+                !assignBasedOnTypeU(dstKnownVal.value(), 0, dstTypeId) &&
+                !assignBasedOnTypeB(dstKnownVal.value(), false, dstTypeId) &&
+                !typeTable->worksAsTypeAnyP(dstTypeId)) {
+                dstKnownVal.reset();
+            }
+        }
+    } else if (typeTable->worksAsTypeAnyP(srcTypeId)) {
+        if (!assignBasedOnTypeI(dstKnownVal.value(), 0, dstTypeId) &&
+            !assignBasedOnTypeU(dstKnownVal.value(), 0, dstTypeId) &&
+            !assignBasedOnTypeB(dstKnownVal.value(), false, dstTypeId) &&
+            !typeTable->worksAsTypeAnyP(dstTypeId)) {
+            dstKnownVal.reset();
+        }
+    } else if (typeTable->worksAsTypeArr(srcTypeId) || typeTable->worksAsTuple(srcTypeId) ||
+        typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_ID) || typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE)) {
+        // these types are only castable when changing constness
+        if (typeTable->isImplicitCastable(srcTypeId, dstTypeId)) {
+            // no action is needed in case of a cast
+            // TODO! break ref
+            dstKnownVal = srcKnownVal;
+        } else {
+            dstKnownVal.reset();
+        }
+    } else {
+        dstKnownVal.reset();
+    }
+
+    return dstKnownVal;
 }
 
 optional<KnownVal> Evaluator::makeArray(TypeTable::Id arrTypeId) {

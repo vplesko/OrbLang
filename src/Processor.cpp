@@ -90,6 +90,7 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
         return NodeVal();
     }
 
+    // TODO tup for tuple, (id) does lookup, error otherwise
     return processTuple(node, starting);
 }
 
