@@ -33,7 +33,12 @@ NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::
 
     optional<KnownVal> knownValCast = makeCast(node.getKnownVal(), node.getKnownVal().type.value(), ty);
     if (!knownValCast.has_value()) {
-        msgs->errorExprCannotCast(codeLoc, node.getKnownVal().type.value(), ty);
+        if (KnownVal::isImplicitCastable(node.getKnownVal(), ty, stringPool, typeTable)) {
+            // if it's implicitly castable, it should be castable
+            msgs->errorInternal(codeLoc);
+        } else {
+            msgs->errorExprCannotCast(codeLoc, node.getKnownVal().type.value(), ty);
+        }
         return NodeVal();
     }
 
@@ -503,7 +508,9 @@ optional<KnownVal> Evaluator::makeCast(const KnownVal &srcKnownVal, TypeTable::I
                 dstKnownVal.value().b = true;
             } else if (typeTable->worksAsTypeCharArrOfLen(dstTypeId, LiteralVal::getStringLen(str))) {
                 dstKnownVal = makeArray(dstTypeId);
-                if (dstKnownVal.has_value()) {
+                if (!dstKnownVal.has_value()) { 
+                    dstKnownVal.reset();
+                } else {
                     for (size_t i = 0; i < LiteralVal::getStringLen(str); ++i) {
                         dstKnownVal.value().elems[i].c8 = str[i];
                     }
@@ -512,6 +519,7 @@ optional<KnownVal> Evaluator::makeCast(const KnownVal &srcKnownVal, TypeTable::I
                 dstKnownVal.reset();
             }
         } else {
+            // if it's not string, it's null
             if (!assignBasedOnTypeI(dstKnownVal.value(), 0, dstTypeId) &&
                 !assignBasedOnTypeU(dstKnownVal.value(), 0, dstTypeId) &&
                 !assignBasedOnTypeB(dstKnownVal.value(), false, dstTypeId) &&
@@ -520,6 +528,7 @@ optional<KnownVal> Evaluator::makeCast(const KnownVal &srcKnownVal, TypeTable::I
             }
         }
     } else if (typeTable->worksAsTypeAnyP(srcTypeId)) {
+        // if it's not string, it's null
         if (!assignBasedOnTypeI(dstKnownVal.value(), 0, dstTypeId) &&
             !assignBasedOnTypeU(dstKnownVal.value(), 0, dstTypeId) &&
             !assignBasedOnTypeB(dstKnownVal.value(), false, dstTypeId) &&
@@ -531,8 +540,9 @@ optional<KnownVal> Evaluator::makeCast(const KnownVal &srcKnownVal, TypeTable::I
         // these types are only castable when changing constness
         if (typeTable->isImplicitCastable(srcTypeId, dstTypeId)) {
             // no action is needed in case of a cast
-            // TODO! break ref
             dstKnownVal = srcKnownVal;
+            dstKnownVal.value().type = dstTypeId;
+            dstKnownVal.value().ref = nullptr;
         } else {
             dstKnownVal.reset();
         }
