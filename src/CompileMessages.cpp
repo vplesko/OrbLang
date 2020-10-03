@@ -231,15 +231,15 @@ void CompileMessages::errorNonBinOp(CodeLoc loc, Oper op) {
     error(loc, "Operation is not binary.");
 }
 
-void CompileMessages::errorVarNameTaken(CodeLoc loc, NamePool::Id name) {
+void CompileMessages::errorSymNameTaken(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
-    ss << "Variable (or other entity) with name '" << namePool->get(name) << "' already exists in this scope.";
+    ss << "Symbol '" << namePool->get(name) << "' already exists in this scope.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorVarNotFound(CodeLoc loc, NamePool::Id name) {
+void CompileMessages::errorSymNotFound(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
-    ss << "Variable with name '" << namePool->get(name) << "' not found.";
+    ss << "Symbol '" << namePool->get(name) << "' not found.";
     error(loc, ss.str());
 }
 

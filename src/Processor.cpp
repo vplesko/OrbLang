@@ -163,7 +163,7 @@ NodeVal Processor::processId(const NodeVal &node) {
 
         return NodeVal(node.getCodeLoc(), known);
     } else {
-        msgs->errorVarNotFound(node.getCodeLoc(), id);
+        msgs->errorSymNotFound(node.getCodeLoc(), id);
         return NodeVal();
     }
 }
@@ -184,7 +184,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
         if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
         NamePool::Id id = pair.first.getKnownVal().id;
         if (!symbolTable->nameAvailable(id, namePool, typeTable)) {
-            msgs->errorVarNameTaken(nodePair.getCodeLoc(), id);
+            msgs->errorSymNameTaken(nodePair.getCodeLoc(), id);
             continue;
         }
         optional<TypeTable::Id> optType;

@@ -70,8 +70,8 @@ public:
     //void errorBadAttr(CodeLoc loc, Token::Attr attr);
     void errorNonUnOp(CodeLoc loc, Oper op);
     void errorNonBinOp(CodeLoc loc, Oper op);
-    void errorVarNameTaken(CodeLoc loc, NamePool::Id name);
-    void errorVarNotFound(CodeLoc loc, NamePool::Id name);
+    void errorSymNameTaken(CodeLoc loc, NamePool::Id name);
+    void errorSymNotFound(CodeLoc loc, NamePool::Id name);
     void errorCnNoInit(CodeLoc loc, NamePool::Id name);
     void errorCnNoInit(CodeLoc loc);
     void errorExprNotBaked(CodeLoc loc);
