@@ -12,7 +12,7 @@ fnc main () () {
         println_i32 101;
     };
 
-    block {
+    block () () {
         println_i32 200;
         exit false;
         println_i32 201;
@@ -62,4 +62,17 @@ fnc main () () {
             pass -1;
         };
     );
+
+    block () () {
+        sym x:i32;
+        block b1 () {
+            + (= x 600) (block i32 { exit b1 true; = x -1; pass 0; }) (= x -1);
+        };
+        println_i32 x;
+    };
+
+    block b0 () {
+        println_i32 601;
+        loop (block bool { exit b0 true; pass true; });
+    };
 };

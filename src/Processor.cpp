@@ -17,6 +17,7 @@ NodeVal Processor::processNode(const NodeVal &node) {
 }
 
 NodeVal Processor::processLeaf(const NodeVal &node) {
+    // TODO should this be an error instead?
     if (node.isEmpty()) return node;
 
     NodeVal prom = node.isLiteralVal() ? promoteLiteralVal(node) : node;
@@ -251,10 +252,13 @@ NodeVal Processor::processBlock(const NodeVal &node) {
 
     optional<NamePool::Id> name;
     if (hasName) {
-        NodeVal nodeName = processWithEscapeIfLeafAndExpectId(node.getChild(indName));
+        NodeVal nodeName = processWithEscapeIfLeaf(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
-        name = nodeName.getKnownVal().id;
+        if (!nodeName.isEmpty()) {
+            if (!checkIsId(nodeName, true)) return NodeVal();
+            name = nodeName.getKnownVal().id;
+        }
     }
 
     optional<TypeTable::Id> type;
@@ -499,10 +503,11 @@ NodeVal Processor::processFnc(const NodeVal &node) {
 
     // ret type
     const NodeVal &nodeRetType = node.getChild(3);
-    if (!nodeRetType.isEmpty()) {
-        NodeVal ty = processAndExpectType(nodeRetType);
-        if (ty.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
+    NodeVal ty = processNode(nodeRetType);
+    if (ty.isInvalid()) return NodeVal();
+    if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
+    if (!ty.isEmpty()) {
+        if (!checkIsType(ty, true)) return NodeVal();
         val.retType = ty.getKnownVal().ty;
     }
 
