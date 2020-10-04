@@ -37,6 +37,7 @@ public:
     struct Block {
         std::optional<NamePool::Id> name;
         std::optional<TypeTable::Id> type;
+        NodeVal val;
         llvm::BasicBlock *blockExit = nullptr, *blockLoop = nullptr;
         llvm::PHINode *phi = nullptr;
     };

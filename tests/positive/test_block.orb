@@ -1,4 +1,4 @@
-# TODO! see what else can be pulled in from the old tests
+# TODO!! see what else can be pulled in from the old tests
 import "util/io.orb";
 
 fnc main () () {
@@ -65,8 +65,8 @@ fnc main () () {
 
     block () () {
         sym x:i32;
-        block b1 () {
-            + (= x 600) (block i32 { exit b1 true; = x -1; pass 0; }) (= x -1);
+        block b0 () {
+            + (= x 600) (block i32 { exit b0 true; = x -1; pass 0; }) (= x -1);
         };
         println_i32 x;
     };

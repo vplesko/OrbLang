@@ -45,6 +45,27 @@ NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::
     return NodeVal(codeLoc, knownValCast.value());
 }
 
+bool Evaluator::performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) {
+    return true;
+}
+
+NodeVal Evaluator::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) {
+    if (!success) return NodeVal();
+
+    if (block.type.has_value()) {
+        if (block.val.isInvalid()) {
+            msgs->errorBlockNoPass(codeLoc);
+            return NodeVal();
+        }
+
+        // TODO if it evals well with a pass in the middle, but no pass at end, no error detected
+        // TODO also, figure out control flow handling and error detection
+        return block.val;
+    } else {
+        return NodeVal(codeLoc);
+    }
+}
+
 NodeVal Evaluator::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) {
     if (!checkIsKnownVal(oper, true) || !checkHasType(oper, true)) return NodeVal();
 
