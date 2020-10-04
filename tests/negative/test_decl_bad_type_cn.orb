@@ -1,0 +1,5 @@
+fnc main () {
+    sym (x:i32 100);
+    sym (a:(i32 cn *) (& x));
+    sym (b:(i32 *) a);
+};

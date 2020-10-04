@@ -1,0 +1,3 @@
+fnc main () () {
+    sym x:((i32 cn) bool);
+};

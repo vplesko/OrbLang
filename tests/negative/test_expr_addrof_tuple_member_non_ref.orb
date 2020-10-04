@@ -1,0 +1,8 @@
+fnc foo () (i32 i32) {
+    sym f:(i32 i32);
+    ret f;
+};
+
+fnc main () () {
+    & (. (foo) 0);
+};

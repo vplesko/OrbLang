@@ -1,0 +1,11 @@
+fnc foo () ((i32 cn) bool) {
+    sym x:(i32 bool);
+    = (. x 0) 0;
+    = (. x 1) false;
+    ret (* (cast (((i32 cn) bool) *) (& x)));
+};
+
+fnc main () () {
+    sym (x:((i32 cn) bool) (foo));
+    = (. x 0) 999;
+};

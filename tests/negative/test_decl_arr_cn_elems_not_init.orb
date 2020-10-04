@@ -1,0 +1,3 @@
+fnc main () () {
+    sym array:(i32 cn 4);
+};

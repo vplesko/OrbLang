@@ -13,6 +13,7 @@ class Evaluator;
 
 // TODO! if operands are known, pass result as known (where allowed)
 // TODO! add ref returning where left out
+// TODO! add more neg tests
 class Processor {
 protected:
     NamePool *namePool;

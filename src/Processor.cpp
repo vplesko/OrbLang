@@ -724,6 +724,7 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
 
     if (node.isEscaped()) prom.escape();
     
+    // TODO remove id special case, but handle on calls instead?
     if (node.hasTypeAttr() && !isId) {
         NodeVal nodeTy = processAndCheckIsType(node.getTypeAttr());
         if (nodeTy.isInvalid()) return NodeVal();
@@ -733,7 +734,6 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
             msgs->errorExprCannotPromote(node.getCodeLoc(), ty);
             return NodeVal();
         }
-        // TODO!! add neg test preventing 100:(i32 *)
         prom = evaluator->performCast(prom.getCodeLoc(), prom, ty);
     }
 
