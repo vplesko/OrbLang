@@ -6,6 +6,10 @@ Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *type
         resetSkipIssued();
 }
 
+bool Evaluator::isRepeatingProcessing(optional<NamePool::Id> block) const {
+    return loopIssued && isSkipIssuedForCurrBlock(block);
+}
+
 NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
     if (!checkIsKnownVal(codeLoc, ref, true)) return NodeVal();
 
@@ -73,6 +77,19 @@ bool Evaluator::performExit(CodeLoc codeLoc, const SymbolTable::Block &block, co
 
     if (cond.getKnownVal().b) {
         exitIssued = true;
+        // if name not given, skip until innermost block (instruction can't do otherwise)
+        // if name given, skip until that block (which may even be innermost block)
+        skipBlock = block.name;
+    }
+
+    return true;
+}
+
+bool Evaluator::performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) {
+    if (!checkIsKnownVal(cond, true)) return false;
+
+    if (cond.getKnownVal().b) {
+        loopIssued = true;
         // if name not given, skip until innermost block (instruction can't do otherwise)
         // if name given, skip until that block (which may even be innermost block)
         skipBlock = block.name;
@@ -660,7 +677,7 @@ bool Evaluator::assignBasedOnTypeB(KnownVal &val, bool x, TypeTable::Id ty) {
 }
 
 bool Evaluator::isSkipIssued() const {
-    return exitIssued;
+    return exitIssued || loopIssued;
 }
 
 bool Evaluator::isSkipIssuedForCurrBlock(optional<NamePool::Id> currBlockName) const {
@@ -669,5 +686,6 @@ bool Evaluator::isSkipIssuedForCurrBlock(optional<NamePool::Id> currBlockName) c
 
 void Evaluator::resetSkipIssued() {
     exitIssued = false;
+    loopIssued = false;
     skipBlock.reset();
 }

@@ -26,6 +26,7 @@ protected:
 
 protected:
     virtual bool isSkippingProcessing() const =0;
+    virtual bool isRepeatingProcessing(std::optional<NamePool::Id> block) const =0;
     virtual NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) =0;
     virtual NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) =0;
     virtual NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) =0;

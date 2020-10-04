@@ -42,6 +42,7 @@ class Codegen : public Processor {
     NodeVal promoteIfKnownValAndCheckIsLlvmVal(const NodeVal &node, bool orError);
 
     bool isSkippingProcessing() const { return false; }
+    bool isRepeatingProcessing(std::optional<NamePool::Id> block) const { return false; }
     NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref);
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty);
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init);

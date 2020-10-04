@@ -23,12 +23,12 @@ fnc main () () {
     });
     println_i32 (eval p);
 
-    #*eval (= p 297);
+    eval (= p 297);
     eval (block {
         loop false;
         loop (< (= p (+ p 1)) 300);
     });
-    println_i32 (eval p);*#
+    println_i32 (eval p);
 
     #*println_i32 (eval (
         block i32 { pass 400; }
@@ -55,7 +55,7 @@ fnc main () () {
     });
     println_i32 (eval p);
 
-    #*eval (sym (c false));
+    eval (sym (c false));
     eval (= p 500);
     eval (block b0 () {
         exit c;
@@ -66,7 +66,7 @@ fnc main () () {
         };
         = p -1;
     });
-    println_i32 (eval p);*#
+    println_i32 (eval p);
 
     #*println_i32 (eval (
         block b0 i32 {

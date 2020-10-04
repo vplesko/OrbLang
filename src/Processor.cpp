@@ -275,15 +275,16 @@ NodeVal Processor::processBlock(const NodeVal &node) {
     SymbolTable::Block block;
     block.name = name;
     block.type = type;
-    if (!performBlockSetUp(node.getCodeLoc(), block)) return NodeVal();
 
-    {
+    do {
+        if (!performBlockSetUp(node.getCodeLoc(), block)) return NodeVal();
+        
         BlockControl blockCtrl(symbolTable, block);
         if (!processChildNodes(nodeBlock)) {
             performBlockTearDown(node.getCodeLoc(), block, false);
             return NodeVal();
         }
-    }
+    } while (isRepeatingProcessing(block.name));
 
     NodeVal ret = performBlockTearDown(node.getCodeLoc(), block, true);
     if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());

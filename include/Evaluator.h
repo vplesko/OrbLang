@@ -3,7 +3,7 @@
 #include "Processor.h"
 
 class Evaluator : public Processor {
-    bool exitIssued;
+    bool exitIssued, loopIssued;
     std::optional<NamePool::Id> skipBlock;
 
     bool isSkipIssued() const;
@@ -24,6 +24,7 @@ class Evaluator : public Processor {
 
     // TODO!
     bool isSkippingProcessing() const { return isSkipIssued(); }
+    bool isRepeatingProcessing(std::optional<NamePool::Id> block) const;
     NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref);
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty);
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init);
@@ -31,7 +32,7 @@ class Evaluator : public Processor {
     bool performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block);
     NodeVal performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success);
     bool performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond);
-    bool performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) { msgs->errorInternal(codeLoc); return false; }
+    bool performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond);
     bool performPass(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &val) { msgs->errorInternal(codeLoc); return false; }
     NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) { msgs->errorInternal(codeLoc); return NodeVal(); }
     bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) { msgs->errorInternal(codeLoc); return false; }
