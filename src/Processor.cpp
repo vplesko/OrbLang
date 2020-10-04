@@ -114,7 +114,7 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
         tup.members.push_back(starting.getKnownVal().ty);
         tup.members.push_back(second.getKnownVal().ty);
         for (size_t i = 2; i < node.getChildrenCnt(); ++i) {
-            NodeVal ty = processAndExpectType(node.getChild(i));
+            NodeVal ty = processAndCheckIsType(node.getChild(i));
             if (ty.isInvalid()) return NodeVal();
             if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
             tup.members.push_back(ty.getKnownVal().ty);
@@ -226,7 +226,7 @@ NodeVal Processor::processCast(const NodeVal &node) {
         return NodeVal();
     }
 
-    NodeVal ty = processAndExpectType(node.getChild(1));
+    NodeVal ty = processAndCheckIsType(node.getChild(1));
     if (ty.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
 
@@ -276,19 +276,27 @@ NodeVal Processor::processBlock(const NodeVal &node) {
     block.name = name;
     block.type = type;
 
+    if (!performBlockSetUp(node.getCodeLoc(), block)) return NodeVal();
+
     do {
-        if (!performBlockSetUp(node.getCodeLoc(), block)) return NodeVal();
-        
         BlockControl blockCtrl(symbolTable, block);
+        SymbolTable::Block *blockInSymbolTable = symbolTable->getLastBlock();
+
         if (!processChildNodes(nodeBlock)) {
-            performBlockTearDown(node.getCodeLoc(), block, false);
+            performBlockTearDown(node.getCodeLoc(), *blockInSymbolTable, false);
             return NodeVal();
         }
-    } while (isRepeatingProcessing(block.name));
 
-    NodeVal ret = performBlockTearDown(node.getCodeLoc(), block, true);
-    if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
-    return ret;
+        if (isRepeatingProcessing(block.name)) {
+            if (!performBlockReentry(node.getCodeLoc())) return NodeVal();
+            continue;
+        }
+
+        NodeVal ret = performBlockTearDown(node.getCodeLoc(), *blockInSymbolTable, true);
+        if (ret.isInvalid()) return NodeVal();
+        if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
+        return ret;
+    } while (true);
 }
 
 NodeVal Processor::processExit(const NodeVal &node) {
@@ -301,15 +309,16 @@ NodeVal Processor::processExit(const NodeVal &node) {
 
     optional<NamePool::Id> name;
     if (hasName) {
-        NodeVal nodeName = processWithEscapeIfLeafAndExpectId(node.getChild(indName));
+        NodeVal nodeName = processWithEscapeIfLeafAndCheckIsId(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
         name = nodeName.getKnownVal().id;
     }
 
     NodeVal nodeCond = processNode(node.getChild(indCond));
-    if (nodeCond.isInvalid() || !checkIsBool(nodeCond, true)) return NodeVal();
+    if (nodeCond.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
+    if (!checkIsBool(nodeCond, true)) return NodeVal();
 
     const SymbolTable::Block *targetBlock;
     if (hasName) {
@@ -345,15 +354,16 @@ NodeVal Processor::processLoop(const NodeVal &node) {
 
     optional<NamePool::Id> name;
     if (hasName) {
-        NodeVal nodeName = processWithEscapeIfLeafAndExpectId(node.getChild(indName));
+        NodeVal nodeName = processWithEscapeIfLeafAndCheckIsId(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
         name = nodeName.getKnownVal().id;
     }
 
     NodeVal nodeCond = processNode(node.getChild(indCond));
-    if (nodeCond.isInvalid() || !checkIsBool(nodeCond, true)) return NodeVal();
+    if (nodeCond.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
+    if (!checkIsBool(nodeCond, true)) return NodeVal();
 
     const SymbolTable::Block *targetBlock;
     if (hasName) {
@@ -384,13 +394,13 @@ NodeVal Processor::processPass(const NodeVal &node) {
 
     optional<NamePool::Id> name;
     if (hasName) {
-        NodeVal nodeName = processWithEscapeIfLeafAndExpectId(node.getChild(indName));
+        NodeVal nodeName = processWithEscapeIfLeafAndCheckIsId(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
         name = nodeName.getKnownVal().id;
     }
 
-    const SymbolTable::Block *targetBlock;
+    SymbolTable::Block *targetBlock;
     if (hasName) {
         targetBlock = symbolTable->getBlock(name.value());
         if (targetBlock == nullptr) {
@@ -411,6 +421,8 @@ NodeVal Processor::processPass(const NodeVal &node) {
 
     NodeVal nodeValue = processAndImplicitCast(node.getChild(indVal), targetBlock->type.value());
     if (nodeValue.isInvalid()) return NodeVal();
+    // TODO add a test for loop/pass in pass arg
+    if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
 
     if (!performPass(node.getCodeLoc(), *targetBlock, nodeValue)) return NodeVal();
     return NodeVal(node.getCodeLoc());
@@ -456,7 +468,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     val.defined = node.getChildrenCnt() == 5;
 
     // name
-    NodeVal name = processWithEscapeIfLeafAndExpectId(node.getChild(1));
+    NodeVal name = processWithEscapeIfLeafAndCheckIsId(node.getChild(1));
     if (name.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
     if (!symbolTable->nameAvailable(name.getKnownVal().id, namePool, typeTable)) {
@@ -713,7 +725,7 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
     if (node.isEscaped()) prom.escape();
     
     if (node.hasTypeAttr() && !isId) {
-        NodeVal nodeTy = processAndExpectType(node.getTypeAttr());
+        NodeVal nodeTy = processAndCheckIsType(node.getTypeAttr());
         if (nodeTy.isInvalid()) return NodeVal();
         TypeTable::Id ty = nodeTy.getKnownVal().ty;
 
@@ -992,7 +1004,7 @@ NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const N
     return lhs;
 }
 
-NodeVal Processor::processAndExpectType(const NodeVal &node) {
+NodeVal Processor::processAndCheckIsType(const NodeVal &node) {
     NodeVal ty = processNode(node);
     if (ty.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
@@ -1010,7 +1022,7 @@ NodeVal Processor::processWithEscapeIfLeaf(const NodeVal &node) {
     }
 }
 
-NodeVal Processor::processWithEscapeIfLeafAndExpectId(const NodeVal &node) {
+NodeVal Processor::processWithEscapeIfLeafAndCheckIsId(const NodeVal &node) {
     NodeVal id = processWithEscapeIfLeaf(node);
     if (id.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
@@ -1039,13 +1051,13 @@ pair<NodeVal, optional<NodeVal>> Processor::processForIdTypePair(const NodeVal &
     
     NodeVal id = node;
     id.clearTypeAttr();
-    id = processWithEscapeIfLeafAndExpectId(id);
+    id = processWithEscapeIfLeafAndCheckIsId(id);
     if (id.isInvalid()) return retInvalid;
     if (isSkippingProcessing()) return retSkipping;
 
     optional<NodeVal> ty;
     if (node.hasTypeAttr()) {
-        ty = processAndExpectType(node.getTypeAttr());
+        ty = processAndCheckIsType(node.getTypeAttr());
         if (ty.value().isInvalid()) return retInvalid;
         if (isSkippingProcessing()) return retSkipping;
     }

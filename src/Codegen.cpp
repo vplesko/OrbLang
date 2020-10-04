@@ -256,7 +256,7 @@ bool Codegen::performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, cons
     return true;
 }
 
-bool Codegen::performPass(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &val) {
+bool Codegen::performPass(CodeLoc codeLoc, SymbolTable::Block &block, const NodeVal &val) {
     if (!checkInLocalScope(codeLoc, true)) return false;
 
     NodeVal valPromo = promoteIfKnownValAndCheckIsLlvmVal(val, true);

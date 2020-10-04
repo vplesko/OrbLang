@@ -30,21 +30,20 @@ fnc main () () {
     });
     println_i32 (eval p);
 
-    #*println_i32 (eval (
+    println_i32 (eval (
         block i32 { pass 400; }
-    ));*#
+    ));
 
-    #*println_i32 (eval (
+    println_i32 (eval (
         block i32 { pass 401:i16; }
-    ));*#
+    ));
 
-    #*println_i32 (eval (
-        block i32 {
-            sym x:(block type { pass i32; });
-            = x 402;
-            = p x;
-        }
-    ));*#
+    eval (block {
+        sym x:(block type { pass i32; });
+        = x 402;
+        = p x;
+    });
+    println_i32 (eval p);
 
     eval (block b0 () {
         block {
@@ -68,35 +67,35 @@ fnc main () () {
     });
     println_i32 (eval p);
 
-    #*println_i32 (eval (
+    println_i32 (eval (
         block b0 i32 {
             block {
                 pass b0 502;
             };
             pass -1;
         };
-    ));*#
+    ));
 
-    #*eval (block () () {
+    eval (block () () {
         block b0 () {
             + (= p 600) (block i32 { exit b0 true; = p -1; pass 0; }) (= p -1);
         };
     });
-    println_i32 (eval p);*#
+    println_i32 (eval p);
 
-    #*eval (= p 600);
+    eval (= p 600);
     eval (block b0 () {
         = p (+ p 1);
         loop (block bool { exit b0 true; pass true; });
     });
-    println_i32 (eval p);*#
+    println_i32 (eval p);
 
-    #*eval (block () () {
+    eval (block () () {
         block b0 () {
             = p 602;
             sym x:(block type { exit b0 true; = p -1; pass i32; });
             = p -1;
         };
     });
-    println_i32 (eval p);*#
+    println_i32 (eval p);
 };

@@ -32,10 +32,11 @@ protected:
     virtual NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) =0;
     virtual NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) =0;
     virtual bool performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) =0;
+    virtual bool performBlockReentry(CodeLoc codeLoc) =0;
     virtual NodeVal performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) =0;
     virtual bool performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) =0;
     virtual bool performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) =0;
-    virtual bool performPass(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &val) =0;
+    virtual bool performPass(CodeLoc codeLoc, SymbolTable::Block &block, const NodeVal &val) =0;
     virtual NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) =0;
     virtual bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) =0;
     virtual bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func) =0;
@@ -72,9 +73,9 @@ private:
     bool checkBetweenChildren(const NodeVal &node, std::size_t nLo, std::size_t nHi, bool orError);
     bool checkImplicitCastable(const NodeVal &node, TypeTable::Id ty, bool orError);
 
-    NodeVal processAndExpectType(const NodeVal &node);
+    NodeVal processAndCheckIsType(const NodeVal &node);
     NodeVal processWithEscapeIfLeaf(const NodeVal &node);
-    NodeVal processWithEscapeIfLeafAndExpectId(const NodeVal &node);
+    NodeVal processWithEscapeIfLeafAndCheckIsId(const NodeVal &node);
     NodeVal processForTypeArg(const NodeVal &node);
     std::pair<NodeVal, std::optional<NodeVal>> processForIdTypePair(const NodeVal &node);
     NodeVal processAndCheckHasType(const NodeVal &node);

@@ -50,7 +50,7 @@ NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::
     return NodeVal(codeLoc, knownValCast.value());
 }
 
-bool Evaluator::performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) {
+bool Evaluator::performBlockReentry(CodeLoc codeLoc) {
     resetSkipIssued();
     return true;
 }
@@ -58,25 +58,34 @@ bool Evaluator::performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) {
 NodeVal Evaluator::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) {
     if (!success) return NodeVal();
 
-    if (isSkipIssuedForCurrBlock(block.name)) {
-        resetSkipIssued();
-    }
-
     // TODO if it evals well with a pass in the middle, but no pass at end, no error detected
     // TODO also, figure out control flow handling and error detection
-    if (block.type.has_value()) {
+    if (!isSkipIssued() && block.type.has_value()) {
         msgs->errorBlockNoPass(codeLoc);
         return NodeVal();
-    } else {
-        return NodeVal(codeLoc);
     }
+    
+    if (isSkipIssuedForCurrBlock(block.name)) {
+        resetSkipIssued();
+
+        if (block.type.has_value()) {
+            if (!block.val.has_value()) {
+                msgs->errorBlockNoPass(codeLoc);
+                return NodeVal();
+            }
+
+            return block.val.value();
+        }
+    }
+    
+    return NodeVal(codeLoc);
 }
 
 bool Evaluator::performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) {
     if (!checkIsKnownVal(cond, true)) return false;
 
     if (cond.getKnownVal().b) {
-        exitIssued = true;
+        exitOrPassIssued = true;
         // if name not given, skip until innermost block (instruction can't do otherwise)
         // if name given, skip until that block (which may even be innermost block)
         skipBlock = block.name;
@@ -95,6 +104,16 @@ bool Evaluator::performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, co
         skipBlock = block.name;
     }
 
+    return true;
+}
+
+bool Evaluator::performPass(CodeLoc codeLoc, SymbolTable::Block &block, const NodeVal &val) {
+    if (!checkIsKnownVal(val, true)) return false;
+
+    exitOrPassIssued = true;
+    skipBlock = block.name;
+    block.val = NodeVal(codeLoc, KnownVal::copyNoRef(val.getKnownVal()));
+    
     return true;
 }
 
@@ -677,7 +696,7 @@ bool Evaluator::assignBasedOnTypeB(KnownVal &val, bool x, TypeTable::Id ty) {
 }
 
 bool Evaluator::isSkipIssued() const {
-    return exitIssued || loopIssued;
+    return exitOrPassIssued || loopIssued;
 }
 
 bool Evaluator::isSkipIssuedForCurrBlock(optional<NamePool::Id> currBlockName) const {
@@ -685,7 +704,7 @@ bool Evaluator::isSkipIssuedForCurrBlock(optional<NamePool::Id> currBlockName) c
 }
 
 void Evaluator::resetSkipIssued() {
-    exitIssued = false;
+    exitOrPassIssued = false;
     loopIssued = false;
     skipBlock.reset();
 }

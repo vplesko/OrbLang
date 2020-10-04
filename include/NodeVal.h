@@ -38,6 +38,7 @@ public:
     // Invalid value. Remember to set code loc before returning if meant to be valid.
     NodeVal();
     // Empty terminal.
+    // TODO split the use of this for valid processing ret and actual empty node
     NodeVal(CodeLoc codeLoc);
     NodeVal(CodeLoc codeLoc, StringPool::Id import);
     NodeVal(CodeLoc codeLoc, const LiteralVal &val);
