@@ -3,6 +3,13 @@
 #include "Processor.h"
 
 class Evaluator : public Processor {
+    bool exitIssued;
+    std::optional<NamePool::Id> skipBlock;
+
+    bool isSkipIssued() const;
+    bool isSkipIssuedForCurrBlock(std::optional<NamePool::Id> currBlockName) const;
+    void resetSkipIssued();
+
     bool assignBasedOnTypeI(KnownVal &val, std::int64_t x, TypeTable::Id ty);
     bool assignBasedOnTypeU(KnownVal &val, std::uint64_t x, TypeTable::Id ty);
     bool assignBasedOnTypeF(KnownVal &val, double x, TypeTable::Id ty);
@@ -16,14 +23,14 @@ class Evaluator : public Processor {
     bool checkIsKnownVal(const NodeVal &node, bool orError) { return checkIsKnownVal(node.getCodeLoc(), node, orError); }
 
     // TODO!
-    bool isSkippingProcessing() const { return false; }
+    bool isSkippingProcessing() const { return isSkipIssued(); }
     NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref);
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty);
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init);
     NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty);
     bool performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block);
     NodeVal performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success);
-    bool performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) { msgs->errorInternal(codeLoc); return false; }
+    bool performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond);
     bool performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) { msgs->errorInternal(codeLoc); return false; }
     bool performPass(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &val) { msgs->errorInternal(codeLoc); return false; }
     NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) { msgs->errorInternal(codeLoc); return NodeVal(); }

@@ -3,6 +3,7 @@ using namespace std;
 
 Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs)
     : Processor(namePool, stringPool, typeTable, symbolTable, msgs, this) {
+        resetSkipIssued();
 }
 
 NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
@@ -46,24 +47,38 @@ NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::
 }
 
 bool Evaluator::performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) {
+    resetSkipIssued();
     return true;
 }
 
 NodeVal Evaluator::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) {
     if (!success) return NodeVal();
 
-    if (block.type.has_value()) {
-        if (block.val.isInvalid()) {
-            msgs->errorBlockNoPass(codeLoc);
-            return NodeVal();
-        }
+    if (isSkipIssuedForCurrBlock(block.name)) {
+        resetSkipIssued();
+    }
 
-        // TODO if it evals well with a pass in the middle, but no pass at end, no error detected
-        // TODO also, figure out control flow handling and error detection
-        return block.val;
+    // TODO if it evals well with a pass in the middle, but no pass at end, no error detected
+    // TODO also, figure out control flow handling and error detection
+    if (block.type.has_value()) {
+        msgs->errorBlockNoPass(codeLoc);
+        return NodeVal();
     } else {
         return NodeVal(codeLoc);
     }
+}
+
+bool Evaluator::performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) {
+    if (!checkIsKnownVal(cond, true)) return false;
+
+    if (cond.getKnownVal().b) {
+        exitIssued = true;
+        // if name not given, skip until innermost block (instruction can't do otherwise)
+        // if name given, skip until that block (which may even be innermost block)
+        skipBlock = block.name;
+    }
+
+    return true;
 }
 
 NodeVal Evaluator::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) {
@@ -642,4 +657,17 @@ bool Evaluator::assignBasedOnTypeB(KnownVal &val, bool x, TypeTable::Id ty) {
     }
 
     return true;
+}
+
+bool Evaluator::isSkipIssued() const {
+    return exitIssued;
+}
+
+bool Evaluator::isSkipIssuedForCurrBlock(optional<NamePool::Id> currBlockName) const {
+    return isSkipIssued() && (!skipBlock.has_value() || skipBlock == currBlockName);
+}
+
+void Evaluator::resetSkipIssued() {
+    exitIssued = false;
+    skipBlock.reset();
 }
