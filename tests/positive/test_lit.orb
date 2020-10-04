@@ -1,5 +1,7 @@
 import "util/io.orb";
 
+sym (glob 111:i8);
+
 fnc main () () {
     println_i32 100;
     println_u32 +101:u32;
@@ -11,6 +13,8 @@ fnc main () () {
     println_f32 -107.0;
     println_i32 10_8_;
     println_f32 (+ 1.0e2 9.0);
+    println_i32 110:(i32 cn);
+    println_i32 glob;
 
     println_c8 'a';
     println_c8 '\\';
@@ -19,9 +23,76 @@ fnc main () () {
 
     println_str "hello";
     println_str "";
+    println_str "\n";
+    println_str "\\n";
 
     println_i32 (cast i32 false);
     println_i32 (cast i32 true);
     
-    println_i32 (cast i32 null);
+    println_i32 011;
+    println_i32 +011;
+    println_i32 -011;
+    println_i32 0xab;
+    println_i32 +0xab;
+    println_i32 -0xab;
+    println_i32 0XCD;
+    println_i32 0XbAbA;
+    println_i32 0xBaBa;
+    println_i32 0b1101;
+    println_i32 1_000_000;
+    println_i32 0_11;
+    println_i32 0xa_b_c;
+    println_i32 +0;
+    println_i32 -0;
+    println_i32 0_;
+    println_i32 0__;
+    println_i32 100__;
+
+    println_f32 1.0;
+    println_f32 +1.0;
+    println_f32 -1.0;
+    println_f32 1.;
+    println_f32 0.1;
+    println_f32 +0.0;
+    println_f32 -0.0;
+    println_f32 1_000.005_000;
+    println_f32 0x.F;
+    println_f32 +0x.F;
+    println_f32 -0x.F;
+    println_f32 0X.F;
+    println_f32 0X_.F;
+    println_f32 0X._F;
+    println_f32 0XA.F;
+    println_f32 0X_A.F;
+    println_f32 0XA_.F;
+    println_f32 0XA._F;
+    println_f32 0XA.F_;
+    println_f32 1.1e4;
+    println_f32 1.1E4;
+    println_f32 0xA.1p2;
+    println_f32 0xA.1P2;
+
+    println_f64 1.0;
+    println_f64 +1.0;
+    println_f64 -1.0;
+    println_f64 1.;
+    println_f64 0.1;
+    println_f64 +0.0;
+    println_f64 -0.0;
+    println_f64 1_000.005_000;
+    println_f64 0x.F;
+    println_f64 +0x.F;
+    println_f64 -0x.F;
+    println_f64 0X.F;
+    println_f64 0X_.F;
+    println_f64 0X._F;
+    println_f64 0XA.F;
+    println_f64 0X_A.F;
+    println_f64 0XA_.F;
+    println_f64 0XA._F;
+    println_f64 0XA.F_;
+    println_f64 1.1e4;
+    println_f64 1.1E4;
+    println_f64 0xA.1p2;
+    println_f64 0xA.1P2;
 };

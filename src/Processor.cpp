@@ -733,7 +733,8 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
             msgs->errorExprCannotPromote(node.getCodeLoc(), ty);
             return NodeVal();
         }
-        prom = performCast(prom.getCodeLoc(), prom, ty);
+        // TODO!! add neg test preventing 100:(i32 *)
+        prom = evaluator->performCast(prom.getCodeLoc(), prom, ty);
     }
 
     return prom;

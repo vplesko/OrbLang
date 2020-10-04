@@ -3,6 +3,8 @@
 #include "Processor.h"
 
 class Evaluator : public Processor {
+    friend class Processor;
+    
     bool exitOrPassIssued, loopIssued;
     std::optional<NamePool::Id> skipBlock;
 

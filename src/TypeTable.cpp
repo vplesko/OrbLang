@@ -326,7 +326,7 @@ bool TypeTable::worksAsPrimitive(Id t, PrimIds p) const {
     } else {
         const TypeDescr &descr = typeDescrs[t.index].first;
         if (!descr.decors.empty()) return false;
-        return worksAsPrimitive(descr.base);
+        return worksAsPrimitive(descr.base, p);
     }
 }
 

@@ -29,8 +29,9 @@ fnc main() () {
     println_i32 (+ 301 (<< 1 2));
     println_u32 (+ 300:u32 (<< 3:u32 1:u32));
     println_i32 (- 301 (<< -3 1));
-    println_i32 (+ 300 (& 0b1010 0b1101));
+    println_i32 (+ 300 (& 0b1010 (| 0b1100 0b1001)));
     println_i32 (+ 300 (^ 0b1100 0b0101));
+    println_i32 (* 2 5 31);
     
     println_i32 (+ 400 (+ 1 -1 1 -1));
     println_i32 (+ 400 (- 3 1 1));

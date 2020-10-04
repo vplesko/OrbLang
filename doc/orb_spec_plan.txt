@@ -105,7 +105,7 @@ block
 	block body OR block t body OR block name t body
 	body is repeated instructions
 	t is return type or () for no ret
-	name is block name
+	name is block name or () for no name
 	if name is leaf id, it is evaluated as that id
 	opens new scope, goes through body, closes scope
 	if has ret type, expects value passed

@@ -10,6 +10,7 @@
 
 class NamePool;
 
+// TODO due to eval id and type vals, it's not guaranteed that given ids refer to anything valid, so check for that first to avoid seg faults
 // TODO! clean up after the rewrite
 class CompileMessages {
     enum Status {

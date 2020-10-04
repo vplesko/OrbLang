@@ -1,5 +1,7 @@
 import "util/io.orb";
 
+eval (sym glob:i32);
+
 # TODO uncomment after known vals can be non-null ptrs
 fnc main () () {
     eval (sym a:i32);
@@ -47,4 +49,7 @@ fnc main () () {
     #println_i32 (eval (. g 1 0));
     #eval (= (. f 0) 701);
     #println_i32 (eval (. g 1 0));
+
+    eval (= glob 800);
+    println_i32 (eval glob);
 };

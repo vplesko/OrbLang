@@ -1,5 +1,7 @@
 import "util/io.orb";
 
+sym glob:i32;
+
 fnc main () () {
     sym a:i32;
     = a 100;
@@ -46,4 +48,7 @@ fnc main () () {
     println_i32 (. g 1 0);
     = (. f 0) 701;
     println_i32 (. g 1 0);
+
+    = glob 800;
+    println_i32 glob;
 };
