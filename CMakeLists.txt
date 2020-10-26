@@ -15,26 +15,26 @@ add_definitions(${LLVM_DEFINITIONS})
 add_definitions(${CLANG_DEFINITIONS})
 
 set(HEADER_FILES
-    "include/ClangAdapter.h"
-    "include/Codegen.h"
-    "include/CodeLoc.h"
-    "include/CompileMessages.h"
-    "include/Compiler.h"
-    "include/Evaluator.h"
-    "include/KnownVal.h"
-    "include/Lexer.h"
-    "include/LiteralVal.h"
-    "include/LlvmVal.h"
-    "include/NamePool.h"
-    "include/NodeVal.h"
-    "include/Parser.h"
-    "include/Processor.h"
-    "include/Reserved.h"
-    "include/StringPool.h"
-    "include/SymbolTable.h"
-    "include/Token.h"
-    "include/TypeTable.h"
-    "include/utils.h"
+    "src/ClangAdapter.h"
+    "src/Codegen.h"
+    "src/CodeLoc.h"
+    "src/CompileMessages.h"
+    "src/Compiler.h"
+    "src/Evaluator.h"
+    "src/KnownVal.h"
+    "src/Lexer.h"
+    "src/LiteralVal.h"
+    "src/LlvmVal.h"
+    "src/NamePool.h"
+    "src/NodeVal.h"
+    "src/Parser.h"
+    "src/Processor.h"
+    "src/Reserved.h"
+    "src/StringPool.h"
+    "src/SymbolTable.h"
+    "src/Token.h"
+    "src/TypeTable.h"
+    "src/utils.h"
     )
 
 set(SOURCE_FILES
@@ -61,8 +61,6 @@ set(SOURCE_FILES
     )
 
 add_executable(orbc "${HEADER_FILES}" "${SOURCE_FILES}")
-
-target_include_directories(orbc PRIVATE "include")
 
 llvm_map_components_to_libnames(LLVM_LIBS
     support

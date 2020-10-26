@@ -1,10 +1,10 @@
-import subprocess
 import difflib
-import platform
 import glob
-import re
-import sys
 import os
+import platform
+import re
+import subprocess
+import sys
 
 ORBC_EXE = sys.argv[1]
 
