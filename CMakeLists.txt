@@ -102,7 +102,9 @@ llvm_map_components_to_libnames(LLVM_LIBS
     xcorecodegen
     )
 
+target_link_libraries(orbc stdc++fs)
+
 # Link against LLVM libraries
-target_link_libraries(orbc ${LLVM_LIBS})
+target_link_libraries(orbc LLVM)
 
 target_link_libraries(orbc clangTooling)

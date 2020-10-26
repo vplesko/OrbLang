@@ -4,6 +4,7 @@ import platform
 import glob
 import re
 import sys
+import os
 
 ORBC_EXE = sys.argv[1]
 
@@ -61,7 +62,10 @@ def run_all_tests(dir, test_func):
     return True
 
 
-if not run_all_tests(TEST_POS_DIR, run_positive_test) or not run_all_tests(TEST_NEG_DIR, run_negative_test):
-    print('Test failed!')
-else:
-    print('Tests ran successfully.')
+if __name__ == "__main__":
+    if not os.path.exists(TEST_BIN_DIR):
+        os.mkdir(TEST_BIN_DIR)
+    if not run_all_tests(TEST_POS_DIR, run_positive_test) or not run_all_tests(TEST_NEG_DIR, run_negative_test):
+        print('Test failed!')
+    else:
+        print('Tests ran successfully.')

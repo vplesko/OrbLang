@@ -828,7 +828,7 @@ NodeVal Processor::processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper o
 NodeVal Processor::processOperComparison(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op) {
     void *signal = performOperComparisonSetUp(codeLoc, opers.size());
     if (signal == nullptr) return NodeVal();
-    DeferredCallback signalDeleteGuard([=] { delete signal; });
+    DeferredCallback signalDeleteGuard([=] { delete (int*) signal; });
 
     NodeVal lhs = processAndCheckHasType(*opers[0]);
     if (lhs.isInvalid()) return performOperComparisonTearDown(codeLoc, false, signal);

@@ -30,7 +30,7 @@ const unordered_map<Oper, OperInfo> operInfos = {
 };
 
 bool isMeaningful(NamePool::Id name) {
-    return meaningfuls.contains(name);
+    return meaningfuls.find(name) != meaningfuls.end();
 }
 
 optional<Meaningful> getMeaningful(NamePool::Id name) {
@@ -45,7 +45,7 @@ bool isMeaningful(NamePool::Id name, Meaningful m) {
 }
 
 bool isKeyword(NamePool::Id name) {
-    return keywords.contains(name);
+    return keywords.find(name) != keywords.end();
 }
 
 optional<Keyword> getKeyword(NamePool::Id name) {
@@ -60,7 +60,7 @@ bool isKeyword(NamePool::Id name, Keyword k) {
 }
 
 bool isOper(NamePool::Id name) {
-    return opers.contains(name);
+    return opers.find(name) != opers.end();
 }
 
 optional<Oper> getOper(NamePool::Id name) {
