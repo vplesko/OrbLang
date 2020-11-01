@@ -11,7 +11,6 @@
 class NamePool;
 
 // TODO due to eval id and type vals, it's not guaranteed that given ids refer to anything valid, so check for that first to avoid seg faults
-// TODO! clean up after the rewrite
 class CompileMessages {
     enum Status {
         S_OK,
@@ -34,12 +33,13 @@ class CompileMessages {
     std::string errorStringOfType(TypeTable::Id ty) const;
 
 public:
-    explicit CompileMessages(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, std::ostream &out)
+    CompileMessages(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, std::ostream &out)
         : namePool(namePool), stringPool(stringPool), typeTable(typeTable), symbolTable(symbolTable), out(&out), status(S_OK) {}
     
     bool isFail() const { return status >= S_ERROR; }
 
     void warnExprIndexOutOfBounds(CodeLoc loc);
+    void warnExprCompareStringLits(CodeLoc loc);
 
     void errorInputFileNotFound(const std::string &path);
     void errorBadToken(CodeLoc loc);
@@ -54,13 +54,8 @@ public:
     void errorUnexpectedKeyword(CodeLoc loc, Keyword keyw);
     void errorUnexpectedIsNotTerminal(CodeLoc loc);
     void errorUnexpectedIsTerminal(CodeLoc loc);
-    void errorUnexpectedNotKeyword(CodeLoc loc);
     void errorUnexpectedNotId(CodeLoc loc);
-    void errorUnexpectedNotFunc(CodeLoc loc);
     void errorUnexpectedNotType(CodeLoc loc);
-    void errorUnexpectedNotBlock(CodeLoc loc);
-    void errorUnexpectedNotAttribute(CodeLoc loc);
-    void errorUnexpectedNodeValue(CodeLoc loc);
     void errorChildrenNotEq(CodeLoc loc, std::size_t cnt);
     void errorChildrenLessThan(CodeLoc loc, std::size_t cnt);
     void errorChildrenMoreThan(CodeLoc loc, std::size_t cnt);
@@ -68,18 +63,14 @@ public:
     void errorInvalidTypeDecorator(CodeLoc loc);
     void errorBadArraySize(CodeLoc loc, long int size);
     void errorNotLastParam(CodeLoc loc);
-    //void errorBadAttr(CodeLoc loc, Token::Attr attr);
     void errorNonUnOp(CodeLoc loc, Oper op);
     void errorNonBinOp(CodeLoc loc, Oper op);
     void errorSymNameTaken(CodeLoc loc, NamePool::Id name);
     void errorSymNotFound(CodeLoc loc, NamePool::Id name);
     void errorCnNoInit(CodeLoc loc, NamePool::Id name);
-    void errorCnNoInit(CodeLoc loc);
-    void errorExprNotBaked(CodeLoc loc);
     void errorExprCannotPromote(CodeLoc loc);
     void errorExprCannotPromote(CodeLoc loc, TypeTable::Id into);
     void errorExprKnownBinBadOp(CodeLoc loc);
-    void errorExprCompareStringLits(CodeLoc loc);
     void errorExprCannotCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into);
     void errorExprCannotImplicitCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into);
     void errorExprCannotImplicitCastEither(CodeLoc loc, TypeTable::Id ty1, TypeTable::Id ty2);
@@ -89,12 +80,10 @@ public:
     void errorExprAddressOfNoRef(CodeLoc loc);
     void errorExprIndexNotIntegral(CodeLoc loc);
     void errorExprUnBadType(CodeLoc loc);
-    void errorExprUnOnCn(CodeLoc loc);
     void errorExprUnOnNull(CodeLoc loc);
     void errorExprAsgnNonRef(CodeLoc loc);
     void errorExprAsgnOnCn(CodeLoc loc);
     void errorExprDotInvalidBase(CodeLoc loc);
-    void errorExprNotValue(CodeLoc loc);
     void errorExitNowhere(CodeLoc loc);
     void errorExitPassingBlock(CodeLoc loc);
     void errorPassNonPassingBlock(CodeLoc loc);
@@ -102,20 +91,16 @@ public:
     void errorRetNoValue(CodeLoc loc, TypeTable::Id shouldRet);
     void errorFuncNameTaken(CodeLoc loc, NamePool::Id name);
     void errorMacroNameTaken(CodeLoc loc, NamePool::Id name);
-    void errorSigConflict(CodeLoc loc);
     void errorArgNameDuplicate(CodeLoc loc, NamePool::Id name);
     void errorFuncNotFound(CodeLoc loc, NamePool::Id name);
-    void errorFuncAmbigious(CodeLoc loc, NamePool::Id name);
     void errorMacroNotFound(CodeLoc loc, NamePool::Id name);
     void errorBlockNotFound(CodeLoc loc, NamePool::Id name);
     void errorBlockNoPass(CodeLoc loc);
     void errorMemberIndex(CodeLoc loc);
-    void errorMismatchTypeAttribute(CodeLoc loc, TypeTable::Id ty);
-    void errorMismatchTypeAttribute(CodeLoc loc);
     void errorMissingTypeAttribute(CodeLoc loc);
     void errorNotGlobalScope(CodeLoc loc);
     void errorNotTopmost(CodeLoc loc);
-    // TODO replace with more specific errors
+    // placeholder error, should not stay in code
     void errorEvaluationNotSupported(CodeLoc loc);
     // placeholder error, should not stay in code
     void errorUnknown(CodeLoc loc);

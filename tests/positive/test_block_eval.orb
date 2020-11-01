@@ -73,7 +73,7 @@ fnc main () () {
                 pass b0 502;
             };
             pass -1;
-        };
+        }
     ));
 
     eval (block () () {
@@ -98,4 +98,13 @@ fnc main () () {
         };
     });
     println_i32 (eval p);
+
+    eval (= p 690);
+    println_i32 (eval (
+        block b0 i32 {
+            = p (+ p 1);
+            loop (< p 700);
+            pass p;
+        };
+    ));
 };

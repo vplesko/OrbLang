@@ -78,6 +78,10 @@ void CompileMessages::warnExprIndexOutOfBounds(CodeLoc loc) {
     warn(loc, "Attempting to index out of bounds of the array.");
 }
 
+void CompileMessages::warnExprCompareStringLits(CodeLoc loc) {
+    warn(loc, "String literals cannot directly be compared for pointer (in)equality.");
+}
+
 inline void CompileMessages::error(const string &str) {
     status = max(status, S_ERROR);
     (*out) << "error: " << str << endl;
@@ -151,32 +155,12 @@ void CompileMessages::errorUnexpectedIsTerminal(CodeLoc loc) {
     error(loc, "Terminal was not expected at this location.");
 }
 
-void CompileMessages::errorUnexpectedNotKeyword(CodeLoc loc) {
-    error(loc, "Result does not present a keyword.");
-}
-
 void CompileMessages::errorUnexpectedNotId(CodeLoc loc) {
     error(loc, "Result does not present an id.");
 }
 
-void CompileMessages::errorUnexpectedNotFunc(CodeLoc loc) {
-    error(loc, "Result does not present a function.");
-}
-
 void CompileMessages::errorUnexpectedNotType(CodeLoc loc) {
     error(loc, "Result does not present a type.");
-}
-
-void CompileMessages::errorUnexpectedNotBlock(CodeLoc loc) {
-    error(loc, "Block was expected at this location.");
-}
-
-void CompileMessages::errorUnexpectedNotAttribute(CodeLoc loc) {
-    error(loc, "Result does not present an attribute.");
-}
-
-void CompileMessages::errorUnexpectedNodeValue(CodeLoc loc) {
-    error(loc, "Unexpected node value found.");
 }
 
 void CompileMessages::errorChildrenNotEq(CodeLoc loc, std::size_t cnt) {
@@ -217,12 +201,6 @@ void CompileMessages::errorNotLastParam(CodeLoc loc) {
     error(loc, "No further parameters are allowed in this function signature.");
 }
 
-/*void CompileMessages::errorBadAttr(CodeLoc loc, Token::Attr attr) {
-    stringstream ss;
-    ss << "Attribute '" << errorString(attr) << "' is not recognized in this context.";
-    error(loc, ss.str());
-}*/
-
 void CompileMessages::errorNonUnOp(CodeLoc loc, Oper op) {
     error(loc, "Operation is not unary.");
 }
@@ -249,14 +227,6 @@ void CompileMessages::errorCnNoInit(CodeLoc loc, NamePool::Id name) {
     error(loc, ss.str());
 }
 
-void CompileMessages::errorCnNoInit(CodeLoc loc) {
-    error(loc, "Constant is not initialized.");
-}
-
-void CompileMessages::errorExprNotBaked(CodeLoc loc) {
-    error(loc, "Expression cannot be evaluated at compile time.");
-}
-
 void CompileMessages::errorExprCannotPromote(CodeLoc loc) {
     error(loc, "Expression cannot be promoted.");
 }
@@ -269,10 +239,6 @@ void CompileMessages::errorExprCannotPromote(CodeLoc loc, TypeTable::Id into) {
 
 void CompileMessages::errorExprKnownBinBadOp(CodeLoc loc) {
     error(loc, "Binary operation is not defined for known values of this type.");
-}
-
-void CompileMessages::errorExprCompareStringLits(CodeLoc loc) {
-    error(loc, "String literals cannot directly be compared for pointer (in)equality.");
 }
 
 void CompileMessages::errorExprCannotCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into) {
@@ -331,10 +297,6 @@ void CompileMessages::errorMacroNameTaken(CodeLoc loc, NamePool::Id name) {
     error(loc, ss.str());
 }
 
-void CompileMessages::errorSigConflict(CodeLoc loc) {
-    error(loc, "Signature conflicts with a previously defined function or macro.");
-}
-
 void CompileMessages::errorArgNameDuplicate(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Argument name '" << namePool->get(name) << "' used more than once.";
@@ -344,12 +306,6 @@ void CompileMessages::errorArgNameDuplicate(CodeLoc loc, NamePool::Id name) {
 void CompileMessages::errorFuncNotFound(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "No functions with name '" << namePool->get(name) << "' satisfying the call signature have been found.";
-    error(loc, ss.str());
-}
-
-void CompileMessages::errorFuncAmbigious(CodeLoc loc, NamePool::Id name) {
-    stringstream ss;
-    ss << "More than one function with name '" << namePool->get(name) << "' satisfying the call signature have been found.";
     error(loc, ss.str());
 }
 
@@ -401,10 +357,6 @@ void CompileMessages::errorExprUnBadType(CodeLoc loc) {
     error(loc, "Unary operation is not allowed on this value.");
 }
 
-void CompileMessages::errorExprUnOnCn(CodeLoc loc) {
-    error(loc, "Operation modifies its operand and cannot be called on a constant type.");
-}
-
 void CompileMessages::errorExprUnOnNull(CodeLoc loc) {
     error(loc, "Operation is not allowed on null literal.");
 }
@@ -419,22 +371,6 @@ void CompileMessages::errorExprAsgnOnCn(CodeLoc loc) {
 
 void CompileMessages::errorExprDotInvalidBase(CodeLoc loc) {
     error(loc, "Invalid expression on left side of dot operator.");
-}
-
-void CompileMessages::errorExprNotValue(CodeLoc loc) {
-    error(loc, "Result does not present a value.");
-}
-
-void CompileMessages::errorMismatchTypeAttribute(CodeLoc loc, TypeTable::Id ty) {
-    stringstream ss;
-    ss << "Type attribute '" << errorStringOfType(ty) << "' does not match the type of the value.";
-    error(loc, ss.str());
-}
-
-void CompileMessages::errorMismatchTypeAttribute(CodeLoc loc) {
-    stringstream ss;
-    ss << "Type attribute does not match the type of the value.";
-    error(loc, ss.str());
 }
 
 void CompileMessages::errorMissingTypeAttribute(CodeLoc loc) {

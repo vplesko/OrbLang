@@ -6,11 +6,12 @@ exprs ::= expr exprs |
 expr ::= expr_walled |
 	exprs ';';
 
-expr_walled ::= expr_walled_bare ':' expr_walled_bare;
+expr_walled ::= expr_walled_bare |
+	expr_walled_bare ':' expr_walled_bare;
 
 expr_walled_bare ::= '(' exprs ')' |
 	'{' exprs '}' |
-	'\\' expr_walled_bare |
+	'\' expr_walled_bare |
 	ID |
 	INT |
 	FLOAT |

@@ -343,7 +343,6 @@ NodeVal Processor::processExit(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
-// TODO write tests for loop on passing block
 NodeVal Processor::processLoop(const NodeVal &node) {
     if (!checkBetweenChildren(node, 2, 3, true)) return NodeVal();
 

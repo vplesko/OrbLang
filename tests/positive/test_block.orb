@@ -74,4 +74,13 @@ fnc main () () {
         println_i32 601;
         loop (block bool { exit b0 true; pass true; });
     };
+
+    sym (d 690);
+    println_i32 (
+        block b0 i32 {
+            = d (+ d 1);
+            loop (< d 700);
+            pass d;
+        };
+    );
 };

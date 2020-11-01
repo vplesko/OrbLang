@@ -11,6 +11,7 @@
 
 class Evaluator;
 
+// TODO due to eval id and type vals, it's not guaranteed that given ids refer to anything valid, so check for that first to avoid seg faults
 // TODO! if operands are known, pass result as known (where allowed)
 // TODO! add ref returning where left out
 // TODO! add more neg tests

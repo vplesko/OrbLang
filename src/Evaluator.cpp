@@ -188,6 +188,7 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     bool isTypeU = typeTable->worksAsTypeU(ty);
     bool isTypeC = typeTable->worksAsTypeC(ty);
     bool isTypeF = typeTable->worksAsTypeF(ty);
+    // TODO strings not handled, fix
     bool isTypeP = typeTable->worksAsTypeAnyP(ty);
     bool isTypeB = typeTable->worksAsTypeB(ty);
 
