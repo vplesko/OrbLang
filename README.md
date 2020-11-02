@@ -1,8 +1,8 @@
 # Orb
 
-Orb is a general-purpose compiled programming language. It is intended for use in applications where access to low-level techniques (eg. manual memory management) is a necessity, and provides compile-time computation capabilities.
+Orb is a general-purpose compiled programming language. It features strict typing, compile-time computations, and manual memory management.
 
-**This project is just a hobby effort and very much a work in progress. A good number of key features are still missing and the tooling may not be very user-friendly.**
+**This project is a hobby effort and very much a work in progress. A good number of key features are still missing and the tooling may not be very user-friendly.**
 
 ## Install
 
@@ -34,20 +34,20 @@ cd ..
 
 ## Examples
 
-You may look at `.orb` files in directory `tests/positive` for examples of code.
+You may look at `.orb` files in directory `tests/positive` for examples of code. `tests/util/clib.orb` and `tests/util/io.orb` may also be of interest.
 
-Here is what HelloWorld would look like in Orb:
+Here is what HelloWorld could look like in Orb:
 
 ```
 (import "clib.orb")
 
-(fnc main (argc:i32 argv:(c8 cn [] cn [])) i32 (
+(fnc main () i32 (
     (printf "Hello, world!\n")
     (ret 0)
 ))
 ```
 
-Depending on your preferences, you may instead write this code:
+Depending on your preferences, you may instead write it like this:
 
 ```
 import "clib.orb";
@@ -71,12 +71,12 @@ import "clib.orb";
 fnc fizzbuzz (top:u32) () {
     sym (i:u32 1);
     block for-loop () {
-        # exit after top is reached
+        # exit after top is exceeded
         exit (> i top);
 
         block for-body () {
             block if () {
-                # negated condition
+                # negated if condition
                 exit (!= (% i 15) 0);
                 printf "FizzBuzz\n";
                 # continue to next iteration
@@ -95,8 +95,9 @@ fnc fizzbuzz (top:u32) () {
             printf "%d\n" i;
         };
 
-        # increment and jump back to block's start
+        # increment the counter
         = i (+ i 1);
+        # unconditionally jump to start of block
         loop true;
     };
 };
@@ -107,9 +108,7 @@ fnc main () () {
 };
 ```
 
-Orb has no knowledge of for loops, instead providing more primitive instructions.
-
-One planned feature are macros - procedures which take code (or other forms of arguments) and return new pieces of code to be processed in place of their invocations. Once implemented, it will be possible to define constructs such as for loops (and many others) from within Orb source code.
+Orb has no knowledge of ifs and for loops, instead providing more primitive instructions. One planned feature are macros - once implemented, it will be possible to define such constructs from within Orb source code.
 
 Here is an illustration of Orb's type system:
 
@@ -118,7 +117,7 @@ bool - boolean
 i8, i16, i32, i64 - signed integrals
 u8, u16, u32, u64 - unsigned integrals
 f32, f64 - floating point numerals
-c8 - char
+c8 - 8-bit char
 ptr - non-descript pointer (void* in C)
 id - identifier (first-class value during compile-time)
 type - type of a value (first-class value during compile-time)
@@ -138,6 +137,7 @@ i32 cn * cn - constant pointer to a constant i32
 ```
 import "clib.orb";
 
+# define our own type (just for show)
 eval (sym (Int:(type cn) i64));
 
 fnc main () () {
@@ -154,6 +154,7 @@ fnc main () () {
             loop (< ind wanted);
         };
 
+        # return a value from this block
         pass ([] a 2);
     }));
 };
