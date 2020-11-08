@@ -32,7 +32,7 @@ private:
 
     bool escaped = false;
 
-    friend void swap(NodeVal &lhs, NodeVal &rhs);
+    void copyFrom(const NodeVal &other);
 
 public:
     // Invalid value. Remember to set code loc before returning if meant to be valid.
@@ -46,7 +46,10 @@ public:
     NodeVal(CodeLoc codeLoc, const LlvmVal &val);
 
     NodeVal(const NodeVal &other);
-    NodeVal& operator=(NodeVal other);
+    NodeVal& operator=(const NodeVal &other);
+
+    NodeVal(NodeVal &&other) = default;
+    NodeVal& operator=(NodeVal &&other) = default;
 
     CodeLoc getCodeLoc() const { return codeLoc; }
     bool isEscaped() const { return escaped; }

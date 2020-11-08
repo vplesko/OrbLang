@@ -19,7 +19,7 @@ NodeVal::NodeVal(CodeLoc codeLoc, const KnownVal &val) : codeLoc(codeLoc), kind(
 NodeVal::NodeVal(CodeLoc codeLoc, const LlvmVal &val) : codeLoc(codeLoc), kind(Kind::kLlvm), llvm(val) {
 }
 
-NodeVal::NodeVal(const NodeVal &other) : NodeVal() {
+void NodeVal::copyFrom(const NodeVal &other) {
     codeLoc = other.codeLoc;
     kind = other.kind;
     importFile = other.importFile;
@@ -39,20 +39,14 @@ NodeVal::NodeVal(const NodeVal &other) : NodeVal() {
     escaped = other.escaped;
 }
 
-void swap(NodeVal &lhs, NodeVal &rhs) {
-    swap(lhs.codeLoc, rhs.codeLoc);
-    swap(lhs.kind, rhs.kind);
-    swap(lhs.importFile, rhs.importFile);
-    swap(lhs.literal, rhs.literal);
-    swap(lhs.known, rhs.known);
-    swap(lhs.llvm, rhs.llvm);
-    swap(lhs.children, rhs.children);
-    swap(lhs.typeAttr, rhs.typeAttr);
-    swap(lhs.escaped, rhs.escaped);
+NodeVal::NodeVal(const NodeVal &other) : NodeVal() {
+    copyFrom(other);
 }
 
-NodeVal& NodeVal::operator=(NodeVal other) {
-    swap(*this, other);
+NodeVal& NodeVal::operator=(const NodeVal &other) {
+    if (this != &other) {
+        copyFrom(other);
+    }
     return *this;
 }
 
