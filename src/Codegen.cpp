@@ -154,12 +154,14 @@ NodeVal Codegen::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal
 }
 
 NodeVal Codegen::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
-    if (node.getType().has_value() && node.getType().value() == ty) {
-        return node;
-    }
-
     NodeVal promo = promoteIfKnownValAndCheckIsLlvmVal(node, true);
     if (promo.isInvalid()) return NodeVal();
+
+    if (promo.getLlvmVal().type == ty) {
+        LlvmVal llvmVal = promo.getLlvmVal();
+        llvmVal.ref = nullptr;
+        return NodeVal(codeLoc, LlvmVal::copyNoRef(promo.getLlvmVal()));
+    }
 
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 

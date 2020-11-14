@@ -1,0 +1,4 @@
+fnc main () () {
+    sym (x 0);
+    = (cast i32 x) 0;
+};

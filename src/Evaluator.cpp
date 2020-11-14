@@ -29,11 +29,6 @@ NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeV
 }
 
 NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
-    if (node.getType().has_value() && node.getType().value() == ty) {
-        // TODO ref break
-        return node;
-    }
-
     if (!checkIsKnownVal(node, true) || !checkHasType(node, true)) return NodeVal();
 
     optional<KnownVal> knownValCast = makeCast(node.getKnownVal(), node.getKnownVal().type.value(), ty);
@@ -535,8 +530,7 @@ bool Evaluator::checkIsKnownVal(CodeLoc codeLoc, const NodeVal &node, bool orErr
 
 // TODO warn on lossy
 optional<KnownVal> Evaluator::makeCast(const KnownVal &srcKnownVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId) {
-    // TODO! ref break
-    if (srcTypeId == dstTypeId) return srcKnownVal;
+    if (srcTypeId == dstTypeId) return KnownVal::copyNoRef(srcKnownVal);
 
     optional<KnownVal> dstKnownVal = KnownVal::makeVal(dstTypeId, typeTable);
 

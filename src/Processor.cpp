@@ -100,7 +100,8 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
 }
 
 NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
-    if (node.getLength() == 1) return starting;
+    if (node.getLength() == 1)
+        return NodeVal(node.getCodeLoc(), KnownVal::copyNoRef(starting.getKnownVal()));
 
     NodeVal second = processForTypeArg(node.getChild(1));
     if (second.isInvalid()) return NodeVal();
@@ -639,6 +640,7 @@ NodeVal Processor::processOper(const NodeVal &node, Oper op) {
 }
 
 NodeVal Processor::processTuple(const NodeVal &node, const NodeVal &starting) {
+    // TODO rework after allowing single value tuples
     if (node.getChildrenCnt() == 1) return starting;
 
     vector<NodeVal> membs;

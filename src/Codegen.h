@@ -10,7 +10,6 @@
 
 class Evaluator;
 
-// TODO! ref breaking
 class Codegen : public Processor {
     Evaluator *evaluator;
 
