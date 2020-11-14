@@ -11,7 +11,6 @@
 
 class Evaluator;
 
-// TODO! if operands are known, pass result as known (where allowed)
 class Processor {
 protected:
     NamePool *namePool;

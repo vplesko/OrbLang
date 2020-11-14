@@ -40,11 +40,6 @@ NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::
             msgs->errorExprCannotCast(codeLoc, node.getKnownVal().type.value(), ty);
         }
         return NodeVal();
-    } else if (!KnownVal::isCastable(node.getKnownVal(), node.getKnownVal().type.value(), stringPool, typeTable)) {
-        // if it's not castable, this should not have succeeded
-        // TODO this duplicate work might be slowing compilation down, analyze
-        msgs->errorInternal(codeLoc);
-        return NodeVal();
     }
 
     return NodeVal(codeLoc, knownValCast.value());
@@ -174,7 +169,7 @@ NodeVal Evaluator::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
 }
 
 void* Evaluator::performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt) {
-    return new ComparisonSignal(true);
+    return new ComparisonSignal;
 }
 
 optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) {
@@ -221,110 +216,110 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     switch (op) {
     case Oper::EQ:
         if (isTypeI) {
-            *result = il.value()==ir.value();
-            return !*result;
+            result->result = il.value()==ir.value();
+            return !result->result;
         } else if (isTypeU) {
-            *result = ul.value()==ur.value();
-            return !*result;
+            result->result = ul.value()==ur.value();
+            return !result->result;
         } else if (isTypeC) {
-            *result = cl.value()==cr.value();
-            return !*result;
+            result->result = cl.value()==cr.value();
+            return !result->result;
         } else if (isTypeF) {
-            *result = fl.value()==fr.value();
-            return !*result;
+            result->result = fl.value()==fr.value();
+            return !result->result;
         } else if (isTypeStr) {
-            *result = strl.value()==strr.value();
-            return !*result;
+            result->result = strl.value()==strr.value();
+            return !result->result;
         } else if (isTypeP) {
-            *result = true; // null == null
-            return !*result;
+            result->result = true; // null == null
+            return !result->result;
         } else if (isTypeB) {
-            *result = bl.value()==br.value();
-            return !*result;
+            result->result = bl.value()==br.value();
+            return !result->result;
         }
         break;
     case Oper::NE:
         if (isTypeI) {
-            *result = il.value()!=ir.value();
-            return !*result;
+            result->result = il.value()!=ir.value();
+            return !result->result;
         } else if (isTypeU) {
-            *result = ul.value()!=ur.value();
-            return !*result;
+            result->result = ul.value()!=ur.value();
+            return !result->result;
         } else if (isTypeC) {
-            *result = cl.value()!=cr.value();
-            return !*result;
+            result->result = cl.value()!=cr.value();
+            return !result->result;
         } else if (isTypeF) {
-            *result = fl.value()!=fr.value();
-            return !*result;
+            result->result = fl.value()!=fr.value();
+            return !result->result;
         } else if (isTypeStr) {
-            *result = strl.value()!=strr.value();
-            return !*result;
+            result->result = strl.value()!=strr.value();
+            return !result->result;
         } else if (isTypeP) {
-            *result = false; // null != null
-            return !*result;
+            result->result = false; // null != null
+            return !result->result;
         } else if (isTypeB) {
-            *result = bl.value()!=br.value();
-            return !*result;
+            result->result = bl.value()!=br.value();
+            return !result->result;
         }
         break;
     case Oper::LT:
         if (isTypeI) {
-            *result = il.value()<ir.value();
-            return !*result;
+            result->result = il.value()<ir.value();
+            return !result->result;
         } else if (isTypeU) {
-            *result = ul.value()<ur.value();
-            return !*result;
+            result->result = ul.value()<ur.value();
+            return !result->result;
         } else if (isTypeC) {
-            *result = cl.value()<cr.value();
-            return !*result;
+            result->result = cl.value()<cr.value();
+            return !result->result;
         } else if (isTypeF) {
-            *result = fl.value()<fr.value();
-            return !*result;
+            result->result = fl.value()<fr.value();
+            return !result->result;
         }
         break;
     case Oper::LE:
         if (isTypeI) {
-            *result = il.value()<=ir.value();
-            return !*result;
+            result->result = il.value()<=ir.value();
+            return !result->result;
         } else if (isTypeU) {
-            *result = ul.value()<=ur.value();
-            return !*result;
+            result->result = ul.value()<=ur.value();
+            return !result->result;
         } else if (isTypeC) {
-            *result = cl.value()<=cr.value();
-            return !*result;
+            result->result = cl.value()<=cr.value();
+            return !result->result;
         } else if (isTypeF) {
-            *result = fl.value()<=fr.value();
-            return !*result;
+            result->result = fl.value()<=fr.value();
+            return !result->result;
         }
         break;
     case Oper::GT:
         if (isTypeI) {
-            *result = il.value()>ir.value();
-            return !*result;
+            result->result = il.value()>ir.value();
+            return !result->result;
         } else if (isTypeU) {
-            *result = ul.value()>ur.value();
-            return !*result;
+            result->result = ul.value()>ur.value();
+            return !result->result;
         } else if (isTypeC) {
-            *result = cl.value()>cr.value();
-            return !*result;
+            result->result = cl.value()>cr.value();
+            return !result->result;
         } else if (isTypeF) {
-            *result = fl.value()>fr.value();
-            return !*result;
+            result->result = fl.value()>fr.value();
+            return !result->result;
         }
         break;
     case Oper::GE:
         if (isTypeI) {
-            *result = il.value()>=ir.value();
-            return !*result;
+            result->result = il.value()>=ir.value();
+            return !result->result;
         } else if (isTypeU) {
-            *result = ul.value()>=ur.value();
-            return !*result;
+            result->result = ul.value()>=ur.value();
+            return !result->result;
         } else if (isTypeC) {
-            *result = cl.value()>=cr.value();
-            return !*result;
+            result->result = cl.value()>=cr.value();
+            return !result->result;
         } else if (isTypeF) {
-            *result = fl.value()>=fr.value();
-            return !*result;
+            result->result = fl.value()>=fr.value();
+            return !result->result;
         }
         break;
     }
@@ -337,7 +332,7 @@ NodeVal Evaluator::performOperComparisonTearDown(CodeLoc codeLoc, bool success, 
     if (!success) return NodeVal();
 
     KnownVal knownVal = KnownVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_BOOL), typeTable);
-    knownVal.b = *((ComparisonSignal*) signal);
+    knownVal.b = ((ComparisonSignal*) signal)->result;
     return NodeVal(codeLoc, knownVal);
 }
 

@@ -22,7 +22,9 @@ class Evaluator : public Processor {
     std::optional<KnownVal> makeArray(TypeTable::Id arrTypeId);
 
 public:
-    typedef bool ComparisonSignal;
+    struct ComparisonSignal {
+        bool result = true;
+    };
 
     // TODO!
     bool isSkippingProcessing() const { return isSkipIssued(); }

@@ -910,18 +910,11 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
         }
 
         if (index.isKnownVal() && typeTable->worksAsTypeArr(baseType)) {
-            if (KnownVal::isI(index.getKnownVal(), typeTable)) {
-                int64_t ind = KnownVal::getValueI(index.getKnownVal(), typeTable).value();
-                size_t len = typeTable->extractLenOfArr(baseType).value();
-                if (ind < 0 || (size_t) ind >= len) {
-                    msgs->warnExprIndexOutOfBounds(index.getCodeLoc());
-                }
-            } else if (KnownVal::isU(index.getKnownVal(), typeTable)) {
-                uint64_t ind = KnownVal::getValueU(index.getKnownVal(), typeTable).value();
-                size_t len = typeTable->extractLenOfArr(baseType).value();
-                if (ind >= len) {
-                    msgs->warnExprIndexOutOfBounds(index.getCodeLoc());
-                }
+            size_t len = typeTable->extractLenOfArr(baseType).value();
+            optional<size_t> ind = KnownVal::getValueNonNeg(index.getKnownVal(), typeTable);
+            if (!ind.has_value() || ind.value() >= len) {
+                msgs->errorExprIndexOutOfBounds(index.getCodeLoc());
+                return NodeVal();
             }
         }
 

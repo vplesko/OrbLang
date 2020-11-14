@@ -13,8 +13,14 @@
 using namespace std;
 
 struct ComparisonSignal {
+    size_t opersCnt;
     llvm::BasicBlock *llvmBlock = nullptr;
     llvm::PHINode *llvmPhi = nullptr;
+    Evaluator::ComparisonSignal evalSignal;
+
+    ComparisonSignal(size_t c) : opersCnt(c) {}
+
+    bool isLlvmStarted() const { return llvmPhi != nullptr; }
 };
 
 Codegen::Codegen(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs, Evaluator *evaluator)
@@ -442,28 +448,28 @@ NodeVal Codegen::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
 }
 
 void* Codegen::performOperComparisonSetUp(CodeLoc codeLoc, size_t opersCnt) {
-    if (checkInGlobalScope(codeLoc, false))
-        return evaluator->performOperComparisonSetUp(codeLoc, opersCnt);
-
-    llvm::BasicBlock *llvmBlockCurr = llvmBuilder.GetInsertBlock();
-
-    llvm::BasicBlock *llvmBlockRes = llvm::BasicBlock::Create(llvmContext, "comparison");
-    llvmBuilder.SetInsertPoint(llvmBlockRes);
-    llvm::PHINode *llvmPhiRes = llvmBuilder.CreatePHI(makeLlvmPrimType(TypeTable::P_BOOL), (unsigned) opersCnt);
-
-    llvmBuilder.SetInsertPoint(llvmBlockCurr);
-
-    ComparisonSignal *compSignal = new ComparisonSignal;
-    compSignal->llvmBlock = llvmBlockRes;
-    compSignal->llvmPhi = llvmPhiRes;
-    return compSignal;
+    return new ComparisonSignal(opersCnt);
 }
 
 optional<bool> Codegen::performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) {
-    if (checkInGlobalScope(codeLoc, false))
-        return evaluator->performOperComparison(codeLoc, lhs, rhs, op, signal);
-
     ComparisonSignal *compSignal = (ComparisonSignal*) signal;
+
+    if (checkIsKnownVal(lhs, false) && checkIsKnownVal(rhs, false)) {
+        --compSignal->opersCnt;
+        return evaluator->performOperComparison(codeLoc, lhs, rhs, op, &compSignal->evalSignal);
+    }
+
+    if (!checkInLocalScope(codeLoc, true)) return nullopt;
+
+    if (!compSignal->isLlvmStarted()) {
+        llvm::BasicBlock *llvmBlockCurr = llvmBuilder.GetInsertBlock();
+
+        compSignal->llvmBlock = llvm::BasicBlock::Create(llvmContext, "comparison");
+        llvmBuilder.SetInsertPoint(compSignal->llvmBlock);
+        compSignal->llvmPhi = llvmBuilder.CreatePHI(makeLlvmPrimType(TypeTable::P_BOOL), (unsigned) compSignal->opersCnt);
+
+        llvmBuilder.SetInsertPoint(llvmBlockCurr);
+    }
     
     NodeVal lhsPromo = promoteIfKnownValAndCheckIsLlvmVal(lhs, true);
     if (lhsPromo.isInvalid()) return nullopt;
@@ -559,12 +565,16 @@ optional<bool> Codegen::performOperComparison(CodeLoc codeLoc, const NodeVal &lh
 }
 
 NodeVal Codegen::performOperComparisonTearDown(CodeLoc codeLoc, bool success, void *signal) {
-    if (checkInGlobalScope(codeLoc, false))
-        return evaluator->performOperComparisonTearDown(codeLoc, success, signal);
-
     ComparisonSignal *compSignal = (ComparisonSignal*) signal;
+
+    if (!compSignal->isLlvmStarted()) {
+        return evaluator->performOperComparisonTearDown(codeLoc, success, &compSignal->evalSignal);
+    }
+
+    if (!checkInLocalScope(codeLoc, true)) return NodeVal();
+
     if (!success) {
-        if (compSignal->llvmPhi != nullptr) compSignal->llvmPhi->eraseFromParent();
+        compSignal->llvmPhi->eraseFromParent();
         return NodeVal();
     }
 
@@ -580,6 +590,9 @@ NodeVal Codegen::performOperComparisonTearDown(CodeLoc codeLoc, bool success, vo
 }
 
 NodeVal Codegen::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) {
+    if (checkIsKnownVal(lhs, false) && checkIsKnownVal(rhs, false))
+        return evaluator->performOperAssignment(codeLoc, lhs, rhs);
+
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
     if (!checkIsLlvmVal(lhs, true)) return NodeVal();
@@ -596,6 +609,11 @@ NodeVal Codegen::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const Node
 }
 
 NodeVal Codegen::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) {
+    // TODO allow eval indexing of strings
+    if (checkIsKnownVal(base, false) && checkIsKnownVal(ind, false) &&
+        !typeTable->worksAsTypeStr(base.getKnownVal().type.value()))
+        return evaluator->performOperIndex(codeLoc, base, ind, resTy);
+
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     
     NodeVal basePromo = promoteIfKnownValAndCheckIsLlvmVal(base, true);
@@ -635,6 +653,9 @@ NodeVal Codegen::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal 
 }
 
 NodeVal Codegen::performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
+    if (checkIsKnownVal(base, false))
+        return evaluator->performOperMember(codeLoc, base, ind, resTy);
+
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     
     NodeVal basePromo = promoteIfKnownValAndCheckIsLlvmVal(base, true);
@@ -651,6 +672,9 @@ NodeVal Codegen::performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64_t
 }
 
 NodeVal Codegen::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op) {
+    if (checkIsKnownVal(lhs, false) && checkIsKnownVal(rhs, false))
+        return evaluator->performOperRegular(codeLoc, lhs, rhs, op);
+
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     
     NodeVal lhsPromo = promoteIfKnownValAndCheckIsLlvmVal(lhs, true);
@@ -743,6 +767,17 @@ NodeVal Codegen::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const N
 }
 
 NodeVal Codegen::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) {
+    bool allKnown = true;
+    for (const auto &it : membs) {
+        if (!checkIsKnownVal(it, false)) {
+            allKnown = false;
+            break;
+        }
+    }
+    if (allKnown) {
+        return evaluator->performTuple(codeLoc, ty, membs);
+    }
+
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
     llvm::StructType *llvmTupType = (llvm::StructType*) makeLlvmTypeOrError(codeLoc, ty);
@@ -880,8 +915,6 @@ llvm::Type* Codegen::makeLlvmType(TypeTable::Id typeId) {
     } else if (typeTable->isTuple(typeId)) {
         const TypeTable::Tuple &tup = typeTable->getTuple(typeId);
 
-        llvm::StructType *structType = llvm::StructType::create(llvmContext, "tuple");
-
         vector<llvm::Type*> memberTypes(tup.members.size());
         for (size_t i = 0; i < tup.members.size(); ++i) {
             llvm::Type *memberType = makeLlvmType(tup.members[i]);
@@ -889,9 +922,7 @@ llvm::Type* Codegen::makeLlvmType(TypeTable::Id typeId) {
             memberTypes[i] = memberType;
         }
 
-        structType->setBody(memberTypes);
-
-        llvmType = structType;
+        llvmType = llvm::StructType::get(llvmContext, memberTypes);
     }
 
     // supported primitive type are codegened at the start of compilation

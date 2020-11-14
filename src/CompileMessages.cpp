@@ -190,14 +190,6 @@ inline void CompileMessages::warn(CodeLoc loc, const std::string &str) {
     warn(str);
 }
 
-void CompileMessages::warnExprIndexOutOfBounds(CodeLoc loc) {
-    warn(loc, "Attempting to index out of bounds of the array.");
-}
-
-void CompileMessages::warnExprCompareStringLits(CodeLoc loc) {
-    warn(loc, "String literals cannot directly be compared for pointer (in)equality.");
-}
-
 inline void CompileMessages::error(const string &str) {
     status = max(status, S_ERROR);
     (*out) << "error: " << str << endl;
@@ -473,6 +465,10 @@ void CompileMessages::errorExprIndexOnBadType(CodeLoc loc, TypeTable::Id ty) {
     stringstream ss;
     ss << "Cannot index on type '" << errorStringOfType(ty) << "'.";
     error(loc, ss.str());
+}
+
+void CompileMessages::errorExprIndexOutOfBounds(CodeLoc loc) {
+    error(loc, "Attempting to index out of bounds of the array.");
 }
 
 void CompileMessages::errorExprDerefOnBadType(CodeLoc loc, TypeTable::Id ty) {

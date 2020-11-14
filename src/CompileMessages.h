@@ -41,9 +41,6 @@ public:
     
     bool isFail() const { return status >= S_ERROR; }
 
-    void warnExprIndexOutOfBounds(CodeLoc loc);
-    void warnExprCompareStringLits(CodeLoc loc);
-
     void errorInputFileNotFound(const std::string &path);
     void errorBadToken(CodeLoc loc);
     void errorUnclosedMultilineComment(CodeLoc loc);
@@ -79,6 +76,7 @@ public:
     void errorExprCannotImplicitCastEither(CodeLoc loc, TypeTable::Id ty1, TypeTable::Id ty2);
     void errorExprIndexOnBadType(CodeLoc loc);
     void errorExprIndexOnBadType(CodeLoc loc, TypeTable::Id ty);
+    void errorExprIndexOutOfBounds(CodeLoc loc);
     void errorExprDerefOnBadType(CodeLoc loc, TypeTable::Id ty);
     void errorExprAddressOfNoRef(CodeLoc loc);
     void errorExprIndexNotIntegral(CodeLoc loc);
