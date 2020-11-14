@@ -58,8 +58,8 @@ bool Evaluator::performBlockReentry(CodeLoc codeLoc) {
 NodeVal Evaluator::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) {
     if (!success) return NodeVal();
 
-    // TODO if it evals well with a pass in the middle, but no pass at end, no error detected
-    // TODO also, figure out control flow handling and error detection
+    // TODO figure out control flow handling and error detection
+    // (eg if it evals well with a pass in the middle, but no pass at end, no error detected)
     if (!isSkipIssued() && block.type.has_value()) {
         msgs->errorBlockNoPass(codeLoc);
         return NodeVal();
@@ -188,7 +188,7 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     bool isTypeU = typeTable->worksAsTypeU(ty);
     bool isTypeC = typeTable->worksAsTypeC(ty);
     bool isTypeF = typeTable->worksAsTypeF(ty);
-    // TODO strings not handled, fix
+    bool isTypeStr = typeTable->worksAsTypeStr(ty);
     bool isTypeP = typeTable->worksAsTypeAnyP(ty);
     bool isTypeB = typeTable->worksAsTypeB(ty);
 
@@ -196,6 +196,7 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     optional<uint64_t> ul, ur;
     optional<char> cl, cr;
     optional<double> fl, fr;
+    optional<StringPool::Id> strl, strr;
     optional<bool> bl, br;
     if (isTypeI) {
         il = KnownVal::getValueI(lhs.getKnownVal(), typeTable).value();
@@ -209,6 +210,9 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     } else if (isTypeF) {
         fl = KnownVal::getValueF(lhs.getKnownVal(), typeTable).value();
         fr = KnownVal::getValueF(rhs.getKnownVal(), typeTable).value();
+    } else if (isTypeStr) {
+        strl = lhs.getKnownVal().str.value();
+        strr = rhs.getKnownVal().str.value();
     } else if (isTypeB) {
         bl = lhs.getKnownVal().b;
         br = rhs.getKnownVal().b;
@@ -227,6 +231,9 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
             return !*result;
         } else if (isTypeF) {
             *result = fl.value()==fr.value();
+            return !*result;
+        } else if (isTypeStr) {
+            *result = strl.value()==strr.value();
             return !*result;
         } else if (isTypeP) {
             *result = true; // null == null
@@ -248,6 +255,9 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
             return !*result;
         } else if (isTypeF) {
             *result = fl.value()!=fr.value();
+            return !*result;
+        } else if (isTypeStr) {
+            *result = strl.value()!=strr.value();
             return !*result;
         } else if (isTypeP) {
             *result = false; // null != null

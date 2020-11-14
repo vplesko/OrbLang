@@ -117,7 +117,7 @@ string CompileMessages::errorStringOfToken(Token tok) const {
 }
 
 string CompileMessages::errorStringOfKeyword(Keyword k) const {
-    return namePool->get(getKeywordNameId(k));
+    return namePool->get(getKeywordNameId(k).value());
 }
 
 string CompileMessages::errorStringOfType(TypeTable::Id ty) const {
@@ -519,6 +519,10 @@ void CompileMessages::errorNotGlobalScope(CodeLoc loc) {
 
 void CompileMessages::errorNotTopmost(CodeLoc loc) {
     error(loc, "This is only allowed at the topmost code level.");
+}
+
+void CompileMessages::errorNoMain() {
+    error("No main function defined.");
 }
 
 void CompileMessages::errorEvaluationNotSupported(CodeLoc loc) {

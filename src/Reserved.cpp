@@ -39,6 +39,14 @@ optional<Meaningful> getMeaningful(NamePool::Id name) {
     return loc->second;
 }
 
+optional<NamePool::Id> getMeaningfulNameId(Meaningful m) {
+    for (const auto &it : meaningfuls) {
+        if (it.second == m) return it.first;
+    }
+
+    return nullopt;
+}
+
 bool isMeaningful(NamePool::Id name, Meaningful m) {
     optional<Meaningful> opt = getMeaningful(name);
     return opt.has_value() && opt.value() == m;
@@ -54,12 +62,12 @@ optional<Keyword> getKeyword(NamePool::Id name) {
     return loc->second;
 }
 
-NamePool::Id getKeywordNameId(Keyword k) {
+optional<NamePool::Id> getKeywordNameId(Keyword k) {
     for (const auto &it : keywords) {
         if (it.second == k) return it.first;
     }
 
-    return 0; // should not happen
+    return nullopt;
 }
 
 bool isKeyword(NamePool::Id name, Keyword k) {

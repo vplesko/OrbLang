@@ -269,10 +269,14 @@ void Compiler::printout() const {
 }
 
 bool Compiler::compile(const std::string &output, bool exe) {
-    // TODO print error if no main
     if (!exe) {
         return codegen->binary(output);
     } else {
+        if (symbolTable->getFunction(getMeaningfulNameId(Meaningful::MAIN).value()) == nullptr) {
+            msgs->errorNoMain();
+            return false;
+        }
+
         const static string tempObjName = isOsWindows ? "a.obj" : "a.o";
         // TODO doesn't get called on linker failure
         DeferredCallback delObjTemp([&] { remove(tempObjName.c_str()); });

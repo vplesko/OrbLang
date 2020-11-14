@@ -103,6 +103,7 @@ public:
     void errorMissingTypeAttribute(CodeLoc loc);
     void errorNotGlobalScope(CodeLoc loc);
     void errorNotTopmost(CodeLoc loc);
+    void errorNoMain();
     // placeholder error, should not stay in code
     void errorEvaluationNotSupported(CodeLoc loc);
     // placeholder error, should not stay in code
