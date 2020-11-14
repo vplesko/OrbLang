@@ -54,6 +54,14 @@ optional<Keyword> getKeyword(NamePool::Id name) {
     return loc->second;
 }
 
+NamePool::Id getKeywordNameId(Keyword k) {
+    for (const auto &it : keywords) {
+        if (it.second == k) return it.first;
+    }
+
+    return 0; // should not happen
+}
+
 bool isKeyword(NamePool::Id name, Keyword k) {
     optional<Keyword> opt = getKeyword(name);
     return opt.has_value() && opt.value() == k;

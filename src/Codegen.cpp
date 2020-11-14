@@ -144,7 +144,6 @@ NodeVal Codegen::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal
 
     LlvmVal llvmVal(ty);
     if (symbolTable->inGlobalScope()) {
-        // TODO is the cast to llvm::Constant* always correct?
         llvmVal.ref = makeLlvmGlobal(llvmType, (llvm::Constant*) promo.getLlvmVal().val, typeTable->worksAsTypeCn(ty), getNameForLlvm(id));
     } else {
         llvmVal.ref = makeLlvmAlloca(llvmType, getNameForLlvm(id));

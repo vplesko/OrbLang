@@ -69,6 +69,7 @@ std::optional<Meaningful> getMeaningful(NamePool::Id name);
 bool isMeaningful(NamePool::Id name, Meaningful m);
 bool isKeyword(NamePool::Id name);
 std::optional<Keyword> getKeyword(NamePool::Id name);
+NamePool::Id getKeywordNameId(Keyword k);
 bool isKeyword(NamePool::Id name, Keyword k);
 bool isOper(NamePool::Id name);
 std::optional<Oper> getOper(NamePool::Id name);

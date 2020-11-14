@@ -10,7 +10,7 @@
 
 class NamePool;
 
-// TODO due to eval id and type vals, it's not guaranteed that given ids refer to anything valid, so check for that first to avoid seg faults
+// TODO due to eval id and type vals, it's not guaranteed that given ids refer to anything valid, fix by introducing zero init
 class CompileMessages {
     enum Status {
         S_OK,
@@ -30,6 +30,9 @@ class CompileMessages {
     void error(const std::string &str);
     void error(CodeLoc loc, const std::string &str);
 
+    std::string errorStringOfTokenType(Token::Type tokTy) const;
+    std::string errorStringOfToken(Token tok) const;
+    std::string errorStringOfKeyword(Keyword k) const;
     std::string errorStringOfType(TypeTable::Id ty) const;
 
 public:

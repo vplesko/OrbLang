@@ -4,6 +4,122 @@
 #include "NamePool.h"
 using namespace std;
 
+string CompileMessages::errorStringOfTokenType(Token::Type tokTy) const {
+    string fallback("<unknown>");
+
+    stringstream ss;
+
+    switch (tokTy) {
+    case Token::T_NUM:
+        ss << "numeric";
+        break;
+    case Token::T_FNUM:
+        ss << "floating numeric";
+        break;
+    case Token::T_CHAR:
+        ss << "char";
+        break;
+    case Token::T_BVAL:
+        ss << "boolean";
+        break;
+    case Token::T_STRING:
+        ss << "string";
+        break;
+    case Token::T_NULL:
+        ss << "null";
+        break;
+    case Token::T_SEMICOLON:
+        ss << "\';\'";
+        break;
+    case Token::T_COLON:
+        ss << "\':\'";
+        break;
+    case Token::T_BACKSLASH:
+        ss << "\'\\\'";
+        break;
+    case Token::T_BRACE_L_REG:
+        ss << "\'(\'";
+        break;
+    case Token::T_BRACE_R_REG:
+        ss << "\')\'";
+        break;
+    case Token::T_BRACE_L_CUR:
+        ss << "\'{\'";
+        break;
+    case Token::T_BRACE_R_CUR:
+        ss << "\'}\'";
+        break;
+    case Token::T_ID:
+        ss << "identifier";
+        break;
+    default:
+        ss << fallback;
+        break;
+    }
+
+    return ss.str();
+}
+
+string CompileMessages::errorStringOfToken(Token tok) const {
+    string fallback("<unknown>");
+
+    stringstream ss;
+
+    switch (tok.type) {
+    case Token::T_NUM:
+        ss << tok.num;
+        break;
+    case Token::T_FNUM:
+        ss << tok.T_FNUM;
+        break;
+    case Token::T_CHAR:
+        ss << '\'' << tok.ch << '\'';
+        break;
+    case Token::T_BVAL:
+        ss << (tok.bval ? "true" : "false");
+        break;
+    case Token::T_STRING:
+        ss << '\"' << stringPool->get(tok.stringId) << '\"';
+        break;
+    case Token::T_NULL:
+        ss << "null";
+        break;
+    case Token::T_SEMICOLON:
+        ss << "\';\'";
+        break;
+    case Token::T_COLON:
+        ss << "\':\'";
+        break;
+    case Token::T_BACKSLASH:
+        ss << "\'\\\'";
+        break;
+    case Token::T_BRACE_L_REG:
+        ss << "\'(\'";
+        break;
+    case Token::T_BRACE_R_REG:
+        ss << "\')\'";
+        break;
+    case Token::T_BRACE_L_CUR:
+        ss << "\'{\'";
+        break;
+    case Token::T_BRACE_R_CUR:
+        ss << "\'}\'";
+        break;
+    case Token::T_ID:
+        ss << "\'" << namePool->get(tok.nameId) << "\'";
+        break;
+    default:
+        ss << fallback;
+        break;
+    }
+
+    return ss.str();
+}
+
+string CompileMessages::errorStringOfKeyword(Keyword k) const {
+    return namePool->get(getKeywordNameId(k));
+}
+
 string CompileMessages::errorStringOfType(TypeTable::Id ty) const {
     string fallback("<unknown>");
 
@@ -123,28 +239,48 @@ void CompileMessages::errorImportCyclical(CodeLoc loc, const string &path) {
 }
 
 void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp) {
-    // TODO better msg
-    error(loc, "Unexpected symbol found.");
+    stringstream ss;
+    ss << "Unexpected symbol found." <<
+        " Expected " << errorStringOfTokenType(exp) << ".";
+    error(loc, ss.str());
 }
 
 void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token::Type see) {
-    // TODO better msg
-    error(loc, "Unexpected symbol found.");
+    stringstream ss;
+    ss << "Unexpected symbol found." <<
+        " Expected " << errorStringOfTokenType(exp) <<
+        ", found " << errorStringOfTokenType(see) << ".";
+    error(loc, ss.str());
 }
 
 void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token see) {
-    // TODO better msg
-    error(loc, "Unexpected symbol found.");
+    stringstream ss;
+    ss << "Unexpected symbol found." <<
+        " Expected " << errorStringOfTokenType(exp) <<
+        ", found " << errorStringOfToken(see) << ".";
+    error(loc, ss.str());
 }
 
 void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, vector<Token::Type> exp, Token see) {
-    // TODO better msg
-    error(loc, "Unexpected symbol found.");
+    stringstream ss;
+    ss << "Unexpected symbol found.";
+
+    ss << " Expected one of: [";
+    for (size_t i = 0; i < exp.size(); ++i) {
+        if (i > 0) ss << ", ";
+        ss << errorStringOfTokenType(exp[i]);
+    }
+    ss << "]";
+
+    ss << ", found " << errorStringOfToken(see) << ".";
+
+    error(loc, ss.str());
 }
 
 void CompileMessages::errorUnexpectedKeyword(CodeLoc loc, Keyword keyw) {
-    // TODO better msg
-    error(loc, "Unexpected keyword found.");
+    stringstream ss;
+    ss << "Unexpected keyword found: " << errorStringOfKeyword(keyw) << ".";
+    error(loc, ss.str());
 }
 
 void CompileMessages::errorUnexpectedIsNotTerminal(CodeLoc loc) {
