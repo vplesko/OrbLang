@@ -454,7 +454,7 @@ void* Codegen::performOperComparisonSetUp(CodeLoc codeLoc, size_t opersCnt) {
 optional<bool> Codegen::performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) {
     ComparisonSignal *compSignal = (ComparisonSignal*) signal;
 
-    if (checkIsKnownVal(lhs, false) && checkIsKnownVal(rhs, false)) {
+    if (!compSignal->isLlvmStarted() && checkIsKnownVal(lhs, false) && checkIsKnownVal(rhs, false)) {
         --compSignal->opersCnt;
         return evaluator->performOperComparison(codeLoc, lhs, rhs, op, &compSignal->evalSignal);
     }

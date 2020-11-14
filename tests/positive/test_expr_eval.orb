@@ -1,40 +1,44 @@
 import "util/io.orb";
 
+eval (sym (glob (< 1 2 3)));
+
 fnc main() () {
-    println_i32 (eval 100);
-    println_i32 (eval (+ 101));
-    println_i32 (eval (- 102));
-    println_f32 (eval (+ 103.0));
-    println_i32 (eval (+ 103 (cast i32 (! false))));
-    println_i8 (eval (~ 104:i8));
+    println_i32 100;
+    println_i32 (+ 101);
+    println_i32 (- 102);
+    println_f32 (+ 103.0);
+    println_i32 (+ 103 (cast i32 (! false)));
+    println_i8 (~ 104:i8);
 
-    println_i32 (eval (+ 200 (cast i32 (!= 1 1 2))));
-    println_i32 (eval (+ 200 (cast i32 (== 1 1))));
-    println_i32 (eval (+ 201 (cast i32 (< 1 2 3 4 5))));
-    println_i32 (eval (+ 203 (cast i32 (>= 3 (- 3 1) (+ 1 2)))));
-    #(eval sym (s 0) (p (& s)));
-    #println_i32 (eval (+ 203 (cast i32 (== p (& s)))));
-    println_i32 (eval (+ 204 (cast i32 (== true true))));
-    println_i32 (eval (+ 206 (cast i32 (== true false))));
-    println_i32 (eval (+ 207 (cast i32 (!= true true))));
-    println_i32 (eval (+ 207 (cast i32 (!= true false))));
-    println_i32 (eval (+ 209 (cast i32 (== "abc" (block (c8 cn []) { pass "def"; })))));
-    println_i32 (eval (+ 209 (cast i32 (== "abc" (block (c8 cn []) { pass "abc"; })))));
-    println_i32 (eval (+ 211 (cast i32 (!= "abc" (block (c8 cn []) { pass "abc"; })))));
-    println_i32 (eval (+ 211 (cast i32 (!= "abc" (block (c8 cn []) { pass "def"; })))));
+    println_i32 (+ 200 (cast i32 (!= 1 1 2)));
+    println_i32 (+ 200 (cast i32 (== 1 1)));
+    println_i32 (+ 201 (cast i32 (< 1 2 3 4 5)));
+    println_i32 (+ 203 (cast i32 (>= 3 (- 3 1) (+ 1 2))));
+    #(eval sym (s 0) (p (& s));
+    #println_i32 (+ 203 (cast i32 (== p (& s))));
+    println_i32 (+ 204 (cast i32 (== true true)));
+    println_i32 (+ 206 (cast i32 (== true false)));
+    println_i32 (+ 207 (cast i32 (!= true true)));
+    println_i32 (+ 207 (cast i32 (!= true false)));
+    println_i32 (+ 209 (cast i32 (== "abc" "def")));
+    println_i32 (+ 209 (cast i32 (== "abc" "abc")));
+    println_i32 (+ 211 (cast i32 (!= "abc" "abc")));
+    println_i32 (+ 211 (cast i32 (!= "abc" "def")));
 
-    println_i32 (eval (+ 200 100 0));
-    println_i32 (eval (/ 905 3));
-    println_f32 (eval (/ 906.0 3.0));
-    println_i32 (eval (+ 300 (>> 6 1)));
-    println_i32 (eval (+ 300 (% 10 6)));
-    println_i32 (eval (+ 301 (<< 1 2)));
-    println_u32 (eval (+ 300:u32 (<< 3:u32 1:u32)));
-    println_i32 (eval (- 301 (<< -3 1)));
-    println_i32 (eval (+ 300 (& 0b1010 (| 0b1100 0b1001))));
-    println_i32 (eval (+ 300 (^ 0b1100 0b0101)));
-    println_i32 (eval (* 2 5 31));
+    println_i32 (+ 200 100 0);
+    println_i32 (/ 905 3);
+    println_f32 (/ 906.0 3.0);
+    println_i32 (+ 300 (>> 6 1));
+    println_i32 (+ 300 (% 10 6));
+    println_i32 (+ 301 (<< 1 2));
+    println_u32 (+ 300:u32 (<< 3:u32 1:u32));
+    println_i32 (- 301 (<< -3 1));
+    println_i32 (+ 300 (& 0b1010 (| 0b1100 0b1001)));
+    println_i32 (+ 300 (^ 0b1100 0b0101));
+    println_i32 (* 2 5 31);
     
-    println_i32 (eval (+ 400 (+ 1 -1 1 -1)));
-    println_i32 (eval (+ 400 (- 3 1 1)));
+    println_i32 (+ 400 (+ 1 -1 1 -1));
+    println_i32 (+ 400 (- 3 1 1));
+
+    println_i32 (+ 499 (cast i32 glob));
 };

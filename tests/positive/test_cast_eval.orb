@@ -1,46 +1,46 @@
 import "util/io.orb";
 
 fnc main () () {
-    println_i32 (eval (cast i32 100));
-    println_i32 (eval (cast i32 101:i16));
-    println_i32 (eval (cast i32 102:i64));
-    println_i32 (eval (cast i32 102:u32));
-    println_i32 (eval (cast i32 103.0));
-    println_i32 (eval (cast i32 'a'));
-    println_i32 (eval (cast i32 '\0'));
-    println_i32 (eval (cast i32 true));
-    println_i32 (eval (cast i32 null));
+    println_i32 (cast i32 100);
+    println_i32 (cast i32 101:i16);
+    println_i32 (cast i32 102:i64);
+    println_i32 (cast i32 102:u32);
+    println_i32 (cast i32 103.0);
+    println_i32 (cast i32 'a');
+    println_i32 (cast i32 '\0');
+    println_i32 (cast i32 true);
+    println_i32 (cast i32 null);
 
-    println_u32 (eval (cast u32 200));
-    println_u32 (eval (cast u32 -1));
-    println_u32 (eval (cast u32 'b'));
-    println_u32 (eval (cast u32 true));
-    println_u32 (eval (cast u32 null));
+    println_u32 (cast u32 200);
+    println_u32 (cast u32 -1);
+    println_u32 (cast u32 'b');
+    println_u32 (cast u32 true);
+    println_u32 (cast u32 null);
 
-    println_f32 (eval (cast f32 300));
-    println_f32 (eval (cast f32 301:u32));
-    println_f32 (eval (cast f32 302.0:f64));
+    println_f32 (cast f32 300);
+    println_f32 (cast f32 301:u32);
+    println_f32 (cast f32 302.0:f64);
 
-    println_i32 (eval (+ 400 (cast i32 (cast (i32 *) (cast (i32 cn * cn) (cast (i32 cn *) (cast (i32 *) null)))))));
-    println_i32 (eval (. (cast ((i32 i32) cn) (401 -1)) 0));
-    println_i32 (eval (. (cast ((i32 i32) cn) (402 -1)) 0));
+    println_i32 (+ 400 (cast i32 (cast (i32 *) (cast (i32 cn * cn) (cast (i32 cn *) (cast (i32 *) null))))));
+    println_i32 (. (cast (i32 i32) (401 -1)) 0);
+    println_i32 (. (cast ((i32 i32) cn) (402 -1)) 0);
 
-    println_c8 (eval (cast c8 65));
-    println_c8 (eval (cast c8 66:u32));
-    println_c8 (eval (cast c8 'X'));
+    println_c8 (cast c8 65);
+    println_c8 (cast c8 66:u32);
+    println_c8 (cast c8 'X');
 
-    println_i32 (eval (cast i32 (cast bool 0)));
-    println_i32 (eval (cast i32 (cast bool 1)));
-    println_i32 (eval (cast i32 (cast bool -1)));
-    println_i32 (eval (cast i32 (cast bool 0:u32)));
-    println_i32 (eval (cast i32 (cast bool 1:u32)));
-    println_i32 (eval (cast i32 (cast bool '\0')));
-    println_i32 (eval (cast i32 (cast bool 'a')));
-    println_i32 (eval (cast i32 (cast bool true)));
-    println_i32 (eval (cast i32 (cast bool null)));
+    println_i32 (cast i32 (cast bool 0));
+    println_i32 (cast i32 (cast bool 1));
+    println_i32 (cast i32 (cast bool -1));
+    println_i32 (cast i32 (cast bool 0:u32));
+    println_i32 (cast i32 (cast bool 1:u32));
+    println_i32 (cast i32 (cast bool '\0'));
+    println_i32 (cast i32 (cast bool 'a'));
+    println_i32 (cast i32 (cast bool true));
+    println_i32 (cast i32 (cast bool null));
     
-    println_str (eval (cast (c8 cn []) "hello"));
+    println_str (cast (c8 cn []) "hello");
 
-    println_c8 (eval ([] (cast (c8 6) "hello") 1));
-    println_i32 (eval (cast i32 ([] (cast (c8 6) "hello") 5)));
+    println_c8 ([] (cast (c8 6) "hello") 1);
+    println_i32 (cast i32 ([] (cast (c8 6) "hello") 5));
 };

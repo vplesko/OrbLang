@@ -45,8 +45,8 @@ fnc main () () {
         = p0 (. x 0);
         = p1 (+ (. x 0) (cast i32 (. x 1)));
     });
-    println_i32 (eval p0);
-    println_i32 (eval p1);
+    println_i32 p0;
+    println_i32 p1;
 
     eval (block {
         sym x:(i32 bool);
@@ -55,21 +55,21 @@ fnc main () () {
         = (. y 0) (. x 0);
         = p0 (. y 0);
     });
-    println_i32 (eval p0);
+    println_i32 p0;
 
     eval (block {
         sym x:((i32 f32) bool);
         = (. (. x 0) 0) 300;
         = p0 (. (. x 0) 0);
     });
-    println_i32 (eval p0);
+    println_i32 p0;
 
     eval (block {
         sym x:((i32 i32) 4);
         = (. ([] x 0) 0) 400;
         = p0 (. ([] x 0) 0);
     });
-    println_i32 (eval p0);
+    println_i32 p0;
 
     #*eval (block {
         sym x:(i32 i32);
@@ -78,7 +78,7 @@ fnc main () () {
         = (. x 0) 500;
         = p0 (. (* y) 0);
     });
-    println_i32 (eval p0);*#
+    println_i32 p0;*#
 
     #*eval (block {
         sym x:(i32 i32);
@@ -87,7 +87,7 @@ fnc main () () {
         = (. x 0) 600;
         = p0 ([] y 0);
     });
-    println_i32 (eval p0);*#
+    println_i32 p0;*#
 
     #*eval (block {
         sym x:((i32 i32) 4);
@@ -99,9 +99,9 @@ fnc main () () {
         = p1 ([] y 1);
         = p2 ([] y 2);
     });
-    println_i32 (eval p0);
-    println_i32 (eval p1);
-    println_i32 (eval p2);*#
+    println_i32 p0;
+    println_i32 p1;
+    println_i32 p2;*#
 
     #*eval (block {
         sym (x:i32 800) (y:i32 801);
@@ -109,16 +109,16 @@ fnc main () () {
         = p0 (. z 0);
         = p1 (. z 1);
     });
-    println_i32 (eval p0);
-    println_i32 (eval p1);*#
+    println_i32 p0;
+    println_i32 p1;*#
 
     #*eval (block {
         sym (x:(i32 i32) (pair 900 901));
         = p0 (dot x 0);
         = p1 (dot x 1);
     });
-    println_i32 (eval p0);
-    println_i32 (eval p1);*#
+    println_i32 p0;
+    println_i32 p1;*#
 
     #*eval (block {
         sym (x:(i32 i32) (pair 1000 1001));
@@ -127,27 +127,27 @@ fnc main () () {
         = p0 (dot z 0);
         = p1 (dot z 1);
     });
-    println_i32 (eval p0);
-    println_i32 (eval p1);*#
+    println_i32 p0;
+    println_i32 p1;*#
 
     eval (block {
         = (. glob1 0) 1100;
         = p0 (. glob1 0);
     });
-    println_i32 (eval p0);
+    println_i32 p0;
 
     #*eval (block {
         sym (x:((i32 i32) cn) (pair 1200 1201));
         = p0 (. x 0);
     });
-    println_i32 (eval p0);*#
+    println_i32 p0;*#
 
     #*eval (block {
         sym x:(i32 i32);
         = (. x 0) 1300;
         = p0 (* (& (. x 0)));
     });
-    println_i32 (eval p0);*#
+    println_i32 p0;*#
 
     eval (block {
         sym x:(i32 i32);
@@ -160,27 +160,27 @@ fnc main () () {
         = ([] (. x 1) 0) 1400;
         = p0 ([] (. x 1) 0);
     });
-    println_i32 (eval p0);
+    println_i32 p0;
 
     #*eval (block {
         sym (x:((i32 cn) (i32 cn)) (addCn (pair 1500 1501)));
         = p0 (. x 0);
     });
-    println_i32 (eval p0);*#
+    println_i32 p0;*#
 
     #*eval (block {
         sym (x:((i32 cn) (i32 cn)) (addCn (pair 1600 1601)));
         sym (y:((i32 cn) (i32 cn)) x);
         = p0 (. y 0);
     });
-    println_i32 (eval p0);*#
+    println_i32 p0;*#
 
     #*eval (block {
         sym (x:((i32 cn) (i32 cn)) (addCn (pair 1700 1701)));
         sym (y:(i32 i32) (remCn x));
         = p0 (. y 0);
     });
-    println_i32 (eval p0);*#
+    println_i32 p0;*#
 
     eval (block {
         sym x:(((i32 cn) bool) cn 4 cn *);
@@ -192,29 +192,29 @@ fnc main () () {
         = (. y 1) 1800;
         = p0 (. y 1);
     });
-    println_i32 (eval p0);*#
+    println_i32 p0;*#
 
     eval (block {
         sym (x:(i32 i32) (1900:i32 1901:i32));
         = p0 (. x 1);
     });
-    println_i32 (eval p0);
+    println_i32 p0;
 
     eval (block {
         sym (x:((i32 cn) (i32 cn)) (2000:(i32 cn) 2001:(i32 cn)));
         = p0 (. x 0);
     });
-    println_i32 (eval p0);
+    println_i32 p0;
 
     eval (block {
         = p0 (. (2100:i32 2101:i32) 1);
     });
-    println_i32 (eval p0);
+    println_i32 p0;
 
     #*eval (block {
         = p0 (dot (2200:i32 2201:i32) 0);
     });
-    println_i32 (eval p0);*#
+    println_i32 p0;*#
 
     #*eval (block {
         sym (y:(i32 i32) (pair 2300 2300));
@@ -222,13 +222,13 @@ fnc main () () {
         = p0 (. (. x 0) 0);
         = p1 (. x 1 0);
     });
-    println_i32 (eval p0);
-    println_i32 (eval p1);*#
+    println_i32 p0;
+    println_i32 p1;*#
 
     eval (block {
         sym x:((i32 i32) (i32 i32));
         = (. x 0 0) 2400;
         = p0 (. x 0 0);
     });
-    println_i32 (eval p0);
+    println_i32 p0;
 };
