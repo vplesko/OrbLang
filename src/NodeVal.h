@@ -26,7 +26,7 @@ private:
     LiteralVal literal;
     LlvmVal llvm;
     KnownVal known;
-    std::vector<std::unique_ptr<NodeVal>> children;
+    std::vector<NodeVal> children;
 
     std::unique_ptr<NodeVal> typeAttr;
 
@@ -45,7 +45,6 @@ public:
     NodeVal(CodeLoc codeLoc, const KnownVal &val);
     NodeVal(CodeLoc codeLoc, const LlvmVal &val);
 
-    // TODO make it explicitly copyable only
     NodeVal(const NodeVal &other);
     NodeVal& operator=(const NodeVal &other);
 
@@ -79,8 +78,8 @@ public:
     const LlvmVal& getLlvmVal() const { return llvm; }
 
     bool isComposite() const  { return kind == Kind::kComposite; }
-    NodeVal& getChild(std::size_t ind) { return *children[ind]; }
-    const NodeVal& getChild(std::size_t ind) const { return *children[ind]; }
+    NodeVal& getChild(std::size_t ind) { return children[ind]; }
+    const NodeVal& getChild(std::size_t ind) const { return children[ind]; }
     void addChild(NodeVal c);
     void addChildren(std::vector<NodeVal> c);
     std::size_t getChildrenCnt() const { return children.size(); }

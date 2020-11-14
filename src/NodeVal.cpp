@@ -29,7 +29,7 @@ void NodeVal::copyFrom(const NodeVal &other) {
     
     children.reserve(other.children.size());
     for (const auto &it : other.children) {
-        children.push_back(make_unique<NodeVal>(*it));
+        children.push_back(NodeVal(it));
     }
     
     if (other.hasTypeAttr()) {
@@ -69,7 +69,7 @@ std::size_t NodeVal::getLength() const {
 }
 
 void NodeVal::addChild(NodeVal c) {
-    children.push_back(make_unique<NodeVal>(move(c)));
+    children.push_back(move(c));
 }
 
 void NodeVal::addChildren(std::vector<NodeVal> c) {
@@ -87,7 +87,7 @@ void NodeVal::escape() {
     escaped = true;
     if (isComposite()) {
         for (auto &child : children) {
-            child->escape();
+            child.escape();
         }
     }
 }
@@ -95,7 +95,7 @@ void NodeVal::escape() {
 void NodeVal::unescape() {
     if (isComposite()) {
         for (auto it = children.rbegin(); it != children.rend(); ++it) {
-            (*it)->unescape();
+            (*it).unescape();
         }
     }
     escaped = false;

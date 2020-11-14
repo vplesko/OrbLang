@@ -525,10 +525,10 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     }
 
     // body
-    optional<NodeVal> nodeBodyOpt;
+    const NodeVal *nodeBodyPtr = nullptr;
     if (val.defined) {
-        nodeBodyOpt = node.getChild(4);
-        if (!checkIsComposite(nodeBodyOpt.value(), true)) {
+        nodeBodyPtr = &node.getChild(4);
+        if (!checkIsComposite(*nodeBodyPtr, true)) {
             return NodeVal();
         }
     }
@@ -537,7 +537,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     symbolTable->registerFunc(val);
 
     if (val.defined) {
-        if (!performFunctionDefinition(nodeArgs, nodeBodyOpt.value(), val)) return NodeVal();
+        if (!performFunctionDefinition(nodeArgs, *nodeBodyPtr, val)) return NodeVal();
     }
 
     return NodeVal(node.getCodeLoc());
