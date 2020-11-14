@@ -8,11 +8,7 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
-class Evaluator;
-
 class Codegen : public Processor {
-    Evaluator *evaluator;
-
     llvm::LLVMContext llvmContext;
     llvm::IRBuilder<> llvmBuilder, llvmBuilderAlloca;
     std::unique_ptr<llvm::Module> llvmModule;
@@ -32,9 +28,6 @@ class Codegen : public Processor {
     llvm::Value* makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTypeId, llvm::Type *dstLlvmType, TypeTable::Id dstTypeId);
 
     std::string getNameForLlvm(NamePool::Id name) const;
-
-    bool checkIsLlvmVal(CodeLoc codeLoc, const NodeVal &node, bool orError);
-    bool checkIsLlvmVal(const NodeVal &node, bool orError) { return checkIsLlvmVal(node.getCodeLoc(), node, orError); }
 
     NodeVal promoteKnownVal(CodeLoc codeLoc, const KnownVal &known);
     NodeVal promoteKnownVal(const NodeVal &node);

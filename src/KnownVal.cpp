@@ -163,3 +163,70 @@ bool KnownVal::isImplicitCastable(const KnownVal &val, TypeTable::Id t, const St
 
     return false;
 }
+
+bool KnownVal::isCastable(const KnownVal &val, TypeTable::Id dstTypeId, const StringPool *stringPool, const TypeTable *typeTable) {
+    TypeTable::Id srcTypeId = val.type.value();
+
+    if (srcTypeId == dstTypeId) return true;
+
+    if (typeTable->worksAsTypeI(srcTypeId)) {
+        int64_t x = KnownVal::getValueI(val, typeTable).value();
+
+        return typeTable->worksAsTypeI(dstTypeId) ||
+            typeTable->worksAsTypeU(dstTypeId) ||
+            typeTable->worksAsTypeF(dstTypeId) ||
+            typeTable->worksAsTypeC(dstTypeId) ||
+            typeTable->worksAsTypeB(dstTypeId) ||
+            (typeTable->worksAsTypeStr(dstTypeId) && x == 0) ||
+            (typeTable->worksAsTypeAnyP(dstTypeId) && x == 0);
+    } else if (typeTable->worksAsTypeU(srcTypeId)) {
+        uint64_t x = KnownVal::getValueU(val, typeTable).value();
+
+        return typeTable->worksAsTypeI(dstTypeId) ||
+            typeTable->worksAsTypeU(dstTypeId) ||
+            typeTable->worksAsTypeF(dstTypeId) ||
+            typeTable->worksAsTypeC(dstTypeId) ||
+            typeTable->worksAsTypeB(dstTypeId) ||
+            (typeTable->worksAsTypeStr(dstTypeId) && x == 0) ||
+            (typeTable->worksAsTypeAnyP(dstTypeId) && x == 0);
+    } else if (typeTable->worksAsTypeF(srcTypeId)) {
+        return typeTable->worksAsTypeI(dstTypeId) ||
+            typeTable->worksAsTypeU(dstTypeId) ||
+            typeTable->worksAsTypeF(dstTypeId);
+    } else if (typeTable->worksAsTypeC(srcTypeId)) {
+        return typeTable->worksAsTypeI(dstTypeId) ||
+            typeTable->worksAsTypeU(dstTypeId) ||
+            typeTable->worksAsTypeC(dstTypeId) ||
+            typeTable->worksAsTypeB(dstTypeId);
+    } else if (typeTable->worksAsTypeB(srcTypeId)) {
+        return typeTable->worksAsTypeI(dstTypeId) ||
+            typeTable->worksAsTypeU(dstTypeId) ||
+            typeTable->worksAsTypeB(dstTypeId);
+    } else if (typeTable->worksAsTypeStr(srcTypeId)) {
+        if (val.str.has_value()) {
+            const string &str = stringPool->get(val.str.value());
+
+            return typeTable->worksAsTypeStr(dstTypeId) ||
+                typeTable->worksAsTypeB(dstTypeId) ||
+                typeTable->worksAsTypeCharArrOfLen(dstTypeId, LiteralVal::getStringLen(str));
+        } else {
+            // if it's not string, it's null
+            return typeTable->worksAsTypeI(dstTypeId) ||
+                typeTable->worksAsTypeU(dstTypeId) ||
+                typeTable->worksAsTypeB(dstTypeId) ||
+                typeTable->worksAsTypeAnyP(dstTypeId);
+        }
+    } else if (typeTable->worksAsTypeAnyP(srcTypeId)) {
+        // it's null
+        return typeTable->worksAsTypeI(dstTypeId) ||
+            typeTable->worksAsTypeU(dstTypeId) ||
+            typeTable->worksAsTypeB(dstTypeId) ||
+            typeTable->worksAsTypeAnyP(dstTypeId);
+    } else if (typeTable->worksAsTypeArr(srcTypeId) || typeTable->worksAsTuple(srcTypeId) ||
+        typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_ID) || typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE)) {
+        // these types are only castable when changing constness
+        return typeTable->isImplicitCastable(srcTypeId, dstTypeId);
+    }
+    
+    return false;
+}

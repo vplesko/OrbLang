@@ -1,4 +1,5 @@
 #include "Codegen.h"
+#include "Evaluator.h"
 #include <iostream>
 #include <sstream>
 #include "llvm/IR/Verifier.h"
@@ -109,9 +110,11 @@ llvm::Type* Codegen::genPrimTypePtr() {
 }
 
 NodeVal Codegen::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
-    if (!checkInLocalScope(codeLoc, true)) return NodeVal();
+    if (checkIsKnownVal(ref, false)) {
+        return evaluator->performLoad(codeLoc, id, ref);
+    }
 
-    // TODO load KnownVal if known
+    if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     if (!checkIsLlvmVal(codeLoc, ref, true)) return NodeVal();
 
     LlvmVal loadLlvmVal(ref.getLlvmVal().type);
@@ -154,16 +157,13 @@ NodeVal Codegen::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal
 }
 
 NodeVal Codegen::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
-    NodeVal promo = promoteIfKnownValAndCheckIsLlvmVal(node, true);
-    if (promo.isInvalid()) return NodeVal();
-
-    if (promo.getLlvmVal().type == ty) {
-        LlvmVal llvmVal = promo.getLlvmVal();
-        llvmVal.ref = nullptr;
-        return NodeVal(codeLoc, LlvmVal::copyNoRef(promo.getLlvmVal()));
-    }
+    if (checkIsKnownVal(node, false) && KnownVal::isCastable(node.getKnownVal(), ty, stringPool, typeTable))
+        return evaluator->performCast(codeLoc, node, ty);
 
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
+
+    NodeVal promo = promoteIfKnownValAndCheckIsLlvmVal(node, true);
+    if (promo.isInvalid()) return NodeVal();
 
     llvm::Type *llvmType = makeLlvmTypeOrError(codeLoc, ty);
     if (llvmType == nullptr) return NodeVal();
@@ -270,6 +270,7 @@ bool Codegen::performPass(CodeLoc codeLoc, SymbolTable::Block &block, const Node
     return true;
 }
 
+// TODO after eval fncs, do evaluator->performCall on eval fnc's call
 NodeVal Codegen::performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
@@ -368,6 +369,10 @@ bool Codegen::performRet(CodeLoc codeLoc, const NodeVal &node) {
 }
 
 NodeVal Codegen::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) {
+    if (checkIsKnownVal(oper, false)) {
+        return evaluator->performOperUnary(codeLoc, oper, op);
+    }
+
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     
     NodeVal promo = promoteIfKnownValAndCheckIsLlvmVal(oper, true);
@@ -414,13 +419,15 @@ NodeVal Codegen::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op)
 }
 
 NodeVal Codegen::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
-    if (!checkInLocalScope(codeLoc, true)) return NodeVal();
-    
-    NodeVal promo = promoteIfKnownValAndCheckIsLlvmVal(oper, true);
-    if (promo.isInvalid()) return NodeVal();
+    if (checkIsKnownVal(oper, false)) {
+        return evaluator->performOperUnaryDeref(codeLoc, oper);
+    }
 
-    TypeTable::Id operTy = promo.getLlvmVal().type;
-    llvm::Value *llvmIn = promo.getLlvmVal().val;
+    if (!checkInLocalScope(codeLoc, true)) return NodeVal();
+    if (!checkIsLlvmVal(oper, true)) return NodeVal();
+
+    TypeTable::Id operTy = oper.getLlvmVal().type;
+    llvm::Value *llvmIn = oper.getLlvmVal().val;
 
     optional<TypeTable::Id> typeId = typeTable->addTypeDerefOf(operTy);
     if (!typeId.has_value()) {
@@ -435,7 +442,8 @@ NodeVal Codegen::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
 }
 
 void* Codegen::performOperComparisonSetUp(CodeLoc codeLoc, size_t opersCnt) {
-    if (!checkInLocalScope(codeLoc, true)) return nullptr;
+    if (checkInGlobalScope(codeLoc, false))
+        return evaluator->performOperComparisonSetUp(codeLoc, opersCnt);
 
     llvm::BasicBlock *llvmBlockCurr = llvmBuilder.GetInsertBlock();
 
@@ -452,6 +460,9 @@ void* Codegen::performOperComparisonSetUp(CodeLoc codeLoc, size_t opersCnt) {
 }
 
 optional<bool> Codegen::performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) {
+    if (checkInGlobalScope(codeLoc, false))
+        return evaluator->performOperComparison(codeLoc, lhs, rhs, op, signal);
+
     ComparisonSignal *compSignal = (ComparisonSignal*) signal;
     
     NodeVal lhsPromo = promoteIfKnownValAndCheckIsLlvmVal(lhs, true);
@@ -548,6 +559,9 @@ optional<bool> Codegen::performOperComparison(CodeLoc codeLoc, const NodeVal &lh
 }
 
 NodeVal Codegen::performOperComparisonTearDown(CodeLoc codeLoc, bool success, void *signal) {
+    if (checkInGlobalScope(codeLoc, false))
+        return evaluator->performOperComparisonTearDown(codeLoc, success, signal);
+
     ComparisonSignal *compSignal = (ComparisonSignal*) signal;
     if (!success) {
         if (compSignal->llvmPhi != nullptr) compSignal->llvmPhi->eraseFromParent();
@@ -820,14 +834,6 @@ NodeVal Codegen::promoteIfKnownValAndCheckIsLlvmVal(const NodeVal &node, bool or
     if (promo.isInvalid()) return NodeVal();
     if (!checkIsLlvmVal(promo, orError)) return NodeVal();
     return promo;
-}
-
-bool Codegen::checkIsLlvmVal(CodeLoc codeLoc, const NodeVal &node, bool orError) {
-    if (!node.isLlvmVal()) {
-        if (orError) msgs->errorUnknown(codeLoc);
-        return false;
-    }
-    return true;
 }
 
 string Codegen::getNameForLlvm(NamePool::Id name) const {

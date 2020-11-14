@@ -64,4 +64,5 @@ struct KnownVal {
     static std::optional<std::uint64_t> getValueNonNeg(const KnownVal &val, const TypeTable *typeTable);
 
     static bool isImplicitCastable(const KnownVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable);
+    static bool isCastable(const KnownVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable);
 };

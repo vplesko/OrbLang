@@ -57,6 +57,10 @@ protected:
     bool checkInGlobalScope(CodeLoc codeLoc, bool orError);
     bool checkInLocalScope(CodeLoc codeLoc, bool orError);
     bool checkHasType(const NodeVal &node, bool orError);
+    bool checkIsKnownVal(CodeLoc codeLoc, const NodeVal &node, bool orError);
+    bool checkIsKnownVal(const NodeVal &node, bool orError) { return checkIsKnownVal(node.getCodeLoc(), node, orError); }
+    bool checkIsLlvmVal(CodeLoc codeLoc, const NodeVal &node, bool orError);
+    bool checkIsLlvmVal(const NodeVal &node, bool orError) { return checkIsLlvmVal(node.getCodeLoc(), node, orError); }
 private:
     bool checkIsTopmost(CodeLoc codeLoc, bool orError);
     bool checkIsId(const NodeVal &node, bool orError);

@@ -40,6 +40,11 @@ NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::
             msgs->errorExprCannotCast(codeLoc, node.getKnownVal().type.value(), ty);
         }
         return NodeVal();
+    } else if (!KnownVal::isCastable(node.getKnownVal(), node.getKnownVal().type.value(), stringPool, typeTable)) {
+        // if it's not castable, this should not have succeeded
+        // TODO this duplicate work might be slowing compilation down, analyze
+        msgs->errorInternal(codeLoc);
+        return NodeVal();
     }
 
     return NodeVal(codeLoc, knownValCast.value());
@@ -169,11 +174,11 @@ NodeVal Evaluator::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
 }
 
 void* Evaluator::performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt) {
-    return new bool(true);
+    return new ComparisonSignal(true);
 }
 
 optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) {
-    bool *result = (bool*) signal;
+    ComparisonSignal *result = (ComparisonSignal*) signal;
 
     if (!checkIsKnownVal(lhs, true) || !checkIsKnownVal(rhs, true)) return nullopt;
 
@@ -332,7 +337,7 @@ NodeVal Evaluator::performOperComparisonTearDown(CodeLoc codeLoc, bool success, 
     if (!success) return NodeVal();
 
     KnownVal knownVal = KnownVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_BOOL), typeTable);
-    knownVal.b = *((bool*) signal);
+    knownVal.b = *((ComparisonSignal*) signal);
     return NodeVal(codeLoc, knownVal);
 }
 
@@ -520,14 +525,6 @@ NodeVal Evaluator::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::ve
     return NodeVal(codeLoc, knownVal);
 }
 
-bool Evaluator::checkIsKnownVal(CodeLoc codeLoc, const NodeVal &node, bool orError) {
-    if (!node.isKnownVal()) {
-        if (orError) msgs->errorUnknown(codeLoc);
-        return false;
-    }
-    return true;
-}
-
 // TODO warn on lossy
 optional<KnownVal> Evaluator::makeCast(const KnownVal &srcKnownVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId) {
     if (srcTypeId == dstTypeId) return KnownVal::copyNoRef(srcKnownVal);
@@ -605,7 +602,7 @@ optional<KnownVal> Evaluator::makeCast(const KnownVal &srcKnownVal, TypeTable::I
             }
         }
     } else if (typeTable->worksAsTypeAnyP(srcTypeId)) {
-        // if it's not string, it's null
+        // it's null
         if (!assignBasedOnTypeI(dstKnownVal.value(), 0, dstTypeId) &&
             !assignBasedOnTypeU(dstKnownVal.value(), 0, dstTypeId) &&
             !assignBasedOnTypeB(dstKnownVal.value(), false, dstTypeId) &&

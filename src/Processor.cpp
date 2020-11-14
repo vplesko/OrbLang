@@ -1080,6 +1080,14 @@ NodeVal Processor::processAndImplicitCast(const NodeVal &node, TypeTable::Id ty)
     if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
 
     if (!checkImplicitCastable(proc, ty, true)) return NodeVal();
+
+    if (proc.getType().value() == ty) {
+        if (checkIsKnownVal(proc, false))
+            return NodeVal(proc.getCodeLoc(), KnownVal::copyNoRef(proc.getKnownVal()));
+        else
+            return NodeVal(proc.getCodeLoc(), LlvmVal::copyNoRef(proc.getLlvmVal()));
+    }
+
     return performCast(proc.getCodeLoc(), proc, ty);
 }
 
@@ -1102,6 +1110,22 @@ bool Processor::checkInLocalScope(CodeLoc codeLoc, bool orError) {
 bool Processor::checkHasType(const NodeVal &node, bool orError) {
     if (!node.getType().has_value()) {
         if (orError) msgs->errorUnknown(node.getCodeLoc());
+        return false;
+    }
+    return true;
+}
+
+bool Processor::checkIsKnownVal(CodeLoc codeLoc, const NodeVal &node, bool orError) {
+    if (!node.isKnownVal()) {
+        if (orError) msgs->errorUnknown(codeLoc);
+        return false;
+    }
+    return true;
+}
+
+bool Processor::checkIsLlvmVal(CodeLoc codeLoc, const NodeVal &node, bool orError) {
+    if (!node.isLlvmVal()) {
+        if (orError) msgs->errorUnknown(codeLoc);
         return false;
     }
     return true;
