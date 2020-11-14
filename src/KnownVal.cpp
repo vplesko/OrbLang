@@ -119,7 +119,6 @@ optional<uint64_t> KnownVal::getValueU(const KnownVal &val, const TypeTable *typ
     return nullopt;
 }
 
-// TODO is there loss on returning float as double
 optional<double> KnownVal::getValueF(const KnownVal &val, const TypeTable *typeTable) {
     if (!val.getType().has_value()) return nullopt;
     if (typeTable->worksAsPrimitive(val.getType().value(), TypeTable::P_F32)) return val.f32;

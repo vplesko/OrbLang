@@ -7,6 +7,10 @@ using namespace std;
 const string numLitChars = "0123456789abcdefABCDEF.xXpP_";
 const string idSpecialChars = "=+-*/%<>&|^!~[]._?";
 
+bool isValidIdStart(char ch) {
+    return isalnum(ch) || idSpecialChars.find(ch) != idSpecialChars.npos;
+}
+
 Lexer::Lexer(NamePool *namePool, StringPool *stringPool, CompileMessages *msgs, const std::string &file)
     : namePool(namePool), stringPool(stringPool), msgs(msgs), in(file) {
     ln = 0;
@@ -60,7 +64,6 @@ void Lexer::skipLine() {
 void Lexer::lexNum(CodeIndex from) {
     CodeIndex l = from;
     while (numLitChars.find(peekCh()) != numLitChars.npos) nextCh();
-    // TODO verify peekCh isn't a valid id char
     CodeIndex r = col-1;
 
     size_t dotIndex = line.find(".", l);
@@ -105,6 +108,10 @@ void Lexer::lexNum(CodeIndex from) {
             tok.num = strtoll(lit.c_str(), &end, base);
             if (end != &*lit.end() || errno == ERANGE) tok.type = Token::T_UNKNOWN;
         }
+    }
+
+    if (isValidIdStart(peekCh())) {
+        tok.type = Token::T_UNKNOWN;
     }
 }
 
@@ -199,7 +206,7 @@ Token Lexer::next() {
             tok.type = Token::T_BACKSLASH;
         } else if (isalnum(ch) || idSpecialChars.find(ch) != idSpecialChars.npos) {
             int l = col-1;
-            while (isalnum(peekCh()) || idSpecialChars.find(peekCh()) != idSpecialChars.npos) {
+            while (isValidIdStart(peekCh())) {
                 ch = nextCh();
             }
 

@@ -420,7 +420,6 @@ NodeVal Processor::processPass(const NodeVal &node) {
 
     NodeVal nodeValue = processAndImplicitCast(node.getChild(indVal), targetBlock->type.value());
     if (nodeValue.isInvalid()) return NodeVal();
-    // TODO add a test for loop/pass in pass arg
     if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
 
     if (!performPass(node.getCodeLoc(), *targetBlock, nodeValue)) return NodeVal();

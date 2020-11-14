@@ -11,10 +11,8 @@
 
 class Evaluator;
 
-// TODO due to eval id and type vals, it's not guaranteed that given ids refer to anything valid, so check for that first to avoid seg faults
 // TODO! if operands are known, pass result as known (where allowed)
-// TODO! add ref returning where left out
-// TODO! add more neg tests
+// TODO! add ref returning and breaking where left out
 class Processor {
 protected:
     NamePool *namePool;
@@ -59,7 +57,7 @@ protected:
 protected:
     bool checkInGlobalScope(CodeLoc codeLoc, bool orError);
     bool checkInLocalScope(CodeLoc codeLoc, bool orError);
-    // TODO recheck where in Evaluator this check needs to be added
+    // TODO! recheck where in Evaluator this check needs to be added
     bool checkHasType(const NodeVal &node, bool orError);
 private:
     bool checkIsTopmost(CodeLoc codeLoc, bool orError);

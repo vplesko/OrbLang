@@ -18,7 +18,6 @@ fnc main() () {
     println_i32 (eval (+ 206 (cast i32 (== true false))));
     println_i32 (eval (+ 207 (cast i32 (!= true true))));
     println_i32 (eval (+ 207 (cast i32 (!= true false))));
-    # TODO have """ start multiline string instead
     println_i32 (eval (+ 209 (cast i32 (== "abc" (block (c8 cn []) { pass "def"; })))));
     println_i32 (eval (+ 209 (cast i32 (== "abc" (block (c8 cn []) { pass "abc"; })))));
     println_i32 (eval (+ 211 (cast i32 (!= "abc" (block (c8 cn []) { pass "abc"; })))));

@@ -1,11 +1,8 @@
 fnc putchar(x:c8) ();
 fnc getchar() c8;
 
-# C library on Windows aggressively inlines these, making them hard to link in
-# printf works, but not scanf
-# TODO find a workaround
 fnc printf(fmt:(c8 cn []) ...) ();
-#fnc scanf(fmt:(c8 cn []) ...) ();
+fnc scanf(fmt:(c8 cn []) ...) ();
 
 fnc malloc(size:u64) ptr;
 fnc free(addr:ptr) ();

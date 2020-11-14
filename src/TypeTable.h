@@ -81,7 +81,6 @@ public:
         bool eq(const TypeDescr &other) const;
     };
 
-    // TODO add i128, u128, f16, f128
     enum PrimIds {
         P_BOOL,
         P_I8,

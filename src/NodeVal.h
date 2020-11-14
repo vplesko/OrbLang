@@ -45,6 +45,7 @@ public:
     NodeVal(CodeLoc codeLoc, const KnownVal &val);
     NodeVal(CodeLoc codeLoc, const LlvmVal &val);
 
+    // TODO make it explicitly copyable only
     NodeVal(const NodeVal &other);
     NodeVal& operator=(const NodeVal &other);
 

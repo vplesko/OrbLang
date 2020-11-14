@@ -106,16 +106,9 @@ NodeVal Parser::parseTerm() {
         val.val_b = tok.bval;
         break;
     case Token::T_STRING:
-        {
-            stringstream ss;
-            ss << stringPool->get(tok.stringId);
-            while (peek().type == Token::T_STRING) {
-                ss << stringPool->get(next().stringId);
-            }
-            val.kind = LiteralVal::Kind::kString;
-            val.val_str = stringPool->add(ss.str());
-            break;
-        }
+        val.kind = LiteralVal::Kind::kString;
+        val.val_str = tok.stringId;
+        break;
     case Token::T_NULL:
         val.kind = LiteralVal::Kind::kNull;
         break;    

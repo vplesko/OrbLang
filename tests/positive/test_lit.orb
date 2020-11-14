@@ -95,4 +95,7 @@ fnc main () () {
     println_f64 1.1E4;
     println_f64 0xA.1p2;
     println_f64 0xA.1P2;
+
+    println_i32 (+ 999
+glob);
 };
