@@ -231,7 +231,7 @@ NodeVal Compiler::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block
         llvmVal.val = block.phi;
         return NodeVal(codeLoc, llvmVal);
     } else {
-        return NodeVal(codeLoc);
+        return NodeVal(true);
     }
 }
 
@@ -303,7 +303,7 @@ NodeVal Compiler::performCall(CodeLoc codeLoc, const FuncValue &func, const std:
         return NodeVal(codeLoc, retLlvmVal);
     } else {
         llvmBuilder.CreateCall(func.llvmFunc, llvmArgValues, "");
-        return NodeVal(codeLoc);
+        return NodeVal(true);
     }
 }
 

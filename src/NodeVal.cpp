@@ -1,13 +1,13 @@
 #include "NodeVal.h"
 using namespace std;
 
-NodeVal::NodeVal() : kind(Kind::kInvalid) {
-}
-
-NodeVal::NodeVal(CodeLoc codeLoc, StringPool::Id import) : codeLoc(codeLoc), kind(Kind::kImport), importFile(import) {
+NodeVal::NodeVal(bool valid) : kind(valid ? Kind::kValid : Kind::kInvalid) {
 }
 
 NodeVal::NodeVal(CodeLoc codeLoc) : codeLoc(codeLoc), kind(Kind::kRaw) {
+}
+
+NodeVal::NodeVal(CodeLoc codeLoc, StringPool::Id import) : codeLoc(codeLoc), kind(Kind::kImport), importFile(import) {
 }
 
 NodeVal::NodeVal(CodeLoc codeLoc, const LiteralVal &val) : codeLoc(codeLoc), kind(Kind::kLiteral), literal(val) {

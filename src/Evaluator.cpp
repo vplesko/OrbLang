@@ -73,7 +73,7 @@ NodeVal Evaluator::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Bloc
         }
     }
     
-    return NodeVal(codeLoc);
+    return NodeVal(true);
 }
 
 bool Evaluator::performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) {
@@ -144,7 +144,7 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
         return move(ret);
     } else {
         resetSkipIssued();
-        return NodeVal(codeLoc);
+        return NodeVal(true);
     }
 }
 
