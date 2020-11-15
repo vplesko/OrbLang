@@ -38,6 +38,7 @@ struct EvalVal {
     // if is callable, type is meaningless
     // TODO after callables are first-class, rework that
     bool isCallable() const { return !type.has_value(); }
+    // TODO move specials to nodeval
     std::optional<NamePool::Id> getCallableId() const;
 
     static EvalVal makeVal(TypeTable::Id t, TypeTable *typeTable);

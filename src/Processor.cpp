@@ -17,9 +17,10 @@ NodeVal Processor::processNode(const NodeVal &node) {
 }
 
 NodeVal Processor::processLeaf(const NodeVal &node) {
-    // TODO should this be an error instead?
+    // TODO remove after escaped raw special processing
     if (node.isEmpty()) return node;
 
+    // TODO if escaped, just return?
     NodeVal prom = node.isLiteralVal() ? promoteLiteralVal(node) : node;
 
     if (!prom.isEscaped() && prom.isEvalVal() && EvalVal::isId(prom.getEvalVal(), typeTable)) {
@@ -30,6 +31,7 @@ NodeVal Processor::processLeaf(const NodeVal &node) {
 }
 
 NodeVal Processor::processNonLeaf(const NodeVal &node) {
+    // TODO special processing for escaped raw (+ change spec mockup)
     NodeVal starting = processNode(node.getChild(0));
     if (starting.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(true);
@@ -159,7 +161,7 @@ NodeVal Processor::processId(const NodeVal &node) {
 
         return NodeVal(node.getCodeLoc(), eval);
     } else if (typeTable->isType(id)) {
-        // TODO ref for types
+        // TODO! ref for types
         EvalVal eval = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
         eval.ty = typeTable->getTypeId(id).value();
 
