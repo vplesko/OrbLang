@@ -107,4 +107,26 @@ fnc main () () {
             pass p;
         };
     ));
+
+    eval (= p 800);
+    eval (block b0 () {
+        = p (block i32 {
+            pass (block i32 {
+                exit b0 true;
+                pass -1;
+            });
+        });
+    });
+    println_i32 p;
+
+    eval (= p -1);
+    eval (block b0 () {
+        = p (block i32 {
+            pass (block i32 {
+                exit b0 false;
+                pass 801;
+            });
+        });
+    });
+    println_i32 p;
 };

@@ -56,8 +56,8 @@ NodeVal* SymbolTable::getVar(NamePool::Id name) {
     return nullptr;
 }
 
-void SymbolTable::registerFunc(const FuncValue &val) {
-    funcs[val.name] = val;
+FuncValue* SymbolTable::registerFunc(const FuncValue &val) {
+    return &(funcs[val.name] = val);
 }
 
 const FuncValue* SymbolTable::getFunction(NamePool::Id name) const {

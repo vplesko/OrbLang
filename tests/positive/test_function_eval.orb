@@ -1,51 +1,53 @@
 import "util/io.orb";
 
-fnc f0 () i32 {
+eval (sym p0:i32);
+
+eval (fnc f0 () i32 {
     ret 100;
-};
+});
 
-fnc f1 (x:i32 y:i32) i32 {
+eval (fnc f1 (x:i32 y:i32) i32 {
     ret (+ x y);
-};
+});
 
-fnc f2 () i64 {
+eval (fnc f2 () i64 {
     ret 103;
-};
+});
 
-fnc f3 (x:i32) () {
-    println_i32 x;
-};
+eval (fnc f3 (x:i32) () {
+    = p0 x;
+});
 
-fnc f4 () () {
-};
+eval (fnc f4 () () {
+});
 
-fnc f5 () () {
+eval (fnc f5 () () {
     ret;
-};
+});
 
-fnc f6 () ();
+eval (fnc f6 () ());
 
-fnc f7 (f7:i32) () {
-    println_i32 f7;
-};
+eval (fnc f7 (f7:i32) () {
+    = p0 f7;
+});
 
-fnc f8 () () {
+eval (fnc f8 () () {
     f3 106;
-};
+});
 
-fnc f9 (x:i32) i32 {
+eval (fnc f9 (x:i32) i32 {
     block {
         exit (> x 0);
         ret 1;
     };
     ret (* x (f9 (- x 1)));
-};
+});
 
 eval (fnc f10 () i32 {
     ret 108;
 });
 
-fnc f11 () i32 {
+eval (fnc f11 () i32 {
     block b0 () {
         ret (block i32 {
             exit b0 true;
@@ -53,9 +55,9 @@ fnc f11 () i32 {
         });
     };
     ret 109;
-};
+});
 
-fnc f12 () i32 {
+eval (fnc f12 () i32 {
     block b0 () {
         ret (block i32 {
             exit b0 false;
@@ -63,9 +65,9 @@ fnc f12 () i32 {
         });
     };
     ret -1;
-};
+});
 
-sym (glob (f10));
+eval (sym (glob (f10)));
 
 fnc main () () {
     println_i32 (f0);
@@ -73,10 +75,13 @@ fnc main () () {
     println_i32 (f1 100 2:i8);
     println_i64 (f2);
     f3 104;
+    println_i32 p0;
     f4;
     f5;
     f7 105;
+    println_i32 p0;
     f8;
+    println_i32 p0;
     println_i32 (- (f9 5) 13);
     println_i32 glob;
     println_i32 (f11);

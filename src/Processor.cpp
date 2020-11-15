@@ -534,10 +534,10 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     }
 
     if (!performFunctionDeclaration(node.getCodeLoc(), val)) return NodeVal();
-    symbolTable->registerFunc(val);
+    FuncValue *symbVal = symbolTable->registerFunc(val);
 
     if (val.defined) {
-        if (!performFunctionDefinition(nodeArgs, *nodeBodyPtr, val)) return NodeVal();
+        if (!performFunctionDefinition(nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();
     }
 
     return NodeVal(node.getCodeLoc());

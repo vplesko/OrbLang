@@ -276,8 +276,11 @@ bool Codegen::performPass(CodeLoc codeLoc, SymbolTable::Block &block, const Node
     return true;
 }
 
-// TODO after eval fncs, do evaluator->performCall on eval fnc's call
 NodeVal Codegen::performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) {
+    if (func.isKnown()) {
+        return evaluator->performCall(codeLoc, func, args);
+    }
+
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
     vector<llvm::Value*> llvmArgValues(args.size());
@@ -296,10 +299,10 @@ NodeVal Codegen::performCall(CodeLoc codeLoc, const FuncValue &func, const std::
 
     if (func.hasRet()) {
         LlvmVal retLlvmVal(func.retType.value());
-        retLlvmVal.val = llvmBuilder.CreateCall(func.func, llvmArgValues, "call_tmp");
+        retLlvmVal.val = llvmBuilder.CreateCall(func.llvmFunc, llvmArgValues, "call_tmp");
         return NodeVal(codeLoc, retLlvmVal);
     } else {
-        llvmBuilder.CreateCall(func.func, llvmArgValues, "");
+        llvmBuilder.CreateCall(func.llvmFunc, llvmArgValues, "");
         return NodeVal(codeLoc);
     }
 }
@@ -316,7 +319,7 @@ bool Codegen::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
 
     llvm::FunctionType *llvmFuncType = llvm::FunctionType::get(llvmRetType, llvmArgTypes, func.variadic);
 
-    func.func = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage, getNameForLlvm(func.name), llvmModule.get());
+    func.llvmFunc = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage, getNameForLlvm(func.name), llvmModule.get());
 
     return true;
 }
@@ -324,13 +327,13 @@ bool Codegen::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
 bool Codegen::performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func) {
     BlockControl blockCtrl(*symbolTable, func);
 
-    llvmBuilderAlloca.SetInsertPoint(llvm::BasicBlock::Create(llvmContext, "alloca", func.func));
+    llvmBuilderAlloca.SetInsertPoint(llvm::BasicBlock::Create(llvmContext, "alloca", func.llvmFunc));
 
-    llvm::BasicBlock *llvmBlockBody = llvm::BasicBlock::Create(llvmContext, "entry", func.func);
+    llvm::BasicBlock *llvmBlockBody = llvm::BasicBlock::Create(llvmContext, "entry", func.llvmFunc);
     llvmBuilder.SetInsertPoint(llvmBlockBody);
 
     size_t i = 0;
-    for (auto &llvmFuncArg : func.func->args()) {
+    for (auto &llvmFuncArg : func.llvmFunc->args()) {
         llvm::Type *llvmArgType = makeLlvmTypeOrError(args.getChild(i).getCodeLoc(), func.argTypes[i]);
         if (llvmArgType == nullptr) return false;
         
@@ -346,7 +349,7 @@ bool Codegen::performFunctionDefinition(const NodeVal &args, const NodeVal &body
     }
 
     if (!processChildNodes(body)) {
-        func.func->eraseFromParent();
+        func.llvmFunc->eraseFromParent();
         return false;
     }
 
@@ -355,8 +358,8 @@ bool Codegen::performFunctionDefinition(const NodeVal &args, const NodeVal &body
     if (!func.hasRet() && !isLlvmBlockTerminated())
         llvmBuilder.CreateRetVoid();
 
-    if (llvm::verifyFunction(*func.func, &llvm::errs())) cerr << endl;
-    llvmFpm->run(*func.func);
+    if (llvm::verifyFunction(*func.llvmFunc, &llvm::errs())) cerr << endl;
+    llvmFpm->run(*func.llvmFunc);
 
     return true;
 }

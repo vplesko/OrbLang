@@ -3,7 +3,7 @@ using namespace std;
 
 Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs)
     : Processor(namePool, stringPool, typeTable, symbolTable, msgs, this) {
-        resetSkipIssued();
+    resetSkipIssued();
 }
 
 bool Evaluator::isRepeatingProcessing(optional<NamePool::Id> block) const {
@@ -109,6 +109,64 @@ bool Evaluator::performPass(CodeLoc codeLoc, SymbolTable::Block &block, const No
     skipBlock = block.name;
     block.val = NodeVal(codeLoc, KnownVal::copyNoRef(val.getKnownVal()));
     
+    return true;
+}
+
+NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) {
+    if (!func.knownFunc.has_value()) {
+        msgs->errorUnknown(codeLoc);
+        return NodeVal();
+    }
+
+    if (func.knownFunc.value().isInvalid()) {
+        msgs->errorUnknown(codeLoc);
+        return NodeVal();
+    }
+
+    BlockControl blockCtrl(*symbolTable, func);
+
+    for (size_t i = 0; i < args.size(); ++i) {
+        symbolTable->addVar(func.argNames[i], args[i]);
+    }
+
+    if (!processChildNodes(func.knownFunc.value())) {
+        return NodeVal();
+    }
+
+    if (func.hasRet()) {
+        if (!retVal.has_value()) {
+            msgs->errorRetNoValue(codeLoc, func.retType.value());
+            return NodeVal();
+        }
+
+        NodeVal ret = move(retVal.value());
+        resetSkipIssued();
+        return move(ret);
+    } else {
+        resetSkipIssued();
+        return NodeVal(codeLoc);
+    }
+}
+
+bool Evaluator::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
+    // mark the func as eval, but it cannot be called
+    func.knownFunc = NodeVal();
+    return true;
+}
+
+bool Evaluator::performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func) {
+    func.knownFunc = body;
+    return true;
+}
+
+bool Evaluator::performRet(CodeLoc codeLoc) {
+    retIssued = true;
+    return true;
+}
+
+bool Evaluator::performRet(CodeLoc codeLoc, const NodeVal &node) {
+    retIssued = true;
+    retVal = node;
     return true;
 }
 
@@ -693,15 +751,21 @@ bool Evaluator::assignBasedOnTypeB(KnownVal &val, bool x, TypeTable::Id ty) {
 }
 
 bool Evaluator::isSkipIssued() const {
+    return exitOrPassIssued || loopIssued || retIssued;
+}
+
+bool Evaluator::isSkipIssuedNotRet() const {
     return exitOrPassIssued || loopIssued;
 }
 
 bool Evaluator::isSkipIssuedForCurrBlock(optional<NamePool::Id> currBlockName) const {
-    return isSkipIssued() && (!skipBlock.has_value() || skipBlock == currBlockName);
+    return isSkipIssuedNotRet() && (!skipBlock.has_value() || skipBlock == currBlockName);
 }
 
 void Evaluator::resetSkipIssued() {
     exitOrPassIssued = false;
     loopIssued = false;
     skipBlock.reset();
+    retIssued = false;
+    retVal.reset();
 }

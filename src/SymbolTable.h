@@ -16,10 +16,13 @@ struct FuncValue {
     std::optional<TypeTable::Id> retType;
     bool defined;
 
-    llvm::Function *func;
+    llvm::Function *llvmFunc;
+    std::optional<NodeVal> knownFunc;
 
     std::size_t argCnt() const { return argNames.size(); }
     bool hasRet() const { return retType.has_value(); }
+
+    bool isKnown() const { return knownFunc.has_value(); }
 
     static bool sameSignature(const FuncValue &fl, const FuncValue &fr);
 };
@@ -73,7 +76,7 @@ public:
     const NodeVal* getVar(NamePool::Id name) const;
     NodeVal* getVar(NamePool::Id name);
 
-    void registerFunc(const FuncValue &val);
+    FuncValue* registerFunc(const FuncValue &val);
     const FuncValue* getFunction(NamePool::Id name) const;
 
     void registerMacro(const MacroValue &val);

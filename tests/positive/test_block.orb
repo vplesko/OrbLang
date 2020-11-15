@@ -83,4 +83,26 @@ fnc main () () {
             pass d;
         };
     );
+
+    = d 800;
+    block b0 () {
+        = d (block i32 {
+            pass (block i32 {
+                exit b0 true;
+                pass -1;
+            });
+        });
+    };
+    println_i32 d;
+
+    = d -1;
+    block b0 () {
+        = d (block i32 {
+            pass (block i32 {
+                exit b0 false;
+                pass 801;
+            });
+        });
+    };
+    println_i32 d;
 };

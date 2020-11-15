@@ -8,7 +8,11 @@ class Evaluator : public Processor {
     bool exitOrPassIssued, loopIssued;
     std::optional<NamePool::Id> skipBlock;
 
+    bool retIssued;
+    std::optional<NodeVal> retVal;
+
     bool isSkipIssued() const;
+    bool isSkipIssuedNotRet() const;
     bool isSkipIssuedForCurrBlock(std::optional<NamePool::Id> currBlockName) const;
     void resetSkipIssued();
 
@@ -26,7 +30,6 @@ public:
         bool result = true;
     };
 
-    // TODO!
     bool isSkippingProcessing() const { return isSkipIssued(); }
     bool isRepeatingProcessing(std::optional<NamePool::Id> block) const;
     NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref);
@@ -39,11 +42,11 @@ public:
     bool performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond);
     bool performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond);
     bool performPass(CodeLoc codeLoc, SymbolTable::Block &block, const NodeVal &val);
-    NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) { msgs->errorInternal(codeLoc); return NodeVal(); }
-    bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) { msgs->errorInternal(codeLoc); return false; }
-    bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func) { msgs->errorInternal(body.getCodeLoc()); return false; }
-    bool performRet(CodeLoc codeLoc) { msgs->errorInternal(codeLoc); return false; }
-    bool performRet(CodeLoc codeLoc, const NodeVal &node) { msgs->errorInternal(codeLoc); return false; }
+    NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args);
+    bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func);
+    bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func);
+    bool performRet(CodeLoc codeLoc);
+    bool performRet(CodeLoc codeLoc, const NodeVal &node);
     NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op);
     NodeVal performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
     void* performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt);
