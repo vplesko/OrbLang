@@ -4,7 +4,7 @@
 #include <cstdint>
 using namespace std;
 
-Parser::Parser(StringPool *stringPool, CompileMessages *msgs) 
+Parser::Parser(StringPool *stringPool, CompilationMessages *msgs) 
     : stringPool(stringPool), lex(nullptr), msgs(msgs) {
 }
 

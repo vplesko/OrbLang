@@ -38,13 +38,13 @@ Unescape sequences are: \', \", \?, \\, \a, \b, \f, \n, \r, \t, \v, \0, and \xNN
 class LiteralVal:
 	literal stuff
 
-class KnownVal:
+class EvalVal:
 	TypeTable::Id
 	oneof:
 		prim stuff
 		id
 		type
-		repeated KnownVal
+		repeated EvalVal
 	optional ref
 
 class LlvmVal:
@@ -56,7 +56,7 @@ class NodeVal:
 	CodeLoc
 	oneof:
 		LiteralVal
-		KnownVal
+		EvalVal
 		LlvmVal
 		repeated NodeVal
 	type node
@@ -69,7 +69,7 @@ processing leaf:
 	if empty:
 		return empty
 	if literal:
-		promote to known
+		promote to evalVal
 	if id and not escaped:
 		process as var
 	else:
@@ -89,8 +89,8 @@ processing node:
 	else:
 		process as non-leaf
 
-when promoting literal to known, type attribute is respected as eval impl cast, unless id
-codegen cannot gen type and id vars, cannot gen code in global
+when promoting literal to evalVal, type attribute is respected as eval impl cast, unless id
+compiler cannot gen type and id vars, cannot gen code in global
 evaluator can have pointers only be null, strings may be non-null or null
 
 sym
@@ -158,8 +158,8 @@ eval
 
 import
 	import a
-	a is known string
-	compiler processes the file, then returns here
+	a is evalVal string
+	orchestrator processes the file, then returns here
 	rules about no cyclical dependencies, etc.
 	// TODO import ...a
 
@@ -170,16 +170,12 @@ import
 	returns ref-val
 	may cast right to left
 
-+ - * / % & ^ |
++ - * / % & ^ | << >>
 	op ...a
 	calcs in pairs
 	may cast left to right, on fail right to left
 	+ - * & can be unary, others not
 	^ not variadic
-
-<< >>
-	op a b
-	calcs in pairs
 
 == != < <= > >=
 	op a ...b

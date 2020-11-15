@@ -6,12 +6,12 @@
 #include "CodeLoc.h"
 #include "NamePool.h"
 #include "Token.h"
-#include "CompileMessages.h"
+#include "CompilationMessages.h"
 
 class Lexer {
     NamePool *namePool;
     StringPool *stringPool;
-    CompileMessages *msgs;
+    CompilationMessages *msgs;
     std::ifstream in;
     std::string line;
     CodeIndex ln, col;
@@ -28,7 +28,7 @@ class Lexer {
     void lexNum(CodeIndex from);
 
 public:
-    Lexer(NamePool *namePool, StringPool *stringPool, CompileMessages *msgs, const std::string &file);
+    Lexer(NamePool *namePool, StringPool *stringPool, CompilationMessages *msgs, const std::string &file);
 
     bool start();
 

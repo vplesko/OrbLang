@@ -17,12 +17,12 @@ struct FuncValue {
     bool defined;
 
     llvm::Function *llvmFunc;
-    std::optional<NodeVal> knownFunc;
+    std::optional<NodeVal> evalFunc;
 
     std::size_t argCnt() const { return argNames.size(); }
     bool hasRet() const { return retType.has_value(); }
 
-    bool isKnown() const { return knownFunc.has_value(); }
+    bool isEval() const { return evalFunc.has_value(); }
 
     static bool sameSignature(const FuncValue &fl, const FuncValue &fr);
 };

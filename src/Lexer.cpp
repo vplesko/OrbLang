@@ -11,7 +11,7 @@ bool isValidIdStart(char ch) {
     return isalnum(ch) || idSpecialChars.find(ch) != idSpecialChars.npos;
 }
 
-Lexer::Lexer(NamePool *namePool, StringPool *stringPool, CompileMessages *msgs, const std::string &file)
+Lexer::Lexer(NamePool *namePool, StringPool *stringPool, CompilationMessages *msgs, const std::string &file)
     : namePool(namePool), stringPool(stringPool), msgs(msgs), in(file) {
     ln = 0;
     col = 0;

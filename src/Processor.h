@@ -7,7 +7,7 @@
 #include "StringPool.h"
 #include "TypeTable.h"
 #include "SymbolTable.h"
-#include "CompileMessages.h"
+#include "CompilationMessages.h"
 
 class Evaluator;
 
@@ -17,7 +17,7 @@ protected:
     StringPool *stringPool;
     TypeTable *typeTable;
     SymbolTable *symbolTable;
-    CompileMessages *msgs;
+    CompilationMessages *msgs;
     Evaluator *evaluator;
 
     unsigned topmost;
@@ -56,8 +56,8 @@ protected:
     bool checkInGlobalScope(CodeLoc codeLoc, bool orError);
     bool checkInLocalScope(CodeLoc codeLoc, bool orError);
     bool checkHasType(const NodeVal &node, bool orError);
-    bool checkIsKnownVal(CodeLoc codeLoc, const NodeVal &node, bool orError);
-    bool checkIsKnownVal(const NodeVal &node, bool orError) { return checkIsKnownVal(node.getCodeLoc(), node, orError); }
+    bool checkIsEvalVal(CodeLoc codeLoc, const NodeVal &node, bool orError);
+    bool checkIsEvalVal(const NodeVal &node, bool orError) { return checkIsEvalVal(node.getCodeLoc(), node, orError); }
     bool checkIsLlvmVal(CodeLoc codeLoc, const NodeVal &node, bool orError);
     bool checkIsLlvmVal(const NodeVal &node, bool orError) { return checkIsLlvmVal(node.getCodeLoc(), node, orError); }
 private:
@@ -65,8 +65,8 @@ private:
     bool checkIsId(const NodeVal &node, bool orError);
     bool checkIsType(const NodeVal &node, bool orError);
     bool checkIsBool(const NodeVal &node, bool orError);
-    bool checkIsComposite(const NodeVal &node, bool orError);
-    // Checks that the node is KnownVal or LlvmVal.
+    bool checkIsRaw(const NodeVal &node, bool orError);
+    // Checks that the node is EvalVal or LlvmVal.
     bool checkIsValue(const NodeVal &node, bool orError);
     bool checkExactlyChildren(const NodeVal &node, std::size_t n, bool orError);
     bool checkAtLeastChildren(const NodeVal &node, std::size_t n, bool orError);
@@ -119,7 +119,7 @@ private:
     NodeVal processNonLeaf(const NodeVal &node);
 
 public:
-    Processor(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs, Evaluator *evaluator);
+    Processor(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs, Evaluator *evaluator);
 
     NodeVal processNode(const NodeVal &node);
 

@@ -1,10 +1,10 @@
-#include "CompileMessages.h"
+#include "CompilationMessages.h"
 #include <sstream>
 #include <filesystem>
 #include "NamePool.h"
 using namespace std;
 
-string CompileMessages::errorStringOfTokenType(Token::Type tokTy) const {
+string CompilationMessages::errorStringOfTokenType(Token::Type tokTy) const {
     string fallback("<unknown>");
 
     stringstream ss;
@@ -60,7 +60,7 @@ string CompileMessages::errorStringOfTokenType(Token::Type tokTy) const {
     return ss.str();
 }
 
-string CompileMessages::errorStringOfToken(Token tok) const {
+string CompilationMessages::errorStringOfToken(Token tok) const {
     string fallback("<unknown>");
 
     stringstream ss;
@@ -116,11 +116,11 @@ string CompileMessages::errorStringOfToken(Token tok) const {
     return ss.str();
 }
 
-string CompileMessages::errorStringOfKeyword(Keyword k) const {
+string CompilationMessages::errorStringOfKeyword(Keyword k) const {
     return namePool->get(getKeywordNameId(k).value());
 }
 
-string CompileMessages::errorStringOfType(TypeTable::Id ty) const {
+string CompilationMessages::errorStringOfType(TypeTable::Id ty) const {
     string fallback("<unknown>");
 
     stringstream ss;
@@ -180,64 +180,64 @@ inline string toString(CodeLoc loc, const StringPool *stringPool) {
     return ss.str();
 }
 
-inline void CompileMessages::warn(const std::string &str) {
+inline void CompilationMessages::warn(const std::string &str) {
     status = max(status, S_WARN);
     (*out) << "warn: " << str << endl;
 }
 
-inline void CompileMessages::warn(CodeLoc loc, const std::string &str) {
+inline void CompilationMessages::warn(CodeLoc loc, const std::string &str) {
     (*out) << toString(loc, stringPool) << ' ';
     warn(str);
 }
 
-inline void CompileMessages::error(const string &str) {
+inline void CompilationMessages::error(const string &str) {
     status = max(status, S_ERROR);
     (*out) << "error: " << str << endl;
 }
 
-inline void CompileMessages::error(CodeLoc loc, const string &str) {
+inline void CompilationMessages::error(CodeLoc loc, const string &str) {
     (*out) << toString(loc, stringPool) << ' ';
     error(str);
 }
 
-void CompileMessages::errorInputFileNotFound(const string &path) {
+void CompilationMessages::errorInputFileNotFound(const string &path) {
     stringstream ss;
     ss << "Input file " << path << " does not exists.";
     error(ss.str());
 }
 
-void CompileMessages::errorBadToken(CodeLoc loc) {
+void CompilationMessages::errorBadToken(CodeLoc loc) {
     error(loc, "Could not parse token at this location.");
 }
 
-void CompileMessages::errorUnclosedMultilineComment(CodeLoc loc) {
+void CompilationMessages::errorUnclosedMultilineComment(CodeLoc loc) {
     error(loc, "End of file reached, but a multiline comment was not closed.");
 }
 
-void CompileMessages::errorImportNotString(CodeLoc loc) {
+void CompilationMessages::errorImportNotString(CodeLoc loc) {
     error(loc, "Import path not a string.");
 }
 
-void CompileMessages::errorImportNotFound(CodeLoc loc, const string &path) {
+void CompilationMessages::errorImportNotFound(CodeLoc loc, const string &path) {
     stringstream ss;
     ss << "Importing nonexistent file '" << path << "'.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorImportCyclical(CodeLoc loc, const string &path) {
+void CompilationMessages::errorImportCyclical(CodeLoc loc, const string &path) {
     stringstream ss;
     ss << "Importing the file '" << path << "' at this point introduced a cyclical dependency.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp) {
+void CompilationMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp) {
     stringstream ss;
     ss << "Unexpected symbol found." <<
         " Expected " << errorStringOfTokenType(exp) << ".";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token::Type see) {
+void CompilationMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token::Type see) {
     stringstream ss;
     ss << "Unexpected symbol found." <<
         " Expected " << errorStringOfTokenType(exp) <<
@@ -245,7 +245,7 @@ void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Tok
     error(loc, ss.str());
 }
 
-void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token see) {
+void CompilationMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token see) {
     stringstream ss;
     ss << "Unexpected symbol found." <<
         " Expected " << errorStringOfTokenType(exp) <<
@@ -253,7 +253,7 @@ void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Tok
     error(loc, ss.str());
 }
 
-void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, vector<Token::Type> exp, Token see) {
+void CompilationMessages::errorUnexpectedTokenType(CodeLoc loc, vector<Token::Type> exp, Token see) {
     stringstream ss;
     ss << "Unexpected symbol found.";
 
@@ -269,266 +269,266 @@ void CompileMessages::errorUnexpectedTokenType(CodeLoc loc, vector<Token::Type> 
     error(loc, ss.str());
 }
 
-void CompileMessages::errorUnexpectedKeyword(CodeLoc loc, Keyword keyw) {
+void CompilationMessages::errorUnexpectedKeyword(CodeLoc loc, Keyword keyw) {
     stringstream ss;
     ss << "Unexpected keyword found: " << errorStringOfKeyword(keyw) << ".";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorUnexpectedIsNotTerminal(CodeLoc loc) {
+void CompilationMessages::errorUnexpectedIsNotTerminal(CodeLoc loc) {
     error(loc, "Non-terminal was not expected at this location.");
 }
 
-void CompileMessages::errorUnexpectedIsTerminal(CodeLoc loc) {
+void CompilationMessages::errorUnexpectedIsTerminal(CodeLoc loc) {
     error(loc, "Terminal was not expected at this location.");
 }
 
-void CompileMessages::errorUnexpectedNotId(CodeLoc loc) {
+void CompilationMessages::errorUnexpectedNotId(CodeLoc loc) {
     error(loc, "Result does not present an id.");
 }
 
-void CompileMessages::errorUnexpectedNotType(CodeLoc loc) {
+void CompilationMessages::errorUnexpectedNotType(CodeLoc loc) {
     error(loc, "Result does not present a type.");
 }
 
-void CompileMessages::errorChildrenNotEq(CodeLoc loc, std::size_t cnt) {
+void CompilationMessages::errorChildrenNotEq(CodeLoc loc, std::size_t cnt) {
     stringstream ss;
     ss << "Number of children nodes must be exactly " << cnt << ".";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorChildrenLessThan(CodeLoc loc, std::size_t cnt) {
+void CompilationMessages::errorChildrenLessThan(CodeLoc loc, std::size_t cnt) {
     stringstream ss;
     ss << "Number of children nodes must be at least " << cnt << ".";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorChildrenMoreThan(CodeLoc loc, std::size_t cnt) {
+void CompilationMessages::errorChildrenMoreThan(CodeLoc loc, std::size_t cnt) {
     stringstream ss;
     ss << "Number of children nodes must be at most " << cnt << ".";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorChildrenNotBetween(CodeLoc loc, std::size_t lo, std::size_t hi) {
+void CompilationMessages::errorChildrenNotBetween(CodeLoc loc, std::size_t lo, std::size_t hi) {
     stringstream ss;
     ss << "Number of children nodes must be between " << lo << " and " << hi << ".";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorInvalidTypeDecorator(CodeLoc loc) {
+void CompilationMessages::errorInvalidTypeDecorator(CodeLoc loc) {
     error(loc, "Invalid type decorator.");
 }
 
-void CompileMessages::errorBadArraySize(CodeLoc loc, long int size) {
+void CompilationMessages::errorBadArraySize(CodeLoc loc, long int size) {
     stringstream ss;
     ss << "Array size must be a non-negative integer. Size " << size << " is invalid.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorNotLastParam(CodeLoc loc) {
+void CompilationMessages::errorNotLastParam(CodeLoc loc) {
     error(loc, "No further parameters are allowed in this function signature.");
 }
 
-void CompileMessages::errorNonUnOp(CodeLoc loc, Oper op) {
+void CompilationMessages::errorNonUnOp(CodeLoc loc, Oper op) {
     error(loc, "Operation is not unary.");
 }
 
-void CompileMessages::errorNonBinOp(CodeLoc loc, Oper op) {
+void CompilationMessages::errorNonBinOp(CodeLoc loc, Oper op) {
     error(loc, "Operation is not binary.");
 }
 
-void CompileMessages::errorSymNameTaken(CodeLoc loc, NamePool::Id name) {
+void CompilationMessages::errorSymNameTaken(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Symbol '" << namePool->get(name) << "' already exists in this scope.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorSymNotFound(CodeLoc loc, NamePool::Id name) {
+void CompilationMessages::errorSymNotFound(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Symbol '" << namePool->get(name) << "' not found.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorCnNoInit(CodeLoc loc, NamePool::Id name) {
+void CompilationMessages::errorCnNoInit(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Constant with name '" << namePool->get(name) << "' is not initialized.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorExprCannotPromote(CodeLoc loc) {
+void CompilationMessages::errorExprCannotPromote(CodeLoc loc) {
     error(loc, "Expression cannot be promoted.");
 }
 
-void CompileMessages::errorExprCannotPromote(CodeLoc loc, TypeTable::Id into) {
+void CompilationMessages::errorExprCannotPromote(CodeLoc loc, TypeTable::Id into) {
     stringstream ss;
     ss << "Expression cannot be promoted to expected type '" << errorStringOfType(into) << "'.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorExprKnownBinBadOp(CodeLoc loc) {
-    error(loc, "Binary operation is not defined for known values of this type.");
+void CompilationMessages::errorExprEvalBinBadOp(CodeLoc loc) {
+    error(loc, "Binary operation is not defined for evaluation values of this type.");
 }
 
-void CompileMessages::errorExprCannotCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into) {
+void CompilationMessages::errorExprCannotCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into) {
     stringstream ss;
     ss << "Expression of type '" << errorStringOfType(from) <<
         "' cannot be cast into type '" << errorStringOfType(into) << "'.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorExprCannotImplicitCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into) {
+void CompilationMessages::errorExprCannotImplicitCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into) {
     stringstream ss;
     ss << "Expression of type '" << errorStringOfType(from) <<
         "' cannot be implicitly cast into type '" << errorStringOfType(into) << "'.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorExprCannotImplicitCastEither(CodeLoc loc, TypeTable::Id ty1, TypeTable::Id ty2) {
+void CompilationMessages::errorExprCannotImplicitCastEither(CodeLoc loc, TypeTable::Id ty1, TypeTable::Id ty2) {
     stringstream ss;
     ss << "Expressions of type '" << errorStringOfType(ty1) << "' and '" << errorStringOfType(ty2) <<
         "' cannot both be implicitly cast to one of the two types.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorExitNowhere(CodeLoc loc) {
+void CompilationMessages::errorExitNowhere(CodeLoc loc) {
     error(loc, "Exit statement has no enclosing block to exit from.");
 }
 
-void CompileMessages::errorExitPassingBlock(CodeLoc loc) {
+void CompilationMessages::errorExitPassingBlock(CodeLoc loc) {
     error(loc, "Attempting to exit a passing block.");
 }
 
-void CompileMessages::errorPassNonPassingBlock(CodeLoc loc) {
+void CompilationMessages::errorPassNonPassingBlock(CodeLoc loc) {
     error(loc, "Attempting to pass a value from a non-passing block.");
 }
 
-void CompileMessages::errorLoopNowhere(CodeLoc loc) {
+void CompilationMessages::errorLoopNowhere(CodeLoc loc) {
     error(loc, "Loop statement has no enclosing block to loop in.");
 }
 
-void CompileMessages::errorRetNoValue(CodeLoc loc, TypeTable::Id shouldRet) {
+void CompilationMessages::errorRetNoValue(CodeLoc loc, TypeTable::Id shouldRet) {
     stringstream ss;
     ss << "Ret statement has no return value, but should return value of type '" <<
         errorStringOfType(shouldRet) << "'.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorFuncNameTaken(CodeLoc loc, NamePool::Id name) {
+void CompilationMessages::errorFuncNameTaken(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Name '" << namePool->get(name) << "' is already taken and cannot be used for a function.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorMacroNameTaken(CodeLoc loc, NamePool::Id name) {
+void CompilationMessages::errorMacroNameTaken(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Name '" << namePool->get(name) << "' is already taken and cannot be used for a macro.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorArgNameDuplicate(CodeLoc loc, NamePool::Id name) {
+void CompilationMessages::errorArgNameDuplicate(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Argument name '" << namePool->get(name) << "' used more than once.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorFuncNotFound(CodeLoc loc, NamePool::Id name) {
+void CompilationMessages::errorFuncNotFound(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "No functions with name '" << namePool->get(name) << "' satisfying the call signature have been found.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorMacroNotFound(CodeLoc loc, NamePool::Id name) {
+void CompilationMessages::errorMacroNotFound(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "No macros with name '" << namePool->get(name) << "' satisfying the invocation signature have been found.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorBlockNotFound(CodeLoc loc, NamePool::Id name) {
+void CompilationMessages::errorBlockNotFound(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "No enclosing blocks with name '" << namePool->get(name) << "' have been found.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorBlockNoPass(CodeLoc loc) {
+void CompilationMessages::errorBlockNoPass(CodeLoc loc) {
     error(loc, "End of passing block reached without a value being passed.");
 }
 
-void CompileMessages::errorMemberIndex(CodeLoc loc) {
+void CompilationMessages::errorMemberIndex(CodeLoc loc) {
     error(loc, "Invalid member index.");
 }
 
-void CompileMessages::errorExprIndexOnBadType(CodeLoc loc) {
+void CompilationMessages::errorExprIndexOnBadType(CodeLoc loc) {
     error(loc, "Cannot index on this value.");
 }
 
-void CompileMessages::errorExprIndexOnBadType(CodeLoc loc, TypeTable::Id ty) {
+void CompilationMessages::errorExprIndexOnBadType(CodeLoc loc, TypeTable::Id ty) {
     stringstream ss;
     ss << "Cannot index on type '" << errorStringOfType(ty) << "'.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorExprIndexOutOfBounds(CodeLoc loc) {
+void CompilationMessages::errorExprIndexOutOfBounds(CodeLoc loc) {
     error(loc, "Attempting to index out of bounds of the array.");
 }
 
-void CompileMessages::errorExprDerefOnBadType(CodeLoc loc, TypeTable::Id ty) {
+void CompilationMessages::errorExprDerefOnBadType(CodeLoc loc, TypeTable::Id ty) {
     stringstream ss;
     ss << "Cannot dereference on type '" << errorStringOfType(ty) << "'.";
     error(loc, ss.str());
 }
 
-void CompileMessages::errorExprAddressOfNoRef(CodeLoc loc) {
+void CompilationMessages::errorExprAddressOfNoRef(CodeLoc loc) {
     error(loc, "Cannot take address of non ref values.");
 }
 
-void CompileMessages::errorExprIndexNotIntegral(CodeLoc loc) {
+void CompilationMessages::errorExprIndexNotIntegral(CodeLoc loc) {
     error(loc, "Index must be of integer or unsigned type.");
 }
 
-void CompileMessages::errorExprUnBadType(CodeLoc loc) {
+void CompilationMessages::errorExprUnBadType(CodeLoc loc) {
     error(loc, "Unary operation is not allowed on this value.");
 }
 
-void CompileMessages::errorExprUnOnNull(CodeLoc loc) {
+void CompilationMessages::errorExprUnOnNull(CodeLoc loc) {
     error(loc, "Operation is not allowed on null literal.");
 }
 
-void CompileMessages::errorExprAsgnNonRef(CodeLoc loc) {
+void CompilationMessages::errorExprAsgnNonRef(CodeLoc loc) {
     error(loc, "Assignment must assign to ref values.");
 }
 
-void CompileMessages::errorExprAsgnOnCn(CodeLoc loc) {
+void CompilationMessages::errorExprAsgnOnCn(CodeLoc loc) {
     error(loc, "Assignment cannot assign to constant types.");
 }
 
-void CompileMessages::errorExprDotInvalidBase(CodeLoc loc) {
+void CompilationMessages::errorExprDotInvalidBase(CodeLoc loc) {
     error(loc, "Invalid expression on left side of dot operator.");
 }
 
-void CompileMessages::errorMissingTypeAttribute(CodeLoc loc) {
+void CompilationMessages::errorMissingTypeAttribute(CodeLoc loc) {
     error(loc, "Type attribute was expected on this node.");
 }
 
-void CompileMessages::errorNotGlobalScope(CodeLoc loc) {
+void CompilationMessages::errorNotGlobalScope(CodeLoc loc) {
     error(loc, "This is only allowed in global scope.");
 }
 
-void CompileMessages::errorNotTopmost(CodeLoc loc) {
+void CompilationMessages::errorNotTopmost(CodeLoc loc) {
     error(loc, "This is only allowed at the topmost code level.");
 }
 
-void CompileMessages::errorNoMain() {
+void CompilationMessages::errorNoMain() {
     error("No main function defined.");
 }
 
-void CompileMessages::errorEvaluationNotSupported(CodeLoc loc) {
+void CompilationMessages::errorEvaluationNotSupported(CodeLoc loc) {
     error(loc, "This evaluation is not supported.");
 }
 
-void CompileMessages::errorUnknown(CodeLoc loc) {
+void CompilationMessages::errorUnknown(CodeLoc loc) {
     error(loc, "Unknown error occured.");
 }
 
-void CompileMessages::errorInternal(CodeLoc loc) {
+void CompilationMessages::errorInternal(CodeLoc loc) {
     error(loc, "An internal error occured. You should not be seeing this.");
 }

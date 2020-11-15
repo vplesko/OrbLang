@@ -16,12 +16,12 @@ add_definitions(${CLANG_DEFINITIONS})
 
 set(HEADER_FILES
     "src/ClangAdapter.h"
-    "src/Codegen.h"
     "src/CodeLoc.h"
-    "src/CompileMessages.h"
+    "src/CompilationOrchestrator.h"
+    "src/CompilationMessages.h"
     "src/Compiler.h"
     "src/Evaluator.h"
-    "src/KnownVal.h"
+    "src/EvalVal.h"
     "src/Lexer.h"
     "src/LiteralVal.h"
     "src/LlvmVal.h"
@@ -39,11 +39,11 @@ set(HEADER_FILES
 
 set(SOURCE_FILES
     "src/ClangAdapter.cpp"
-    "src/Codegen.cpp"
-    "src/CompileMessages.cpp"
+    "src/CompilationOrchestrator.cpp"
+    "src/CompilationMessages.cpp"
     "src/Compiler.cpp"
     "src/Evaluator.cpp"
-    "src/KnownVal.cpp"
+    "src/EvalVal.cpp"
     "src/Lexer.cpp"
     "src/main.cpp"
     "src/LiteralVal.cpp"

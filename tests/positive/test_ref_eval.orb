@@ -2,7 +2,7 @@ import "util/io.orb";
 
 eval (sym glob:i32);
 
-# TODO uncomment test cases after known vals can be non-null ptrs
+# TODO uncomment test cases after eval vals can be non-null ptrs
 fnc main () () {
     eval (sym a:i32);
     = a 100;

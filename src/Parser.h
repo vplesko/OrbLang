@@ -1,13 +1,13 @@
 #pragma once
 
-#include "CompileMessages.h"
+#include "CompilationMessages.h"
 #include "Lexer.h"
 #include "NodeVal.h"
 
 class Parser {
     StringPool *stringPool;
     Lexer *lex;
-    CompileMessages *msgs;
+    CompilationMessages *msgs;
 
     const Token& peek() const;
     Token next();
@@ -25,7 +25,7 @@ class Parser {
     NodeVal parseTerm();
 
 public:
-    Parser(StringPool *stringPool, CompileMessages *msgs);
+    Parser(StringPool *stringPool, CompilationMessages *msgs);
 
     void setLexer(Lexer *lex_) { lex = lex_; }
     Lexer* getLexer() const { return lex; }

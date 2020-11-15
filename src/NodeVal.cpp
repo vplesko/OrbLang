@@ -7,13 +7,13 @@ NodeVal::NodeVal() : kind(Kind::kInvalid) {
 NodeVal::NodeVal(CodeLoc codeLoc, StringPool::Id import) : codeLoc(codeLoc), kind(Kind::kImport), importFile(import) {
 }
 
-NodeVal::NodeVal(CodeLoc codeLoc) : codeLoc(codeLoc), kind(Kind::kComposite) {
+NodeVal::NodeVal(CodeLoc codeLoc) : codeLoc(codeLoc), kind(Kind::kRaw) {
 }
 
 NodeVal::NodeVal(CodeLoc codeLoc, const LiteralVal &val) : codeLoc(codeLoc), kind(Kind::kLiteral), literal(val) {
 }
 
-NodeVal::NodeVal(CodeLoc codeLoc, const KnownVal &val) : codeLoc(codeLoc), kind(Kind::kKnown), known(val) {
+NodeVal::NodeVal(CodeLoc codeLoc, const EvalVal &val) : codeLoc(codeLoc), kind(Kind::kEval), eval(val) {
 }
 
 NodeVal::NodeVal(CodeLoc codeLoc, const LlvmVal &val) : codeLoc(codeLoc), kind(Kind::kLlvm), llvm(val) {
@@ -24,7 +24,7 @@ void NodeVal::copyFrom(const NodeVal &other) {
     kind = other.kind;
     importFile = other.importFile;
     literal = other.literal;
-    known = other.known;
+    eval = other.eval;
     llvm = other.llvm;
     
     children.reserve(other.children.size());
@@ -51,20 +51,20 @@ NodeVal& NodeVal::operator=(const NodeVal &other) {
 }
 
 optional<TypeTable::Id> NodeVal::getType() const {
-    if (isKnownVal()) return getKnownVal().getType();
+    if (isEvalVal()) return getEvalVal().getType();
     if (isLlvmVal()) return getLlvmVal().type;
     return nullopt;
 }
 
 bool NodeVal::hasRef() const {
-    if (isKnownVal()) return getKnownVal().ref != nullptr;
+    if (isEvalVal()) return getEvalVal().ref != nullptr;
     if (isLlvmVal()) return getLlvmVal().ref != nullptr;
     return false;
 }
 
 std::size_t NodeVal::getLength() const {
     if (isInvalid()) return 0;
-    if (isComposite()) return getChildrenCnt();
+    if (isRaw()) return getChildrenCnt();
     return 1;
 }
 
@@ -85,7 +85,7 @@ void NodeVal::setTypeAttr(NodeVal t) {
 
 void NodeVal::escape() {
     escaped = true;
-    if (isComposite()) {
+    if (isRaw()) {
         for (auto &child : children) {
             child.escape();
         }
@@ -93,7 +93,7 @@ void NodeVal::escape() {
 }
 
 void NodeVal::unescape() {
-    if (isComposite()) {
+    if (isRaw()) {
         for (auto it = children.rbegin(); it != children.rend(); ++it) {
             (*it).unescape();
         }

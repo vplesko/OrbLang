@@ -11,19 +11,19 @@ class Evaluator : public Processor {
     bool retIssued;
     std::optional<NodeVal> retVal;
 
-    bool isSkipIssued() const;
-    bool isSkipIssuedNotRet() const;
+    bool isSkipIssuedNotRet() const { return exitOrPassIssued || loopIssued; }
+    bool isSkipIssued() const { return isSkipIssuedNotRet() || retIssued; }
     bool isSkipIssuedForCurrBlock(std::optional<NamePool::Id> currBlockName) const;
     void resetSkipIssued();
 
-    bool assignBasedOnTypeI(KnownVal &val, std::int64_t x, TypeTable::Id ty);
-    bool assignBasedOnTypeU(KnownVal &val, std::uint64_t x, TypeTable::Id ty);
-    bool assignBasedOnTypeF(KnownVal &val, double x, TypeTable::Id ty);
-    bool assignBasedOnTypeC(KnownVal &val, char x, TypeTable::Id ty);
-    bool assignBasedOnTypeB(KnownVal &val, bool x, TypeTable::Id ty);
+    bool assignBasedOnTypeI(EvalVal &val, std::int64_t x, TypeTable::Id ty);
+    bool assignBasedOnTypeU(EvalVal &val, std::uint64_t x, TypeTable::Id ty);
+    bool assignBasedOnTypeF(EvalVal &val, double x, TypeTable::Id ty);
+    bool assignBasedOnTypeC(EvalVal &val, char x, TypeTable::Id ty);
+    bool assignBasedOnTypeB(EvalVal &val, bool x, TypeTable::Id ty);
 
-    std::optional<KnownVal> makeCast(const KnownVal &srcKnownVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
-    std::optional<KnownVal> makeArray(TypeTable::Id arrTypeId);
+    std::optional<EvalVal> makeCast(const EvalVal &srcEvalVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
+    std::optional<EvalVal> makeArray(TypeTable::Id arrTypeId);
 
 public:
     struct ComparisonSignal {
@@ -59,5 +59,5 @@ public:
     NodeVal performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs);
 
 public:
-    Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompileMessages *msgs);
+    Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs);
 };

@@ -1,6 +1,6 @@
 #include <iostream>
 #include <filesystem>
-#include "Compiler.h"
+#include "CompilationOrchestrator.h"
 using namespace std;
 
 enum Error {
@@ -44,19 +44,19 @@ int main(int argc,  char** argv) {
         cout << " " << f;
     cout << endl;
 
-    Compiler compiler(cerr);
-    if (!compiler.parse(inputs)) {
+    CompilationOrchestrator co(cerr);
+    if (!co.parse(inputs)) {
         cerr << "Compilation failed." << endl;
         return PARSE_FAIL;
     }
     
     /*cout << "Code printout:" << endl;
-    compiler.printout();*/
+    co.printout();*/
 
     if (!output.empty()) {
         string ext = filesystem::path(output).extension().string();
         bool obj = ext == ".o" || ext == ".obj";
-        if (!compiler.compile(output, !obj)) {
+        if (!co.compile(output, !obj)) {
             cerr << "Something went wrong when compiling!" << endl;
             return COMPILE_FAIL;
         }

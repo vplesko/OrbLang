@@ -11,7 +11,7 @@
 class NamePool;
 
 // TODO due to eval id and type vals, it's not guaranteed that given ids refer to anything valid, fix by introducing zero init
-class CompileMessages {
+class CompilationMessages {
     enum Status {
         S_OK,
         S_WARN,
@@ -36,7 +36,7 @@ class CompileMessages {
     std::string errorStringOfType(TypeTable::Id ty) const;
 
 public:
-    CompileMessages(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, std::ostream &out)
+    CompilationMessages(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, std::ostream &out)
         : namePool(namePool), stringPool(stringPool), typeTable(typeTable), symbolTable(symbolTable), out(&out), status(S_OK) {}
     
     bool isFail() const { return status >= S_ERROR; }
@@ -70,7 +70,7 @@ public:
     void errorCnNoInit(CodeLoc loc, NamePool::Id name);
     void errorExprCannotPromote(CodeLoc loc);
     void errorExprCannotPromote(CodeLoc loc, TypeTable::Id into);
-    void errorExprKnownBinBadOp(CodeLoc loc);
+    void errorExprEvalBinBadOp(CodeLoc loc);
     void errorExprCannotCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into);
     void errorExprCannotImplicitCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into);
     void errorExprCannotImplicitCastEither(CodeLoc loc, TypeTable::Id ty1, TypeTable::Id ty2);

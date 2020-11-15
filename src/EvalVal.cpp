@@ -1,107 +1,107 @@
-#include "KnownVal.h"
+#include "EvalVal.h"
 #include "LiteralVal.h"
 #include "SymbolTable.h"
 using namespace std;
 
-optional<NamePool::Id> KnownVal::getCallableId() const {
+optional<NamePool::Id> EvalVal::getCallableId() const {
     if (!isCallable()) return nullopt;
     return id;
 }
 
-KnownVal KnownVal::makeVal(TypeTable::Id t, TypeTable *typeTable) {
-    KnownVal knownVal;
-    knownVal.type = t;
+EvalVal EvalVal::makeVal(TypeTable::Id t, TypeTable *typeTable) {
+    EvalVal evalVal;
+    evalVal.type = t;
 
     if (typeTable->worksAsTuple(t)) {
         const TypeTable::Tuple *tup = typeTable->extractTuple(t).value();
-        knownVal.elems.reserve(tup->members.size());
+        evalVal.elems.reserve(tup->members.size());
         for (TypeTable::Id membType : tup->members) {
-            knownVal.elems.push_back(makeVal(membType, typeTable));
+            evalVal.elems.push_back(makeVal(membType, typeTable));
         }
     } else if (typeTable->worksAsTypeArr(t)) {
         size_t len = typeTable->extractLenOfArr(t).value();
         TypeTable::Id elemType = typeTable->addTypeIndexOf(t).value();
-        knownVal.elems = vector<KnownVal>(len, makeVal(elemType, typeTable));
+        evalVal.elems = vector<EvalVal>(len, makeVal(elemType, typeTable));
     }
 
-    return knownVal;
+    return evalVal;
 }
 
-KnownVal KnownVal::copyNoRef(const KnownVal &k) {
-    KnownVal knownVal(k);
-    knownVal.ref = nullptr;
-    return knownVal;
+EvalVal EvalVal::copyNoRef(const EvalVal &k) {
+    EvalVal evalVal(k);
+    evalVal.ref = nullptr;
+    return evalVal;
 }
 
-bool KnownVal::isId(const KnownVal &val, const TypeTable *typeTable) {
+bool EvalVal::isId(const EvalVal &val, const TypeTable *typeTable) {
     optional<TypeTable::Id> type = val.getType();
     return type.has_value() && typeTable->worksAsPrimitive(type.value(), TypeTable::P_ID);
 }
 
-bool KnownVal::isType(const KnownVal &val, const TypeTable *typeTable) {
+bool EvalVal::isType(const EvalVal &val, const TypeTable *typeTable) {
     optional<TypeTable::Id> type = val.getType();
     return type.has_value() && typeTable->worksAsPrimitive(type.value(), TypeTable::P_TYPE);
 }
 
-bool KnownVal::isMacro(const KnownVal &val, const SymbolTable *symbolTable) {
+bool EvalVal::isMacro(const EvalVal &val, const SymbolTable *symbolTable) {
     return val.isCallable() && symbolTable->isMacroName(val.id);
 }
 
-bool KnownVal::isFunc(const KnownVal &val, const SymbolTable *symbolTable) {
+bool EvalVal::isFunc(const EvalVal &val, const SymbolTable *symbolTable) {
     return val.isCallable() && symbolTable->isFuncName(val.id);
 }
 
-bool KnownVal::isI(const KnownVal &val, const TypeTable *typeTable) {
+bool EvalVal::isI(const EvalVal &val, const TypeTable *typeTable) {
     optional<TypeTable::Id> type = val.getType();
     return type.has_value() && typeTable->worksAsTypeI(type.value());
 }
 
-bool KnownVal::isU(const KnownVal &val, const TypeTable *typeTable) {
+bool EvalVal::isU(const EvalVal &val, const TypeTable *typeTable) {
     optional<TypeTable::Id> type = val.getType();
     return type.has_value() && typeTable->worksAsTypeU(type.value());
 }
 
-bool KnownVal::isF(const KnownVal &val, const TypeTable *typeTable) {
+bool EvalVal::isF(const EvalVal &val, const TypeTable *typeTable) {
     optional<TypeTable::Id> type = val.getType();
     return type.has_value() && typeTable->worksAsTypeF(type.value());
 }
 
-bool KnownVal::isB(const KnownVal &val, const TypeTable *typeTable) {
+bool EvalVal::isB(const EvalVal &val, const TypeTable *typeTable) {
     optional<TypeTable::Id> type = val.getType();
     return type.has_value() && typeTable->worksAsTypeB(type.value());
 }
 
-bool KnownVal::isC(const KnownVal &val, const TypeTable *typeTable) {
+bool EvalVal::isC(const EvalVal &val, const TypeTable *typeTable) {
     optional<TypeTable::Id> type = val.getType();
     return type.has_value() && typeTable->worksAsTypeC(type.value());
 }
 
-bool KnownVal::isStr(const KnownVal &val, const TypeTable *typeTable) {
+bool EvalVal::isStr(const EvalVal &val, const TypeTable *typeTable) {
     optional<TypeTable::Id> type = val.getType();
     return type.has_value() && typeTable->worksAsTypeStr(type.value());
 }
 
-bool KnownVal::isAnyP(const KnownVal &val, const TypeTable *typeTable) {
+bool EvalVal::isAnyP(const EvalVal &val, const TypeTable *typeTable) {
     optional<TypeTable::Id> type = val.getType();
     return type.has_value() && typeTable->worksAsTypeAnyP(type.value());
 }
 
-bool KnownVal::isArr(const KnownVal &val, const TypeTable *typeTable) {
+bool EvalVal::isArr(const EvalVal &val, const TypeTable *typeTable) {
     optional<TypeTable::Id> type = val.getType();
     return type.has_value() && typeTable->worksAsTypeArr(type.value());
 }
 
-bool KnownVal::isTuple(const KnownVal &val, const TypeTable *typeTable) {
+bool EvalVal::isTuple(const EvalVal &val, const TypeTable *typeTable) {
     optional<TypeTable::Id> type = val.getType();
     return type.has_value() && typeTable->worksAsTuple(type.value());
 }
 
-bool KnownVal::isNull(const KnownVal &val, const TypeTable *typeTable) {
+bool EvalVal::isNull(const EvalVal &val, const TypeTable *typeTable) {
     if (isStr(val, typeTable)) return !val.str.has_value();
     return isAnyP(val, typeTable);
 }
 
-optional<int64_t> KnownVal::getValueI(const KnownVal &val, const TypeTable *typeTable) {
+optional<int64_t> EvalVal::getValueI(const EvalVal &val, const TypeTable *typeTable) {
     if (!val.getType().has_value()) return nullopt;
     if (typeTable->worksAsPrimitive(val.getType().value(), TypeTable::P_I8)) return val.i8;
     if (typeTable->worksAsPrimitive(val.getType().value(), TypeTable::P_I16)) return val.i16;
@@ -110,7 +110,7 @@ optional<int64_t> KnownVal::getValueI(const KnownVal &val, const TypeTable *type
     return nullopt;
 }
 
-optional<uint64_t> KnownVal::getValueU(const KnownVal &val, const TypeTable *typeTable) {
+optional<uint64_t> EvalVal::getValueU(const EvalVal &val, const TypeTable *typeTable) {
     if (!val.getType().has_value()) return nullopt;
     if (typeTable->worksAsPrimitive(val.getType().value(), TypeTable::P_U8)) return val.u8;
     if (typeTable->worksAsPrimitive(val.getType().value(), TypeTable::P_U16)) return val.u16;
@@ -119,14 +119,14 @@ optional<uint64_t> KnownVal::getValueU(const KnownVal &val, const TypeTable *typ
     return nullopt;
 }
 
-optional<double> KnownVal::getValueF(const KnownVal &val, const TypeTable *typeTable) {
+optional<double> EvalVal::getValueF(const EvalVal &val, const TypeTable *typeTable) {
     if (!val.getType().has_value()) return nullopt;
     if (typeTable->worksAsPrimitive(val.getType().value(), TypeTable::P_F32)) return val.f32;
     if (typeTable->worksAsPrimitive(val.getType().value(), TypeTable::P_F64)) return val.f64;
     return nullopt;
 }
 
-optional<uint64_t> KnownVal::getValueNonNeg(const KnownVal &val, const TypeTable *typeTable) {
+optional<uint64_t> EvalVal::getValueNonNeg(const EvalVal &val, const TypeTable *typeTable) {
     optional<int64_t> valI = getValueI(val, typeTable);
     if (valI.has_value()) {
         if (valI.value() < 0) return nullopt;
@@ -141,7 +141,7 @@ optional<uint64_t> KnownVal::getValueNonNeg(const KnownVal &val, const TypeTable
     return nullopt;
 }
 
-bool KnownVal::isImplicitCastable(const KnownVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable) {
+bool EvalVal::isImplicitCastable(const EvalVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable) {
     if (typeTable->isImplicitCastable(val.getType().value(), t))
         return true;
 
@@ -154,7 +154,7 @@ bool KnownVal::isImplicitCastable(const KnownVal &val, TypeTable::Id t, const St
     optional<double> valF = getValueF(val, typeTable);
     if (valF.has_value()) return typeTable->fitsTypeF(valF.value(), t);
 
-    // if a known val is ptr, it has to be null
+    // if an eval val is ptr, it has to be null
     if (typeTable->worksAsTypePtr(val.getType().value()) && typeTable->worksAsTypeAnyP(t)) return true;
     
     if (isStr(val, typeTable) && !isNull(val, typeTable))
@@ -164,13 +164,13 @@ bool KnownVal::isImplicitCastable(const KnownVal &val, TypeTable::Id t, const St
     return false;
 }
 
-bool KnownVal::isCastable(const KnownVal &val, TypeTable::Id dstTypeId, const StringPool *stringPool, const TypeTable *typeTable) {
+bool EvalVal::isCastable(const EvalVal &val, TypeTable::Id dstTypeId, const StringPool *stringPool, const TypeTable *typeTable) {
     TypeTable::Id srcTypeId = val.type.value();
 
     if (srcTypeId == dstTypeId) return true;
 
     if (typeTable->worksAsTypeI(srcTypeId)) {
-        int64_t x = KnownVal::getValueI(val, typeTable).value();
+        int64_t x = EvalVal::getValueI(val, typeTable).value();
 
         return typeTable->worksAsTypeI(dstTypeId) ||
             typeTable->worksAsTypeU(dstTypeId) ||
@@ -180,7 +180,7 @@ bool KnownVal::isCastable(const KnownVal &val, TypeTable::Id dstTypeId, const St
             (typeTable->worksAsTypeStr(dstTypeId) && x == 0) ||
             (typeTable->worksAsTypeAnyP(dstTypeId) && x == 0);
     } else if (typeTable->worksAsTypeU(srcTypeId)) {
-        uint64_t x = KnownVal::getValueU(val, typeTable).value();
+        uint64_t x = EvalVal::getValueU(val, typeTable).value();
 
         return typeTable->worksAsTypeI(dstTypeId) ||
             typeTable->worksAsTypeU(dstTypeId) ||

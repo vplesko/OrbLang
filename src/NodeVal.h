@@ -4,7 +4,7 @@
 #include <memory>
 #include "CodeLoc.h"
 #include "LiteralVal.h"
-#include "KnownVal.h"
+#include "EvalVal.h"
 #include "LlvmVal.h"
 
 class NodeVal {
@@ -13,9 +13,9 @@ public:
         kInvalid,
         kImport,
         kLiteral,
-        kKnown,
+        kEval,
         kLlvm,
-        kComposite
+        kRaw
     };
 
 private:
@@ -25,7 +25,7 @@ private:
     StringPool::Id importFile;
     LiteralVal literal;
     LlvmVal llvm;
-    KnownVal known;
+    EvalVal eval;
     std::vector<NodeVal> children;
 
     std::unique_ptr<NodeVal> typeAttr;
@@ -42,7 +42,7 @@ public:
     NodeVal(CodeLoc codeLoc);
     NodeVal(CodeLoc codeLoc, StringPool::Id import);
     NodeVal(CodeLoc codeLoc, const LiteralVal &val);
-    NodeVal(CodeLoc codeLoc, const KnownVal &val);
+    NodeVal(CodeLoc codeLoc, const EvalVal &val);
     NodeVal(CodeLoc codeLoc, const LlvmVal &val);
 
     NodeVal(const NodeVal &other);
@@ -56,8 +56,8 @@ public:
     std::optional<TypeTable::Id> getType() const;
     bool hasRef() const;
     std::size_t getLength() const;
-    bool isEmpty() const { return isComposite() && getChildrenCnt() == 0; }
-    bool isLeaf() const { return !isComposite() || isEmpty(); }
+    bool isEmpty() const { return isRaw() && getChildrenCnt() == 0; }
+    bool isLeaf() const { return !isRaw() || isEmpty(); }
 
     // Remember to check when returned to you before any other checks or usages.
     bool isInvalid() const { return kind == Kind::kInvalid; }
@@ -69,15 +69,15 @@ public:
     LiteralVal& getLiteralVal() { return literal; }
     const LiteralVal& getLiteralVal() const { return literal; }
 
-    bool isKnownVal() const { return kind == Kind::kKnown; }
-    KnownVal& getKnownVal() { return known; }
-    const KnownVal& getKnownVal() const { return known; }
+    bool isEvalVal() const { return kind == Kind::kEval; }
+    EvalVal& getEvalVal() { return eval; }
+    const EvalVal& getEvalVal() const { return eval; }
 
     bool isLlvmVal() const { return kind == Kind::kLlvm; }
     LlvmVal& getLlvmVal() { return llvm; }
     const LlvmVal& getLlvmVal() const { return llvm; }
 
-    bool isComposite() const  { return kind == Kind::kComposite; }
+    bool isRaw() const  { return kind == Kind::kRaw; }
     NodeVal& getChild(std::size_t ind) { return children[ind]; }
     const NodeVal& getChild(std::size_t ind) const { return children[ind]; }
     void addChild(NodeVal c);
