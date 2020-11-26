@@ -5,7 +5,7 @@ project(OrbCompiler)
 find_package(LLVM REQUIRED CONFIG)
 find_package(Clang REQUIRED)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(${LLVM_INCLUDE_DIRS})
