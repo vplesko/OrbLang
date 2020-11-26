@@ -74,6 +74,9 @@ private:
     bool checkBetweenChildren(const NodeVal &node, std::size_t nLo, std::size_t nHi, bool orError);
     bool checkImplicitCastable(const NodeVal &node, TypeTable::Id ty, bool orError);
 
+    NodeVal dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty);
+    NodeVal dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
+
     NodeVal processAndCheckIsType(const NodeVal &node);
     NodeVal processWithEscapeIfLeaf(const NodeVal &node);
     NodeVal processWithEscapeIfLeafAndCheckIsId(const NodeVal &node);

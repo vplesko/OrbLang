@@ -26,10 +26,6 @@ class Evaluator : public Processor {
     std::optional<EvalVal> makeArray(TypeTable::Id arrTypeId);
 
 public:
-    struct ComparisonSignal {
-        bool result = true;
-    };
-
     bool isSkippingProcessing() const { return isSkipIssued(); }
     bool isRepeatingProcessing(std::optional<NamePool::Id> block) const;
     NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref);

@@ -1,6 +1,10 @@
 #include "Evaluator.h"
 using namespace std;
 
+struct ComparisonSignal {
+    bool result = true;
+};
+
 Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs)
     : Processor(namePool, stringPool, typeTable, symbolTable, msgs, this) {
     resetSkipIssued();

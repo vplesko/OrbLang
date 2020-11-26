@@ -152,7 +152,11 @@ NodeVal Processor::processId(const NodeVal &node) {
     NodeVal *value = symbolTable->getVar(id);
     
     if (value != nullptr) {
-        return performLoad(node.getCodeLoc(), id, *value);
+        if (checkIsEvalVal(*value, false)) {
+            return evaluator->performLoad(node.getCodeLoc(), id, *value);
+        } else {
+            return performLoad(node.getCodeLoc(), id, *value);
+        }
     } else if (symbolTable->isFuncName(id) || symbolTable->isMacroName(id) ||
         isKeyword(id) || isOper(id)) {
         // TODO these as first-class values, with ref
@@ -237,7 +241,10 @@ NodeVal Processor::processCast(const NodeVal &node) {
     if (value.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(true);
 
-    return performCast(node.getCodeLoc(), value, ty.getEvalVal().ty);
+    if (checkIsEvalVal(value, false) && EvalVal::isCastable(value.getEvalVal(), ty.getEvalVal().ty, stringPool, typeTable))
+        return evaluator->performCast(node.getCodeLoc(), value, ty.getEvalVal().ty);
+    else
+        return performCast(node.getCodeLoc(), value, ty.getEvalVal().ty);
 }
 
 NodeVal Processor::processBlock(const NodeVal &node) {
@@ -454,8 +461,12 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
 
         args.push_back(move(arg));
     }
-    
-    return performCall(node.getCodeLoc(), *funcVal, args);
+
+    if (funcVal->isEval()) {
+        return evaluator->performCall(node.getCodeLoc(), *funcVal, args);
+    } else {
+        return performCall(node.getCodeLoc(), *funcVal, args);
+    }
 }
 
 // TODO allow function definition after declaration
@@ -648,11 +659,13 @@ NodeVal Processor::processTuple(const NodeVal &node, const NodeVal &starting) {
     vector<NodeVal> membs;
     membs.reserve(node.getChildrenCnt());
     membs.push_back(starting);
+    bool allEval = checkIsEvalVal(starting, false);
     for (size_t i = 1; i < node.getChildrenCnt(); ++i) {
         NodeVal memb = processNode(node.getChild(i));
         if (memb.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(true);
         membs.push_back(move(memb));
+        if (!checkIsEvalVal(memb, false)) allEval = false;
     }
 
     TypeTable::Tuple tup;
@@ -671,7 +684,10 @@ NodeVal Processor::processTuple(const NodeVal &node, const NodeVal &starting) {
         return NodeVal();
     }
 
-    return performTuple(node.getCodeLoc(), tupTypeIdOpt.value(), membs);
+    if (allEval)
+        return evaluator->performTuple(node.getCodeLoc(), tupTypeIdOpt.value(), membs);
+    else
+        return performTuple(node.getCodeLoc(), tupTypeIdOpt.value(), membs);
 }
 
 NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
@@ -791,10 +807,10 @@ bool Processor::implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly
     if (lhs.getType().value() == rhs.getType().value()) return true;
 
     if (checkImplicitCastable(rhs, lhs.getType().value(), false)) {
-        rhs = performCast(rhs.getCodeLoc(), rhs, lhs.getType().value());
+        rhs = dispatchCast(rhs.getCodeLoc(), rhs, lhs.getType().value());
         return !rhs.isInvalid();
     } else if (!oneWayOnly && checkImplicitCastable(lhs, rhs.getType().value(), false)) {
-        lhs = performCast(lhs.getCodeLoc(), lhs, rhs.getType().value());
+        lhs = dispatchCast(lhs.getCodeLoc(), lhs, rhs.getType().value());
         return !lhs.isInvalid();
     } else {
         if (oneWayOnly) msgs->errorExprCannotImplicitCast(rhs.getCodeLoc(), rhs.getType().value(), lhs.getType().value());
@@ -824,39 +840,84 @@ NodeVal Processor::processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper o
     if (operProc.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(true);
 
-    return op == Oper::MUL ? performOperUnaryDeref(codeLoc, operProc) : performOperUnary(codeLoc, operProc, op);
+    if (op == Oper::MUL) {
+        return dispatchOperUnaryDeref(codeLoc, operProc);
+    } else {
+        if (checkIsEvalVal(oper, false)) {
+            return evaluator->performOperUnary(codeLoc, operProc, op);
+        } else {
+            return performOperUnary(codeLoc, operProc, op);
+        }
+    }
 }
 
 NodeVal Processor::processOperComparison(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op) {
-    void *signal = performOperComparisonSetUp(codeLoc, opers.size());
-    if (signal == nullptr) return NodeVal();
+    NodeVal lhs = processAndCheckHasType(*opers[0]);
+    if (lhs.isInvalid()) return NodeVal();
+    if (isSkippingProcessing()) return NodeVal(true);
+
+    // redirecting to evaluator when all operands are EvalVals is more complicated in the case of comparisons
+    // the reason for is that LLVM's phi nodes need to be started up and closed appropriately
+    void *evalSignal = nullptr;
+    DeferredCallback evalSignalDeleteGuard([=] { delete (int*) evalSignal; });
+
+    void *signal = nullptr;
     DeferredCallback signalDeleteGuard([=] { delete (int*) signal; });
 
-    NodeVal lhs = processAndCheckHasType(*opers[0]);
-    if (lhs.isInvalid()) return performOperComparisonTearDown(codeLoc, false, signal);
-    if (isSkippingProcessing()) {
-        performOperComparisonTearDown(codeLoc, true, signal);
-        return NodeVal(true);
+    // do set up on the appropriate processor subclass, depending on whether first operand is EvalVal
+    bool stillEval = checkIsEvalVal(lhs, false);
+    if (stillEval) {
+        evalSignal = evaluator->performOperComparisonSetUp(codeLoc, opers.size());
+        if (evalSignal == nullptr) return NodeVal();
+    } else {
+        signal = performOperComparisonSetUp(codeLoc, opers.size());
+        if (signal == nullptr) return NodeVal();
     }
 
     for (size_t i = 1; i < opers.size(); ++i) {
         NodeVal rhs = processAndCheckHasType(*opers[i]);
-        if (rhs.isInvalid()) return performOperComparisonTearDown(codeLoc, false, signal);
+        if (rhs.isInvalid()) {
+            if (stillEval) return evaluator->performOperComparisonTearDown(codeLoc, false, evalSignal);
+            else return performOperComparisonTearDown(codeLoc, false, signal);
+        }
         if (isSkippingProcessing()) {
-            performOperComparisonTearDown(codeLoc, true, signal);
+            if (stillEval) evaluator->performOperComparisonTearDown(codeLoc, true, evalSignal);
+            else performOperComparisonTearDown(codeLoc, true, signal);
             return NodeVal(true);
         }
 
-        if (!implicitCastOperands(lhs, rhs, false)) return performOperComparisonTearDown(codeLoc, false, signal);
+        if (stillEval && !checkIsEvalVal(rhs, false)) {
+            // no longer all EvalVals, so handoff from evaluator-> to this->
+            evaluator->performOperComparisonTearDown(codeLoc, true, evalSignal);
+            stillEval = false;
 
-        optional<bool> compSuccess = performOperComparison(codeLoc, lhs, rhs, op, signal);
-        if (!compSuccess.has_value()) return performOperComparisonTearDown(codeLoc, false, signal);
-        if (compSuccess.value()) break;
+            signal = performOperComparisonSetUp(codeLoc, opers.size()-i);
+            if (signal == nullptr) return NodeVal();
+        }
+
+        if (!implicitCastOperands(lhs, rhs, false)) {
+            if (stillEval) return evaluator->performOperComparisonTearDown(codeLoc, false, evalSignal);
+            else return performOperComparisonTearDown(codeLoc, false, signal);
+        }
+
+        if (stillEval) {
+            optional<bool> compSuccess = evaluator->performOperComparison(codeLoc, lhs, rhs, op, evalSignal);
+            if (!compSuccess.has_value()) return evaluator->performOperComparisonTearDown(codeLoc, false, evalSignal);
+            if (compSuccess.value()) break;
+        } else {
+            optional<bool> compSuccess = performOperComparison(codeLoc, lhs, rhs, op, signal);
+            if (!compSuccess.has_value()) return performOperComparisonTearDown(codeLoc, false, signal);
+            if (compSuccess.value()) break;
+        }
 
         lhs = move(rhs);
     }
 
-    return performOperComparisonTearDown(codeLoc, true, signal);
+    if (stillEval) {
+        return evaluator->performOperComparisonTearDown(codeLoc, true, evalSignal);
+    } else {
+        return performOperComparisonTearDown(codeLoc, true, signal);
+    }
 }
 
 NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
@@ -880,7 +941,11 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
 
         if (!implicitCastOperands(lhs, rhs, true)) return NodeVal();
 
-        rhs = performOperAssignment(codeLoc, lhs, rhs);
+        if (checkIsEvalVal(lhs, false) && checkIsEvalVal(rhs, false)) {
+            rhs = evaluator->performOperAssignment(codeLoc, lhs, rhs);
+        } else {
+            rhs = performOperAssignment(codeLoc, lhs, rhs);
+        }
         if (rhs.isInvalid()) return NodeVal();
 
         if (i == 0) break;
@@ -920,7 +985,13 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
             }
         }
 
-        base = performOperIndex(base.getCodeLoc(), base, index, elemType.value());
+        // TODO allow eval indexing of strings
+        if (checkIsEvalVal(base, false) && checkIsEvalVal(index, false) &&
+            !typeTable->worksAsTypeStr(base.getEvalVal().type.value())) {
+            base = evaluator->performOperIndex(codeLoc, base, index, elemType.value());
+        } else {
+            base = performOperIndex(base.getCodeLoc(), base, index, elemType.value());
+        }
         if (base.isInvalid()) return NodeVal();
     }
 
@@ -934,7 +1005,7 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
 
     for (size_t i = 1; i < opers.size(); ++i) {
         if (typeTable->worksAsTypeP(base.getType().value())) {
-            base = performOperUnaryDeref(base.getCodeLoc(), base);
+            base = dispatchOperUnaryDeref(base.getCodeLoc(), base);
             if (base.isInvalid()) return NodeVal();
             if (!checkHasType(base, true)) return NodeVal();
         }
@@ -968,7 +1039,11 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
             return NodeVal();
         }
 
-        base = performOperMember(index.getCodeLoc(), base, indexVal, resType.value());
+        if (checkIsEvalVal(base, false)) {
+            base = evaluator->performOperMember(index.getCodeLoc(), base, indexVal, resType.value());
+        } else {
+            base = performOperMember(index.getCodeLoc(), base, indexVal, resType.value());
+        }
         if (base.isInvalid()) return NodeVal();
     }
 
@@ -993,7 +1068,11 @@ NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const N
 
         if (!implicitCastOperands(lhs, rhs, false)) return NodeVal();
 
-        lhs = performOperRegular(codeLoc, lhs, rhs, op);
+        if (checkIsEvalVal(lhs, false) && checkIsEvalVal(rhs, false)) {
+            lhs = evaluator->performOperRegular(codeLoc, lhs, rhs, op);
+        } else {
+            lhs = performOperRegular(codeLoc, lhs, rhs, op);
+        }
         if (lhs.isInvalid()) return NodeVal();
     }
 
@@ -1083,7 +1162,22 @@ NodeVal Processor::processAndImplicitCast(const NodeVal &node, TypeTable::Id ty)
             return NodeVal(proc.getCodeLoc(), LlvmVal::copyNoRef(proc.getLlvmVal()));
     }
 
-    return performCast(proc.getCodeLoc(), proc, ty);
+    return dispatchCast(proc.getCodeLoc(), proc, ty);
+}
+
+NodeVal Processor::dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
+    if (checkIsEvalVal(node, false) && EvalVal::isCastable(node.getEvalVal(), ty, stringPool, typeTable))
+        return evaluator->performCast(node.getCodeLoc(), node, ty);
+    else
+        return performCast(node.getCodeLoc(), node, ty);
+}
+
+NodeVal Processor::dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
+    if (checkIsEvalVal(oper, false)) {
+        return evaluator->performOperUnaryDeref(codeLoc, oper);
+    } else {
+        return performOperUnaryDeref(codeLoc, oper);
+    }
 }
 
 bool Processor::checkInGlobalScope(CodeLoc codeLoc, bool orError) {

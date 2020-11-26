@@ -1,5 +1,4 @@
 #include "Compiler.h"
-#include "Evaluator.h"
 #include <iostream>
 #include <sstream>
 #include "llvm/IR/Verifier.h"
@@ -13,14 +12,8 @@
 using namespace std;
 
 struct ComparisonSignal {
-    size_t opersCnt;
     llvm::BasicBlock *llvmBlock = nullptr;
     llvm::PHINode *llvmPhi = nullptr;
-    Evaluator::ComparisonSignal evalSignal;
-
-    ComparisonSignal(size_t c) : opersCnt(c) {}
-
-    bool isLlvmStarted() const { return llvmPhi != nullptr; }
 };
 
 Compiler::Compiler(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs, Evaluator *evaluator)
@@ -116,10 +109,6 @@ llvm::Type* Compiler::genPrimTypePtr() {
 }
 
 NodeVal Compiler::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
-    if (checkIsEvalVal(ref, false)) {
-        return evaluator->performLoad(codeLoc, id, ref);
-    }
-
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     if (!checkIsLlvmVal(codeLoc, ref, true)) return NodeVal();
 
@@ -163,9 +152,6 @@ NodeVal Compiler::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVa
 }
 
 NodeVal Compiler::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
-    if (checkIsEvalVal(node, false) && EvalVal::isCastable(node.getEvalVal(), ty, stringPool, typeTable))
-        return evaluator->performCast(codeLoc, node, ty);
-
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
     NodeVal promo = promoteIfEvalValAndCheckIsLlvmVal(node, true);
@@ -277,10 +263,6 @@ bool Compiler::performPass(CodeLoc codeLoc, SymbolTable::Block &block, const Nod
 }
 
 NodeVal Compiler::performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) {
-    if (func.isEval()) {
-        return evaluator->performCall(codeLoc, func, args);
-    }
-
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
     vector<llvm::Value*> llvmArgValues(args.size());
@@ -378,10 +360,6 @@ bool Compiler::performRet(CodeLoc codeLoc, const NodeVal &node) {
 }
 
 NodeVal Compiler::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) {
-    if (checkIsEvalVal(oper, false)) {
-        return evaluator->performOperUnary(codeLoc, oper, op);
-    }
-
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     
     NodeVal promo = promoteIfEvalValAndCheckIsLlvmVal(oper, true);
@@ -428,10 +406,6 @@ NodeVal Compiler::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op
 }
 
 NodeVal Compiler::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
-    if (checkIsEvalVal(oper, false)) {
-        return evaluator->performOperUnaryDeref(codeLoc, oper);
-    }
-
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     if (!checkIsLlvmVal(oper, true)) return NodeVal();
 
@@ -451,28 +425,23 @@ NodeVal Compiler::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
 }
 
 void* Compiler::performOperComparisonSetUp(CodeLoc codeLoc, size_t opersCnt) {
-    return new ComparisonSignal(opersCnt);
+    ComparisonSignal *compSignal = new ComparisonSignal;
+
+    llvm::BasicBlock *llvmBlockCurr = llvmBuilder.GetInsertBlock();
+
+    compSignal->llvmBlock = llvm::BasicBlock::Create(llvmContext, "comparison");
+    llvmBuilder.SetInsertPoint(compSignal->llvmBlock);
+    compSignal->llvmPhi = llvmBuilder.CreatePHI(makeLlvmPrimType(TypeTable::P_BOOL), opersCnt);
+
+    llvmBuilder.SetInsertPoint(llvmBlockCurr);
+    
+    return compSignal;
 }
 
 optional<bool> Compiler::performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) {
     ComparisonSignal *compSignal = (ComparisonSignal*) signal;
 
-    if (!compSignal->isLlvmStarted() && checkIsEvalVal(lhs, false) && checkIsEvalVal(rhs, false)) {
-        --compSignal->opersCnt;
-        return evaluator->performOperComparison(codeLoc, lhs, rhs, op, &compSignal->evalSignal);
-    }
-
     if (!checkInLocalScope(codeLoc, true)) return nullopt;
-
-    if (!compSignal->isLlvmStarted()) {
-        llvm::BasicBlock *llvmBlockCurr = llvmBuilder.GetInsertBlock();
-
-        compSignal->llvmBlock = llvm::BasicBlock::Create(llvmContext, "comparison");
-        llvmBuilder.SetInsertPoint(compSignal->llvmBlock);
-        compSignal->llvmPhi = llvmBuilder.CreatePHI(makeLlvmPrimType(TypeTable::P_BOOL), (unsigned) compSignal->opersCnt);
-
-        llvmBuilder.SetInsertPoint(llvmBlockCurr);
-    }
     
     NodeVal lhsPromo = promoteIfEvalValAndCheckIsLlvmVal(lhs, true);
     if (lhsPromo.isInvalid()) return nullopt;
@@ -570,10 +539,6 @@ optional<bool> Compiler::performOperComparison(CodeLoc codeLoc, const NodeVal &l
 NodeVal Compiler::performOperComparisonTearDown(CodeLoc codeLoc, bool success, void *signal) {
     ComparisonSignal *compSignal = (ComparisonSignal*) signal;
 
-    if (!compSignal->isLlvmStarted()) {
-        return evaluator->performOperComparisonTearDown(codeLoc, success, &compSignal->evalSignal);
-    }
-
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
     if (!success) {
@@ -593,9 +558,6 @@ NodeVal Compiler::performOperComparisonTearDown(CodeLoc codeLoc, bool success, v
 }
 
 NodeVal Compiler::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) {
-    if (checkIsEvalVal(lhs, false) && checkIsEvalVal(rhs, false))
-        return evaluator->performOperAssignment(codeLoc, lhs, rhs);
-
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
     if (!checkIsLlvmVal(lhs, true)) return NodeVal();
@@ -612,11 +574,6 @@ NodeVal Compiler::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const Nod
 }
 
 NodeVal Compiler::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) {
-    // TODO allow eval indexing of strings
-    if (checkIsEvalVal(base, false) && checkIsEvalVal(ind, false) &&
-        !typeTable->worksAsTypeStr(base.getEvalVal().type.value()))
-        return evaluator->performOperIndex(codeLoc, base, ind, resTy);
-
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     
     NodeVal basePromo = promoteIfEvalValAndCheckIsLlvmVal(base, true);
@@ -656,9 +613,6 @@ NodeVal Compiler::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal
 }
 
 NodeVal Compiler::performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
-    if (checkIsEvalVal(base, false))
-        return evaluator->performOperMember(codeLoc, base, ind, resTy);
-
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     
     NodeVal basePromo = promoteIfEvalValAndCheckIsLlvmVal(base, true);
@@ -675,9 +629,6 @@ NodeVal Compiler::performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64_
 }
 
 NodeVal Compiler::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op) {
-    if (checkIsEvalVal(lhs, false) && checkIsEvalVal(rhs, false))
-        return evaluator->performOperRegular(codeLoc, lhs, rhs, op);
-
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     
     NodeVal lhsPromo = promoteIfEvalValAndCheckIsLlvmVal(lhs, true);
@@ -770,17 +721,6 @@ NodeVal Compiler::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const 
 }
 
 NodeVal Compiler::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) {
-    bool allEval = true;
-    for (const auto &it : membs) {
-        if (!checkIsEvalVal(it, false)) {
-            allEval = false;
-            break;
-        }
-    }
-    if (allEval) {
-        return evaluator->performTuple(codeLoc, ty, membs);
-    }
-
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
     llvm::StructType *llvmTupType = (llvm::StructType*) makeLlvmTypeOrError(codeLoc, ty);
