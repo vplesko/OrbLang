@@ -1,5 +1,17 @@
 import "util/io.orb";
 
+eval (sym (glob1 -1) (glob2 -1));
+
+eval (fnc foo () () {
+    = glob1 900;
+});
+
+eval (block {
+    foo;
+    = glob2 901;
+    sym foo:i32;
+});
+
 fnc main () () {
     eval (sym p:i32);
     eval (sym (a null));
@@ -129,4 +141,7 @@ fnc main () () {
         });
     });
     println_i32 p;
+
+    println_i32 glob1;
+    println_i32 glob2;
 };

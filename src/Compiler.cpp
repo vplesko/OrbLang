@@ -307,7 +307,7 @@ bool Compiler::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
 }
 
 bool Compiler::performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func) {
-    BlockControl blockCtrl(*symbolTable, func);
+    BlockControl blockCtrl(symbolTable, func);
 
     llvmBuilderAlloca.SetInsertPoint(llvm::BasicBlock::Create(llvmContext, "alloca", func.llvmFunc));
 

@@ -290,10 +290,9 @@ NodeVal Processor::processBlock(const NodeVal &node) {
 
     do {
         BlockControl blockCtrl(symbolTable, block);
-        SymbolTable::Block *blockInSymbolTable = symbolTable->getLastBlock();
 
         if (!processChildNodes(nodeBlock)) {
-            performBlockTearDown(node.getCodeLoc(), *blockInSymbolTable, false);
+            performBlockTearDown(node.getCodeLoc(), *symbolTable->getLastBlock(), false);
             return NodeVal();
         }
 
@@ -302,7 +301,7 @@ NodeVal Processor::processBlock(const NodeVal &node) {
             continue;
         }
 
-        NodeVal ret = performBlockTearDown(node.getCodeLoc(), *blockInSymbolTable, true);
+        NodeVal ret = performBlockTearDown(node.getCodeLoc(), *symbolTable->getLastBlock(), true);
         if (ret.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(true);
         return ret;

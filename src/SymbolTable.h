@@ -48,7 +48,6 @@ private:
         Block block;
         // Guarantees pointer stability of values.
         std::unordered_map<NamePool::Id, NodeVal> vars;
-        BlockInternal *prev;
     };
 
     friend class BlockControl;
@@ -58,16 +57,16 @@ private:
     // Guarantees pointer stability of values.
     std::unordered_map<NamePool::Id, MacroValue> macros;
 
-    BlockInternal *last, *glob;
-
-    bool inFunc;
-    FuncValue currFunc;
-
-    void setCurrFunc(const FuncValue &func) { inFunc = true; currFunc = func; }
-    void clearCurrFunc() { inFunc = false; }
+    // Do NOT guarantee pointer stability of blocks.
+    std::vector<BlockInternal> globalBlockChain;
+    std::vector<std::pair<FuncValue, std::vector<BlockInternal>>> localBlockChains;
 
     void newBlock(Block b);
+    void newBlock(const FuncValue &f);
     void endBlock();
+
+    const BlockInternal* getLastBlockInternal() const;
+    BlockInternal* getLastBlockInternal();
 
 public:
     SymbolTable();
@@ -82,9 +81,9 @@ public:
     void registerMacro(const MacroValue &val);
     const MacroValue* getMacro(NamePool::Id name) const;
 
-    bool inGlobalScope() const { return last == glob; }
-    const Block* getLastBlock() const { return &last->block; }
-    Block* getLastBlock() { return &last->block; }
+    bool inGlobalScope() const;
+    const Block* getLastBlock() const;
+    Block* getLastBlock();
     const Block* getBlock(NamePool::Id name) const;
     Block* getBlock(NamePool::Id name);
 
@@ -95,25 +94,21 @@ public:
     bool isMacroName(NamePool::Id name) const;
     
     bool nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable) const;
-
-    ~SymbolTable();
 };
 
 class BlockControl {
     SymbolTable *symTable;
-    bool funcOpen;
 
 public:
-    explicit BlockControl(SymbolTable *symTable = nullptr) : symTable(symTable), funcOpen(false) {
+    explicit BlockControl(SymbolTable *symTable = nullptr) : symTable(symTable) {
         if (symTable != nullptr) symTable->newBlock(SymbolTable::Block());
     }
-    BlockControl(SymbolTable *symTable, SymbolTable::Block bo) : symTable(symTable), funcOpen(false) {
-        this->symTable->newBlock(bo);
+    BlockControl(SymbolTable *symTable, SymbolTable::Block bo) : symTable(symTable) {
+        if (symTable != nullptr) symTable->newBlock(bo);
     }
     // ref cuz must not be null
-    BlockControl(SymbolTable &symTable, const FuncValue &func) : symTable(&symTable), funcOpen(true) {
-        this->symTable->setCurrFunc(func);
-        this->symTable->newBlock(SymbolTable::Block());
+    BlockControl(SymbolTable *symTable, const FuncValue &func) : symTable(symTable) {
+        if (symTable != nullptr) symTable->newBlock(func);
     }
 
     BlockControl(const BlockControl&) = delete;
@@ -123,7 +118,6 @@ public:
     void operator=(const BlockControl&&) = delete;
 
     ~BlockControl() {
-        if (symTable) symTable->endBlock();
-        if (funcOpen) symTable->clearCurrFunc();
+        if (symTable != nullptr) symTable->endBlock();
     }
 };

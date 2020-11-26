@@ -127,7 +127,7 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
         return NodeVal();
     }
 
-    BlockControl blockCtrl(*symbolTable, func);
+    BlockControl blockCtrl(symbolTable, func);
 
     for (size_t i = 0; i < args.size(); ++i) {
         symbolTable->addVar(func.argNames[i], args[i]);

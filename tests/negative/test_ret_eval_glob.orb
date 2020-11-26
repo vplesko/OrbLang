@@ -1,0 +1,4 @@
+eval (ret);
+
+fnc main () () {
+};

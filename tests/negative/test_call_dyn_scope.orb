@@ -1,0 +1,8 @@
+fnc foo () () {
+    = a 0;
+};
+
+fnc main () () {
+    sym (a 0);
+    foo;
+};

@@ -1,0 +1,8 @@
+eval (fnc foo () () {
+    = a 0;
+});
+
+fnc main () () {
+    eval (sym (a 0));
+    foo;
+};

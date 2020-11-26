@@ -15,42 +15,68 @@ bool FuncValue::sameSignature(const FuncValue &fl, const FuncValue &fr) {
     return true;
 }
 
-SymbolTable::SymbolTable() : inFunc(false) {
-    last = glob = new BlockInternal();
-    glob->prev = nullptr;
+SymbolTable::SymbolTable() {
+    globalBlockChain.push_back(BlockInternal());
 }
 
 void SymbolTable::newBlock(Block b) {
-    BlockInternal *s = new BlockInternal();
-    s->block = b;
-    
-    s->prev = last;
-    last = s;
+    BlockInternal s;
+    s.block = b;
+    if (localBlockChains.empty()) globalBlockChain.push_back(s);
+    else localBlockChains.back().second.push_back(s);
+}
+
+void SymbolTable::newBlock(const FuncValue &f) {
+    localBlockChains.push_back(make_pair(f, vector<BlockInternal>(1, BlockInternal())));
 }
 
 void SymbolTable::endBlock() {
-    BlockInternal *s = last;
-    last = last->prev;
-    delete s;
+    if (localBlockChains.empty()) {
+        globalBlockChain.pop_back();
+    } else {
+        localBlockChains.back().second.pop_back();
+        if (localBlockChains.back().second.empty())
+            localBlockChains.pop_back();
+    }
 }
 
 void SymbolTable::addVar(NamePool::Id name, NodeVal var) {
-    last->vars.insert(make_pair(name, move(var)));
+    getLastBlockInternal()->vars.insert(make_pair(name, move(var)));
 }
 
 const NodeVal* SymbolTable::getVar(NamePool::Id name) const {
-    for (BlockInternal *s = last; s != nullptr; s = s->prev) {
-        auto loc = s->vars.find(name);
-        if (loc != s->vars.end()) return &loc->second;
+    if (!localBlockChains.empty()) {
+        for (auto it = localBlockChains.back().second.rbegin();
+            it != localBlockChains.back().second.rend();
+            ++it) {
+            auto loc = it->vars.find(name);
+            if (loc != it->vars.end()) return &loc->second;
+        }
+    }
+    for (auto it = globalBlockChain.rbegin();
+        it != globalBlockChain.rend();
+        ++it) {
+        auto loc = it->vars.find(name);
+        if (loc != it->vars.end()) return &loc->second;
     }
 
     return nullptr;
 }
 
 NodeVal* SymbolTable::getVar(NamePool::Id name) {
-    for (BlockInternal *s = last; s != nullptr; s = s->prev) {
-        auto loc = s->vars.find(name);
-        if (loc != s->vars.end()) return &loc->second;
+    if (!localBlockChains.empty()) {
+        for (auto it = localBlockChains.back().second.rbegin();
+            it != localBlockChains.back().second.rend();
+            ++it) {
+            auto loc = it->vars.find(name);
+            if (loc != it->vars.end()) return &loc->second;
+        }
+    }
+    for (auto it = globalBlockChain.rbegin();
+        it != globalBlockChain.rend();
+        ++it) {
+        auto loc = it->vars.find(name);
+        if (loc != it->vars.end()) return &loc->second;
     }
 
     return nullptr;
@@ -76,25 +102,71 @@ const MacroValue* SymbolTable::getMacro(NamePool::Id name) const {
     return &loc->second;
 }
 
+bool SymbolTable::inGlobalScope() const {
+    return localBlockChains.empty() && globalBlockChain.size() == 1;
+}
+
+const SymbolTable::BlockInternal* SymbolTable::getLastBlockInternal() const {
+    if (localBlockChains.empty()) {
+        return &globalBlockChain.back();
+    } else {
+        return &localBlockChains.back().second.back();
+    }
+}
+
+SymbolTable::BlockInternal* SymbolTable::getLastBlockInternal() {
+    if (localBlockChains.empty()) {
+        return &globalBlockChain.back();
+    } else {
+        return &localBlockChains.back().second.back();
+    }
+}
+
+const SymbolTable::Block* SymbolTable::getLastBlock() const {
+    return &getLastBlockInternal()->block;
+}
+
+SymbolTable::Block* SymbolTable::getLastBlock() {
+    return &getLastBlockInternal()->block;
+}
+
 const SymbolTable::Block* SymbolTable::getBlock(NamePool::Id name) const {
-    for (const BlockInternal *s = last; s != nullptr; s = s->prev) {
-        if (s->block.name == name) return &s->block;
+    if (!localBlockChains.empty()) {
+        for (auto it = localBlockChains.back().second.rbegin();
+            it != localBlockChains.back().second.rend();
+            ++it) {
+            if (it->block.name == name) return &it->block;
+        }
+    }
+    for (auto it = globalBlockChain.rbegin();
+        it != globalBlockChain.rend();
+        ++it) {
+        if (it->block.name == name) return &it->block;
     }
 
     return nullptr;
 }
 
 SymbolTable::Block* SymbolTable::getBlock(NamePool::Id name) {
-    for (BlockInternal *s = last; s != nullptr; s = s->prev) {
-        if (s->block.name == name) return &s->block;
+    if (!localBlockChains.empty()) {
+        for (auto it = localBlockChains.back().second.rbegin();
+            it != localBlockChains.back().second.rend();
+            ++it) {
+            if (it->block.name == name) return &it->block;
+        }
+    }
+    for (auto it = globalBlockChain.rbegin();
+        it != globalBlockChain.rend();
+        ++it) {
+        if (it->block.name == name) return &it->block;
     }
 
     return nullptr;
 }
 
 optional<FuncValue> SymbolTable::getCurrFunc() const {
-    if (inFunc) return currFunc;
-    else return nullopt;
+    if (localBlockChains.empty()) return nullopt;
+    return localBlockChains.back().first;
 }
 
 bool SymbolTable::isFuncName(NamePool::Id name) const {
@@ -108,18 +180,11 @@ bool SymbolTable::isMacroName(NamePool::Id name) const {
 bool SymbolTable::nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable) const {
     if (isReserved(name) || typeTable->isType(name)) return false;
 
-    if (last == glob) {
+    if (inGlobalScope()) {
         // you can have vars with same name as funcs, except in global
         if (isFuncName(name) || isMacroName(name)) return false;
     }
 
+    const BlockInternal *last = getLastBlockInternal();
     return last->vars.find(name) == last->vars.end();
-}
-
-SymbolTable::~SymbolTable() {
-    while (last != nullptr) {
-        BlockInternal *s = last;
-        last = last->prev;
-        delete s;
-    }
 }
