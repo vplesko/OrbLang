@@ -165,7 +165,6 @@ NodeVal Processor::processId(const NodeVal &node) {
 
         return NodeVal(node.getCodeLoc(), eval);
     } else if (typeTable->isType(id)) {
-        // TODO! ref for types
         EvalVal eval = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
         eval.ty = typeTable->getTypeId(id).value();
 
