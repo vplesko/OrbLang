@@ -17,7 +17,8 @@ class Parser {
     bool matchOrError(Token::Type type);
     bool matchCloseBraceOrError(Token openBrace);
 
-    NodeVal makeEmpty();
+    NodeVal makeEmpty() const;
+    NodeVal makeEmpty(CodeLoc codeLoc) const;
     // Returns false on error, otherwise true.
     bool parseTypeAttr(NodeVal &node);
 

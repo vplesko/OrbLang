@@ -316,7 +316,7 @@ bool Compiler::performFunctionDefinition(const NodeVal &args, const NodeVal &bod
 
     size_t i = 0;
     for (auto &llvmFuncArg : func.llvmFunc->args()) {
-        llvm::Type *llvmArgType = makeLlvmTypeOrError(args.getChild(i).getCodeLoc(), func.argTypes[i]);
+        llvm::Type *llvmArgType = makeLlvmTypeOrError(args.getRawVal().getChild(i).getCodeLoc(), func.argTypes[i]);
         if (llvmArgType == nullptr) return false;
         
         llvm::AllocaInst *llvmAlloca = makeLlvmAlloca(llvmArgType, getNameForLlvm(func.argNames[i]));
@@ -324,7 +324,7 @@ bool Compiler::performFunctionDefinition(const NodeVal &args, const NodeVal &bod
 
         LlvmVal varLlvmVal(func.argTypes[i]);
         varLlvmVal.ref = llvmAlloca;
-        NodeVal varNodeVal(args.getChild(i).getCodeLoc(), varLlvmVal);
+        NodeVal varNodeVal(args.getRawVal().getChild(i).getCodeLoc(), varLlvmVal);
         symbolTable->addVar(func.argNames[i], move(varNodeVal));
 
         ++i;

@@ -6,6 +6,7 @@
 #include "LiteralVal.h"
 #include "EvalVal.h"
 #include "LlvmVal.h"
+#include "RawVal.h"
 
 class NodeVal {
 public:
@@ -27,7 +28,7 @@ private:
     LiteralVal literal;
     LlvmVal llvm;
     EvalVal eval;
-    std::vector<NodeVal> children;
+    RawVal raw;
 
     std::unique_ptr<NodeVal> typeAttr;
 
@@ -37,12 +38,11 @@ private:
 
 public:
     NodeVal(bool valid = false);
-    // Empty terminal.
-    NodeVal(CodeLoc codeLoc);
     NodeVal(CodeLoc codeLoc, StringPool::Id import);
     NodeVal(CodeLoc codeLoc, const LiteralVal &val);
     NodeVal(CodeLoc codeLoc, const EvalVal &val);
     NodeVal(CodeLoc codeLoc, const LlvmVal &val);
+    NodeVal(CodeLoc codeLoc, const RawVal &val);
 
     NodeVal(const NodeVal &other);
     NodeVal& operator=(const NodeVal &other);
@@ -55,8 +55,8 @@ public:
     std::optional<TypeTable::Id> getType() const;
     bool hasRef() const;
     std::size_t getLength() const;
-    bool isEmpty() const { return isRaw() && getChildrenCnt() == 0; }
-    bool isLeaf() const { return !isRaw() || isEmpty(); }
+    bool isEmpty() const { return isRawVal() && raw.isEmpty(); }
+    bool isLeaf() const { return !isRawVal() || isEmpty(); }
 
     // Remember to check when returned to you before any other checks or usages.
     bool isInvalid() const { return kind == Kind::kInvalid; }
@@ -76,12 +76,9 @@ public:
     LlvmVal& getLlvmVal() { return llvm; }
     const LlvmVal& getLlvmVal() const { return llvm; }
 
-    bool isRaw() const  { return kind == Kind::kRaw; }
-    NodeVal& getChild(std::size_t ind) { return children[ind]; }
-    const NodeVal& getChild(std::size_t ind) const { return children[ind]; }
-    void addChild(NodeVal c);
-    void addChildren(std::vector<NodeVal> c);
-    std::size_t getChildrenCnt() const { return children.size(); }
+    bool isRawVal() const  { return kind == Kind::kRaw; }
+    RawVal& getRawVal() { return raw; }
+    const RawVal& getRawVal() const { return raw; }
 
     bool hasTypeAttr() const { return typeAttr != nullptr; }
     NodeVal& getTypeAttr() { return *typeAttr; }

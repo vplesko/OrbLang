@@ -53,8 +53,13 @@ bool Parser::matchCloseBraceOrError(Token openBrace) {
     return true;
 }
 
-NodeVal Parser::makeEmpty() {
-    return NodeVal(loc());
+NodeVal Parser::makeEmpty() const {
+    return makeEmpty(loc());
+}
+
+NodeVal Parser::makeEmpty(CodeLoc codeLoc) const {
+    RawVal emptyRaw;
+    return NodeVal(loc(), emptyRaw);
 }
 
 bool Parser::parseTypeAttr(NodeVal &node) {
@@ -125,8 +130,7 @@ NodeVal Parser::parseTerm() {
 }
 
 NodeVal Parser::parseNode() {
-    CodeLoc codeLocNode = loc();
-    NodeVal node(codeLocNode);
+    NodeVal node = makeEmpty();
 
     bool escaped = match(Token::T_BACKSLASH);
 
@@ -140,11 +144,11 @@ NodeVal Parser::parseNode() {
                 next();
 
                 if (children.empty()) {
-                    node.addChild(makeEmpty());
+                    node.getRawVal().addChild(makeEmpty());
                 } else {
-                    NodeVal tuple = NodeVal(children[0].getCodeLoc());
-                    tuple.addChildren(move(children)); // children is emptied here
-                    node.addChild(move(tuple));
+                    NodeVal tuple = makeEmpty(children[0].getCodeLoc());
+                    tuple.getRawVal().addChildren(move(children)); // children is emptied here
+                    node.getRawVal().addChild(move(tuple));
                 }
             } else {
                 bool escaped = match(Token::T_BACKSLASH);
@@ -162,7 +166,7 @@ NodeVal Parser::parseNode() {
         
         if (!matchCloseBraceOrError(openBrace)) return NodeVal();
 
-        node.addChildren(move(children));
+        node.getRawVal().addChildren(move(children));
     } else {
         while (peek().type != Token::T_SEMICOLON) {
             if (!escaped) escaped = match(Token::T_BACKSLASH);
@@ -175,7 +179,7 @@ NodeVal Parser::parseNode() {
             if (child.isInvalid()) return NodeVal();
             if (escaped) child.escape();
             escaped = false;
-            node.addChild(move(child));
+            node.getRawVal().addChild(move(child));
         }
         next();
     }
