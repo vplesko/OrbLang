@@ -79,7 +79,6 @@ public:
     void setTypeAttr(NodeVal t);
     void clearTypeAttr() { typeAttr.reset(); }
 
-    static std::size_t getLength(const NodeVal &node, const TypeTable *typeTable);
     static bool isEmpty(const NodeVal &node, const TypeTable *typeTable);
     static bool isLeaf(const NodeVal &node, const TypeTable *typeTable);
 

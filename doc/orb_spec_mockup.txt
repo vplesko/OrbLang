@@ -12,6 +12,7 @@ expr_walled ::= expr_walled_bare |
 expr_walled_bare ::= '(' exprs ')' |
 	'{' exprs '}' |
 	'\' expr_walled_bare |
+	',' expr_walled_bare |
 	ID |
 	INT |
 	FLOAT |
@@ -25,13 +26,16 @@ _DIGIT is [0-9]
 _SIGNS is [=+-*/%<>&|^!~[]._?]
 ID is [:_ALPHA::_DIGIT::SIGNS:]* that does not start with :_DIGIT: nor +:_DIGIT: nor -:_DIGIT:
 INT and FLOAT are ([+-]?:_DIGIT:)[0123456789abcdefABCDEF.xXeEpP_]*
-CHAR is within '', STRING is within "
+CHAR is within '', STRING is within ""
 BOOL is true or false
 NULL is null
 
+\ increases escape score, , decreases it
+if score is >0, considered to be escaped
+
 comments are # for single line, #* ... *# for multiline
 
-Unescape sequences are: \', \", \?, \\, \a, \b, \f, \n, \r, \t, \v, \0, and \xNN (where N is a hex digit in [0-9a-fA-F]).
+Char unescape sequences are: \', \", \?, \\, \a, \b, \f, \n, \r, \t, \v, \0, and \xNN (where N is a hex digit in [0-9a-fA-F]).
 
 ********************
 
@@ -58,16 +62,14 @@ class NodeVal:
 		LiteralVal
 		EvalVal
 		LlvmVal
-		repeated NodeVal
 	type node
 	is import
 	is invalid
+	is valid
 
 ********************
 
 processing leaf:
-	if empty:
-		return empty
 	if literal:
 		promote to evalVal
 	if id and not escaped:
@@ -76,6 +78,9 @@ processing leaf:
 		return as is
 
 processing non-leaf:
+	if escaped:
+		process all children
+		return raw
 	process starting
 	if starting is macro:
 		invoke
@@ -90,7 +95,8 @@ processing node:
 		process as non-leaf
 
 when promoting literal to evalVal, type attribute is respected as eval impl cast, unless id
-compiler cannot gen type and id vars, cannot gen code in global
+	if escaped, escape score and type attribute preserved
+compiler cannot gen type, id or raw vars, cannot gen code in global
 evaluator can have pointers only be null, strings may be non-null or null
 
 sym
@@ -189,6 +195,7 @@ import
 	op a ...b
 	goes in pairs
 	. works on pointers also
+	for . if raw and member is not raw, non-ref returned
 
 type
 	type ...a

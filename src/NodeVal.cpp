@@ -78,13 +78,6 @@ void NodeVal::setTypeAttr(NodeVal t) {
     typeAttr = make_unique<NodeVal>(move(t));
 }
 
-// TODO rename to width
-size_t NodeVal::getLength(const NodeVal &node, const TypeTable *typeTable) {
-    if (node.isInvalid()) return 0;
-    if (isRawVal(node, typeTable)) return node.getChildrenCnt();
-    return 1;
-}
-
 bool NodeVal::isEmpty(const NodeVal &node, const TypeTable *typeTable) {
     return isRawVal(node, typeTable) && node.eval.elems.empty();
 }

@@ -115,7 +115,7 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
 }
 
 NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
-    if (NodeVal::getLength(node, typeTable) == 1)
+    if (checkExactlyChildren(node, 1, false))
         return NodeVal(node.getCodeLoc(), EvalVal::copyNoRef(starting.getEvalVal()));
 
     NodeVal second = processForTypeArg(node.getChild(1));

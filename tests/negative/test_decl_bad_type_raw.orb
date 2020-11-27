@@ -1,5 +1,0 @@
-# TODO rename all test_decl_... to test_sym_...
-
-fnc main () () {
-    eval (sym (a:i32 ()));
-};

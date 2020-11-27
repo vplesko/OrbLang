@@ -1,0 +1,3 @@
+fnc main () () {
+    eval (sym (a:i32 ()));
+};
