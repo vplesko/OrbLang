@@ -104,6 +104,11 @@ NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
         if (childProc.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(true);
 
+        if (childProc.hasRef()) {
+            if (childProc.isEvalVal()) childProc.getEvalVal().ref = nullptr;
+            else if (childProc.isLlvmVal()) childProc.getLlvmVal().ref = nullptr;
+        }
+
         evalRaw.elems.push_back(move(childProc));
     }
 

@@ -1,4 +1,3 @@
-# TODO! raw +
 import "util/io.orb";
 
 eval (fnc foo () raw {
@@ -55,4 +54,10 @@ fnc main () () {
     println_i32 (. a 0 1);
     = (. a 0) \(205);
     println_i32 (. a 0 0);
+
+    println_i32 (. (+ \(abc def) \(300 -1)) 2);
+    = a \(abc def);
+    println_i32 (. (+ a \(-1 301)) 3);
+    = a (+ \(302) a);
+    println_i32 (. a 0);
 };

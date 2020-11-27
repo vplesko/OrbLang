@@ -24,6 +24,7 @@ class Evaluator : public Processor {
 
     std::optional<EvalVal> makeCast(const EvalVal &srcEvalVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
     std::optional<EvalVal> makeArray(TypeTable::Id arrTypeId);
+    std::vector<NodeVal> makeRawConcat(const EvalVal &lhs, const EvalVal &rhs) const;
 
 public:
     bool isSkippingProcessing() const { return isSkipIssued(); }

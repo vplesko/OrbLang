@@ -1,0 +1,5 @@
+fnc main () () {
+    eval (sym (a:(raw cn) \(0 0)) (b:(raw cn) \(0 0)));
+    eval (sym (ab (+ a b)));
+    = ab \();
+};

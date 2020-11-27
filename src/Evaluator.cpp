@@ -440,13 +440,16 @@ NodeVal Evaluator::performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64
 
     if (NodeVal::isRawVal(base, typeTable)) {
         NodeVal nodeVal = base.getChild(ind);
-        if (base.hasRef() && NodeVal::isRawVal(nodeVal, typeTable)) {
-            nodeVal.getEvalVal().ref = &base.getEvalVal().ref->getEvalVal().elems[ind];
-        } else {
-            // the reason for breaking refs is that it could lead to seg faults
-            // when a raw with a ref to local value is passed out of block or returned from function
-            if (nodeVal.isEvalVal()) nodeVal.getEvalVal().ref = nullptr;
-            else if (nodeVal.isLlvmVal()) nodeVal.getLlvmVal().ref = nullptr;
+        // if member is not raw val, it's not ref and shouldn't be
+        if (NodeVal::isRawVal(nodeVal, typeTable)) {
+            if (base.hasRef()) {
+                nodeVal.getEvalVal().ref = &base.getEvalVal().ref->getEvalVal().elems[ind];
+            } else {
+                nodeVal.getEvalVal().ref = nullptr;
+            }
+            // raw doesn't care about its raw member types
+            // its constness determines the constness of members
+            nodeVal.getEvalVal().type = base.getEvalVal().type;
         }
         return nodeVal;
     } else {
@@ -471,6 +474,7 @@ NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const
     bool isTypeI = typeTable->worksAsTypeI(ty);
     bool isTypeU = typeTable->worksAsTypeU(ty);
     bool isTypeF = typeTable->worksAsTypeF(ty);
+    bool isTypeRaw = NodeVal::isRawVal(lhs, typeTable);
 
     optional<int64_t> il, ir;
     optional<uint64_t> ul, ur;
@@ -494,6 +498,9 @@ NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const
             if (assignBasedOnTypeU(evalVal, ul.value()+ur.value(), ty)) success = true;
         } else if (isTypeF) {
             if (assignBasedOnTypeF(evalVal, fl.value()+fr.value(), ty)) success = true;
+        } else if (isTypeRaw) {
+            evalVal.elems = makeRawConcat(lhs.getEvalVal(), rhs.getEvalVal());
+            success = true;
         }
         break;
     case Oper::SUB:
@@ -704,6 +711,20 @@ optional<EvalVal> Evaluator::makeArray(TypeTable::Id arrTypeId) {
     if (!typeTable->worksAsTypeArr(arrTypeId)) return nullopt;
 
     return EvalVal::makeVal(arrTypeId, typeTable);
+}
+
+vector<NodeVal> Evaluator::makeRawConcat(const EvalVal &lhs, const EvalVal &rhs) const {
+    vector<NodeVal> elems;
+    elems.reserve(lhs.elems.size()+rhs.elems.size());
+
+    for (const auto &it : lhs.elems) {
+        elems.push_back(it);
+    }
+    for (const auto &it : rhs.elems) {
+        elems.push_back(it);
+    }
+
+    return elems;
 }
 
 bool Evaluator::assignBasedOnTypeI(EvalVal &val, int64_t x, TypeTable::Id ty) {
