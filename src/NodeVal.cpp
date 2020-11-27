@@ -112,3 +112,12 @@ void NodeVal::unescape(NodeVal &node, const TypeTable *typeTable) {
         node.getEvalVal().escaped = false;
     }
 }
+
+void NodeVal::copyNonValFields(NodeVal &dst, const NodeVal &src, const TypeTable *typeTable) {
+    if (isEscaped(src, typeTable) && !isEscaped(dst, typeTable)) {
+        escape(dst, typeTable);
+    }
+    if (src.hasTypeAttr()) {
+        dst.setTypeAttr(src.getTypeAttr());
+    }
+}

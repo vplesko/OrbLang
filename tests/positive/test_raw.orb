@@ -1,4 +1,4 @@
-# TODO! raw escaping, unescaping, +, ., eval
+# TODO! raw escaping, unescaping, escape score, +, .
 import "util/io.orb";
 
 eval (fnc foo () raw {
@@ -17,4 +17,7 @@ fnc main () () {
     = ([] d 0) a;
     = ([] d 1) (foo);
     = b (bar a);
+    = a \(+ 1 2);
+    = b \();
+    \();
 };

@@ -17,7 +17,6 @@ NodeVal Processor::processNode(const NodeVal &node) {
 }
 
 NodeVal Processor::processLeaf(const NodeVal &node) {
-    // TODO! if escaped, just return?
     NodeVal prom = node.isLiteralVal() ? promoteLiteralVal(node) : node;
 
     if (!NodeVal::isEscaped(prom, typeTable) && prom.isEvalVal() && EvalVal::isId(prom.getEvalVal(), typeTable)) {
@@ -28,7 +27,10 @@ NodeVal Processor::processLeaf(const NodeVal &node) {
 }
 
 NodeVal Processor::processNonLeaf(const NodeVal &node) {
-    // TODO! special processing for escaped raw (+ change spec mockup)
+    if (NodeVal::isEscaped(node, typeTable)) {
+        return processNonLeafEscaped(node);
+    }
+
     NodeVal starting = processNode(NodeVal::getRawVal(node).getChild(0));
     if (starting.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(true);
@@ -92,6 +94,20 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
 
     // TODO tup for tuple, (id) does lookup, error otherwise
     return processTuple(node, starting);
+}
+
+NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
+    EvalVal evalRaw = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_RAW), typeTable);
+
+    for (const auto &it : NodeVal::getRawVal(node).children) {
+        NodeVal childProc = processNode(it);
+        if (childProc.isInvalid()) return NodeVal();
+        if (isSkippingProcessing()) return NodeVal(true);
+
+        evalRaw.raw.children.push_back(move(childProc));
+    }
+
+    return NodeVal(node.getCodeLoc(), evalRaw);
 }
 
 NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
@@ -736,9 +752,9 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
     }
     NodeVal prom(node.getCodeLoc(), eval);
 
-    if (NodeVal::isEscaped(node, typeTable)) NodeVal::escape(prom, typeTable);
-    
-    // TODO remove id special case, but handle on calls instead?
+    if (NodeVal::isEscaped(node, typeTable))
+        NodeVal::copyNonValFields(prom, node, typeTable);
+
     if (node.hasTypeAttr() && !isId) {
         NodeVal nodeTy = processAndCheckIsType(node.getTypeAttr());
         if (nodeTy.isInvalid()) return NodeVal();

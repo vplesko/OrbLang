@@ -122,6 +122,7 @@ private:
 
     NodeVal processLeaf(const NodeVal &node);
     NodeVal processNonLeaf(const NodeVal &node);
+    NodeVal processNonLeafEscaped(const NodeVal &node);
 
 public:
     Processor(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs, Evaluator *evaluator);

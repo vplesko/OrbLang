@@ -83,4 +83,5 @@ public:
     static bool isEscaped(const NodeVal &node, const TypeTable *typeTable);
     static void escape(NodeVal &node, const TypeTable *typeTable);
     static void unescape(NodeVal &node, const TypeTable *typeTable);
+    static void copyNonValFields(NodeVal &dst, const NodeVal &src, const TypeTable *typeTable);
 };
