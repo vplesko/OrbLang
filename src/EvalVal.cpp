@@ -43,6 +43,11 @@ bool EvalVal::isType(const EvalVal &val, const TypeTable *typeTable) {
     return type.has_value() && typeTable->worksAsPrimitive(type.value(), TypeTable::P_TYPE);
 }
 
+bool EvalVal::isRaw(const EvalVal &val, const TypeTable *typeTable) {
+    optional<TypeTable::Id> type = val.getType();
+    return type.has_value() && typeTable->worksAsPrimitive(type.value(), TypeTable::P_RAW);
+}
+
 bool EvalVal::isMacro(const EvalVal &val, const SymbolTable *symbolTable) {
     return val.isCallable() && symbolTable->isMacroName(val.id);
 }

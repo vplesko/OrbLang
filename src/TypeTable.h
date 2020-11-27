@@ -97,6 +97,7 @@ public:
         P_PTR,
         P_ID,
         P_TYPE,
+        P_RAW,
         P_ENUM_END // length marker, do not reference
     };
 

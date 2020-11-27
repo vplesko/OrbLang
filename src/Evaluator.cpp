@@ -666,8 +666,11 @@ optional<EvalVal> Evaluator::makeCast(const EvalVal &srcEvalVal, TypeTable::Id s
             !typeTable->worksAsTypeAnyP(dstTypeId)) {
             dstEvalVal.reset();
         }
-    } else if (typeTable->worksAsTypeArr(srcTypeId) || typeTable->worksAsTuple(srcTypeId) ||
-        typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_ID) || typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE)) {
+    } else if (typeTable->worksAsTypeArr(srcTypeId) ||
+        typeTable->worksAsTuple(srcTypeId) ||
+        typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_ID) ||
+        typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE) ||
+        typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_RAW)) {
         // these types are only castable when changing constness
         if (typeTable->isImplicitCastable(srcTypeId, dstTypeId)) {
             // no action is needed in case of a cast

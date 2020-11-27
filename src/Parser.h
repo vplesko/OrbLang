@@ -3,10 +3,12 @@
 #include "CompilationMessages.h"
 #include "Lexer.h"
 #include "NodeVal.h"
+#include "TypeTable.h"
 
 class Parser {
     StringPool *stringPool;
     Lexer *lex;
+    TypeTable *typeTable;
     CompilationMessages *msgs;
 
     const Token& peek() const;
@@ -26,7 +28,7 @@ class Parser {
     NodeVal parseTerm();
 
 public:
-    Parser(StringPool *stringPool, CompilationMessages *msgs);
+    Parser(StringPool *stringPool, TypeTable *typeTable, CompilationMessages *msgs);
 
     void setLexer(Lexer *lex_) { lex = lex_; }
     Lexer* getLexer() const { return lex; }

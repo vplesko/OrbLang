@@ -6,7 +6,6 @@
 #include "LiteralVal.h"
 #include "EvalVal.h"
 #include "LlvmVal.h"
-#include "RawVal.h"
 
 class NodeVal {
 public:
@@ -16,8 +15,7 @@ public:
         kImport,
         kLiteral,
         kEval,
-        kLlvm,
-        kRaw
+        kLlvm
     };
 
 private:
@@ -28,11 +26,8 @@ private:
     LiteralVal literal;
     LlvmVal llvm;
     EvalVal eval;
-    RawVal raw;
 
     std::unique_ptr<NodeVal> typeAttr;
-
-    bool escaped = false;
 
     void copyFrom(const NodeVal &other);
 
@@ -42,7 +37,6 @@ public:
     NodeVal(CodeLoc codeLoc, const LiteralVal &val);
     NodeVal(CodeLoc codeLoc, const EvalVal &val);
     NodeVal(CodeLoc codeLoc, const LlvmVal &val);
-    NodeVal(CodeLoc codeLoc, const RawVal &val);
 
     NodeVal(const NodeVal &other);
     NodeVal& operator=(const NodeVal &other);
@@ -51,12 +45,8 @@ public:
     NodeVal& operator=(NodeVal &&other) = default;
 
     CodeLoc getCodeLoc() const { return codeLoc; }
-    bool isEscaped() const { return escaped; }
     std::optional<TypeTable::Id> getType() const;
     bool hasRef() const;
-    std::size_t getLength() const;
-    bool isEmpty() const { return isRawVal() && raw.isEmpty(); }
-    bool isLeaf() const { return !isRawVal() || isEmpty(); }
 
     // Remember to check when returned to you before any other checks or usages.
     bool isInvalid() const { return kind == Kind::kInvalid; }
@@ -76,16 +66,21 @@ public:
     LlvmVal& getLlvmVal() { return llvm; }
     const LlvmVal& getLlvmVal() const { return llvm; }
 
-    bool isRawVal() const  { return kind == Kind::kRaw; }
-    RawVal& getRawVal() { return raw; }
-    const RawVal& getRawVal() const { return raw; }
-
     bool hasTypeAttr() const { return typeAttr != nullptr; }
     NodeVal& getTypeAttr() { return *typeAttr; }
     const NodeVal& getTypeAttr() const { return *typeAttr; }
     void setTypeAttr(NodeVal t);
     void clearTypeAttr() { typeAttr.reset(); }
 
-    void escape();
-    void unescape();
+    static std::size_t getLength(const NodeVal &node, const TypeTable *typeTable);
+    static bool isEmpty(const NodeVal &node, const TypeTable *typeTable);
+    static bool isLeaf(const NodeVal &node, const TypeTable *typeTable);
+
+    static bool isRawVal(const NodeVal &node, const TypeTable *typeTable);
+    static RawVal& getRawVal(NodeVal &node);
+    static const RawVal& getRawVal(const NodeVal &node);
+
+    static bool isEscaped(const NodeVal &node, const TypeTable *typeTable);
+    static void escape(NodeVal &node, const TypeTable *typeTable);
+    static void unescape(NodeVal &node, const TypeTable *typeTable);
 };

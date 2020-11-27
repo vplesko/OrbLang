@@ -4,8 +4,8 @@
 #include <cstdint>
 using namespace std;
 
-Parser::Parser(StringPool *stringPool, CompilationMessages *msgs) 
-    : stringPool(stringPool), lex(nullptr), msgs(msgs) {
+Parser::Parser(StringPool *stringPool, TypeTable *typeTable, CompilationMessages *msgs) 
+    : stringPool(stringPool), typeTable(typeTable), lex(nullptr), msgs(msgs) {
 }
 
 const Token& Parser::peek() const {
@@ -58,7 +58,7 @@ NodeVal Parser::makeEmpty() const {
 }
 
 NodeVal Parser::makeEmpty(CodeLoc codeLoc) const {
-    RawVal emptyRaw;
+    EvalVal emptyRaw = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_RAW), typeTable);
     return NodeVal(loc(), emptyRaw);
 }
 
@@ -144,11 +144,11 @@ NodeVal Parser::parseNode() {
                 next();
 
                 if (children.empty()) {
-                    node.getRawVal().addChild(makeEmpty());
+                    NodeVal::getRawVal(node).addChild(makeEmpty());
                 } else {
                     NodeVal tuple = makeEmpty(children[0].getCodeLoc());
-                    tuple.getRawVal().addChildren(move(children)); // children is emptied here
-                    node.getRawVal().addChild(move(tuple));
+                    NodeVal::getRawVal(tuple).addChildren(move(children)); // children is emptied here
+                    NodeVal::getRawVal(node).addChild(move(tuple));
                 }
             } else {
                 bool escaped = match(Token::T_BACKSLASH);
@@ -159,14 +159,14 @@ NodeVal Parser::parseNode() {
                     child = parseTerm();
                 }
                 if (child.isInvalid()) return NodeVal();
-                if (escaped) child.escape();
+                if (escaped) NodeVal::escape(child, typeTable);
                 children.push_back(move(child));
             }
         }
         
         if (!matchCloseBraceOrError(openBrace)) return NodeVal();
 
-        node.getRawVal().addChildren(move(children));
+        NodeVal::getRawVal(node).addChildren(move(children));
     } else {
         while (peek().type != Token::T_SEMICOLON) {
             if (!escaped) escaped = match(Token::T_BACKSLASH);
@@ -177,15 +177,15 @@ NodeVal Parser::parseNode() {
                 child = parseTerm();
             }
             if (child.isInvalid()) return NodeVal();
-            if (escaped) child.escape();
+            if (escaped) NodeVal::escape(child, typeTable);
             escaped = false;
-            node.getRawVal().addChild(move(child));
+            NodeVal::getRawVal(node).addChild(move(child));
         }
         next();
     }
 
     if (escaped) {
-        node.escape();
+        NodeVal::escape(node, typeTable);
         escaped = false;
     }
 

@@ -25,6 +25,7 @@ struct LiteralVal {
         bool val_b;
         StringPool::Id val_str;
     };
+    bool escaped = false;
 
     static std::size_t getStringLen(const std::string &str) { return str.size()+1; }
 };

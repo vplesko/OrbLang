@@ -1,0 +1,20 @@
+# TODO! raw escaping, unescaping, +, ., eval
+import "util/io.orb";
+
+eval (fnc foo () raw {
+    ret ();
+});
+
+eval (fnc bar (r:raw) raw {
+    ret r;
+});
+
+fnc main () () {
+    ;
+    eval (sym (a ()) b:raw (c:(raw cn) a));
+    = b a;
+    eval (sym (d:(raw 2)));
+    = ([] d 0) a;
+    = ([] d 1) (foo);
+    = b (bar a);
+};

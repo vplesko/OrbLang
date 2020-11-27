@@ -5,6 +5,7 @@
 #include "NamePool.h"
 #include "StringPool.h"
 #include "TypeTable.h"
+#include "RawVal.h"
 
 class SymbolTable;
 
@@ -27,18 +28,22 @@ struct EvalVal {
         NamePool::Id id;
         TypeTable::Id ty;
     };
+    RawVal raw;
     std::vector<EvalVal> elems;
     
     EvalVal *ref = nullptr;
+
+    bool escaped = false;
 
     EvalVal() {}
 
     std::optional<TypeTable::Id> getType() const { return type; }
 
+    bool isEscaped() const { return escaped; }
+
     // if is callable, type is meaningless
-    // TODO after callables are first-class, rework that
+    // TODO after callables (fncs, macs, specs) are first-class, rework that
     bool isCallable() const { return !type.has_value(); }
-    // TODO move specials to nodeval
     std::optional<NamePool::Id> getCallableId() const;
 
     static EvalVal makeVal(TypeTable::Id t, TypeTable *typeTable);
@@ -46,6 +51,7 @@ struct EvalVal {
 
     static bool isId(const EvalVal &val, const TypeTable *typeTable);
     static bool isType(const EvalVal &val, const TypeTable *typeTable);
+    static bool isRaw(const EvalVal &val, const TypeTable *typeTable);
     static bool isMacro(const EvalVal &val, const SymbolTable *symbolTable);
     static bool isFunc(const EvalVal &val, const SymbolTable *symbolTable);
     static bool isI(const EvalVal &val, const TypeTable *typeTable);

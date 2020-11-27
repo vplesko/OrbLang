@@ -92,6 +92,12 @@ void CompilationOrchestrator::genPrimTypes() {
         TypeTable::P_TYPE,
         nullptr
     );
+    // raw
+    typeTable->addPrimType(
+        namePool->add("raw"),
+        TypeTable::P_RAW,
+        nullptr
+    );
     // b
     typeTable->addPrimType(
         namePool->add("bool"),
@@ -201,7 +207,7 @@ ImportTransRes followImport(
 bool CompilationOrchestrator::parse(const vector<string> &inputs) {
     if (inputs.empty()) return false;
 
-    Parser par(stringPool.get(), msgs.get());
+    Parser par(stringPool.get(), typeTable.get(), msgs.get());
 
     unordered_map<string, unique_ptr<Lexer>> lexers;
     stack<Lexer*> trace;
