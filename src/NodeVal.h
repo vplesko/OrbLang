@@ -63,6 +63,11 @@ public:
     bool isEvalVal() const { return kind == Kind::kEval; }
     EvalVal& getEvalVal() { return eval; }
     const EvalVal& getEvalVal() const { return eval; }
+    std::size_t getChildrenCnt() const { return eval.elems.size(); }
+    NodeVal& getChild(std::size_t ind) { return eval.elems[ind]; }
+    const NodeVal& getChild(std::size_t ind) const { return eval.elems[ind]; }
+    void addChild(NodeVal c);
+    void addChildren(std::vector<NodeVal> c);
 
     bool isLlvmVal() const { return kind == Kind::kLlvm; }
     LlvmVal& getLlvmVal() { return llvm; }
@@ -79,8 +84,6 @@ public:
     static bool isLeaf(const NodeVal &node, const TypeTable *typeTable);
 
     static bool isRawVal(const NodeVal &node, const TypeTable *typeTable);
-    static RawVal& getRawVal(NodeVal &node);
-    static const RawVal& getRawVal(const NodeVal &node);
 
     static void escape(NodeVal &node, const TypeTable *typeTable, EscapeScore amount = 1);
     static void unescape(NodeVal &node, const TypeTable *typeTable);

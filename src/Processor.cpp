@@ -31,7 +31,7 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
         return processNonLeafEscaped(node);
     }
 
-    NodeVal starting = processNode(NodeVal::getRawVal(node).getChild(0));
+    NodeVal starting = processNode(node.getChild(0));
     if (starting.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(true);
 
@@ -99,12 +99,12 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
 NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
     EvalVal evalRaw = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_RAW), typeTable);
 
-    for (const auto &it : NodeVal::getRawVal(node).children) {
+    for (const auto &it : node.getEvalVal().elems) {
         NodeVal childProc = processNode(it);
         if (childProc.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(true);
 
-        evalRaw.raw.children.push_back(move(childProc));
+        evalRaw.elems.push_back(move(childProc));
     }
 
     return NodeVal(node.getCodeLoc(), evalRaw);
@@ -118,7 +118,7 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
     if (NodeVal::getLength(node, typeTable) == 1)
         return NodeVal(node.getCodeLoc(), EvalVal::copyNoRef(starting.getEvalVal()));
 
-    NodeVal second = processForTypeArg(NodeVal::getRawVal(node).getChild(1));
+    NodeVal second = processForTypeArg(node.getChild(1));
     if (second.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(true);
 
@@ -126,11 +126,11 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
 
     if (second.isEvalVal() && EvalVal::isType(second.getEvalVal(), typeTable)) {
         TypeTable::Tuple tup;
-        tup.members.reserve(NodeVal::getRawVal(node).getChildrenCnt());
+        tup.members.reserve(node.getChildrenCnt());
         tup.members.push_back(starting.getEvalVal().ty);
         tup.members.push_back(second.getEvalVal().ty);
-        for (size_t i = 2; i < NodeVal::getRawVal(node).getChildrenCnt(); ++i) {
-            NodeVal ty = processAndCheckIsType(NodeVal::getRawVal(node).getChild(i));
+        for (size_t i = 2; i < node.getChildrenCnt(); ++i) {
+            NodeVal ty = processAndCheckIsType(node.getChild(i));
             if (ty.isInvalid()) return NodeVal();
             if (isSkippingProcessing()) return NodeVal(true);
             tup.members.push_back(ty.getEvalVal().ty);
@@ -146,8 +146,8 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
     } else {
         TypeTable::TypeDescr descr(starting.getEvalVal().ty);
         if (!applyTypeDescrDecor(descr, second)) return NodeVal();
-        for (size_t i = 2; i < NodeVal::getRawVal(node).getChildrenCnt(); ++i) {
-            NodeVal decor = processWithEscapeIfLeaf(NodeVal::getRawVal(node).getChild(i));
+        for (size_t i = 2; i < node.getChildrenCnt(); ++i) {
+            NodeVal decor = processWithEscapeIfLeaf(node.getChild(i));
             if (decor.isInvalid()) return NodeVal();
             if (isSkippingProcessing()) return NodeVal(true);
             if (!applyTypeDescrDecor(descr, decor)) return NodeVal();
@@ -191,14 +191,14 @@ NodeVal Processor::processId(const NodeVal &node) {
 NodeVal Processor::processSym(const NodeVal &node) {
     if (!checkAtLeastChildren(node, 2, true)) return NodeVal();
 
-    for (size_t i = 1; i < NodeVal::getRawVal(node).getChildrenCnt(); ++i) {
-        const NodeVal &entry = NodeVal::getRawVal(node).getChild(i);
+    for (size_t i = 1; i < node.getChildrenCnt(); ++i) {
+        const NodeVal &entry = node.getChild(i);
         // continue with the other sym entries to minimize the number of errors printed out
         if (!NodeVal::isLeaf(entry, typeTable) && !checkBetweenChildren(entry, 1, 2, true)) continue;
 
         bool hasInit = checkExactlyChildren(entry, 2, false);
 
-        const NodeVal &nodePair = NodeVal::isLeaf(entry, typeTable) ? entry : NodeVal::getRawVal(entry).getChild(0);
+        const NodeVal &nodePair = NodeVal::isLeaf(entry, typeTable) ? entry : entry.getChild(0);
         pair<NodeVal, optional<NodeVal>> pair = processForIdTypePair(nodePair);
         if (pair.first.isInvalid()) continue;
         if (isSkippingProcessing()) return NodeVal(true);
@@ -213,7 +213,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
         bool hasType = optType.has_value();
 
         if (hasInit) {
-            const NodeVal &nodeInit = NodeVal::getRawVal(entry).getChild(1);
+            const NodeVal &nodeInit = entry.getChild(1);
             NodeVal init = hasType ? processAndImplicitCast(nodeInit, optType.value()) : processNode(nodeInit);
             if (init.isInvalid()) continue;
             if (isSkippingProcessing()) return NodeVal(true);
@@ -245,11 +245,11 @@ NodeVal Processor::processCast(const NodeVal &node) {
         return NodeVal();
     }
 
-    NodeVal ty = processAndCheckIsType(NodeVal::getRawVal(node).getChild(1));
+    NodeVal ty = processAndCheckIsType(node.getChild(1));
     if (ty.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(true);
 
-    NodeVal value = processNode(NodeVal::getRawVal(node).getChild(2));
+    NodeVal value = processNode(node.getChild(2));
     if (value.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(true);
 
@@ -262,19 +262,19 @@ NodeVal Processor::processCast(const NodeVal &node) {
 NodeVal Processor::processBlock(const NodeVal &node) {
     if (!checkBetweenChildren(node, 2, 4, true)) return NodeVal();
 
-    bool hasName = NodeVal::getRawVal(node).getChildrenCnt() > 3;
-    bool hasType = NodeVal::getRawVal(node).getChildrenCnt() > 2;
+    bool hasName = node.getChildrenCnt() > 3;
+    bool hasType = node.getChildrenCnt() > 2;
 
     size_t indName = 1;
     size_t indType = hasName ? 2 : 1;
     size_t indBody = hasName ? 3 : (hasType ? 2 : 1);
 
-    const NodeVal &nodeBlock = NodeVal::getRawVal(node).getChild(indBody);
+    const NodeVal &nodeBlock = node.getChild(indBody);
     if (!checkIsRaw(nodeBlock, true)) return NodeVal();
 
     optional<NamePool::Id> name;
     if (hasName) {
-        NodeVal nodeName = processWithEscapeIfLeaf(NodeVal::getRawVal(node).getChild(indName));
+        NodeVal nodeName = processWithEscapeIfLeaf(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(true);
         if (!NodeVal::isEmpty(nodeName, typeTable)) {
@@ -285,7 +285,7 @@ NodeVal Processor::processBlock(const NodeVal &node) {
 
     optional<TypeTable::Id> type;
     if (hasType) {
-        NodeVal nodeType = processNode(NodeVal::getRawVal(node).getChild(indType));
+        NodeVal nodeType = processNode(node.getChild(indType));
         if (nodeType.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(true);
         if (!NodeVal::isEmpty(nodeType, typeTable)) {
@@ -323,20 +323,20 @@ NodeVal Processor::processBlock(const NodeVal &node) {
 NodeVal Processor::processExit(const NodeVal &node) {
     if (!checkBetweenChildren(node, 2, 3, true)) return NodeVal();
 
-    bool hasName = NodeVal::getRawVal(node).getChildrenCnt() > 2;
+    bool hasName = node.getChildrenCnt() > 2;
 
     size_t indName = 1;
     size_t indCond = hasName ? 2 : 1;
 
     optional<NamePool::Id> name;
     if (hasName) {
-        NodeVal nodeName = processWithEscapeIfLeafAndCheckIsId(NodeVal::getRawVal(node).getChild(indName));
+        NodeVal nodeName = processWithEscapeIfLeafAndCheckIsId(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(true);
         name = nodeName.getEvalVal().id;
     }
 
-    NodeVal nodeCond = processNode(NodeVal::getRawVal(node).getChild(indCond));
+    NodeVal nodeCond = processNode(node.getChild(indCond));
     if (nodeCond.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(true);
     if (!checkIsBool(nodeCond, true)) return NodeVal();
@@ -345,7 +345,7 @@ NodeVal Processor::processExit(const NodeVal &node) {
     if (hasName) {
         targetBlock = symbolTable->getBlock(name.value());
         if (targetBlock == nullptr) {
-            msgs->errorBlockNotFound(NodeVal::getRawVal(node).getChild(indName).getCodeLoc(), name.value());
+            msgs->errorBlockNotFound(node.getChild(indName).getCodeLoc(), name.value());
             return NodeVal();
         }
     } else {
@@ -367,20 +367,20 @@ NodeVal Processor::processExit(const NodeVal &node) {
 NodeVal Processor::processLoop(const NodeVal &node) {
     if (!checkBetweenChildren(node, 2, 3, true)) return NodeVal();
 
-    bool hasName = NodeVal::getRawVal(node).getChildrenCnt() > 2;
+    bool hasName = node.getChildrenCnt() > 2;
 
     size_t indName = 1;
     size_t indCond = hasName ? 2 : 1;
 
     optional<NamePool::Id> name;
     if (hasName) {
-        NodeVal nodeName = processWithEscapeIfLeafAndCheckIsId(NodeVal::getRawVal(node).getChild(indName));
+        NodeVal nodeName = processWithEscapeIfLeafAndCheckIsId(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(true);
         name = nodeName.getEvalVal().id;
     }
 
-    NodeVal nodeCond = processNode(NodeVal::getRawVal(node).getChild(indCond));
+    NodeVal nodeCond = processNode(node.getChild(indCond));
     if (nodeCond.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(true);
     if (!checkIsBool(nodeCond, true)) return NodeVal();
@@ -389,7 +389,7 @@ NodeVal Processor::processLoop(const NodeVal &node) {
     if (hasName) {
         targetBlock = symbolTable->getBlock(name.value());
         if (targetBlock == nullptr) {
-            msgs->errorBlockNotFound(NodeVal::getRawVal(node).getChild(indName).getCodeLoc(), name.value());
+            msgs->errorBlockNotFound(node.getChild(indName).getCodeLoc(), name.value());
             return NodeVal();
         }
     } else {
@@ -407,14 +407,14 @@ NodeVal Processor::processLoop(const NodeVal &node) {
 NodeVal Processor::processPass(const NodeVal &node) {
     if (!checkBetweenChildren(node, 2, 3, true)) return NodeVal();
 
-    bool hasName = NodeVal::getRawVal(node).getChildrenCnt() > 2;
+    bool hasName = node.getChildrenCnt() > 2;
 
     size_t indName = 1;
     size_t indVal = hasName ? 2 : 1;
 
     optional<NamePool::Id> name;
     if (hasName) {
-        NodeVal nodeName = processWithEscapeIfLeafAndCheckIsId(NodeVal::getRawVal(node).getChild(indName));
+        NodeVal nodeName = processWithEscapeIfLeafAndCheckIsId(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(true);
         name = nodeName.getEvalVal().id;
@@ -424,7 +424,7 @@ NodeVal Processor::processPass(const NodeVal &node) {
     if (hasName) {
         targetBlock = symbolTable->getBlock(name.value());
         if (targetBlock == nullptr) {
-            msgs->errorBlockNotFound(NodeVal::getRawVal(node).getChild(indName).getCodeLoc(), name.value());
+            msgs->errorBlockNotFound(node.getChild(indName).getCodeLoc(), name.value());
             return NodeVal();
         }
     } else {
@@ -439,7 +439,7 @@ NodeVal Processor::processPass(const NodeVal &node) {
         return NodeVal();
     }
 
-    NodeVal nodeValue = processAndImplicitCast(NodeVal::getRawVal(node).getChild(indVal), targetBlock->type.value());
+    NodeVal nodeValue = processAndImplicitCast(node.getChild(indVal), targetBlock->type.value());
     if (nodeValue.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(true);
 
@@ -455,7 +455,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
         return NodeVal();
     }
     
-    size_t providedArgCnt = NodeVal::getRawVal(node).getChildrenCnt()-1;
+    size_t providedArgCnt = node.getChildrenCnt()-1;
     if (funcVal->argCnt() > providedArgCnt ||
         (funcVal->argCnt() < providedArgCnt && !funcVal->variadic)) {
         msgs->errorUnknown(node.getCodeLoc());
@@ -465,8 +465,8 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
     vector<NodeVal> args;
     for (size_t i = 0; i < providedArgCnt; ++i) {
         NodeVal arg = i < funcVal->argCnt() ?
-            processAndImplicitCast(NodeVal::getRawVal(node).getChild(i+1), funcVal->argTypes[i]) :
-            processNode(NodeVal::getRawVal(node).getChild(i+1));
+            processAndImplicitCast(node.getChild(i+1), funcVal->argTypes[i]) :
+            processNode(node.getChild(i+1));
         if (arg.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(true);
 
@@ -488,10 +488,10 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     }
 
     FuncValue val;
-    val.defined = NodeVal::getRawVal(node).getChildrenCnt() == 5;
+    val.defined = node.getChildrenCnt() == 5;
 
     // name
-    NodeVal name = processWithEscapeIfLeafAndCheckIsId(NodeVal::getRawVal(node).getChild(1));
+    NodeVal name = processWithEscapeIfLeafAndCheckIsId(node.getChild(1));
     if (name.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(true);
     if (!symbolTable->nameAvailable(name.getEvalVal().id, namePool, typeTable)) {
@@ -501,11 +501,11 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     val.name = name.getEvalVal().id;
 
     // arguments
-    const NodeVal &nodeArgs = NodeVal::getRawVal(node).getChild(2);
+    const NodeVal &nodeArgs = node.getChild(2);
     if (!checkIsRaw(nodeArgs, true)) return NodeVal();
     val.variadic = false;
-    for (size_t i = 0; i < NodeVal::getRawVal(nodeArgs).getChildrenCnt(); ++i) {
-        const NodeVal &nodeArg = NodeVal::getRawVal(nodeArgs).getChild(i);
+    for (size_t i = 0; i < nodeArgs.getChildrenCnt(); ++i) {
+        const NodeVal &nodeArg = nodeArgs.getChild(i);
 
         if (val.variadic) {
             msgs->errorNotLastParam(nodeArg.getCodeLoc());
@@ -529,17 +529,17 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     }
 
     // check no arg name duplicates
-    for (size_t i = 0; i+1 < NodeVal::getRawVal(nodeArgs).getChildrenCnt(); ++i) {
-        for (size_t j = i+1; j < NodeVal::getRawVal(nodeArgs).getChildrenCnt(); ++j) {
+    for (size_t i = 0; i+1 < nodeArgs.getChildrenCnt(); ++i) {
+        for (size_t j = i+1; j < nodeArgs.getChildrenCnt(); ++j) {
             if (val.argNames[i] == val.argNames[j]) {
-                msgs->errorArgNameDuplicate(NodeVal::getRawVal(nodeArgs).getChild(j).getCodeLoc(), val.argNames[j]);
+                msgs->errorArgNameDuplicate(nodeArgs.getChild(j).getCodeLoc(), val.argNames[j]);
                 return NodeVal();
             }
         }
     }
 
     // ret type
-    const NodeVal &nodeRetType = NodeVal::getRawVal(node).getChild(3);
+    const NodeVal &nodeRetType = node.getChild(3);
     NodeVal ty = processNode(nodeRetType);
     if (ty.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(true);
@@ -551,7 +551,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     // body
     const NodeVal *nodeBodyPtr = nullptr;
     if (val.defined) {
-        nodeBodyPtr = &NodeVal::getRawVal(node).getChild(4);
+        nodeBodyPtr = &node.getChild(4);
         if (!checkIsRaw(*nodeBodyPtr, true)) {
             return NodeVal();
         }
@@ -578,14 +578,14 @@ NodeVal Processor::processRet(const NodeVal &node) {
         return NodeVal();
     }
 
-    bool retsVal = NodeVal::getRawVal(node).getChildrenCnt() == 2;
+    bool retsVal = node.getChildrenCnt() == 2;
     if (retsVal) {
         if (!optFuncValue.value().hasRet()) {
             msgs->errorUnknown(node.getCodeLoc());
             return NodeVal();
         }
 
-        NodeVal val = processAndImplicitCast(NodeVal::getRawVal(node).getChild(1), optFuncValue.value().retType.value());
+        NodeVal val = processAndImplicitCast(node.getChild(1), optFuncValue.value().retType.value());
         if (val.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(true);
 
@@ -611,7 +611,7 @@ NodeVal Processor::processEval(const NodeVal &node) {
         return NodeVal();
     }
 
-    return evaluator->processNode(NodeVal::getRawVal(node).getChild(1));
+    return evaluator->processNode(node.getChild(1));
 }
 
 NodeVal Processor::processImport(const NodeVal &node) {
@@ -620,7 +620,7 @@ NodeVal Processor::processImport(const NodeVal &node) {
         return NodeVal();
     }
 
-    NodeVal file = processNode(NodeVal::getRawVal(node).getChild(1));
+    NodeVal file = processNode(node.getChild(1));
     if (file.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) {
         msgs->errorInternal(node.getCodeLoc());
@@ -639,15 +639,15 @@ NodeVal Processor::processOper(const NodeVal &node, Oper op) {
     if (!checkAtLeastChildren(node, 2, true)) return NodeVal();
 
     if (checkExactlyChildren(node, 2, false)) {
-        return processOperUnary(node.getCodeLoc(), NodeVal::getRawVal(node).getChild(1), op);
+        return processOperUnary(node.getCodeLoc(), node.getChild(1), op);
     }
 
     OperInfo operInfo = operInfos.find(op)->second;
 
     vector<const NodeVal*> operands;
-    operands.reserve(NodeVal::getRawVal(node).getChildrenCnt()-1);
-    for (size_t i = 1; i < NodeVal::getRawVal(node).getChildrenCnt(); ++i) {
-        operands.push_back(&NodeVal::getRawVal(node).getChild(i));
+    operands.reserve(node.getChildrenCnt()-1);
+    for (size_t i = 1; i < node.getChildrenCnt(); ++i) {
+        operands.push_back(&node.getChild(i));
     }
     
     if (operInfo.comparison) {
@@ -665,14 +665,14 @@ NodeVal Processor::processOper(const NodeVal &node, Oper op) {
 
 NodeVal Processor::processTuple(const NodeVal &node, const NodeVal &starting) {
     // TODO rework after allowing single value tuples
-    if (NodeVal::getRawVal(node).getChildrenCnt() == 1) return starting;
+    if (node.getChildrenCnt() == 1) return starting;
 
     vector<NodeVal> membs;
-    membs.reserve(NodeVal::getRawVal(node).getChildrenCnt());
+    membs.reserve(node.getChildrenCnt());
     membs.push_back(starting);
     bool allEval = checkIsEvalTime(starting, false);
-    for (size_t i = 1; i < NodeVal::getRawVal(node).getChildrenCnt(); ++i) {
-        NodeVal memb = processNode(NodeVal::getRawVal(node).getChild(i));
+    for (size_t i = 1; i < node.getChildrenCnt(); ++i) {
+        NodeVal memb = processNode(node.getChild(i));
         if (memb.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(true);
         membs.push_back(move(memb));
@@ -832,8 +832,8 @@ bool Processor::implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly
 }
 
 bool Processor::processChildNodes(const NodeVal &node) {
-    for (size_t i = 0; i < NodeVal::getRawVal(node).getChildrenCnt(); ++i) {
-        NodeVal tmp = processNode(NodeVal::getRawVal(node).getChild(i));
+    for (size_t i = 0; i < node.getChildrenCnt(); ++i) {
+        NodeVal tmp = processNode(node.getChild(i));
         if (tmp.isInvalid()) return false;
         if (isSkippingProcessing()) return true;
     }
@@ -1022,6 +1022,7 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
             if (!checkHasType(base, true)) return NodeVal();
         }
         TypeTable::Id baseType = base.getType().value();
+        bool isBaseRaw = NodeVal::isRawVal(base, typeTable);
 
         NodeVal index = processNode(*opers[i]);
         if (index.isInvalid()) return NodeVal();
@@ -1031,21 +1032,32 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
             return NodeVal();
         }
 
-        optional<const TypeTable::Tuple*> tupleOpt = typeTable->extractTuple(baseType);
-        if (!tupleOpt.has_value()) {
-            msgs->errorExprDotInvalidBase(base.getCodeLoc());
-            return NodeVal();
+        size_t baseLen;
+        if (isBaseRaw) {
+            baseLen = base.getChildrenCnt();
+        } else {
+            optional<const TypeTable::Tuple*> tupleOpt = typeTable->extractTuple(baseType);
+            if (tupleOpt.has_value()) {
+                baseLen = tupleOpt.value()->members.size();
+            } else {
+                msgs->errorExprDotInvalidBase(base.getCodeLoc());
+                return NodeVal();
+            }
         }
-        const TypeTable::Tuple &tuple = *tupleOpt.value();
 
         optional<uint64_t> indexValOpt = EvalVal::getValueNonNeg(index.getEvalVal(), typeTable);
-        if (!indexValOpt.has_value() || indexValOpt.value() >= tuple.members.size()) {
+        if (!indexValOpt.has_value() || indexValOpt.value() >= baseLen) {
             msgs->errorMemberIndex(index.getCodeLoc());
             return NodeVal();
         }
         uint64_t indexVal = indexValOpt.value();
 
-        optional<TypeTable::Id> resType = typeTable->extractMemberType(baseType, (size_t) indexVal);
+        optional<TypeTable::Id> resType;
+        if (isBaseRaw) {
+            resType = base.getChild(indexVal).getType();
+        } else {
+            resType = typeTable->extractMemberType(baseType, (size_t) indexVal);
+        }
         if (!resType.has_value()) {
             msgs->errorInternal(base.getCodeLoc());
             return NodeVal();
@@ -1285,7 +1297,7 @@ bool Processor::checkIsValue(const NodeVal &node, bool orError) {
 }
 
 bool Processor::checkExactlyChildren(const NodeVal &node, std::size_t n, bool orError) {
-    if (!NodeVal::isRawVal(node, typeTable) || NodeVal::getRawVal(node).getChildrenCnt() != n) {
+    if (!NodeVal::isRawVal(node, typeTable) || node.getChildrenCnt() != n) {
         if (orError) msgs->errorChildrenNotEq(node.getCodeLoc(), n);
         return false;
     }
@@ -1293,7 +1305,7 @@ bool Processor::checkExactlyChildren(const NodeVal &node, std::size_t n, bool or
 }
 
 bool Processor::checkAtLeastChildren(const NodeVal &node, std::size_t n, bool orError) {
-    if (!NodeVal::isRawVal(node, typeTable) || NodeVal::getRawVal(node).getChildrenCnt() < n) {
+    if (!NodeVal::isRawVal(node, typeTable) || node.getChildrenCnt() < n) {
         if (orError) msgs->errorChildrenLessThan(node.getCodeLoc(), n);
         return false;
     }
@@ -1301,7 +1313,7 @@ bool Processor::checkAtLeastChildren(const NodeVal &node, std::size_t n, bool or
 }
 
 bool Processor::checkAtMostChildren(const NodeVal &node, std::size_t n, bool orError) {
-    if (!NodeVal::isRawVal(node, typeTable) || NodeVal::getRawVal(node).getChildrenCnt() > n) {
+    if (!NodeVal::isRawVal(node, typeTable) || node.getChildrenCnt() > n) {
         if (orError) msgs->errorChildrenMoreThan(node.getCodeLoc(), n);
         return false;
     }
@@ -1309,7 +1321,7 @@ bool Processor::checkAtMostChildren(const NodeVal &node, std::size_t n, bool orE
 }
 
 bool Processor::checkBetweenChildren(const NodeVal &node, std::size_t nLo, std::size_t nHi, bool orError) {
-    if (!NodeVal::isRawVal(node, typeTable) || !between(NodeVal::getRawVal(node).getChildrenCnt(), nLo, nHi)) {
+    if (!NodeVal::isRawVal(node, typeTable) || !between(node.getChildrenCnt(), nLo, nHi)) {
         if (orError) msgs->errorChildrenNotBetween(node.getCodeLoc(), nLo, nHi);
         return false;
     }

@@ -18,7 +18,7 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
     if (!checkIsEvalVal(codeLoc, ref, true)) return NodeVal();
 
     EvalVal evalVal(ref.getEvalVal());
-    evalVal.ref = &ref.getEvalVal();
+    evalVal.ref = &ref;
     return NodeVal(codeLoc, evalVal);
 }
 
@@ -401,7 +401,7 @@ NodeVal Evaluator::performOperComparisonTearDown(CodeLoc codeLoc, bool success, 
 NodeVal Evaluator::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) {
     if (!checkIsEvalVal(lhs, true) || !checkIsEvalVal(rhs, true)) return NodeVal();
 
-    *lhs.getEvalVal().ref = EvalVal::copyNoRef(rhs.getEvalVal());
+    *lhs.getEvalVal().ref = NodeVal(lhs.getEvalVal().ref->getCodeLoc(), EvalVal::copyNoRef(rhs.getEvalVal()));
 
     EvalVal evalVal(rhs.getEvalVal());
     evalVal.ref = lhs.getEvalVal().ref;
@@ -419,9 +419,9 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVa
 
     EvalVal evalVal;
     if (typeTable->worksAsTypeArr(base.getType().value())) {
-        evalVal = EvalVal(base.getEvalVal().elems[index.value()]);
+        evalVal = EvalVal(base.getEvalVal().elems[index.value()].getEvalVal());
         if (base.hasRef()) {
-            evalVal.ref = &base.getEvalVal().ref->elems[index.value()];
+            evalVal.ref = &base.getEvalVal().ref->getEvalVal().elems[index.value()];
         } else {
             evalVal.ref = nullptr;
         }
@@ -438,13 +438,26 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVa
 NodeVal Evaluator::performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
     if (!checkIsEvalVal(base, true)) return NodeVal();
 
-    EvalVal evalVal(base.getEvalVal().elems[ind]);
-    if (base.hasRef()) {
-        evalVal.ref = &base.getEvalVal().ref->elems[ind];
+    if (NodeVal::isRawVal(base, typeTable)) {
+        NodeVal nodeVal = base.getChild(ind);
+        if (base.hasRef() && NodeVal::isRawVal(nodeVal, typeTable)) {
+            nodeVal.getEvalVal().ref = &base.getEvalVal().ref->getEvalVal().elems[ind];
+        } else {
+            // the reason for breaking refs is that it could lead to seg faults
+            // when a raw with a ref to local value is passed out of block or returned from function
+            if (nodeVal.isEvalVal()) nodeVal.getEvalVal().ref = nullptr;
+            else if (nodeVal.isLlvmVal()) nodeVal.getLlvmVal().ref = nullptr;
+        }
+        return nodeVal;
     } else {
-        evalVal.ref = nullptr;
+        EvalVal evalVal(base.getEvalVal().elems[ind].getEvalVal());
+        if (base.hasRef()) {
+            evalVal.ref = &base.getEvalVal().ref->getEvalVal().elems[ind];
+        } else {
+            evalVal.ref = nullptr;
+        }
+        return NodeVal(codeLoc, evalVal);
     }
-    return NodeVal(codeLoc, evalVal);
 }
 
 // TODO warn on over/underflow; are results correct in these cases?
@@ -576,7 +589,7 @@ NodeVal Evaluator::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::ve
         const NodeVal &memb = membs[i];
         if (!checkIsEvalVal(memb, true)) return NodeVal();
         
-        evalVal.elems[i] = EvalVal::copyNoRef(memb.getEvalVal());
+        evalVal.elems[i] = NodeVal(memb.getCodeLoc(), EvalVal::copyNoRef(memb.getEvalVal()));
     }
 
     return NodeVal(codeLoc, evalVal);
@@ -643,7 +656,7 @@ optional<EvalVal> Evaluator::makeCast(const EvalVal &srcEvalVal, TypeTable::Id s
                     dstEvalVal.reset();
                 } else {
                     for (size_t i = 0; i < LiteralVal::getStringLen(str); ++i) {
-                        dstEvalVal.value().elems[i].c8 = str[i];
+                        dstEvalVal.value().elems[i].getEvalVal().c8 = str[i];
                     }
                 }
             } else {

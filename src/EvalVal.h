@@ -6,8 +6,8 @@
 #include "NamePool.h"
 #include "StringPool.h"
 #include "TypeTable.h"
-#include "RawVal.h"
 
+class NodeVal;
 class SymbolTable;
 
 struct EvalVal {
@@ -29,10 +29,9 @@ struct EvalVal {
         NamePool::Id id;
         TypeTable::Id ty;
     };
-    RawVal raw;
-    std::vector<EvalVal> elems;
-    
-    EvalVal *ref = nullptr;
+    std::vector<NodeVal> elems;
+
+    NodeVal *ref = nullptr;
 
     EscapeScore escapeScore = 0;
 

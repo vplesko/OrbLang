@@ -63,34 +63,38 @@ bool NodeVal::hasRef() const {
     return false;
 }
 
+void NodeVal::addChild(NodeVal c) {
+    getEvalVal().elems.push_back(move(c));
+}
+
+void NodeVal::addChildren(std::vector<NodeVal> c) {
+    getEvalVal().elems.reserve(getEvalVal().elems.size()+c.size());
+    for (auto &it : c) {
+        addChild(move(it));
+    }
+}
+
 void NodeVal::setTypeAttr(NodeVal t) {
     typeAttr = make_unique<NodeVal>(move(t));
 }
 
+// TODO rename to width
 size_t NodeVal::getLength(const NodeVal &node, const TypeTable *typeTable) {
     if (node.isInvalid()) return 0;
-    if (isRawVal(node, typeTable)) return node.eval.raw.getChildrenCnt();
+    if (isRawVal(node, typeTable)) return node.getChildrenCnt();
     return 1;
 }
 
 bool NodeVal::isEmpty(const NodeVal &node, const TypeTable *typeTable) {
-    return isRawVal(node, typeTable) && node.eval.raw.isEmpty();
+    return isRawVal(node, typeTable) && node.eval.elems.empty();
 }
 
 bool NodeVal::isLeaf(const NodeVal &node, const TypeTable *typeTable) {
-    return !isRawVal(node, typeTable) || node.eval.raw.isEmpty();
+    return !isRawVal(node, typeTable) || node.eval.elems.empty();
 }
 
 bool NodeVal::isRawVal(const NodeVal &node, const TypeTable *typeTable) {
     return node.isEvalVal() && EvalVal::isRaw(node.getEvalVal(), typeTable);
-}
-
-RawVal& NodeVal::getRawVal(NodeVal &node) {
-    return node.getEvalVal().raw;
-}
-
-const RawVal& NodeVal::getRawVal(const NodeVal &node) {
-    return node.getEvalVal().raw;
 }
 
 void NodeVal::escape(NodeVal &node, const TypeTable *typeTable, EscapeScore amount) {
@@ -101,7 +105,7 @@ void NodeVal::escape(NodeVal &node, const TypeTable *typeTable, EscapeScore amou
     } else if (node.isEvalVal()) {
         node.getEvalVal().escapeScore += amount;
         if (isRawVal(node, typeTable)) {
-            for (auto &child : getRawVal(node).children) {
+            for (auto &child : node.getEvalVal().elems) {
                 escape(child, typeTable, amount);
             }
         }
@@ -113,7 +117,7 @@ void NodeVal::unescape(NodeVal &node, const TypeTable *typeTable) {
         node.getLiteralVal().escapeScore -= 1;
     } else if (node.isEvalVal()) {
         if (isRawVal(node, typeTable)) {
-            for (auto it = getRawVal(node).children.rbegin(); it != getRawVal(node).children.rend(); ++it) {
+            for (auto it = node.getEvalVal().elems.rbegin(); it != node.getEvalVal().elems.rend(); ++it) {
                 unescape(*it, typeTable);
             }
         }

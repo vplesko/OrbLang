@@ -1,6 +1,7 @@
 #include "EvalVal.h"
 #include "LiteralVal.h"
 #include "SymbolTable.h"
+#include "NodeVal.h"
 using namespace std;
 
 optional<NamePool::Id> EvalVal::getCallableId() const {
@@ -16,12 +17,12 @@ EvalVal EvalVal::makeVal(TypeTable::Id t, TypeTable *typeTable) {
         const TypeTable::Tuple *tup = typeTable->extractTuple(t).value();
         evalVal.elems.reserve(tup->members.size());
         for (TypeTable::Id membType : tup->members) {
-            evalVal.elems.push_back(makeVal(membType, typeTable));
+            evalVal.elems.push_back(NodeVal(CodeLoc(), makeVal(membType, typeTable)));
         }
     } else if (typeTable->worksAsTypeArr(t)) {
         size_t len = typeTable->extractLenOfArr(t).value();
         TypeTable::Id elemType = typeTable->addTypeIndexOf(t).value();
-        evalVal.elems = vector<EvalVal>(len, makeVal(elemType, typeTable));
+        evalVal.elems = vector<NodeVal>(len, NodeVal(CodeLoc(), makeVal(elemType, typeTable)));
     }
 
     return evalVal;

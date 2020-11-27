@@ -316,7 +316,7 @@ bool Compiler::performFunctionDefinition(const NodeVal &args, const NodeVal &bod
 
     size_t i = 0;
     for (auto &llvmFuncArg : func.llvmFunc->args()) {
-        llvm::Type *llvmArgType = makeLlvmTypeOrError(NodeVal::getRawVal(args).getChild(i).getCodeLoc(), func.argTypes[i]);
+        llvm::Type *llvmArgType = makeLlvmTypeOrError(args.getChild(i).getCodeLoc(), func.argTypes[i]);
         if (llvmArgType == nullptr) return false;
         
         llvm::AllocaInst *llvmAlloca = makeLlvmAlloca(llvmArgType, getNameForLlvm(func.argNames[i]));
@@ -324,7 +324,7 @@ bool Compiler::performFunctionDefinition(const NodeVal &args, const NodeVal &bod
 
         LlvmVal varLlvmVal(func.argTypes[i]);
         varLlvmVal.ref = llvmAlloca;
-        NodeVal varNodeVal(NodeVal::getRawVal(args).getChild(i).getCodeLoc(), varLlvmVal);
+        NodeVal varNodeVal(args.getChild(i).getCodeLoc(), varLlvmVal);
         symbolTable->addVar(func.argNames[i], move(varNodeVal));
 
         ++i;
@@ -773,8 +773,8 @@ NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
 
         vector<llvm::Constant*> llvmConsts;
         llvmConsts.reserve(eval.elems.size());
-        for (const EvalVal &elem : eval.elems) {
-            NodeVal elemPromo = promoteEvalVal(codeLoc, elem);
+        for (const NodeVal &elem : eval.elems) {
+            NodeVal elemPromo = promoteEvalVal(codeLoc, elem.getEvalVal());
             if (elemPromo.isInvalid()) return NodeVal();
             llvmConsts.push_back((llvm::Constant*) elemPromo.getLlvmVal().val);
         }
@@ -783,8 +783,8 @@ NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
     } else if (EvalVal::isTuple(eval, typeTable)) {
         vector<llvm::Constant*> llvmConsts;
         llvmConsts.reserve(eval.elems.size());
-        for (const EvalVal &elem : eval.elems) {
-            NodeVal elemPromo = promoteEvalVal(codeLoc, elem);
+        for (const NodeVal &elem : eval.elems) {
+            NodeVal elemPromo = promoteEvalVal(codeLoc, elem.getEvalVal());
             if (elemPromo.isInvalid()) return NodeVal();
             llvmConsts.push_back((llvm::Constant*) elemPromo.getLlvmVal().val);
         }

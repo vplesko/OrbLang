@@ -59,7 +59,7 @@ NodeVal Parser::makeEmpty() const {
 
 NodeVal Parser::makeEmpty(CodeLoc codeLoc) const {
     EvalVal emptyRaw = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_RAW), typeTable);
-    return NodeVal(loc(), emptyRaw);
+    return NodeVal(codeLoc, emptyRaw);
 }
 
 EscapeScore Parser::parseEscapeScore() {
@@ -157,11 +157,11 @@ NodeVal Parser::parseNode() {
                 next();
 
                 if (children.empty()) {
-                    NodeVal::getRawVal(node).addChild(makeEmpty());
+                    node.addChild(makeEmpty());
                 } else {
                     NodeVal tuple = makeEmpty(children[0].getCodeLoc());
-                    NodeVal::getRawVal(tuple).addChildren(move(children)); // children is emptied here
-                    NodeVal::getRawVal(node).addChild(move(tuple));
+                    tuple.addChildren(move(children)); // children is emptied here
+                    node.addChild(move(tuple));
                 }
             } else {
                 EscapeScore escapeScore = parseEscapeScore();
@@ -179,7 +179,7 @@ NodeVal Parser::parseNode() {
         
         if (!matchCloseBraceOrError(openBrace)) return NodeVal();
 
-        NodeVal::getRawVal(node).addChildren(move(children));
+        node.addChildren(move(children));
     } else {
         while (peek().type != Token::T_SEMICOLON) {
             escapeScore += parseEscapeScore();
@@ -192,7 +192,7 @@ NodeVal Parser::parseNode() {
             if (child.isInvalid()) return NodeVal();
             NodeVal::escape(child, typeTable, escapeScore);
             escapeScore = 0;
-            NodeVal::getRawVal(node).addChild(move(child));
+            node.addChild(move(child));
         }
         next();
     }
