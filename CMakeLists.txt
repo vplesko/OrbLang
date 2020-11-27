@@ -22,6 +22,7 @@ set(HEADER_FILES
     "src/Compiler.h"
     "src/Evaluator.h"
     "src/EvalVal.h"
+    "src/EscapeScore.h"
     "src/Lexer.h"
     "src/LiteralVal.h"
     "src/LlvmVal.h"

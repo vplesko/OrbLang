@@ -45,6 +45,8 @@ public:
     NodeVal& operator=(NodeVal &&other) = default;
 
     CodeLoc getCodeLoc() const { return codeLoc; }
+    bool isEscaped() const;
+    EscapeScore getEscapeScore() const;
     std::optional<TypeTable::Id> getType() const;
     bool hasRef() const;
 
@@ -80,8 +82,7 @@ public:
     static RawVal& getRawVal(NodeVal &node);
     static const RawVal& getRawVal(const NodeVal &node);
 
-    static bool isEscaped(const NodeVal &node, const TypeTable *typeTable);
-    static void escape(NodeVal &node, const TypeTable *typeTable);
+    static void escape(NodeVal &node, const TypeTable *typeTable, EscapeScore amount = 1);
     static void unescape(NodeVal &node, const TypeTable *typeTable);
-    static void copyNonValFields(NodeVal &dst, const NodeVal &src, const TypeTable *typeTable);
+    static void copyNonValFieldsLeaf(NodeVal &dst, const NodeVal &src, const TypeTable *typeTable);
 };

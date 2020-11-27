@@ -21,6 +21,8 @@ class Parser {
 
     NodeVal makeEmpty() const;
     NodeVal makeEmpty(CodeLoc codeLoc) const;
+
+    EscapeScore parseEscapeScore();
     // Returns false on error, otherwise true.
     bool parseTypeAttr(NodeVal &node);
 

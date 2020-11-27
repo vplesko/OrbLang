@@ -1,4 +1,4 @@
-# TODO! raw escaping, unescaping, escape score, +, .
+# TODO! raw +, .
 import "util/io.orb";
 
 eval (fnc foo () raw {
@@ -19,5 +19,26 @@ fnc main () () {
     = b (bar a);
     = a \(+ 1 2);
     = b \();
+
     \();
+    \\();
+    ,();
+    ,,();
+    \,();
+    ,\();
+
+    sym (x:i32 100);
+    println_i32 \,x;
+    println_i32 \,(+ x 1);
+    println_i32 ,\,,\\(+ x 2);
+    println_i32 ,(+ \x 3);
+    println_i32 ,(+ ,x 4);
+    println_i32 ,(+ \,x 5);
+    println_i32 ,(+ ,\x 6);
+    block {
+        \,(println_i32 (+ x 7))
+    };
+    block {
+        ,\(println_i32 (+ x 8))
+    };
 };

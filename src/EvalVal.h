@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <vector>
+#include "EscapeScore.h"
 #include "NamePool.h"
 #include "StringPool.h"
 #include "TypeTable.h"
@@ -33,13 +34,13 @@ struct EvalVal {
     
     EvalVal *ref = nullptr;
 
-    bool escaped = false;
+    EscapeScore escapeScore = 0;
 
     EvalVal() {}
 
     std::optional<TypeTable::Id> getType() const { return type; }
 
-    bool isEscaped() const { return escaped; }
+    bool isEscaped() const { return escapeScore > 0; }
 
     // if is callable, type is meaningless
     // TODO after callables (fncs, macs, specs) are first-class, rework that

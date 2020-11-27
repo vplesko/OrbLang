@@ -62,6 +62,19 @@ NodeVal Parser::makeEmpty(CodeLoc codeLoc) const {
     return NodeVal(loc(), emptyRaw);
 }
 
+EscapeScore Parser::parseEscapeScore() {
+    EscapeScore escapeScore = 0;
+    while (peek().type == Token::T_BACKSLASH || peek().type == Token::T_COMMA) {
+        if (match(Token::T_BACKSLASH)) {
+            ++escapeScore;
+        } else {
+            match(Token::T_COMMA);
+            --escapeScore;
+        }
+    }
+    return escapeScore;
+}
+
 bool Parser::parseTypeAttr(NodeVal &node) {
     if (match(Token::T_COLON)) {
         node.setTypeAttr(parseType());
@@ -132,7 +145,7 @@ NodeVal Parser::parseTerm() {
 NodeVal Parser::parseNode() {
     NodeVal node = makeEmpty();
 
-    bool escaped = match(Token::T_BACKSLASH);
+    EscapeScore escapeScore = parseEscapeScore();
 
     if (peek().type == Token::T_BRACE_L_REG || peek().type == Token::T_BRACE_L_CUR) {
         Token openBrace = next();
@@ -151,7 +164,7 @@ NodeVal Parser::parseNode() {
                     NodeVal::getRawVal(node).addChild(move(tuple));
                 }
             } else {
-                bool escaped = match(Token::T_BACKSLASH);
+                EscapeScore escapeScore = parseEscapeScore();
                 NodeVal child;
                 if (peek().type == Token::T_BRACE_L_REG || peek().type == Token::T_BRACE_L_CUR) {
                     child = parseNode();
@@ -159,7 +172,7 @@ NodeVal Parser::parseNode() {
                     child = parseTerm();
                 }
                 if (child.isInvalid()) return NodeVal();
-                if (escaped) NodeVal::escape(child, typeTable);
+                NodeVal::escape(child, typeTable, escapeScore);
                 children.push_back(move(child));
             }
         }
@@ -169,7 +182,7 @@ NodeVal Parser::parseNode() {
         NodeVal::getRawVal(node).addChildren(move(children));
     } else {
         while (peek().type != Token::T_SEMICOLON) {
-            if (!escaped) escaped = match(Token::T_BACKSLASH);
+            escapeScore += parseEscapeScore();
             NodeVal child;
             if (peek().type == Token::T_BRACE_L_REG || peek().type == Token::T_BRACE_L_CUR) {
                 child = parseNode();
@@ -177,17 +190,15 @@ NodeVal Parser::parseNode() {
                 child = parseTerm();
             }
             if (child.isInvalid()) return NodeVal();
-            if (escaped) NodeVal::escape(child, typeTable);
-            escaped = false;
+            NodeVal::escape(child, typeTable, escapeScore);
+            escapeScore = 0;
             NodeVal::getRawVal(node).addChild(move(child));
         }
         next();
     }
 
-    if (escaped) {
-        NodeVal::escape(node, typeTable);
-        escaped = false;
-    }
+    NodeVal::escape(node, typeTable, escapeScore);
+    escapeScore = 0;
 
     if (!parseTypeAttr(node)) return NodeVal();
 

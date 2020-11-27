@@ -40,6 +40,17 @@ NodeVal& NodeVal::operator=(const NodeVal &other) {
     return *this;
 }
 
+bool NodeVal::isEscaped() const {
+    return (isLiteralVal() && getLiteralVal().isEscaped()) ||
+        (isEvalVal() && getEvalVal().isEscaped());
+}
+
+EscapeScore NodeVal::getEscapeScore() const {
+    if (isLiteralVal()) return getLiteralVal().escapeScore;
+    if (isEvalVal()) return getEvalVal().escapeScore;
+    return 0;
+}
+
 optional<TypeTable::Id> NodeVal::getType() const {
     if (isEvalVal()) return getEvalVal().getType();
     if (isLlvmVal()) return getLlvmVal().type;
@@ -82,19 +93,16 @@ const RawVal& NodeVal::getRawVal(const NodeVal &node) {
     return node.getEvalVal().raw;
 }
 
-bool NodeVal::isEscaped(const NodeVal &node, const TypeTable *typeTable) {
-    return (node.isLiteralVal() && node.getLiteralVal().escaped) ||
-        (node.isEvalVal() && node.getEvalVal().isEscaped());
-}
+void NodeVal::escape(NodeVal &node, const TypeTable *typeTable, EscapeScore amount) {
+    if (amount == 0) return;
 
-void NodeVal::escape(NodeVal &node, const TypeTable *typeTable) {
     if (node.isLiteralVal()) {
-        node.getLiteralVal().escaped = true;
+        node.getLiteralVal().escapeScore += amount;
     } else if (node.isEvalVal()) {
-        node.getEvalVal().escaped = true;
+        node.getEvalVal().escapeScore += amount;
         if (isRawVal(node, typeTable)) {
             for (auto &child : getRawVal(node).children) {
-                escape(child, typeTable);
+                escape(child, typeTable, amount);
             }
         }
     }
@@ -102,21 +110,19 @@ void NodeVal::escape(NodeVal &node, const TypeTable *typeTable) {
 
 void NodeVal::unescape(NodeVal &node, const TypeTable *typeTable) {
     if (node.isLiteralVal()) {
-        node.getLiteralVal().escaped = false;
+        node.getLiteralVal().escapeScore -= 1;
     } else if (node.isEvalVal()) {
         if (isRawVal(node, typeTable)) {
             for (auto it = getRawVal(node).children.rbegin(); it != getRawVal(node).children.rend(); ++it) {
                 unescape(*it, typeTable);
             }
         }
-        node.getEvalVal().escaped = false;
+        node.getEvalVal().escapeScore -= 1;
     }
 }
 
-void NodeVal::copyNonValFields(NodeVal &dst, const NodeVal &src, const TypeTable *typeTable) {
-    if (isEscaped(src, typeTable) && !isEscaped(dst, typeTable)) {
-        escape(dst, typeTable);
-    }
+void NodeVal::copyNonValFieldsLeaf(NodeVal &dst, const NodeVal &src, const TypeTable *typeTable) {
+    escape(dst, typeTable, src.getEscapeScore()-dst.getEscapeScore());
     if (src.hasTypeAttr()) {
         dst.setTypeAttr(src.getTypeAttr());
     }

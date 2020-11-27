@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "EscapeScore.h"
 #include "NamePool.h"
 #include "StringPool.h"
 
@@ -25,7 +26,9 @@ struct LiteralVal {
         bool val_b;
         StringPool::Id val_str;
     };
-    bool escaped = false;
+    EscapeScore escapeScore = 0;
+
+    bool isEscaped() const { return escapeScore > 0; }
 
     static std::size_t getStringLen(const std::string &str) { return str.size()+1; }
 };

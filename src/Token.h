@@ -14,6 +14,7 @@ struct Token {
         T_SEMICOLON,
         T_COLON,
         T_BACKSLASH,
+        T_COMMA,
         T_BRACE_L_REG,
         T_BRACE_R_REG,
         T_BRACE_L_CUR,

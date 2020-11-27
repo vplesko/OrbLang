@@ -204,6 +204,8 @@ Token Lexer::next() {
             nextCh();
         } else if (ch == '\\') {
             tok.type = Token::T_BACKSLASH;
+        } else if (ch == ',') {
+            tok.type = Token::T_COMMA;
         } else if (isalnum(ch) || idSpecialChars.find(ch) != idSpecialChars.npos) {
             int l = col-1;
             while (isValidIdStart(peekCh())) {

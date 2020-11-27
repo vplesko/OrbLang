@@ -19,7 +19,7 @@ NodeVal Processor::processNode(const NodeVal &node) {
 NodeVal Processor::processLeaf(const NodeVal &node) {
     NodeVal prom = node.isLiteralVal() ? promoteLiteralVal(node) : node;
 
-    if (!NodeVal::isEscaped(prom, typeTable) && prom.isEvalVal() && EvalVal::isId(prom.getEvalVal(), typeTable)) {
+    if (!prom.isEscaped() && prom.isEvalVal() && EvalVal::isId(prom.getEvalVal(), typeTable)) {
         return processId(prom);
     }
 
@@ -27,7 +27,7 @@ NodeVal Processor::processLeaf(const NodeVal &node) {
 }
 
 NodeVal Processor::processNonLeaf(const NodeVal &node) {
-    if (NodeVal::isEscaped(node, typeTable)) {
+    if (node.isEscaped()) {
         return processNonLeafEscaped(node);
     }
 
@@ -752,8 +752,8 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
     }
     NodeVal prom(node.getCodeLoc(), eval);
 
-    if (NodeVal::isEscaped(node, typeTable))
-        NodeVal::copyNonValFields(prom, node, typeTable);
+    if (node.isEscaped())
+        NodeVal::copyNonValFieldsLeaf(prom, node, typeTable);
 
     if (node.hasTypeAttr() && !isId) {
         NodeVal nodeTy = processAndCheckIsType(node.getTypeAttr());
@@ -1118,7 +1118,7 @@ NodeVal Processor::processWithEscapeIfLeafAndCheckIsId(const NodeVal &node) {
 }
 
 NodeVal Processor::processForTypeArg(const NodeVal &node) {
-    if (!NodeVal::isLeaf(node, typeTable) || NodeVal::isEscaped(node, typeTable)) return processNode(node);
+    if (!NodeVal::isLeaf(node, typeTable) || node.isEscaped()) return processNode(node);
     
     NodeVal esc = processWithEscapeIfLeaf(node);
     if (esc.isInvalid()) return NodeVal();
