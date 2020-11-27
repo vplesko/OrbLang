@@ -56,16 +56,18 @@ protected:
     bool checkInGlobalScope(CodeLoc codeLoc, bool orError);
     bool checkInLocalScope(CodeLoc codeLoc, bool orError);
     bool checkHasType(const NodeVal &node, bool orError);
+    bool checkIsEvalTime(CodeLoc codeLoc, const NodeVal &node, bool orError);
+    bool checkIsEvalTime(const NodeVal &node, bool orError) { return checkIsEvalVal(node.getCodeLoc(), node, orError); }
     bool checkIsEvalVal(CodeLoc codeLoc, const NodeVal &node, bool orError);
     bool checkIsEvalVal(const NodeVal &node, bool orError) { return checkIsEvalVal(node.getCodeLoc(), node, orError); }
     bool checkIsLlvmVal(CodeLoc codeLoc, const NodeVal &node, bool orError);
     bool checkIsLlvmVal(const NodeVal &node, bool orError) { return checkIsLlvmVal(node.getCodeLoc(), node, orError); }
+    bool checkIsRaw(const NodeVal &node, bool orError);
 private:
     bool checkIsTopmost(CodeLoc codeLoc, bool orError);
     bool checkIsId(const NodeVal &node, bool orError);
     bool checkIsType(const NodeVal &node, bool orError);
     bool checkIsBool(const NodeVal &node, bool orError);
-    bool checkIsRaw(const NodeVal &node, bool orError);
     // Checks that the node is EvalVal or LlvmVal.
     bool checkIsValue(const NodeVal &node, bool orError);
     bool checkExactlyChildren(const NodeVal &node, std::size_t n, bool orError);
