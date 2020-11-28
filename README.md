@@ -1,10 +1,10 @@
 # Orb
 
-Orb is a general-purpose compiled programming language. It features strict typing, compile-time computations, and manual memory management.
+Orb is a general-purpose compiled programming language. It features static typing, manual memory management, and extensive compile-time computations. Identifiers, types, and even Orb code itself are all first-class values during compilation of Orb programs (referred to as evaluation time).
 
 **This project is a hobby effort and very much a work in progress. A good number of key features are still missing and the tooling may not be very user-friendly.**
 
-> Check `doc/examples` for some examples for Orb code.
+> **Check `doc/examples` for some examples for Orb code.**
 
 ## Install
 
@@ -121,9 +121,9 @@ u8, u16, u32, u64 - unsigned integrals
 f32, f64 - floating point numerals
 c8 - 8-bit char
 ptr - non-descript pointer (void* in C)
-id - identifier (first-class value during compile-time)
-type - type of a value (first-class value during compile-time)
-raw - unprocessed list of values, usually represents Orb code (first-class value during compile-time)
+id - identifier (first-class value at evaluation)
+type - type of a value (first-class value at evaluation)
+raw - unprocessed list of values, usually represents Orb code (first-class value at evaluation)
 i32 cn - constant i32
 i32 4 - array of 4 i32s
 i32 * - pointer to a i32 (can be dereferenced)
@@ -135,7 +135,7 @@ i32 cn * cn - constant pointer to a constant i32
 (i32 (u32 cn *) (c8 bool)) - tuple of a i32, a pointer to a constant u32, and a tuple of a c8 and bool
 ```
 
-`eval` is used to execute code at compile-time. This code calculates the 20th number in the Fibonacci sequence while compiling, and prints it at runtime:
+`eval` is used to execute code at compile-time (ie. to evaluate it instead). This code calculates the 20th number in the Fibonacci sequence while compiling, and prints it at runtime:
 
 ```
 import "clib.orb";
