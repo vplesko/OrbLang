@@ -20,7 +20,26 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
         evalVal.ref = &ref;
         return NodeVal(codeLoc, evalVal);
     } else {
-        // TODO! allowing eval to do this (needed for macro args) opens up UB with older than current vals being loaded
+        // the only case where loading non-eval vals here is allowed is if they were passed in an invocation
+        optional<MacroValue> currMac = symbolTable->getCurrMacro();
+        if (!currMac.has_value()) {
+            msgs->errorEvaluationNotSupported(codeLoc);
+            return NodeVal();
+        }
+
+        // if there's a local symbol with same name as curr macro arg, it is definitely EvalVal, so won't get here
+        bool isMacroArg = false;
+        for (NamePool::Id name : currMac.value().argNames) {
+            if (id == name) {
+                isMacroArg = true;
+                break;
+            }
+        }
+        if (!isMacroArg) {
+            msgs->errorEvaluationNotSupported(codeLoc);
+            return NodeVal();
+        }
+
         return ref;
     }
 }
