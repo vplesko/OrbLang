@@ -4,6 +4,8 @@ Orb is a general-purpose compiled programming language. It features strict typin
 
 **This project is a hobby effort and very much a work in progress. A good number of key features are still missing and the tooling may not be very user-friendly.**
 
+> Check `doc/examples` for some examples for Orb code.
+
 ## Install
 
 Following are required:
