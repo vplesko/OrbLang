@@ -38,6 +38,7 @@ protected:
     virtual NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) =0;
     virtual bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) =0;
     virtual bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func) =0;
+    virtual bool performMacroDefinition(const NodeVal &args, const NodeVal &body, MacroValue &macro) =0;
     virtual bool performRet(CodeLoc codeLoc) =0;
     virtual bool performRet(CodeLoc codeLoc, const NodeVal &node) =0;
     virtual NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) =0;
@@ -75,6 +76,7 @@ private:
     bool checkAtMostChildren(const NodeVal &node, std::size_t n, bool orError);
     bool checkBetweenChildren(const NodeVal &node, std::size_t nLo, std::size_t nHi, bool orError);
     bool checkImplicitCastable(const NodeVal &node, TypeTable::Id ty, bool orError);
+    bool checkNoArgNameDuplicates(const NodeVal &nodeArgs, const std::vector<NamePool::Id> &argNames, bool orError);
 
     NodeVal dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty);
     NodeVal dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
@@ -102,7 +104,6 @@ private:
     bool applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &node);
     bool implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly);
 
-    NodeVal processInvoke(const NodeVal &node, const NodeVal &starting);
     NodeVal processType(const NodeVal &node, const NodeVal &starting);
     NodeVal processId(const NodeVal &node);
     NodeVal processSym(const NodeVal &node);
@@ -112,9 +113,10 @@ private:
     NodeVal processLoop(const NodeVal &node);
     NodeVal processPass(const NodeVal &node);
     NodeVal processCall(const NodeVal &node, const NodeVal &starting);
+    NodeVal processInvoke(const NodeVal &node, const NodeVal &starting);
     NodeVal processFnc(const NodeVal &node);
-    NodeVal processRet(const NodeVal &node);
     NodeVal processMac(const NodeVal &node);
+    NodeVal processRet(const NodeVal &node);
     NodeVal processEval(const NodeVal &node);
     NodeVal processImport(const NodeVal &node);
     NodeVal processOper(const NodeVal &node, Oper op);

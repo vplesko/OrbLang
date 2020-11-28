@@ -3,18 +3,6 @@
 #include "utils.h"
 using namespace std;
 
-bool FuncValue::sameSignature(const FuncValue &fl, const FuncValue &fr) {
-    if (fl.name != fr.name) return false;
-    if (fl.variadic != fr.variadic) return false;
-    if (fl.argCnt() != fr.argCnt()) return false;
-    for (size_t i = 0; i < fl.argCnt(); ++i) {
-        if (fl.argTypes[i] != fr.argTypes[i]) return false;
-    }
-    if (fl.retType != fr.retType) return false;
-
-    return true;
-}
-
 SymbolTable::SymbolTable() {
     globalBlockChain.push_back(BlockInternal());
 }
@@ -28,6 +16,10 @@ void SymbolTable::newBlock(Block b) {
 
 void SymbolTable::newBlock(const FuncValue &f) {
     localBlockChains.push_back(make_pair(f, vector<BlockInternal>(1, BlockInternal())));
+}
+
+void SymbolTable::newBlock(const MacroValue &m) {
+    localBlockChains.push_back(make_pair(m, vector<BlockInternal>(1, BlockInternal())));
 }
 
 void SymbolTable::endBlock() {
@@ -92,8 +84,8 @@ const FuncValue* SymbolTable::getFunction(NamePool::Id name) const {
     return &loc->second;
 }
 
-void SymbolTable::registerMacro(const MacroValue &val) {
-    macros[val.name] = move(val);
+MacroValue* SymbolTable::registerMacro(const MacroValue &val) {
+    return &(macros[val.name] = val);
 }
 
 const MacroValue* SymbolTable::getMacro(NamePool::Id name) const {
@@ -166,7 +158,14 @@ SymbolTable::Block* SymbolTable::getBlock(NamePool::Id name) {
 
 optional<FuncValue> SymbolTable::getCurrFunc() const {
     if (localBlockChains.empty()) return nullopt;
-    return localBlockChains.back().first;
+    if (const FuncValue *p = get_if<FuncValue>(&localBlockChains.back().first)) return *p;
+    return nullopt;
+}
+
+optional<MacroValue> SymbolTable::getCurrMacro() const {
+    if (localBlockChains.empty()) return nullopt;
+    if (const MacroValue *p = get_if<MacroValue>(&localBlockChains.back().first)) return *p;
+    return nullopt;
 }
 
 bool SymbolTable::isFuncName(NamePool::Id name) const {

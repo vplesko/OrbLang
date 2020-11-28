@@ -346,6 +346,11 @@ bool Compiler::performFunctionDefinition(const NodeVal &args, const NodeVal &bod
     return true;
 }
 
+bool Compiler::performMacroDefinition(const NodeVal &args, const NodeVal &body, MacroValue &macro) {
+    msgs->errorUnknown(body.getCodeLoc());
+    return false;
+}
+
 bool Compiler::performRet(CodeLoc codeLoc) {
     llvmBuilder.CreateRetVoid();
     return true;

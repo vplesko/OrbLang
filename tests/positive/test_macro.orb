@@ -1,0 +1,12 @@
+import "util/io.orb";
+
+eval (mac foo () {
+    ret ();
+});
+
+eval (mac bar (a b) {
+    ret \(,a ,b);
+});
+
+fnc main () () {
+};

@@ -42,6 +42,7 @@ public:
     NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args);
     bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func);
     bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func);
+    bool performMacroDefinition(const NodeVal &args, const NodeVal &body, MacroValue &macro);
     bool performRet(CodeLoc codeLoc);
     bool performRet(CodeLoc codeLoc, const NodeVal &node);
     NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op);

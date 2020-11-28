@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <vector>
 #include <string>
+#include <variant>
 #include "NamePool.h"
 #include "TypeTable.h"
 #include "NodeVal.h"
@@ -23,8 +24,6 @@ struct FuncValue {
     bool hasRet() const { return retType.has_value(); }
 
     bool isEval() const { return evalFunc.has_value(); }
-
-    static bool sameSignature(const FuncValue &fl, const FuncValue &fr);
 };
 
 struct MacroValue {
@@ -59,10 +58,11 @@ private:
 
     // Do NOT guarantee pointer stability of blocks.
     std::vector<BlockInternal> globalBlockChain;
-    std::vector<std::pair<FuncValue, std::vector<BlockInternal>>> localBlockChains;
+    std::vector<std::pair<std::variant<FuncValue, MacroValue>, std::vector<BlockInternal>>> localBlockChains;
 
     void newBlock(Block b);
     void newBlock(const FuncValue &f);
+    void newBlock(const MacroValue &m);
     void endBlock();
 
     const BlockInternal* getLastBlockInternal() const;
@@ -78,7 +78,7 @@ public:
     FuncValue* registerFunc(const FuncValue &val);
     const FuncValue* getFunction(NamePool::Id name) const;
 
-    void registerMacro(const MacroValue &val);
+    MacroValue* registerMacro(const MacroValue &val);
     const MacroValue* getMacro(NamePool::Id name) const;
 
     bool inGlobalScope() const;
@@ -88,6 +88,7 @@ public:
     Block* getBlock(NamePool::Id name);
 
     std::optional<FuncValue> getCurrFunc() const;
+    std::optional<MacroValue> getCurrMacro() const;
 
     bool isVarName(NamePool::Id name) const { return getVar(name) != nullptr; }
     bool isFuncName(NamePool::Id name) const;
@@ -109,6 +110,10 @@ public:
     // ref cuz must not be null
     BlockControl(SymbolTable *symTable, const FuncValue &func) : symTable(symTable) {
         if (symTable != nullptr) symTable->newBlock(func);
+    }
+    // ref cuz must not be null
+    BlockControl(SymbolTable *symTable, const MacroValue &macro) : symTable(symTable) {
+        if (symTable != nullptr) symTable->newBlock(macro);
     }
 
     BlockControl(const BlockControl&) = delete;

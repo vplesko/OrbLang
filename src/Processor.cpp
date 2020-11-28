@@ -121,10 +121,6 @@ NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
     return NodeVal(node.getCodeLoc(), evalRaw);
 }
 
-NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
-    return NodeVal(); // TODO
-}
-
 NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
     if (checkExactlyChildren(node, 1, false))
         return NodeVal(node.getCodeLoc(), EvalVal::copyNoRef(starting.getEvalVal()));
@@ -488,6 +484,11 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
     }
 }
 
+NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
+    // TODO! always to eval
+    return NodeVal(); // TODO!
+}
+
 // TODO allow function definition after declaration
 NodeVal Processor::processFnc(const NodeVal &node) {
     if (!checkInGlobalScope(node.getCodeLoc(), true) ||
@@ -537,14 +538,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     }
 
     // check no arg name duplicates
-    for (size_t i = 0; i+1 < nodeArgs.getChildrenCnt(); ++i) {
-        for (size_t j = i+1; j < nodeArgs.getChildrenCnt(); ++j) {
-            if (val.argNames[i] == val.argNames[j]) {
-                msgs->errorArgNameDuplicate(nodeArgs.getChild(j).getCodeLoc(), val.argNames[j]);
-                return NodeVal();
-            }
-        }
-    }
+    if (!checkNoArgNameDuplicates(nodeArgs, val.argNames, true)) return NodeVal();
 
     // ret type
     const NodeVal &nodeRetType = node.getChild(3);
@@ -575,6 +569,54 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     return NodeVal(true);
 }
 
+NodeVal Processor::processMac(const NodeVal &node) {
+    if (!checkInGlobalScope(node.getCodeLoc(), true) ||
+        !checkExactlyChildren(node, 4, true)) {
+        return NodeVal();
+    }
+
+    MacroValue val;
+
+    // name
+    NodeVal name = processWithEscapeIfLeafAndCheckIsId(node.getChild(1));
+    if (name.isInvalid()) return NodeVal();
+    if (isSkippingProcessing()) return NodeVal(true);
+    if (!symbolTable->nameAvailable(name.getEvalVal().id, namePool, typeTable)) {
+        msgs->errorMacroNameTaken(name.getCodeLoc(), name.getEvalVal().id);
+        return NodeVal();
+    }
+    val.name = name.getEvalVal().id;
+
+    // arguments
+    const NodeVal &nodeArgs = node.getChild(2);
+    if (!checkIsRaw(nodeArgs, true)) return NodeVal();
+    // TODO allow for this to be received from some prior processing, rather than just looking at children (same applies to other places, eg. func, sym)
+    for (size_t i = 0; i < nodeArgs.getChildrenCnt(); ++i) {
+        const NodeVal &nodeArg = nodeArgs.getChild(i);
+
+        NodeVal arg = processWithEscapeIfLeafAndCheckIsId(nodeArg);
+        if (arg.isInvalid()) return NodeVal();
+        if (isSkippingProcessing()) return NodeVal(true);
+        NamePool::Id argId = arg.getEvalVal().id;
+        val.argNames.push_back(argId);
+    }
+
+    // check no arg name duplicates
+    if (!checkNoArgNameDuplicates(nodeArgs, val.argNames, true)) return NodeVal();
+
+    // body
+    const NodeVal *nodeBodyPtr = &node.getChild(3);
+    if (!checkIsRaw(*nodeBodyPtr, true)) {
+        return NodeVal();
+    }
+
+    MacroValue *symbVal = symbolTable->registerMacro(val);
+    if (!performMacroDefinition(nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();
+
+    return NodeVal(true);
+}
+
+// TODO! for macro
 NodeVal Processor::processRet(const NodeVal &node) {
     if (!checkBetweenChildren(node, 1, 2, true)) {
         return NodeVal();
@@ -608,10 +650,6 @@ NodeVal Processor::processRet(const NodeVal &node) {
     }
 
     return NodeVal(true);
-}
-
-NodeVal Processor::processMac(const NodeVal &node) {
-    return NodeVal(); // TODO
 }
 
 NodeVal Processor::processEval(const NodeVal &node) {
@@ -1351,6 +1389,18 @@ bool Processor::checkImplicitCastable(const NodeVal &node, TypeTable::Id ty, boo
         if (!typeTable->isImplicitCastable(nodeTy, ty)) {
             if (orError) msgs->errorExprCannotImplicitCast(node.getCodeLoc(), nodeTy, ty);
             return false;
+        }
+    }
+    return true;
+}
+
+bool Processor::checkNoArgNameDuplicates(const NodeVal &nodeArgs, const std::vector<NamePool::Id> &argNames, bool orError) {
+    for (size_t i = 0; i+1 < nodeArgs.getChildrenCnt(); ++i) {
+        for (size_t j = i+1; j < nodeArgs.getChildrenCnt(); ++j) {
+            if (argNames[i] == argNames[j]) {
+                if (orError) msgs->errorArgNameDuplicate(nodeArgs.getChild(j).getCodeLoc(), argNames[j]);
+                return false;
+            }
         }
     }
     return true;

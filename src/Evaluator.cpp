@@ -163,6 +163,11 @@ bool Evaluator::performFunctionDefinition(const NodeVal &args, const NodeVal &bo
     return true;
 }
 
+bool Evaluator::performMacroDefinition(const NodeVal &args, const NodeVal &body, MacroValue &macro) {
+    macro.body = body;
+    return true;
+}
+
 bool Evaluator::performRet(CodeLoc codeLoc) {
     retIssued = true;
     return true;
