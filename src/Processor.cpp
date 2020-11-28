@@ -23,7 +23,7 @@ NodeVal Processor::processLeaf(const NodeVal &node) {
         return processId(prom);
     }
 
-    NodeVal::resetEscapeScore(prom, typeTable);
+    NodeVal::unescape(prom, typeTable);
     return prom;
 }
 
@@ -99,7 +99,8 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
 }
 
 NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
-    EvalVal evalRaw = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_RAW), typeTable);
+    NodeVal nodeValRaw = NodeVal::makeEmpty(node.getCodeLoc(), typeTable);
+    NodeVal::escape(nodeValRaw, typeTable, node.getEscapeScore()-1);
 
     bool anyRawCn = false;
     for (const auto &it : node.getEvalVal().elems) {
@@ -116,12 +117,13 @@ NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
                 anyRawCn = true;
         }
 
-        evalRaw.elems.push_back(move(childProc));
+        nodeValRaw.getEvalVal().elems.push_back(move(childProc));
     }
 
-    if (anyRawCn) evalRaw.getType() = typeTable->addTypeCnOf(evalRaw.getType().value());
+    if (anyRawCn)
+        nodeValRaw.getEvalVal().getType() = typeTable->addTypeCnOf(nodeValRaw.getType().value());
 
-    return NodeVal(node.getCodeLoc(), evalRaw);
+    return nodeValRaw;
 }
 
 NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {

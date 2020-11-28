@@ -53,15 +53,6 @@ bool Parser::matchCloseBraceOrError(Token openBrace) {
     return true;
 }
 
-NodeVal Parser::makeEmpty() const {
-    return makeEmpty(loc());
-}
-
-NodeVal Parser::makeEmpty(CodeLoc codeLoc) const {
-    EvalVal emptyRaw = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_RAW), typeTable);
-    return NodeVal(codeLoc, emptyRaw);
-}
-
 EscapeScore Parser::parseEscapeScore() {
     EscapeScore escapeScore = 0;
     while (peek().type == Token::T_BACKSLASH || peek().type == Token::T_COMMA) {
@@ -143,7 +134,7 @@ NodeVal Parser::parseTerm() {
 }
 
 NodeVal Parser::parseNode() {
-    NodeVal node = makeEmpty();
+    NodeVal node = NodeVal::makeEmpty(loc(), typeTable);
 
     EscapeScore escapeScore = parseEscapeScore();
 
@@ -157,9 +148,9 @@ NodeVal Parser::parseNode() {
                 next();
 
                 if (children.empty()) {
-                    node.addChild(makeEmpty());
+                    node.addChild(NodeVal::makeEmpty(loc(), typeTable));
                 } else {
-                    NodeVal tuple = makeEmpty(children[0].getCodeLoc());
+                    NodeVal tuple = NodeVal::makeEmpty(children[0].getCodeLoc(), typeTable);
                     tuple.addChildren(move(children)); // children is emptied here
                     node.addChild(move(tuple));
                 }

@@ -1,0 +1,15 @@
+import "base.orb";
+
+fnc printf(fmt:(c8 cn []) ...) ();
+
+eval (mac sayHellos (cnt) {
+    sym (r ());
+    range i cnt {
+        = r (+ r \((printf "Hello!\n")));
+    };
+    ret \(block ,r);
+});
+
+fnc main () () {
+    sayHellos 100;
+};

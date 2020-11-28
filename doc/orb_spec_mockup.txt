@@ -75,13 +75,13 @@ processing leaf:
 	if id and not escaped:
 		process as var
 	else:
-		reset escape score
+		unescape once
 		return as is
 
 processing non-leaf:
 	if escaped:
 		process all children
-		return raw
+		return raw with escape score of 1 less
 	process starting
 	if starting is macro:
 		invoke

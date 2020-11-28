@@ -82,11 +82,10 @@ public:
 
     static bool isEmpty(const NodeVal &node, const TypeTable *typeTable);
     static bool isLeaf(const NodeVal &node, const TypeTable *typeTable);
-
     static bool isRawVal(const NodeVal &node, const TypeTable *typeTable);
 
+    static NodeVal makeEmpty(CodeLoc codeLoc, TypeTable *typeTable);
     static void escape(NodeVal &node, const TypeTable *typeTable, EscapeScore amount = 1);
     static void unescape(NodeVal &node, const TypeTable *typeTable);
-    static void resetEscapeScore(NodeVal &node, const TypeTable *typeTable);
     static void copyNonValFieldsLeaf(NodeVal &dst, const NodeVal &src, const TypeTable *typeTable);
 };

@@ -90,6 +90,11 @@ bool NodeVal::isRawVal(const NodeVal &node, const TypeTable *typeTable) {
     return node.isEvalVal() && EvalVal::isRaw(node.getEvalVal(), typeTable);
 }
 
+NodeVal NodeVal::makeEmpty(CodeLoc codeLoc, TypeTable *typeTable) {
+    EvalVal emptyRaw = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_RAW), typeTable);
+    return NodeVal(codeLoc, emptyRaw);
+}
+
 void NodeVal::escape(NodeVal &node, const TypeTable *typeTable, EscapeScore amount) {
     if (amount == 0) return;
 
@@ -115,19 +120,6 @@ void NodeVal::unescape(NodeVal &node, const TypeTable *typeTable) {
             }
         }
         node.getEvalVal().escapeScore -= 1;
-    }
-}
-
-void NodeVal::resetEscapeScore(NodeVal &node, const TypeTable *typeTable) {
-    if (node.isLiteralVal()) {
-        node.getLiteralVal().escapeScore = 0;
-    } else if (node.isEvalVal()) {
-        if (isRawVal(node, typeTable)) {
-            for (auto it = node.getEvalVal().elems.rbegin(); it != node.getEvalVal().elems.rend(); ++it) {
-                resetEscapeScore(*it, typeTable);
-            }
-        }
-        node.getEvalVal().escapeScore = 0;
     }
 }
 

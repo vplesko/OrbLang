@@ -72,7 +72,7 @@ import "clib.orb";
 
 fnc fizzbuzz (top:u32) () {
     sym (i:u32 1);
-    block for-loop () {
+    block {
         # exit after top is exceeded
         exit (> i top);
 
