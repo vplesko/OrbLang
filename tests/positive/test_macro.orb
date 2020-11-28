@@ -1,12 +1,49 @@
 import "util/io.orb";
 
-eval (mac foo () {
+eval (mac m1 () {
     ret ();
 });
 
-eval (mac bar (a b) {
+eval (mac m2 (a b) {
     ret \(,a ,b);
 });
 
+eval (mac m3 (a) {
+    ret \(m2 println_i32 ,a);
+});
+
+eval (mac m4 (a b) {
+    m2 sym (x ,a);
+    ret \(,x ,b);
+});
+
+eval (mac ++ (a) {
+    ret \(= ,a (+ ,a 1));
+});
+
+eval (mac passthrough (a) {
+    ret ,a;
+});
+
 fnc main () () {
+    m1;
+    m2 println_i32 100;
+    m2 println_i32 (+ 100 1);
+    m2 println_i32 ,(+ 100 2);
+    m2 ,println_i32 (+ 100 3);
+    sym (x 104);
+    m2 println_i32 ,x;
+    m2 println_i32 (m2 + 105);
+    m3 106;
+    m4 println_i32 107;
+    = x 107;
+    ++ x;
+    println_i32 x;
+    println_i32 (++ x);
+    = x 0;
+    = (++ x) 110;
+    println_i32 x;
+    println_i32 (passthrough 111);
+    = x 112;
+    println_i32 (passthrough ,x);
 };

@@ -30,6 +30,8 @@ struct MacroValue {
     NamePool::Id name;
     std::vector<NamePool::Id> argNames;
     NodeVal body;
+
+    std::size_t argCnt() const { return argNames.size(); }
 };
 
 class SymbolTable {

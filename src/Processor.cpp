@@ -23,6 +23,7 @@ NodeVal Processor::processLeaf(const NodeVal &node) {
         return processId(prom);
     }
 
+    NodeVal::resetEscapeScore(prom, typeTable);
     return prom;
 }
 
@@ -38,6 +39,7 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
     if (starting.isEvalVal() && EvalVal::isMacro(starting.getEvalVal(), symbolTable)) {
         NodeVal invoked = processInvoke(node, starting);
         if (invoked.isInvalid()) return NodeVal();
+        if (isSkippingProcessing()) return NodeVal(true);
 
         return processNode(invoked);
     }
@@ -105,6 +107,7 @@ NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
         if (childProc.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(true);
 
+        // TODO the fact refs are kept for non-raws can lead to segfaults when raw is passed to outer scope
         if (NodeVal::isRawVal(childProc, typeTable)) {
             if (childProc.hasRef())
                 childProc.getEvalVal().ref = nullptr;
@@ -485,8 +488,31 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
 }
 
 NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
-    // TODO! always to eval
-    return NodeVal(); // TODO!
+    NamePool::Id name = starting.getEvalVal().getCallableId().value();
+    const MacroValue *macroVal = symbolTable->getMacro(name);
+    if (macroVal == nullptr) {
+        msgs->errorMacroNotFound(starting.getCodeLoc(), name);
+        return NodeVal();
+    }
+    
+    size_t providedArgCnt = node.getChildrenCnt()-1;
+    if (macroVal->argCnt() != providedArgCnt) {
+        msgs->errorUnknown(node.getCodeLoc());
+        return NodeVal();    
+    }
+
+    vector<NodeVal> args;
+    for (size_t i = 0; i < providedArgCnt; ++i) {
+        NodeVal arg = node.getChild(i+1);
+        NodeVal::escape(arg, typeTable);
+        arg = processNode(arg);
+        if (arg.isInvalid()) return NodeVal();
+        if (isSkippingProcessing()) return NodeVal(true);
+
+        args.push_back(move(arg));
+    }
+
+    return evaluator->performInvoke(node.getCodeLoc(), *macroVal, args);
 }
 
 // TODO allow function definition after declaration
@@ -616,40 +642,51 @@ NodeVal Processor::processMac(const NodeVal &node) {
     return NodeVal(true);
 }
 
-// TODO! for macro
 NodeVal Processor::processRet(const NodeVal &node) {
     if (!checkBetweenChildren(node, 1, 2, true)) {
         return NodeVal();
     }
 
     optional<FuncValue> optFuncValue = symbolTable->getCurrFunc();
-    if (!optFuncValue.has_value()) {
-        msgs->errorUnknown(node.getCodeLoc());
-        return NodeVal();
-    }
+    optional<MacroValue> optMacroValue = symbolTable->getCurrMacro();
 
-    bool retsVal = node.getChildrenCnt() == 2;
-    if (retsVal) {
-        if (!optFuncValue.value().hasRet()) {
-            msgs->errorUnknown(node.getCodeLoc());
-            return NodeVal();
+    if (optFuncValue.has_value()) {
+        bool retsVal = node.getChildrenCnt() == 2;
+        if (retsVal) {
+            if (!optFuncValue.value().hasRet()) {
+                msgs->errorUnknown(node.getCodeLoc());
+                return NodeVal();
+            }
+
+            NodeVal val = processAndImplicitCast(node.getChild(1), optFuncValue.value().retType.value());
+            if (val.isInvalid()) return NodeVal();
+            if (isSkippingProcessing()) return NodeVal(true);
+
+            if (!performRet(node.getCodeLoc(), val)) return NodeVal();
+        } else {
+            if (optFuncValue.value().hasRet()) {
+                msgs->errorRetNoValue(node.getCodeLoc(), optFuncValue.value().retType.value());
+                return NodeVal();
+            }
+
+            if (!performRet(node.getCodeLoc())) return NodeVal();
         }
 
-        NodeVal val = processAndImplicitCast(node.getChild(1), optFuncValue.value().retType.value());
+        return NodeVal(true);
+    } else if (optMacroValue.has_value()) {
+        if (!checkExactlyChildren(node, 2, true)) return NodeVal();
+
+        NodeVal val = processNode(node.getChild(1));
         if (val.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(true);
 
         if (!performRet(node.getCodeLoc(), val)) return NodeVal();
+
+        return NodeVal(true);
     } else {
-        if (optFuncValue.value().hasRet()) {
-            msgs->errorRetNoValue(node.getCodeLoc(), optFuncValue.value().retType.value());
-            return NodeVal();
-        }
-
-        if (!performRet(node.getCodeLoc())) return NodeVal();
+        msgs->errorUnknown(node.getCodeLoc());
+        return NodeVal();
     }
-
-    return NodeVal(true);
 }
 
 NodeVal Processor::processEval(const NodeVal &node) {

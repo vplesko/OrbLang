@@ -289,6 +289,11 @@ NodeVal Compiler::performCall(CodeLoc codeLoc, const FuncValue &func, const std:
     }
 }
 
+NodeVal Compiler::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args) {
+    msgs->errorInternal(codeLoc);
+    return NodeVal();
+}
+
 bool Compiler::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
     vector<llvm::Type*> llvmArgTypes(func.argCnt());
     for (size_t i = 0; i < func.argCnt(); ++i) {

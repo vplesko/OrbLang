@@ -75,6 +75,7 @@ processing leaf:
 	if id and not escaped:
 		process as var
 	else:
+		reset escape score
 		return as is
 
 processing non-leaf:

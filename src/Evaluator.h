@@ -40,6 +40,7 @@ public:
     bool performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond);
     bool performPass(CodeLoc codeLoc, SymbolTable::Block &block, const NodeVal &val);
     NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args);
+    NodeVal performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args);
     bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func);
     bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func);
     bool performMacroDefinition(const NodeVal &args, const NodeVal &body, MacroValue &macro);

@@ -15,11 +15,14 @@ bool Evaluator::isRepeatingProcessing(optional<NamePool::Id> block) const {
 }
 
 NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
-    if (!checkIsEvalVal(codeLoc, ref, true)) return NodeVal();
-
-    EvalVal evalVal(ref.getEvalVal());
-    evalVal.ref = &ref;
-    return NodeVal(codeLoc, evalVal);
+    if (checkIsEvalVal(codeLoc, ref, false)) {
+        EvalVal evalVal(ref.getEvalVal());
+        evalVal.ref = &ref;
+        return NodeVal(codeLoc, evalVal);
+    } else {
+        // TODO! allowing eval to do this (needed for macro args) opens up UB with older than current vals being loaded
+        return ref;
+    }
 }
 
 NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) {
@@ -150,6 +153,27 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
         resetSkipIssued();
         return NodeVal(true);
     }
+}
+
+NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args) {
+    BlockControl blockCtrl(symbolTable, macro);
+
+    for (size_t i = 0; i < args.size(); ++i) {
+        symbolTable->addVar(macro.argNames[i], args[i]);
+    }
+
+    if (!processChildNodes(macro.body)) {
+        return NodeVal();
+    }
+
+    if (!retVal.has_value()) {
+        msgs->errorUnknown(codeLoc);
+        return NodeVal();
+    }
+
+    NodeVal ret = move(retVal.value());
+    resetSkipIssued();
+    return move(ret);
 }
 
 bool Evaluator::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {

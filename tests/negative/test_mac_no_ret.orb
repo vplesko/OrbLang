@@ -1,0 +1,5 @@
+eval (mac foo () {});
+
+fnc main () () {
+    foo;
+};

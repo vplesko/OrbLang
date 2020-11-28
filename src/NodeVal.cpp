@@ -118,6 +118,19 @@ void NodeVal::unescape(NodeVal &node, const TypeTable *typeTable) {
     }
 }
 
+void NodeVal::resetEscapeScore(NodeVal &node, const TypeTable *typeTable) {
+    if (node.isLiteralVal()) {
+        node.getLiteralVal().escapeScore = 0;
+    } else if (node.isEvalVal()) {
+        if (isRawVal(node, typeTable)) {
+            for (auto it = node.getEvalVal().elems.rbegin(); it != node.getEvalVal().elems.rend(); ++it) {
+                resetEscapeScore(*it, typeTable);
+            }
+        }
+        node.getEvalVal().escapeScore = 0;
+    }
+}
+
 void NodeVal::copyNonValFieldsLeaf(NodeVal &dst, const NodeVal &src, const TypeTable *typeTable) {
     escape(dst, typeTable, src.getEscapeScore()-dst.getEscapeScore());
     if (src.hasTypeAttr()) {
