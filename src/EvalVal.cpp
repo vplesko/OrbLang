@@ -170,6 +170,7 @@ bool EvalVal::isImplicitCastable(const EvalVal &val, TypeTable::Id t, const Stri
     return false;
 }
 
+// keep in sync with Evaluator::performCast
 bool EvalVal::isCastable(const EvalVal &val, TypeTable::Id dstTypeId, const StringPool *stringPool, const TypeTable *typeTable) {
     TypeTable::Id srcTypeId = val.type.value();
 
@@ -228,11 +229,23 @@ bool EvalVal::isCastable(const EvalVal &val, TypeTable::Id dstTypeId, const Stri
             typeTable->worksAsTypeU(dstTypeId) ||
             typeTable->worksAsTypeB(dstTypeId) ||
             typeTable->worksAsTypeAnyP(dstTypeId);
-    } else if (typeTable->worksAsTypeArr(srcTypeId) || typeTable->worksAsTuple(srcTypeId) ||
-        typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_ID) || typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE)) {
+    } else if (typeTable->worksAsTypeArr(srcTypeId) ||
+        typeTable->worksAsTuple(srcTypeId) ||
+        typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_ID) ||
+        typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE) ||
+        typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_RAW)) {
         // these types are only castable when changing constness
         return typeTable->isImplicitCastable(srcTypeId, dstTypeId);
     }
     
     return false;
+}
+
+void EvalVal::equalizeAllRawElemTypes(EvalVal &val, const TypeTable *typeTable) {
+    for (auto &it : val.elems) {
+        if (NodeVal::isRawVal(it, typeTable)) {
+            it.getEvalVal().getType() = val.getType();
+            equalizeAllRawElemTypes(it.getEvalVal(), typeTable);
+        }
+    }
 }

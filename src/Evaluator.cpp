@@ -440,20 +440,18 @@ NodeVal Evaluator::performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64
 
     if (NodeVal::isRawVal(base, typeTable)) {
         NodeVal nodeVal = base.getChild(ind);
-        // if member is not raw val, it's not ref and shouldn't be
         if (NodeVal::isRawVal(nodeVal, typeTable)) {
+            nodeVal.getEvalVal().type = resTy;
             if (base.hasRef()) {
                 nodeVal.getEvalVal().ref = &base.getEvalVal().ref->getEvalVal().elems[ind];
             } else {
                 nodeVal.getEvalVal().ref = nullptr;
             }
-            // raw doesn't care about its raw member types
-            // its constness determines the constness of members
-            nodeVal.getEvalVal().type = base.getEvalVal().type;
         }
         return nodeVal;
     } else {
         EvalVal evalVal(base.getEvalVal().elems[ind].getEvalVal());
+        evalVal.type = resTy;
         if (base.hasRef()) {
             evalVal.ref = &base.getEvalVal().ref->getEvalVal().elems[ind];
         } else {
@@ -602,6 +600,7 @@ NodeVal Evaluator::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::ve
     return NodeVal(codeLoc, evalVal);
 }
 
+// keep in sync with EvalVal::isCastable
 // TODO warn on lossy
 optional<EvalVal> Evaluator::makeCast(const EvalVal &srcEvalVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId) {
     if (srcTypeId == dstTypeId) return EvalVal::copyNoRef(srcEvalVal);
@@ -694,9 +693,14 @@ optional<EvalVal> Evaluator::makeCast(const EvalVal &srcEvalVal, TypeTable::Id s
         // these types are only castable when changing constness
         if (typeTable->isImplicitCastable(srcTypeId, dstTypeId)) {
             // no action is needed in case of a cast
-            dstEvalVal = srcEvalVal;
+            // except for raw when dropping cn
+            dstEvalVal = EvalVal::copyNoRef(srcEvalVal);
             dstEvalVal.value().type = dstTypeId;
-            dstEvalVal.value().ref = nullptr;
+
+            if (EvalVal::isRaw(dstEvalVal.value(), typeTable) &&
+                !typeTable->worksAsTypeCn(dstTypeId) && typeTable->worksAsTypeCn(srcTypeId)) {
+                EvalVal::equalizeAllRawElemTypes(dstEvalVal.value(), typeTable);
+            }
         } else {
             dstEvalVal.reset();
         }

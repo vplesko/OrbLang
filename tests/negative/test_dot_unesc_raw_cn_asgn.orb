@@ -1,0 +1,6 @@
+fnc main () () {
+    eval (sym (a:(raw cn) \()));
+    # b must be (raw cn)
+    eval (sym (b \(\() ,a)));
+    = b \();
+};

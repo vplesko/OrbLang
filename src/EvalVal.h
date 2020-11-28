@@ -37,7 +37,8 @@ struct EvalVal {
 
     EvalVal() {}
 
-    std::optional<TypeTable::Id> getType() const { return type; }
+    const std::optional<TypeTable::Id>& getType() const { return type; }
+    std::optional<TypeTable::Id>& getType() { return type; }
 
     bool isEscaped() const { return escapeScore > 0; }
 
@@ -72,4 +73,6 @@ struct EvalVal {
 
     static bool isImplicitCastable(const EvalVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable);
     static bool isCastable(const EvalVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable);
+
+    static void equalizeAllRawElemTypes(EvalVal &val, const TypeTable *typeTable);
 };

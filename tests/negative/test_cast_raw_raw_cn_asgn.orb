@@ -1,0 +1,5 @@
+fnc main () () {
+    eval (sym (a ()));
+    eval (sym (b (cast (raw cn) a)));
+    = b ();
+};

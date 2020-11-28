@@ -99,18 +99,24 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
 NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
     EvalVal evalRaw = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_RAW), typeTable);
 
+    bool anyRawCn = false;
     for (const auto &it : node.getEvalVal().elems) {
         NodeVal childProc = processNode(it);
         if (childProc.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(true);
 
-        if (childProc.hasRef()) {
-            if (childProc.isEvalVal()) childProc.getEvalVal().ref = nullptr;
-            else if (childProc.isLlvmVal()) childProc.getLlvmVal().ref = nullptr;
+        if (NodeVal::isRawVal(childProc, typeTable)) {
+            if (childProc.hasRef())
+                childProc.getEvalVal().ref = nullptr;
+
+            if (typeTable->worksAsTypeCn(childProc.getType().value()))
+                anyRawCn = true;
         }
 
         evalRaw.elems.push_back(move(childProc));
     }
+
+    if (anyRawCn) evalRaw.getType() = typeTable->addTypeCnOf(evalRaw.getType().value());
 
     return NodeVal(node.getCodeLoc(), evalRaw);
 }
@@ -258,10 +264,7 @@ NodeVal Processor::processCast(const NodeVal &node) {
     if (value.isInvalid()) return NodeVal();
     if (isSkippingProcessing()) return NodeVal(true);
 
-    if (checkIsEvalTime(value, false) && EvalVal::isCastable(value.getEvalVal(), ty.getEvalVal().ty, stringPool, typeTable))
-        return evaluator->performCast(node.getCodeLoc(), value, ty.getEvalVal().ty);
-    else
-        return performCast(node.getCodeLoc(), value, ty.getEvalVal().ty);
+    return dispatchCast(node.getCodeLoc(), value, ty.getEvalVal().ty);
 }
 
 NodeVal Processor::processBlock(const NodeVal &node) {
@@ -1060,6 +1063,9 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
         optional<TypeTable::Id> resType;
         if (isBaseRaw) {
             resType = base.getChild(indexVal).getType();
+            if (typeTable->worksAsPrimitive(resType.value(), TypeTable::P_RAW) && typeTable->worksAsTypeCn(baseType)) {
+                resType = typeTable->addTypeCnOf(resType.value());
+            }
         } else {
             resType = typeTable->extractMemberType(baseType, (size_t) indexVal);
         }

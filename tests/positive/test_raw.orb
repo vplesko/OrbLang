@@ -17,7 +17,7 @@ fnc main () () {
     = ([] d 1) (foo);
     = b (bar a);
     = a \(+ 1 2);
-    = b \();
+    = b ();
 
     \();
     \\();
@@ -60,4 +60,13 @@ fnc main () () {
     println_i32 (. (+ a \(-1 301)) 3);
     = a (+ \(302) a);
     println_i32 (. a 0);
+
+    eval (sym (e:(raw cn) \(400)));
+    println_i32 (. (bar e) 0);
+    eval (sym (f (cast raw \(() ,e))));
+    = (. f 1) \(401);
+    println_i32 (. f 1 0);
+    = f \(402);
+    println_i32 (. f 0);
+    = f e;
 };

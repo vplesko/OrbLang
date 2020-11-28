@@ -1,5 +1,0 @@
-fnc main () () {
-    eval (sym (x 0));
-    eval (sym (a \(,x)));
-    = (. a 0) 99;
-};
