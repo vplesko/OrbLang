@@ -1,0 +1,25 @@
+import "base.orb";
+
+fnc printf(fmt:(c8 cn []) ...) ();
+
+fnc fizzbuzz (n:i32) () {
+    range i n {
+        if (== (% i 15) 0) {
+            printf "fizzbuzz\n";
+            continue;
+        };
+        if (== (% i 3) 0) {
+            printf "fizz\n";
+            continue;
+        };
+        if (== (% i 5) 0) {
+            printf "buzz\n";
+            continue;
+        };
+        printf "%d\n" i;
+    };
+};
+
+fnc main () () {
+    fizzbuzz 101;
+};

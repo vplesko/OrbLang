@@ -1,0 +1,26 @@
+import "base.orb";
+
+fnc printf(fmt:(c8 cn []) ...) ();
+
+eval (fnc fibonacci (n:i32) u64 {
+    if (< n 2) {
+        ret (cast u64 n);
+    };
+
+    sym (a:(u64 3));
+    = ([] a 0) 0;
+    = ([] a 1) 1;
+
+    for (sym (i 2)) (<= i n) (++ i) {
+        = ([] a 2) (+ ([] a 0) ([] a 1));
+        
+        = ([] a 0) ([] a 1);
+        = ([] a 1) ([] a 2);
+    };
+
+    ret ([] a 2);
+});
+
+fnc main () () {
+    printf "%lld\n" (fibonacci 20);
+};

@@ -34,7 +34,7 @@ cd ..
 
 ## Examples
 
-You may look at `.orb` files in directory `tests/positive` for examples of code. `tests/util/clib.orb` and `tests/util/io.orb` may also be of interest.
+You may look inside directory `doc/examples` for examples of code. Additionally, you may also browse `.orb` files in `tests/positive`.
 
 Here is what HelloWorld could look like in Orb:
 
@@ -108,7 +108,7 @@ fnc main () () {
 };
 ```
 
-Orb has no knowledge of ifs and for loops, instead providing more primitive instructions. One planned feature are macros - once implemented, it will be possible to define such constructs from within Orb source code.
+Orb has no knowledge of ifs and for loops, instead providing more primitive instructions. However, such constructs can be defined from within Orb source code. Check `doc/examples/base.orb` for a taste of how this works.
 
 Here is an illustration of Orb's type system:
 
@@ -121,6 +121,7 @@ c8 - 8-bit char
 ptr - non-descript pointer (void* in C)
 id - identifier (first-class value during compile-time)
 type - type of a value (first-class value during compile-time)
+raw - unprocessed list of values, usually represents Orb code (first-class value during compile-time)
 i32 cn - constant i32
 i32 4 - array of 4 i32s
 i32 * - pointer to a i32 (can be dereferenced)

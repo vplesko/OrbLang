@@ -1,0 +1,5 @@
+fnc printf(fmt:(c8 cn []) ...) ();
+
+fnc main () () {
+    printf "Hello, world!\n";
+};

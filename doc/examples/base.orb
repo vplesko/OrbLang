@@ -1,0 +1,34 @@
+eval (mac ++ (x) {
+    ret \(= ,x (+ ,x 1));
+});
+
+eval (mac if (cond body) {
+    ret \(block {
+        (exit (! ,cond))
+        (block ,body)
+    });
+});
+
+eval (mac for (init cond iter body) {
+    ret \(block {
+        ,init
+        (block for-loop-whole () {
+            (exit (! ,cond))
+            (block for-loop-body () ,body)
+            ,iter
+            (loop true)
+        })
+    });
+});
+
+eval (mac break () {
+    ret \(exit for-loop-whole true);
+});
+
+eval (mac continue () {
+    ret \(exit for-loop-body true);
+});
+
+eval (mac range (i n body) {
+    ret \(for (sym (,i 0)) (< ,i ,n) (++ ,i) ,body);
+});
