@@ -20,7 +20,7 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
         evalVal.ref = &ref;
         return NodeVal(codeLoc, evalVal);
     } else {
-        // TODO track whether nodeval is verified to have been passed through invocations, allow this load only then
+        // TODO track whether nodeval is verified to have been passed through invocations, allow this load only then or when non-ref
         // the only case where loading non-eval vals here is allowed is if they were passed in an invocation
         optional<MacroValue> currMac = symbolTable->getCurrMacro();
         if (!currMac.has_value()) {
