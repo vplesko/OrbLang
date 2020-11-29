@@ -82,10 +82,16 @@ bool Parser::parseTypeAttr(NodeVal &node) {
 
 // cannot be semicolon-terminated
 NodeVal Parser::parseType() {
+    EscapeScore escapeScore = parseEscapeScore();
+
+    NodeVal nodeVal;
     if (peek().type == Token::T_BRACE_L_REG || peek().type == Token::T_BRACE_L_CUR)
-        return parseNode();
+        nodeVal = parseNode();
     else
-        return parseTerm();
+        nodeVal = parseTerm();
+
+    NodeVal::escape(nodeVal, typeTable, escapeScore);
+    return nodeVal;
 }
 
 NodeVal Parser::parseTerm() {

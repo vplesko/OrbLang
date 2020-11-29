@@ -100,7 +100,8 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
 
 NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
     NodeVal nodeValRaw = NodeVal::makeEmpty(node.getCodeLoc(), typeTable);
-    NodeVal::escape(nodeValRaw, typeTable, node.getEscapeScore()-1);
+    NodeVal::copyNonValFieldsLeaf(nodeValRaw, node, typeTable);
+    NodeVal::unescape(nodeValRaw, typeTable);
 
     bool anyRawCn = false;
     for (const auto &it : node.getEvalVal().elems) {
@@ -108,7 +109,8 @@ NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
         if (childProc.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(true);
 
-        // TODO the fact refs are kept for non-raws can lead to segfaults when raw is passed to outer scope
+        // TODO track whether nodeval is verified to have been passed through invocations, load refs (for raw and nonraw) only then
+        // (set to true in nodeval in symboltable for invocation args, keep track through all ref returning opers)
         if (NodeVal::isRawVal(childProc, typeTable)) {
             if (childProc.hasRef())
                 childProc.getEvalVal().ref = nullptr;
@@ -1232,6 +1234,7 @@ NodeVal Processor::processForTypeArg(const NodeVal &node) {
     return esc;
 }
 
+// TODO allow such pair to be passed from macro, preserving type attr
 pair<NodeVal, optional<NodeVal>> Processor::processForIdTypePair(const NodeVal &node) {
     const pair<NodeVal, optional<NodeVal>> retInvalid = make_pair<NodeVal, optional<NodeVal>>(NodeVal(), nullopt);
     const pair<NodeVal, optional<NodeVal>> retSkipping = make_pair<NodeVal, optional<NodeVal>>(NodeVal(true), nullopt);

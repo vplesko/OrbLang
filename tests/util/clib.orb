@@ -1,8 +1,8 @@
-fnc putchar(x:c8) ();
-fnc getchar() c8;
+fnc putchar (x:c8) ();
+fnc getchar () c8;
 
-fnc printf(fmt:(c8 cn []) ...) ();
-fnc scanf(fmt:(c8 cn []) ...) ();
+fnc printf (fmt:(c8 cn []) ...) ();
+fnc scanf (fmt:(c8 cn []) ...) ();
 
-fnc malloc(size:u64) ptr;
-fnc free(addr:ptr) ();
+fnc malloc (size:u64) ptr;
+fnc free (addr:ptr) ();
