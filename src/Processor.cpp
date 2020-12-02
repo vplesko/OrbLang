@@ -109,12 +109,12 @@ NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
         if (childProc.isInvalid()) return NodeVal();
         if (isSkippingProcessing()) return NodeVal(true);
 
-        // TODO track whether nodeval is verified to have been passed through invocations, load refs (for raw and nonraw) only then
-        // (set to true in nodeval in symboltable for invocation args, keep track through all ref returning opers)
+        /*
+        raws can contain ref values, but this can result in segfaults (or worse!) if a ref is passed out of its lifetime
+        this will also be a problem with eval pointers, when implemented
+        TODO find a way to track lifetimes and make the compilation stop, instead of crashing
+        */
         if (NodeVal::isRawVal(childProc, typeTable)) {
-            if (childProc.hasRef())
-                childProc.getEvalVal().ref = nullptr;
-
             if (typeTable->worksAsTypeCn(childProc.getType().value()))
                 anyRawCn = true;
         }
@@ -270,6 +270,7 @@ NodeVal Processor::processCast(const NodeVal &node) {
     return dispatchCast(node.getCodeLoc(), value, ty.getEvalVal().ty);
 }
 
+// TODO figure out how to detect whether all code branches return or not
 NodeVal Processor::processBlock(const NodeVal &node) {
     if (!checkBetweenChildren(node, 2, 4, true)) return NodeVal();
 

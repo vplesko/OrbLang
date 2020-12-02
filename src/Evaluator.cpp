@@ -20,27 +20,9 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
         evalVal.ref = &ref;
         return NodeVal(codeLoc, evalVal);
     } else {
-        // TODO track whether nodeval is verified to have been passed through invocations, allow this load only then or when non-ref
-        // the only case where loading non-eval vals here is allowed is if they were passed in an invocation
-        optional<MacroValue> currMac = symbolTable->getCurrMacro();
-        if (!currMac.has_value()) {
-            msgs->errorEvaluationNotSupported(codeLoc);
-            return NodeVal();
-        }
-
-        // if there's a local symbol with same name as curr macro arg, it is definitely EvalVal, so won't get here
-        bool isMacroArg = false;
-        for (NamePool::Id name : currMac.value().argNames) {
-            if (id == name) {
-                isMacroArg = true;
-                break;
-            }
-        }
-        if (!isMacroArg) {
-            msgs->errorEvaluationNotSupported(codeLoc);
-            return NodeVal();
-        }
-
+        // allowing eval to load compiled variables risks fetching outdated values from symbol table
+        // however, eval needs to be able to do this for macros to be able to work with compiled args
+        // TODO find a way to limit this behaviour to make it correct
         return ref;
     }
 }
@@ -80,8 +62,6 @@ bool Evaluator::performBlockReentry(CodeLoc codeLoc) {
 NodeVal Evaluator::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) {
     if (!success) return NodeVal();
 
-    // TODO figure out control flow handling and error detection
-    // (eg if it evals well with a pass in the middle, but no pass at end, no error detected)
     if (!isSkipIssued() && block.type.has_value()) {
         msgs->errorBlockNoPass(codeLoc);
         return NodeVal();

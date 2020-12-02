@@ -1,4 +1,0 @@
-fnc main () () {
-    sym (x 0);
-    eval (\(,x));
-};

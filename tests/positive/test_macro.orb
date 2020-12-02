@@ -25,6 +25,10 @@ eval (mac passthrough (a) {
     ret ,a;
 });
 
+eval (mac getSecond (r) {
+    ret (. r 1);
+});
+
 eval (mac say (x) {
     sym (r ());
     passthrough {
@@ -54,5 +58,7 @@ fnc main () () {
     println_i32 (passthrough 111);
     = x 112;
     println_i32 (passthrough ,x);
-    say 113;
+    = x 113;
+    println_i32 (getSecond \(-1 ,x));
+    say 114;
 };
