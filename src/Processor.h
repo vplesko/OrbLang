@@ -23,7 +23,7 @@ protected:
     unsigned topmost;
 
 protected:
-    // TODO use exceptions for this one instead
+    // Remember to check before processing other nodes.
     virtual bool isSkippingProcessing() const =0;
     virtual bool isRepeatingProcessing(std::optional<NamePool::Id> block) const =0;
     virtual NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) =0;

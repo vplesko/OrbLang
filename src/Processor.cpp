@@ -34,12 +34,12 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
 
     NodeVal starting = processNode(node.getChild(0));
     if (starting.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(starting.getCodeLoc());
 
     if (starting.isEvalVal() && EvalVal::isMacro(starting.getEvalVal(), symbolTable)) {
         NodeVal invoked = processInvoke(node, starting);
         if (invoked.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(true);
+        if (isSkippingProcessing()) return NodeVal(invoked.getCodeLoc());
 
         return processNode(invoked);
     }
@@ -107,7 +107,7 @@ NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
     for (const auto &it : node.getEvalVal().elems) {
         NodeVal childProc = processNode(it);
         if (childProc.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(true);
+        if (isSkippingProcessing()) return NodeVal(childProc.getCodeLoc());
 
         /*
         raws can contain ref values, but this can result in segfaults (or worse!) if a ref is passed out of its lifetime
@@ -134,7 +134,7 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
 
     NodeVal second = processForTypeArg(node.getChild(1));
     if (second.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(second.getCodeLoc());
 
     EvalVal evalTy = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
 
@@ -146,7 +146,7 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
         for (size_t i = 2; i < node.getChildrenCnt(); ++i) {
             NodeVal ty = processAndCheckIsType(node.getChild(i));
             if (ty.isInvalid()) return NodeVal();
-            if (isSkippingProcessing()) return NodeVal(true);
+            if (isSkippingProcessing()) return NodeVal(ty.getCodeLoc());
             tup.members.push_back(ty.getEvalVal().ty);
         }
 
@@ -163,7 +163,7 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
         for (size_t i = 2; i < node.getChildrenCnt(); ++i) {
             NodeVal decor = processWithEscapeIfLeaf(node.getChild(i));
             if (decor.isInvalid()) return NodeVal();
-            if (isSkippingProcessing()) return NodeVal(true);
+            if (isSkippingProcessing()) return NodeVal(decor.getCodeLoc());
             if (!applyTypeDescrDecor(descr, decor)) return NodeVal();
         }
 
@@ -215,7 +215,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
         const NodeVal &nodePair = NodeVal::isLeaf(entry, typeTable) ? entry : entry.getChild(0);
         pair<NodeVal, optional<NodeVal>> pair = processForIdTypePair(nodePair);
         if (pair.first.isInvalid()) continue;
-        if (isSkippingProcessing()) return NodeVal(true);
+        if (isSkippingProcessing()) return NodeVal(nodePair.getCodeLoc());
         NamePool::Id id = pair.first.getEvalVal().id;
         if (!symbolTable->nameAvailable(id, namePool, typeTable)) {
             msgs->errorSymNameTaken(nodePair.getCodeLoc(), id);
@@ -230,7 +230,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
             const NodeVal &nodeInit = entry.getChild(1);
             NodeVal init = hasType ? processAndImplicitCast(nodeInit, optType.value()) : processNode(nodeInit);
             if (init.isInvalid()) continue;
-            if (isSkippingProcessing()) return NodeVal(true);
+            if (isSkippingProcessing()) return NodeVal(init.getCodeLoc());
 
             NodeVal nodeReg = performRegister(entry.getCodeLoc(), id, init);
             if (nodeReg.isInvalid()) continue;
@@ -251,7 +251,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
         }
     }
 
-    return NodeVal(true);
+    return NodeVal(node.getCodeLoc());
 }
 
 NodeVal Processor::processCast(const NodeVal &node) {
@@ -261,11 +261,11 @@ NodeVal Processor::processCast(const NodeVal &node) {
 
     NodeVal ty = processAndCheckIsType(node.getChild(1));
     if (ty.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(ty.getCodeLoc());
 
     NodeVal value = processNode(node.getChild(2));
     if (value.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(value.getCodeLoc());
 
     return dispatchCast(node.getCodeLoc(), value, ty.getEvalVal().ty);
 }
@@ -288,7 +288,7 @@ NodeVal Processor::processBlock(const NodeVal &node) {
     if (hasName) {
         NodeVal nodeName = processWithEscapeIfLeaf(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(true);
+        if (isSkippingProcessing()) return NodeVal(nodeName.getCodeLoc());
         if (!NodeVal::isEmpty(nodeName, typeTable)) {
             if (!checkIsId(nodeName, true)) return NodeVal();
             name = nodeName.getEvalVal().id;
@@ -299,7 +299,7 @@ NodeVal Processor::processBlock(const NodeVal &node) {
     if (hasType) {
         NodeVal nodeType = processNode(node.getChild(indType));
         if (nodeType.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(true);
+        if (isSkippingProcessing()) return NodeVal(nodeType.getCodeLoc());
         if (!NodeVal::isEmpty(nodeType, typeTable)) {
             if (!checkIsType(nodeType, true)) return NodeVal();
             type = nodeType.getEvalVal().ty;
@@ -327,7 +327,7 @@ NodeVal Processor::processBlock(const NodeVal &node) {
 
         NodeVal ret = performBlockTearDown(node.getCodeLoc(), *symbolTable->getLastBlock(), true);
         if (ret.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(true);
+        if (isSkippingProcessing()) return NodeVal(ret.getCodeLoc());
         return ret;
     } while (true);
 }
@@ -344,13 +344,13 @@ NodeVal Processor::processExit(const NodeVal &node) {
     if (hasName) {
         NodeVal nodeName = processWithEscapeIfLeafAndCheckIsId(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(true);
+        if (isSkippingProcessing()) return NodeVal(nodeName.getCodeLoc());
         name = nodeName.getEvalVal().id;
     }
 
     NodeVal nodeCond = processNode(node.getChild(indCond));
     if (nodeCond.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(nodeCond.getCodeLoc());
     if (!checkIsBool(nodeCond, true)) return NodeVal();
 
     const SymbolTable::Block *targetBlock;
@@ -373,7 +373,7 @@ NodeVal Processor::processExit(const NodeVal &node) {
     }
 
     if (!performExit(node.getCodeLoc(), *targetBlock, nodeCond)) return NodeVal();
-    return NodeVal(true);
+    return NodeVal(node.getCodeLoc());
 }
 
 NodeVal Processor::processLoop(const NodeVal &node) {
@@ -388,13 +388,13 @@ NodeVal Processor::processLoop(const NodeVal &node) {
     if (hasName) {
         NodeVal nodeName = processWithEscapeIfLeafAndCheckIsId(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(true);
+        if (isSkippingProcessing()) return NodeVal(nodeName.getCodeLoc());
         name = nodeName.getEvalVal().id;
     }
 
     NodeVal nodeCond = processNode(node.getChild(indCond));
     if (nodeCond.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(nodeCond.getCodeLoc());
     if (!checkIsBool(nodeCond, true)) return NodeVal();
 
     const SymbolTable::Block *targetBlock;
@@ -413,7 +413,7 @@ NodeVal Processor::processLoop(const NodeVal &node) {
     }
 
     if (!performLoop(node.getCodeLoc(), *targetBlock, nodeCond)) return NodeVal();
-    return NodeVal(true);
+    return NodeVal(node.getCodeLoc());
 }
 
 NodeVal Processor::processPass(const NodeVal &node) {
@@ -428,7 +428,7 @@ NodeVal Processor::processPass(const NodeVal &node) {
     if (hasName) {
         NodeVal nodeName = processWithEscapeIfLeafAndCheckIsId(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(true);
+        if (isSkippingProcessing()) return NodeVal(nodeName.getCodeLoc());
         name = nodeName.getEvalVal().id;
     }
 
@@ -453,10 +453,10 @@ NodeVal Processor::processPass(const NodeVal &node) {
 
     NodeVal nodeValue = processAndImplicitCast(node.getChild(indVal), targetBlock->type.value());
     if (nodeValue.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(nodeValue.getCodeLoc());
 
     if (!performPass(node.getCodeLoc(), *targetBlock, nodeValue)) return NodeVal();
-    return NodeVal(true);
+    return NodeVal(node.getCodeLoc());
 }
 
 NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
@@ -480,7 +480,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
             processAndImplicitCast(node.getChild(i+1), funcVal->argTypes[i]) :
             processNode(node.getChild(i+1));
         if (arg.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(true);
+        if (isSkippingProcessing()) return NodeVal(arg.getCodeLoc());
 
         args.push_back(move(arg));
     }
@@ -512,7 +512,7 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
         NodeVal::escape(arg, typeTable);
         arg = processNode(arg);
         if (arg.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(true);
+        if (isSkippingProcessing()) return NodeVal(arg.getCodeLoc());
 
         args.push_back(move(arg));
     }
@@ -533,7 +533,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     // name
     NodeVal name = processWithEscapeIfLeafAndCheckIsId(node.getChild(1));
     if (name.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(name.getCodeLoc());
     if (!symbolTable->nameAvailable(name.getEvalVal().id, namePool, typeTable)) {
         msgs->errorFuncNameTaken(name.getCodeLoc(), name.getEvalVal().id);
         return NodeVal();
@@ -554,7 +554,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
 
         pair<NodeVal, optional<NodeVal>> arg = processForIdTypePair(nodeArg);
         if (arg.first.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(true);
+        if (isSkippingProcessing()) return NodeVal(nodeArg.getCodeLoc());
         NamePool::Id argId = arg.first.getEvalVal().id;
         if (isMeaningful(argId, Meaningful::ELLIPSIS)) {
             val.variadic = true;
@@ -575,7 +575,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     const NodeVal &nodeRetType = node.getChild(3);
     NodeVal ty = processNode(nodeRetType);
     if (ty.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(ty.getCodeLoc());
     if (!NodeVal::isEmpty(ty, typeTable)) {
         if (!checkIsType(ty, true)) return NodeVal();
         val.retType = ty.getEvalVal().ty;
@@ -597,7 +597,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         if (!performFunctionDefinition(nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();
     }
 
-    return NodeVal(true);
+    return NodeVal(node.getCodeLoc());
 }
 
 NodeVal Processor::processMac(const NodeVal &node) {
@@ -611,7 +611,7 @@ NodeVal Processor::processMac(const NodeVal &node) {
     // name
     NodeVal name = processWithEscapeIfLeafAndCheckIsId(node.getChild(1));
     if (name.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(node.getCodeLoc());
     if (!symbolTable->nameAvailable(name.getEvalVal().id, namePool, typeTable)) {
         msgs->errorMacroNameTaken(name.getCodeLoc(), name.getEvalVal().id);
         return NodeVal();
@@ -627,7 +627,7 @@ NodeVal Processor::processMac(const NodeVal &node) {
 
         NodeVal arg = processWithEscapeIfLeafAndCheckIsId(nodeArg);
         if (arg.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(true);
+        if (isSkippingProcessing()) return NodeVal(arg.getCodeLoc());
         NamePool::Id argId = arg.getEvalVal().id;
         val.argNames.push_back(argId);
     }
@@ -644,7 +644,7 @@ NodeVal Processor::processMac(const NodeVal &node) {
     MacroValue *symbVal = symbolTable->registerMacro(val);
     if (!performMacroDefinition(nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();
 
-    return NodeVal(true);
+    return NodeVal(node.getCodeLoc());
 }
 
 NodeVal Processor::processRet(const NodeVal &node) {
@@ -665,7 +665,7 @@ NodeVal Processor::processRet(const NodeVal &node) {
 
             NodeVal val = processAndImplicitCast(node.getChild(1), optFuncValue.value().retType.value());
             if (val.isInvalid()) return NodeVal();
-            if (isSkippingProcessing()) return NodeVal(true);
+            if (isSkippingProcessing()) return NodeVal(val.getCodeLoc());
 
             if (!performRet(node.getCodeLoc(), val)) return NodeVal();
         } else {
@@ -677,17 +677,17 @@ NodeVal Processor::processRet(const NodeVal &node) {
             if (!performRet(node.getCodeLoc())) return NodeVal();
         }
 
-        return NodeVal(true);
+        return NodeVal(node.getCodeLoc());
     } else if (optMacroValue.has_value()) {
         if (!checkExactlyChildren(node, 2, true)) return NodeVal();
 
         NodeVal val = processNode(node.getChild(1));
         if (val.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(true);
+        if (isSkippingProcessing()) return NodeVal(val.getCodeLoc());
 
         if (!performRet(node.getCodeLoc(), val)) return NodeVal();
 
-        return NodeVal(true);
+        return NodeVal(node.getCodeLoc());
     } else {
         msgs->errorUnknown(node.getCodeLoc());
         return NodeVal();
@@ -762,7 +762,7 @@ NodeVal Processor::processTuple(const NodeVal &node, const NodeVal &starting) {
     for (size_t i = 1; i < node.getChildrenCnt(); ++i) {
         NodeVal memb = processNode(node.getChild(i));
         if (memb.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(true);
+        if (isSkippingProcessing()) return NodeVal(memb.getCodeLoc());
         membs.push_back(move(memb));
         if (allEval && !checkIsEvalTime(memb, false)) allEval = false;
     }
@@ -789,7 +789,6 @@ NodeVal Processor::processTuple(const NodeVal &node, const NodeVal &starting) {
         return performTuple(node.getCodeLoc(), tupTypeIdOpt.value(), membs);
 }
 
-// TODO include specials's ids as literals to be promoted
 NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
     bool isId = false;
 
@@ -938,7 +937,7 @@ NodeVal Processor::processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper o
 
     NodeVal operProc = processNode(oper);
     if (operProc.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(operProc.getCodeLoc());
 
     if (op == Oper::MUL) {
         return dispatchOperUnaryDeref(codeLoc, operProc);
@@ -954,7 +953,7 @@ NodeVal Processor::processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper o
 NodeVal Processor::processOperComparison(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op) {
     NodeVal lhs = processAndCheckHasType(*opers[0]);
     if (lhs.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(lhs.getCodeLoc());
 
     // redirecting to evaluator when all operands are EvalVals is more complicated in the case of comparisons
     // the reason for is that LLVM's phi nodes need to be started up and closed appropriately
@@ -983,7 +982,7 @@ NodeVal Processor::processOperComparison(CodeLoc codeLoc, const std::vector<cons
         if (isSkippingProcessing()) {
             if (stillEval) evaluator->performOperComparisonTearDown(codeLoc, true, evalSignal);
             else performOperComparisonTearDown(codeLoc, true, signal);
-            return NodeVal(true);
+            return NodeVal(rhs.getCodeLoc());
         }
 
         if (stillEval && !checkIsEvalTime(rhs, false)) {
@@ -1023,12 +1022,12 @@ NodeVal Processor::processOperComparison(CodeLoc codeLoc, const std::vector<cons
 NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
     NodeVal rhs = processAndCheckHasType(*opers.back());
     if (rhs.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(rhs.getCodeLoc());
 
     for (size_t i = opers.size()-2;; --i) {
         NodeVal lhs = processAndCheckHasType(*opers[i]);
         if (lhs.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(true);
+        if (isSkippingProcessing()) return NodeVal(lhs.getCodeLoc());
 
         if (!lhs.hasRef()) {
             msgs->errorExprAsgnNonRef(lhs.getCodeLoc());
@@ -1057,7 +1056,7 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
 NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
     NodeVal base = processAndCheckHasType(*opers[0]);
     if (base.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(base.getCodeLoc());
 
     for (size_t i = 1; i < opers.size(); ++i) {
         TypeTable::Id baseType = base.getType().value();
@@ -1070,7 +1069,7 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
 
         NodeVal index = processAndCheckHasType(*opers[i]);
         if (index.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(true);
+        if (isSkippingProcessing()) return NodeVal(index.getCodeLoc());
         if (!typeTable->worksAsTypeI(index.getType().value()) && !typeTable->worksAsTypeU(index.getType().value())) {
             msgs->errorExprIndexNotIntegral(index.getCodeLoc());
             return NodeVal();
@@ -1101,7 +1100,7 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
 NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
     NodeVal base = processAndCheckHasType(*opers[0]);
     if (base.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(base.getCodeLoc());
 
     for (size_t i = 1; i < opers.size(); ++i) {
         if (typeTable->worksAsTypeP(base.getType().value())) {
@@ -1114,7 +1113,7 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
 
         NodeVal index = processNode(*opers[i]);
         if (index.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(true);
+        if (isSkippingProcessing()) return NodeVal(index.getCodeLoc());
         if (!index.isEvalVal()) {
             msgs->errorMemberIndex(index.getCodeLoc());
             return NodeVal();
@@ -1174,12 +1173,12 @@ NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const N
 
     NodeVal lhs = processAndCheckHasType(*opers[0]);
     if (lhs.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(lhs.getCodeLoc());
 
     for (size_t i = 1; i < opers.size(); ++i) {
         NodeVal rhs = processAndCheckHasType(*opers[i]);
         if (rhs.isInvalid()) return NodeVal();
-        if (isSkippingProcessing()) return NodeVal(true);
+        if (isSkippingProcessing()) return NodeVal(rhs.getCodeLoc());
 
         if (!implicitCastOperands(lhs, rhs, false)) return NodeVal();
 
@@ -1197,7 +1196,7 @@ NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const N
 NodeVal Processor::processAndCheckIsType(const NodeVal &node) {
     NodeVal ty = processNode(node);
     if (ty.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(ty.getCodeLoc());
     if (!checkIsType(ty, true)) return NodeVal();
     return ty;
 }
@@ -1215,7 +1214,7 @@ NodeVal Processor::processWithEscapeIfLeaf(const NodeVal &node) {
 NodeVal Processor::processWithEscapeIfLeafAndCheckIsId(const NodeVal &node) {
     NodeVal id = processWithEscapeIfLeaf(node);
     if (id.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(id.getCodeLoc());
     if (!checkIsId(id, true)) return NodeVal();
     return id;
 }
@@ -1238,7 +1237,7 @@ NodeVal Processor::processForTypeArg(const NodeVal &node) {
 // TODO allow such pair to be passed from macro, preserving type attr
 pair<NodeVal, optional<NodeVal>> Processor::processForIdTypePair(const NodeVal &node) {
     const pair<NodeVal, optional<NodeVal>> retInvalid = make_pair<NodeVal, optional<NodeVal>>(NodeVal(), nullopt);
-    const pair<NodeVal, optional<NodeVal>> retSkipping = make_pair<NodeVal, optional<NodeVal>>(NodeVal(true), nullopt);
+    const pair<NodeVal, optional<NodeVal>> retSkipping = make_pair<NodeVal, optional<NodeVal>>(NodeVal(node.getCodeLoc()), nullopt);
     
     NodeVal id = node;
     id.clearTypeAttr();
@@ -1259,7 +1258,7 @@ pair<NodeVal, optional<NodeVal>> Processor::processForIdTypePair(const NodeVal &
 NodeVal Processor::processAndCheckHasType(const NodeVal &node) {
     NodeVal proc = processNode(node);
     if (proc.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(proc.getCodeLoc());
     if (!checkHasType(proc, true)) return NodeVal();
     return proc;
 }
@@ -1267,7 +1266,7 @@ NodeVal Processor::processAndCheckHasType(const NodeVal &node) {
 NodeVal Processor::processAndImplicitCast(const NodeVal &node, TypeTable::Id ty) {
     NodeVal proc = processNode(node);
     if (proc.isInvalid()) return NodeVal();
-    if (isSkippingProcessing()) return NodeVal(true);
+    if (isSkippingProcessing()) return NodeVal(proc.getCodeLoc());
 
     if (!checkImplicitCastable(proc, ty, true)) return NodeVal();
 

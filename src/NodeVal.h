@@ -32,8 +32,9 @@ private:
     void copyFrom(const NodeVal &other);
 
 public:
-    // TODO require that valid has CodeLoc
-    NodeVal(bool valid = false);
+    // Invalid node
+    NodeVal();
+    NodeVal(CodeLoc codeLoc);
     NodeVal(CodeLoc codeLoc, StringPool::Id import);
     NodeVal(CodeLoc codeLoc, const LiteralVal &val);
     NodeVal(CodeLoc codeLoc, const EvalVal &val);

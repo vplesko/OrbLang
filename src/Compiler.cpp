@@ -197,6 +197,7 @@ bool Compiler::performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) {
     return true;
 }
 
+// TODO if a compiled block has a jump not at the end, llvm will report it instead of this compiler
 NodeVal Compiler::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) {
     if (!success) return NodeVal();
 
@@ -217,7 +218,7 @@ NodeVal Compiler::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block
         llvmVal.val = block.phi;
         return NodeVal(codeLoc, llvmVal);
     } else {
-        return NodeVal(true);
+        return NodeVal(codeLoc);
     }
 }
 
@@ -285,7 +286,7 @@ NodeVal Compiler::performCall(CodeLoc codeLoc, const FuncValue &func, const std:
         return NodeVal(codeLoc, retLlvmVal);
     } else {
         llvmBuilder.CreateCall(func.llvmFunc, llvmArgValues, "");
-        return NodeVal(true);
+        return NodeVal(codeLoc);
     }
 }
 
