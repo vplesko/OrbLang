@@ -84,6 +84,19 @@ fnc main () () {
         };
     );
 
+    = d 690;
+    block b0 () {
+        block i32 {
+            = d (+ d 1);
+            loop (< d 701);
+            exit b0 true;
+            # this pass is necessary, since compilation doesn't know of unconditional jumps
+            # TODO make the compilation aware of unconditional jumps
+            pass -1;
+        };
+    };
+    println_i32 d;
+
     = d 800;
     block b0 () {
         = d (block i32 {

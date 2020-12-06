@@ -120,6 +120,16 @@ fnc main () () {
         };
     ));
 
+    eval (= p 690);
+    eval (block b0 () {
+        block i32 {
+            = p (+ p 1);
+            loop (< p 701);
+            exit b0 true;
+        };
+    });
+    println_i32 p;
+
     eval (= p 800);
     eval (block b0 () {
         = p (block i32 {

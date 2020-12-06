@@ -197,6 +197,11 @@ bool Compiler::performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) {
     return true;
 }
 
+optional<bool> Compiler::performBlockBody(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &nodeBody) {
+    processChildNodes(nodeBody);
+    return false;
+}
+
 // TODO if a compiled block has a jump not at the end, llvm will report it instead of this compiler
 NodeVal Compiler::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) {
     if (!success) return NodeVal();

@@ -1,0 +1,7 @@
+# TODO! exception gets thrown instead of error reported
+# TODO! make it so negative testing can detected if the error is internal
+fnc main () () {
+    block {
+        eval (exit true);
+    };
+};

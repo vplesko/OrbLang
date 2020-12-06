@@ -4,17 +4,8 @@
 
 class Evaluator : public Processor {
     friend class Processor;
-    
-    bool exitOrPassIssued, loopIssued;
-    std::optional<NamePool::Id> skipBlock;
 
-    bool retIssued;
     std::optional<NodeVal> retVal;
-
-    bool isSkipIssuedNotRet() const { return exitOrPassIssued || loopIssued; }
-    bool isSkipIssued() const { return isSkipIssuedNotRet() || retIssued; }
-    bool isSkipIssuedForCurrBlock(std::optional<NamePool::Id> currBlockName) const;
-    void resetSkipIssued();
 
     bool assignBasedOnTypeI(EvalVal &val, std::int64_t x, TypeTable::Id ty);
     bool assignBasedOnTypeU(EvalVal &val, std::uint64_t x, TypeTable::Id ty);
@@ -26,15 +17,15 @@ class Evaluator : public Processor {
     std::optional<EvalVal> makeArray(TypeTable::Id arrTypeId);
     std::vector<NodeVal> makeRawConcat(const EvalVal &lhs, const EvalVal &rhs) const;
 
+    NodeVal doBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success, bool jumpingOut);
+
 public:
-    bool isSkippingProcessing() const override { return isSkipIssued(); }
-    bool isRepeatingProcessing(std::optional<NamePool::Id> block) const override;
     NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) override;
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) override;
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) override;
     NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) override;
     bool performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) override { return true; }
-    bool performBlockReentry(CodeLoc codeLoc) override;
+    std::optional<bool> performBlockBody(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &nodeBody) override;
     NodeVal performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) override;
     bool performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) override;
     bool performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) override;

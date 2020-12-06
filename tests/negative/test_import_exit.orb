@@ -1,0 +1,3 @@
+import (eval (exit true));
+
+fnc main () () {};

@@ -33,14 +33,12 @@ class Compiler : public Processor {
     NodeVal promoteEvalVal(const NodeVal &node);
     NodeVal promoteIfEvalValAndCheckIsLlvmVal(const NodeVal &node, bool orError);
 
-    bool isSkippingProcessing() const override { return false; }
-    bool isRepeatingProcessing(std::optional<NamePool::Id> block) const override { return false; }
     NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) override;
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) override;
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) override;
     NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) override;
     bool performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) override;
-    bool performBlockReentry(CodeLoc codeLoc) override { return true; }
+    std::optional<bool> performBlockBody(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &nodeBody) override;
     NodeVal performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) override;
     bool performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) override;
     bool performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) override;

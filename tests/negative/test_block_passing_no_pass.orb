@@ -1,0 +1,5 @@
+fnc main () () {
+    block i32 {
+        sym (x 0);
+    };
+};

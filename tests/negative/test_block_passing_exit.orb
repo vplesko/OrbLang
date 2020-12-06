@@ -1,0 +1,5 @@
+fnc main () () {
+    block b0 i32 {
+        exit b0 true;
+    };
+};

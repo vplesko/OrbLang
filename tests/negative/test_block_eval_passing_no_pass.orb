@@ -1,0 +1,5 @@
+fnc main () () {
+    eval (block i32 {
+        sym (x 0);
+    });
+};

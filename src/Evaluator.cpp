@@ -1,4 +1,5 @@
 #include "Evaluator.h"
+#include "exceptions.h"
 using namespace std;
 
 struct ComparisonSignal {
@@ -7,11 +8,6 @@ struct ComparisonSignal {
 
 Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs)
     : Processor(namePool, stringPool, typeTable, symbolTable, msgs, this) {
-    resetSkipIssued();
-}
-
-bool Evaluator::isRepeatingProcessing(optional<NamePool::Id> block) const {
-    return loopIssued && isSkipIssuedForCurrBlock(block);
 }
 
 NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
@@ -54,43 +50,35 @@ NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::
     return NodeVal(codeLoc, evalValCast.value());
 }
 
-bool Evaluator::performBlockReentry(CodeLoc codeLoc) {
-    resetSkipIssued();
-    return true;
+optional<bool> Evaluator::performBlockBody(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &nodeBody) {
+    try {
+        bool bodySuccess = processChildNodes(nodeBody);
+        if (!bodySuccess) return nullopt;
+        return false;
+    } catch (ExceptionEvaluatorJump ex) {
+        bool forCurrBlock = !ex.isRet && (!ex.blockName.has_value() || ex.blockName == block.name);
+        if (!forCurrBlock) {
+            doBlockTearDown(codeLoc, block, true, true);
+            throw ex;
+        }
+
+        return ex.isLoop;
+    }
 }
 
 NodeVal Evaluator::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) {
-    if (!success) return NodeVal();
-
-    if (!isSkipIssued() && block.type.has_value()) {
-        msgs->errorBlockNoPass(codeLoc);
-        return NodeVal();
-    }
-    
-    if (isSkipIssuedForCurrBlock(block.name)) {
-        resetSkipIssued();
-
-        if (block.type.has_value()) {
-            if (!block.val.has_value()) {
-                msgs->errorBlockNoPass(codeLoc);
-                return NodeVal();
-            }
-
-            return block.val.value();
-        }
-    }
-    
-    return NodeVal(codeLoc);
+    return doBlockTearDown(codeLoc, block, success, false);
 }
 
 bool Evaluator::performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) {
     if (!checkIsEvalVal(cond, true)) return false;
 
     if (cond.getEvalVal().b) {
-        exitOrPassIssued = true;
+        ExceptionEvaluatorJump ex;
         // if name not given, skip until innermost block (instruction can't do otherwise)
         // if name given, skip until that block (which may even be innermost block)
-        skipBlock = block.name;
+        ex.blockName = block.name;
+        throw ex;
     }
 
     return true;
@@ -100,10 +88,12 @@ bool Evaluator::performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, co
     if (!checkIsEvalVal(cond, true)) return false;
 
     if (cond.getEvalVal().b) {
-        loopIssued = true;
+        ExceptionEvaluatorJump ex;
         // if name not given, skip until innermost block (instruction can't do otherwise)
         // if name given, skip until that block (which may even be innermost block)
-        skipBlock = block.name;
+        ex.blockName = block.name;
+        ex.isLoop = true;
+        throw ex;
     }
 
     return true;
@@ -112,11 +102,11 @@ bool Evaluator::performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, co
 bool Evaluator::performPass(CodeLoc codeLoc, SymbolTable::Block &block, const NodeVal &val) {
     if (!checkIsEvalVal(val, true)) return false;
 
-    exitOrPassIssued = true;
-    skipBlock = block.name;
     block.val = NodeVal(codeLoc, EvalVal::copyNoRef(val.getEvalVal()));
-    
-    return true;
+
+    ExceptionEvaluatorJump ex;
+    ex.blockName = block.name;
+    throw ex;
 }
 
 NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) {
@@ -136,8 +126,15 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
         symbolTable->addVar(func.argNames[i], args[i]);
     }
 
-    if (!processChildNodes(func.evalFunc.value())) {
-        return NodeVal();
+    try {
+        if (!processChildNodes(func.evalFunc.value())) {
+            return NodeVal();
+        }
+    } catch (ExceptionEvaluatorJump ex) {
+        if (!ex.isRet) {
+            msgs->errorInternal(codeLoc);
+            return NodeVal();
+        }
     }
 
     if (func.hasRet()) {
@@ -146,11 +143,8 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
             return NodeVal();
         }
 
-        NodeVal ret = move(retVal.value());
-        resetSkipIssued();
-        return move(ret);
+        return move(retVal.value());
     } else {
-        resetSkipIssued();
         return NodeVal(codeLoc);
     }
 }
@@ -162,8 +156,15 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const
         symbolTable->addVar(macro.argNames[i], args[i]);
     }
 
-    if (!processChildNodes(macro.body)) {
-        return NodeVal();
+    try {
+        if (!processChildNodes(macro.body)) {
+            return NodeVal();
+        }
+    } catch (ExceptionEvaluatorJump ex) {
+        if (!ex.isRet) {
+            msgs->errorInternal(codeLoc);
+            return NodeVal();
+        }
     }
 
     if (!retVal.has_value()) {
@@ -171,9 +172,7 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const
         return NodeVal();
     }
 
-    NodeVal ret = move(retVal.value());
-    resetSkipIssued();
-    return move(ret);
+    return move(retVal.value());
 }
 
 bool Evaluator::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
@@ -193,14 +192,17 @@ bool Evaluator::performMacroDefinition(const NodeVal &args, const NodeVal &body,
 }
 
 bool Evaluator::performRet(CodeLoc codeLoc) {
-    retIssued = true;
-    return true;
+    ExceptionEvaluatorJump ex;
+    ex.isRet = true;
+    throw ex;
 }
 
 bool Evaluator::performRet(CodeLoc codeLoc, const NodeVal &node) {
-    retIssued = true;
     retVal = node;
-    return true;
+
+    ExceptionEvaluatorJump ex;
+    ex.isRet = true;
+    throw ex;
 }
 
 NodeVal Evaluator::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) {
@@ -419,6 +421,7 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     return nullopt;    
 }
 
+// if processing an operand threw ExceptionEvaluatorJump, teardown won't get called
 NodeVal Evaluator::performOperComparisonTearDown(CodeLoc codeLoc, bool success, void *signal) {
     if (!success) return NodeVal();
 
@@ -629,6 +632,21 @@ NodeVal Evaluator::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::ve
     return NodeVal(codeLoc, evalVal);
 }
 
+NodeVal Evaluator::doBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success, bool jumpingOut) {
+    if (!success) return NodeVal();
+
+    if (!jumpingOut && block.type.has_value()) {
+        if (!block.val.has_value()) {
+            msgs->errorBlockNoPass(codeLoc);
+            return NodeVal();
+        }
+
+        return block.val.value();
+    }
+
+    return NodeVal(codeLoc);
+}
+
 // keep in sync with EvalVal::isCastable
 // TODO warn on lossy
 optional<EvalVal> Evaluator::makeCast(const EvalVal &srcEvalVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId) {
@@ -822,16 +840,4 @@ bool Evaluator::assignBasedOnTypeB(EvalVal &val, bool x, TypeTable::Id ty) {
     }
 
     return true;
-}
-
-bool Evaluator::isSkipIssuedForCurrBlock(optional<NamePool::Id> currBlockName) const {
-    return isSkipIssuedNotRet() && (!skipBlock.has_value() || skipBlock == currBlockName);
-}
-
-void Evaluator::resetSkipIssued() {
-    exitOrPassIssued = false;
-    loopIssued = false;
-    skipBlock.reset();
-    retIssued = false;
-    retVal.reset();
 }

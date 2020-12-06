@@ -1,0 +1,8 @@
+fnc main () () {
+    eval (sym (x 0));
+    eval (block i32 {
+        = x (+ x 1);
+        loop (< x 5);
+        loop false;
+    });
+};
