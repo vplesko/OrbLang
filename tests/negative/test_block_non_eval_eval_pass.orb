@@ -1,0 +1,5 @@
+fnc main () () {
+    block i32 {
+        eval (pass 0);
+    };
+};

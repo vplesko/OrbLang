@@ -42,6 +42,8 @@ public:
         std::optional<NodeVal> val;
         llvm::BasicBlock *blockExit = nullptr, *blockLoop = nullptr;
         llvm::PHINode *phi = nullptr;
+
+        bool isEval() const { return blockExit == nullptr && blockLoop == nullptr && phi == nullptr; }
     };
 
 private:

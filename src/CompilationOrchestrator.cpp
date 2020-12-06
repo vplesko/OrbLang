@@ -292,3 +292,7 @@ bool CompilationOrchestrator::compile(const std::string &output, bool exe) {
         return buildExecutable(tempObjName, output);
     }
 }
+
+bool CompilationOrchestrator::isInternalError() const {
+    return msgs->getStatus() == CompilationMessages::S_INTERNAL;
+}

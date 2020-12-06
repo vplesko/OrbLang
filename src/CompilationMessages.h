@@ -12,12 +12,15 @@ class NamePool;
 
 // TODO due to eval id and type vals, it's not guaranteed that given ids refer to anything valid, fix by introducing zero init
 class CompilationMessages {
+public:
     enum Status {
         S_OK,
         S_WARN,
-        S_ERROR
+        S_ERROR,
+        S_INTERNAL
     };
 
+private:
     NamePool *namePool;
     StringPool *stringPool;
     TypeTable *typeTable;
@@ -38,7 +41,8 @@ class CompilationMessages {
 public:
     CompilationMessages(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, std::ostream &out)
         : namePool(namePool), stringPool(stringPool), typeTable(typeTable), symbolTable(symbolTable), out(&out), status(S_OK) {}
-    
+
+    Status getStatus() const {return status; }
     bool isFail() const { return status >= S_ERROR; }
 
     void errorInputFileNotFound(const std::string &path);

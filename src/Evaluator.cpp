@@ -72,6 +72,10 @@ NodeVal Evaluator::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Bloc
 
 bool Evaluator::performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) {
     if (!checkIsEvalVal(cond, true)) return false;
+    if (!block.isEval()) {
+        msgs->errorEvaluationNotSupported(codeLoc);
+        return false;
+    }
 
     if (cond.getEvalVal().b) {
         ExceptionEvaluatorJump ex;
@@ -86,6 +90,10 @@ bool Evaluator::performExit(CodeLoc codeLoc, const SymbolTable::Block &block, co
 
 bool Evaluator::performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) {
     if (!checkIsEvalVal(cond, true)) return false;
+    if (!block.isEval()) {
+        msgs->errorEvaluationNotSupported(codeLoc);
+        return false;
+    }
 
     if (cond.getEvalVal().b) {
         ExceptionEvaluatorJump ex;
@@ -101,6 +109,10 @@ bool Evaluator::performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, co
 
 bool Evaluator::performPass(CodeLoc codeLoc, SymbolTable::Block &block, const NodeVal &val) {
     if (!checkIsEvalVal(val, true)) return false;
+    if (!block.isEval()) {
+        msgs->errorEvaluationNotSupported(codeLoc);
+        return false;
+    }
 
     block.val = NodeVal(codeLoc, EvalVal::copyNoRef(val.getEvalVal()));
 
@@ -192,6 +204,11 @@ bool Evaluator::performMacroDefinition(const NodeVal &args, const NodeVal &body,
 }
 
 bool Evaluator::performRet(CodeLoc codeLoc) {
+    if (symbolTable->getCurrFunc().has_value() && !symbolTable->getCurrFunc().value().isEval()) {
+        msgs->errorEvaluationNotSupported(codeLoc);
+        return false;
+    }
+
     ExceptionEvaluatorJump ex;
     ex.isRet = true;
     throw ex;
@@ -199,10 +216,9 @@ bool Evaluator::performRet(CodeLoc codeLoc) {
 
 bool Evaluator::performRet(CodeLoc codeLoc, const NodeVal &node) {
     retVal = node;
+    performRet(codeLoc);
 
-    ExceptionEvaluatorJump ex;
-    ex.isRet = true;
-    throw ex;
+    return false; // unreachable
 }
 
 NodeVal Evaluator::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) {

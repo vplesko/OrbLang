@@ -42,7 +42,7 @@ def run_negative_test(case):
     src_file = TEST_NEG_DIR + '/' + case + '.orb'
 
     result = subprocess.run([ORBC_EXE, src_file], stderr=subprocess.DEVNULL)
-    return result.returncode != 0
+    return result.returncode > 0 and result.returncode < 100
 
 
 def run_all_tests(dir, test_func):

@@ -4,7 +4,7 @@ using namespace std;
 NodeVal::NodeVal() : kind(Kind::kInvalid) {
 }
 
-NodeVal::NodeVal(CodeLoc codeLoc) : kind(Kind::kValid) {
+NodeVal::NodeVal(CodeLoc codeLoc) : codeLoc(codeLoc), kind(Kind::kValid) {
 }
 
 NodeVal::NodeVal(CodeLoc codeLoc, StringPool::Id import) : codeLoc(codeLoc), kind(Kind::kImport), importFile(import) {
