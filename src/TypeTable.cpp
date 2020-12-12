@@ -1,4 +1,5 @@
 #include "TypeTable.h"
+#include <sstream>
 using namespace std;
 
 void TypeTable::Tuple::addMember(TypeTable::Id m) {
@@ -649,5 +650,75 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
         return true;
     } else {
         return false;
+    }
+}
+
+optional<string> TypeTable::makeBinString(Id t) const {
+    // don't forget special delim after custom types are cast safe
+    if (isPrimitive(t)) {
+        switch (t.index) {
+        case P_BOOL:
+            return "$bool";
+        case P_I8:
+            return "$i8";
+        case P_I16:
+            return "$i16";
+        case P_I32:
+            return "$i32";
+        case P_I64:
+            return "$i64";
+        case P_U8:
+            return "$u8";
+        case P_U16:
+            return "$u16";
+        case P_U32:
+            return "$u32";
+        case P_U64:
+            return "$u64";
+        case P_F32:
+            return "$f32";
+        case P_F64:
+            return "$f64";
+        case P_C8:
+            return "$c8";
+        case P_PTR:
+            return "$ptr";
+        case P_ID:
+            return "$id";
+        case P_TYPE:
+            return "$type";
+        case P_RAW:
+            return "$raw";
+        default:
+            return nullopt;
+        }
+    } else if (isTuple(t)) {
+        stringstream ss;
+        const Tuple &tup = getTuple(t);
+        for (auto it : tup.members) {
+            optional<string> membStr = makeBinString(it);
+            if (!membStr.has_value()) return nullopt;
+            ss << membStr.value();
+        }
+        return ss.str();
+    } else if (isTypeDescr(t)) {
+        stringstream ss;
+        const TypeDescr &descr = getTypeDescr(t);
+        for (size_t i = descr.decors.size()-1;; --i) {
+            if (descr.cns[i]) ss << "$cn";
+            if (descr.decors[i].type == TypeDescr::Decor::D_ARR) ss << "$arr";
+            else if (descr.decors[i].type == TypeDescr::Decor::D_ARR_PTR) ss << "$[]";
+            else if (descr.decors[i].type == TypeDescr::Decor::D_PTR) ss << "$*";
+            else return nullopt;
+
+            if (i == 0) break;
+        }
+        if (descr.cn) ss << "$cn";
+        optional<string> baseStr = makeBinString(descr.base);
+        if (!baseStr.has_value()) return nullopt;
+        ss << baseStr.value();
+        return ss.str();
+    } else {
+        return nullopt;
     }
 }

@@ -192,8 +192,10 @@ public:
     bool fitsTypeF(double x, Id t) const;
     Id shortestFittingTypeIId(int64_t x) const;
     bool isDirectCn(Id t) const;
-    
+
     bool isImplicitCastable(Id from, Id into) const;
+
+    std::optional<std::string> makeBinString(Id t) const;
 };
 
 template <typename T>

@@ -720,7 +720,8 @@ optional<EvalVal> Evaluator::makeCast(const EvalVal &srcEvalVal, TypeTable::Id s
             !assignBasedOnTypeC(dstEvalVal.value(), (char) x, dstTypeId) &&
             !assignBasedOnTypeB(dstEvalVal.value(), (bool) x, dstTypeId) &&
             !(typeTable->worksAsTypeStr(dstTypeId) && x == 0) &&
-            !(typeTable->worksAsTypeAnyP(dstTypeId) && x == 0)) {
+            !(typeTable->worksAsTypeAnyP(dstTypeId) && x == 0) &&
+            !assignBasedOnTypeId(dstEvalVal.value(), x, dstTypeId)) {
             dstEvalVal.reset();
         }
     } else if (typeTable->worksAsTypeF(srcTypeId)) {
@@ -740,7 +741,8 @@ optional<EvalVal> Evaluator::makeCast(const EvalVal &srcEvalVal, TypeTable::Id s
     } else if (typeTable->worksAsTypeB(srcTypeId)) {
         if (!assignBasedOnTypeI(dstEvalVal.value(), srcEvalVal.b ? 1 : 0, dstTypeId) &&
             !assignBasedOnTypeU(dstEvalVal.value(), srcEvalVal.b ? 1 : 0, dstTypeId) &&
-            !assignBasedOnTypeB(dstEvalVal.value(), srcEvalVal.b, dstTypeId)) {
+            !assignBasedOnTypeB(dstEvalVal.value(), srcEvalVal.b, dstTypeId) &&
+            !assignBasedOnTypeId(dstEvalVal.value(), srcEvalVal.b, dstTypeId)) {
             dstEvalVal.reset();
         }
     } else if (typeTable->worksAsTypeStr(srcTypeId)) {
@@ -779,10 +781,20 @@ optional<EvalVal> Evaluator::makeCast(const EvalVal &srcEvalVal, TypeTable::Id s
             !typeTable->worksAsTypeAnyP(dstTypeId)) {
             dstEvalVal.reset();
         }
+    } else if (typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE)) {
+        if (typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_TYPE)) {
+            dstEvalVal = EvalVal::copyNoRef(srcEvalVal);
+            dstEvalVal.value().type = dstTypeId;
+        } else if (typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_ID)) {
+            optional<NamePool::Id> id = makeIdFromTy(srcEvalVal.ty);
+            if (id.has_value()) dstEvalVal.value().id = id.value();
+            else dstEvalVal.reset();
+        } else {
+            dstEvalVal.reset();
+        }
     } else if (typeTable->worksAsTypeArr(srcTypeId) ||
         typeTable->worksAsTuple(srcTypeId) ||
         typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_ID) ||
-        typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE) ||
         typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_RAW)) {
         // these types are only castable when changing constness
         if (typeTable->isImplicitCastable(srcTypeId, dstTypeId)) {
@@ -809,6 +821,25 @@ optional<EvalVal> Evaluator::makeArray(TypeTable::Id arrTypeId) {
     if (!typeTable->worksAsTypeArr(arrTypeId)) return nullopt;
 
     return EvalVal::makeVal(arrTypeId, typeTable);
+}
+
+NamePool::Id Evaluator::makeIdFromU(std::uint64_t x) {
+    stringstream ss;
+    ss << "$U" << x;
+    return namePool->add(ss.str());
+}
+
+NamePool::Id Evaluator::makeIdFromB(bool x) {
+    return namePool->add(x ? "$Bt" : "$Bf");
+}
+
+optional<NamePool::Id> Evaluator::makeIdFromTy(TypeTable::Id x) {
+    optional<string> str = typeTable->makeBinString(x);
+    if (!str.has_value()) return nullopt;
+
+    stringstream ss;
+    ss << "$T" << str.value();
+    return namePool->add(ss.str());
 }
 
 NamePool::Id Evaluator::makeIdConcat(NamePool::Id lhs, NamePool::Id rhs) {
@@ -888,6 +919,26 @@ bool Evaluator::assignBasedOnTypeC(EvalVal &val, char x, TypeTable::Id ty) {
 bool Evaluator::assignBasedOnTypeB(EvalVal &val, bool x, TypeTable::Id ty) {
     if (typeTable->worksAsPrimitive(ty, TypeTable::P_BOOL)) {
         val.b = x;
+    } else {
+        return false;
+    }
+
+    return true;
+}
+
+bool Evaluator::assignBasedOnTypeId(EvalVal &val, std::uint64_t x, TypeTable::Id ty) {
+    if (typeTable->worksAsPrimitive(ty, TypeTable::P_ID)) {
+        val.id = makeIdFromU(x);
+    } else {
+        return false;
+    }
+
+    return true;
+}
+
+bool Evaluator::assignBasedOnTypeId(EvalVal &val, bool x, TypeTable::Id ty) {
+    if (typeTable->worksAsPrimitive(ty, TypeTable::P_ID)) {
+        val.id = makeIdFromB(x);
     } else {
         return false;
     }

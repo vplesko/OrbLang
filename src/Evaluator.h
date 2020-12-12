@@ -12,9 +12,14 @@ class Evaluator : public Processor {
     bool assignBasedOnTypeF(EvalVal &val, double x, TypeTable::Id ty);
     bool assignBasedOnTypeC(EvalVal &val, char x, TypeTable::Id ty);
     bool assignBasedOnTypeB(EvalVal &val, bool x, TypeTable::Id ty);
+    bool assignBasedOnTypeId(EvalVal &val, std::uint64_t x, TypeTable::Id ty);
+    bool assignBasedOnTypeId(EvalVal &val, bool x, TypeTable::Id ty);
 
     std::optional<EvalVal> makeCast(const EvalVal &srcEvalVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
     std::optional<EvalVal> makeArray(TypeTable::Id arrTypeId);
+    NamePool::Id makeIdFromU(std::uint64_t x);
+    NamePool::Id makeIdFromB(bool x);
+    std::optional<NamePool::Id> makeIdFromTy(TypeTable::Id x);
     NamePool::Id makeIdConcat(NamePool::Id lhs, NamePool::Id rhs);
     std::vector<NodeVal> makeRawConcat(const EvalVal &lhs, const EvalVal &rhs) const;
 

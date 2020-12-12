@@ -195,7 +195,8 @@ bool EvalVal::isCastable(const EvalVal &val, TypeTable::Id dstTypeId, const Stri
             typeTable->worksAsTypeC(dstTypeId) ||
             typeTable->worksAsTypeB(dstTypeId) ||
             (typeTable->worksAsTypeStr(dstTypeId) && x == 0) ||
-            (typeTable->worksAsTypeAnyP(dstTypeId) && x == 0);
+            (typeTable->worksAsTypeAnyP(dstTypeId) && x == 0) ||
+            typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_ID);
     } else if (typeTable->worksAsTypeF(srcTypeId)) {
         return typeTable->worksAsTypeI(dstTypeId) ||
             typeTable->worksAsTypeU(dstTypeId) ||
@@ -208,7 +209,8 @@ bool EvalVal::isCastable(const EvalVal &val, TypeTable::Id dstTypeId, const Stri
     } else if (typeTable->worksAsTypeB(srcTypeId)) {
         return typeTable->worksAsTypeI(dstTypeId) ||
             typeTable->worksAsTypeU(dstTypeId) ||
-            typeTable->worksAsTypeB(dstTypeId);
+            typeTable->worksAsTypeB(dstTypeId) ||
+            typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_ID);
     } else if (typeTable->worksAsTypeStr(srcTypeId)) {
         if (val.str.has_value()) {
             const string &str = stringPool->get(val.str.value());
@@ -229,10 +231,12 @@ bool EvalVal::isCastable(const EvalVal &val, TypeTable::Id dstTypeId, const Stri
             typeTable->worksAsTypeU(dstTypeId) ||
             typeTable->worksAsTypeB(dstTypeId) ||
             typeTable->worksAsTypeAnyP(dstTypeId);
+    } else if (typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE)) {
+        return typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_ID) ||
+            typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE);
     } else if (typeTable->worksAsTypeArr(srcTypeId) ||
         typeTable->worksAsTuple(srcTypeId) ||
         typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_ID) ||
-        typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE) ||
         typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_RAW)) {
         // these types are only castable when changing constness
         return typeTable->isImplicitCastable(srcTypeId, dstTypeId);
