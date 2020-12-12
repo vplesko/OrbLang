@@ -1,6 +1,8 @@
 import "util/io.orb";
 
 fnc main () () {
+    sym p:i32;
+
     eval (sym (ty0 i32));
     eval (sym (a:ty0 100));
     println_i32 (eval a);
@@ -16,4 +18,19 @@ fnc main () () {
 
     eval (sym (d:(ty0 (= ty0 bool)) (tup 103 false)));
     println_i32 (eval (. d 0));
+
+    eval (= ty0 i32);
+    = p 200;
+    eval (block {
+        exit (== ty0 i32);
+        = p -1;
+    });
+    println_i32 p;
+
+    = p 201;
+    eval (block {
+        exit (!= ty0 (i32 cn));
+        = p -1;
+    });
+    println_i32 p;
 };

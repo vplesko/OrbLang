@@ -295,6 +295,8 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     bool isTypeStr = typeTable->worksAsTypeStr(ty);
     bool isTypeP = typeTable->worksAsTypeAnyP(ty);
     bool isTypeB = typeTable->worksAsTypeB(ty);
+    bool isTypeId = typeTable->worksAsPrimitive(ty, TypeTable::P_ID);
+    bool isTypeTy = typeTable->worksAsPrimitive(ty, TypeTable::P_TYPE);
 
     optional<int64_t> il, ir;
     optional<uint64_t> ul, ur;
@@ -302,6 +304,8 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     optional<double> fl, fr;
     optional<StringPool::Id> strl, strr;
     optional<bool> bl, br;
+    optional<NamePool::Id> idl, idr;
+    optional<TypeTable::Id> tyl, tyr;
     if (isTypeI) {
         il = EvalVal::getValueI(lhs.getEvalVal(), typeTable).value();
         ir = EvalVal::getValueI(rhs.getEvalVal(), typeTable).value();
@@ -320,6 +324,12 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     } else if (isTypeB) {
         bl = lhs.getEvalVal().b;
         br = rhs.getEvalVal().b;
+    } else if (isTypeId) {
+        idl = lhs.getEvalVal().id;
+        idr = rhs.getEvalVal().id;
+    } else if (isTypeTy) {
+        tyl = lhs.getEvalVal().ty;
+        tyr = rhs.getEvalVal().ty;
     }
 
     switch (op) {
@@ -345,6 +355,12 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
         } else if (isTypeB) {
             result->result = bl.value()==br.value();
             return !result->result;
+        } else if (isTypeId) {
+            result->result = idl.value()==idr.value();
+            return !result->result;
+        } else if (isTypeTy) {
+            result->result = tyl.value()==tyr.value();
+            return !result->result;
         }
         break;
     case Oper::NE:
@@ -368,6 +384,12 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
             return !result->result;
         } else if (isTypeB) {
             result->result = bl.value()!=br.value();
+            return !result->result;
+        } else if (isTypeId) {
+            result->result = idl.value()!=idr.value();
+            return !result->result;
+        } else if (isTypeTy) {
+            result->result = tyl.value()!=tyr.value();
             return !result->result;
         }
         break;
