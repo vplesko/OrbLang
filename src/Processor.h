@@ -106,6 +106,7 @@ private:
 
     NodeVal processType(const NodeVal &node, const NodeVal &starting);
     NodeVal processId(const NodeVal &node);
+    NodeVal processId(const NodeVal &node, const NodeVal &starting);
     NodeVal processSym(const NodeVal &node);
     NodeVal processCast(const NodeVal &node);
     NodeVal processBlock(const NodeVal &node);

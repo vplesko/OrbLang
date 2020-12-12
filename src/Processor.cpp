@@ -42,6 +42,10 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
         return processNode(invoked);
     }
 
+    if (starting.isEvalVal() && EvalVal::isId(starting.getEvalVal(), typeTable)) {
+        return processId(node, starting);
+    }
+
     if (starting.isEvalVal() && EvalVal::isType(starting.getEvalVal(), typeTable)) {
         return processType(node, starting);
     }
@@ -93,8 +97,6 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
         msgs->errorInternal(node.getCodeLoc());
         return NodeVal();
     }
-
-    // TODO(id) does lookup
 
     msgs->errorUnknown(node.getCodeLoc());
     return NodeVal();
@@ -198,6 +200,12 @@ NodeVal Processor::processId(const NodeVal &node) {
         msgs->errorSymNotFound(node.getCodeLoc(), id);
         return NodeVal();
     }
+}
+
+NodeVal Processor::processId(const NodeVal &node, const NodeVal &starting) {
+    if (!checkExactlyChildren(node, 1, true)) return NodeVal();
+
+    return processId(starting);
 }
 
 NodeVal Processor::processSym(const NodeVal &node) {

@@ -1,6 +1,17 @@
 import "util/io.orb";
 
 fnc main () () {
-    sym (a=+-*/%<>&|^!~[]._?0123456789:i32 100);
+    sym (x 100);
+    println_i32 (\x);
+
+    = x 101;
+    eval (sym (id1 \x));
+    println_i32 (id1);
+
+    = x 102;
+    eval (sym (id2 \id1));
+    println_i32 ((id2));
+
+    sym (a=+-*/%<>&|^!~[]._?0123456789:i32 200);
     println_i32 a=+-*/%<>&|^!~[]._?0123456789;
 };

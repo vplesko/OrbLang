@@ -87,7 +87,7 @@ processing non-leaf:
 		invoke
 		process new node
 	else:
-		depending on what starting is (type, function, keyword, oper), process as that, or as tuple
+		depending on what starting is (id, type, function, keyword, oper), process as that
 
 processing node:
 	if empty or no children:
