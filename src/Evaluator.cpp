@@ -1,4 +1,5 @@
 #include "Evaluator.h"
+#include <sstream>
 #include "exceptions.h"
 using namespace std;
 
@@ -542,11 +543,13 @@ NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const
     bool isTypeI = typeTable->worksAsTypeI(ty);
     bool isTypeU = typeTable->worksAsTypeU(ty);
     bool isTypeF = typeTable->worksAsTypeF(ty);
+    bool isTypeId = typeTable->worksAsPrimitive(ty, TypeTable::P_ID);
     bool isTypeRaw = NodeVal::isRawVal(lhs, typeTable);
 
     optional<int64_t> il, ir;
     optional<uint64_t> ul, ur;
     optional<double> fl, fr;
+    optional<NamePool::Id> idl, idr;
     if (isTypeI) {
         il = EvalVal::getValueI(lhs.getEvalVal(), typeTable).value();
         ir = EvalVal::getValueI(rhs.getEvalVal(), typeTable).value();
@@ -556,8 +559,11 @@ NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const
     } else if (isTypeF) {
         fl = EvalVal::getValueF(lhs.getEvalVal(), typeTable).value();
         fr = EvalVal::getValueF(rhs.getEvalVal(), typeTable).value();
+    } else if (isTypeId) {
+        idl = lhs.getEvalVal().id;
+        idr = rhs.getEvalVal().id;
     }
-    
+
     switch (op) {
     case Oper::ADD:
         if (isTypeI) {
@@ -566,6 +572,9 @@ NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const
             if (assignBasedOnTypeU(evalVal, ul.value()+ur.value(), ty)) success = true;
         } else if (isTypeF) {
             if (assignBasedOnTypeF(evalVal, fl.value()+fr.value(), ty)) success = true;
+        } else if (isTypeId) {
+            evalVal.id = makeIdConcat(lhs.getEvalVal().id, rhs.getEvalVal().id);
+            success = true;
         } else if (isTypeRaw) {
             evalVal.elems = makeRawConcat(lhs.getEvalVal(), rhs.getEvalVal());
             success = true;
@@ -800,6 +809,12 @@ optional<EvalVal> Evaluator::makeArray(TypeTable::Id arrTypeId) {
     if (!typeTable->worksAsTypeArr(arrTypeId)) return nullopt;
 
     return EvalVal::makeVal(arrTypeId, typeTable);
+}
+
+NamePool::Id Evaluator::makeIdConcat(NamePool::Id lhs, NamePool::Id rhs) {
+    stringstream ss;
+    ss << namePool->get(lhs) << "$+" << namePool->get(rhs);
+    return namePool->add(ss.str());
 }
 
 vector<NodeVal> Evaluator::makeRawConcat(const EvalVal &lhs, const EvalVal &rhs) const {
