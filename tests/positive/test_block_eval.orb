@@ -117,7 +117,7 @@ fnc main () () {
             = p (+ p 1);
             loop (< p 700);
             pass p;
-        };
+        }
     ));
 
     eval (= p 690);

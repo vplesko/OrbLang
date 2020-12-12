@@ -199,30 +199,30 @@ fnc main () () {
     println_i32 p0;*#
 
     eval (block {
-        sym (x:(i32 i32) (1900:i32 1901:i32));
+        sym (x:(i32 i32) (tup 1900:i32 1901:i32));
         = p0 (. x 1);
     });
     println_i32 p0;
 
     eval (block {
-        sym (x:((i32 cn) (i32 cn)) (2000:(i32 cn) 2001:(i32 cn)));
+        sym (x:((i32 cn) (i32 cn)) (tup 2000:(i32 cn) 2001:(i32 cn)));
         = p0 (. x 0);
     });
     println_i32 p0;
 
     eval (block {
-        = p0 (. (2100:i32 2101:i32) 1);
+        = p0 (. (tup 2100:i32 2101:i32) 1);
     });
     println_i32 p0;
 
     eval (block {
-        = p0 (dot (2200:i32 2201:i32) 0);
+        = p0 (dot (tup 2200:i32 2201:i32) 0);
     });
     println_i32 p0;
 
     eval (block {
         sym (y:(i32 i32) (pair 2300 2300));
-        sym (x:((i32 i32) (i32 i32)) (y (2301:i32 2301:i32)));
+        sym (x:((i32 i32) (i32 i32)) (tup y (tup 2301:i32 2301:i32)));
         = p0 (. (. x 0) 0);
         = p1 (. x 1 0);
     });

@@ -120,7 +120,7 @@ private:
     NodeVal processEval(const NodeVal &node);
     NodeVal processImport(const NodeVal &node);
     NodeVal processOper(const NodeVal &node, Oper op);
-    NodeVal processTuple(const NodeVal &node, const NodeVal &starting);
+    NodeVal processTup(const NodeVal &node);
 
     NodeVal processLeaf(const NodeVal &node);
     NodeVal processNonLeaf(const NodeVal &node);

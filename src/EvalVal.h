@@ -43,7 +43,7 @@ struct EvalVal {
     bool isEscaped() const { return escapeScore > 0; }
 
     // if is callable, type is meaningless
-    // TODO after callables (fncs, macs, specs) are first-class, rework that
+    // TODO after callables (fncs, macs) are first-class, rework that
     bool isCallable() const { return !type.has_value(); }
     std::optional<NamePool::Id> getCallableId() const;
 

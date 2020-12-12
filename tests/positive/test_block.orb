@@ -59,7 +59,7 @@ fnc main () () {
                 pass b0 502;
             };
             pass -1;
-        };
+        }
     );
 
     block () () {
@@ -81,7 +81,7 @@ fnc main () () {
             = d (+ d 1);
             loop (< d 700);
             pass d;
-        };
+        }
     );
 
     = d 690;

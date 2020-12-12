@@ -152,22 +152,22 @@ fnc main () () {
         println_i32 (. y 1);
     };
     block {
-        sym (x:(i32 i32) (1900:i32 1901:i32));
+        sym (x:(i32 i32) (tup 1900:i32 1901:i32));
         println_i32 (. x 1);
     };
     block {
-        sym (x:((i32 cn) (i32 cn)) (2000:(i32 cn) 2001:(i32 cn)));
+        sym (x:((i32 cn) (i32 cn)) (tup 2000:(i32 cn) 2001:(i32 cn)));
         println_i32 (. x 0);
     };
     block {
-        println_i32 (. (2100:i32 2101:i32) 1);
+        println_i32 (. (tup 2100:i32 2101:i32) 1);
     };
     block {
-        println_i32 (dot (2200:i32 2201:i32) 0);
+        println_i32 (dot (tup 2200:i32 2201:i32) 0);
     };
     block {
         sym (y:(i32 i32) (pair 2300 2300));
-        sym (x:((i32 i32) (i32 i32)) (y (2301:i32 2301:i32)));
+        sym (x:((i32 i32) (i32 i32)) (tup y (tup 2301:i32 2301:i32)));
         println_i32 (. (. x 0) 0);
         println_i32 (. x 1 0);
     };

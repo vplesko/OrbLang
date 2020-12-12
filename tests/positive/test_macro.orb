@@ -31,9 +31,7 @@ eval (mac getSecond (r) {
 
 eval (mac say (x) {
     sym (r ());
-    passthrough {
-        = r \(println_i32 ,x);
-    };
+    passthrough (= r \(println_i32 ,x));
     ret r;
 });
 

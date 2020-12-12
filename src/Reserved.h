@@ -24,6 +24,7 @@ enum class Keyword {
     RET,
     MAC,
     EVAL,
+    TUP,
     IMPORT,
     UNKNOWN
 };

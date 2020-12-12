@@ -75,6 +75,8 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
                 return processMac(node);
             case Keyword::EVAL:
                 return processEval(node);
+            case Keyword::TUP:
+                return processTup(node);
             case Keyword::IMPORT:
                 return processImport(node);
             default:
@@ -92,8 +94,10 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
         return NodeVal();
     }
 
-    // TODO tup for tuple, (id) does lookup, error otherwise
-    return processTuple(node, starting);
+    // TODO(id) does lookup
+
+    msgs->errorUnknown(node.getCodeLoc());
+    return NodeVal();
 }
 
 NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
@@ -717,14 +721,13 @@ NodeVal Processor::processOper(const NodeVal &node, Oper op) {
     }
 }
 
-NodeVal Processor::processTuple(const NodeVal &node, const NodeVal &starting) {
-    // TODO rework after allowing single value tuples
-    if (node.getChildrenCnt() == 1) return starting;
+// TODO remove tup after replacing with macro
+NodeVal Processor::processTup(const NodeVal &node) {
+    if (!checkAtLeastChildren(node, 3, true)) return NodeVal();
 
     vector<NodeVal> membs;
-    membs.reserve(node.getChildrenCnt());
-    membs.push_back(starting);
-    bool allEval = checkIsEvalTime(starting, false);
+    membs.reserve(node.getChildrenCnt()-1);
+    bool allEval = true;
     for (size_t i = 1; i < node.getChildrenCnt(); ++i) {
         NodeVal memb = processNode(node.getChild(i));
         if (memb.isInvalid()) return NodeVal();
