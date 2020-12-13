@@ -228,12 +228,13 @@ type
 ********************
 
 plan:
- - new specials: sizeOf, attrOf, error
+ - sizeOf
  - attributes
+ - attrOf, attr?? (type is for type attr)
  - custom types (req attr in sym, type cn only)
  - variadics
  - first class fncs and macs
- - declarations
+ - declarations (fncs and tuple types only)
  - ptrs in eval
  - drop, move
  - new attributes: noZero, noScope, inline, restrict, noDrop, unique, pure...
@@ -241,4 +242,4 @@ plan:
  - custom attrs on custom types
  - base.orb, std
  - __line, __file
- - override
+ - error, override
