@@ -186,6 +186,7 @@ public:
     std::optional<const Tuple*> extractTuple(Id t) const;
     std::optional<Id> extractMemberType(Id t, std::size_t ind);
     std::optional<std::size_t> extractLenOfArr(Id arrTypeId) const;
+    std::optional<std::size_t> extractLenOfTuple(Id tupleTypeId) const;
 
     bool fitsTypeI(int64_t x, Id t) const;
     bool fitsTypeU(uint64_t x, Id t) const;

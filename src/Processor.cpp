@@ -83,6 +83,8 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
                 return processTup(node);
             case Keyword::TYPE_OF:
                 return processTypeOf(node);
+            case Keyword::LEN_OF:
+                return processLenOf(node);
             case Keyword::IMPORT:
                 return processImport(node);
             default:
@@ -778,9 +780,34 @@ NodeVal Processor::processTypeOf(const NodeVal &node) {
     if (operand.isInvalid()) return NodeVal();
     if (!checkHasType(operand, true)) return NodeVal();
 
-    EvalVal type = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
-    type.ty = operand.getType().value();
-    return NodeVal(node.getCodeLoc(), type);
+    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
+    evalVal.ty = operand.getType().value();
+    return NodeVal(node.getCodeLoc(), evalVal);
+}
+
+NodeVal Processor::processLenOf(const NodeVal &node) {
+    if (!checkExactlyChildren(node, 2, true)) return NodeVal();
+
+    NodeVal operand = processNode(node.getChild(1));
+    if (operand.isInvalid()) return NodeVal();
+    if (!checkHasType(operand, true)) return NodeVal();
+
+    TypeTable::Id ty;
+    if (typeTable->worksAsPrimitive(operand.getType().value(), TypeTable::P_TYPE)) ty = operand.getEvalVal().ty;
+    else ty = operand.getType().value();
+
+    uint32_t len;
+    if (typeTable->worksAsTypeArr(ty)) len = typeTable->extractLenOfArr(ty).value();
+    else if (typeTable->worksAsTuple(ty)) len = typeTable->extractLenOfTuple(ty).value();
+    else if (typeTable->worksAsPrimitive(ty, TypeTable::P_RAW)) len = operand.getChildrenCnt();
+    else {
+        msgs->errorUnknown(node.getCodeLoc());
+        return NodeVal();
+    }
+
+    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_U32), typeTable);
+    evalVal.u32 = len;
+    return NodeVal(node.getCodeLoc(), evalVal);
 }
 
 NodeVal Processor::promoteLiteralVal(const NodeVal &node) {

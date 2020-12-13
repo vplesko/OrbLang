@@ -275,7 +275,12 @@ TypeTable::Id TypeTable::getTypeCharArrOfLenId(std::size_t len) {
 
 optional<size_t> TypeTable::extractLenOfArr(Id arrTypeId) const {
     if (!worksAsTypeArr(arrTypeId)) return nullopt;
-    return typeDescrs[arrTypeId.index].first.decors.back().len;
+    return getTypeDescr(arrTypeId).decors.back().len;
+}
+
+optional<size_t> TypeTable::extractLenOfTuple(Id tupleTypeId) const {
+    if (!worksAsTuple(tupleTypeId)) return nullopt;
+    return getTuple(tupleTypeId).members.size();
 }
 
 bool TypeTable::isValidType(Id t) const {

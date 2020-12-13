@@ -124,6 +124,7 @@ private:
     NodeVal processOper(const NodeVal &node, Oper op);
     NodeVal processTup(const NodeVal &node);
     NodeVal processTypeOf(const NodeVal &node);
+    NodeVal processLenOf(const NodeVal &node);
 
     NodeVal processLeaf(const NodeVal &node);
     NodeVal processNonLeaf(const NodeVal &node);

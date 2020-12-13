@@ -26,6 +26,7 @@ enum class Keyword {
     EVAL,
     TUP,
     TYPE_OF,
+    LEN_OF,
     IMPORT,
     UNKNOWN
 };

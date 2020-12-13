@@ -54,4 +54,23 @@ fnc main () () {
         = p -1;
     };
     println_i32 p;
+
+    block {
+        sym x:(i32 3);
+        println_i32 (+ 300 (lenOf x));
+        println_i32 (+ 300 (lenOf (i32 4)));
+    };
+
+    block {
+        sym x:(c8 c8 c8 c8 c8);
+        println_i32 (+ 300 (lenOf x));
+        println_i32 (+ 300 (lenOf (c8 c8 c8 c8 c8 c8)));
+    };
+
+    block {
+        eval (sym x:raw);
+        println_i32 (+ 307 (lenOf x));
+        eval (= x \(() () ()));
+        println_i32 (+ 305 (lenOf x));
+    };
 };

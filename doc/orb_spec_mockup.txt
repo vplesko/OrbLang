@@ -172,6 +172,16 @@ typeOf
 	typeOf val
 	returns the type of val
 
+lenOf
+	lenOf val
+	if val is a type:
+		if val is a type arr, returns its length
+		if val is a type tuple, returns its num of membs
+		if val is a type raw, returns its num of children
+		otherwise, error
+	otherwise, return lenOf its type
+	returns a u32
+
 import
 	import a
 	a is evalVal string
@@ -214,13 +224,13 @@ type
 ********************
 
 plan:
- - custom types
- - ptrs in eval
- - new specials: lenOf, sizeOf, attrOf, ??, error
+ - new specials: sizeOf, attrOf, ??, error
  - attributes
+ - custom types (req attr in sym, type cn only)
  - variadics
  - first class fncs and macs
  - declarations
+ - ptrs in eval
  - drop, move
  - new attributes: noZero, noScope, inline, restrict, noDrop, unique, pure...
  - include C headers
