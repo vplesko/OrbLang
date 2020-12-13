@@ -73,4 +73,14 @@ fnc main () () {
         eval (= x \(() () ()));
         println_i32 (+ 305 (lenOf x));
     };
+
+    block {
+        sym x:c8 (y:(i16 cn) 0);
+        println_i32 (+ 399 (sizeOf x));
+        println_i32 (+ 399 (sizeOf y));
+        println_i32 (+ 398 (sizeOf i32));
+        eval (sym z:i32);
+        println_i32 (+ 399 (eval (sizeOf z)));
+        println_i32 (+ 400 (eval (sizeOf u32)));
+    };
 };

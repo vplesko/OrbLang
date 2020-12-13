@@ -16,7 +16,9 @@ CompilationOrchestrator::CompilationOrchestrator(ostream &out) {
     symbolTable = make_unique<SymbolTable>();
     msgs = make_unique<CompilationMessages>(namePool.get(), stringPool.get(), typeTable.get(), symbolTable.get(), out);
     evaluator = make_unique<Evaluator>(namePool.get(), stringPool.get(), typeTable.get(), symbolTable.get(), msgs.get());
-    compiler = make_unique<Compiler>(namePool.get(), stringPool.get(), typeTable.get(), symbolTable.get(), msgs.get(), evaluator.get());
+    compiler = make_unique<Compiler>(namePool.get(), stringPool.get(), typeTable.get(), symbolTable.get(), msgs.get());
+    evaluator->setCompiler(compiler.get());
+    compiler->setEvaluator(evaluator.get());
 
     genReserved();
     genPrimTypes();
@@ -62,6 +64,7 @@ void CompilationOrchestrator::genReserved() {
     addKeyword(namePool.get(), "tup", Keyword::TUP);
     addKeyword(namePool.get(), "typeOf", Keyword::TYPE_OF);
     addKeyword(namePool.get(), "lenOf", Keyword::LEN_OF);
+    addKeyword(namePool.get(), "sizeOf", Keyword::SIZE_OF);
     addKeyword(namePool.get(), "??", Keyword::IS_DEF);
     addKeyword(namePool.get(), "import", Keyword::IMPORT);
 

@@ -4,7 +4,7 @@ Orb is a general-purpose compiled programming language. It features static typin
 
 **This project is a hobby effort and very much a work in progress. A good number of key features are still missing and the tooling may not be very user-friendly.**
 
-> **Check `doc/examples` for some examples for Orb code.**
+> **Check `doc/examples` for some examples of Orb code.**
 
 ## Install
 
@@ -59,7 +59,7 @@ fnc main () () {
 };
 ```
 
-This may be compiled to an executable with:
+This can be compiled to an executable with:
 
 ```
 ./orbc main.orb main

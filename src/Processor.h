@@ -19,6 +19,7 @@ protected:
     SymbolTable *symbolTable;
     CompilationMessages *msgs;
     Evaluator *evaluator;
+    Processor *compiler;
 
     unsigned topmost;
 
@@ -53,6 +54,7 @@ protected:
     virtual NodeVal performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) =0;
     virtual NodeVal performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op) =0;
     virtual NodeVal performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) =0;
+    virtual std::optional<std::uint64_t> performSizeOf(CodeLoc codeLoc, TypeTable::Id ty) =0;
 
 protected:
     bool checkInGlobalScope(CodeLoc codeLoc, bool orError);
@@ -125,6 +127,7 @@ private:
     NodeVal processTup(const NodeVal &node);
     NodeVal processTypeOf(const NodeVal &node);
     NodeVal processLenOf(const NodeVal &node);
+    NodeVal processSizeOf(const NodeVal &node);
     NodeVal processIsDef(const NodeVal &node);
 
     NodeVal processLeaf(const NodeVal &node);
@@ -132,7 +135,10 @@ private:
     NodeVal processNonLeafEscaped(const NodeVal &node);
 
 public:
-    Processor(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs, Evaluator *evaluator);
+    Processor(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs);
+
+    void setEvaluator(Evaluator *evaluator) { this->evaluator = evaluator; }
+    void setCompiler(Processor *compiler) { this->compiler = compiler; }
 
     NodeVal processNode(const NodeVal &node);
 

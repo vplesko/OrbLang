@@ -8,7 +8,8 @@ struct ComparisonSignal {
 };
 
 Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs)
-    : Processor(namePool, stringPool, typeTable, symbolTable, msgs, this) {
+    : Processor(namePool, stringPool, typeTable, symbolTable, msgs) {
+    setEvaluator(this);
 }
 
 NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
@@ -684,6 +685,11 @@ NodeVal Evaluator::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::ve
     }
 
     return NodeVal(codeLoc, evalVal);
+}
+
+optional<uint64_t> Evaluator::performSizeOf(CodeLoc codeLoc, TypeTable::Id ty) {
+    msgs->errorInternal(codeLoc);
+    return nullopt;
 }
 
 NodeVal Evaluator::doBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success, bool jumpingOut) {

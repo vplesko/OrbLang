@@ -14,6 +14,9 @@ class Compiler : public Processor {
     std::unique_ptr<llvm::Module> llvmModule;
     std::unique_ptr<llvm::PassManagerBuilder> llvmPmb;
     std::unique_ptr<llvm::legacy::FunctionPassManager> llvmFpm;
+    llvm::TargetMachine *targetMachine;
+
+    bool initLlvmTargetMachine();
 
     bool isLlvmBlockTerminated() const;
     llvm::Function* getLlvmCurrFunction() { return llvmBuilder.GetInsertBlock()->getParent(); }
@@ -61,9 +64,10 @@ class Compiler : public Processor {
     NodeVal performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) override;
     NodeVal performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op) override;
     NodeVal performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) override;
+    std::optional<std::uint64_t> performSizeOf(CodeLoc codeLoc, TypeTable::Id ty) override;
 
 public:
-    Compiler(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs, Evaluator *evaluator);
+    Compiler(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs);
 
     llvm::Type* genPrimTypeBool();
     llvm::Type* genPrimTypeI(unsigned bits);

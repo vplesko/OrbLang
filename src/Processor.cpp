@@ -3,8 +3,8 @@
 #include "Evaluator.h"
 using namespace std;
 
-Processor::Processor(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs, Evaluator *evaluator)
-    : namePool(namePool), stringPool(stringPool), typeTable(typeTable), symbolTable(symbolTable), msgs(msgs), evaluator(evaluator), topmost(0) {
+Processor::Processor(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs)
+    : namePool(namePool), stringPool(stringPool), typeTable(typeTable), symbolTable(symbolTable), msgs(msgs), compiler(nullptr), evaluator(nullptr), topmost(0) {
 }
 
 NodeVal Processor::processNode(const NodeVal &node) {
@@ -85,6 +85,8 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
                 return processTypeOf(node);
             case Keyword::LEN_OF:
                 return processLenOf(node);
+            case Keyword::SIZE_OF:
+                return processSizeOf(node);
             case Keyword::IS_DEF:
                 return processIsDef(node);
             case Keyword::IMPORT:
@@ -798,7 +800,7 @@ NodeVal Processor::processLenOf(const NodeVal &node) {
     if (typeTable->worksAsPrimitive(operand.getType().value(), TypeTable::P_TYPE)) ty = operand.getEvalVal().ty;
     else ty = operand.getType().value();
 
-    uint32_t len;
+    uint64_t len;
     if (typeTable->worksAsTypeArr(ty)) len = typeTable->extractLenOfArr(ty).value();
     else if (typeTable->worksAsTuple(ty)) len = typeTable->extractLenOfTuple(ty).value();
     else if (typeTable->worksAsPrimitive(ty, TypeTable::P_RAW)) len = operand.getChildrenCnt();
@@ -807,8 +809,27 @@ NodeVal Processor::processLenOf(const NodeVal &node) {
         return NodeVal();
     }
 
-    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_U32), typeTable);
-    evalVal.u32 = len;
+    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_U64), typeTable);
+    evalVal.u64 = len;
+    return NodeVal(node.getCodeLoc(), evalVal);
+}
+
+NodeVal Processor::processSizeOf(const NodeVal &node) {
+    if (!checkExactlyChildren(node, 2, true)) return NodeVal();
+
+    NodeVal operand = processNode(node.getChild(1));
+    if (operand.isInvalid()) return NodeVal();
+    if (!checkHasType(operand, true)) return NodeVal();
+
+    TypeTable::Id ty;
+    if (typeTable->worksAsPrimitive(operand.getType().value(), TypeTable::P_TYPE)) ty = operand.getEvalVal().ty;
+    else ty = operand.getType().value();
+
+    optional<uint64_t> size = compiler->performSizeOf(node.getCodeLoc(), ty);
+    if (!size.has_value()) return NodeVal();
+
+    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_U64), typeTable);
+    evalVal.u64 = size.value();
     return NodeVal(node.getCodeLoc(), evalVal);
 }
 

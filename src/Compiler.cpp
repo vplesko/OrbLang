@@ -16,8 +16,10 @@ struct ComparisonSignal {
     llvm::PHINode *llvmPhi = nullptr;
 };
 
-Compiler::Compiler(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs, Evaluator *evaluator)
-    : Processor(namePool, stringPool, typeTable, symbolTable, msgs, evaluator), llvmBuilder(llvmContext), llvmBuilderAlloca(llvmContext) {
+Compiler::Compiler(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs)
+    : Processor(namePool, stringPool, typeTable, symbolTable, msgs), llvmBuilder(llvmContext), llvmBuilderAlloca(llvmContext), targetMachine(nullptr) {
+    setCompiler(this);
+
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("module"), llvmContext);
 
     llvmPmb = make_unique<llvm::PassManagerBuilder>();
@@ -32,28 +34,9 @@ void Compiler::printout() const {
 }
 
 bool Compiler::binary(const std::string &filename) {
-    llvm::InitializeAllTargetInfos();
-    llvm::InitializeAllTargets();
-    llvm::InitializeAllTargetMCs();
-    llvm::InitializeAllAsmParsers();
-    llvm::InitializeAllAsmPrinters();
-
-    std::string targetTriple = llvm::sys::getDefaultTargetTriple();
-    llvmModule->setTargetTriple(targetTriple);
-
-    std::string error;
-    const llvm::Target *target = llvm::TargetRegistry::lookupTarget(targetTriple, error);
-    if (target == nullptr) {
-        llvm::errs() << error;
+    if (targetMachine == nullptr && !initLlvmTargetMachine()) {
         return false;
     }
-
-    const std::string cpu = "generic";
-    const std::string features = "";
-    const llvm::TargetOptions options;
-    llvm::Optional<llvm::Reloc::Model> relocModel;
-    llvm::TargetMachine *targetMachine = target->createTargetMachine(targetTriple, cpu, features, options, relocModel);
-    llvmModule->setDataLayout(targetMachine->createDataLayout());
 
     std::error_code errorCode;
     llvm::raw_fd_ostream dest(filename, errorCode, llvm::sys::fs::F_None);
@@ -770,6 +753,18 @@ NodeVal Compiler::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vec
     return NodeVal(codeLoc, llvmVal);
 }
 
+optional<uint64_t> Compiler::performSizeOf(CodeLoc codeLoc, TypeTable::Id ty) {
+    if (targetMachine == nullptr && !initLlvmTargetMachine()) {
+        msgs->errorInternal(codeLoc);
+        return nullopt;
+    }
+
+    llvm::Type *llvmType = makeLlvmTypeOrError(codeLoc, ty);
+    if (llvmType == nullptr) return nullopt;
+
+    return targetMachine->createDataLayout().getTypeAllocSize(llvmType).getFixedSize();
+}
+
 NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
     if (!eval.type.has_value()) {
         msgs->errorExprCannotPromote(codeLoc);
@@ -1011,4 +1006,33 @@ llvm::Value* Compiler::makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTy
     }
 
     return dstLlvmVal;
+}
+
+bool Compiler::initLlvmTargetMachine() {
+    if (targetMachine != nullptr) return true;
+
+    llvm::InitializeAllTargetInfos();
+    llvm::InitializeAllTargets();
+    llvm::InitializeAllTargetMCs();
+    llvm::InitializeAllAsmParsers();
+    llvm::InitializeAllAsmPrinters();
+
+    std::string targetTriple = llvm::sys::getDefaultTargetTriple();
+    llvmModule->setTargetTriple(targetTriple);
+
+    std::string error;
+    const llvm::Target *target = llvm::TargetRegistry::lookupTarget(targetTriple, error);
+    if (target == nullptr) {
+        llvm::errs() << error;
+        return false;
+    }
+
+    const std::string cpu = "generic";
+    const std::string features = "";
+    const llvm::TargetOptions options;
+    llvm::Optional<llvm::Reloc::Model> relocModel;
+    targetMachine = target->createTargetMachine(targetTriple, cpu, features, options, relocModel);
+    llvmModule->setDataLayout(targetMachine->createDataLayout());
+
+    return true;
 }

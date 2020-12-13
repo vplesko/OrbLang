@@ -179,8 +179,18 @@ lenOf
 		if val is a type tuple, returns its num of membs
 		if val is a type raw, returns its num of children
 		otherwise, error
-	otherwise, return lenOf its type
-	returns a u32
+	else:
+		return lenOf its type
+	returns a u64
+
+sizeOf
+	sizeOf val
+	if val is a type:
+		returns memory alloc size of val
+	else:
+		return sizeOf its type
+	if not a compilable type, error
+	returns a u64
 
 ??
 	?? name
@@ -228,7 +238,6 @@ type
 ********************
 
 plan:
- - sizeOf
  - attributes
  - attrOf, attr?? (type is for type attr)
  - custom types (req attr in sym, type cn only)
@@ -239,7 +248,3 @@ plan:
  - drop, move
  - new attributes: noZero, noScope, inline, restrict, noDrop, unique, pure...
  - include C headers
- - custom attrs on custom types
- - base.orb, std
- - __line, __file
- - error, override
