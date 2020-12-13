@@ -206,7 +206,6 @@ type
 ********************
 
 plan:
- - process type attr (and other attrs) before the rest
  - custom types
  - ptrs in eval
  - new specials: typeOf, lenOf, sizeOf, attrOf, ??, error

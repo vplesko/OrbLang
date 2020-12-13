@@ -7,7 +7,6 @@ Processor::Processor(NamePool *namePool, StringPool *stringPool, TypeTable *type
     : namePool(namePool), stringPool(stringPool), typeTable(typeTable), symbolTable(symbolTable), msgs(msgs), evaluator(evaluator), topmost(0) {
 }
 
-// TODO process type and other attrs before anything else
 NodeVal Processor::processNode(const NodeVal &node) {
     unsigned oldTopmost = topmost;
     if (topmost < 2) ++topmost;
