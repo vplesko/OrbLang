@@ -148,17 +148,17 @@ fnc
 	fnc has its own scope, goes through body
 	if retting, expects ret
 
-ret
-	ret OR ret val
-	returns from function
-	has to be in function
-
 mac
 	mac name args subst
 	if name is leaf id, it is evaluated as that id
 	args is list of args, if any is leaf id, it is evaluated as that id
 	invoked not evaluating its args, invocations repeteadly resolved until no longer macro invocation, after code processed normally
 	when invoked, replaces invoke node with subst, but appearances of any arg replaced with passed node
+
+ret
+	ret OR ret val
+	returns from function
+	has to be in function
 
 eval
 	eval inst
@@ -202,3 +202,22 @@ import
 type
 	type ...a
 	if past first is leaf and not escaped, escape, then if id of type, get that type
+
+********************
+
+plan:
+ - process type attr (and other attrs) before the rest
+ - custom types
+ - ptrs in eval
+ - new specials: typeOf, lenOf, sizeOf, attrOf, ??, error
+ - attributes
+ - variadics
+ - first class fncs and macs
+ - declarations
+ - drop, move
+ - new attributes: noZero, noScope, inline, restrict, noDrop, unique, pure...
+ - include C headers
+ - custom attrs on custom types
+ - base.orb, std
+ - __line, __file
+ - override

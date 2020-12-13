@@ -30,39 +30,39 @@ fnc main () () {
     println_i32 p;
 
     eval (= id0 (+ \a \b));
-    sym ((eval id0) 300);
+    sym (,id0 300);
     println_i32 (id0);
 
     eval (= id0 (cast id false));
-    sym ((eval id0) 301);
+    sym (,id0 301);
     println_i32 (id0);
 
     eval (= id0 (cast id true));
-    sym ((eval id0) 302);
+    sym (,id0 302);
     println_i32 (id0);
 
     eval (= id0 (cast id 0:u32));
-    sym ((eval id0) 303);
+    sym (,id0 303);
     println_i32 (id0);
 
     eval (= id0 (cast id 999:u32));
-    sym ((eval id0) 304);
+    sym (,id0 304);
     println_i32 (id0);
 
     eval (= id0 (cast id i32));
-    sym ((eval id0) 305);
+    sym (,id0 305);
     println_i32 (id0);
 
     eval (= id0 (cast id (i32 * [] 4)));
-    sym ((eval id0) 306);
+    sym (,id0 306);
     println_i32 (id0);
 
     eval (= id0 (cast id (i32 cn * cn [] 4)));
-    sym ((eval id0) 307);
+    sym (,id0 307);
     println_i32 (id0);
 
     eval (= id0 (cast id (i32 u32 bool id type)));
-    sym ((eval id0) 308);
+    sym (,id0 308);
     println_i32 (id0);
 
     eval (= id0
@@ -76,7 +76,7 @@ fnc main () () {
             (cast id (i32 * [] 4))
             (cast id (i32 cn * cn [] 4))
             (cast id (i32 u32 bool id type))));
-    sym ((eval id0) 309);
+    sym (,id0 309);
     println_i32 (id0);
 
     sym (a=+-*/%<>&|^!~[]._?0123456789:i32 400);

@@ -626,7 +626,6 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
     } else if (isTuple(from)) {
         if (!isTuple(into)) return false;
 
-        // TODO rethink the rules
         return from.index == into.index;
     } else if (isTypeDescr(from)) {
         if (!isTypeDescr(into)) return false;
@@ -655,53 +654,72 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
 
 optional<string> TypeTable::makeBinString(Id t) const {
     // don't forget special delim after custom types are cast safe
+    stringstream ss;
+
     if (isPrimitive(t)) {
+        ss << "$p";
         switch (t.index) {
         case P_BOOL:
-            return "$bool";
+            ss << "$bool";
+            break;
         case P_I8:
-            return "$i8";
+            ss << "$i8";
+            break;
         case P_I16:
-            return "$i16";
+            ss << "$i16";
+            break;
         case P_I32:
-            return "$i32";
+            ss << "$i32";
+            break;
         case P_I64:
-            return "$i64";
+            ss << "$i64";
+            break;
         case P_U8:
-            return "$u8";
+            ss << "$u8";
+            break;
         case P_U16:
-            return "$u16";
+            ss << "$u16";
+            break;
         case P_U32:
-            return "$u32";
+            ss << "$u32";
+            break;
         case P_U64:
-            return "$u64";
+            ss << "$u64";
+            break;
         case P_F32:
-            return "$f32";
+            ss << "$f32";
+            break;
         case P_F64:
-            return "$f64";
+            ss << "$f64";
+            break;
         case P_C8:
-            return "$c8";
+            ss << "$c8";
+            break;
         case P_PTR:
-            return "$ptr";
+            ss << "$ptr";
+            break;
         case P_ID:
-            return "$id";
+            ss << "$id";
+            break;
         case P_TYPE:
-            return "$type";
+            ss << "$type";
+            break;
         case P_RAW:
-            return "$raw";
+            ss << "$raw";
+            break;
         default:
             return nullopt;
         }
     } else if (isTuple(t)) {
-        stringstream ss;
+        ss << "$t";
         const Tuple &tup = getTuple(t);
         for (auto it : tup.members) {
             optional<string> membStr = makeBinString(it);
             if (!membStr.has_value()) return nullopt;
             ss << membStr.value();
         }
-        return ss.str();
     } else if (isTypeDescr(t)) {
+        ss << "$d";
         stringstream ss;
         const TypeDescr &descr = getTypeDescr(t);
         for (size_t i = descr.decors.size()-1;; --i) {
@@ -721,4 +739,6 @@ optional<string> TypeTable::makeBinString(Id t) const {
     } else {
         return nullopt;
     }
+
+    return ss.str();
 }

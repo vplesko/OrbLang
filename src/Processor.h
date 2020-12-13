@@ -83,11 +83,11 @@ private:
     NodeVal dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
 
     NodeVal processAndCheckIsType(const NodeVal &node);
-    NodeVal processWithEscapeIfLeaf(const NodeVal &node);
-    NodeVal processWithEscapeIfLeafAndCheckIsId(const NodeVal &node);
+    NodeVal processAndCheckHasType(const NodeVal &node);
+    NodeVal processWithEscape(const NodeVal &node);
+    NodeVal processWithEscapeAndCheckIsId(const NodeVal &node);
     NodeVal processForTypeArg(const NodeVal &node);
     std::pair<NodeVal, std::optional<NodeVal>> processForIdTypePair(const NodeVal &node);
-    NodeVal processAndCheckHasType(const NodeVal &node);
     NodeVal processAndImplicitCast(const NodeVal &node, TypeTable::Id ty);
 
     NodeVal processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op);
