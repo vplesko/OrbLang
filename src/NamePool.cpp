@@ -15,3 +15,8 @@ NamePool::Id NamePool::add(const string &name) {
     next += 1;
     return next-1;
 }
+
+NamePool::Id NamePool::addMain(const std::string &name) {
+    main = add(name);
+    return main;
+}

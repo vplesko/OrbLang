@@ -10,7 +10,6 @@
 
 class NamePool;
 
-// TODO due to eval id and type vals, it's not guaranteed that given ids refer to anything valid, fix by introducing zero init
 class CompilationMessages {
 public:
     enum Status {

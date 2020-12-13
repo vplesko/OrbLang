@@ -1,0 +1,57 @@
+import "util/io.orb";
+
+fnc main () () {
+    eval (sym bool_:bool);
+    println_i32 (cast i32 bool_);
+
+    eval (sym i8_:i8 i16_:i16 i32_:i32 i64_:i64);
+    println_i8 i8_;
+    println_i16 i16_;
+    println_i32 i32_;
+    println_i64 i64_;
+
+    eval (sym u8_:u8 u16_:u16 u32_:u32 u64_:u64);
+    println_u8 u8_;
+    println_u16 u16_;
+    println_u32 u32_;
+    println_u64 u64_;
+
+    eval (sym f32_:f32 f64_:f64);
+    println_f32 f32_;
+    println_f64 f64_;
+
+    eval (sym c8_:c8);
+    println_i32 (cast i32 c8_);
+
+    eval (sym ptr_:ptr);
+    println_i32 (cast i32 ptr_);
+
+    eval (sym (main 99));
+    eval (sym type_:type);
+    eval (sym id_:type_);
+    println_i32 (id_);
+
+    # TODO uncomment after lenOf implemented
+    #*
+    eval (sym raw_:raw);
+    println_i32 (eval (lenOf raw_));
+    *#
+
+    eval (sym p:(i32 *));
+    eval (sym p_cn:(i32 cn *));
+    println_i32 (cast i32 p);
+    println_i32 (cast i32 p_cn);
+
+    eval (sym ap:(i32 []));
+    eval (sym ap_cn:(i32 cn []));
+    println_i32 (cast i32 ap);
+    println_i32 (cast i32 ap_cn);
+
+    eval (sym arr:(i32 4));
+    println_i32 ([] arr 2);
+
+    eval (sym t:(i32 bool ptr));
+    println_i32 (. t 0);
+    println_i32 (cast i32 (. t 1));
+    println_i32 (cast i32 (. t 2));
+};

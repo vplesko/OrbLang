@@ -22,6 +22,11 @@ CompilationOrchestrator::CompilationOrchestrator(ostream &out) {
     genPrimTypes();
 }
 
+void addMain(NamePool *namePool) {
+    NamePool::Id name = namePool->addMain("main");
+    meaningfuls.insert(make_pair(name, Meaningful::MAIN));
+}
+
 void addMeaningful(NamePool *namePool, const std::string &str, Meaningful m) {
     NamePool::Id name = namePool->add(str);
     meaningfuls.insert(make_pair(name, m));
@@ -38,7 +43,7 @@ void addOper(NamePool *namePool, const std::string &str, Oper o) {
 }
 
 void CompilationOrchestrator::genReserved() {
-    addMeaningful(namePool.get(), "main", Meaningful::MAIN);
+    addMain(namePool.get());
     addMeaningful(namePool.get(), "cn", Meaningful::CN);
     addMeaningful(namePool.get(), "*", Meaningful::ASTERISK);
     addMeaningful(namePool.get(), "[]", Meaningful::SQUARE);

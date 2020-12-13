@@ -48,6 +48,7 @@ struct EvalVal {
     std::optional<NamePool::Id> getCallableId() const;
 
     static EvalVal makeVal(TypeTable::Id t, TypeTable *typeTable);
+    static EvalVal makeZero(TypeTable::Id t, NamePool *namePool, TypeTable *typeTable);
     static EvalVal copyNoRef(const EvalVal &k);
 
     static bool isId(const EvalVal &val, const TypeTable *typeTable);

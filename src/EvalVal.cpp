@@ -28,6 +28,34 @@ EvalVal EvalVal::makeVal(TypeTable::Id t, TypeTable *typeTable) {
     return evalVal;
 }
 
+EvalVal EvalVal::makeZero(TypeTable::Id t, NamePool *namePool, TypeTable *typeTable) {
+    EvalVal evalVal;
+    evalVal.type = t;
+
+    if (typeTable->worksAsTuple(t)) {
+        const TypeTable::Tuple *tup = typeTable->extractTuple(t).value();
+        evalVal.elems.reserve(tup->members.size());
+        for (TypeTable::Id membType : tup->members) {
+            evalVal.elems.push_back(NodeVal(CodeLoc(), makeZero(membType, namePool, typeTable)));
+        }
+    } else if (typeTable->worksAsTypeArr(t)) {
+        size_t len = typeTable->extractLenOfArr(t).value();
+        TypeTable::Id elemType = typeTable->addTypeIndexOf(t).value();
+        evalVal.elems = vector<NodeVal>(len, NodeVal(CodeLoc(), makeZero(elemType, namePool, typeTable)));
+    } else if (typeTable->worksAsTypeStr(t)) {
+        // do nothing, std::optional is already nullopt
+    } else if (typeTable->worksAsPrimitive(t, TypeTable::P_ID)) {
+        evalVal.id = namePool->getMainId();
+    } else if (typeTable->worksAsPrimitive(t, TypeTable::P_TYPE)) {
+        evalVal.ty = typeTable->getPrimTypeId(TypeTable::P_ID);
+    } else {
+        // because of union, this takes care of all other primitives
+        evalVal.u64 = 0LL;
+    }
+
+    return evalVal;
+}
+
 EvalVal EvalVal::copyNoRef(const EvalVal &k) {
     EvalVal evalVal(k);
     evalVal.ref = nullptr;

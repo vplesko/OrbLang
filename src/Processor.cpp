@@ -249,7 +249,10 @@ NodeVal Processor::processSym(const NodeVal &node) {
                 continue;
             }
 
-            NodeVal nodeReg = performRegister(entry.getCodeLoc(), id, optType.value());
+            NodeVal nodeZero = performZero(entry.getCodeLoc(), optType.value());
+            if (nodeZero.isInvalid()) continue;
+
+            NodeVal nodeReg = performRegister(entry.getCodeLoc(), id, nodeZero);
             if (nodeReg.isInvalid()) continue;
             symbolTable->addVar(id, move(nodeReg));
         }

@@ -14,9 +14,9 @@ fnc print_i32 (x:i32) () { printf "%d" x; };
 fnc println_i32 (x:i32) () { printf "%d\n" x; };
 fnc scan_i32 () i32 { sym x:i32; scanf "%d" (& x); ret x; };
 
-fnc print_i64 (x:i64) () { printf "%lld" x; };
-fnc println_i64 (x:i64) () { printf "%lld\n" x; };
-fnc scan_i64 () i64 { sym x:i64; scanf "%lld" (& x); ret x; };
+fnc print_i64 (x:i64) () { printf "%ld" x; };
+fnc println_i64 (x:i64) () { printf "%ld\n" x; };
+fnc scan_i64 () i64 { sym x:i64; scanf "%ld" (& x); ret x; };
 
 fnc print_u8 (x:u8) () { printf "%hhu" x; };
 fnc println_u8 (x:u8) () { printf "%hhu\n" x; };
@@ -30,9 +30,9 @@ fnc print_u32 (x:u32) () { printf "%u" x; };
 fnc println_u32 (x:u32) () { printf "%u\n" x; };
 fnc scan_u32 () u32 { sym x:u32; scanf "%u" (& x); ret x; };
 
-fnc print_u64 (x:u64) () { printf "%llu" x; };
-fnc println_u64 (x:u64) () { printf "%llu\n" x; };
-fnc scan_u64 () u64 { sym x:u64; scanf "%llu" (& x); ret x; };
+fnc print_u64 (x:u64) () { printf "%lu" x; };
+fnc println_u64 (x:u64) () { printf "%lu\n" x; };
+fnc scan_u64 () u64 { sym x:u64; scanf "%lu" (& x); ret x; };
 
 fnc print_f32 (x:f32) () { printf "%.4f" (cast f64 x); };
 fnc println_f32 (x:f32) () { printf "%.4f\n" (cast f64 x); };

@@ -105,6 +105,7 @@ sym
 	a is id, t is type, b is init value
 	if a is leaf id, it is evaluated as that id
 	b cast to t, if no t then a is type of b
+	zero initialized (id to main, type to id, raw to empty)
 
 cast
 	cast t a

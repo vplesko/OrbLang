@@ -118,6 +118,16 @@ NodeVal Compiler::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
     return NodeVal(codeLoc, loadLlvmVal);
 }
 
+NodeVal Compiler::performZero(CodeLoc codeLoc, TypeTable::Id ty) {
+    llvm::Type *llvmType = makeLlvmTypeOrError(codeLoc, ty);
+    if (llvmType == nullptr) return NodeVal();
+
+    LlvmVal llvmVal;
+    llvmVal.type = ty;
+    llvmVal.val = llvm::Constant::getNullValue(llvmType);
+    return NodeVal(codeLoc, llvmVal);
+}
+
 NodeVal Compiler::performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) {
     llvm::Type *llvmType = makeLlvmTypeOrError(codeLoc, ty);
     if (llvmType == nullptr) return NodeVal();

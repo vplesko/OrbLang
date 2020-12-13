@@ -27,6 +27,7 @@ class Evaluator : public Processor {
 
 public:
     NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) override;
+    NodeVal performZero(CodeLoc codeLoc, TypeTable::Id ty) override;
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) override;
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) override;
     NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) override;

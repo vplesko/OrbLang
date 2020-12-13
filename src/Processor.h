@@ -24,6 +24,7 @@ protected:
 
 protected:
     virtual NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) =0;
+    virtual NodeVal performZero(CodeLoc codeLoc, TypeTable::Id ty) =0;
     virtual NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) =0;
     virtual NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) =0;
     virtual NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) =0;
