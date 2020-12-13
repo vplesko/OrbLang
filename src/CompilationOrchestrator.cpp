@@ -62,6 +62,7 @@ void CompilationOrchestrator::genReserved() {
     addKeyword(namePool.get(), "tup", Keyword::TUP);
     addKeyword(namePool.get(), "typeOf", Keyword::TYPE_OF);
     addKeyword(namePool.get(), "lenOf", Keyword::LEN_OF);
+    addKeyword(namePool.get(), "??", Keyword::IS_DEF);
     addKeyword(namePool.get(), "import", Keyword::IMPORT);
 
     addOper(namePool.get(), "+", Oper::ADD);

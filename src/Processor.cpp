@@ -85,6 +85,8 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
                 return processTypeOf(node);
             case Keyword::LEN_OF:
                 return processLenOf(node);
+            case Keyword::IS_DEF:
+                return processIsDef(node);
             case Keyword::IMPORT:
                 return processImport(node);
             default:
@@ -807,6 +809,19 @@ NodeVal Processor::processLenOf(const NodeVal &node) {
 
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_U32), typeTable);
     evalVal.u32 = len;
+    return NodeVal(node.getCodeLoc(), evalVal);
+}
+
+NodeVal Processor::processIsDef(const NodeVal &node) {
+    if (!checkExactlyChildren(node, 2, true)) return NodeVal();
+
+    NodeVal name = processWithEscapeAndCheckIsId(node.getChild(1));
+    if (name.isInvalid()) return NodeVal();
+
+    NamePool::Id id = name.getEvalVal().id;
+
+    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_BOOL), typeTable);
+    evalVal.b = symbolTable->isVarName(id) || symbolTable->isFuncName(id) || symbolTable->isMacroName(id);
     return NodeVal(node.getCodeLoc(), evalVal);
 }
 

@@ -79,6 +79,18 @@ fnc main () () {
     sym (,id0 309);
     println_i32 (id0);
 
+    block {
+        sym (x 0);
+        println_i32 (+ 309 (cast i32 (?? x)));
+        println_i32 (+ 311 (cast i32 (?? undefinedIdentifierX)));
+        println_i32 (+ 311 (cast i32 (?? id0)));
+        println_i32 (+ 313 (cast i32 (?? y)));
+        sym (y 0);
+        println_i32 (+ 313 (cast i32 (?? main)));
+        = id0 \x;
+        println_i32 (+ 314 (cast i32 (?? ,id0)));
+    };
+
     sym (a=+-*/%<>&|^!~[]._?0123456789:i32 400);
     println_i32 a=+-*/%<>&|^!~[]._?0123456789;
 };

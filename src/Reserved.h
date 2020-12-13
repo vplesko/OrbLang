@@ -27,6 +27,7 @@ enum class Keyword {
     TUP,
     TYPE_OF,
     LEN_OF,
+    IS_DEF,
     IMPORT,
     UNKNOWN
 };
