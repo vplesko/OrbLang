@@ -123,6 +123,7 @@ private:
     NodeVal processImport(const NodeVal &node);
     NodeVal processOper(const NodeVal &node, Oper op);
     NodeVal processTup(const NodeVal &node);
+    NodeVal processTypeOf(const NodeVal &node);
 
     NodeVal processLeaf(const NodeVal &node);
     NodeVal processNonLeaf(const NodeVal &node);

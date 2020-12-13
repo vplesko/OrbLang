@@ -81,6 +81,8 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
                 return processEval(node);
             case Keyword::TUP:
                 return processTup(node);
+            case Keyword::TYPE_OF:
+                return processTypeOf(node);
             case Keyword::IMPORT:
                 return processImport(node);
             default:
@@ -767,6 +769,18 @@ NodeVal Processor::processTup(const NodeVal &node) {
         return evaluator->performTuple(node.getCodeLoc(), tupTypeIdOpt.value(), membs);
     else
         return performTuple(node.getCodeLoc(), tupTypeIdOpt.value(), membs);
+}
+
+NodeVal Processor::processTypeOf(const NodeVal &node) {
+    if (!checkExactlyChildren(node, 2, true)) return NodeVal();
+
+    NodeVal operand = processNode(node.getChild(1));
+    if (operand.isInvalid()) return NodeVal();
+    if (!checkHasType(operand, true)) return NodeVal();
+
+    EvalVal type = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
+    type.ty = operand.getType().value();
+    return NodeVal(node.getCodeLoc(), type);
 }
 
 NodeVal Processor::promoteLiteralVal(const NodeVal &node) {

@@ -25,6 +25,7 @@ enum class Keyword {
     MAC,
     EVAL,
     TUP,
+    TYPE_OF,
     IMPORT,
     UNKNOWN
 };

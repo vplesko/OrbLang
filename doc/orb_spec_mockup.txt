@@ -164,6 +164,14 @@ eval
 	eval inst
 	evaluates instruction
 
+tup
+	tup a ...b
+	creates a tuple out of provided vals
+
+typeOf
+	typeOf val
+	returns the type of val
+
 import
 	import a
 	a is evalVal string
@@ -208,7 +216,7 @@ type
 plan:
  - custom types
  - ptrs in eval
- - new specials: typeOf, lenOf, sizeOf, attrOf, ??, error
+ - new specials: lenOf, sizeOf, attrOf, ??, error
  - attributes
  - variadics
  - first class fncs and macs

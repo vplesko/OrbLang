@@ -33,4 +33,25 @@ fnc main () () {
         = p -1;
     });
     println_i32 p;
+
+    = p 300;
+    block {
+        exit (== (typeOf 100) i32);
+        = p -1;
+    };
+    println_i32 p;
+
+    = p 301;
+    block {
+        exit (!= (typeOf p) (i32 cn));
+        = p -1;
+    };
+    println_i32 p;
+
+    = p 302;
+    block {
+        exit (== (typeOf \()) raw);
+        = p -1;
+    };
+    println_i32 p;
 };
