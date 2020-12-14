@@ -22,8 +22,10 @@ class Parser {
     EscapeScore parseEscapeScore();
     // Returns false on error, otherwise true.
     bool parseTypeAttr(NodeVal &node);
+    // Returns false on error, otherwise true.
+    bool parseAttrs(NodeVal &node);
 
-    NodeVal parseType();
+    NodeVal parseNoSemicolon();
     NodeVal parseTerm();
 
 public:

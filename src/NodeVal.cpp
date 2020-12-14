@@ -28,7 +28,10 @@ void NodeVal::copyFrom(const NodeVal &other) {
     llvm = other.llvm;
     
     if (other.hasTypeAttr()) {
-        typeAttr = make_unique<NodeVal>(*other.typeAttr);
+        typeAttr = make_unique<NodeVal>(other.getTypeAttr());
+    }
+    if (other.hasAttrs()) {
+        attrs = make_unique<NodeVal>(other.getAttrs());
     }
 }
 
@@ -81,6 +84,10 @@ void NodeVal::setTypeAttr(NodeVal t) {
     typeAttr = make_unique<NodeVal>(move(t));
 }
 
+void NodeVal::setAttrs(NodeVal a) {
+    attrs = make_unique<NodeVal>(move(a));
+}
+
 bool NodeVal::isEmpty(const NodeVal &node, const TypeTable *typeTable) {
     return isRawVal(node, typeTable) && node.eval.elems.empty();
 }
@@ -130,5 +137,8 @@ void NodeVal::copyNonValFieldsLeaf(NodeVal &dst, const NodeVal &src, const TypeT
     escape(dst, typeTable, src.getEscapeScore()-dst.getEscapeScore());
     if (src.hasTypeAttr()) {
         dst.setTypeAttr(src.getTypeAttr());
+    }
+    if (src.hasAttrs()) {
+        dst.setAttrs(src.getAttrs());
     }
 }

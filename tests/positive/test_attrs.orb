@@ -1,0 +1,5 @@
+import "util/io.orb";
+
+fnc main () () {
+    sym (x:i32::foo 0::bar);
+};

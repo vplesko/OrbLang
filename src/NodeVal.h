@@ -27,7 +27,7 @@ private:
     LlvmVal llvm;
     EvalVal eval;
 
-    std::unique_ptr<NodeVal> typeAttr;
+    std::unique_ptr<NodeVal> typeAttr, attrs;
 
     void copyFrom(const NodeVal &other);
 
@@ -80,6 +80,12 @@ public:
     const NodeVal& getTypeAttr() const { return *typeAttr; }
     void setTypeAttr(NodeVal t);
     void clearTypeAttr() { typeAttr.reset(); }
+
+    bool hasAttrs() const { return attrs != nullptr; }
+    NodeVal& getAttrs() { return *attrs; }
+    const NodeVal& getAttrs() const { return *attrs; }
+    void setAttrs(NodeVal a);
+    void clearAttrs() { attrs.reset(); }
 
     static bool isEmpty(const NodeVal &node, const TypeTable *typeTable);
     static bool isLeaf(const NodeVal &node, const TypeTable *typeTable);

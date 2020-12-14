@@ -167,7 +167,12 @@ Token Lexer::next() {
         } else if (ch == ';') {
             tok = {.type=Token::T_SEMICOLON};
         } else if (ch == ':') {
-            tok = {.type=Token::T_COLON};
+            if (peekCh() == ':') {
+                nextCh();
+                tok = {.type=Token::T_DOUBLE_COLON};
+            } else {
+                tok = {.type=Token::T_COLON};
+            }
         } else if (ch == '(') {
             tok = {.type=Token::T_BRACE_L_REG};
         } else if (ch == ')') {

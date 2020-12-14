@@ -13,6 +13,7 @@ struct Token {
         T_NULL,
         T_SEMICOLON,
         T_COLON,
+        T_DOUBLE_COLON,
         T_BACKSLASH,
         T_COMMA,
         T_BRACE_L_REG,
