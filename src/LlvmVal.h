@@ -12,10 +12,4 @@ struct LlvmVal {
 
     bool valBroken() const { return val == nullptr; }
     bool refBroken() const { return ref == nullptr; }
-
-    static LlvmVal copyNoRef(const LlvmVal &l) {
-        LlvmVal llvmVal(l);
-        llvmVal.ref = nullptr;
-        return llvmVal;
-    }
 };

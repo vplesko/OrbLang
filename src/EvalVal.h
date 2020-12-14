@@ -49,6 +49,7 @@ struct EvalVal {
 
     static EvalVal makeVal(TypeTable::Id t, TypeTable *typeTable);
     static EvalVal makeZero(TypeTable::Id t, NamePool *namePool, TypeTable *typeTable);
+    // use NodeVal::copyNoRef unless sure attrs aren't needed
     static EvalVal copyNoRef(const EvalVal &k);
 
     static bool isId(const EvalVal &val, const TypeTable *typeTable);

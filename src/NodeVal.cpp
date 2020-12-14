@@ -133,6 +133,19 @@ void NodeVal::unescape(NodeVal &node, const TypeTable *typeTable) {
     }
 }
 
+NodeVal NodeVal::copyNoRef(const NodeVal &k) {
+    NodeVal nodeVal(k);
+    if (nodeVal.isLlvmVal()) nodeVal.getLlvmVal().ref = nullptr;
+    else if (nodeVal.isEvalVal()) nodeVal.getEvalVal().ref = nullptr;
+    return nodeVal;
+}
+
+NodeVal NodeVal::copyNoRef(CodeLoc codeLoc, const NodeVal &k) {
+    NodeVal nodeVal = copyNoRef(k);
+    nodeVal.codeLoc = codeLoc;
+    return nodeVal;
+}
+
 void NodeVal::copyNonValFieldsLeaf(NodeVal &dst, const NodeVal &src, const TypeTable *typeTable) {
     escape(dst, typeTable, src.getEscapeScore()-dst.getEscapeScore());
     if (src.hasTypeAttr()) {

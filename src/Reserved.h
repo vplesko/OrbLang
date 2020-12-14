@@ -10,6 +10,7 @@ enum class Meaningful {
     ASTERISK,
     SQUARE,
     ELLIPSIS,
+    TYPE,
     UNKNOWN
 };
 
@@ -29,6 +30,8 @@ enum class Keyword {
     LEN_OF,
     SIZE_OF,
     IS_DEF,
+    ATTR_OF,
+    ATTR_IS_DEF,
     IMPORT,
     UNKNOWN
 };

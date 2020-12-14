@@ -15,7 +15,7 @@ class Evaluator : public Processor {
     bool assignBasedOnTypeId(EvalVal &val, std::uint64_t x, TypeTable::Id ty);
     bool assignBasedOnTypeId(EvalVal &val, bool x, TypeTable::Id ty);
 
-    std::optional<EvalVal> makeCast(const EvalVal &srcEvalVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
+    std::optional<NodeVal> makeCast(CodeLoc codeLoc, const NodeVal &srcVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
     std::optional<EvalVal> makeArray(TypeTable::Id arrTypeId);
     NamePool::Id makeIdFromU(std::uint64_t x);
     NamePool::Id makeIdFromB(bool x);

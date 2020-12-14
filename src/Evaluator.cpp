@@ -14,9 +14,9 @@ Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *type
 
 NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
     if (checkIsEvalVal(codeLoc, ref, false)) {
-        EvalVal evalVal(ref.getEvalVal());
-        evalVal.ref = &ref;
-        return NodeVal(codeLoc, evalVal);
+        NodeVal nodeVal = NodeVal::copyNoRef(codeLoc, ref);
+        nodeVal.getEvalVal().ref = &ref;
+        return nodeVal;
     } else {
         // allowing eval to load compiled variables risks fetching outdated values from symbol table
         // however, eval needs to be able to do this for macros to be able to work with compiled args
@@ -39,13 +39,13 @@ NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::
 NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) {
     if (!checkIsEvalVal(init, true)) return NodeVal();
 
-    return NodeVal(codeLoc, EvalVal::copyNoRef(init.getEvalVal()));
+    return NodeVal::copyNoRef(codeLoc, init);
 }
 
 NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
     if (!checkIsEvalVal(node, true) || !checkHasType(node, true)) return NodeVal();
 
-    optional<EvalVal> evalValCast = makeCast(node.getEvalVal(), node.getEvalVal().type.value(), ty);
+    optional<NodeVal> evalValCast = makeCast(codeLoc, node, node.getEvalVal().type.value(), ty);
     if (!evalValCast.has_value()) {
         if (EvalVal::isImplicitCastable(node.getEvalVal(), ty, stringPool, typeTable)) {
             // if it's implicitly castable, it should be castable
@@ -56,7 +56,7 @@ NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::
         return NodeVal();
     }
 
-    return NodeVal(codeLoc, evalValCast.value());
+    return evalValCast.value();
 }
 
 optional<bool> Evaluator::performBlockBody(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &nodeBody) {
@@ -123,7 +123,7 @@ bool Evaluator::performPass(CodeLoc codeLoc, SymbolTable::Block &block, const No
         return false;
     }
 
-    block.val = NodeVal(codeLoc, EvalVal::copyNoRef(val.getEvalVal()));
+    block.val = NodeVal::copyNoRef(codeLoc, val);
 
     ExceptionEvaluatorJump ex;
     ex.blockName = block.name;
@@ -480,7 +480,7 @@ NodeVal Evaluator::performOperComparisonTearDown(CodeLoc codeLoc, bool success, 
 NodeVal Evaluator::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) {
     if (!checkIsEvalVal(lhs, true) || !checkIsEvalVal(rhs, true)) return NodeVal();
 
-    *lhs.getEvalVal().ref = NodeVal(lhs.getEvalVal().ref->getCodeLoc(), EvalVal::copyNoRef(rhs.getEvalVal()));
+    *lhs.getEvalVal().ref = NodeVal::copyNoRef(lhs.getEvalVal().ref->getCodeLoc(), rhs);
 
     EvalVal evalVal(rhs.getEvalVal());
     evalVal.ref = lhs.getEvalVal().ref;
@@ -496,14 +496,12 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVa
         return NodeVal();
     }
 
-    EvalVal evalVal;
     if (typeTable->worksAsTypeArr(base.getType().value())) {
-        evalVal = EvalVal(base.getEvalVal().elems[index.value()].getEvalVal());
+        NodeVal nodeVal = NodeVal::copyNoRef(codeLoc, base.getEvalVal().elems[index.value()]);
         if (base.hasRef()) {
-            evalVal.ref = &base.getEvalVal().ref->getEvalVal().elems[index.value()];
-        } else {
-            evalVal.ref = nullptr;
+            nodeVal.getEvalVal().ref = &base.getEvalVal().ref->getEvalVal().elems[index.value()];
         }
+        return nodeVal;
     } else if (typeTable->worksAsTypeArrP(base.getType().value())) {
         msgs->errorUnknown(codeLoc);
         return NodeVal();
@@ -511,7 +509,6 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVa
         msgs->errorInternal(codeLoc);
         return NodeVal();
     }
-    return NodeVal(codeLoc, evalVal);
 }
 
 NodeVal Evaluator::performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
@@ -529,14 +526,12 @@ NodeVal Evaluator::performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64
         }
         return nodeVal;
     } else {
-        EvalVal evalVal(base.getEvalVal().elems[ind].getEvalVal());
-        evalVal.type = resTy;
+        NodeVal nodeVal = NodeVal::copyNoRef(codeLoc, base.getEvalVal().elems[ind]);
+        nodeVal.getEvalVal().type = resTy;
         if (base.hasRef()) {
-            evalVal.ref = &base.getEvalVal().ref->getEvalVal().elems[ind];
-        } else {
-            evalVal.ref = nullptr;
+            nodeVal.getEvalVal().ref = &base.getEvalVal().ref->getEvalVal().elems[ind];
         }
-        return NodeVal(codeLoc, evalVal);
+        return nodeVal;
     }
 }
 
@@ -681,7 +676,7 @@ NodeVal Evaluator::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::ve
         const NodeVal &memb = membs[i];
         if (!checkIsEvalVal(memb, true)) return NodeVal();
         
-        evalVal.elems[i] = NodeVal(memb.getCodeLoc(), EvalVal::copyNoRef(memb.getEvalVal()));
+        evalVal.elems[i] = NodeVal::copyNoRef(memb.getCodeLoc(), memb);
     }
 
     return NodeVal(codeLoc, evalVal);
@@ -709,101 +704,103 @@ NodeVal Evaluator::doBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &bl
 
 // keep in sync with EvalVal::isCastable
 // TODO warn on lossy
-optional<EvalVal> Evaluator::makeCast(const EvalVal &srcEvalVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId) {
-    if (srcTypeId == dstTypeId) return EvalVal::copyNoRef(srcEvalVal);
+optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId) {
+    if (srcTypeId == dstTypeId) return NodeVal::copyNoRef(codeLoc, srcVal);
 
-    optional<EvalVal> dstEvalVal = EvalVal::makeVal(dstTypeId, typeTable);
+    const EvalVal &srcEvalVal = srcVal.getEvalVal();
+    EvalVal dstEvalVal = EvalVal::makeVal(dstTypeId, typeTable);
 
     if (typeTable->worksAsTypeI(srcTypeId)) {
         int64_t x = EvalVal::getValueI(srcEvalVal, typeTable).value();
-        if (!assignBasedOnTypeI(dstEvalVal.value(), (int64_t) x, dstTypeId) &&
-            !assignBasedOnTypeU(dstEvalVal.value(), (uint64_t) x, dstTypeId) &&
-            !assignBasedOnTypeF(dstEvalVal.value(), (double) x, dstTypeId) &&
-            !assignBasedOnTypeC(dstEvalVal.value(), (char) x, dstTypeId) &&
-            !assignBasedOnTypeB(dstEvalVal.value(), (bool) x, dstTypeId) &&
+        if (!assignBasedOnTypeI(dstEvalVal, (int64_t) x, dstTypeId) &&
+            !assignBasedOnTypeU(dstEvalVal, (uint64_t) x, dstTypeId) &&
+            !assignBasedOnTypeF(dstEvalVal, (double) x, dstTypeId) &&
+            !assignBasedOnTypeC(dstEvalVal, (char) x, dstTypeId) &&
+            !assignBasedOnTypeB(dstEvalVal, (bool) x, dstTypeId) &&
             !(typeTable->worksAsTypeStr(dstTypeId) && x == 0) &&
             !(typeTable->worksAsTypeAnyP(dstTypeId) && x == 0)) {
-            dstEvalVal.reset();
+            return nullopt;
         }
     } else if (typeTable->worksAsTypeU(srcTypeId)) {
         uint64_t x = EvalVal::getValueU(srcEvalVal, typeTable).value();
-        if (!assignBasedOnTypeI(dstEvalVal.value(), (int64_t) x, dstTypeId) &&
-            !assignBasedOnTypeU(dstEvalVal.value(), (uint64_t) x, dstTypeId) &&
-            !assignBasedOnTypeF(dstEvalVal.value(), (double) x, dstTypeId) &&
-            !assignBasedOnTypeC(dstEvalVal.value(), (char) x, dstTypeId) &&
-            !assignBasedOnTypeB(dstEvalVal.value(), (bool) x, dstTypeId) &&
+        if (!assignBasedOnTypeI(dstEvalVal, (int64_t) x, dstTypeId) &&
+            !assignBasedOnTypeU(dstEvalVal, (uint64_t) x, dstTypeId) &&
+            !assignBasedOnTypeF(dstEvalVal, (double) x, dstTypeId) &&
+            !assignBasedOnTypeC(dstEvalVal, (char) x, dstTypeId) &&
+            !assignBasedOnTypeB(dstEvalVal, (bool) x, dstTypeId) &&
             !(typeTable->worksAsTypeStr(dstTypeId) && x == 0) &&
             !(typeTable->worksAsTypeAnyP(dstTypeId) && x == 0) &&
-            !assignBasedOnTypeId(dstEvalVal.value(), x, dstTypeId)) {
-            dstEvalVal.reset();
+            !assignBasedOnTypeId(dstEvalVal, x, dstTypeId)) {
+            return nullopt;
         }
     } else if (typeTable->worksAsTypeF(srcTypeId)) {
         double x = EvalVal::getValueF(srcEvalVal, typeTable).value();
-        if (!assignBasedOnTypeI(dstEvalVal.value(), (int64_t) x, dstTypeId) &&
-            !assignBasedOnTypeU(dstEvalVal.value(), (uint64_t) x, dstTypeId) &&
-            !assignBasedOnTypeF(dstEvalVal.value(), (double) x, dstTypeId)) {
-            dstEvalVal.reset();
+        if (!assignBasedOnTypeI(dstEvalVal, (int64_t) x, dstTypeId) &&
+            !assignBasedOnTypeU(dstEvalVal, (uint64_t) x, dstTypeId) &&
+            !assignBasedOnTypeF(dstEvalVal, (double) x, dstTypeId)) {
+            return nullopt;
         }
     } else if (typeTable->worksAsTypeC(srcTypeId)) {
-        if (!assignBasedOnTypeI(dstEvalVal.value(), (int64_t) srcEvalVal.c8, dstTypeId) &&
-            !assignBasedOnTypeU(dstEvalVal.value(), (uint64_t) srcEvalVal.c8, dstTypeId) &&
-            !assignBasedOnTypeC(dstEvalVal.value(), srcEvalVal.c8, dstTypeId) &&
-            !assignBasedOnTypeB(dstEvalVal.value(), (bool) srcEvalVal.c8, dstTypeId)) {
-            dstEvalVal.reset();
+        if (!assignBasedOnTypeI(dstEvalVal, (int64_t) srcEvalVal.c8, dstTypeId) &&
+            !assignBasedOnTypeU(dstEvalVal, (uint64_t) srcEvalVal.c8, dstTypeId) &&
+            !assignBasedOnTypeC(dstEvalVal, srcEvalVal.c8, dstTypeId) &&
+            !assignBasedOnTypeB(dstEvalVal, (bool) srcEvalVal.c8, dstTypeId)) {
+            return nullopt;
         }
     } else if (typeTable->worksAsTypeB(srcTypeId)) {
-        if (!assignBasedOnTypeI(dstEvalVal.value(), srcEvalVal.b ? 1 : 0, dstTypeId) &&
-            !assignBasedOnTypeU(dstEvalVal.value(), srcEvalVal.b ? 1 : 0, dstTypeId) &&
-            !assignBasedOnTypeB(dstEvalVal.value(), srcEvalVal.b, dstTypeId) &&
-            !assignBasedOnTypeId(dstEvalVal.value(), srcEvalVal.b, dstTypeId)) {
-            dstEvalVal.reset();
+        if (!assignBasedOnTypeI(dstEvalVal, srcEvalVal.b ? 1 : 0, dstTypeId) &&
+            !assignBasedOnTypeU(dstEvalVal, srcEvalVal.b ? 1 : 0, dstTypeId) &&
+            !assignBasedOnTypeB(dstEvalVal, srcEvalVal.b, dstTypeId) &&
+            !assignBasedOnTypeId(dstEvalVal, srcEvalVal.b, dstTypeId)) {
+            return nullopt;
         }
     } else if (typeTable->worksAsTypeStr(srcTypeId)) {
         if (srcEvalVal.str.has_value()) {
             const string &str = stringPool->get(srcEvalVal.str.value());
             if (typeTable->worksAsTypeStr(dstTypeId)) {
-                dstEvalVal.value().str = srcEvalVal.str;
+                dstEvalVal.str = srcEvalVal.str;
             } else if (typeTable->worksAsTypeB(dstTypeId)) {
-                dstEvalVal.value().b = true;
+                dstEvalVal.b = true;
             } else if (typeTable->worksAsTypeCharArrOfLen(dstTypeId, LiteralVal::getStringLen(str))) {
-                dstEvalVal = makeArray(dstTypeId);
-                if (!dstEvalVal.has_value()) { 
-                    dstEvalVal.reset();
+                optional<EvalVal> arrEvalVal = makeArray(dstTypeId);
+                if (!arrEvalVal.has_value()) { 
+                    return nullopt;
                 } else {
+                    dstEvalVal = arrEvalVal.value();
                     for (size_t i = 0; i < LiteralVal::getStringLen(str); ++i) {
-                        dstEvalVal.value().elems[i].getEvalVal().c8 = str[i];
+                        dstEvalVal.elems[i].getEvalVal().c8 = str[i];
                     }
                 }
             } else {
-                dstEvalVal.reset();
+                return nullopt;
             }
         } else {
             // if it's not string, it's null
-            if (!assignBasedOnTypeI(dstEvalVal.value(), 0, dstTypeId) &&
-                !assignBasedOnTypeU(dstEvalVal.value(), 0, dstTypeId) &&
-                !assignBasedOnTypeB(dstEvalVal.value(), false, dstTypeId) &&
+            if (!assignBasedOnTypeI(dstEvalVal, 0, dstTypeId) &&
+                !assignBasedOnTypeU(dstEvalVal, 0, dstTypeId) &&
+                !assignBasedOnTypeB(dstEvalVal, false, dstTypeId) &&
                 !typeTable->worksAsTypeAnyP(dstTypeId)) {
-                dstEvalVal.reset();
+                return nullopt;
             }
         }
     } else if (typeTable->worksAsTypeAnyP(srcTypeId)) {
         // it's null
-        if (!assignBasedOnTypeI(dstEvalVal.value(), 0, dstTypeId) &&
-            !assignBasedOnTypeU(dstEvalVal.value(), 0, dstTypeId) &&
-            !assignBasedOnTypeB(dstEvalVal.value(), false, dstTypeId) &&
+        if (!assignBasedOnTypeI(dstEvalVal, 0, dstTypeId) &&
+            !assignBasedOnTypeU(dstEvalVal, 0, dstTypeId) &&
+            !assignBasedOnTypeB(dstEvalVal, false, dstTypeId) &&
             !typeTable->worksAsTypeAnyP(dstTypeId)) {
-            dstEvalVal.reset();
+            return nullopt;
         }
     } else if (typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE)) {
         if (typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_TYPE)) {
             dstEvalVal = EvalVal::copyNoRef(srcEvalVal);
-            dstEvalVal.value().type = dstTypeId;
+            dstEvalVal.type = dstTypeId;
         } else if (typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_ID)) {
             optional<NamePool::Id> id = makeIdFromTy(srcEvalVal.ty);
-            if (id.has_value()) dstEvalVal.value().id = id.value();
-            else dstEvalVal.reset();
+            if (id.has_value()) dstEvalVal.id = id.value();
+            else return nullopt;
         } else {
-            dstEvalVal.reset();
+            return nullopt;
         }
     } else if (typeTable->worksAsTypeArr(srcTypeId) ||
         typeTable->worksAsTuple(srcTypeId) ||
@@ -814,20 +811,20 @@ optional<EvalVal> Evaluator::makeCast(const EvalVal &srcEvalVal, TypeTable::Id s
             // no action is needed in case of a cast
             // except for raw when dropping cn
             dstEvalVal = EvalVal::copyNoRef(srcEvalVal);
-            dstEvalVal.value().type = dstTypeId;
+            dstEvalVal.type = dstTypeId;
 
-            if (EvalVal::isRaw(dstEvalVal.value(), typeTable) &&
+            if (EvalVal::isRaw(dstEvalVal, typeTable) &&
                 !typeTable->worksAsTypeCn(dstTypeId) && typeTable->worksAsTypeCn(srcTypeId)) {
-                EvalVal::equalizeAllRawElemTypes(dstEvalVal.value(), typeTable);
+                EvalVal::equalizeAllRawElemTypes(dstEvalVal, typeTable);
             }
         } else {
-            dstEvalVal.reset();
+            return nullopt;
         }
     } else {
-        dstEvalVal.reset();
+        return nullopt;
     }
 
-    return dstEvalVal;
+    return NodeVal(codeLoc, dstEvalVal);
 }
 
 optional<EvalVal> Evaluator::makeArray(TypeTable::Id arrTypeId) {

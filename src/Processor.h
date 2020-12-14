@@ -99,7 +99,8 @@ private:
     NodeVal processOperMember(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers);
     NodeVal processOperRegular(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op);
 
-    std::optional<std::unordered_map<NamePool::Id, NodeVal>> processAttributes(const NodeVal &node);
+    typedef std::unordered_map<NamePool::Id, NodeVal> AttrMap;
+    std::optional<AttrMap> processAttributes(const NodeVal &node);
 protected:
     bool processChildNodes(const NodeVal &node);
 
@@ -130,6 +131,8 @@ private:
     NodeVal processLenOf(const NodeVal &node);
     NodeVal processSizeOf(const NodeVal &node);
     NodeVal processIsDef(const NodeVal &node);
+    NodeVal processAttrOf(const NodeVal &node);
+    NodeVal processAttrIsDef(const NodeVal &node);
 
     NodeVal processLeaf(const NodeVal &node);
     NodeVal processNonLeaf(const NodeVal &node);

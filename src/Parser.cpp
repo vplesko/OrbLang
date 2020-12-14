@@ -66,48 +66,28 @@ EscapeScore Parser::parseEscapeScore() {
     return escapeScore;
 }
 
-bool Parser::parseTypeAttr(NodeVal &node) {
-    if (match(Token::T_COLON)) {
-        node.setTypeAttr(parseNoSemicolon());
-
-        // multiple type attributes are not allowed (bracket for type attr on type attr)
-        if (node.getTypeAttr().isInvalid() || node.getTypeAttr().hasTypeAttr()) {
-            msgs->errorUnknown(node.getTypeAttr().getTypeAttr().getCodeLoc());
-            return false;
-        }
-    }
-
-    return true;
+void Parser::parseTypeAttr(NodeVal &node) {
+    if (match(Token::T_COLON)) node.setTypeAttr(parseBare());
 }
 
-bool Parser::parseAttrs(NodeVal &node) {
-    if (match(Token::T_DOUBLE_COLON)) {
-        node.setAttrs(parseNoSemicolon());
-
-        // multiple attributes are not allowed (bracket for attrs on attrs)
-        if (node.getAttrs().isInvalid() || node.getAttrs().hasAttrs()) {
-            msgs->errorUnknown(node.getAttrs().getAttrs().getCodeLoc());
-            return false;
-        }
-    }
-
-    return true;
+void Parser::parseAttrs(NodeVal &node) {
+    if (match(Token::T_DOUBLE_COLON)) node.setAttrs(parseBare());
 }
 
-NodeVal Parser::parseNoSemicolon() {
+NodeVal Parser::parseBare() {
     EscapeScore escapeScore = parseEscapeScore();
 
     NodeVal nodeVal;
     if (peek().type == Token::T_BRACE_L_REG || peek().type == Token::T_BRACE_L_CUR)
-        nodeVal = parseNode();
+        nodeVal = parseNode(true);
     else
-        nodeVal = parseTerm();
+        nodeVal = parseTerm(true);
 
     NodeVal::escape(nodeVal, typeTable, escapeScore);
     return nodeVal;
 }
 
-NodeVal Parser::parseTerm() {
+NodeVal Parser::parseTerm(bool ignoreAttrs) {
     CodeLoc codeLocTok = loc();
     Token tok = next();
 
@@ -147,12 +127,15 @@ NodeVal Parser::parseTerm() {
 
     NodeVal ret(codeLocTok, val);
 
-    if (!parseTypeAttr(ret) || !parseAttrs(ret)) return NodeVal();
+    if (!ignoreAttrs) {
+        parseTypeAttr(ret);
+        parseAttrs(ret);
+    }
 
     return ret;
 }
 
-NodeVal Parser::parseNode() {
+NodeVal Parser::parseNode(bool ignoreAttrs) {
     NodeVal node = NodeVal::makeEmpty(loc(), typeTable);
 
     EscapeScore escapeScore = parseEscapeScore();
@@ -210,7 +193,10 @@ NodeVal Parser::parseNode() {
     NodeVal::escape(node, typeTable, escapeScore);
     escapeScore = 0;
 
-    if (!parseTypeAttr(node) || !parseAttrs(node)) return NodeVal();
+    if (!ignoreAttrs) {
+        parseTypeAttr(node);
+        parseAttrs(node);
+    }
 
     return node;
 }

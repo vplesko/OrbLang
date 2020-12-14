@@ -50,6 +50,7 @@ void CompilationOrchestrator::genReserved() {
     addMeaningful(namePool.get(), "*", Meaningful::ASTERISK);
     addMeaningful(namePool.get(), "[]", Meaningful::SQUARE);
     addMeaningful(namePool.get(), "...", Meaningful::ELLIPSIS);
+    addMeaningful(namePool.get(), "type", Meaningful::TYPE);
 
     addKeyword(namePool.get(), "sym", Keyword::SYM);
     addKeyword(namePool.get(), "cast", Keyword::CAST);
@@ -66,6 +67,8 @@ void CompilationOrchestrator::genReserved() {
     addKeyword(namePool.get(), "lenOf", Keyword::LEN_OF);
     addKeyword(namePool.get(), "sizeOf", Keyword::SIZE_OF);
     addKeyword(namePool.get(), "??", Keyword::IS_DEF);
+    addKeyword(namePool.get(), "attrOf", Keyword::ATTR_OF);
+    addKeyword(namePool.get(), "attr??", Keyword::ATTR_IS_DEF);
     addKeyword(namePool.get(), "import", Keyword::IMPORT);
 
     addOper(namePool.get(), "+", Oper::ADD);

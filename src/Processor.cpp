@@ -89,6 +89,10 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
                 return processSizeOf(node);
             case Keyword::IS_DEF:
                 return processIsDef(node);
+            case Keyword::ATTR_OF:
+                return processAttrOf(node);
+            case Keyword::ATTR_IS_DEF:
+                return processAttrIsDef(node);
             case Keyword::IMPORT:
                 return processImport(node);
             default:
@@ -141,7 +145,7 @@ NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
 
 NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
     if (checkExactlyChildren(node, 1, false))
-        return NodeVal(node.getCodeLoc(), EvalVal::copyNoRef(starting.getEvalVal()));
+        return NodeVal::copyNoRef(node.getCodeLoc(), starting);
 
     NodeVal second = processForTypeArg(node.getChild(1));
     if (second.isInvalid()) return NodeVal();
@@ -846,6 +850,77 @@ NodeVal Processor::processIsDef(const NodeVal &node) {
     return NodeVal(node.getCodeLoc(), evalVal);
 }
 
+NodeVal Processor::processAttrOf(const NodeVal &node) {
+    if (!checkExactlyChildren(node, 3, true)) return NodeVal();
+
+    NodeVal operand = processNode(node.getChild(1));
+    if (operand.isInvalid()) return NodeVal();
+
+    NodeVal name = processWithEscapeAndCheckIsId(node.getChild(2));
+    if (name.isInvalid()) return NodeVal();
+    NamePool::Id attrName = name.getEvalVal().id;
+
+    optional<NamePool::Id> typeId = getMeaningfulNameId(Meaningful::TYPE);
+    if (!typeId.has_value()) {
+        msgs->errorInternal(node.getCodeLoc());
+        return NodeVal();
+    }
+
+    if (attrName == typeId.value()) {
+        if (!operand.hasTypeAttr()) {
+            msgs->errorUnknown(node.getCodeLoc());
+            return NodeVal();
+        }
+
+        NodeVal typeAttrProc = processNode(operand.getTypeAttr());
+        if (typeAttrProc.isInvalid()) return NodeVal();
+
+        return typeAttrProc;
+    } else {
+        optional<AttrMap> attrMapOpt = processAttributes(operand);
+        if (!attrMapOpt.has_value()) return NodeVal();
+
+        auto loc = attrMapOpt.value().find(attrName);
+        if (loc == attrMapOpt.value().end()) {
+            msgs->errorUnknown(node.getCodeLoc());
+            return NodeVal();
+        }
+
+        return loc->second;
+    }
+}
+
+NodeVal Processor::processAttrIsDef(const NodeVal &node) {
+    if (!checkExactlyChildren(node, 3, true)) return NodeVal();
+
+    NodeVal operand = processNode(node.getChild(1));
+    if (operand.isInvalid()) return NodeVal();
+
+    NodeVal name = processWithEscapeAndCheckIsId(node.getChild(2));
+    if (name.isInvalid()) return NodeVal();
+    NamePool::Id attrName = name.getEvalVal().id;
+
+    optional<NamePool::Id> typeId = getMeaningfulNameId(Meaningful::TYPE);
+    if (!typeId.has_value()) {
+        msgs->errorInternal(node.getCodeLoc());
+        return NodeVal();
+    }
+
+    bool attrIsDef;
+    if (attrName == typeId.value()) {
+        attrIsDef = operand.hasTypeAttr();
+    } else {
+        optional<AttrMap> attrMapOpt = processAttributes(operand);
+        if (!attrMapOpt.has_value()) return NodeVal();
+
+        attrIsDef = attrMapOpt.value().find(attrName) != attrMapOpt.value().end();
+    }
+
+    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_BOOL), typeTable);
+    evalVal.b = attrIsDef;
+    return NodeVal(node.getCodeLoc(), evalVal);
+}
+
 NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
     bool isId = false;
 
@@ -975,20 +1050,34 @@ bool Processor::implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly
     }
 }
 
-optional<unordered_map<NamePool::Id, NodeVal>> Processor::processAttributes(const NodeVal &node) {
-    if (!node.hasAttrs()) return unordered_map<NamePool::Id, NodeVal>();
+optional<Processor::AttrMap> Processor::processAttributes(const NodeVal &node) {
+    if (!node.hasAttrs()) return AttrMap();
 
     NodeVal nodeAttrs = processWithEscape(node.getAttrs());
     if (nodeAttrs.isInvalid()) return nullopt;
 
+    optional<NamePool::Id> typeId = getMeaningfulNameId(Meaningful::TYPE);
+    if (!typeId.has_value()) {
+        msgs->errorInternal(node.getCodeLoc());
+        return nullopt;
+    }
+
     if (!NodeVal::isRawVal(nodeAttrs, typeTable)) {
         if (!checkIsId(nodeAttrs, true)) return nullopt;
 
-        unordered_map<NamePool::Id, NodeVal> attrs;
-        attrs.insert({nodeAttrs.getEvalVal().id, NodeVal::makeEmpty(nodeAttrs.getCodeLoc(), typeTable)});
+        NamePool::Id attrName = nodeAttrs.getEvalVal().id;
+        if (attrName == typeId.value()) {
+            msgs->errorUnknown(nodeAttrs.getCodeLoc());
+            return nullopt;
+        }
+
+        NodeVal attrVal = NodeVal::makeEmpty(nodeAttrs.getCodeLoc(), typeTable);
+
+        AttrMap attrs;
+        attrs.insert({attrName, attrVal});
         return attrs;
     } else {
-        unordered_map<NamePool::Id, NodeVal> attrs;
+        AttrMap attrs;
 
         for (size_t i = 0; i < nodeAttrs.getChildrenCnt(); ++i) {
             const NodeVal &nodeAttrEntry = nodeAttrs.getChild(i);
@@ -1005,11 +1094,21 @@ optional<unordered_map<NamePool::Id, NodeVal>> Processor::processAttributes(cons
 
             if (!checkIsId(*nodeAttrEntryName, true)) return nullopt;
 
-            if (nodeAttrEntryVal == nullptr) {
-                attrs.insert({nodeAttrEntryName->getEvalVal().id, NodeVal::makeEmpty(nodeAttrEntryName->getCodeLoc(), typeTable)});
-            } else {
-                attrs.insert({nodeAttrEntryName->getEvalVal().id, *nodeAttrEntryVal});
+            NamePool::Id attrName = nodeAttrEntryName->getEvalVal().id;
+            if (attrName == typeId.value()) {
+                msgs->errorUnknown(nodeAttrEntry.getCodeLoc());
+                return nullopt;
             }
+
+            NodeVal attrVal;
+            if (nodeAttrEntryVal == nullptr) {
+                attrVal = NodeVal::makeEmpty(nodeAttrEntryName->getCodeLoc(), typeTable);
+            } else {
+                attrVal = processNode(*nodeAttrEntryVal);
+                if (attrVal.isInvalid()) return nullopt;
+            }
+
+            attrs.insert({attrName, attrVal});
         }
 
         return attrs;
@@ -1344,12 +1443,8 @@ NodeVal Processor::processAndImplicitCast(const NodeVal &node, TypeTable::Id ty)
 
     if (!checkImplicitCastable(proc, ty, true)) return NodeVal();
 
-    if (proc.getType().value() == ty) {
-        if (checkIsEvalVal(proc, false))
-            return NodeVal(proc.getCodeLoc(), EvalVal::copyNoRef(proc.getEvalVal()));
-        else
-            return NodeVal(proc.getCodeLoc(), LlvmVal::copyNoRef(proc.getLlvmVal()));
-    }
+    if (proc.getType().value() == ty)
+        return NodeVal::copyNoRef(proc.getCodeLoc(), proc);
 
     return dispatchCast(proc.getCodeLoc(), proc, ty);
 }

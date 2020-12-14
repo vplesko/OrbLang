@@ -1,0 +1,3 @@
+fnc main () () {
+    attr?? \()::((type 0)) foo;
+};

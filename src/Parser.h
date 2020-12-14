@@ -20,13 +20,11 @@ class Parser {
     bool matchCloseBraceOrError(Token openBrace);
 
     EscapeScore parseEscapeScore();
-    // Returns false on error, otherwise true.
-    bool parseTypeAttr(NodeVal &node);
-    // Returns false on error, otherwise true.
-    bool parseAttrs(NodeVal &node);
+    void parseTypeAttr(NodeVal &node);
+    void parseAttrs(NodeVal &node);
 
-    NodeVal parseNoSemicolon();
-    NodeVal parseTerm();
+    NodeVal parseBare();
+    NodeVal parseTerm(bool ignoreAttrs = false);
 
 public:
     Parser(StringPool *stringPool, TypeTable *typeTable, CompilationMessages *msgs);
@@ -34,7 +32,7 @@ public:
     void setLexer(Lexer *lex_) { lex = lex_; }
     Lexer* getLexer() const { return lex; }
 
-    NodeVal parseNode();
+    NodeVal parseNode(bool ignoreAttrs = false);
 
     bool isOver() const { return peek().type == Token::T_END; }
 };

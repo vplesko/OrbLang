@@ -1,12 +1,68 @@
 import "util/io.orb";
 
-#*
-TODO test
-::a ::() ::(a) ::(a b) ::((a x)) :: ((a x) b) ::((a x) (b y))
-with/without type attr
-from node, from raw ref
-attrOf/attr?? type gets type attr
-*#
 fnc main () () {
-    sym (x:i32::foo 0::bar);
+    eval (sym (x \()));
+    println_i32 (cast i32 (attr?? x foo));
+
+    eval (= x \()::foo);
+    println_i32 (cast i32 (attr?? x foo));
+    println_i32 (+ 2 (cast i32 (attr?? x bar)));
+
+    eval (= x \()::(foo));
+    println_i32 (+ 2 (cast i32 (attr?? x foo)));
+    println_i32 (+ 4 (cast i32 (attr?? x bar)));
+
+    eval (= x \()::(foo bar));
+    println_i32 (+ 4 (cast i32 (attr?? x foo)));
+    println_i32 (+ 5 (cast i32 (attr?? x bar)));
+    println_i32 (+ 7 (cast i32 (attr?? x baz)));
+
+    eval (= x \()::((foo 8)));
+    println_i32 (attrOf x foo);
+
+    eval (= x \()::((foo 9) bar));
+    println_i32 (attrOf x foo);
+
+    eval (= x \()::(foo (bar 10)));
+    println_i32 (attrOf x bar);
+
+    eval (= x \()::((foo 11) (bar 12)));
+    println_i32 (attrOf x foo);
+    println_i32 (attrOf x bar);
+
+    eval (= x \():i32::((foo 13)));
+    println_i32 (attrOf x foo);
+
+    println_i32 (attrOf \()::((foo 14)) foo);
+
+    sym (p 15);
+    block {
+        exit (== (attrOf \():i32 type) i32);
+        = p -1;
+    };
+    println_i32 p;
+
+    = p 16;
+    block {
+        exit (== (attrOf \():i32::foo type) i32);
+        = p -1;
+    };
+    println_i32 p;
+
+    = p 17;
+    block {
+        exit (attr?? \():i32 type);
+        = p -1;
+    };
+    println_i32 p;
+
+    = p 18;
+    block {
+        exit (attr?? \():i32::foo type);
+        = p -1;
+    };
+    println_i32 p;
+
+    println_i32 (+ 19 (lenOf (attrOf \()::foo foo)));
+    println_i32 (+ 20 (lenOf (attrOf \()::(foo) foo)));
 };
