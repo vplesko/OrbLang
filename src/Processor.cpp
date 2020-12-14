@@ -975,6 +975,47 @@ bool Processor::implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly
     }
 }
 
+optional<unordered_map<NamePool::Id, NodeVal>> Processor::processAttributes(const NodeVal &node) {
+    if (!node.hasAttrs()) return unordered_map<NamePool::Id, NodeVal>();
+
+    NodeVal nodeAttrs = processWithEscape(node.getAttrs());
+    if (nodeAttrs.isInvalid()) return nullopt;
+
+    if (!NodeVal::isRawVal(nodeAttrs, typeTable)) {
+        if (!checkIsId(nodeAttrs, true)) return nullopt;
+
+        unordered_map<NamePool::Id, NodeVal> attrs;
+        attrs.insert({nodeAttrs.getEvalVal().id, NodeVal::makeEmpty(nodeAttrs.getCodeLoc(), typeTable)});
+        return attrs;
+    } else {
+        unordered_map<NamePool::Id, NodeVal> attrs;
+
+        for (size_t i = 0; i < nodeAttrs.getChildrenCnt(); ++i) {
+            const NodeVal &nodeAttrEntry = nodeAttrs.getChild(i);
+
+            const NodeVal *nodeAttrEntryName = nullptr;
+            const NodeVal *nodeAttrEntryVal = nullptr;
+            if (!NodeVal::isRawVal(nodeAttrEntry, typeTable)) {
+                nodeAttrEntryName = &nodeAttrEntry;
+            } else {
+                if (!checkExactlyChildren(nodeAttrEntry, 2, true)) return nullopt;
+                nodeAttrEntryName = &nodeAttrEntry.getChild(0);
+                nodeAttrEntryVal = &nodeAttrEntry.getChild(1);
+            }
+
+            if (!checkIsId(*nodeAttrEntryName, true)) return nullopt;
+
+            if (nodeAttrEntryVal == nullptr) {
+                attrs.insert({nodeAttrEntryName->getEvalVal().id, NodeVal::makeEmpty(nodeAttrEntryName->getCodeLoc(), typeTable)});
+            } else {
+                attrs.insert({nodeAttrEntryName->getEvalVal().id, *nodeAttrEntryVal});
+            }
+        }
+
+        return attrs;
+    }
+}
+
 bool Processor::processChildNodes(const NodeVal &node) {
     for (size_t i = 0; i < node.getChildrenCnt(); ++i) {
         NodeVal tmp = processNode(node.getChild(i));

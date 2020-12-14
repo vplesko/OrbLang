@@ -1,5 +1,12 @@
 import "util/io.orb";
 
+#*
+TODO test
+::a ::() ::(a) ::(a b) ::((a x)) :: ((a x) b) ::((a x) (b y))
+with/without type attr
+from node, from raw ref
+attrOf/attr?? type gets type attr
+*#
 fnc main () () {
     sym (x:i32::foo 0::bar);
 };

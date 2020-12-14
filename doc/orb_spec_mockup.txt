@@ -7,7 +7,9 @@ expr ::= expr_walled |
 	exprs ';';
 
 expr_walled ::= expr_walled_bare |
-	expr_walled_bare ':' expr_walled_bare;
+	expr_walled_bare ':' expr_walled_bare |
+	expr_walled_bare '::' expr_walled_bare |
+	expr_walled_bare ':' expr_walled_bare '::' expr_walled_bare;
 
 expr_walled_bare ::= '(' exprs ')' |
 	'{' exprs '}' |
@@ -99,6 +101,9 @@ when promoting literal to evalVal, type attribute is respected as eval impl cast
 	if escaped, escape score and type attribute preserved
 compiler cannot gen type, id or raw vars, cannot gen code in global
 evaluator can have pointers only be null, strings may be non-null or null
+
+attrs
+	::a OR ::(...[(a v) OR a])
 
 sym
 	sym a:t OR sym (a:t) OR sym (a b) OR sym (a:t b), variadic
