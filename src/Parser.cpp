@@ -70,8 +70,8 @@ void Parser::parseTypeAttr(NodeVal &node) {
     if (match(Token::T_COLON)) node.setTypeAttr(parseBare());
 }
 
-void Parser::parseAttrs(NodeVal &node) {
-    if (match(Token::T_DOUBLE_COLON)) node.setAttrs(parseBare());
+void Parser::parseNonTypeAttrs(NodeVal &node) {
+    if (match(Token::T_DOUBLE_COLON)) node.setNonTypeAttrs(parseBare());
 }
 
 NodeVal Parser::parseBare() {
@@ -129,7 +129,7 @@ NodeVal Parser::parseTerm(bool ignoreAttrs) {
 
     if (!ignoreAttrs) {
         parseTypeAttr(ret);
-        parseAttrs(ret);
+        parseNonTypeAttrs(ret);
     }
 
     return ret;
@@ -195,7 +195,7 @@ NodeVal Parser::parseNode(bool ignoreAttrs) {
 
     if (!ignoreAttrs) {
         parseTypeAttr(node);
-        parseAttrs(node);
+        parseNonTypeAttrs(node);
     }
 
     return node;

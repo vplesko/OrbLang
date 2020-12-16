@@ -20,7 +20,8 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
     } else {
         // allowing eval to load compiled variables risks fetching outdated values from symbol table
         // however, eval needs to be able to do this for macros to be able to work with compiled args
-        // TODO find a way to limit this behaviour to make it correct (allow to load invoke args only)
+        // TODO find a way to limit this behaviour to make it correct
+        // maybe allow to load invoke args and their attrs only
         return ref;
     }
 }

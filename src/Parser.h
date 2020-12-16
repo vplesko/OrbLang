@@ -21,7 +21,7 @@ class Parser {
 
     EscapeScore parseEscapeScore();
     void parseTypeAttr(NodeVal &node);
-    void parseAttrs(NodeVal &node);
+    void parseNonTypeAttrs(NodeVal &node);
 
     NodeVal parseBare();
     NodeVal parseTerm(bool ignoreAttrs = false);

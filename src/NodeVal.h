@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <memory>
+#include <unordered_map>
 #include "CodeLoc.h"
 #include "LiteralVal.h"
 #include "EvalVal.h"
@@ -14,9 +15,12 @@ public:
         kValid,
         kImport,
         kLiteral,
+        kAttrMap,
         kEval,
         kLlvm
     };
+
+    typedef std::unordered_map<NamePool::Id, std::unique_ptr<NodeVal>> AttrMap;
 
 private:
     CodeLoc codeLoc;
@@ -24,11 +28,13 @@ private:
     Kind kind;
     StringPool::Id importFile;
     LiteralVal literal;
+    AttrMap attrMap;
     LlvmVal llvm;
     EvalVal eval;
 
-    std::unique_ptr<NodeVal> typeAttr, attrs;
+    std::unique_ptr<NodeVal> typeAttr, nonTypeAttrs;
 
+    void copyAttrMap(const AttrMap &a);
     void copyFrom(const NodeVal &other);
 
 public:
@@ -37,6 +43,7 @@ public:
     NodeVal(CodeLoc codeLoc);
     NodeVal(CodeLoc codeLoc, StringPool::Id import);
     NodeVal(CodeLoc codeLoc, const LiteralVal &val);
+    NodeVal(CodeLoc codeLoc, const AttrMap &val);
     NodeVal(CodeLoc codeLoc, const EvalVal &val);
     NodeVal(CodeLoc codeLoc, const LlvmVal &val);
 
@@ -62,6 +69,10 @@ public:
     LiteralVal& getLiteralVal() { return literal; }
     const LiteralVal& getLiteralVal() const { return literal; }
 
+    bool isAttrMap() const { return kind == Kind::kAttrMap; }
+    AttrMap& getAttrMap() { return attrMap; }
+    const AttrMap& getAttrMap() const { return attrMap; }
+
     bool isEvalVal() const { return kind == Kind::kEval; }
     EvalVal& getEvalVal() { return eval; }
     const EvalVal& getEvalVal() const { return eval; }
@@ -81,11 +92,11 @@ public:
     void setTypeAttr(NodeVal t);
     void clearTypeAttr() { typeAttr.reset(); }
 
-    bool hasAttrs() const { return attrs != nullptr; }
-    NodeVal& getAttrs() { return *attrs; }
-    const NodeVal& getAttrs() const { return *attrs; }
-    void setAttrs(NodeVal a);
-    void clearAttrs() { attrs.reset(); }
+    bool hasNonTypeAttrs() const { return nonTypeAttrs != nullptr; }
+    NodeVal& getNonTypeAttrs() { return *nonTypeAttrs; }
+    const NodeVal& getNonTypeAttrs() const { return *nonTypeAttrs; }
+    void setNonTypeAttrs(NodeVal a);
+    void clearNonTypeAttrs() { nonTypeAttrs.reset(); }
 
     static bool isEmpty(const NodeVal &node, const TypeTable *typeTable);
     static bool isLeaf(const NodeVal &node, const TypeTable *typeTable);

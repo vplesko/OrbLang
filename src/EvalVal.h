@@ -11,6 +11,7 @@ class NodeVal;
 class SymbolTable;
 
 struct EvalVal {
+    // type of this evaluation value
     std::optional<TypeTable::Id> type;
     union {
         std::int8_t i8;
@@ -26,7 +27,9 @@ struct EvalVal {
         char c8;
         bool b;
         std::optional<StringPool::Id> str;
+        // TODO move specials to NodeVal
         NamePool::Id id;
+        // contains type value in case this is type or type cn
         TypeTable::Id ty;
     };
     std::vector<NodeVal> elems;

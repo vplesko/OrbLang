@@ -13,10 +13,20 @@ NodeVal::NodeVal(CodeLoc codeLoc, StringPool::Id import) : codeLoc(codeLoc), kin
 NodeVal::NodeVal(CodeLoc codeLoc, const LiteralVal &val) : codeLoc(codeLoc), kind(Kind::kLiteral), literal(val) {
 }
 
+NodeVal::NodeVal(CodeLoc codeLoc, const AttrMap &val) : codeLoc(codeLoc), kind(Kind::kAttrMap) {
+    copyAttrMap(val);
+}
+
 NodeVal::NodeVal(CodeLoc codeLoc, const EvalVal &val) : codeLoc(codeLoc), kind(Kind::kEval), eval(val) {
 }
 
 NodeVal::NodeVal(CodeLoc codeLoc, const LlvmVal &val) : codeLoc(codeLoc), kind(Kind::kLlvm), llvm(val) {
+}
+
+void NodeVal::copyAttrMap(const AttrMap &a) {
+    for (const auto &loc : a) {
+        attrMap.insert({loc.first, make_unique<NodeVal>(*loc.second)});
+    }
 }
 
 void NodeVal::copyFrom(const NodeVal &other) {
@@ -26,16 +36,18 @@ void NodeVal::copyFrom(const NodeVal &other) {
     literal = other.literal;
     eval = other.eval;
     llvm = other.llvm;
-    
+    if (other.isAttrMap()) {
+        copyAttrMap(other.getAttrMap());
+    }
     if (other.hasTypeAttr()) {
         typeAttr = make_unique<NodeVal>(other.getTypeAttr());
     }
-    if (other.hasAttrs()) {
-        attrs = make_unique<NodeVal>(other.getAttrs());
+    if (other.hasNonTypeAttrs()) {
+        nonTypeAttrs = make_unique<NodeVal>(other.getNonTypeAttrs());
     }
 }
 
-NodeVal::NodeVal(const NodeVal &other) : NodeVal() {
+NodeVal::NodeVal(const NodeVal &other) {
     copyFrom(other);
 }
 
@@ -84,8 +96,8 @@ void NodeVal::setTypeAttr(NodeVal t) {
     typeAttr = make_unique<NodeVal>(move(t));
 }
 
-void NodeVal::setAttrs(NodeVal a) {
-    attrs = make_unique<NodeVal>(move(a));
+void NodeVal::setNonTypeAttrs(NodeVal a) {
+    nonTypeAttrs = make_unique<NodeVal>(move(a));
 }
 
 bool NodeVal::isEmpty(const NodeVal &node, const TypeTable *typeTable) {
@@ -151,7 +163,7 @@ void NodeVal::copyNonValFieldsLeaf(NodeVal &dst, const NodeVal &src, const TypeT
     if (src.hasTypeAttr()) {
         dst.setTypeAttr(src.getTypeAttr());
     }
-    if (src.hasAttrs()) {
-        dst.setAttrs(src.getAttrs());
+    if (src.hasNonTypeAttrs()) {
+        dst.setNonTypeAttrs(src.getNonTypeAttrs());
     }
 }
