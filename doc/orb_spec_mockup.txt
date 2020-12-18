@@ -263,10 +263,11 @@ type
 ********************
 
 plan:
- - custom types (req attr in sym, type cn only)
+ - custom types (req attr in sym, type cn only, unique names regardless of scope)
  - first class fncs and macs
  - declarations (fncs and tuple types only)
  - variadics
+ - zero
  - drop, move
  - new attributes: preprocess, noZero, noDrop, unique...
  - include C headers
