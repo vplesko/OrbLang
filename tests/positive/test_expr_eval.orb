@@ -14,8 +14,8 @@ fnc main() () {
     println_i32 (+ 200 (cast i32 (== 1 1)));
     println_i32 (+ 201 (cast i32 (< 1 2 3 4 5)));
     println_i32 (+ 203 (cast i32 (>= 3 (- 3 1) (+ 1 2))));
-    #(eval sym (s 0) (p (& s));
-    #println_i32 (+ 203 (cast i32 (== p (& s))));
+    eval (sym (s 0) (p (& s)));
+    println_i32 (+ 203 (cast i32 (== p (& s))));
     println_i32 (+ 204 (cast i32 (== true true)));
     println_i32 (+ 206 (cast i32 (== true false)));
     println_i32 (+ 207 (cast i32 (!= true true)));

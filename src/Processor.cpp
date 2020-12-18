@@ -1289,7 +1289,7 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
             }
         }
 
-        // TODO allow eval indexing of strings
+        // TODO allow eval indexing of strings?
         if (checkIsEvalTime(base, false) && checkIsEvalTime(index, false) &&
             !typeTable->worksAsTypeStr(base.getEvalVal().type.value())) {
             base = evaluator->performOperIndex(codeLoc, base, index, elemType.value());
@@ -1473,10 +1473,18 @@ NodeVal Processor::dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable:
 }
 
 NodeVal Processor::dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
+    if (!checkHasType(oper, true)) return NodeVal();
+
+    optional<TypeTable::Id> resTy = typeTable->addTypeDerefOf(oper.getType().value());
+    if (!resTy.has_value()) {
+        msgs->errorUnknown(codeLoc);
+        return NodeVal();
+    }
+
     if (checkIsEvalTime(oper, false)) {
-        return evaluator->performOperUnaryDeref(codeLoc, oper);
+        return evaluator->performOperUnaryDeref(codeLoc, oper, resTy.value());
     } else {
-        return performOperUnaryDeref(codeLoc, oper);
+        return performOperUnaryDeref(codeLoc, oper, resTy.value());
     }
 }
 

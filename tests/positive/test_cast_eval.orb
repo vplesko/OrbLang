@@ -43,4 +43,6 @@ fnc main () () {
 
     println_c8 ([] (cast (c8 6) "hello") 1);
     println_i32 (cast i32 ([] (cast (c8 6) "hello") 5));
+
+    cast (i32 cn * cn) (cast ptr (cast (i32 []) (cast (i32 *) null)));
 };

@@ -44,7 +44,7 @@ protected:
     virtual bool performRet(CodeLoc codeLoc) =0;
     virtual bool performRet(CodeLoc codeLoc, const NodeVal &node) =0;
     virtual NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) =0;
-    virtual NodeVal performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) =0;
+    virtual NodeVal performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper, TypeTable::Id resTy) =0;
     virtual void* performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt) =0;
     // Returns nullopt in case of fail. Otherwise, returns whether the variadic comparison may exit early.
     virtual std::optional<bool> performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) =0;

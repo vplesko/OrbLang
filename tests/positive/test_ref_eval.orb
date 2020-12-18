@@ -2,13 +2,12 @@ import "util/io.orb";
 
 eval (sym glob:i32);
 
-# TODO uncomment test cases after eval vals can be non-null ptrs
 fnc main () () {
     eval (sym a:i32);
     = a 100;
     println_i32 a;
-    #= (* (& a)) 101;
-    #println_i32 a;
+    = (* (& a)) 101;
+    println_i32 a;
 
     eval (sym b:(i32 2));
     = ([] b 0) 200;
@@ -18,38 +17,32 @@ fnc main () () {
     = ([] b 1) 202;
     println_i32 ([] b 1);
 
-    #eval (sym (c (cast (i32 []) (& b))));
-    #= ([] c 0) 300;
-    #println_i32 ([] b 0);
-    #= ([] c 0) 301;
-    #println_i32 ([] c 0);
+    eval (sym (d (& b)));
+    = ([] (* d) 1) 300;
+    println_i32 ([] b 1);
+    = ([] (* d) 1) 301;
+    println_i32 ([] (* d) 1);
 
-    #eval (sym (d (& b)));
-    #= ([] (* d) 1) 400;
-    #println_i32 ([] b 1);
-    #= ([] (* d) 1) 401;
-    #println_i32 ([] (* d) 1);
-
-    #eval (sym (e (& a)));
-    #= (* e) 500;
-    #println_i32 a;
-    #= (* e) 501;
-    #println_i32 (* e);
+    eval (sym (e (& a)));
+    = (* e) 400;
+    println_i32 a;
+    = (* e) 401;
+    println_i32 (* e);
 
     eval (sym f:(i32 i32));
-    = (. f 0) 600;
+    = (. f 0) 500;
     println_i32 (. f 0);
-    = (. f 0) 601;
+    = (. f 0) 501;
     println_i32 (. f 0);
-    = (. f 1) 602;
+    = (. f 1) 502;
     println_i32 (. f 1);
 
-    #eval (sym (g (0 (& f))));
-    #= (. g 1 0) 700;
-    #println_i32 (. g 1 0);
-    #= (. f 0) 701;
-    #println_i32 (. g 1 0);
+    eval (sym (g (tup 0 (& f))));
+    = (. g 1 0) 600;
+    println_i32 (. g 1 0);
+    = (. f 0) 601;
+    println_i32 (. g 1 0);
 
-    = glob 800;
+    = glob 700;
     println_i32 glob;
 };

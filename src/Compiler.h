@@ -55,7 +55,7 @@ class Compiler : public Processor {
     bool performRet(CodeLoc codeLoc) override;
     bool performRet(CodeLoc codeLoc, const NodeVal &node) override;
     NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) override;
-    NodeVal performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) override;
+    NodeVal performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper, TypeTable::Id resTy) override;
     void* performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt) override;
     std::optional<bool> performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) override;
     NodeVal performOperComparisonTearDown(CodeLoc codeLoc, bool success, void *signal) override;

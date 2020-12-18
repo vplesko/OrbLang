@@ -265,10 +265,9 @@ type
 plan:
  - named tuple membs
  - custom types (req attr in sym, type cn only)
- - variadics
  - first class fncs and macs
  - declarations (fncs and tuple types only)
- - ptrs in eval
+ - variadics
  - drop, move
- - new attributes: preprocess, noZero, noScope, inline, restrict, noDrop, unique, pure...
+ - new attributes: preprocess, noZero, noDrop, unique...
  - include C headers

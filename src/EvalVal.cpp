@@ -51,6 +51,7 @@ EvalVal EvalVal::makeZero(TypeTable::Id t, NamePool *namePool, TypeTable *typeTa
     } else {
         // because of union, this takes care of all other primitives
         evalVal.u64 = 0LL;
+        //evalVal.p = nullptr;
     }
 
     return evalVal;
@@ -110,6 +111,11 @@ bool EvalVal::isC(const EvalVal &val, const TypeTable *typeTable) {
     return type.has_value() && typeTable->worksAsTypeC(type.value());
 }
 
+bool EvalVal::isP(const EvalVal &val, const TypeTable *typeTable) {
+    optional<TypeTable::Id> type = val.getType();
+    return type.has_value() && typeTable->worksAsTypeP(type.value());
+}
+
 bool EvalVal::isStr(const EvalVal &val, const TypeTable *typeTable) {
     optional<TypeTable::Id> type = val.getType();
     return type.has_value() && typeTable->worksAsTypeStr(type.value());
@@ -131,6 +137,7 @@ bool EvalVal::isTuple(const EvalVal &val, const TypeTable *typeTable) {
 }
 
 bool EvalVal::isNull(const EvalVal &val, const TypeTable *typeTable) {
+    if (isP(val, typeTable)) return val.p == nullptr;
     if (isStr(val, typeTable)) return !val.str.has_value();
     return isAnyP(val, typeTable);
 }
@@ -254,11 +261,14 @@ bool EvalVal::isCastable(const EvalVal &val, TypeTable::Id dstTypeId, const Stri
                 typeTable->worksAsTypeAnyP(dstTypeId);
         }
     } else if (typeTable->worksAsTypeAnyP(srcTypeId)) {
-        // it's null
-        return typeTable->worksAsTypeI(dstTypeId) ||
-            typeTable->worksAsTypeU(dstTypeId) ||
-            typeTable->worksAsTypeB(dstTypeId) ||
-            typeTable->worksAsTypeAnyP(dstTypeId);
+        if (isNull(val, typeTable)) {
+            return typeTable->worksAsTypeI(dstTypeId) ||
+                typeTable->worksAsTypeU(dstTypeId) ||
+                typeTable->worksAsTypeB(dstTypeId) ||
+                typeTable->worksAsTypeAnyP(dstTypeId);
+        } else {
+            return typeTable->isImplicitCastable(srcTypeId, dstTypeId);
+        }
     } else if (typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE)) {
         return typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_ID) ||
             typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE);

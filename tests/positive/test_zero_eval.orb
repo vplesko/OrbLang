@@ -31,11 +31,8 @@ fnc main () () {
     eval (sym id_:type_);
     println_i32 (id_);
 
-    # TODO uncomment after lenOf implemented
-    #*
     eval (sym raw_:raw);
     println_i32 (eval (lenOf raw_));
-    *#
 
     eval (sym p:(i32 *));
     eval (sym p_cn:(i32 cn *));

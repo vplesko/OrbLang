@@ -1,0 +1,4 @@
+fnc main () () {
+    eval (sym (x 0) (p (& x)));
+    eval (cast ptr p);
+};

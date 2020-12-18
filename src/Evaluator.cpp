@@ -270,8 +270,11 @@ NodeVal Evaluator::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper o
             success = true;
         }
     } else if (op == Oper::BIT_AND) {
-        msgs->errorEvaluationNotSupported(codeLoc);
-        errorGiven = true;
+        if (oper.hasRef()) {
+            evalVal = EvalVal::makeVal(typeTable->addTypeAddrOf(ty), typeTable);
+            evalVal.p = oper.getEvalVal().ref;
+            success = true;
+        }
     }
 
     if (!success) {
@@ -282,9 +285,18 @@ NodeVal Evaluator::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper o
     return NodeVal(codeLoc, evalVal);
 }
 
-NodeVal Evaluator::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
-    msgs->errorEvaluationNotSupported(codeLoc);
-    return NodeVal();
+NodeVal Evaluator::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper, TypeTable::Id resTy) {
+    if (!checkIsEvalVal(oper, true)) return NodeVal();
+
+    if (EvalVal::isNull(oper.getEvalVal(), typeTable)) {
+        msgs->errorUnknown(oper.getCodeLoc());
+        return NodeVal();
+    }
+
+    NodeVal nodeEvalVal = NodeVal::copyNoRef(*oper.getEvalVal().p);
+    nodeEvalVal.getEvalVal().type = resTy;
+    nodeEvalVal.getEvalVal().ref = oper.getEvalVal().p;
+    return nodeEvalVal;
 }
 
 void* Evaluator::performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt) {
@@ -303,7 +315,8 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     bool isTypeC = typeTable->worksAsTypeC(ty);
     bool isTypeF = typeTable->worksAsTypeF(ty);
     bool isTypeStr = typeTable->worksAsTypeStr(ty);
-    bool isTypeP = typeTable->worksAsTypeAnyP(ty);
+    bool isTypeP = typeTable->worksAsTypeP(ty);
+    bool isTypeAnyP = typeTable->worksAsTypeAnyP(ty);
     bool isTypeB = typeTable->worksAsTypeB(ty);
     bool isTypeId = typeTable->worksAsPrimitive(ty, TypeTable::P_ID);
     bool isTypeTy = typeTable->worksAsPrimitive(ty, TypeTable::P_TYPE);
@@ -313,6 +326,7 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     optional<char> cl, cr;
     optional<double> fl, fr;
     optional<StringPool::Id> strl, strr;
+    optional<const NodeVal*> pl, pr;
     optional<bool> bl, br;
     optional<NamePool::Id> idl, idr;
     optional<TypeTable::Id> tyl, tyr;
@@ -331,6 +345,13 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     } else if (isTypeStr) {
         strl = lhs.getEvalVal().str.value();
         strr = rhs.getEvalVal().str.value();
+    } else if (isTypeAnyP) {
+        if (isTypeP) {
+            pl = lhs.getEvalVal().p;
+            pr = rhs.getEvalVal().p;
+        } else {
+            pl = pr = nullptr;
+        }
     } else if (isTypeB) {
         bl = lhs.getEvalVal().b;
         br = rhs.getEvalVal().b;
@@ -359,8 +380,8 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
         } else if (isTypeStr) {
             result->result = strl.value()==strr.value();
             return !result->result;
-        } else if (isTypeP) {
-            result->result = true; // null == null
+        } else if (isTypeAnyP) {
+            result->result = pl==pr;
             return !result->result;
         } else if (isTypeB) {
             result->result = bl.value()==br.value();
@@ -389,8 +410,8 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
         } else if (isTypeStr) {
             result->result = strl.value()!=strr.value();
             return !result->result;
-        } else if (isTypeP) {
-            result->result = false; // null != null
+        } else if (isTypeAnyP) {
+            result->result = pl!=pr;
             return !result->result;
         } else if (isTypeB) {
             result->result = bl.value()!=br.value();
@@ -718,8 +739,9 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
             !assignBasedOnTypeF(dstEvalVal, (double) x, dstTypeId) &&
             !assignBasedOnTypeC(dstEvalVal, (char) x, dstTypeId) &&
             !assignBasedOnTypeB(dstEvalVal, (bool) x, dstTypeId) &&
-            !(typeTable->worksAsTypeStr(dstTypeId) && x == 0) &&
-            !(typeTable->worksAsTypeAnyP(dstTypeId) && x == 0)) {
+            !(x == 0 && assignBasedOnTypeP(dstEvalVal, nullptr, dstTypeId)) &&
+            !(x == 0 && typeTable->worksAsTypeStr(dstTypeId)) &&
+            !(x == 0 && typeTable->worksAsTypeAnyP(dstTypeId))) {
             return nullopt;
         }
     } else if (typeTable->worksAsTypeU(srcTypeId)) {
@@ -729,8 +751,9 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
             !assignBasedOnTypeF(dstEvalVal, (double) x, dstTypeId) &&
             !assignBasedOnTypeC(dstEvalVal, (char) x, dstTypeId) &&
             !assignBasedOnTypeB(dstEvalVal, (bool) x, dstTypeId) &&
-            !(typeTable->worksAsTypeStr(dstTypeId) && x == 0) &&
-            !(typeTable->worksAsTypeAnyP(dstTypeId) && x == 0) &&
+            !(x == 0 && assignBasedOnTypeP(dstEvalVal, nullptr, dstTypeId)) &&
+            !(x == 0 && typeTable->worksAsTypeStr(dstTypeId)) &&
+            !(x == 0 && typeTable->worksAsTypeAnyP(dstTypeId)) &&
             !assignBasedOnTypeId(dstEvalVal, x, dstTypeId)) {
             return nullopt;
         }
@@ -780,17 +803,28 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
             if (!assignBasedOnTypeI(dstEvalVal, 0, dstTypeId) &&
                 !assignBasedOnTypeU(dstEvalVal, 0, dstTypeId) &&
                 !assignBasedOnTypeB(dstEvalVal, false, dstTypeId) &&
+                !assignBasedOnTypeP(dstEvalVal, nullptr, dstTypeId) &&
                 !typeTable->worksAsTypeAnyP(dstTypeId)) {
                 return nullopt;
             }
         }
     } else if (typeTable->worksAsTypeAnyP(srcTypeId)) {
-        // it's null
-        if (!assignBasedOnTypeI(dstEvalVal, 0, dstTypeId) &&
-            !assignBasedOnTypeU(dstEvalVal, 0, dstTypeId) &&
-            !assignBasedOnTypeB(dstEvalVal, false, dstTypeId) &&
-            !typeTable->worksAsTypeAnyP(dstTypeId)) {
-            return nullopt;
+        if (EvalVal::isNull(srcEvalVal, typeTable)) {
+            if (!assignBasedOnTypeI(dstEvalVal, 0, dstTypeId) &&
+                !assignBasedOnTypeU(dstEvalVal, 0, dstTypeId) &&
+                !assignBasedOnTypeB(dstEvalVal, false, dstTypeId) &&
+                !assignBasedOnTypeP(dstEvalVal, nullptr, dstTypeId) &&
+                !typeTable->worksAsTypeAnyP(dstTypeId)) {
+                return nullopt;
+            }
+        } else {
+            if (typeTable->isImplicitCastable(srcTypeId, dstTypeId)) {
+                if (!assignBasedOnTypeP(dstEvalVal, srcEvalVal.p, dstTypeId)) {
+                    return nullopt;
+                }
+            } else {
+                return nullopt;
+            }
         }
     } else if (typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE)) {
         if (typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_TYPE)) {
@@ -930,6 +964,16 @@ bool Evaluator::assignBasedOnTypeC(EvalVal &val, char x, TypeTable::Id ty) {
 bool Evaluator::assignBasedOnTypeB(EvalVal &val, bool x, TypeTable::Id ty) {
     if (typeTable->worksAsPrimitive(ty, TypeTable::P_BOOL)) {
         val.b = x;
+    } else {
+        return false;
+    }
+
+    return true;
+}
+
+bool Evaluator::assignBasedOnTypeP(EvalVal &val, NodeVal *x, TypeTable::Id ty) {
+    if (typeTable->worksAsTypeP(ty)) {
+        val.p = x;
     } else {
         return false;
     }

@@ -31,6 +31,7 @@ struct EvalVal {
         NamePool::Id id;
         // contains type value in case this is type or type cn
         TypeTable::Id ty;
+        NodeVal *p = nullptr;
     };
     std::vector<NodeVal> elems;
 
@@ -65,6 +66,7 @@ struct EvalVal {
     static bool isF(const EvalVal &val, const TypeTable *typeTable);
     static bool isB(const EvalVal &val, const TypeTable *typeTable);
     static bool isC(const EvalVal &val, const TypeTable *typeTable);
+    static bool isP(const EvalVal &val, const TypeTable *typeTable);
     static bool isStr(const EvalVal &val, const TypeTable *typeTable);
     static bool isAnyP(const EvalVal &val, const TypeTable *typeTable);
     static bool isArr(const EvalVal &val, const TypeTable *typeTable);

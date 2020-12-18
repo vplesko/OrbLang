@@ -414,20 +414,13 @@ NodeVal Compiler::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op
     return NodeVal(codeLoc, llvmVal);
 }
 
-NodeVal Compiler::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
+NodeVal Compiler::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper, TypeTable::Id resTy) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     if (!checkIsLlvmVal(oper, true)) return NodeVal();
 
-    TypeTable::Id operTy = oper.getLlvmVal().type;
     llvm::Value *llvmIn = oper.getLlvmVal().val;
 
-    optional<TypeTable::Id> typeId = typeTable->addTypeDerefOf(operTy);
-    if (!typeId.has_value()) {
-        msgs->errorUnknown(codeLoc);
-        return NodeVal();
-    }
-
-    LlvmVal llvmVal(typeId.value());
+    LlvmVal llvmVal(resTy);
     llvmVal.val = llvmBuilder.CreateLoad(llvmIn, "deref_tmp");
     llvmVal.ref = llvmIn;
     return NodeVal(codeLoc, llvmVal);

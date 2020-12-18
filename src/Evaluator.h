@@ -12,6 +12,7 @@ class Evaluator : public Processor {
     bool assignBasedOnTypeF(EvalVal &val, double x, TypeTable::Id ty);
     bool assignBasedOnTypeC(EvalVal &val, char x, TypeTable::Id ty);
     bool assignBasedOnTypeB(EvalVal &val, bool x, TypeTable::Id ty);
+    bool assignBasedOnTypeP(EvalVal &val, NodeVal *x, TypeTable::Id ty);
     bool assignBasedOnTypeId(EvalVal &val, std::uint64_t x, TypeTable::Id ty);
     bool assignBasedOnTypeId(EvalVal &val, bool x, TypeTable::Id ty);
 
@@ -45,7 +46,7 @@ public:
     bool performRet(CodeLoc codeLoc) override;
     bool performRet(CodeLoc codeLoc, const NodeVal &node) override;
     NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) override;
-    NodeVal performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) override;
+    NodeVal performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper, TypeTable::Id resTy) override;
     void* performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt) override;
     std::optional<bool> performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) override;
     NodeVal performOperComparisonTearDown(CodeLoc codeLoc, bool success, void *signal) override;
