@@ -34,12 +34,14 @@ public:
     };
 
     struct Tuple {
-        std::vector<Id> members;
+        std::vector<std::pair<Id, std::optional<NamePool::Id>>> members;
 
         Tuple() {}
-        Tuple(std::vector<Id> membs) : members(std::move(membs)) {}
+        Tuple(std::vector<std::pair<Id, std::optional<NamePool::Id>>> membs) : members(std::move(membs)) {}
 
         void addMember(Id m);
+        void addMember(Id m, NamePool::Id n);
+        std::optional<std::size_t> getMemberInd(NamePool::Id name) const;
 
         bool eq(const Tuple &other) const;
     };
@@ -196,7 +198,7 @@ public:
 
     bool isImplicitCastable(Id from, Id into) const;
 
-    std::optional<std::string> makeBinString(Id t) const;
+    std::optional<std::string> makeBinString(Id t, const NamePool *namePool) const;
 };
 
 template <typename T>

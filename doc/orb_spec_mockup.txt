@@ -263,7 +263,6 @@ type
 ********************
 
 plan:
- - named tuple membs
  - custom types (req attr in sym, type cn only)
  - first class fncs and macs
  - declarations (fncs and tuple types only)

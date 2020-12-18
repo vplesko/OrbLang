@@ -198,4 +198,11 @@ fnc main () () {
         = p0 (. x 0 0);
     });
     println_i32 p0;
+
+    eval (block {
+        sym x:(i32::((name \x)) i32::((name \y)));
+        = (. x x) 2200;
+        = p0 (. x 0);
+    });
+    println_i32 p0;
 };

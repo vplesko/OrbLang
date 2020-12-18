@@ -84,5 +84,5 @@ bool isOper(NamePool::Id name);
 std::optional<Oper> getOper(NamePool::Id name);
 bool isOper(NamePool::Id name, Oper o);
 bool isReserved(NamePool::Id name);
-bool isTypeDescr(Meaningful m);
-bool isTypeDescr(NamePool::Id name);
+bool isTypeDescrDecor(Meaningful m);
+bool isTypeDescrDecor(NamePool::Id name);

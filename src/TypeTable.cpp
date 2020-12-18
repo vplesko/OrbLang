@@ -3,7 +3,19 @@
 using namespace std;
 
 void TypeTable::Tuple::addMember(TypeTable::Id m) {
-    members.push_back(m);
+    members.push_back({m, nullopt});
+}
+
+void TypeTable::Tuple::addMember(Id m, NamePool::Id n) {
+    members.push_back({m, n});
+}
+
+optional<size_t> TypeTable::Tuple::getMemberInd(NamePool::Id name) const {
+    for (size_t i = 0; i < members.size(); ++i) {
+        if (members[i].second.has_value() && members[i].second.value() == name) return i;
+    }
+
+    return nullopt;
 }
 
 bool TypeTable::Tuple::eq(const Tuple &other) const {
@@ -93,7 +105,7 @@ void TypeTable::addPrimType(NamePool::Id name, PrimIds primId, llvm::Type *type)
 optional<TypeTable::Id> TypeTable::addTuple(Tuple tup) {
     if (tup.members.empty()) return nullopt;
 
-    if (tup.members.size() == 1) return tup.members[0];
+    if (tup.members.size() == 1) return tup.members[0].first;
 
     for (size_t i = 0; i < tuples.size(); ++i) {
         if (tup.eq(tuples[i].first)) {
@@ -214,11 +226,9 @@ TypeTable::Id TypeTable::addTypeDropCnsOf(Id t) {
     } else if (isTuple(t)) {
         const Tuple &old = getTuple(t);
 
-        Tuple now;
-        now.members.resize(old.members.size());
-        for (size_t i = 0; i < old.members.size(); ++i) {
-            now.members[i] = addTypeDropCnsOf(old.members[i]);
-        }
+        Tuple now = old;
+        for (size_t i = 0; i < old.members.size(); ++i)
+            now.members[i].first = addTypeDropCnsOf(old.members[i].first);
 
         return addTuple(move(now)).value();
     } else {
@@ -397,7 +407,7 @@ optional<TypeTable::Id> TypeTable::extractMemberType(Id t, size_t ind) {
 
     if (ind >= tup.value()->members.size()) return nullopt;
 
-    Id id = tup.value()->members[ind];
+    Id id = tup.value()->members[ind].first;
     return isDirectCn(t) ? addTypeCnOf(id) : id;
 }
 
@@ -484,7 +494,7 @@ bool TypeTable::worksAsTypeCn(Id t) const {
         const Tuple &tup = getTuple(t);
 
         for (auto it : tup.members) {
-            if (worksAsTypeCn(it)) return true;
+            if (worksAsTypeCn(it.first)) return true;
         }
 
         return false;
@@ -657,7 +667,7 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
     }
 }
 
-optional<string> TypeTable::makeBinString(Id t) const {
+optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool) const {
     // don't forget special delim after custom types are cast safe
     stringstream ss;
 
@@ -719,7 +729,12 @@ optional<string> TypeTable::makeBinString(Id t) const {
         ss << "$t";
         const Tuple &tup = getTuple(t);
         for (auto it : tup.members) {
-            optional<string> membStr = makeBinString(it);
+            if (it.second.has_value()) {
+                ss << "$n";
+                ss << namePool->get(it.second.value());
+            }
+            ss << "$m";
+            optional<string> membStr = makeBinString(it.first, namePool);
             if (!membStr.has_value()) return nullopt;
             ss << membStr.value();
         }
@@ -737,7 +752,7 @@ optional<string> TypeTable::makeBinString(Id t) const {
             if (i == 0) break;
         }
         if (descr.cn) ss << "$cn";
-        optional<string> baseStr = makeBinString(descr.base);
+        optional<string> baseStr = makeBinString(descr.base, namePool);
         if (!baseStr.has_value()) return nullopt;
         ss << baseStr.value();
         return ss.str();

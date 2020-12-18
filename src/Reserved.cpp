@@ -94,12 +94,12 @@ bool isReserved(NamePool::Id name) {
     return isKeyword(name) || isOper(name);
 }
 
-bool isTypeDescr(Meaningful m) {
+bool isTypeDescrDecor(Meaningful m) {
     return m == Meaningful::CN || m == Meaningful::ASTERISK || m == Meaningful::SQUARE;
 }
 
-bool isTypeDescr(NamePool::Id name) {
+bool isTypeDescrDecor(NamePool::Id name) {
     optional<Meaningful> m = getMeaningful(name);
     if (!m.has_value()) return false;
-    return isTypeDescr(m.value());
+    return isTypeDescrDecor(m.value());
 }

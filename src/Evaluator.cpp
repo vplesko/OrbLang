@@ -879,7 +879,7 @@ NamePool::Id Evaluator::makeIdFromB(bool x) {
 }
 
 optional<NamePool::Id> Evaluator::makeIdFromTy(TypeTable::Id x) {
-    optional<string> str = typeTable->makeBinString(x);
+    optional<string> str = typeTable->makeBinString(x, namePool);
     if (!str.has_value()) return nullopt;
 
     stringstream ss;

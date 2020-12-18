@@ -874,7 +874,7 @@ llvm::Type* Compiler::makeLlvmType(TypeTable::Id typeId) {
 
         vector<llvm::Type*> memberTypes(tup.members.size());
         for (size_t i = 0; i < tup.members.size(); ++i) {
-            llvm::Type *memberType = makeLlvmType(tup.members[i]);
+            llvm::Type *memberType = makeLlvmType(tup.members[i].first);
             if (memberType == nullptr) return nullptr;
             memberTypes[i] = memberType;
         }

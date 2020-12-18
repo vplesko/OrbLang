@@ -16,8 +16,14 @@ NodeVal Processor::processNode(const NodeVal &node) {
         NodeVal procAttrs = node;
         if (!processAttributes(procAttrs)) return NodeVal();
 
-        if (NodeVal::isLeaf(procAttrs, typeTable)) return processLeaf(procAttrs);
-        else return processNonLeaf(procAttrs);
+        NodeVal ret;
+        if (NodeVal::isLeaf(procAttrs, typeTable)) ret = processLeaf(procAttrs);
+        else ret = processNonLeaf(procAttrs);
+        if (ret.isInvalid()) return NodeVal();
+
+        if (procAttrs.hasTypeAttr()) ret.setTypeAttr(procAttrs.getTypeAttr());
+        if (procAttrs.hasNonTypeAttrs()) ret.setNonTypeAttrs(procAttrs.getNonTypeAttrs());
+        return ret;
     } else {
         if (NodeVal::isLeaf(node, typeTable)) return processLeaf(node);
         else return processNonLeaf(node);
@@ -161,25 +167,7 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
 
     EvalVal evalTy = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
 
-    if (second.isEvalVal() && EvalVal::isType(second.getEvalVal(), typeTable)) {
-        TypeTable::Tuple tup;
-        tup.members.reserve(node.getChildrenCnt());
-        tup.members.push_back(starting.getEvalVal().ty);
-        tup.members.push_back(second.getEvalVal().ty);
-        for (size_t i = 2; i < node.getChildrenCnt(); ++i) {
-            NodeVal ty = processAndCheckIsType(node.getChild(i));
-            if (ty.isInvalid()) return NodeVal();
-            tup.members.push_back(ty.getEvalVal().ty);
-        }
-
-        optional<TypeTable::Id> tupTypeId = typeTable->addTuple(move(tup));
-        if (!tupTypeId.has_value()) {
-            msgs->errorInternal(node.getCodeLoc());
-            return NodeVal();
-        }
-
-        evalTy.ty = tupTypeId.value();
-    } else {
+    if (canBeTypeDescrDecor(second)) {
         TypeTable::TypeDescr descr(starting.getEvalVal().ty);
         if (!applyTypeDescrDecor(descr, second)) return NodeVal();
         for (size_t i = 2; i < node.getChildrenCnt(); ++i) {
@@ -189,6 +177,24 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
         }
 
         evalTy.ty = typeTable->addTypeDescr(move(descr));
+    } else {
+        TypeTable::Tuple tup;
+        tup.members.reserve(node.getChildrenCnt());
+        if (!applyTupleMemb(tup, starting)) return NodeVal();
+        if (!applyTupleMemb(tup, second)) return NodeVal();
+        for (size_t i = 2; i < node.getChildrenCnt(); ++i) {
+            NodeVal ty = processNode(node.getChild(i));
+            if (ty.isInvalid()) return NodeVal();
+            if (!applyTupleMemb(tup, ty)) return NodeVal();
+        }
+
+        optional<TypeTable::Id> tupTypeId = typeTable->addTuple(move(tup));
+        if (!tupTypeId.has_value()) {
+            msgs->errorInternal(node.getCodeLoc());
+            return NodeVal();
+        }
+
+        evalTy.ty = tupTypeId.value();
     }
 
     return NodeVal(node.getCodeLoc(), evalTy);
@@ -869,34 +875,13 @@ NodeVal Processor::processAttrOf(const NodeVal &node) {
     if (name.isInvalid()) return NodeVal();
     NamePool::Id attrName = name.getEvalVal().id;
 
-    optional<NamePool::Id> typeId = getMeaningfulNameId(Meaningful::TYPE);
-    if (!typeId.has_value()) {
-        msgs->errorInternal(node.getCodeLoc());
+    optional<NodeVal> nodeAttr = getAttribute(operand, attrName);
+    if (!nodeAttr.has_value()) {
+        msgs->errorUnknown(node.getCodeLoc());
         return NodeVal();
     }
 
-    if (attrName == typeId.value()) {
-        if (!operand.hasTypeAttr()) {
-            msgs->errorUnknown(node.getCodeLoc());
-            return NodeVal();
-        }
-
-        return operand.getTypeAttr();
-    } else {
-        if (!operand.hasNonTypeAttrs()) {
-            msgs->errorUnknown(node.getCodeLoc());
-            return NodeVal();
-        }
-        const NodeVal &nonTypeAttrs = operand.getNonTypeAttrs();
-
-        auto loc = nonTypeAttrs.getAttrMap().find(attrName);
-        if (loc == nonTypeAttrs.getAttrMap().end()) {
-            msgs->errorUnknown(node.getCodeLoc());
-            return NodeVal();
-        }
-
-        return *loc->second;
-    }
+    return nodeAttr.value();
 }
 
 NodeVal Processor::processAttrIsDef(const NodeVal &node) {
@@ -1000,6 +985,43 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
     return prom;
 }
 
+optional<NodeVal> Processor::getAttribute(const NodeVal &node, NamePool::Id attrName) {
+    optional<NamePool::Id> typeId = getMeaningfulNameId(Meaningful::TYPE);
+    if (!typeId.has_value()) {
+        msgs->errorInternal(node.getCodeLoc());
+        return NodeVal();
+    }
+
+    if (attrName == typeId.value()) {
+        if (!node.hasTypeAttr()) return nullopt;
+
+        return node.getTypeAttr();
+    } else {
+        if (!node.hasNonTypeAttrs()) return nullopt;
+
+        const NodeVal &nonTypeAttrs = node.getNonTypeAttrs();
+
+        auto loc = nonTypeAttrs.getAttrMap().find(attrName);
+        if (loc == nonTypeAttrs.getAttrMap().end()) return nullopt;
+
+        return *loc->second;
+    }
+}
+
+optional<NodeVal> Processor::getAttribute(const NodeVal &node, const string &attrStrName) {
+    return getAttribute(node, namePool->add(attrStrName));
+}
+
+bool Processor::canBeTypeDescrDecor(const NodeVal &node) {
+    if (!node.isEvalVal()) return false;
+
+    if (EvalVal::isId(node.getEvalVal(), typeTable)) {
+        return isTypeDescrDecor(node.getEvalVal().id);
+    }
+
+    return EvalVal::isI(node.getEvalVal(), typeTable) || EvalVal::isU(node.getEvalVal(), typeTable);
+}
+
 bool Processor::applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &node) {
     if (!node.isEvalVal()) {
         msgs->errorInvalidTypeDecorator(node.getCodeLoc());
@@ -1008,7 +1030,7 @@ bool Processor::applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &
 
     if (EvalVal::isId(node.getEvalVal(), typeTable)) {
         optional<Meaningful> mean = getMeaningful(node.getEvalVal().id);
-        if (!mean.has_value() || !isTypeDescr(mean.value())) {
+        if (!mean.has_value() || !isTypeDescrDecor(mean.value())) {
             msgs->errorInvalidTypeDecorator(node.getCodeLoc());
             return false;
         }
@@ -1045,6 +1067,23 @@ bool Processor::applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &
     return true;
 }
 
+bool Processor::applyTupleMemb(TypeTable::Tuple &tup, const NodeVal &node) {
+    if (!checkIsEvalVal(node, true) || !checkIsType(node, true)) return false;
+
+    TypeTable::Id membType = node.getEvalVal().ty;
+    optional<NodeVal> nodeName = getAttribute(node, "name");
+
+    if (nodeName.has_value()) {
+        if (!checkIsEvalVal(nodeName.value(), true) || !checkIsId(nodeName.value(), true)) return false;
+
+        tup.addMember(membType, nodeName.value().getEvalVal().id);
+    } else {
+        tup.addMember(membType);
+    }
+
+    return true;
+}
+
 bool Processor::implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly) {
     if (lhs.getType().value() == rhs.getType().value()) return true;
 
@@ -1076,7 +1115,7 @@ bool Processor::processAttributes(NodeVal &node) {
         node.setTypeAttr(move(procType));
     }
 
-    if (node.hasNonTypeAttrs()) {
+    if (node.hasNonTypeAttrs() && !node.getNonTypeAttrs().isAttrMap()) {
         NodeVal::AttrMap attrMap;
 
         NodeVal nodeAttrs = processWithEscape(node.getNonTypeAttrs());
@@ -1315,7 +1354,7 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
         TypeTable::Id baseType = base.getType().value();
         bool isBaseRaw = NodeVal::isRawVal(base, typeTable);
 
-        NodeVal index = processNode(*opers[i]);
+        NodeVal index = processWithEscape(*opers[i]);
         if (index.isInvalid()) return NodeVal();
         if (!index.isEvalVal()) {
             msgs->errorMemberIndex(index.getCodeLoc());
@@ -1323,24 +1362,40 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
         }
 
         size_t baseLen;
+        const TypeTable::Tuple* tuple = nullptr;
         if (isBaseRaw) {
             baseLen = base.getChildrenCnt();
         } else {
             optional<const TypeTable::Tuple*> tupleOpt = typeTable->extractTuple(baseType);
             if (tupleOpt.has_value()) {
                 baseLen = tupleOpt.value()->members.size();
+                tuple = tupleOpt.value();
             } else {
                 msgs->errorExprDotInvalidBase(base.getCodeLoc());
                 return NodeVal();
             }
         }
 
-        optional<uint64_t> indexValOpt = EvalVal::getValueNonNeg(index.getEvalVal(), typeTable);
-        if (!indexValOpt.has_value() || indexValOpt.value() >= baseLen) {
-            msgs->errorMemberIndex(index.getCodeLoc());
-            return NodeVal();
+        uint64_t indexVal;
+        if (checkIsId(index, false)) {
+            if (tuple == nullptr) {
+                msgs->errorExprDotInvalidBase(index.getCodeLoc());
+                return NodeVal();
+            }
+            optional<size_t> ind = tuple->getMemberInd(index.getEvalVal().id);
+            if (!ind.has_value()) {
+                msgs->errorMemberIndex(index.getCodeLoc());
+                return NodeVal();
+            }
+            indexVal = ind.value();
+        } else {
+            optional<uint64_t> indexValOpt = EvalVal::getValueNonNeg(index.getEvalVal(), typeTable);
+            if (!indexValOpt.has_value() || indexValOpt.value() >= baseLen) {
+                msgs->errorMemberIndex(index.getCodeLoc());
+                return NodeVal();
+            }
+            indexVal = indexValOpt.value();
         }
-        uint64_t indexVal = indexValOpt.value();
 
         optional<TypeTable::Id> resType;
         if (isBaseRaw) {
@@ -1429,8 +1484,7 @@ NodeVal Processor::processForTypeArg(const NodeVal &node) {
         return NodeVal();
     }
 
-    if ((EvalVal::isId(esc.getEvalVal(), typeTable) && isTypeDescr(esc.getEvalVal().id)) ||
-        EvalVal::isI(esc.getEvalVal(), typeTable) || EvalVal::isU(esc.getEvalVal(), typeTable)) {
+    if (canBeTypeDescrDecor(esc)) {
         return esc;
     }
 

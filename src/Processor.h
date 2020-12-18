@@ -105,7 +105,13 @@ protected:
 
 private:
     NodeVal promoteLiteralVal(const NodeVal &node);
+    // invalid in case of fail, nullopt in case of not found
+    std::optional<NodeVal> getAttribute(const NodeVal &node, NamePool::Id attrName);
+    // invalid in case of fail, nullopt in case of not found
+    std::optional<NodeVal> getAttribute(const NodeVal &node, const std::string &attrStrName);
+    bool canBeTypeDescrDecor(const NodeVal &node);
     bool applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &node);
+    bool applyTupleMemb(TypeTable::Tuple &tup, const NodeVal &node);
     bool implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly);
 
     NodeVal processType(const NodeVal &node, const NodeVal &starting);
