@@ -1,5 +1,16 @@
 import "util/io.orb";
 
+eval (sym
+    (myI32:(type cn)::custom i32)
+    (myI32Cn:(type cn)::custom (i32 cn))
+    (myI64Cn:(type cn)::custom (i64 cn))
+    (myI32Arr:(type cn)::custom (i32 4))
+    (myI32P:(type cn)::custom (i32 *))
+    (myI32ArrP:(type cn)::custom (i32 []))
+    (myI32Tup:(type cn)::custom (i32 i32))
+    (myMyI32P:(type cn)::custom (myI32 *))
+    (myRaw:(type cn)::custom raw));
+
 fnc main () () {
     sym p:i32;
 
@@ -82,5 +93,59 @@ fnc main () () {
         eval (sym z:i32);
         println_i32 (+ 399 (eval (sizeOf z)));
         println_i32 (+ 400 (eval (sizeOf u32)));
+    };
+
+    block {
+        sym a:myI32;
+        = a (cast myI32 500);
+        println_i32 (cast i32 a);
+
+        sym (b:myI32Cn (cast myI32Cn 501));
+        println_i32 (cast i32 b);
+
+        sym c:myI32Arr;
+        = ([] c 0) 502;
+        println_i32 ([] c 0);
+
+        sym x0:i32;
+        sym (d:myI32P (cast myI32P (& x0)));
+        = (* d) 503;
+        println_i32 (* d);
+
+        sym x1:(i32 4);
+        sym (e:myI32ArrP (cast myI32ArrP (& x1)));
+        = ([] e 0) 504;
+        println_i32 ([] e 0);
+
+        sym f:myI32Tup;
+        = (. f 0) 505;
+        println_i32 (. f 0);
+
+        sym (g:myMyI32P (cast myMyI32P (& a)));
+        = (* g) (cast myI32 506);
+        println_i32 (cast i32 (* g));
+
+        println_i32 (+ 503 (lenOf c));
+        println_i32 (+ 506 (lenOf f));
+
+        eval (sym (h:myRaw (cast myRaw \(() ()))));
+        println_i32 (+ 507 (lenOf h));
+
+        sym i:myI32;
+        println_i32 (+ 510 (cast i32 i));
+
+        eval (sym j:myI32);
+        println_i32 (+ 511 (cast i32 j));
+
+        eval (sym (x2:i32 512));
+        eval (sym (k:myI32P (cast myI32P (& x2))));
+        println_i32 (* (cast (i32 *) k));
+
+        = i (cast (myI32 cn) 513);
+        println_i32 (cast (i32 cn) i);
+
+        eval (sym (l:myI32Cn (cast myI32Cn 514)));
+        eval (sym (m:myI64Cn (cast myI64Cn l)));
+        println_i32 (cast i32 m);
     };
 };

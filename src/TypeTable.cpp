@@ -69,6 +69,14 @@ TypeTable::TypeTable() {
     addTypeStr();
 }
 
+void TypeTable::addPrimType(NamePool::Id name, PrimIds primId, llvm::Type *type) {
+    Id id{Id::kPrim, primId};
+
+    typeIds.insert(make_pair(name, id));
+    typeNames.insert(make_pair(id, name));
+    primTypes[primId] = type;
+}
+
 TypeTable::Id TypeTable::addTypeDescr(TypeDescr typeDescr) {
     if (typeDescr.decors.empty() && typeDescr.cn == false)
         return typeDescr.base;
@@ -94,14 +102,6 @@ TypeTable::Id TypeTable::addTypeDescr(TypeDescr typeDescr, llvm::Type *type) {
     return id;
 }
 
-void TypeTable::addPrimType(NamePool::Id name, PrimIds primId, llvm::Type *type) {
-    Id id{Id::kPrim, primId};
-
-    typeIds.insert(make_pair(name, id));
-    typeNames.insert(make_pair(id, name));
-    primTypes[primId] = type;
-}
-
 optional<TypeTable::Id> TypeTable::addTuple(Tuple tup) {
     if (tup.members.empty()) return nullopt;
 
@@ -125,29 +125,57 @@ optional<TypeTable::Id> TypeTable::addTuple(Tuple tup) {
     return id;
 }
 
-optional<TypeTable::Id> TypeTable::addTypeDerefOf(Id typeId) {
-    // ptr cannot be dereferenced
-    if (worksAsTypePtr(typeId) || !worksAsTypeP(typeId)) return nullopt;
+optional<TypeTable::Id> TypeTable::addCustom(TypeTable::Custom c) {
+    for (const auto &it : customs) {
+        if (it.first.name == c.name) return nullopt;
+    }
 
-    const TypeDescr &typeDescr = typeDescrs[typeId.index].first;
-    
-    TypeDescr typeDerefDescr(typeDescr.base, typeDescr.cn);
-    typeDerefDescr.decors = vector<TypeDescr::Decor>(typeDescr.decors.begin(), typeDescr.decors.end()-1);
-    typeDerefDescr.cns = vector<bool>(typeDescr.cns.begin(), typeDescr.cns.end()-1);
-    
-    return addTypeDescr(move(typeDerefDescr));
+    Id id;
+    id.kind = Id::kCustom;
+    id.index = customs.size();
+
+    typeIds.insert(make_pair(c.name, id));
+    typeNames.insert(make_pair(id, c.name));
+
+    customs.push_back(make_pair(c, nullptr));
+
+    return id;
+}
+
+optional<TypeTable::Id> TypeTable::addTypeDerefOf(Id typeId) {
+    if (!worksAsTypeP(typeId)) return nullopt;
+
+    if (isTypeDescr(typeId)) {
+        const TypeDescr &typeDescr = typeDescrs[typeId.index].first;
+        
+        TypeDescr typeDerefDescr(typeDescr.base, typeDescr.cn);
+        typeDerefDescr.decors = vector<TypeDescr::Decor>(typeDescr.decors.begin(), typeDescr.decors.end()-1);
+        typeDerefDescr.cns = vector<bool>(typeDescr.cns.begin(), typeDescr.cns.end()-1);
+        
+        return addTypeDescr(move(typeDerefDescr));
+    } else if (isCustom(typeId)) {
+        return addTypeDerefOf(getCustom(typeId).type);
+    } else {
+        return nullopt;
+    }
 }
 
 optional<TypeTable::Id> TypeTable::addTypeIndexOf(Id typeId) {
     if (!worksAsTypeArrP(typeId) && !worksAsTypeArr(typeId)) return nullopt;
 
-    const TypeDescr &typeDescr = typeDescrs[typeId.index].first;
-    
-    TypeDescr typeIndexDescr(typeDescr.base, typeDescr.cn);
-    typeIndexDescr.decors = vector<TypeDescr::Decor>(typeDescr.decors.begin(), typeDescr.decors.end()-1);
-    typeIndexDescr.cns = vector<bool>(typeDescr.cns.begin(), typeDescr.cns.end()-1);
-    
-    return addTypeDescr(move(typeIndexDescr));
+    if (isTypeDescr(typeId)) {
+        const TypeDescr &typeDescr = typeDescrs[typeId.index].first;
+        
+        TypeDescr typeIndexDescr(typeDescr.base, typeDescr.cn);
+        typeIndexDescr.decors = vector<TypeDescr::Decor>(typeDescr.decors.begin(), typeDescr.decors.end()-1);
+        typeIndexDescr.cns = vector<bool>(typeDescr.cns.begin(), typeDescr.cns.end()-1);
+        
+        return addTypeDescr(move(typeIndexDescr));
+    } else if (isCustom(typeId)) {
+        return addTypeIndexOf(getCustom(typeId).type);
+    } else {
+        return nullopt;
+    }
 }
 
 TypeTable::Id TypeTable::addTypeAddrOf(Id typeId) {
@@ -214,28 +242,6 @@ TypeTable::Id TypeTable::addTypeCnOf(Id typeId) {
     }
 }
 
-TypeTable::Id TypeTable::addTypeDropCnsOf(Id t) {
-    if (isTypeDescr(t)) {
-        const TypeDescr &old = getTypeDescr(t);
-
-        TypeDescr now(addTypeDropCnsOf(old.base), false);
-        now.decors = vector<TypeDescr::Decor>(old.decors.begin(), old.decors.end());
-        now.cns = vector<bool>(old.cns.size(), false);
-
-        return addTypeDescr(move(now));
-    } else if (isTuple(t)) {
-        const Tuple &old = getTuple(t);
-
-        Tuple now = old;
-        for (size_t i = 0; i < old.members.size(); ++i)
-            now.members[i].first = addTypeDropCnsOf(old.members[i].first);
-
-        return addTuple(move(now)).value();
-    } else {
-        return t;
-    }
-}
-
 void TypeTable::addTypeStr() {
     Id c8Id{Id::kPrim, P_C8};
 
@@ -250,6 +256,7 @@ llvm::Type* TypeTable::getType(Id id) {
     case Id::kPrim: return primTypes[id.index];
     case Id::kTuple: return tuples[id.index].second;
     case Id::kDescr: return typeDescrs[id.index].second;
+    case Id::kCustom: return customs[id.index].second;
     default: return nullptr;
     }
 }
@@ -259,6 +266,7 @@ void TypeTable::setType(Id id, llvm::Type *type) {
     case Id::kPrim: primTypes[id.index] = type; break;
     case Id::kTuple: tuples[id.index].second = type; break;
     case Id::kDescr: typeDescrs[id.index].second = type; break;
+    case Id::kCustom: customs[id.index].second = type; break;
     }
 }
 
@@ -278,6 +286,10 @@ const TypeTable::TypeDescr& TypeTable::getTypeDescr(Id id) const {
     return typeDescrs[id.index].first;
 }
 
+const TypeTable::Custom& TypeTable::getCustom(Id id) const {
+    return customs[id.index].first;
+}
+
 TypeTable::Id TypeTable::getTypeCharArrOfLenId(std::size_t len) {
     Id c8Id{Id::kPrim, P_C8};
     return addTypeArrOfLenIdOf(c8Id, len);
@@ -285,12 +297,41 @@ TypeTable::Id TypeTable::getTypeCharArrOfLenId(std::size_t len) {
 
 optional<size_t> TypeTable::extractLenOfArr(Id arrTypeId) const {
     if (!worksAsTypeArr(arrTypeId)) return nullopt;
-    return getTypeDescr(arrTypeId).decors.back().len;
+
+    if (isTypeDescr(arrTypeId))
+        return getTypeDescr(arrTypeId).decors.back().len;
+    else if (isCustom(arrTypeId))
+        return extractLenOfArr(getCustom(arrTypeId).type);
+    else
+        return nullopt;
 }
 
 optional<size_t> TypeTable::extractLenOfTuple(Id tupleTypeId) const {
     if (!worksAsTuple(tupleTypeId)) return nullopt;
-    return getTuple(tupleTypeId).members.size();
+
+    if (isTuple(tupleTypeId))
+        return getTuple(tupleTypeId).members.size();
+    else if (isCustom(tupleTypeId))
+        return extractLenOfTuple(getCustom(tupleTypeId).type);
+    else
+        return nullopt;
+}
+
+TypeTable::Id TypeTable::extractBaseType(Id t) const {
+    if (isCustom(t)) return extractBaseType(getCustom(t).type);
+    if (isTypeDescr(t)) return extractBaseType(getTypeDescr(t).base);
+    return t;
+}
+
+TypeTable::Id TypeTable::extractCustomBaseType(Id t) const {
+    // only pass through customs and cn
+    if (isCustom(t)) return extractCustomBaseType(getCustom(t).type);
+    if (isTypeDescr(t)) {
+        const TypeDescr &descr = typeDescrs[t.index].first;
+        if (!descr.decors.empty()) return t;
+        return extractCustomBaseType(descr.base);
+    }
+    return t;
 }
 
 bool TypeTable::isValidType(Id t) const {
@@ -298,6 +339,7 @@ bool TypeTable::isValidType(Id t) const {
     case Id::kPrim: return t.index < primTypes.size();
     case Id::kTuple: return t.index < tuples.size();
     case Id::kDescr: return t.index < typeDescrs.size();
+    case Id::kCustom: return t.index < customs.size();
     default: return false;
     }
 }
@@ -325,6 +367,8 @@ bool TypeTable::worksAsPrimitive(Id t) const {
         return true;
     } else if (isTuple(t)) {
         return false;
+    } else if (isCustom(t)) {
+        return worksAsPrimitive(getCustom(t).type);
     } else {
         const TypeDescr &descr = typeDescrs[t.index].first;
         if (!descr.decors.empty()) return false;
@@ -339,6 +383,8 @@ bool TypeTable::worksAsPrimitive(Id t, PrimIds p) const {
         return t.index == p;
     } else if (isTuple(t)) {
         return false;
+    } else if (isCustom(t)) {
+        return worksAsPrimitive(getCustom(t).type, p);
     } else {
         const TypeDescr &descr = typeDescrs[t.index].first;
         if (!descr.decors.empty()) return false;
@@ -353,6 +399,8 @@ bool TypeTable::worksAsPrimitive(Id t, PrimIds lo, PrimIds hi) const {
         return between((PrimIds) t.index, lo, hi);
     } else if (isTuple(t)) {
         return false;
+    } else if (isCustom(t)) {
+        return worksAsPrimitive(getCustom(t).type, lo, hi);
     } else {
         const TypeDescr &descr = typeDescrs[t.index].first;
         if (!descr.decors.empty()) return false;
@@ -367,10 +415,28 @@ bool TypeTable::worksAsTuple(Id t) const {
         return false;
     } else if (isTuple(t)) {
         return true;
+    } else if (isCustom(t)) {
+        return worksAsTuple(getCustom(t).type);
     } else {
         const TypeDescr &descr = typeDescrs[t.index].first;
         if (!descr.decors.empty()) return false;
         return worksAsTuple(descr.base);
+    }
+}
+
+bool TypeTable::worksAsCustom(Id t) const {
+    if (!isValidType(t)) return false;
+    
+    if (isPrimitive(t)) {
+        return false;
+    } else if (isTuple(t)) {
+        return false;
+    } else if (isCustom(t)) {
+        return true;
+    } else {
+        const TypeDescr &descr = typeDescrs[t.index].first;
+        if (!descr.decors.empty()) return false;
+        return worksAsCustom(descr.base);
     }
 }
 
@@ -386,10 +452,16 @@ bool TypeTable::isTypeDescr(Id t) const {
     return t.kind == Id::kDescr && t.index < typeDescrs.size();
 }
 
+bool TypeTable::isCustom(Id t) const {
+    return t.kind == Id::kCustom && t.index < customs.size();
+}
+
 optional<const TypeTable::Tuple*> TypeTable::extractTuple(Id t) const {
     if (!isValidType(t)) return nullopt;
 
     if (isTuple(t)) return &(getTuple(t));
+
+    if (isCustom(t)) return extractTuple(getCustom(t).type);
 
     if (isTypeDescr(t)) {
         const TypeDescr &descr = getTypeDescr(t);
@@ -412,15 +484,15 @@ optional<TypeTable::Id> TypeTable::extractMemberType(Id t, size_t ind) {
 }
 
 bool TypeTable::worksAsTypeAnyP(Id t) const {
-    return worksAsTypeP(t) || worksAsTypeArrP(t);
+    return worksAsTypeP(t) || worksAsTypePtr(t) || worksAsTypeArrP(t);
 }
 
 bool TypeTable::worksAsTypeP(Id t) const {
     if (!isValidType(t)) return false;
 
-    if (worksAsTypePtr(t)) return true;
-
-    if (isTypeDescr(t)) {
+    if (isCustom(t)) {
+        return worksAsTypeP(getCustom(t).type);
+    } else if (isTypeDescr(t)) {
         const TypeDescr &ty = typeDescrs[t.index].first;
         return (ty.decors.empty() && worksAsTypePtr(ty.base)) ||
             (!ty.decors.empty() && ty.decors.back().type == TypeDescr::Decor::D_PTR);
@@ -432,6 +504,8 @@ bool TypeTable::worksAsTypeP(Id t) const {
 bool TypeTable::worksAsTypePtr(Id t) const {
     if (isPrimitive(t)) {
         return t.index == P_PTR;
+    } else if (isCustom(t)) {
+        return worksAsTypePtr(getCustom(t).type);
     } else if (isTypeDescr(t)) {
         const TypeDescr &descr = getTypeDescr(t);
         return descr.decors.empty() && worksAsTypePtr(descr.base);
@@ -441,33 +515,33 @@ bool TypeTable::worksAsTypePtr(Id t) const {
 }
 
 bool TypeTable::worksAsTypeArr(Id t) const {
-    return isTypeDescrSatisfyingCondition(t, [](const TypeDescr &ty) {
+    return worksAsTypeDescrSatisfyingCondition(t, [](const TypeDescr &ty) {
         return !ty.decors.empty() && ty.decors.back().type == TypeDescr::Decor::D_ARR;
     });
 }
 
 bool TypeTable::worksAsTypeArrOfLen(Id t, std::size_t len) const {
-    return isTypeDescrSatisfyingCondition(t, [=](const TypeDescr &ty) {
+    return worksAsTypeDescrSatisfyingCondition(t, [=](const TypeDescr &ty) {
         return !ty.decors.empty() && ty.decors.back().type == TypeDescr::Decor::D_ARR &&
             ty.decors.back().len == len;
     });
 }
 
 bool TypeTable::worksAsTypeArrP(Id t) const {
-    return isTypeDescrSatisfyingCondition(t, [](const TypeDescr &ty) {
+    return worksAsTypeDescrSatisfyingCondition(t, [](const TypeDescr &ty) {
         return !ty.decors.empty() && ty.decors.back().type == TypeDescr::Decor::D_ARR_PTR;
     });
 }
 
 bool TypeTable::worksAsTypeStr(Id t) const {
-    return isTypeDescrSatisfyingCondition(t, [this](const TypeDescr &ty) {
+    return worksAsTypeDescrSatisfyingCondition(t, [this](const TypeDescr &ty) {
         return ty.decors.size() == 1 && ty.decors[0].type == TypeDescr::Decor::D_ARR_PTR &&
             worksAsTypeC(ty.base) && ty.cn;
     });
 }
 
 bool TypeTable::worksAsTypeCharArrOfLen(Id t, size_t len) const {
-    return isTypeDescrSatisfyingCondition(t, [=](const TypeDescr &ty) {
+    return worksAsTypeDescrSatisfyingCondition(t, [=](const TypeDescr &ty) {
         return ty.decors.size() == 1 && worksAsTypeC(ty.base) &&
             ty.decors[0].type == TypeDescr::Decor::D_ARR && ty.decors[0].len == len;
     });
@@ -498,6 +572,8 @@ bool TypeTable::worksAsTypeCn(Id t) const {
         }
 
         return false;
+    } else if (isCustom(t)) {
+        return worksAsTypeCn(getCustom(t).type);
     } else {
         return false;
     }
@@ -506,9 +582,7 @@ bool TypeTable::worksAsTypeCn(Id t) const {
 bool TypeTable::fitsTypeI(int64_t x, Id t) const {
     if (!worksAsPrimitive(t)) return false;
 
-    PrimIds primId;
-    if (isPrimitive(t)) primId = (PrimIds) t.index;
-    else primId = (PrimIds) typeDescrs[t.index].first.base.index;
+    PrimIds primId = (PrimIds) extractBaseType(t).index;
     
     int64_t lo, hi;
     switch (primId) {
@@ -553,9 +627,7 @@ bool TypeTable::fitsTypeI(int64_t x, Id t) const {
 bool TypeTable::fitsTypeU(uint64_t x, Id t) const {
     if (!worksAsPrimitive(t)) return false;
 
-    PrimIds primId;
-    if (isPrimitive(t)) primId = (PrimIds) t.index;
-    else primId = (PrimIds) typeDescrs[t.index].first.base.index;
+    PrimIds primId = (PrimIds) extractBaseType(t).index;
     
     uint64_t hi;
     switch (primId) {
@@ -592,9 +664,7 @@ bool TypeTable::fitsTypeU(uint64_t x, Id t) const {
 bool TypeTable::fitsTypeF(double x, Id t) const {
     if (!worksAsPrimitive(t)) return false;
 
-    PrimIds primId;
-    if (isPrimitive(t)) primId = (PrimIds) t.index;
-    else primId = (PrimIds) typeDescrs[t.index].first.base.index;
+    PrimIds primId = (PrimIds) extractBaseType(t).index;
 
     if (primId == P_F32) {
         return std::isinf(x) || std::isnan(x) || (std::abs(x) <= numeric_limits<float>::max());
@@ -610,7 +680,9 @@ TypeTable::Id TypeTable::shortestFittingTypeIId(int64_t x) const {
 }
 
 bool TypeTable::isDirectCn(Id t) const {
-    if (isTypeDescr(t)) {
+    if (isCustom(t)) {
+        return isDirectCn(getCustom(t).type);
+    } else if (isTypeDescr(t)) {
         const TypeDescr &descr = getTypeDescr(t);
 
         return descr.cns.empty() ? descr.cn : descr.cns.back();
@@ -642,6 +714,8 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
         if (!isTuple(into)) return false;
 
         return from.index == into.index;
+    } else if (isCustom(from)) {
+        return getCustom(from).name == getCustom(into).name;
     } else if (isTypeDescr(from)) {
         if (!isTypeDescr(into)) return false;
 
@@ -738,6 +812,8 @@ optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool) const 
             if (!membStr.has_value()) return nullopt;
             ss << membStr.value();
         }
+    } else if (isCustom(t)) {
+        ss << "$c" << "$" << namePool->get(getCustom(t).name);
     } else if (isTypeDescr(t)) {
         ss << "$d";
         stringstream ss;

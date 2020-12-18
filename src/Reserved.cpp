@@ -1,4 +1,5 @@
 #include "Reserved.h"
+#include <cassert>
 using namespace std;
 
 std::unordered_map<NamePool::Id, Meaningful> meaningfuls;
@@ -39,12 +40,13 @@ optional<Meaningful> getMeaningful(NamePool::Id name) {
     return loc->second;
 }
 
-optional<NamePool::Id> getMeaningfulNameId(Meaningful m) {
+NamePool::Id getMeaningfulNameId(Meaningful m) {
     for (const auto &it : meaningfuls) {
         if (it.second == m) return it.first;
     }
 
-    return nullopt;
+    assert(false && "getMeaningfulNameId failed to find!");
+    return NamePool::Id();
 }
 
 bool isMeaningful(NamePool::Id name, Meaningful m) {
@@ -62,12 +64,13 @@ optional<Keyword> getKeyword(NamePool::Id name) {
     return loc->second;
 }
 
-optional<NamePool::Id> getKeywordNameId(Keyword k) {
+NamePool::Id getKeywordNameId(Keyword k) {
     for (const auto &it : keywords) {
         if (it.second == k) return it.first;
     }
 
-    return nullopt;
+    assert(false && "getKeywordNameId failed to find!");
+    return NamePool::Id();
 }
 
 bool isKeyword(NamePool::Id name, Keyword k) {
@@ -91,7 +94,7 @@ bool isOper(NamePool::Id name, Oper o) {
 }
 
 bool isReserved(NamePool::Id name) {
-    return isKeyword(name) || isOper(name);
+    return isKeyword(name) || isOper(name) || isTypeDescrDecor(name);
 }
 
 bool isTypeDescrDecor(Meaningful m) {

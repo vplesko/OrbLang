@@ -880,6 +880,9 @@ llvm::Type* Compiler::makeLlvmType(TypeTable::Id typeId) {
         }
 
         llvmType = llvm::StructType::get(llvmContext, memberTypes);
+    } else if (typeTable->isCustom(typeId)) {
+        llvmType = makeLlvmType(typeTable->getCustom(typeId).type);
+        if (llvmType == nullptr) return nullptr;
     }
 
     // supported primitive type are compiled at the start of compilation

@@ -67,7 +67,6 @@ protected:
     bool checkIsLlvmVal(CodeLoc codeLoc, const NodeVal &node, bool orError);
     bool checkIsLlvmVal(const NodeVal &node, bool orError) { return checkIsLlvmVal(node.getCodeLoc(), node, orError); }
     bool checkIsRaw(const NodeVal &node, bool orError);
-private:
     bool checkIsTopmost(CodeLoc codeLoc, bool orError);
     bool checkIsId(const NodeVal &node, bool orError);
     bool checkIsType(const NodeVal &node, bool orError);
@@ -81,6 +80,7 @@ private:
     bool checkImplicitCastable(const NodeVal &node, TypeTable::Id ty, bool orError);
     bool checkNoArgNameDuplicates(const NodeVal &nodeArgs, const std::vector<NamePool::Id> &argNames, bool orError);
 
+private:
     NodeVal dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty);
     NodeVal dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
 
@@ -103,12 +103,10 @@ private:
 protected:
     bool processChildNodes(const NodeVal &node);
 
+    std::optional<NodeVal> getAttribute(const NodeVal &node, NamePool::Id attrName);
+    std::optional<NodeVal> getAttribute(const NodeVal &node, const std::string &attrStrName);
 private:
     NodeVal promoteLiteralVal(const NodeVal &node);
-    // invalid in case of fail, nullopt in case of not found
-    std::optional<NodeVal> getAttribute(const NodeVal &node, NamePool::Id attrName);
-    // invalid in case of fail, nullopt in case of not found
-    std::optional<NodeVal> getAttribute(const NodeVal &node, const std::string &attrStrName);
     bool canBeTypeDescrDecor(const NodeVal &node);
     bool applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &node);
     bool applyTupleMemb(TypeTable::Tuple &tup, const NodeVal &node);

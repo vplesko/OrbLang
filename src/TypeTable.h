@@ -14,7 +14,8 @@ public:
         enum Kind {
             kPrim,
             kTuple,
-            kDescr
+            kDescr,
+            kCustom
         };
 
         Kind kind;
@@ -37,7 +38,7 @@ public:
         std::vector<std::pair<Id, std::optional<NamePool::Id>>> members;
 
         Tuple() {}
-        Tuple(std::vector<std::pair<Id, std::optional<NamePool::Id>>> membs) : members(std::move(membs)) {}
+        explicit Tuple(std::vector<std::pair<Id, std::optional<NamePool::Id>>> membs) : members(std::move(membs)) {}
 
         void addMember(Id m);
         void addMember(Id m, NamePool::Id n);
@@ -69,7 +70,7 @@ public:
         std::vector<bool> cns;
 
         TypeDescr() {}
-        TypeDescr(Id base, bool cn_ = false) : base(base), cn(cn_) {}
+        explicit TypeDescr(Id base, bool cn_ = false) : base(base), cn(cn_) {}
 
         TypeDescr(TypeDescr&&) = default;
         TypeDescr& operator=(TypeDescr&&) = default;
@@ -81,6 +82,14 @@ public:
         void setLastCn();
 
         bool eq(const TypeDescr &other) const;
+    };
+
+    struct Custom {
+        Id type;
+        NamePool::Id name;
+
+        Custom() {}
+        Custom(Id type, NamePool::Id name) : type(type), name(name) {}
     };
 
     enum PrimIds {
@@ -116,12 +125,13 @@ private:
     std::array<llvm::Type*, P_ENUM_END> primTypes;
     std::vector<std::pair<Tuple, llvm::Type*>> tuples;
     std::vector<std::pair<TypeDescr, llvm::Type*>> typeDescrs;
+    std::vector<std::pair<Custom, llvm::Type*>> customs;
     
     std::unordered_map<NamePool::Id, Id> typeIds;
     std::unordered_map<Id, NamePool::Id, Id::Hasher> typeNames;
 
     template <typename T>
-    bool isTypeDescrSatisfyingCondition(Id t, T cond) const;
+    bool worksAsTypeDescrSatisfyingCondition(Id t, T cond) const;
 
     void addTypeStr();
 
@@ -129,21 +139,20 @@ public:
     TypeTable();
 
     void addPrimType(NamePool::Id name, PrimIds primId, llvm::Type *type);
-    // should have at least one member. if there is exactly one member,
-    // the created type will not be a tuple, but the type of that member.
-    std::optional<Id> addTuple(Tuple tup);
-
     // if typeDescr is secretly a prim/tuple, that type's Id is returned instead
     Id addTypeDescr(TypeDescr typeDescr);
     // if typeDescr is secretly a prim/tuple, that type's Id is returned instead
     Id addTypeDescr(TypeDescr typeDescr, llvm::Type *type);
+    // should have at least one member. if there is exactly one member,
+    // the created type will not be a tuple, but the type of that member.
+    std::optional<Id> addTuple(Tuple tup);
+    std::optional<Id> addCustom(Custom c);
 
     std::optional<Id> addTypeDerefOf(Id typeId);
     std::optional<Id> addTypeIndexOf(Id typeId);
     Id addTypeAddrOf(Id typeId);
     Id addTypeArrOfLenIdOf(Id typeId, std::size_t len);
     Id addTypeCnOf(Id typeId);
-    Id addTypeDropCnsOf(Id t);
 
     llvm::Type* getType(Id id);
     void setType(Id id, llvm::Type *type);
@@ -152,6 +161,7 @@ public:
     Id getPrimTypeId(PrimIds id) const;
     const Tuple& getTuple(Id id) const;
     const TypeDescr& getTypeDescr(Id id) const;
+    const Custom& getCustom(Id id) const;
 
     Id getTypeIdStr() { return strType; }
     Id getTypeCharArrOfLenId(std::size_t len);
@@ -164,11 +174,13 @@ public:
     bool isPrimitive(Id t) const;
     bool isTuple(Id t) const;
     bool isTypeDescr(Id t) const;
+    bool isCustom(Id t) const;
     
     bool worksAsPrimitive(Id t) const;
     bool worksAsPrimitive(Id t, PrimIds p) const;
     bool worksAsPrimitive(Id t, PrimIds lo, PrimIds hi) const;
     bool worksAsTuple(Id t) const;
+    bool worksAsCustom(Id t) const;
     bool worksAsTypeI(Id t) const { return worksAsPrimitive(t, P_I8, P_I64); }
     bool worksAsTypeU(Id t) const { return worksAsPrimitive(t, P_U8, P_U64); }
     bool worksAsTypeF(Id t) const { return worksAsPrimitive(t, P_F32, P_F64); }
@@ -189,6 +201,8 @@ public:
     std::optional<Id> extractMemberType(Id t, std::size_t ind);
     std::optional<std::size_t> extractLenOfArr(Id arrTypeId) const;
     std::optional<std::size_t> extractLenOfTuple(Id tupleTypeId) const;
+    Id extractBaseType(Id t) const;
+    Id extractCustomBaseType(Id t) const;
 
     bool fitsTypeI(int64_t x, Id t) const;
     bool fitsTypeU(uint64_t x, Id t) const;
@@ -202,9 +216,13 @@ public:
 };
 
 template <typename T>
-bool TypeTable::isTypeDescrSatisfyingCondition(Id t, T cond) const {
-    if (!isTypeDescr(t)) return false;
+bool TypeTable::worksAsTypeDescrSatisfyingCondition(Id t, T cond) const {
+    if (isCustom(t)) return worksAsTypeDescrSatisfyingCondition(getCustom(t).type, cond);
 
-    const TypeDescr &ty = typeDescrs[t.index].first;
-    return cond(ty);
+    if (isTypeDescr(t)) {
+        const TypeDescr &ty = typeDescrs[t.index].first;
+        return cond(ty);
+    }
+
+    return false;
 }

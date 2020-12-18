@@ -293,7 +293,7 @@ bool CompilationOrchestrator::compile(const std::string &output, bool exe) {
     if (!exe) {
         return compiler->binary(output);
     } else {
-        if (symbolTable->getFunction(getMeaningfulNameId(Meaningful::MAIN).value()) == nullptr) {
+        if (symbolTable->getFunction(getMeaningfulNameId(Meaningful::MAIN)) == nullptr) {
             msgs->errorNoMain();
             return false;
         }

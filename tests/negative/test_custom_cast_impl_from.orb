@@ -1,0 +1,6 @@
+eval (sym (t:(type cn)::custom i32));
+
+fnc main () () {
+    sym a:t;
+    sym (b:i32 a);
+};

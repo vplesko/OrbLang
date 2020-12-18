@@ -818,7 +818,7 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
                 return nullopt;
             }
         } else {
-            if (typeTable->isImplicitCastable(srcTypeId, dstTypeId)) {
+            if (typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId))) {
                 if (!assignBasedOnTypeP(dstEvalVal, srcEvalVal.p, dstTypeId)) {
                     return nullopt;
                 }
@@ -842,7 +842,7 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
         typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_ID) ||
         typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_RAW)) {
         // these types are only castable when changing constness
-        if (typeTable->isImplicitCastable(srcTypeId, dstTypeId)) {
+        if (typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId))) {
             // no action is needed in case of a cast
             // except for raw when dropping cn
             dstEvalVal = EvalVal::copyNoRef(srcEvalVal);

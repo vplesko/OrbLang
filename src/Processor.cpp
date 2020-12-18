@@ -234,7 +234,6 @@ NodeVal Processor::processId(const NodeVal &node, const NodeVal &starting) {
     return processId(starting);
 }
 
-// TODO custom types
 NodeVal Processor::processSym(const NodeVal &node) {
     if (!checkAtLeastChildren(node, 2, true)) return NodeVal();
 
@@ -265,8 +264,29 @@ NodeVal Processor::processSym(const NodeVal &node) {
             NodeVal init = hasType ? processAndImplicitCast(nodeInit, optType.value()) : processNode(nodeInit);
             if (init.isInvalid()) continue;
 
+            if (getAttribute(pair.first, "custom").has_value()) {
+                if (!checkInGlobalScope(entry.getCodeLoc(), true)) continue;
+                if (!checkIsType(init, true)) return NodeVal();
+                if (!typeTable->isDirectCn(init.getType().value())) {
+                    msgs->errorUnknown(entry.getCodeLoc());
+                    return NodeVal();
+                }
+
+                TypeTable::Custom custom;
+                custom.name = id;
+                custom.type = init.getEvalVal().ty;
+                optional<TypeTable::Id> typeId = typeTable->addCustom(custom);
+                if (!typeId.has_value()) {
+                    msgs->errorUnknown(entry.getCodeLoc());
+                    return NodeVal();
+                }
+
+                init.getEvalVal().ty = typeId.value();
+            }
+
             NodeVal nodeReg = performRegister(entry.getCodeLoc(), id, init);
             if (nodeReg.isInvalid()) continue;
+
             symbolTable->addVar(id, move(nodeReg));
         } else {
             if (!hasType) {
@@ -283,6 +303,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
 
             NodeVal nodeReg = performRegister(entry.getCodeLoc(), id, nodeZero);
             if (nodeReg.isInvalid()) continue;
+
             symbolTable->addVar(id, move(nodeReg));
         }
     }
@@ -894,14 +915,10 @@ NodeVal Processor::processAttrIsDef(const NodeVal &node) {
     if (name.isInvalid()) return NodeVal();
     NamePool::Id attrName = name.getEvalVal().id;
 
-    optional<NamePool::Id> typeId = getMeaningfulNameId(Meaningful::TYPE);
-    if (!typeId.has_value()) {
-        msgs->errorInternal(node.getCodeLoc());
-        return NodeVal();
-    }
+    NamePool::Id typeId = getMeaningfulNameId(Meaningful::TYPE);
 
     bool attrIsDef;
-    if (attrName == typeId.value()) {
+    if (attrName == typeId) {
         attrIsDef = operand.hasTypeAttr();
     } else {
         if (!operand.hasNonTypeAttrs()) {
@@ -916,6 +933,31 @@ NodeVal Processor::processAttrIsDef(const NodeVal &node) {
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_BOOL), typeTable);
     evalVal.b = attrIsDef;
     return NodeVal(node.getCodeLoc(), evalVal);
+}
+
+// not able to fail, only to not find
+// update callers if that changes
+optional<NodeVal> Processor::getAttribute(const NodeVal &node, NamePool::Id attrName) {
+    NamePool::Id typeId = getMeaningfulNameId(Meaningful::TYPE);
+
+    if (attrName == typeId) {
+        if (!node.hasTypeAttr()) return nullopt;
+
+        return node.getTypeAttr();
+    } else {
+        if (!node.hasNonTypeAttrs()) return nullopt;
+
+        const NodeVal &nonTypeAttrs = node.getNonTypeAttrs();
+
+        auto loc = nonTypeAttrs.getAttrMap().find(attrName);
+        if (loc == nonTypeAttrs.getAttrMap().end()) return nullopt;
+
+        return *loc->second;
+    }
+}
+
+optional<NodeVal> Processor::getAttribute(const NodeVal &node, const string &attrStrName) {
+    return getAttribute(node, namePool->add(attrStrName));
 }
 
 NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
@@ -983,33 +1025,6 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
     }
 
     return prom;
-}
-
-optional<NodeVal> Processor::getAttribute(const NodeVal &node, NamePool::Id attrName) {
-    optional<NamePool::Id> typeId = getMeaningfulNameId(Meaningful::TYPE);
-    if (!typeId.has_value()) {
-        msgs->errorInternal(node.getCodeLoc());
-        return NodeVal();
-    }
-
-    if (attrName == typeId.value()) {
-        if (!node.hasTypeAttr()) return nullopt;
-
-        return node.getTypeAttr();
-    } else {
-        if (!node.hasNonTypeAttrs()) return nullopt;
-
-        const NodeVal &nonTypeAttrs = node.getNonTypeAttrs();
-
-        auto loc = nonTypeAttrs.getAttrMap().find(attrName);
-        if (loc == nonTypeAttrs.getAttrMap().end()) return nullopt;
-
-        return *loc->second;
-    }
-}
-
-optional<NodeVal> Processor::getAttribute(const NodeVal &node, const string &attrStrName) {
-    return getAttribute(node, namePool->add(attrStrName));
 }
 
 bool Processor::canBeTypeDescrDecor(const NodeVal &node) {
@@ -1101,11 +1116,7 @@ bool Processor::implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly
 }
 
 bool Processor::processAttributes(NodeVal &node) {
-    optional<NamePool::Id> typeId = getMeaningfulNameId(Meaningful::TYPE);
-    if (!typeId.has_value()) {
-        msgs->errorInternal(node.getCodeLoc());
-        return false;
-    }
+    NamePool::Id typeId = getMeaningfulNameId(Meaningful::TYPE);
 
     if (node.hasTypeAttr()) {
         NodeVal procType = processNode(node.getTypeAttr());
@@ -1125,7 +1136,7 @@ bool Processor::processAttributes(NodeVal &node) {
             if (!checkIsId(nodeAttrs, true)) return false;
 
             NamePool::Id attrName = nodeAttrs.getEvalVal().id;
-            if (attrName == typeId.value() || attrMap.find(attrName) != attrMap.end()) {
+            if (attrName == typeId || attrMap.find(attrName) != attrMap.end()) {
                 msgs->errorUnknown(nodeAttrs.getCodeLoc());
                 return false;
             }
@@ -1150,7 +1161,7 @@ bool Processor::processAttributes(NodeVal &node) {
                 if (!checkIsId(*nodeAttrEntryName, true)) return false;
 
                 NamePool::Id attrName = nodeAttrEntryName->getEvalVal().id;
-                if (attrName == typeId.value() || attrMap.find(attrName) != attrMap.end()) {
+                if (attrName == typeId || attrMap.find(attrName) != attrMap.end()) {
                     msgs->errorUnknown(nodeAttrEntry.getCodeLoc());
                     return false;
                 }

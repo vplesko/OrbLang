@@ -186,6 +186,9 @@ bool EvalVal::isImplicitCastable(const EvalVal &val, TypeTable::Id t, const Stri
     if (typeTable->isImplicitCastable(val.getType().value(), t))
         return true;
 
+    if (typeTable->worksAsCustom(val.getType().value()) || typeTable->worksAsCustom(t))
+        return false;
+
     optional<int64_t> valI = getValueI(val, typeTable);
     if (valI.has_value()) return typeTable->fitsTypeI(valI.value(), t);
 
@@ -267,7 +270,7 @@ bool EvalVal::isCastable(const EvalVal &val, TypeTable::Id dstTypeId, const Stri
                 typeTable->worksAsTypeB(dstTypeId) ||
                 typeTable->worksAsTypeAnyP(dstTypeId);
         } else {
-            return typeTable->isImplicitCastable(srcTypeId, dstTypeId);
+            return typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId));
         }
     } else if (typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE)) {
         return typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_ID) ||
@@ -277,7 +280,7 @@ bool EvalVal::isCastable(const EvalVal &val, TypeTable::Id dstTypeId, const Stri
         typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_ID) ||
         typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_RAW)) {
         // these types are only castable when changing constness
-        return typeTable->isImplicitCastable(srcTypeId, dstTypeId);
+        return typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId));
     }
     
     return false;

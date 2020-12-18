@@ -117,7 +117,7 @@ string CompilationMessages::errorStringOfToken(Token tok) const {
 }
 
 string CompilationMessages::errorStringOfKeyword(Keyword k) const {
-    return namePool->get(getKeywordNameId(k).value());
+    return namePool->get(getKeywordNameId(k));
 }
 
 string CompilationMessages::errorStringOfType(TypeTable::Id ty) const {
@@ -162,6 +162,8 @@ string CompilationMessages::errorStringOfType(TypeTable::Id ty) const {
         }
 
         ss << ')';
+    } else if (typeTable->isCustom(ty)) {
+        ss << namePool->get(typeTable->getCustom(ty).name);
     } else {
         optional<NamePool::Id> name = typeTable->getTypeName(ty);
         if (!name.has_value()) return fallback;
