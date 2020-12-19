@@ -1,6 +1,7 @@
 import "util/io.orb";
 
 sym (glob 111:i8);
+sym (hello "HELLO");
 
 fnc main () () {
     println_i32 100;
@@ -22,6 +23,7 @@ fnc main () () {
     println_c8 ([] "hello" 0);
 
     println_str "hello";
+    println_str hello;
     println_str "";
     println_str "\n";
     println_str "\\n";
