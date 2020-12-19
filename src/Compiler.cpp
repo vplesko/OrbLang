@@ -23,7 +23,7 @@ Compiler::Compiler(NamePool *namePool, StringPool *stringPool, TypeTable *typeTa
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("module"), llvmContext);
 
     llvmPmb = make_unique<llvm::PassManagerBuilder>();
-    llvmPmb->OptLevel = 3;
+    llvmPmb->OptLevel = 0;
 
     llvmFpm = make_unique<llvm::legacy::FunctionPassManager>(llvmModule.get());
     llvmPmb->populateFunctionPassManager(*llvmFpm);
@@ -874,7 +874,7 @@ llvm::Type* Compiler::makeLlvmType(TypeTable::Id typeId) {
 
         vector<llvm::Type*> memberTypes(tup.members.size());
         for (size_t i = 0; i < tup.members.size(); ++i) {
-            llvm::Type *memberType = makeLlvmType(tup.members[i].first);
+            llvm::Type *memberType = makeLlvmType(tup.members[i]);
             if (memberType == nullptr) return nullptr;
             memberTypes[i] = memberType;
         }

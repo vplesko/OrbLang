@@ -16,8 +16,8 @@ EvalVal EvalVal::makeVal(TypeTable::Id t, TypeTable *typeTable) {
     if (typeTable->worksAsTuple(t)) {
         const TypeTable::Tuple *tup = typeTable->extractTuple(t).value();
         evalVal.elems.reserve(tup->members.size());
-        for (size_t i = 0; i < tup->members.size(); ++i) {
-            evalVal.elems.push_back(NodeVal(CodeLoc(), makeVal(tup->members[i].first, typeTable)));
+        for (TypeTable::Id memb : tup->members) {
+            evalVal.elems.push_back(NodeVal(CodeLoc(), makeVal(memb, typeTable)));
         }
     } else if (typeTable->worksAsTypeArr(t)) {
         size_t len = typeTable->extractLenOfArr(t).value();
@@ -35,8 +35,8 @@ EvalVal EvalVal::makeZero(TypeTable::Id t, NamePool *namePool, TypeTable *typeTa
     if (typeTable->worksAsTuple(t)) {
         const TypeTable::Tuple *tup = typeTable->extractTuple(t).value();
         evalVal.elems.reserve(tup->members.size());
-        for (size_t i = 0; i < tup->members.size(); ++i) {
-            evalVal.elems.push_back(NodeVal(CodeLoc(), makeZero(tup->members[i].first, namePool, typeTable)));
+        for (TypeTable::Id memb : tup->members) {
+            evalVal.elems.push_back(NodeVal(CodeLoc(), makeZero(memb, namePool, typeTable)));
         }
     } else if (typeTable->worksAsTypeArr(t)) {
         size_t len = typeTable->extractLenOfArr(t).value();

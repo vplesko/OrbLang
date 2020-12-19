@@ -158,7 +158,7 @@ string CompilationMessages::errorStringOfType(TypeTable::Id ty) const {
 
         for (size_t i = 0; i < tuple.members.size(); ++i) {
             if (i > 0) ss << ' ';
-            ss << errorStringOfType(tuple.members[i].first);
+            ss << errorStringOfType(tuple.members[i]);
         }
 
         ss << ')';

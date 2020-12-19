@@ -242,6 +242,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
         if (entry.isInvalid()) return NodeVal();
 
         // continue with the other sym entries to minimize the number of errors printed out
+        // TODO don't do that, it doesn't help much
         if (!NodeVal::isLeaf(entry, typeTable) && !checkBetweenChildren(entry, 1, 2, true)) continue;
 
         bool hasInit = checkExactlyChildren(entry, 2, false);
@@ -1085,16 +1086,7 @@ bool Processor::applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &
 bool Processor::applyTupleMemb(TypeTable::Tuple &tup, const NodeVal &node) {
     if (!checkIsEvalVal(node, true) || !checkIsType(node, true)) return false;
 
-    TypeTable::Id membType = node.getEvalVal().ty;
-    optional<NodeVal> nodeName = getAttribute(node, "name");
-
-    if (nodeName.has_value()) {
-        if (!checkIsEvalVal(nodeName.value(), true) || !checkIsId(nodeName.value(), true)) return false;
-
-        tup.addMember(membType, nodeName.value().getEvalVal().id);
-    } else {
-        tup.addMember(membType);
-    }
+    tup.addMember(node.getEvalVal().ty);
 
     return true;
 }
@@ -1373,40 +1365,24 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
         }
 
         size_t baseLen;
-        const TypeTable::Tuple* tuple = nullptr;
         if (isBaseRaw) {
             baseLen = base.getChildrenCnt();
         } else {
             optional<const TypeTable::Tuple*> tupleOpt = typeTable->extractTuple(baseType);
-            if (tupleOpt.has_value()) {
-                baseLen = tupleOpt.value()->members.size();
-                tuple = tupleOpt.value();
-            } else {
+            if (!tupleOpt.has_value()) {
                 msgs->errorExprDotInvalidBase(base.getCodeLoc());
                 return NodeVal();
             }
+            baseLen = tupleOpt.value()->members.size();
         }
 
         uint64_t indexVal;
-        if (checkIsId(index, false)) {
-            if (tuple == nullptr) {
-                msgs->errorExprDotInvalidBase(index.getCodeLoc());
-                return NodeVal();
-            }
-            optional<size_t> ind = tuple->getMemberInd(index.getEvalVal().id);
-            if (!ind.has_value()) {
-                msgs->errorMemberIndex(index.getCodeLoc());
-                return NodeVal();
-            }
-            indexVal = ind.value();
-        } else {
-            optional<uint64_t> indexValOpt = EvalVal::getValueNonNeg(index.getEvalVal(), typeTable);
-            if (!indexValOpt.has_value() || indexValOpt.value() >= baseLen) {
-                msgs->errorMemberIndex(index.getCodeLoc());
-                return NodeVal();
-            }
-            indexVal = indexValOpt.value();
+        optional<uint64_t> indexValOpt = EvalVal::getValueNonNeg(index.getEvalVal(), typeTable);
+        if (!indexValOpt.has_value() || indexValOpt.value() >= baseLen) {
+            msgs->errorMemberIndex(index.getCodeLoc());
+            return NodeVal();
         }
+        indexVal = indexValOpt.value();
 
         optional<TypeTable::Id> resType;
         if (isBaseRaw) {

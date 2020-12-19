@@ -35,14 +35,12 @@ public:
     };
 
     struct Tuple {
-        std::vector<std::pair<Id, std::optional<NamePool::Id>>> members;
+        std::vector<Id> members;
 
         Tuple() {}
-        explicit Tuple(std::vector<std::pair<Id, std::optional<NamePool::Id>>> membs) : members(std::move(membs)) {}
+        explicit Tuple(std::vector<Id> membs) : members(std::move(membs)) {}
 
         void addMember(Id m);
-        void addMember(Id m, NamePool::Id n);
-        std::optional<std::size_t> getMemberInd(NamePool::Id name) const;
 
         bool eq(const Tuple &other) const;
     };

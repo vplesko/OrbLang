@@ -3,19 +3,7 @@
 using namespace std;
 
 void TypeTable::Tuple::addMember(TypeTable::Id m) {
-    members.push_back({m, nullopt});
-}
-
-void TypeTable::Tuple::addMember(Id m, NamePool::Id n) {
-    members.push_back({m, n});
-}
-
-optional<size_t> TypeTable::Tuple::getMemberInd(NamePool::Id name) const {
-    for (size_t i = 0; i < members.size(); ++i) {
-        if (members[i].second.has_value() && members[i].second.value() == name) return i;
-    }
-
-    return nullopt;
+    members.push_back(m);
 }
 
 bool TypeTable::Tuple::eq(const Tuple &other) const {
@@ -105,7 +93,7 @@ TypeTable::Id TypeTable::addTypeDescr(TypeDescr typeDescr, llvm::Type *type) {
 optional<TypeTable::Id> TypeTable::addTuple(Tuple tup) {
     if (tup.members.empty()) return nullopt;
 
-    if (tup.members.size() == 1) return tup.members[0].first;
+    if (tup.members.size() == 1) return tup.members[0];
 
     for (size_t i = 0; i < tuples.size(); ++i) {
         if (tup.eq(tuples[i].first)) {
@@ -479,7 +467,7 @@ optional<TypeTable::Id> TypeTable::extractMemberType(Id t, size_t ind) {
 
     if (ind >= tup.value()->members.size()) return nullopt;
 
-    Id id = tup.value()->members[ind].first;
+    Id id = tup.value()->members[ind];
     return isDirectCn(t) ? addTypeCnOf(id) : id;
 }
 
@@ -568,7 +556,7 @@ bool TypeTable::worksAsTypeCn(Id t) const {
         const Tuple &tup = getTuple(t);
 
         for (auto it : tup.members) {
-            if (worksAsTypeCn(it.first)) return true;
+            if (worksAsTypeCn(it)) return true;
         }
 
         return false;
@@ -803,12 +791,7 @@ optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool) const 
         ss << "$t";
         const Tuple &tup = getTuple(t);
         for (auto it : tup.members) {
-            if (it.second.has_value()) {
-                ss << "$n";
-                ss << namePool->get(it.second.value());
-            }
-            ss << "$m";
-            optional<string> membStr = makeBinString(it.first, namePool);
+            optional<string> membStr = makeBinString(it, namePool);
             if (!membStr.has_value()) return nullopt;
             ss << membStr.value();
         }

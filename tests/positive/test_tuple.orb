@@ -171,9 +171,4 @@ fnc main () () {
         = (. x 0 0) 2400;
         println_i32 (. x 0 0);
     };
-    block {
-        sym x:(i32::((name \x)) i32::((name \y)));
-        = (. x x) 2500;
-        println_i32 (. x 0);
-    };
 };
