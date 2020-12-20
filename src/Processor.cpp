@@ -86,6 +86,8 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
                 return processLoop(node);
             case Keyword::PASS:
                 return processPass(node);
+            case Keyword::DATA:
+                return processData(node);
             case Keyword::FNC:
                 return processFnc(node);
             case Keyword::RET:
@@ -265,6 +267,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
             NodeVal init = hasType ? processAndImplicitCast(nodeInit, optType.value()) : processNode(nodeInit);
             if (init.isInvalid()) continue;
 
+            // TODO! move to a separate keyword
             if (getAttribute(pair.first, "custom").has_value()) {
                 if (!checkInGlobalScope(entry.getCodeLoc(), true)) continue;
                 if (!checkIsType(init, true)) return NodeVal();
@@ -501,6 +504,62 @@ NodeVal Processor::processPass(const NodeVal &node) {
     if (nodeValue.isInvalid()) return NodeVal();
 
     if (!performPass(node.getCodeLoc(), *targetBlock, nodeValue)) return NodeVal();
+    return NodeVal(node.getCodeLoc());
+}
+
+NodeVal Processor::processData(const NodeVal &node) {
+    if (!checkInGlobalScope(node.getCodeLoc(), true)) return NodeVal();
+    if (!checkBetweenChildren(node, 2, 3, true)) return NodeVal();
+
+    bool definition = node.getChildrenCnt() == 3;
+
+    TypeTable::DataType dataType;
+    dataType.defined = false;
+
+    NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(1));
+    if (nodeName.isInvalid()) return NodeVal();
+    dataType.name = nodeName.getEvalVal().id;
+    if (!symbolTable->nameAvailable(dataType.name, namePool, typeTable)) {
+        if (optional<TypeTable::Id> oldTy = typeTable->getTypeId(dataType.name);
+            !(oldTy.has_value() && typeTable->isDataType(oldTy.value()))) {
+            msgs->errorUnknown(nodeName.getCodeLoc());
+            return NodeVal();
+        }
+    }
+
+    optional<TypeTable::Id> typeIdOpt = typeTable->addDataType(dataType);
+    if (!typeIdOpt.has_value()) {
+        msgs->errorUnknown(node.getCodeLoc());
+        return NodeVal();
+    }
+
+    dataType.defined = definition;
+    if (dataType.defined) {
+        const NodeVal &nodeMembs = processWithEscape(node.getChild(2));
+        if (nodeMembs.isInvalid()) return NodeVal();
+        if (!checkIsRaw(nodeMembs, true)) return NodeVal();
+        if (!checkAtLeastChildren(nodeMembs, 1, true)) return NodeVal();
+        for (size_t i = 0; i < nodeMembs.getChildrenCnt(); ++i) {
+            const NodeVal &nodeMemb = nodeMembs.getChild(i);
+
+            // TODO if type is cn, will always error on sym
+            pair<NodeVal, optional<NodeVal>> memb = processForIdTypePair(nodeMemb);
+            if (memb.first.isInvalid()) return NodeVal();
+            NamePool::Id membNameId = memb.first.getEvalVal().id;
+            if (!memb.second.has_value()) {
+                msgs->errorMissingTypeAttribute(nodeMemb.getCodeLoc());
+                return NodeVal();
+            }
+            dataType.members.push_back(make_pair(membNameId, memb.second.value().getEvalVal().ty));
+        }
+
+        optional<TypeTable::Id> typeIdOpt = typeTable->addDataType(dataType);
+        if (!typeIdOpt.has_value()) {
+            msgs->errorUnknown(node.getCodeLoc());
+            return NodeVal();
+        }
+    }
+
     return NodeVal(node.getCodeLoc());
 }
 
@@ -1356,6 +1415,8 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
         }
         TypeTable::Id baseType = base.getType().value();
         bool isBaseRaw = NodeVal::isRawVal(base, typeTable);
+        bool isBaseTup = typeTable->worksAsTuple(baseType);
+        bool isBaseData = typeTable->worksAsDataType(baseType);
 
         NodeVal index = processWithEscape(*opers[i]);
         if (index.isInvalid()) return NodeVal();
@@ -1364,25 +1425,44 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
             return NodeVal();
         }
 
-        size_t baseLen;
+        size_t baseLen = 0;
         if (isBaseRaw) {
             baseLen = base.getChildrenCnt();
-        } else {
+        } else if (isBaseTup) {
             optional<const TypeTable::Tuple*> tupleOpt = typeTable->extractTuple(baseType);
             if (!tupleOpt.has_value()) {
                 msgs->errorExprDotInvalidBase(base.getCodeLoc());
                 return NodeVal();
             }
             baseLen = tupleOpt.value()->members.size();
+        } else if (isBaseData) {
+            // base len not needed
+        } else {
+            msgs->errorUnknown(base.getCodeLoc());
+            return NodeVal();
         }
 
         uint64_t indexVal;
-        optional<uint64_t> indexValOpt = EvalVal::getValueNonNeg(index.getEvalVal(), typeTable);
-        if (!indexValOpt.has_value() || indexValOpt.value() >= baseLen) {
-            msgs->errorMemberIndex(index.getCodeLoc());
-            return NodeVal();
+        if (isBaseData) {
+            if (!EvalVal::isId(index.getEvalVal(), typeTable)) {
+                msgs->errorUnknown(index.getCodeLoc());
+                return NodeVal();
+            }
+            NamePool::Id indexName = index.getEvalVal().id;
+            optional<uint64_t> indexValOpt = typeTable->extractDataType(baseType).value()->getMembInd(indexName);
+            if (!indexValOpt.has_value()) {
+                msgs->errorUnknown(index.getCodeLoc());
+                return NodeVal();
+            }
+            indexVal = indexValOpt.value();
+        } else {
+            optional<uint64_t> indexValOpt = EvalVal::getValueNonNeg(index.getEvalVal(), typeTable);
+            if (!indexValOpt.has_value() || indexValOpt.value() >= baseLen) {
+                msgs->errorMemberIndex(index.getCodeLoc());
+                return NodeVal();
+            }
+            indexVal = indexValOpt.value();
         }
-        indexVal = indexValOpt.value();
 
         optional<TypeTable::Id> resType;
         if (isBaseRaw) {
@@ -1390,8 +1470,10 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
             if (typeTable->worksAsPrimitive(resType.value(), TypeTable::P_RAW) && typeTable->worksAsTypeCn(baseType)) {
                 resType = typeTable->addTypeCnOf(resType.value());
             }
+        } else if (isBaseTup) {
+            resType = typeTable->extractTupleMemberType(baseType, (size_t) indexVal);
         } else {
-            resType = typeTable->extractMemberType(baseType, (size_t) indexVal);
+            resType = typeTable->extractDataTypeMemberType(baseType, index.getEvalVal().id);
         }
         if (!resType.has_value()) {
             msgs->errorInternal(base.getCodeLoc());

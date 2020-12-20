@@ -804,6 +804,19 @@ NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
         }
 
         llvmConst = llvm::ConstantStruct::getAnon(llvmContext, llvmConsts);
+    } else if (EvalVal::isDataType(eval, typeTable)) {
+        llvm::StructType *llvmStructType = (llvm::StructType*) makeLlvmTypeOrError(codeLoc, eval.type.value());
+        if (llvmStructType == nullptr) return NodeVal();
+
+        vector<llvm::Constant*> llvmConsts;
+        llvmConsts.reserve(eval.elems.size());
+        for (const NodeVal &elem : eval.elems) {
+            NodeVal elemPromo = promoteEvalVal(codeLoc, elem.getEvalVal());
+            if (elemPromo.isInvalid()) return NodeVal();
+            llvmConsts.push_back((llvm::Constant*) elemPromo.getLlvmVal().val);
+        }
+
+        llvmConst = llvm::ConstantStruct::get(llvmStructType, llvmConsts);
     }
 
     if (llvmConst == nullptr) {
@@ -848,7 +861,15 @@ llvm::Constant* Compiler::makeLlvmConstString(const std::string &str) {
 
 llvm::Type* Compiler::makeLlvmType(TypeTable::Id typeId) {
     llvm::Type *llvmType = typeTable->getType(typeId);
-    if (llvmType != nullptr) return llvmType;
+    if (llvmType != nullptr) {
+        if (typeTable->isDataType(typeId)) {
+            bool definitionCompiled = !((llvm::StructType*) llvmType)->isOpaque();
+            bool definitionProcessed = typeTable->getDataType(typeId).defined;
+            if (definitionCompiled == definitionProcessed) return llvmType;
+        } else {
+            return llvmType;
+        }
+    }
 
     if (typeTable->isTypeDescr(typeId)) {
         const TypeTable::TypeDescr &descr = typeTable->getTypeDescr(typeId);
@@ -881,8 +902,31 @@ llvm::Type* Compiler::makeLlvmType(TypeTable::Id typeId) {
 
         llvmType = llvm::StructType::get(llvmContext, memberTypes);
     } else if (typeTable->isCustom(typeId)) {
+        // TODO! test promote of custom
         llvmType = makeLlvmType(typeTable->getCustom(typeId).type);
         if (llvmType == nullptr) return nullptr;
+    } else if (typeTable->isDataType(typeId)) {
+        const TypeTable::DataType &data = typeTable->getDataType(typeId);
+
+        // pre-declare
+        if (llvmType == nullptr) {
+            llvmType = llvm::StructType::create(llvmContext, namePool->get(data.name));
+            typeTable->setType(typeId, llvmType);
+        }
+
+        if (data.defined) {
+            // set to dummy body to not be opaque, to avoid potential infinite recursion (llvm doesn't allow empty bodies)
+            llvm::Type *dummy = makeLlvmType(typeTable->getPrimTypeId(TypeTable::P_BOOL));
+            ((llvm::StructType*) llvmType)->setBody({dummy});
+
+            vector<llvm::Type*> memberTypes(data.members.size());
+            for (size_t i = 0; i < data.members.size(); ++i) {
+                llvm::Type *memberType = makeLlvmType(data.members[i].second);
+                if (memberType == nullptr) return nullptr;
+                memberTypes[i] = memberType;
+            }
+            ((llvm::StructType*) llvmType)->setBody(memberTypes);
+        }
     }
 
     // supported primitive type are compiled at the start of compilation
@@ -993,8 +1037,10 @@ llvm::Value* Compiler::makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTy
                 llvm::ConstantInt::getNullValue(llvmTypeI),
                 "p2b_cast");
         }
-    } else if (typeTable->worksAsTypeArr(srcTypeId) || typeTable->worksAsTuple(srcTypeId)) {
-        // tuples and arrs are only castable when changing constness
+    } else if (typeTable->worksAsTypeArr(srcTypeId) ||
+        typeTable->worksAsTuple(srcTypeId) ||
+        typeTable->worksAsDataType(srcTypeId)) {
+        // these types are only castable when changing constness
         if (typeTable->isImplicitCastable(srcTypeId, dstTypeId)) {
             // no action is needed in case of a cast
             dstLlvmVal = srcLlvmVal;

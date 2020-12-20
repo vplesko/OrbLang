@@ -71,6 +71,7 @@ struct EvalVal {
     static bool isAnyP(const EvalVal &val, const TypeTable *typeTable);
     static bool isArr(const EvalVal &val, const TypeTable *typeTable);
     static bool isTuple(const EvalVal &val, const TypeTable *typeTable);
+    static bool isDataType(const EvalVal &val, const TypeTable *typeTable);
     static bool isNull(const EvalVal &val, const TypeTable *typeTable);
 
     static std::optional<std::int64_t> getValueI(const EvalVal &val, const TypeTable *typeTable);

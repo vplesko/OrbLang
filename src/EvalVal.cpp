@@ -19,6 +19,12 @@ EvalVal EvalVal::makeVal(TypeTable::Id t, TypeTable *typeTable) {
         for (TypeTable::Id memb : tup->members) {
             evalVal.elems.push_back(NodeVal(CodeLoc(), makeVal(memb, typeTable)));
         }
+    } else if (typeTable->worksAsDataType(t)) {
+        const TypeTable::DataType *data = typeTable->extractDataType(t).value();
+        evalVal.elems.reserve(data->members.size());
+        for (const auto &memb : data->members) {
+            evalVal.elems.push_back(NodeVal(CodeLoc(), makeVal(memb.second, typeTable)));
+        }
     } else if (typeTable->worksAsTypeArr(t)) {
         size_t len = typeTable->extractLenOfArr(t).value();
         TypeTable::Id elemType = typeTable->addTypeIndexOf(t).value();
@@ -37,6 +43,12 @@ EvalVal EvalVal::makeZero(TypeTable::Id t, NamePool *namePool, TypeTable *typeTa
         evalVal.elems.reserve(tup->members.size());
         for (TypeTable::Id memb : tup->members) {
             evalVal.elems.push_back(NodeVal(CodeLoc(), makeZero(memb, namePool, typeTable)));
+        }
+    } if (typeTable->worksAsDataType(t)) {
+        const TypeTable::DataType *data = typeTable->extractDataType(t).value();
+        evalVal.elems.reserve(data->members.size());
+        for (const auto &memb : data->members) {
+            evalVal.elems.push_back(NodeVal(CodeLoc(), makeZero(memb.second, namePool, typeTable)));
         }
     } else if (typeTable->worksAsTypeArr(t)) {
         size_t len = typeTable->extractLenOfArr(t).value();
@@ -134,6 +146,11 @@ bool EvalVal::isArr(const EvalVal &val, const TypeTable *typeTable) {
 bool EvalVal::isTuple(const EvalVal &val, const TypeTable *typeTable) {
     optional<TypeTable::Id> type = val.getType();
     return type.has_value() && typeTable->worksAsTuple(type.value());
+}
+
+bool EvalVal::isDataType(const EvalVal &val, const TypeTable *typeTable) {
+    optional<TypeTable::Id> type = val.getType();
+    return type.has_value() && typeTable->worksAsDataType(type.value());
 }
 
 bool EvalVal::isNull(const EvalVal &val, const TypeTable *typeTable) {
@@ -277,6 +294,7 @@ bool EvalVal::isCastable(const EvalVal &val, TypeTable::Id dstTypeId, const Stri
             typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE);
     } else if (typeTable->worksAsTypeArr(srcTypeId) ||
         typeTable->worksAsTuple(srcTypeId) ||
+        typeTable->worksAsDataType(srcTypeId) ||
         typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_ID) ||
         typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_RAW)) {
         // these types are only castable when changing constness

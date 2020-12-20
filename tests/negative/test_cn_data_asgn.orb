@@ -1,0 +1,13 @@
+data Foo {
+    x:i32
+    y:i32
+};
+
+fnc main () () {
+    sym a:Foo;
+    = (. a x) 0;
+    = (. a y) 1;
+
+    sym (b:(Foo cn) a);
+    = (. b x) 100;
+};

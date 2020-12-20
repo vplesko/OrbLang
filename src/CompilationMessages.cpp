@@ -164,6 +164,8 @@ string CompilationMessages::errorStringOfType(TypeTable::Id ty) const {
         ss << ')';
     } else if (typeTable->isCustom(ty)) {
         ss << namePool->get(typeTable->getCustom(ty).name);
+    } else if (typeTable->isDataType(ty)) {
+        ss << namePool->get(typeTable->getDataType(ty).name);
     } else {
         optional<NamePool::Id> name = typeTable->getTypeName(ty);
         if (!name.has_value()) return fallback;

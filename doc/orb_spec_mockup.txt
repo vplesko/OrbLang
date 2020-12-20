@@ -117,7 +117,6 @@ non-type attrs
 sym
 	sym a:t OR sym (a:t) OR sym (a b) OR sym (a:t b), variadic
 	a is id, t is type, b is init value
-	if a is leaf id, it is evaluated as that id
 	b cast to t, if no t then a is type of b
 	zero initialized (id to main, type to id, raw to empty)
 
@@ -129,45 +128,48 @@ block
 	body is repeated instructions
 	t is return type or () for no ret
 	name is block name or () for no name
-	if name is leaf id, it is evaluated as that id
 	opens new scope, goes through body, closes scope
 	if has ret type, expects value passed
 
 exit
 	exit cond OR exit name cond
-	if name is leaf id, it is evaluated as that id
 	exits a block if cond is true
 	if name given, exits that block, otherwise innermost enclosing block
 	has to be non-retting block
 
 loop
 	loop cond OR loop name cond
-	if name is leaf id, it is evaluated as that id
 	re-enters a block if cond is true, clearing scopes
 	if name given, re-enters that block, otherwise innermost enclosing block
 
 pass
 	pass val OR pass name val
-	if name is leaf id, it is evaluated as that id
 	exits a block, yielding val as ret
 	if name given, exits that block, otherwise innermost enclosing block
 	has to be retting block
 
+data
+	data name OR data name membs
+	first declares, second defines a data type
+	name is id, membs is list of a:t
+	must have at least one member
+	global scope only
+
 fnc
 	fnc name args type OR fnc name args type body
 	first declares, second defines a function
-	if name is leaf id, it is evaluated as that id
-	args is list of args as a:t, if a is leaf id, it is evaluated as that id
+	args is list of args as a:t
 	type is ret type or no ret if it's ()
 	fnc has its own scope, goes through body
 	if retting, expects ret
+	global scope only
 
 mac
 	mac name args subst
-	if name is leaf id, it is evaluated as that id
-	args is list of args, if any is leaf id, it is evaluated as that id
+	args is list of args
 	invoked not evaluating its args, invocations repeteadly resolved until no longer macro invocation, after code processed normally
 	when invoked, replaces invoke node with subst, but appearances of any arg replaced with passed node
+	global scope only
 
 ret
 	ret OR ret val
@@ -258,7 +260,7 @@ import
 
 type
 	type ...a
-	if past first is leaf and not escaped, escape, then if id of type, get that type
+	if past first is type decor, pre-escape
 
 ********************
 
@@ -266,7 +268,6 @@ plan:
  - first class fncs and macs
  - declarations (fncs and tuple types only)
  - variadics
- - data types
  - zero
  - drop, move
  - new attributes: preprocess, noZero, noDrop, unique...

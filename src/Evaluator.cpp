@@ -839,6 +839,7 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
         }
     } else if (typeTable->worksAsTypeArr(srcTypeId) ||
         typeTable->worksAsTuple(srcTypeId) ||
+        typeTable->worksAsDataType(srcTypeId) ||
         typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_ID) ||
         typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_RAW)) {
         // these types are only castable when changing constness
