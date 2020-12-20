@@ -1401,9 +1401,7 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
             }
         }
 
-        // TODO allow eval indexing of strings?
-        if (checkIsEvalTime(base, false) && checkIsEvalTime(index, false) &&
-            !typeTable->worksAsTypeStr(base.getEvalVal().type.value())) {
+        if (checkIsEvalTime(base, false) && checkIsEvalTime(index, false)) {
             base = evaluator->performOperIndex(codeLoc, base, index, elemType.value());
         } else {
             base = performOperIndex(base.getCodeLoc(), base, index, elemType.value());

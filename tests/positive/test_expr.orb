@@ -1,6 +1,6 @@
 import "util/io.orb";
 
-sym (glob (< 1 2 3));
+sym (glob0 (< 1 2 3)) (glob1 "abcd");
 
 fnc main() () {
     println_i32 (block i32 { pass 100; });
@@ -39,5 +39,7 @@ fnc main() () {
     println_i32 (+ 400 (+ (block i32 { pass 1; }) -1 1 -1));
     println_i32 (+ 400 (- (block i32 { pass 3; }) 1 1));
 
-    println_i32 (+ 499 (cast i32 glob));
+    println_i32 (+ 499 (cast i32 glob0));
+
+    println_c8 ([] glob1 1);
 };

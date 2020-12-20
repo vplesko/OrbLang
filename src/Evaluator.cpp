@@ -524,6 +524,22 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVa
             nodeVal.getEvalVal().ref = &base.getEvalVal().ref->getEvalVal().elems[index.value()];
         }
         return nodeVal;
+    } else if (typeTable->worksAsTypeStr(base.getType().value())) {
+        if (!base.getEvalVal().str.has_value()) {
+            msgs->errorUnknown(codeLoc);
+            return NodeVal();
+        }
+        StringPool::Id strId = base.getEvalVal().str.value();
+        const string &str = stringPool->get(strId);
+        if (index.value() >= str.size()) {
+            msgs->errorExprIndexOutOfBounds(codeLoc);
+            return NodeVal();
+        }
+
+        // not a ref-val
+        EvalVal evalVal = EvalVal::makeVal(resTy, typeTable);
+        evalVal.c8 = str[index.value()];
+        return NodeVal(codeLoc, move(evalVal));
     } else if (typeTable->worksAsTypeArrP(base.getType().value())) {
         msgs->errorUnknown(codeLoc);
         return NodeVal();
