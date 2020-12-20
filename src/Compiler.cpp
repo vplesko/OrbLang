@@ -779,8 +779,11 @@ NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
     } else if (EvalVal::isNull(eval, typeTable)) {
         llvmConst = llvm::ConstantPointerNull::get((llvm::PointerType*)makeLlvmType(ty));
     } else if (EvalVal::isStr(eval, typeTable)) {
-        const std::string &str = stringPool->get(eval.str.value());
-        llvmConst = makeLlvmConstString(str);
+        llvmConst = stringPool->getLlvm(eval.str.value());
+        if (llvmConst == nullptr) {
+            llvmConst = makeLlvmConstString(stringPool->get(eval.str.value()));
+            stringPool->setLlvm(eval.str.value(), llvmConst);
+        }
     } else if (EvalVal::isArr(eval, typeTable)) {
         llvm::ArrayType *llvmArrayType = (llvm::ArrayType*) makeLlvmTypeOrError(codeLoc, eval.type.value());
         if (llvmArrayType == nullptr) return NodeVal();

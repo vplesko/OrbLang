@@ -272,8 +272,7 @@ type
 ********************
 
 plan:
- - first class fncs and macs
- - declarations (fncs and tuple types only)
+ - first class fncs and macs (fnc type, with fnc makes const, llvm functions are llvm ptrs, ptr casting, null impl; mac similar, but can't decl)
  - variadics
  - zero
  - drop, move

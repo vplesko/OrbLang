@@ -3,6 +3,7 @@
 #include <vector>
 #include <memory>
 #include <unordered_map>
+#include <variant>
 #include "CodeLoc.h"
 #include "LiteralVal.h"
 #include "EvalVal.h"
@@ -10,6 +11,9 @@
 
 class NodeVal {
 public:
+    typedef std::unordered_map<NamePool::Id, std::unique_ptr<NodeVal>> AttrMap;
+
+private:
     enum class Kind {
         kInvalid,
         kValid,
@@ -20,18 +24,10 @@ public:
         kLlvm
     };
 
-    typedef std::unordered_map<NamePool::Id, std::unique_ptr<NodeVal>> AttrMap;
-
-private:
     CodeLoc codeLoc;
 
     Kind kind;
-    StringPool::Id importFile;
-    LiteralVal literal;
-    AttrMap attrMap;
-    LlvmVal llvm;
-    EvalVal eval;
-
+    std::variant<StringPool::Id, LiteralVal, AttrMap, LlvmVal, EvalVal> value;
     std::unique_ptr<NodeVal> typeAttr, nonTypeAttrs;
 
     void copyAttrMap(const AttrMap &a);
@@ -43,10 +39,10 @@ public:
     // Valid node
     NodeVal(CodeLoc codeLoc);
     NodeVal(CodeLoc codeLoc, StringPool::Id import);
-    NodeVal(CodeLoc codeLoc, const LiteralVal &val);
-    NodeVal(CodeLoc codeLoc, const AttrMap &val);
-    NodeVal(CodeLoc codeLoc, const EvalVal &val);
-    NodeVal(CodeLoc codeLoc, const LlvmVal &val);
+    NodeVal(CodeLoc codeLoc, LiteralVal val);
+    NodeVal(CodeLoc codeLoc, AttrMap val);
+    NodeVal(CodeLoc codeLoc, EvalVal val);
+    NodeVal(CodeLoc codeLoc, LlvmVal val);
 
     NodeVal(const NodeVal &other);
     NodeVal& operator=(const NodeVal &other);
@@ -66,28 +62,28 @@ public:
     bool isInvalid() const { return kind == Kind::kInvalid; }
 
     bool isImport() const { return kind == Kind::kImport; }
-    StringPool::Id getImportFile() const { return importFile; }
+    StringPool::Id getImportFile() const { return std::get<StringPool::Id>(value); }
 
     bool isLiteralVal() const { return kind == Kind::kLiteral; }
-    LiteralVal& getLiteralVal() { return literal; }
-    const LiteralVal& getLiteralVal() const { return literal; }
+    LiteralVal& getLiteralVal() { return std::get<LiteralVal>(value); }
+    const LiteralVal& getLiteralVal() const { return std::get<LiteralVal>(value); }
 
     bool isAttrMap() const { return kind == Kind::kAttrMap; }
-    AttrMap& getAttrMap() { return attrMap; }
-    const AttrMap& getAttrMap() const { return attrMap; }
+    AttrMap& getAttrMap() { return std::get<AttrMap>(value); }
+    const AttrMap& getAttrMap() const { return std::get<AttrMap>(value); }
 
     bool isEvalVal() const { return kind == Kind::kEval; }
-    EvalVal& getEvalVal() { return eval; }
-    const EvalVal& getEvalVal() const { return eval; }
-    std::size_t getChildrenCnt() const { return eval.elems.size(); }
-    NodeVal& getChild(std::size_t ind) { return eval.elems[ind]; }
-    const NodeVal& getChild(std::size_t ind) const { return eval.elems[ind]; }
+    EvalVal& getEvalVal() { return std::get<EvalVal>(value); }
+    const EvalVal& getEvalVal() const { return std::get<EvalVal>(value); }
+    std::size_t getChildrenCnt() const { return getEvalVal().elems.size(); }
+    NodeVal& getChild(std::size_t ind) { return getEvalVal().elems[ind]; }
+    const NodeVal& getChild(std::size_t ind) const { return getEvalVal().elems[ind]; }
     void addChild(NodeVal c);
     void addChildren(std::vector<NodeVal> c);
 
     bool isLlvmVal() const { return kind == Kind::kLlvm; }
-    LlvmVal& getLlvmVal() { return llvm; }
-    const LlvmVal& getLlvmVal() const { return llvm; }
+    LlvmVal& getLlvmVal() { return std::get<LlvmVal>(value); }
+    const LlvmVal& getLlvmVal() const { return std::get<LlvmVal>(value); }
 
     bool hasTypeAttr() const { return typeAttr != nullptr; }
     NodeVal& getTypeAttr() { return *typeAttr; }

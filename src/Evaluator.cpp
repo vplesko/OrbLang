@@ -282,7 +282,7 @@ NodeVal Evaluator::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper o
         return NodeVal();
     }
 
-    return NodeVal(codeLoc, evalVal);
+    return NodeVal(codeLoc, move(evalVal));
 }
 
 NodeVal Evaluator::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper, TypeTable::Id resTy) {
@@ -496,7 +496,7 @@ NodeVal Evaluator::performOperComparisonTearDown(CodeLoc codeLoc, bool success, 
 
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_BOOL), typeTable);
     evalVal.b = ((ComparisonSignal*) signal)->result;
-    return NodeVal(codeLoc, evalVal);
+    return NodeVal(codeLoc, move(evalVal));
 }
 
 NodeVal Evaluator::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) {
@@ -506,7 +506,7 @@ NodeVal Evaluator::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const No
 
     EvalVal evalVal(rhs.getEvalVal());
     evalVal.ref = lhs.getEvalVal().ref;
-    return NodeVal(codeLoc, evalVal);
+    return NodeVal(codeLoc, move(evalVal));
 }
 
 NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) {
@@ -688,7 +688,7 @@ NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const
         return NodeVal();
     }
 
-    return NodeVal(codeLoc, evalVal);
+    return NodeVal(codeLoc, move(evalVal));
 }
 
 NodeVal Evaluator::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) {
@@ -701,7 +701,7 @@ NodeVal Evaluator::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::ve
         evalVal.elems[i] = NodeVal::copyNoRef(memb.getCodeLoc(), memb);
     }
 
-    return NodeVal(codeLoc, evalVal);
+    return NodeVal(codeLoc, move(evalVal));
 }
 
 optional<uint64_t> Evaluator::performSizeOf(CodeLoc codeLoc, TypeTable::Id ty) {
@@ -860,7 +860,7 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
         return nullopt;
     }
 
-    return NodeVal(codeLoc, dstEvalVal);
+    return NodeVal(codeLoc, move(dstEvalVal));
 }
 
 optional<EvalVal> Evaluator::makeArray(TypeTable::Id arrTypeId) {

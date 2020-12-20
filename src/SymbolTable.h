@@ -62,6 +62,7 @@ private:
 
     // Do NOT guarantee pointer stability of blocks.
     std::vector<BlockInternal> globalBlockChain;
+    // TODO doesn't need all of the data from Func/MacroValue
     std::vector<std::pair<std::variant<FuncValue, MacroValue>, std::vector<BlockInternal>>> localBlockChains;
 
     void newBlock(Block b);

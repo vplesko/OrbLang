@@ -21,8 +21,8 @@ NodeVal Processor::processNode(const NodeVal &node) {
         else ret = processNonLeaf(procAttrs);
         if (ret.isInvalid()) return NodeVal();
 
-        if (procAttrs.hasTypeAttr()) ret.setTypeAttr(procAttrs.getTypeAttr());
-        if (procAttrs.hasNonTypeAttrs()) ret.setNonTypeAttrs(procAttrs.getNonTypeAttrs());
+        if (procAttrs.hasTypeAttr()) ret.setTypeAttr(move(procAttrs.getTypeAttr()));
+        if (procAttrs.hasNonTypeAttrs()) ret.setNonTypeAttrs(move(procAttrs.getNonTypeAttrs()));
         return ret;
     } else {
         if (NodeVal::isLeaf(node, typeTable)) return processLeaf(node);
@@ -201,7 +201,7 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
         evalTy.ty = tupTypeId.value();
     }
 
-    return NodeVal(node.getCodeLoc(), evalTy);
+    return NodeVal(node.getCodeLoc(), move(evalTy));
 }
 
 NodeVal Processor::processId(const NodeVal &node) {
@@ -220,12 +220,12 @@ NodeVal Processor::processId(const NodeVal &node) {
         EvalVal eval;
         eval.id = id;
 
-        return NodeVal(node.getCodeLoc(), eval);
+        return NodeVal(node.getCodeLoc(), move(eval));
     } else if (typeTable->isType(id)) {
         EvalVal eval = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
         eval.ty = typeTable->getTypeId(id).value();
 
-        return NodeVal(node.getCodeLoc(), eval);
+        return NodeVal(node.getCodeLoc(), move(eval));
     } else {
         msgs->errorSymNotFound(node.getCodeLoc(), id);
         return NodeVal();
@@ -630,7 +630,7 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
     return evaluator->performInvoke(node.getCodeLoc(), *macroVal, args);
 }
 
-// TODO allow function definition after declaration
+// TODO+ allow function definition after declaration
 NodeVal Processor::processFnc(const NodeVal &node) {
     if (!checkInGlobalScope(node.getCodeLoc(), true) ||
         !checkBetweenChildren(node, 4, 5, true)) {
@@ -896,7 +896,7 @@ NodeVal Processor::processTypeOf(const NodeVal &node) {
 
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
     evalVal.ty = operand.getType().value();
-    return NodeVal(node.getCodeLoc(), evalVal);
+    return NodeVal(node.getCodeLoc(), move(evalVal));
 }
 
 NodeVal Processor::processLenOf(const NodeVal &node) {
@@ -921,7 +921,7 @@ NodeVal Processor::processLenOf(const NodeVal &node) {
 
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_U64), typeTable);
     evalVal.u64 = len;
-    return NodeVal(node.getCodeLoc(), evalVal);
+    return NodeVal(node.getCodeLoc(), move(evalVal));
 }
 
 NodeVal Processor::processSizeOf(const NodeVal &node) {
@@ -940,7 +940,7 @@ NodeVal Processor::processSizeOf(const NodeVal &node) {
 
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_U64), typeTable);
     evalVal.u64 = size.value();
-    return NodeVal(node.getCodeLoc(), evalVal);
+    return NodeVal(node.getCodeLoc(), move(evalVal));
 }
 
 NodeVal Processor::processIsDef(const NodeVal &node) {
@@ -953,7 +953,7 @@ NodeVal Processor::processIsDef(const NodeVal &node) {
 
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_BOOL), typeTable);
     evalVal.b = symbolTable->isVarName(id) || symbolTable->isFuncName(id) || symbolTable->isMacroName(id);
-    return NodeVal(node.getCodeLoc(), evalVal);
+    return NodeVal(node.getCodeLoc(), move(evalVal));
 }
 
 NodeVal Processor::processAttrOf(const NodeVal &node) {
@@ -1002,7 +1002,7 @@ NodeVal Processor::processAttrIsDef(const NodeVal &node) {
 
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_BOOL), typeTable);
     evalVal.b = attrIsDef;
-    return NodeVal(node.getCodeLoc(), evalVal);
+    return NodeVal(node.getCodeLoc(), move(evalVal));
 }
 
 // not able to fail, only to not find
@@ -1087,7 +1087,7 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
         NodeVal nodeTy = node.getTypeAttr();
         TypeTable::Id ty = nodeTy.getEvalVal().ty;
 
-        if (!EvalVal::isImplicitCastable(eval, ty, stringPool, typeTable)) {
+        if (!EvalVal::isImplicitCastable(prom.getEvalVal(), ty, stringPool, typeTable)) {
             msgs->errorExprCannotPromote(node.getCodeLoc(), ty);
             return NodeVal();
         }
@@ -1418,6 +1418,7 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
     if (base.isInvalid()) return NodeVal();
 
     for (size_t i = 1; i < opers.size(); ++i) {
+        // TODO remove this behaviour?
         if (typeTable->worksAsTypeP(base.getType().value())) {
             base = dispatchOperUnaryDeref(base.getCodeLoc(), base);
             if (base.isInvalid()) return NodeVal();
