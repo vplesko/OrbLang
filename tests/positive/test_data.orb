@@ -16,7 +16,7 @@ eval (fnc makePoint2 (x:i32 y:i32) Point2 {
     ret p;
 });
 
-eval (sym (MyPoint2:(type cn)::custom Point2));
+custom myPoint2 Point2;
 
 data Point3;
 data Point3;
@@ -55,7 +55,7 @@ fnc main () () {
         println_i32 (. p x);
     };
     block {
-        sym p:MyPoint2;
+        sym p:myPoint2;
         = (. p x) 101;
         println_i32 (. p x);
     };

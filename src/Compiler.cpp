@@ -902,7 +902,6 @@ llvm::Type* Compiler::makeLlvmType(TypeTable::Id typeId) {
 
         llvmType = llvm::StructType::get(llvmContext, memberTypes);
     } else if (typeTable->isCustom(typeId)) {
-        // TODO! test promote of custom
         llvmType = makeLlvmType(typeTable->getCustom(typeId).type);
         if (llvmType == nullptr) return nullptr;
     } else if (typeTable->isDataType(typeId)) {

@@ -148,6 +148,13 @@ pass
 	if name given, exits that block, otherwise innermost enclosing block
 	has to be retting block
 
+custom
+	custom name val
+	declares a custom type
+	name is id, val is type
+	same type as val, but restricts impl cast
+	global only
+
 data
 	data name OR data name membs
 	first declares, second defines a data type

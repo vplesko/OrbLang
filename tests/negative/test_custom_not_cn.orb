@@ -1,3 +1,0 @@
-eval (sym (t::custom i32));
-
-fnc main () () {};

@@ -40,6 +40,7 @@ private:
 public:
     // Invalid node
     NodeVal();
+    // Valid node
     NodeVal(CodeLoc codeLoc);
     NodeVal(CodeLoc codeLoc, StringPool::Id import);
     NodeVal(CodeLoc codeLoc, const LiteralVal &val);
@@ -52,6 +53,8 @@ public:
 
     NodeVal(NodeVal &&other) = default;
     NodeVal& operator=(NodeVal &&other) = default;
+
+    static NodeVal makeEmpty(CodeLoc codeLoc, TypeTable *typeTable);
 
     CodeLoc getCodeLoc() const { return codeLoc; }
     bool isEscaped() const;
@@ -102,7 +105,6 @@ public:
     static bool isLeaf(const NodeVal &node, const TypeTable *typeTable);
     static bool isRawVal(const NodeVal &node, const TypeTable *typeTable);
 
-    static NodeVal makeEmpty(CodeLoc codeLoc, TypeTable *typeTable);
     static void escape(NodeVal &node, const TypeTable *typeTable, EscapeScore amount = 1);
     static void unescape(NodeVal &node, const TypeTable *typeTable);
 

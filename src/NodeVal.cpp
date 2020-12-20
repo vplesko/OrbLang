@@ -58,6 +58,11 @@ NodeVal& NodeVal::operator=(const NodeVal &other) {
     return *this;
 }
 
+NodeVal NodeVal::makeEmpty(CodeLoc codeLoc, TypeTable *typeTable) {
+    EvalVal emptyRaw = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_RAW), typeTable);
+    return NodeVal(codeLoc, emptyRaw);
+}
+
 bool NodeVal::isEscaped() const {
     return (isLiteralVal() && getLiteralVal().isEscaped()) ||
         (isEvalVal() && getEvalVal().isEscaped());
@@ -110,11 +115,6 @@ bool NodeVal::isLeaf(const NodeVal &node, const TypeTable *typeTable) {
 
 bool NodeVal::isRawVal(const NodeVal &node, const TypeTable *typeTable) {
     return node.isEvalVal() && EvalVal::isRaw(node.getEvalVal(), typeTable);
-}
-
-NodeVal NodeVal::makeEmpty(CodeLoc codeLoc, TypeTable *typeTable) {
-    EvalVal emptyRaw = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_RAW), typeTable);
-    return NodeVal(codeLoc, emptyRaw);
 }
 
 void NodeVal::escape(NodeVal &node, const TypeTable *typeTable, EscapeScore amount) {

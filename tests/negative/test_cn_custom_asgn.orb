@@ -1,4 +1,4 @@
-eval (sym (t:(type cn)::custom (i32 cn)));
+custom t (i32 cn);
 
 fnc main () () {
     sym (a:t (cast t 0));

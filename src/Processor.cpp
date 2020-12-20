@@ -86,6 +86,8 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
                 return processLoop(node);
             case Keyword::PASS:
                 return processPass(node);
+            case Keyword::CUSTOM:
+                return processCustom(node);
             case Keyword::DATA:
                 return processData(node);
             case Keyword::FNC:
@@ -266,27 +268,6 @@ NodeVal Processor::processSym(const NodeVal &node) {
             const NodeVal &nodeInit = entry.getChild(1);
             NodeVal init = hasType ? processAndImplicitCast(nodeInit, optType.value()) : processNode(nodeInit);
             if (init.isInvalid()) continue;
-
-            // TODO! move to a separate keyword
-            if (getAttribute(pair.first, "custom").has_value()) {
-                if (!checkInGlobalScope(entry.getCodeLoc(), true)) continue;
-                if (!checkIsType(init, true)) return NodeVal();
-                if (!typeTable->isDirectCn(init.getType().value())) {
-                    msgs->errorUnknown(entry.getCodeLoc());
-                    return NodeVal();
-                }
-
-                TypeTable::Custom custom;
-                custom.name = id;
-                custom.type = init.getEvalVal().ty;
-                optional<TypeTable::Id> typeId = typeTable->addCustom(custom);
-                if (!typeId.has_value()) {
-                    msgs->errorUnknown(entry.getCodeLoc());
-                    return NodeVal();
-                }
-
-                init.getEvalVal().ty = typeId.value();
-            }
 
             NodeVal nodeReg = performRegister(entry.getCodeLoc(), id, init);
             if (nodeReg.isInvalid()) continue;
@@ -504,6 +485,35 @@ NodeVal Processor::processPass(const NodeVal &node) {
     if (nodeValue.isInvalid()) return NodeVal();
 
     if (!performPass(node.getCodeLoc(), *targetBlock, nodeValue)) return NodeVal();
+    return NodeVal(node.getCodeLoc());
+}
+
+NodeVal Processor::processCustom(const NodeVal &node) {
+    if (!checkInGlobalScope(node.getCodeLoc(), true)) return NodeVal();
+    if (!checkExactlyChildren(node, 3, true)) return NodeVal();
+
+    NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(1));
+    if (nodeName.isInvalid()) return NodeVal();
+    NamePool::Id name = nodeName.getEvalVal().id;
+    if (!symbolTable->nameAvailable(name, namePool, typeTable)) {
+        msgs->errorUnknown(nodeName.getCodeLoc());
+        return NodeVal();
+    }
+
+    NodeVal nodeTy = processNode(node.getChild(2));
+    if (nodeTy.isInvalid()) return NodeVal();
+    if (!checkIsType(nodeTy, true)) return NodeVal();
+    TypeTable::Id ty = nodeTy.getEvalVal().ty;
+
+    TypeTable::Custom custom;
+    custom.name = name;
+    custom.type = ty;
+    optional<TypeTable::Id> typeId = typeTable->addCustom(custom);
+    if (!typeId.has_value()) {
+        msgs->errorUnknown(node.getCodeLoc());
+        return NodeVal();
+    }
+
     return NodeVal(node.getCodeLoc());
 }
 

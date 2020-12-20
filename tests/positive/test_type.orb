@@ -1,15 +1,14 @@
 import "util/io.orb";
 
-eval (sym
-    (myI32:(type cn)::custom i32)
-    (myI32Cn:(type cn)::custom (i32 cn))
-    (myI64Cn:(type cn)::custom (i64 cn))
-    (myI32Arr:(type cn)::custom (i32 4))
-    (myI32P:(type cn)::custom (i32 *))
-    (myI32ArrP:(type cn)::custom (i32 []))
-    (myI32Tup:(type cn)::custom (i32 i32))
-    (myMyI32P:(type cn)::custom (myI32 *))
-    (myRaw:(type cn)::custom raw));
+custom myI32 i32;
+custom myI32Cn (i32 cn);
+custom myI64Cn (i64 cn);
+custom myI32Arr (i32 4);
+custom myI32P (i32 *);
+custom myI32ArrP (i32 []);
+custom myI32Tup (i32 i32);
+custom myMyI32P (myI32 *);
+custom myRaw raw;
 
 fnc main () () {
     sym p:i32;
