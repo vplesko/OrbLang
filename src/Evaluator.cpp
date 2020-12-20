@@ -214,7 +214,8 @@ bool Evaluator::performMacroDefinition(const NodeVal &args, const NodeVal &body,
 }
 
 bool Evaluator::performRet(CodeLoc codeLoc) {
-    if (symbolTable->getCurrFunc().has_value() && !symbolTable->getCurrFunc().value().isEval()) {
+    optional<SymbolTable::CalleeValueInfo> callee = symbolTable->getCurrCallee();
+    if (callee.has_value() && !callee.value().isEval) {
         msgs->errorEvaluationNotSupported(codeLoc);
         return false;
     }

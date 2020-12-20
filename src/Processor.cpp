@@ -759,24 +759,27 @@ NodeVal Processor::processRet(const NodeVal &node) {
         return NodeVal();
     }
 
-    optional<FuncValue> optFuncValue = symbolTable->getCurrFunc();
-    optional<MacroValue> optMacroValue = symbolTable->getCurrMacro();
+    optional<SymbolTable::CalleeValueInfo> optCallee = symbolTable->getCurrCallee();
+    if (!optCallee.has_value()) {
+        msgs->errorUnknown(node.getCodeLoc());
+        return NodeVal();
+    }
 
-    if (optFuncValue.has_value()) {
+    if (optCallee.value().isFunc) {
         bool retsVal = node.getChildrenCnt() == 2;
         if (retsVal) {
-            if (!optFuncValue.value().hasRet()) {
+            if (!optCallee.value().retType.has_value()) {
                 msgs->errorUnknown(node.getCodeLoc());
                 return NodeVal();
             }
 
-            NodeVal val = processAndImplicitCast(node.getChild(1), optFuncValue.value().retType.value());
+            NodeVal val = processAndImplicitCast(node.getChild(1), optCallee.value().retType.value());
             if (val.isInvalid()) return NodeVal();
 
             if (!performRet(node.getCodeLoc(), val)) return NodeVal();
         } else {
-            if (optFuncValue.value().hasRet()) {
-                msgs->errorRetNoValue(node.getCodeLoc(), optFuncValue.value().retType.value());
+            if (optCallee.value().retType.has_value()) {
+                msgs->errorRetNoValue(node.getCodeLoc(), optCallee.value().retType.value());
                 return NodeVal();
             }
 
@@ -784,7 +787,7 @@ NodeVal Processor::processRet(const NodeVal &node) {
         }
 
         return NodeVal(node.getCodeLoc());
-    } else if (optMacroValue.has_value()) {
+    } else {
         if (!checkExactlyChildren(node, 2, true)) return NodeVal();
 
         NodeVal val = processNode(node.getChild(1));
@@ -793,9 +796,6 @@ NodeVal Processor::processRet(const NodeVal &node) {
         if (!performRet(node.getCodeLoc(), val)) return NodeVal();
 
         return NodeVal(node.getCodeLoc());
-    } else {
-        msgs->errorUnknown(node.getCodeLoc());
-        return NodeVal();
     }
 }
 

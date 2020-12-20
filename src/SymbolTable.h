@@ -46,6 +46,22 @@ public:
         bool isEval() const { return blockExit == nullptr && blockLoop == nullptr && phi == nullptr; }
     };
 
+    struct CalleeValueInfo {
+        bool isFunc, isEval;
+        std::optional<TypeTable::Id> retType;
+
+        explicit CalleeValueInfo(const FuncValue &func) {
+            isFunc = true;
+            isEval = func.isEval();
+            retType = func.retType;
+        }
+
+        explicit CalleeValueInfo(const MacroValue &macro) {
+            isFunc = false;
+            isEval = true;
+        }
+    };
+
 private:
     struct BlockInternal {
         Block block;
@@ -62,8 +78,7 @@ private:
 
     // Do NOT guarantee pointer stability of blocks.
     std::vector<BlockInternal> globalBlockChain;
-    // TODO doesn't need all of the data from Func/MacroValue
-    std::vector<std::pair<std::variant<FuncValue, MacroValue>, std::vector<BlockInternal>>> localBlockChains;
+    std::vector<std::pair<CalleeValueInfo, std::vector<BlockInternal>>> localBlockChains;
 
     void newBlock(Block b);
     void newBlock(const FuncValue &f);
@@ -92,8 +107,7 @@ public:
     const Block* getBlock(NamePool::Id name) const;
     Block* getBlock(NamePool::Id name);
 
-    std::optional<FuncValue> getCurrFunc() const;
-    std::optional<MacroValue> getCurrMacro() const;
+    std::optional<CalleeValueInfo> getCurrCallee() const;
 
     bool isVarName(NamePool::Id name) const { return getVar(name) != nullptr; }
     bool isFuncName(NamePool::Id name) const;

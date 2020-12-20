@@ -15,11 +15,11 @@ void SymbolTable::newBlock(Block b) {
 }
 
 void SymbolTable::newBlock(const FuncValue &f) {
-    localBlockChains.push_back(make_pair(f, vector<BlockInternal>(1, BlockInternal())));
+    localBlockChains.push_back(make_pair(CalleeValueInfo(f), vector<BlockInternal>(1, BlockInternal())));
 }
 
 void SymbolTable::newBlock(const MacroValue &m) {
-    localBlockChains.push_back(make_pair(m, vector<BlockInternal>(1, BlockInternal())));
+    localBlockChains.push_back(make_pair(CalleeValueInfo(m), vector<BlockInternal>(1, BlockInternal())));
 }
 
 void SymbolTable::endBlock() {
@@ -156,16 +156,9 @@ SymbolTable::Block* SymbolTable::getBlock(NamePool::Id name) {
     return nullptr;
 }
 
-optional<FuncValue> SymbolTable::getCurrFunc() const {
+optional<SymbolTable::CalleeValueInfo> SymbolTable::getCurrCallee() const {
     if (localBlockChains.empty()) return nullopt;
-    if (const FuncValue *p = get_if<FuncValue>(&localBlockChains.back().first)) return *p;
-    return nullopt;
-}
-
-optional<MacroValue> SymbolTable::getCurrMacro() const {
-    if (localBlockChains.empty()) return nullopt;
-    if (const MacroValue *p = get_if<MacroValue>(&localBlockChains.back().first)) return *p;
-    return nullopt;
+    return localBlockChains.back().first;
 }
 
 bool SymbolTable::isFuncName(NamePool::Id name) const {
