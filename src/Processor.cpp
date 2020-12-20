@@ -248,19 +248,17 @@ NodeVal Processor::processSym(const NodeVal &node) {
         const NodeVal &entry = processWithEscape(node.getChild(i));
         if (entry.isInvalid()) return NodeVal();
 
-        // continue with the other sym entries to minimize the number of errors printed out
-        // TODO don't do that, it doesn't help much
-        if (!NodeVal::isLeaf(entry, typeTable) && !checkBetweenChildren(entry, 1, 2, true)) continue;
+        if (!NodeVal::isLeaf(entry, typeTable) && !checkBetweenChildren(entry, 1, 2, true)) return NodeVal();
 
         bool hasInit = checkExactlyChildren(entry, 2, false);
 
         const NodeVal &nodePair = NodeVal::isLeaf(entry, typeTable) ? entry : entry.getChild(0);
         pair<NodeVal, optional<NodeVal>> pair = processForIdTypePair(nodePair);
-        if (pair.first.isInvalid()) continue;
+        if (pair.first.isInvalid()) return NodeVal();
         NamePool::Id id = pair.first.getEvalVal().id;
         if (!symbolTable->nameAvailable(id, namePool, typeTable)) {
             msgs->errorSymNameTaken(nodePair.getCodeLoc(), id);
-            continue;
+            return NodeVal();
         }
         optional<TypeTable::Id> optType;
         if (pair.second.has_value()) optType = pair.second.value().getEvalVal().ty;
@@ -270,27 +268,27 @@ NodeVal Processor::processSym(const NodeVal &node) {
         if (hasInit) {
             const NodeVal &nodeInit = entry.getChild(1);
             NodeVal init = hasType ? processAndImplicitCast(nodeInit, optType.value()) : processNode(nodeInit);
-            if (init.isInvalid()) continue;
+            if (init.isInvalid()) return NodeVal();
 
             NodeVal nodeReg = performRegister(entry.getCodeLoc(), id, init);
-            if (nodeReg.isInvalid()) continue;
+            if (nodeReg.isInvalid()) return NodeVal();
 
             symbolTable->addVar(id, move(nodeReg));
         } else {
             if (!hasType) {
                 msgs->errorMissingTypeAttribute(nodePair.getCodeLoc());
-                continue;
+                return NodeVal();
             }
             if (typeTable->worksAsTypeCn(optType.value())) {
                 msgs->errorUnknown(entry.getCodeLoc());
-                continue;
+                return NodeVal();
             }
 
             NodeVal nodeZero = performZero(entry.getCodeLoc(), optType.value());
-            if (nodeZero.isInvalid()) continue;
+            if (nodeZero.isInvalid()) return NodeVal();
 
             NodeVal nodeReg = performRegister(entry.getCodeLoc(), id, nodeZero);
-            if (nodeReg.isInvalid()) continue;
+            if (nodeReg.isInvalid()) return NodeVal();
 
             symbolTable->addVar(id, move(nodeReg));
         }
