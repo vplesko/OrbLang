@@ -13,6 +13,9 @@ NodeVal::NodeVal(CodeLoc codeLoc, StringPool::Id import) : codeLoc(codeLoc), kin
 NodeVal::NodeVal(CodeLoc codeLoc, LiteralVal val) : codeLoc(codeLoc), kind(Kind::kLiteral), value(val) {
 }
 
+NodeVal::NodeVal(CodeLoc codeLoc, SpecialVal val) : codeLoc(codeLoc), kind(Kind::kSpecial), value(val) {
+}
+
 NodeVal::NodeVal(CodeLoc codeLoc, AttrMap val) : codeLoc(codeLoc), kind(Kind::kAttrMap), value(move(val)) {
 }
 
@@ -35,6 +38,7 @@ void NodeVal::copyFrom(const NodeVal &other) {
 
     if (other.isImport()) value = other.getImportFile();
     else if (other.isLiteralVal()) value = other.getLiteralVal();
+    else if (other.isSpecialVal()) value = other.getSpecialVal();
     else if (other.isEvalVal()) value = other.getEvalVal();
     else if (other.isLlvmVal()) value = other.getLlvmVal();
     else if (other.isAttrMap()) copyAttrMap(other.getAttrMap());

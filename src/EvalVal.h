@@ -12,6 +12,7 @@ class SymbolTable;
 
 struct EvalVal {
     // type of this evaluation value
+    // TODO+ remove optional after no longer needed
     std::optional<TypeTable::Id> type;
     union {
         std::int8_t i8;
@@ -27,7 +28,6 @@ struct EvalVal {
         char c8;
         bool b;
         std::optional<StringPool::Id> str;
-        // TODO move specials to NodeVal
         NamePool::Id id;
         // contains type value in case this is type or type cn
         TypeTable::Id ty;
@@ -47,7 +47,7 @@ struct EvalVal {
     bool isEscaped() const { return escapeScore > 0; }
 
     // if is callable, type is meaningless
-    // TODO after callables (fncs, macs) are first-class, rework that
+    // TODO+ after callables (fncs, macs) are first-class, rework that
     bool isCallable() const { return !type.has_value(); }
     std::optional<NamePool::Id> getCallableId() const;
 

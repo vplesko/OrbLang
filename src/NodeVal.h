@@ -6,6 +6,7 @@
 #include <variant>
 #include "CodeLoc.h"
 #include "LiteralVal.h"
+#include "SpecialVal.h"
 #include "EvalVal.h"
 #include "LlvmVal.h"
 
@@ -19,6 +20,7 @@ private:
         kValid,
         kImport,
         kLiteral,
+        kSpecial,
         kAttrMap,
         kEval,
         kLlvm
@@ -27,7 +29,7 @@ private:
     CodeLoc codeLoc;
 
     Kind kind;
-    std::variant<StringPool::Id, LiteralVal, AttrMap, LlvmVal, EvalVal> value;
+    std::variant<StringPool::Id, LiteralVal, SpecialVal, AttrMap, LlvmVal, EvalVal> value;
     std::unique_ptr<NodeVal> typeAttr, nonTypeAttrs;
 
     void copyAttrMap(const AttrMap &a);
@@ -40,6 +42,7 @@ public:
     NodeVal(CodeLoc codeLoc);
     NodeVal(CodeLoc codeLoc, StringPool::Id import);
     NodeVal(CodeLoc codeLoc, LiteralVal val);
+    NodeVal(CodeLoc codeLoc, SpecialVal val);
     NodeVal(CodeLoc codeLoc, AttrMap val);
     NodeVal(CodeLoc codeLoc, EvalVal val);
     NodeVal(CodeLoc codeLoc, LlvmVal val);
@@ -67,6 +70,10 @@ public:
     bool isLiteralVal() const { return kind == Kind::kLiteral; }
     LiteralVal& getLiteralVal() { return std::get<LiteralVal>(value); }
     const LiteralVal& getLiteralVal() const { return std::get<LiteralVal>(value); }
+
+    bool isSpecialVal() const { return kind == Kind::kSpecial; }
+    SpecialVal& getSpecialVal() { return std::get<SpecialVal>(value); }
+    const SpecialVal& getSpecialVal() const { return std::get<SpecialVal>(value); }
 
     bool isAttrMap() const { return kind == Kind::kAttrMap; }
     AttrMap& getAttrMap() { return std::get<AttrMap>(value); }

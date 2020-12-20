@@ -69,9 +69,8 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
         return processCall(node, starting);
     }
 
-    optional<NamePool::Id> callName = starting.isEvalVal() ? starting.getEvalVal().getCallableId() : nullopt;
-    if (callName.has_value()) {
-        optional<Keyword> keyw = getKeyword(starting.getEvalVal().id);
+    if (starting.isSpecialVal()) {
+        optional<Keyword> keyw = getKeyword(starting.getSpecialVal().id);
         if (keyw.has_value()) {
             switch (keyw.value()) {
             case Keyword::SYM:
@@ -120,7 +119,7 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
             }
         }
 
-        optional<Oper> op = getOper(starting.getEvalVal().id);
+        optional<Oper> op = getOper(starting.getSpecialVal().id);
         if (op.has_value()) {
             return processOper(node, op.value());
         }
@@ -215,8 +214,12 @@ NodeVal Processor::processId(const NodeVal &node) {
         } else {
             return performLoad(node.getCodeLoc(), id, *value);
         }
-    } else if (symbolTable->isFuncName(id) || symbolTable->isMacroName(id) ||
-        isKeyword(id) || isOper(id)) {
+    } else if (isKeyword(id) || isOper(id)) {
+        SpecialVal spec;
+        spec.id = id;
+
+        return NodeVal(node.getCodeLoc(), spec);
+    } else if (symbolTable->isFuncName(id) || symbolTable->isMacroName(id)) {
         EvalVal eval;
         eval.id = id;
 
