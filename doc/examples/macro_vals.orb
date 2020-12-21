@@ -1,0 +1,28 @@
+import "base.orb";
+
+fnc printf(fmt:(c8 cn []) ...) ();
+
+mac likeThis (times what) {
+    sym (r {});
+    range i times {
+        = r (+ r \{ ,what });
+    };
+    ret \(block ,r);
+};
+
+mac likeThat (times what) {
+    ret \(range i ,times { ,what });
+};
+
+eval (fnc doIt (start:i32 times:u32 what:raw how:(mac (a b))) i32 {
+    sym (x start);
+    how ,times ,what;
+    ret x;
+});
+
+fnc main () () {
+    printf "%d\n" (doIt 1 10 \(= x (* 2 x)) likeThis); # 1024
+    printf "%d\n" (doIt 1 10 \(= x (* 2 x)) likeThat);
+    printf "%d\n" (doIt 1 10 \(= x (+ 2 x)) likeThis); # 21
+    printf "%d\n" (doIt 1 10 \(= x (+ 2 x)) likeThat);
+};

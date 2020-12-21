@@ -3,9 +3,9 @@ import "base.orb";
 fnc printf(fmt:(c8 cn []) ...) ();
 
 eval (mac sayHellos (cnt) {
-    sym (r ());
+    sym (r {});
     range i cnt {
-        = r (+ r \((printf "Hello!\n")));
+        = r (+ r \{ printf "Hello!\n"; });
     };
     ret \(block ,r);
 });

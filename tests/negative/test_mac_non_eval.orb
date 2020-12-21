@@ -1,5 +1,0 @@
-mac foo () {
-    ret ();
-};
-
-fnc main () () {};

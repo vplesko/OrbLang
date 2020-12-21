@@ -1,62 +1,113 @@
 import "util/io.orb";
 
-eval (mac m1 () {
+mac m1 () {
     ret ();
-});
+};
 
-eval (mac m2 (a b) {
+mac m2 (a b) {
     ret \(,a ,b);
-});
+};
 
-eval (mac m3 (a) {
+mac m3 (a) {
     ret \(m2 println_i32 ,a);
-});
+};
 
-eval (mac m4 (a b) {
+mac m4 (a b) {
     m2 sym (x ,a);
     ret \(,x ,b);
-});
+};
 
-eval (mac ++ (a) {
+mac ++ (a) {
     ret \(= ,a (+ ,a 1));
-});
+};
 
-eval (mac passthrough (a) {
+mac passthrough (a) {
     ret ,a;
-});
+};
 
-eval (mac getSecond (r) {
+mac getSecond (r) {
     ret (. r 1);
-});
+};
 
-eval (mac say (x) {
+mac say (x) {
     sym (r ());
     passthrough (= r \(println_i32 ,x));
     ret r;
+};
+
+eval (sym (glob:(mac (p)) ++));
+
+custom MyMac (mac (p));
+
+eval (fnc invokeAndRet (x:i32 m:MyMac) i32 {
+    ret (m ,x);
 });
 
 fnc main () () {
-    m1;
-    m2 println_i32 100;
-    m2 println_i32 (+ 100 1);
-    m2 println_i32 ,(+ 100 2);
-    m2 ,println_i32 (+ 100 3);
-    sym (x 104);
-    m2 println_i32 ,x;
-    m2 println_i32 (m2 + 105);
-    m3 106;
-    m4 println_i32 107;
-    = x 107;
-    ++ x;
-    println_i32 x;
-    println_i32 (++ x);
-    = x 0;
-    = (++ x) 110;
-    println_i32 x;
-    println_i32 (passthrough 111);
-    = x 112;
-    println_i32 (passthrough ,x);
-    = x 113;
-    println_i32 (getSecond \(-1 ,x));
-    say 114;
+    block {
+        m1;
+        m2 println_i32 100;
+        m2 println_i32 (+ 100 1);
+        m2 println_i32 ,(+ 100 2);
+        m2 ,println_i32 (+ 100 3);
+        sym (x 104);
+        m2 println_i32 ,x;
+        m2 println_i32 (m2 + 105);
+        m3 106;
+        m4 println_i32 107;
+        = x 107;
+        ++ x;
+        println_i32 x;
+        println_i32 (++ x);
+        = x 0;
+        = (++ x) 110;
+        println_i32 x;
+        println_i32 (passthrough 111);
+        = x 112;
+        println_i32 (passthrough ,x);
+        = x 113;
+        println_i32 (getSecond \(-1 ,x));
+        say 114;
+    };
+
+    block {
+        sym (x 199);
+        println_i32 (glob ,x);
+        println_i32 (glob x);
+        = glob passthrough;
+        = x 202;
+        println_i32 (glob ,x);
+
+        eval (sym (c0:(mac (p))));
+        println_i32 (+ 203 (cast i32 (cast ptr c0)));
+        = c0 ++;
+        c0 x;
+        println_i32 (c0 x);
+        = c0 passthrough;
+        = x 205;
+        println_i32 (c0 ,x);
+        = c0 null;
+        println_i32 (+ 206 (cast i32 (cast (i32 *) c0)));
+
+        eval (sym (c1:((mac (p)) cn) c0));
+        println_i32 (+ 207 (cast i32 (!= c0 c1)));
+        = c0 ++;
+        println_i32 (+ 207 (cast i32 (!= c0 c1)));
+        println_i32 (+ 209 (cast i32 (== c0 c1)));
+        = c0 c1;
+        println_i32 (+ 209 (cast i32 (== c0 c1)));
+        = c0 (cast (typeOf c0) (cast (i32 *) null));
+
+        println_i32 ((* (& passthrough)) 211);
+
+        println_i32 (+ 212 (cast i32 (== (typeOf c0) (typeOf c1))));
+        println_i32 (+ 212 (cast i32 (== ((mac (p)) cn) (typeOf c1))));
+
+        eval (sym (c2:MyMac));
+        = c2 (cast MyMac passthrough);
+        println_i32 (c2 214);
+
+        println_i32 (invokeAndRet 215 c2);
+        println_i32 (invokeAndRet 215 (cast MyMac ++));
+    };
 };

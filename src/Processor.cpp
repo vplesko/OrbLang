@@ -50,7 +50,7 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
     NodeVal starting = processNode(node.getChild(0));
     if (starting.isInvalid()) return NodeVal();
 
-    if (starting.isEvalVal() && EvalVal::isMacro(starting.getEvalVal(), symbolTable)) {
+    if (starting.isEvalVal() && EvalVal::isMacro(starting.getEvalVal(), typeTable)) {
         NodeVal invoked = processInvoke(node, starting);
         if (invoked.isInvalid()) return NodeVal();
 
@@ -205,9 +205,9 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
 
 NodeVal Processor::processId(const NodeVal &node) {
     NamePool::Id id = node.getEvalVal().id;
-    
+
     NodeVal *value = symbolTable->getVar(id);
-    
+
     if (value != nullptr) {
         if (checkIsEvalTime(*value, false)) {
             return evaluator->performLoad(node.getCodeLoc(), id, *value);
@@ -219,7 +219,7 @@ NodeVal Processor::processId(const NodeVal &node) {
         spec.id = id;
 
         return NodeVal(node.getCodeLoc(), spec);
-    } else if (symbolTable->isFuncName(id) || symbolTable->isMacroName(id)) {
+    } else if (symbolTable->isFuncName(id)) {
         EvalVal eval;
         eval.id = id;
 
@@ -575,7 +575,7 @@ NodeVal Processor::processData(const NodeVal &node) {
 }
 
 NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
-    NamePool::Id name = starting.getEvalVal().getCallableId().value();
+    NamePool::Id name = starting.getEvalVal().id;
     const FuncValue *funcVal = symbolTable->getFunction(name);
     if (funcVal == nullptr) {
         msgs->errorFuncNotFound(starting.getCodeLoc(), name);
@@ -607,7 +607,11 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
 }
 
 NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
-    NamePool::Id name = starting.getEvalVal().getCallableId().value();
+    if (!starting.getEvalVal().callId.has_value()) {
+        msgs->errorMacroNoValue(starting.getCodeLoc());
+        return NodeVal();
+    }
+    NamePool::Id name = starting.getEvalVal().callId.value();
     const MacroValue *macroVal = symbolTable->getMacro(name);
     if (macroVal == nullptr) {
         msgs->errorMacroNotFound(starting.getCodeLoc(), name);
@@ -710,24 +714,37 @@ NodeVal Processor::processFnc(const NodeVal &node) {
 }
 
 NodeVal Processor::processMac(const NodeVal &node) {
-    if (!checkInGlobalScope(node.getCodeLoc(), true) ||
-        !checkExactlyChildren(node, 4, true)) {
+    if (!checkExactlyChildren(node, 2, false) && !checkExactlyChildren(node, 4, true)) {
         return NodeVal();
     }
 
-    MacroValue val;
+    bool isType = node.getChildrenCnt() == 2;
+    bool isDefinition = node.getChildrenCnt() == 4;
+
+    if (isDefinition && !checkInGlobalScope(node.getCodeLoc(), true)) {
+        return NodeVal();
+    }
+
+    // mac args OR mac name args body
+    size_t indName = isDefinition ? 1 : 0;
+    size_t indArgs = isType ? 1 : 2;
+    size_t indBody = isDefinition ? 3 : 0;
 
     // name
-    NodeVal name = processWithEscapeAndCheckIsId(node.getChild(1));
-    if (name.isInvalid()) return NodeVal();
-    if (!symbolTable->nameAvailable(name.getEvalVal().id, namePool, typeTable)) {
-        msgs->errorMacroNameTaken(name.getCodeLoc(), name.getEvalVal().id);
-        return NodeVal();
+    NamePool::Id name;
+    if (isDefinition) {
+        NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(indName));
+        if (nodeName.isInvalid()) return NodeVal();
+        if (!symbolTable->nameAvailable(nodeName.getEvalVal().id, namePool, typeTable)) {
+            msgs->errorMacroNameTaken(nodeName.getCodeLoc(), nodeName.getEvalVal().id);
+            return NodeVal();
+        }
+        name = nodeName.getEvalVal().id;
     }
-    val.name = name.getEvalVal().id;
 
     // arguments
-    const NodeVal &nodeArgs = processWithEscape(node.getChild(2));
+    vector<NamePool::Id> argNames;
+    const NodeVal &nodeArgs = processWithEscape(node.getChild(indArgs));
     if (nodeArgs.isInvalid()) return NodeVal();
     if (!checkIsRaw(nodeArgs, true)) return NodeVal();
     for (size_t i = 0; i < nodeArgs.getChildrenCnt(); ++i) {
@@ -736,22 +753,52 @@ NodeVal Processor::processMac(const NodeVal &node) {
         NodeVal arg = processWithEscapeAndCheckIsId(nodeArg);
         if (arg.isInvalid()) return NodeVal();
         NamePool::Id argId = arg.getEvalVal().id;
-        val.argNames.push_back(argId);
+        argNames.push_back(argId);
     }
-
     // check no arg name duplicates
-    if (!checkNoArgNameDuplicates(nodeArgs, val.argNames, true)) return NodeVal();
+    if (!checkNoArgNameDuplicates(nodeArgs, argNames, true)) return NodeVal();
 
     // body
-    const NodeVal *nodeBodyPtr = &node.getChild(3);
-    if (!checkIsRaw(*nodeBodyPtr, true)) {
-        return NodeVal();
+    const NodeVal *nodeBodyPtr = nullptr;
+    if (isDefinition) {
+        nodeBodyPtr = &node.getChild(indBody);
+        if (!checkIsRaw(*nodeBodyPtr, true)) {
+            return NodeVal();
+        }
     }
 
-    MacroValue *symbVal = symbolTable->registerMacro(val);
-    if (!performMacroDefinition(nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();
+    // macro type
+    TypeTable::Id type;
+    {
+        TypeTable::Callable callable;
+        callable.isFunc = false;
+        callable.argCnt = argNames.size();
+        optional<TypeTable::Id> typeOpt = typeTable->addCallable(callable);
+        if (!typeOpt.has_value()) {
+            msgs->errorInternal(node.getCodeLoc());
+            return NodeVal();
+        }
+        type = isDefinition ? typeTable->addTypeCnOf(typeOpt.value()) : typeOpt.value();
+    }
 
-    return NodeVal(node.getCodeLoc());
+    if (isDefinition) {
+        MacroValue macroVal;
+        macroVal.type = type;
+        macroVal.name = name;
+        macroVal.argNames = move(argNames);
+
+        MacroValue *symbVal = symbolTable->registerMacro(macroVal);
+        NodeVal nodeMacro = evaluator->performMacroDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal);
+        if (nodeMacro.isInvalid()) return NodeVal();
+
+        symbolTable->addVar(name, nodeMacro);
+
+        return NodeVal(node.getCodeLoc());
+    } else {
+        EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
+        evalVal.ty = type;
+        return NodeVal(node.getCodeLoc(), move(evalVal));
+    }
 }
 
 NodeVal Processor::processRet(const NodeVal &node) {
@@ -953,7 +1000,7 @@ NodeVal Processor::processIsDef(const NodeVal &node) {
     NamePool::Id id = name.getEvalVal().id;
 
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_BOOL), typeTable);
-    evalVal.b = symbolTable->isVarName(id) || symbolTable->isFuncName(id) || symbolTable->isMacroName(id);
+    evalVal.b = symbolTable->isVarName(id) || symbolTable->isFuncName(id);
     return NodeVal(node.getCodeLoc(), move(evalVal));
 }
 

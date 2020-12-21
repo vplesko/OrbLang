@@ -56,22 +56,7 @@ const NodeVal* SymbolTable::getVar(NamePool::Id name) const {
 }
 
 NodeVal* SymbolTable::getVar(NamePool::Id name) {
-    if (!localBlockChains.empty()) {
-        for (auto it = localBlockChains.back().second.rbegin();
-            it != localBlockChains.back().second.rend();
-            ++it) {
-            auto loc = it->vars.find(name);
-            if (loc != it->vars.end()) return &loc->second;
-        }
-    }
-    for (auto it = globalBlockChain.rbegin();
-        it != globalBlockChain.rend();
-        ++it) {
-        auto loc = it->vars.find(name);
-        if (loc != it->vars.end()) return &loc->second;
-    }
-
-    return nullptr;
+    return const_cast<NodeVal*>(const_cast<const SymbolTable*>(this)->getVar(name));
 }
 
 FuncValue* SymbolTable::registerFunc(const FuncValue &val) {
@@ -140,20 +125,7 @@ const SymbolTable::Block* SymbolTable::getBlock(NamePool::Id name) const {
 }
 
 SymbolTable::Block* SymbolTable::getBlock(NamePool::Id name) {
-    if (!localBlockChains.empty()) {
-        for (auto it = localBlockChains.back().second.rbegin();
-            it != localBlockChains.back().second.rend();
-            ++it) {
-            if (it->block.name == name) return &it->block;
-        }
-    }
-    for (auto it = globalBlockChain.rbegin();
-        it != globalBlockChain.rend();
-        ++it) {
-        if (it->block.name == name) return &it->block;
-    }
-
-    return nullptr;
+    return const_cast<SymbolTable::Block*>(const_cast<const SymbolTable*>(this)->getBlock(name));
 }
 
 optional<SymbolTable::CalleeValueInfo> SymbolTable::getCurrCallee() const {
@@ -165,16 +137,12 @@ bool SymbolTable::isFuncName(NamePool::Id name) const {
     return getFunction(name) != nullptr;
 }
 
-bool SymbolTable::isMacroName(NamePool::Id name) const {
-    return getMacro(name) != nullptr;
-}
-
 bool SymbolTable::nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable) const {
     if (isReserved(name) || typeTable->isType(name)) return false;
 
     if (inGlobalScope()) {
         // you can have vars with same name as funcs, except in global
-        if (isFuncName(name) || isMacroName(name)) return false;
+        if (isFuncName(name)) return false;
     }
 
     const BlockInternal *last = getLastBlockInternal();

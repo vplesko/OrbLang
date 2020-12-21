@@ -45,7 +45,4 @@ fnc main () () {
     println_i32 (cast i32 (cast bool nonNullPtr));
 
     println_str (cast (c8 cn []) (block (c8 cn []) { pass "hello"; }));
-
-    cast type i32;
-    cast (type cn) i32;
 };

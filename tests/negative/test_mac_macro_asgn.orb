@@ -1,0 +1,7 @@
+mac foo () {};
+
+mac bar () {};
+
+fnc main () () {
+    eval (= foo bar);
+};

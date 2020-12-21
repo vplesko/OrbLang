@@ -27,6 +27,8 @@ struct FuncValue {
 };
 
 struct MacroValue {
+    TypeTable::Id type;
+
     NamePool::Id name;
     std::vector<NamePool::Id> argNames;
     NodeVal body;
@@ -111,8 +113,7 @@ public:
 
     bool isVarName(NamePool::Id name) const { return getVar(name) != nullptr; }
     bool isFuncName(NamePool::Id name) const;
-    bool isMacroName(NamePool::Id name) const;
-    
+
     bool nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable) const;
 };
 

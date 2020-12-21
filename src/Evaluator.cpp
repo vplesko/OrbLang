@@ -48,8 +48,7 @@ NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::
 
     optional<NodeVal> evalValCast = makeCast(codeLoc, node, node.getEvalVal().type.value(), ty);
     if (!evalValCast.has_value()) {
-        if (EvalVal::isImplicitCastable(node.getEvalVal(), ty, stringPool, typeTable)) {
-            // if it's implicitly castable, it should be castable
+        if (EvalVal::isCastable(node.getEvalVal(), ty, stringPool, typeTable)) {
             msgs->errorInternal(codeLoc);
         } else {
             msgs->errorExprCannotCast(codeLoc, node.getEvalVal().type.value(), ty);
@@ -208,9 +207,13 @@ bool Evaluator::performFunctionDefinition(const NodeVal &args, const NodeVal &bo
     return true;
 }
 
-bool Evaluator::performMacroDefinition(const NodeVal &args, const NodeVal &body, MacroValue &macro) {
+NodeVal Evaluator::performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, MacroValue &macro) {
     macro.body = body;
-    return true;
+
+    EvalVal evalVal = EvalVal::makeVal(macro.type, typeTable);
+    evalVal.callId = macro.name;
+
+    return NodeVal(codeLoc, move(evalVal));
 }
 
 bool Evaluator::performRet(CodeLoc codeLoc) {
@@ -321,6 +324,7 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     bool isTypeB = typeTable->worksAsTypeB(ty);
     bool isTypeId = typeTable->worksAsPrimitive(ty, TypeTable::P_ID);
     bool isTypeTy = typeTable->worksAsPrimitive(ty, TypeTable::P_TYPE);
+    bool isTypeCall = typeTable->worksAsCallable(ty);
 
     optional<int64_t> il, ir;
     optional<uint64_t> ul, ur;
@@ -331,6 +335,7 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     optional<bool> bl, br;
     optional<NamePool::Id> idl, idr;
     optional<TypeTable::Id> tyl, tyr;
+    optional<optional<NamePool::Id>> calll, callr;
     if (isTypeI) {
         il = EvalVal::getValueI(lhs.getEvalVal(), typeTable).value();
         ir = EvalVal::getValueI(rhs.getEvalVal(), typeTable).value();
@@ -362,6 +367,9 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     } else if (isTypeTy) {
         tyl = lhs.getEvalVal().ty;
         tyr = rhs.getEvalVal().ty;
+    } else if (isTypeCall) {
+        calll = lhs.getEvalVal().callId;
+        callr = rhs.getEvalVal().callId;
     }
 
     switch (op) {
@@ -393,6 +401,9 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
         } else if (isTypeTy) {
             result->result = tyl.value()==tyr.value();
             return !result->result;
+        } else if (isTypeCall) {
+            result->result = calll.value()==callr.value();
+            return !result->result;            
         }
         break;
     case Oper::NE:
@@ -423,6 +434,9 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
         } else if (isTypeTy) {
             result->result = tyl.value()!=tyr.value();
             return !result->result;
+        } else if (isTypeCall) {
+            result->result = calll.value()!=callr.value();
+            return !result->result;            
         }
         break;
     case Oper::LT:
@@ -757,7 +771,6 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
             !assignBasedOnTypeC(dstEvalVal, (char) x, dstTypeId) &&
             !assignBasedOnTypeB(dstEvalVal, (bool) x, dstTypeId) &&
             !(x == 0 && assignBasedOnTypeP(dstEvalVal, nullptr, dstTypeId)) &&
-            !(x == 0 && typeTable->worksAsTypeStr(dstTypeId)) &&
             !(x == 0 && typeTable->worksAsTypeAnyP(dstTypeId))) {
             return nullopt;
         }
@@ -769,7 +782,6 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
             !assignBasedOnTypeC(dstEvalVal, (char) x, dstTypeId) &&
             !assignBasedOnTypeB(dstEvalVal, (bool) x, dstTypeId) &&
             !(x == 0 && assignBasedOnTypeP(dstEvalVal, nullptr, dstTypeId)) &&
-            !(x == 0 && typeTable->worksAsTypeStr(dstTypeId)) &&
             !(x == 0 && typeTable->worksAsTypeAnyP(dstTypeId)) &&
             !assignBasedOnTypeId(dstEvalVal, x, dstTypeId)) {
             return nullopt;
@@ -831,7 +843,8 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
                 !assignBasedOnTypeU(dstEvalVal, 0, dstTypeId) &&
                 !assignBasedOnTypeB(dstEvalVal, false, dstTypeId) &&
                 !assignBasedOnTypeP(dstEvalVal, nullptr, dstTypeId) &&
-                !typeTable->worksAsTypeAnyP(dstTypeId)) {
+                !typeTable->worksAsTypeAnyP(dstTypeId) &&
+                !typeTable->worksAsCallable(dstTypeId)) {
                 return nullopt;
             }
         } else {
@@ -854,12 +867,19 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
         } else {
             return nullopt;
         }
-    } else if (typeTable->worksAsTypeArr(srcTypeId) ||
-        typeTable->worksAsTuple(srcTypeId) ||
-        typeTable->worksAsDataType(srcTypeId) ||
-        typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_ID) ||
-        typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_RAW)) {
-        // these types are only castable when changing constness
+    } else if (typeTable->worksAsCallable(srcTypeId)) {
+        if (typeTable->worksAsTypeAnyP(dstTypeId)) {
+            if (srcEvalVal.callId.has_value() ||
+                (!assignBasedOnTypeP(dstEvalVal, nullptr, dstTypeId) && !typeTable->worksAsTypeAnyP(dstTypeId)))
+                return nullopt;
+        } else if (typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId))) {
+            dstEvalVal = EvalVal::copyNoRef(srcEvalVal);
+            dstEvalVal.type = dstTypeId;
+        } else {
+            return nullopt;
+        }
+    } else {
+        // other types are only castable when changing constness
         if (typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId))) {
             // no action is needed in case of a cast
             // except for raw when dropping cn
@@ -873,8 +893,6 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
         } else {
             return nullopt;
         }
-    } else {
-        return nullopt;
     }
 
     return NodeVal(codeLoc, move(dstEvalVal));

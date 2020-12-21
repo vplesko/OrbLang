@@ -125,6 +125,7 @@ string CompilationMessages::errorStringOfType(TypeTable::Id ty) const {
 
     stringstream ss;
 
+    // TODO pretty print for macros
     if (typeTable->isTypeDescr(ty)) {
         ss << '(';
 
@@ -168,9 +169,16 @@ string CompilationMessages::errorStringOfType(TypeTable::Id ty) const {
         ss << namePool->get(typeTable->getDataType(ty).name);
     } else {
         optional<NamePool::Id> name = typeTable->getTypeName(ty);
-        if (!name.has_value()) return fallback;
-
-        ss << namePool->get(name.value());
+        if (name.has_value()) {
+            ss << namePool->get(name.value());
+        } else {
+            optional<string> str = typeTable->makeBinString(ty, namePool);
+            if (str.has_value()) {
+                ss << str.value();
+            } else {
+                return fallback;
+            }
+        }
     }
 
     return ss.str();
@@ -445,6 +453,10 @@ void CompilationMessages::errorMacroNotFound(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "No macros with name '" << namePool->get(name) << "' satisfying the invocation signature have been found.";
     error(loc, ss.str());
+}
+
+void CompilationMessages::errorMacroNoValue(CodeLoc loc) {
+    error(loc, "Trying to invoke a macro with no value.");
 }
 
 void CompilationMessages::errorBlockNotFound(CodeLoc loc, NamePool::Id name) {

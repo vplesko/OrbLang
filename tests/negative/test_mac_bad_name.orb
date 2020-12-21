@@ -1,5 +1,5 @@
 sym (foo:i32 100);
 
-eval (mac foo () {});
+mac foo () {};
 
 fnc main () () {};

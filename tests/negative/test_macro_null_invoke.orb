@@ -1,0 +1,4 @@
+fnc main () () {
+    eval (sym x:(mac ()));
+    x;
+};

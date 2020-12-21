@@ -23,14 +23,6 @@ bool TypeTable::TypeDescr::eq(const TypeDescr &other) const {
     return true;
 }
 
-optional<size_t> TypeTable::DataType::getMembInd(NamePool::Id name) const {
-    for (size_t i = 0; i < members.size(); ++i) {
-        if (members[i].first == name) return i;
-    }
-
-    return nullopt;
-}
-
 void TypeTable::TypeDescr::addDecor(Decor d, bool cn_) {
     bool prevIsCn = cns.empty() ? cn : cns.back();
 
@@ -45,6 +37,18 @@ void TypeTable::TypeDescr::addDecor(Decor d, bool cn_) {
 void TypeTable::TypeDescr::setLastCn() {
     if (cns.empty()) cn = true;
     else cns[cns.size()-1] = true;
+}
+
+optional<size_t> TypeTable::DataType::getMembInd(NamePool::Id name) const {
+    for (size_t i = 0; i < members.size(); ++i) {
+        if (members[i].first == name) return i;
+    }
+
+    return nullopt;
+}
+
+bool TypeTable::Callable::eq(const Callable &other) const {
+    return isFunc == other.isFunc && argCnt == other.argCnt;
 }
 
 TypeTable::PrimIds TypeTable::shortestFittingPrimTypeI(int64_t x) {
@@ -155,6 +159,25 @@ optional<TypeTable::Id> TypeTable::addDataType(DataType data) {
 
         return id;
     }
+}
+
+optional<TypeTable::Id> TypeTable::addCallable(Callable call) {
+    for (size_t i = 0; i < callables.size(); ++i) {
+        if (call.eq(callables[i].first)) {
+            Id id;
+            id.kind = Id::kCallable;
+            id.index = i;
+            return id;
+        }
+    }
+
+    Id id;
+    id.kind = Id::kCallable;
+    id.index = callables.size();
+
+    callables.push_back(make_pair(move(call), nullptr));
+
+    return id;
 }
 
 optional<TypeTable::Id> TypeTable::addTypeDerefOf(Id typeId) {
@@ -273,6 +296,7 @@ llvm::Type* TypeTable::getType(Id id) {
     case Id::kDescr: return typeDescrs[id.index].second;
     case Id::kCustom: return customs[id.index].second;
     case Id::kData: return dataTypes[id.index].second;
+    case Id::kCallable: return callables[id.index].second;
     default: return nullptr;
     }
 }
@@ -284,6 +308,7 @@ void TypeTable::setType(Id id, llvm::Type *type) {
     case Id::kDescr: typeDescrs[id.index].second = type; break;
     case Id::kCustom: customs[id.index].second = type; break;
     case Id::kData: dataTypes[id.index].second = type; break;
+    case Id::kCallable: callables[id.index].second = type; break;
     }
 }
 
@@ -313,6 +338,10 @@ const TypeTable::DataType& TypeTable::getDataType(Id id) const {
 
 TypeTable::DataType& TypeTable::getDataType(Id id) {
     return dataTypes[id.index].first;
+}
+
+const TypeTable::Callable& TypeTable::getCallable(Id id) const {
+    return callables[id.index].first;
 }
 
 TypeTable::Id TypeTable::getTypeCharArrOfLenId(std::size_t len) {
@@ -349,7 +378,6 @@ TypeTable::Id TypeTable::extractBaseType(Id t) const {
 }
 
 TypeTable::Id TypeTable::extractCustomBaseType(Id t) const {
-    // only pass through customs and cn
     if (isCustom(t)) return extractCustomBaseType(getCustom(t).type);
     if (isTypeDescr(t)) {
         const TypeDescr &descr = typeDescrs[t.index].first;
@@ -366,6 +394,7 @@ bool TypeTable::isValidType(Id t) const {
     case Id::kDescr: return t.index < typeDescrs.size();
     case Id::kCustom: return t.index < customs.size();
     case Id::kData: return t.index < dataTypes.size();
+    case Id::kCallable: return t.index < callables.size();
     default: return false;
     }
 }
@@ -374,7 +403,7 @@ bool TypeTable::isType(NamePool::Id name) const {
     return typeIds.find(name) != typeIds.end();
 }
 
-std::optional<TypeTable::Id> TypeTable::getTypeId(NamePool::Id name) const {
+optional<TypeTable::Id> TypeTable::getTypeId(NamePool::Id name) const {
     auto loc = typeIds.find(name);
     if (loc == typeIds.end()) return nullopt;
     return loc->second;
@@ -436,7 +465,7 @@ bool TypeTable::worksAsPrimitive(Id t, PrimIds lo, PrimIds hi) const {
 
 bool TypeTable::worksAsTuple(Id t) const {
     if (!isValidType(t)) return false;
-    
+
     if (isTuple(t)) {
         return true;
     } else if (isCustom(t)) {
@@ -452,7 +481,7 @@ bool TypeTable::worksAsTuple(Id t) const {
 
 bool TypeTable::worksAsCustom(Id t) const {
     if (!isValidType(t)) return false;
-    
+
     if (isCustom(t)) {
         return true;
     } else if (isTypeDescr(t)) {
@@ -466,7 +495,7 @@ bool TypeTable::worksAsCustom(Id t) const {
 
 bool TypeTable::worksAsDataType(Id t) const {
     if (!isValidType(t)) return false;
-    
+
     if (isDataType(t)) {
         return true;
     } else if (isCustom(t)) {
@@ -478,6 +507,27 @@ bool TypeTable::worksAsDataType(Id t) const {
     } else {
         return false;
     }
+}
+
+bool TypeTable::worksAsCallable(Id t) const {
+    if (!isValidType(t)) return false;
+
+    if (isCallable(t)) {
+        return true;
+    } else if (isCustom(t)) {
+        return worksAsCallable(getCustom(t).type);
+    } else if (isTypeDescr(t)) {
+        const TypeDescr &descr = typeDescrs[t.index].first;
+        if (!descr.decors.empty()) return false;
+        return worksAsCallable(descr.base);
+    } else {
+        return false;
+    }
+}
+
+bool TypeTable::worksAsCallable(Id t, bool isFunc) const {
+    if (!worksAsCallable(t)) return false;
+    return getCallable(extractCustomBaseType(t)).isFunc == isFunc;
 }
 
 bool TypeTable::isPrimitive(Id t) const {
@@ -498,6 +548,10 @@ bool TypeTable::isCustom(Id t) const {
 
 bool TypeTable::isDataType(Id t) const {
     return t.kind == Id::kData && t.index < dataTypes.size();
+}
+
+bool TypeTable::isCallable(Id t) const {
+    return t.kind == Id::kCallable && t.index < callables.size();
 }
 
 optional<const TypeTable::Tuple*> TypeTable::extractTuple(Id t) const {
@@ -875,7 +929,6 @@ optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool) const 
         ss << "$s" << "$" << namePool->get(getDataType(t).name);
     } else if (isTypeDescr(t)) {
         ss << "$d";
-        stringstream ss;
         const TypeDescr &descr = getTypeDescr(t);
         for (size_t i = descr.decors.size()-1;; --i) {
             if (descr.cns[i]) ss << "$cn";
@@ -891,6 +944,10 @@ optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool) const 
         if (!baseStr.has_value()) return nullopt;
         ss << baseStr.value();
         return ss.str();
+    } else if (isCallable(t)) {
+        // TODO+ keep updated
+        const Callable &call = getCallable(t);
+        ss << (call.isFunc ? "$f" : "$m") << "$" << call.argCnt;
     } else {
         return nullopt;
     }

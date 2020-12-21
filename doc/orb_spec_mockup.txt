@@ -172,7 +172,9 @@ fnc
 	global scope only
 
 mac
-	mac name args subst
+	mac args OR mac name args subst
+	first makes a type, second defines a macro
+	when defined, type is cn
 	args is list of args
 	invoked not evaluating its args, invocations repeteadly resolved until no longer macro invocation, after code processed normally
 	when invoked, replaces invoke node with subst, but appearances of any arg replaced with passed node
@@ -272,7 +274,7 @@ type
 ********************
 
 plan:
- - first class fncs and macs (fnc type, with fnc makes const, llvm functions are llvm ptrs, ptr casting, null impl; mac similar, but can't decl)
+ - first class fncs (fnc type, with fnc makes const, llvm functions are llvm ptrs, ptr casting, null impl)
  - variadics
  - zero
  - drop, move

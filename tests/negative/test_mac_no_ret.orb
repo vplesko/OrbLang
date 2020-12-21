@@ -1,4 +1,4 @@
-eval (mac foo () {});
+mac foo () {};
 
 fnc main () () {
     foo;

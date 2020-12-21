@@ -16,7 +16,8 @@ public:
             kTuple,
             kDescr,
             kCustom,
-            kData
+            kData,
+            kCallable
         };
 
         Kind kind;
@@ -103,6 +104,13 @@ public:
         std::optional<std::size_t> getMembInd(NamePool::Id name) const;
     };
 
+    struct Callable {
+        bool isFunc;
+        std::size_t argCnt;
+
+        bool eq(const Callable &other) const;
+    };
+
     enum PrimIds {
         P_BOOL,
         P_I8,
@@ -138,6 +146,7 @@ private:
     std::vector<std::pair<TypeDescr, llvm::Type*>> typeDescrs;
     std::vector<std::pair<Custom, llvm::Type*>> customs;
     std::vector<std::pair<DataType, llvm::Type*>> dataTypes;
+    std::vector<std::pair<Callable, llvm::Type*>> callables;
     
     std::unordered_map<NamePool::Id, Id> typeIds;
     std::unordered_map<Id, NamePool::Id, Id::Hasher> typeNames;
@@ -159,6 +168,7 @@ public:
     std::optional<Id> addCustom(Custom c);
     // if already exists, errors on redefinition, overrides otherwise
     std::optional<Id> addDataType(DataType data);
+    std::optional<Id> addCallable(Callable call);
 
     std::optional<Id> addTypeDerefOf(Id typeId);
     std::optional<Id> addTypeIndexOf(Id typeId);
@@ -176,6 +186,7 @@ public:
     const Custom& getCustom(Id id) const;
     const DataType& getDataType(Id id) const;
     DataType& getDataType(Id id);
+    const Callable& getCallable(Id id) const;
 
     Id getTypeIdStr() { return strType; }
     Id getTypeCharArrOfLenId(std::size_t len);
@@ -190,6 +201,7 @@ public:
     bool isTypeDescr(Id t) const;
     bool isCustom(Id t) const;
     bool isDataType(Id t) const;
+    bool isCallable(Id t) const;
     
     bool worksAsPrimitive(Id t) const;
     bool worksAsPrimitive(Id t, PrimIds p) const;
@@ -197,6 +209,8 @@ public:
     bool worksAsTuple(Id t) const;
     bool worksAsCustom(Id t) const;
     bool worksAsDataType(Id t) const;
+    bool worksAsCallable(Id t) const;
+    bool worksAsCallable(Id t, bool isFunc) const;
     bool worksAsTypeI(Id t) const { return worksAsPrimitive(t, P_I8, P_I64); }
     bool worksAsTypeU(Id t) const { return worksAsPrimitive(t, P_U8, P_U64); }
     bool worksAsTypeF(Id t) const { return worksAsPrimitive(t, P_F32, P_F64); }
@@ -220,6 +234,7 @@ public:
     std::optional<std::size_t> extractLenOfArr(Id arrTypeId) const;
     std::optional<std::size_t> extractLenOfTuple(Id tupleTypeId) const;
     Id extractBaseType(Id t) const;
+    // only passes through customs and cn
     Id extractCustomBaseType(Id t) const;
 
     bool fitsTypeI(int64_t x, Id t) const;

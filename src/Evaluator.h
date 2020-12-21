@@ -42,7 +42,7 @@ public:
     NodeVal performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args) override;
     bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) override;
     bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func) override;
-    bool performMacroDefinition(const NodeVal &args, const NodeVal &body, MacroValue &macro) override;
+    NodeVal performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, MacroValue &macro) override;
     bool performRet(CodeLoc codeLoc) override;
     bool performRet(CodeLoc codeLoc, const NodeVal &node) override;
     NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) override;

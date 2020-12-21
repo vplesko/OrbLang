@@ -12,7 +12,7 @@ class SymbolTable;
 
 struct EvalVal {
     // type of this evaluation value
-    // TODO+ remove optional after no longer needed
+    // TODO+ after fncs are first-class, remove this
     std::optional<TypeTable::Id> type;
     union {
         std::int8_t i8;
@@ -28,9 +28,12 @@ struct EvalVal {
         char c8;
         bool b;
         std::optional<StringPool::Id> str;
+        // contains id value
         NamePool::Id id;
         // contains type value in case this is type or type cn
         TypeTable::Id ty;
+        // contains macro name
+        std::optional<NamePool::Id> callId;
         NodeVal *p = nullptr;
     };
     std::vector<NodeVal> elems;
@@ -41,15 +44,11 @@ struct EvalVal {
 
     EvalVal() {}
 
+    // TODO+ remove optional after no longer needed
     const std::optional<TypeTable::Id>& getType() const { return type; }
     std::optional<TypeTable::Id>& getType() { return type; }
 
     bool isEscaped() const { return escapeScore > 0; }
-
-    // if is callable, type is meaningless
-    // TODO+ after callables (fncs, macs) are first-class, rework that
-    bool isCallable() const { return !type.has_value(); }
-    std::optional<NamePool::Id> getCallableId() const;
 
     static EvalVal makeVal(TypeTable::Id t, TypeTable *typeTable);
     static EvalVal makeZero(TypeTable::Id t, NamePool *namePool, TypeTable *typeTable);
@@ -59,8 +58,8 @@ struct EvalVal {
     static bool isId(const EvalVal &val, const TypeTable *typeTable);
     static bool isType(const EvalVal &val, const TypeTable *typeTable);
     static bool isRaw(const EvalVal &val, const TypeTable *typeTable);
-    static bool isMacro(const EvalVal &val, const SymbolTable *symbolTable);
     static bool isFunc(const EvalVal &val, const SymbolTable *symbolTable);
+    static bool isMacro(const EvalVal &val, const TypeTable *TypeTable);
     static bool isI(const EvalVal &val, const TypeTable *typeTable);
     static bool isU(const EvalVal &val, const TypeTable *typeTable);
     static bool isF(const EvalVal &val, const TypeTable *typeTable);
