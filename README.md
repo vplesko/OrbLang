@@ -124,7 +124,7 @@ ptr - non-descript pointer (void* in C)
 id - identifier (first-class value at evaluation)
 type - type of a value (first-class value at evaluation)
 raw - unprocessed list of values, usually represents Orb code (first-class value at evaluation)
-mac (a b) - macro that takes two args (first-class value at evaluation)
+mac (a b) - macro that takes two args
 i32 cn - constant i32
 i32 4 - array of 4 i32s
 i32 * - pointer to a i32 (can be dereferenced)

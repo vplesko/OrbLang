@@ -274,7 +274,7 @@ type
 ********************
 
 plan:
- - first class fncs (fnc type, with fnc makes const, llvm functions are llvm ptrs, ptr casting, null impl)
+ - fnc vals (fnc type, with fnc makes const, llvm functions are llvm ptrs, ptr casting, null impl)
  - variadics
  - zero
  - drop, move

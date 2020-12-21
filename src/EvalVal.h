@@ -12,7 +12,7 @@ class SymbolTable;
 
 struct EvalVal {
     // type of this evaluation value
-    // TODO+ after fncs are first-class, remove this
+    // TODO+ after fncs are typed, remove this
     std::optional<TypeTable::Id> type;
     union {
         std::int8_t i8;

@@ -489,6 +489,7 @@ NodeVal Processor::processPass(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
+// TODO allow in local
 NodeVal Processor::processCustom(const NodeVal &node) {
     if (!checkInGlobalScope(node.getCodeLoc(), true)) return NodeVal();
     if (!checkExactlyChildren(node, 3, true)) return NodeVal();
@@ -518,6 +519,7 @@ NodeVal Processor::processCustom(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
+// TODO allow in local
 NodeVal Processor::processData(const NodeVal &node) {
     if (!checkInGlobalScope(node.getCodeLoc(), true)) return NodeVal();
     if (!checkBetweenChildren(node, 2, 3, true)) return NodeVal();
@@ -636,6 +638,7 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
 }
 
 // TODO+ allow function definition after declaration
+// TODO allow in local
 NodeVal Processor::processFnc(const NodeVal &node) {
     if (!checkInGlobalScope(node.getCodeLoc(), true) ||
         !checkBetweenChildren(node, 4, 5, true)) {
@@ -713,6 +716,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
+// TODO allow in local
 NodeVal Processor::processMac(const NodeVal &node) {
     if (!checkExactlyChildren(node, 2, false) && !checkExactlyChildren(node, 4, true)) {
         return NodeVal();
