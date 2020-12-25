@@ -277,8 +277,8 @@ plan:
  - fnc decl then def
  - func and macro overloading (in args variad part of func type and cns past ptrs)
  - variadics
- - fnc and mac in local
+ - attrs: variadic, preprocess, noNameMangle
  - zero
  - drop, move
- - new attributes: variadic, preprocess, noNameMangle, noZero, noDrop, unique...
+ - attrs: noZero, noDrop, unique
  - include C headers
