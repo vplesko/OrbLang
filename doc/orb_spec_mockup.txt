@@ -275,8 +275,11 @@ type
 
 plan:
  - fnc vals (fnc type, with fnc makes const, llvm functions are llvm ptrs, ptr casting, null impl)
+ - fnc decl then def
+ - func and macro overloading (in args variad part of func type and cns past ptrs)
  - variadics
+ - fnc and mac in local
  - zero
  - drop, move
- - new attributes: preprocess, noZero, noDrop, unique...
+ - new attributes: preprocess, noNameMangle, noZero, noDrop, unique...
  - include C headers

@@ -12,7 +12,6 @@ class SymbolTable;
 
 struct EvalVal {
     // type of this evaluation value
-    // TODO+ after fncs are typed, remove this
     std::optional<TypeTable::Id> type;
     union {
         std::int8_t i8;
@@ -44,7 +43,6 @@ struct EvalVal {
 
     EvalVal() {}
 
-    // TODO+ remove optional after no longer needed
     const std::optional<TypeTable::Id>& getType() const { return type; }
     std::optional<TypeTable::Id>& getType() { return type; }
 
