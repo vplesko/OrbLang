@@ -27,8 +27,12 @@ eval (fnc f5 () () {
 
 eval (fnc f6 () ());
 
-eval (fnc f7 (f7:i32) () {
-    = p0 f7;
+eval (fnc f7 (f7:i32) i32 {
+    ret f7;
+});
+
+eval (fnc f7b (f7b:i32) i32 {
+    ret (+ f7b 1);
 });
 
 eval (fnc f8 () () {
@@ -69,21 +73,67 @@ eval (fnc f12 () i32 {
 
 eval (sym (glob (f10)));
 
+eval (sym (globFnc:(fnc (x:i32) i32) f7));
+
+custom MyFnc (fnc (p:i32) i32);
+
+eval (fnc callAndRet (x:i32 f:MyFnc) i32 {
+    ret (f x);
+});
+
 fnc main () () {
-    println_i32 (f0);
-    println_i32 (f1 100 1);
-    println_i32 (f1 100 2:i8);
-    println_i64 (f2);
-    f3 104;
-    println_i32 p0;
-    f4;
-    f5;
-    f7 105;
-    println_i32 p0;
-    f8;
-    println_i32 p0;
-    println_i32 (- (f9 5) 13);
-    println_i32 glob;
-    println_i32 (f11);
-    println_i32 (f12);
+    block {
+        println_i32 (f0);
+        println_i32 (f1 100 1);
+        println_i32 (f1 100 2:i8);
+        println_i64 (f2);
+        f3 104;
+        println_i32 p0;
+        f4;
+        f5;
+        println_i32 (f7 105);
+        f8;
+        println_i32 p0;
+        println_i32 (- (f9 5) 13);
+        println_i32 glob;
+        println_i32 (f11);
+        println_i32 (f12);
+    };
+
+    block {
+        eval (sym (x 200));
+        println_i32 (globFnc x);
+        = globFnc f7b;
+        println_i32 (globFnc x);
+
+        eval (sym (c0:(fnc (p:i32) i32)));
+        println_i32 (+ 202 (cast i32 (cast ptr c0)));
+        = c0 f7b;
+        = x 202;
+        println_i32 (c0 x);
+        = c0 null;
+        println_i32 (+ 204 (cast i32 (cast (i32 *) c0)));
+
+        eval (sym (c1:((fnc (p:i32) i32) cn) c0));
+        println_i32 (+ 205 (cast i32 (!= c0 c1)));
+        = c0 f7;
+        println_i32 (+ 205 (cast i32 (!= c0 c1)));
+        println_i32 (+ 207 (cast i32 (== c0 c1)));
+        = c0 c1;
+        println_i32 (+ 207 (cast i32 (== c0 c1)));
+
+        = c0 f7;
+        println_i32 ((* (& c0)) 209);
+        println_i32 ((* (& f7)) -209);
+
+        println_i32 (+ 210 (cast i32 (== (typeOf c0) (typeOf c1))));
+        println_i32 (+ 210 (cast i32 (== ((fnc (p:i32) i32) cn) (typeOf c1))));
+
+        eval (sym (c2:MyFnc));
+        = c2 (cast MyFnc f7);
+        println_i32 (c2 212);
+
+        println_i32 (callAndRet 213 c2);
+        println_i32 (callAndRet 213 (cast MyFnc f7b));
+    };
 };

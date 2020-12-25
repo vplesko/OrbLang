@@ -106,7 +106,14 @@ public:
 
     struct Callable {
         bool isFunc;
-        std::size_t argCnt;
+        std::vector<TypeTable::Id> argTypes;
+        std::optional<TypeTable::Id> retType;
+        bool variadic = false;
+
+        std::size_t argCnt() const { return argTypes.size(); }
+        bool hasRet() const { return retType.has_value(); }
+
+        void makeFitArgCnt(std::size_t argCnt) { argTypes.resize(argCnt); }
 
         bool eq(const Callable &other) const;
     };
@@ -233,6 +240,7 @@ public:
     std::optional<Id> extractDataTypeMemberType(Id t, NamePool::Id memb);
     std::optional<std::size_t> extractLenOfArr(Id arrTypeId) const;
     std::optional<std::size_t> extractLenOfTuple(Id tupleTypeId) const;
+    const Callable* extractCallable(Id t) const;
     Id extractBaseType(Id t) const;
     // only passes through customs and cn
     Id extractCustomBaseType(Id t) const;

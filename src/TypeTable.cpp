@@ -48,7 +48,14 @@ optional<size_t> TypeTable::DataType::getMembInd(NamePool::Id name) const {
 }
 
 bool TypeTable::Callable::eq(const Callable &other) const {
-    return isFunc == other.isFunc && argCnt == other.argCnt;
+    if (isFunc != other.isFunc || argCnt() != other.argCnt() ||
+        retType != other.retType || variadic != other.variadic) return false;
+
+    for (size_t i = 0; i < argCnt(); ++i) {
+        if (argTypes[i] != other.argTypes[i]) return false;
+    }
+
+    return true;
 }
 
 TypeTable::PrimIds TypeTable::shortestFittingPrimTypeI(int64_t x) {
@@ -349,6 +356,7 @@ TypeTable::Id TypeTable::getTypeCharArrOfLenId(std::size_t len) {
     return addTypeArrOfLenIdOf(c8Id, len);
 }
 
+// TODO optimize, there is redundant work here
 optional<size_t> TypeTable::extractLenOfArr(Id arrTypeId) const {
     if (!worksAsTypeArr(arrTypeId)) return nullopt;
 
@@ -360,6 +368,8 @@ optional<size_t> TypeTable::extractLenOfArr(Id arrTypeId) const {
         return nullopt;
 }
 
+// TODO does this work for eg. ((i32 i32) cn)? (see extractCallable)
+// TODO optimize, there is redundant work here
 optional<size_t> TypeTable::extractLenOfTuple(Id tupleTypeId) const {
     if (!worksAsTuple(tupleTypeId)) return nullopt;
 
@@ -369,6 +379,23 @@ optional<size_t> TypeTable::extractLenOfTuple(Id tupleTypeId) const {
         return extractLenOfTuple(getCustom(tupleTypeId).type);
     else
         return nullopt;
+}
+
+// TODO optimize, there is redundant work here
+const TypeTable::Callable* TypeTable::extractCallable(Id t) const {
+    if (!worksAsCallable(t)) return nullptr;
+
+    if (isCallable(t)) {
+        return &getCallable(t);
+    } else if (isCustom(t)) {
+        return extractCallable(getCustom(t).type);
+    } else if (isTypeDescr(t)) {
+        const TypeDescr &descr = typeDescrs[t.index].first;
+        if (!descr.decors.empty()) return nullptr;
+        return extractCallable(descr.base);
+    } else {
+        return nullptr;
+    }
 }
 
 TypeTable::Id TypeTable::extractBaseType(Id t) const {
@@ -948,9 +975,22 @@ optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool) const 
         ss << baseStr.value();
         return ss.str();
     } else if (isCallable(t)) {
-        // TODO print for signature instead
         const Callable &call = getCallable(t);
-        ss << (call.isFunc ? "$f" : "$m") << "$" << call.argCnt;
+        ss << (call.isFunc ? "$f" : "$m");
+        ss << "$a" << call.argCnt();
+        if (call.variadic) ss << "+";
+        if (call.isFunc) {
+            for (TypeTable::Id argTy : call.argTypes) {
+                optional<string> str = makeBinString(argTy, namePool);
+                if (!str.has_value()) return nullopt;
+                ss << str.value();
+            }
+        }
+        if (call.retType.has_value()) {
+            optional<string> str = makeBinString(call.retType.value(), namePool);
+            if (!str.has_value()) return nullopt;
+            ss << "$r" << str.value();
+        }
     } else {
         return nullopt;
     }

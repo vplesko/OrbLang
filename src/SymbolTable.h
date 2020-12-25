@@ -10,20 +10,20 @@
 #include "llvm/IR/Instructions.h"
 
 struct FuncValue {
+    TypeTable::Id type;
+
     NamePool::Id name;
-    bool variadic;
     std::vector<NamePool::Id> argNames;
-    std::vector<TypeTable::Id> argTypes;
-    std::optional<TypeTable::Id> retType;
     bool defined;
 
     llvm::Function *llvmFunc;
     std::optional<NodeVal> evalFunc;
 
     std::size_t argCnt() const { return argNames.size(); }
-    bool hasRet() const { return retType.has_value(); }
-
     bool isEval() const { return evalFunc.has_value(); }
+
+    static const TypeTable::Callable& getCallable(const FuncValue &func, const TypeTable *typeTable);
+    static std::optional<TypeTable::Id> getRetType(const FuncValue &func, const TypeTable *typeTable);
 };
 
 struct MacroValue {
@@ -52,15 +52,13 @@ public:
         bool isFunc, isEval;
         std::optional<TypeTable::Id> retType;
 
-        explicit CalleeValueInfo(const FuncValue &func) {
-            isFunc = true;
-            isEval = func.isEval();
-            retType = func.retType;
-        }
+        static CalleeValueInfo make(const FuncValue &func, const TypeTable *typeTable);
 
-        explicit CalleeValueInfo(const MacroValue &macro) {
-            isFunc = false;
-            isEval = true;
+        static CalleeValueInfo make(const MacroValue &macro) {
+            CalleeValueInfo c;
+            c.isFunc = false;
+            c.isEval = true;
+            return c;
         }
     };
 
@@ -83,8 +81,7 @@ private:
     std::vector<std::pair<CalleeValueInfo, std::vector<BlockInternal>>> localBlockChains;
 
     void newBlock(Block b);
-    void newBlock(const FuncValue &f);
-    void newBlock(const MacroValue &m);
+    void newBlock(const CalleeValueInfo &c);
     void endBlock();
 
     const BlockInternal* getLastBlockInternal() const;
@@ -112,7 +109,6 @@ public:
     std::optional<CalleeValueInfo> getCurrCallee() const;
 
     bool isVarName(NamePool::Id name) const { return getVar(name) != nullptr; }
-    bool isFuncName(NamePool::Id name) const;
 
     bool nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable) const;
 };
@@ -128,12 +124,8 @@ public:
         if (symTable != nullptr) symTable->newBlock(bo);
     }
     // ref cuz must not be null
-    BlockControl(SymbolTable *symTable, const FuncValue &func) : symTable(symTable) {
-        if (symTable != nullptr) symTable->newBlock(func);
-    }
-    // ref cuz must not be null
-    BlockControl(SymbolTable *symTable, const MacroValue &macro) : symTable(symTable) {
-        if (symTable != nullptr) symTable->newBlock(macro);
+    BlockControl(SymbolTable *symTable, const SymbolTable::CalleeValueInfo &c) : symTable(symTable) {
+        if (symTable != nullptr) symTable->newBlock(c);
     }
 
     BlockControl(const BlockControl&) = delete;

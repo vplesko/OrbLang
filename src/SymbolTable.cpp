@@ -1,7 +1,29 @@
 #include "SymbolTable.h"
+#include <cassert>
+#include "TypeTable.h"
 #include "Reserved.h"
 #include "utils.h"
 using namespace std;
+
+const TypeTable::Callable& FuncValue::getCallable(const FuncValue &func, const TypeTable *typeTable) {
+    const TypeTable::Callable *call = typeTable->extractCallable(func.type);
+    assert(call != nullptr);
+    return *call;
+}
+
+optional<TypeTable::Id> FuncValue::getRetType(const FuncValue &func, const TypeTable *typeTable) {
+    return getCallable(func, typeTable).retType;
+}
+
+SymbolTable::CalleeValueInfo SymbolTable::CalleeValueInfo::make(const FuncValue &func, const TypeTable *typeTable) {
+    CalleeValueInfo c;
+    c.isFunc = true;
+    c.isEval = func.isEval();
+    const TypeTable::Callable *call = typeTable->extractCallable(func.type);
+    assert(call != nullptr);
+    c.retType = call->retType;
+    return c;
+}
 
 SymbolTable::SymbolTable() {
     globalBlockChain.push_back(BlockInternal());
@@ -14,12 +36,8 @@ void SymbolTable::newBlock(Block b) {
     else localBlockChains.back().second.push_back(s);
 }
 
-void SymbolTable::newBlock(const FuncValue &f) {
-    localBlockChains.push_back(make_pair(CalleeValueInfo(f), vector<BlockInternal>(1, BlockInternal())));
-}
-
-void SymbolTable::newBlock(const MacroValue &m) {
-    localBlockChains.push_back(make_pair(CalleeValueInfo(m), vector<BlockInternal>(1, BlockInternal())));
+void SymbolTable::newBlock(const CalleeValueInfo &c) {
+    localBlockChains.push_back(make_pair(c, vector<BlockInternal>(1, BlockInternal())));
 }
 
 void SymbolTable::endBlock() {
@@ -133,17 +151,8 @@ optional<SymbolTable::CalleeValueInfo> SymbolTable::getCurrCallee() const {
     return localBlockChains.back().first;
 }
 
-bool SymbolTable::isFuncName(NamePool::Id name) const {
-    return getFunction(name) != nullptr;
-}
-
 bool SymbolTable::nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable) const {
     if (isReserved(name) || typeTable->isType(name)) return false;
-
-    if (inGlobalScope()) {
-        // you can have vars with same name as funcs, except in global
-        if (isFuncName(name)) return false;
-    }
 
     const BlockInternal *last = getLastBlockInternal();
     return last->vars.find(name) == last->vars.end();

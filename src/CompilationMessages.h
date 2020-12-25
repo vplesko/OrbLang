@@ -98,6 +98,7 @@ public:
     void errorArgNameDuplicate(CodeLoc loc, NamePool::Id name);
     void errorFuncNotFound(CodeLoc loc, NamePool::Id name);
     void errorMacroNotFound(CodeLoc loc, NamePool::Id name);
+    void errorFuncNoValue(CodeLoc loc);
     void errorMacroNoValue(CodeLoc loc);
     void errorBlockNotFound(CodeLoc loc, NamePool::Id name);
     void errorBlockNoPass(CodeLoc loc);

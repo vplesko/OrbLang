@@ -163,8 +163,8 @@ data
 	global scope only
 
 fnc
-	fnc name args type OR fnc name args type body
-	first declares, second defines a function
+	fnc args type OR fnc name args type OR fnc name args type body
+	first makes a type, second declares, third defines a function
 	args is list of args as a:t
 	type is ret type or no ret if it's ()
 	fnc has its own scope, goes through body
@@ -175,7 +175,7 @@ mac
 	mac args OR mac name args subst
 	first makes a type, second defines a macro
 	when defined, type is cn
-	args is list of args
+	args is list of args as names
 	invoked not evaluating its args, invocations repeteadly resolved until no longer macro invocation, after code processed normally
 	when invoked, replaces invoke node with subst, but appearances of any arg replaced with passed node
 	global scope only
@@ -274,12 +274,11 @@ type
 ********************
 
 plan:
- - fnc vals (fnc type, with fnc makes const, llvm functions are llvm ptrs, ptr casting, null impl)
  - fnc decl then def
  - func and macro overloading (in args variad part of func type and cns past ptrs)
  - variadics
  - fnc and mac in local
  - zero
  - drop, move
- - new attributes: preprocess, noNameMangle, noZero, noDrop, unique...
+ - new attributes: variadic, preprocess, noNameMangle, noZero, noDrop, unique...
  - include C headers

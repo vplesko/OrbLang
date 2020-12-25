@@ -125,7 +125,7 @@ string CompilationMessages::errorStringOfType(TypeTable::Id ty) const {
 
     stringstream ss;
 
-    // TODO pretty print for macros
+    // TODO pretty print for funcs and macros
     if (typeTable->isTypeDescr(ty)) {
         ss << '(';
 
@@ -453,6 +453,10 @@ void CompilationMessages::errorMacroNotFound(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "No macros with name '" << namePool->get(name) << "' satisfying the invocation signature have been found.";
     error(loc, ss.str());
+}
+
+void CompilationMessages::errorFuncNoValue(CodeLoc loc) {
+    error(loc, "Trying to call a function with no value.");
 }
 
 void CompilationMessages::errorMacroNoValue(CodeLoc loc) {

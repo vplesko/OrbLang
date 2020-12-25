@@ -121,6 +121,11 @@ bool NodeVal::isRawVal(const NodeVal &node, const TypeTable *typeTable) {
     return node.isEvalVal() && EvalVal::isRaw(node.getEvalVal(), typeTable);
 }
 
+bool NodeVal::isFunc(const NodeVal &val, const TypeTable *typeTable) {
+    optional<TypeTable::Id> type = val.getType();
+    return type.has_value() && typeTable->worksAsCallable(type.value(), true);
+}
+
 void NodeVal::escape(NodeVal &node, const TypeTable *typeTable, EscapeScore amount) {
     if (amount == 0) return;
 

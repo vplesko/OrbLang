@@ -85,8 +85,9 @@ bool EvalVal::isRaw(const EvalVal &val, const TypeTable *typeTable) {
     return type.has_value() && typeTable->worksAsPrimitive(type.value(), TypeTable::P_RAW);
 }
 
-bool EvalVal::isFunc(const EvalVal &val, const SymbolTable *symbolTable) {
-    return !val.type.has_value() && symbolTable->isFuncName(val.id);
+bool EvalVal::isFunc(const EvalVal &val, const TypeTable *typeTable) {
+    optional<TypeTable::Id> type = val.getType();
+    return type.has_value() && typeTable->worksAsCallable(type.value(), true);
 }
 
 bool EvalVal::isMacro(const EvalVal &val, const TypeTable *typeTable) {
@@ -153,6 +154,11 @@ bool EvalVal::isNull(const EvalVal &val, const TypeTable *typeTable) {
     if (isP(val, typeTable)) return val.p == nullptr;
     if (isStr(val, typeTable)) return !val.str.has_value();
     return isAnyP(val, typeTable);
+}
+
+bool EvalVal::isCallableNoValue(const EvalVal &val, const TypeTable *typeTable) {
+    optional<TypeTable::Id> type = val.getType();
+    return type.has_value() && typeTable->worksAsCallable(type.value()) && !val.callId.has_value();
 }
 
 optional<int64_t> EvalVal::getValueI(const EvalVal &val, const TypeTable *typeTable) {

@@ -13,7 +13,7 @@ mac m3 (a) {
 };
 
 mac m4 (a b) {
-    m2 sym (x ,a);
+    m2 sym (x a);
     ret \(,x ,b);
 };
 
@@ -96,7 +96,6 @@ fnc main () () {
         println_i32 (+ 209 (cast i32 (== c0 c1)));
         = c0 c1;
         println_i32 (+ 209 (cast i32 (== c0 c1)));
-        = c0 (cast (typeOf c0) (cast (i32 *) null));
 
         println_i32 ((* (& passthrough)) 211);
 

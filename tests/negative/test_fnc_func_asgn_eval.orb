@@ -1,0 +1,7 @@
+eval (fnc foo () {});
+
+eval (fnc bar () {});
+
+fnc main () () {
+    eval (= foo bar);
+};

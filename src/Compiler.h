@@ -23,6 +23,7 @@ class Compiler : public Processor {
     llvm::Constant* getLlvmConstB(bool val);
     // generates a constant for a string literal
     llvm::Constant* makeLlvmConstString(const std::string &str);
+    llvm::FunctionType* makeLlvmFunctionType(TypeTable::Id typeId);
     llvm::Type* makeLlvmType(TypeTable::Id typeId);
     llvm::Type* makeLlvmPrimType(TypeTable::PrimIds primTypeId) { return makeLlvmType(typeTable->getPrimTypeId(primTypeId)); }
     llvm::Type* makeLlvmTypeOrError(CodeLoc codeLoc, TypeTable::Id typeId);
@@ -47,10 +48,10 @@ class Compiler : public Processor {
     bool performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) override;
     bool performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) override;
     bool performPass(CodeLoc codeLoc, SymbolTable::Block &block, const NodeVal &val) override;
-    NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) override;
+    NodeVal performCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args) override;
     NodeVal performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args) override;
-    bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) override;
-    bool performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func) override;
+    NodeVal performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) override;
+    NodeVal performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) override;
     NodeVal performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, MacroValue &macro) override;
     bool performRet(CodeLoc codeLoc) override;
     bool performRet(CodeLoc codeLoc, const NodeVal &node) override;

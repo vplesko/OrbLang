@@ -56,7 +56,7 @@ struct EvalVal {
     static bool isId(const EvalVal &val, const TypeTable *typeTable);
     static bool isType(const EvalVal &val, const TypeTable *typeTable);
     static bool isRaw(const EvalVal &val, const TypeTable *typeTable);
-    static bool isFunc(const EvalVal &val, const SymbolTable *symbolTable);
+    static bool isFunc(const EvalVal &val, const TypeTable *TypeTable);
     static bool isMacro(const EvalVal &val, const TypeTable *TypeTable);
     static bool isI(const EvalVal &val, const TypeTable *typeTable);
     static bool isU(const EvalVal &val, const TypeTable *typeTable);
@@ -70,6 +70,7 @@ struct EvalVal {
     static bool isTuple(const EvalVal &val, const TypeTable *typeTable);
     static bool isDataType(const EvalVal &val, const TypeTable *typeTable);
     static bool isNull(const EvalVal &val, const TypeTable *typeTable);
+    static bool isCallableNoValue(const EvalVal &val, const TypeTable *typeTable);
 
     static std::optional<std::int64_t> getValueI(const EvalVal &val, const TypeTable *typeTable);
     static std::optional<std::uint64_t> getValueU(const EvalVal &val, const TypeTable *typeTable);

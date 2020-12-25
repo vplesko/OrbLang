@@ -130,25 +130,42 @@ bool Evaluator::performPass(CodeLoc codeLoc, SymbolTable::Block &block, const No
     throw ex;
 }
 
-NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) {
-    if (!func.evalFunc.has_value()) {
+NodeVal Evaluator::performCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args) {
+    if (!checkIsEvalVal(func, true)) return NodeVal();
+
+    if (!func.getEvalVal().callId.has_value()) {
+        msgs->errorFuncNoValue(func.getCodeLoc());
+        return NodeVal();
+    }
+    NamePool::Id name = func.getEvalVal().callId.value();
+    const FuncValue *funcVal = symbolTable->getFunction(name);
+    if (funcVal == nullptr) {
+        msgs->errorFuncNotFound(func.getCodeLoc(), name);
+        return NodeVal();
+    }
+    if (!funcVal->defined) {
         msgs->errorUnknown(codeLoc);
         return NodeVal();
     }
-
-    if (func.evalFunc.value().isInvalid()) {
+    if (!funcVal->evalFunc.has_value()) {
         msgs->errorUnknown(codeLoc);
         return NodeVal();
     }
+    if (funcVal->evalFunc.value().isInvalid()) {
+        msgs->errorInternal(codeLoc);
+        return NodeVal();
+    }
 
-    BlockControl blockCtrl(symbolTable, func);
+    BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(*funcVal, typeTable));
+
+    const TypeTable::Callable &call = FuncValue::getCallable(*funcVal, typeTable);
 
     for (size_t i = 0; i < args.size(); ++i) {
-        symbolTable->addVar(func.argNames[i], args[i]);
+        symbolTable->addVar(funcVal->argNames[i], args[i]);
     }
 
     try {
-        if (!processChildNodes(func.evalFunc.value())) {
+        if (!processChildNodes(funcVal->evalFunc.value())) {
             return NodeVal();
         }
     } catch (ExceptionEvaluatorJump ex) {
@@ -158,9 +175,9 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
         }
     }
 
-    if (func.hasRet()) {
+    if (call.hasRet()) {
         if (!retVal.has_value()) {
-            msgs->errorRetNoValue(codeLoc, func.retType.value());
+            msgs->errorRetNoValue(codeLoc, call.retType.value());
             return NodeVal();
         }
 
@@ -171,7 +188,7 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
 }
 
 NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args) {
-    BlockControl blockCtrl(symbolTable, macro);
+    BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(macro));
 
     for (size_t i = 0; i < args.size(); ++i) {
         symbolTable->addVar(macro.argNames[i], args[i]);
@@ -196,15 +213,23 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const
     return move(retVal.value());
 }
 
-bool Evaluator::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
+NodeVal Evaluator::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
     // mark the func as eval, but it cannot be called
     func.evalFunc = NodeVal();
-    return true;
+
+    EvalVal evalVal = EvalVal::makeVal(func.type, typeTable);
+    evalVal.callId = func.name;
+
+    return NodeVal(codeLoc, move(evalVal));
 }
 
-bool Evaluator::performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func) {
+NodeVal Evaluator::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) {
     func.evalFunc = body;
-    return true;
+
+    EvalVal evalVal = EvalVal::makeVal(func.type, typeTable);
+    evalVal.callId = func.name;
+
+    return NodeVal(codeLoc, move(evalVal));
 }
 
 NodeVal Evaluator::performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, MacroValue &macro) {

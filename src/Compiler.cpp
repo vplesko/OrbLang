@@ -96,8 +96,14 @@ NodeVal Compiler::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
     if (!checkIsLlvmVal(codeLoc, ref, true)) return NodeVal();
 
     LlvmVal loadLlvmVal(ref.getLlvmVal().type);
-    loadLlvmVal.ref = ref.getLlvmVal().ref;
-    loadLlvmVal.val = llvmBuilder.CreateLoad(ref.getLlvmVal().ref, getNameForLlvm(id));
+    if (ref.getLlvmVal().ref == nullptr) {
+        // this only happens in the case of global function variables
+        // in this case, the loaded value is non-ref
+        loadLlvmVal.val = ref.getLlvmVal().val;
+    } else {
+        loadLlvmVal.ref = ref.getLlvmVal().ref;
+        loadLlvmVal.val = llvmBuilder.CreateLoad(ref.getLlvmVal().ref, getNameForLlvm(id));
+    }
     return NodeVal(codeLoc, loadLlvmVal);
 }
 
@@ -261,8 +267,9 @@ bool Compiler::performPass(CodeLoc codeLoc, SymbolTable::Block &block, const Nod
     return true;
 }
 
-NodeVal Compiler::performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) {
+NodeVal Compiler::performCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
+    if (!checkIsLlvmVal(func, true)) return NodeVal();
 
     vector<llvm::Value*> llvmArgValues(args.size());
     for (size_t i = 0; i < args.size(); ++i) {
@@ -278,12 +285,16 @@ NodeVal Compiler::performCall(CodeLoc codeLoc, const FuncValue &func, const std:
         }
     }
 
-    if (func.hasRet()) {
-        LlvmVal retLlvmVal(func.retType.value());
-        retLlvmVal.val = llvmBuilder.CreateCall(func.llvmFunc, llvmArgValues, "call_tmp");
+    const TypeTable::Callable *call = typeTable->extractCallable(func.getLlvmVal().type);
+
+    llvm::FunctionCallee llvmFuncCallee = llvm::FunctionCallee(makeLlvmFunctionType(func.getLlvmVal().type), func.getLlvmVal().val);
+
+    if (call->hasRet()) {
+        LlvmVal retLlvmVal(call->retType.value());
+        retLlvmVal.val = llvmBuilder.CreateCall(llvmFuncCallee, llvmArgValues, "call_tmp");
         return NodeVal(codeLoc, retLlvmVal);
     } else {
-        llvmBuilder.CreateCall(func.llvmFunc, llvmArgValues, "");
+        llvmBuilder.CreateCall(llvmFuncCallee, llvmArgValues, "");
         return NodeVal(codeLoc);
     }
 }
@@ -293,25 +304,27 @@ NodeVal Compiler::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const 
     return NodeVal();
 }
 
-bool Compiler::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
-    vector<llvm::Type*> llvmArgTypes(func.argCnt());
-    for (size_t i = 0; i < func.argCnt(); ++i) {
-        llvmArgTypes[i] = makeLlvmTypeOrError(codeLoc, func.argTypes[i]);
-        if (llvmArgTypes[i] == nullptr) return false;
+NodeVal Compiler::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
+    llvm::FunctionType *llvmFuncType = makeLlvmFunctionType(func.type);
+    if (llvmFuncType == nullptr) {
+        msgs->errorUnknown(codeLoc);
+        return NodeVal();
     }
-    
-    llvm::Type *llvmRetType = func.retType.has_value() ? makeLlvmTypeOrError(codeLoc, func.retType.value()) : llvm::Type::getVoidTy(llvmContext);
-    if (llvmRetType == nullptr) return false;
-
-    llvm::FunctionType *llvmFuncType = llvm::FunctionType::get(llvmRetType, llvmArgTypes, func.variadic);
 
     func.llvmFunc = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage, getNameForLlvm(func.name), llvmModule.get());
 
-    return true;
+    LlvmVal llvmVal;
+    llvmVal.type = func.type;
+    llvmVal.val = func.llvmFunc;
+    // ref left null for the case of compiled functions
+
+    return NodeVal(codeLoc, llvmVal);
 }
 
-bool Compiler::performFunctionDefinition(const NodeVal &args, const NodeVal &body, FuncValue &func) {
-    BlockControl blockCtrl(symbolTable, func);
+NodeVal Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) {
+    BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(func, typeTable));
+
+    const TypeTable::Callable &call = FuncValue::getCallable(func, typeTable);
 
     llvmBuilderAlloca.SetInsertPoint(llvm::BasicBlock::Create(llvmContext, "alloca", func.llvmFunc));
 
@@ -320,13 +333,13 @@ bool Compiler::performFunctionDefinition(const NodeVal &args, const NodeVal &bod
 
     size_t i = 0;
     for (auto &llvmFuncArg : func.llvmFunc->args()) {
-        llvm::Type *llvmArgType = makeLlvmTypeOrError(args.getChild(i).getCodeLoc(), func.argTypes[i]);
-        if (llvmArgType == nullptr) return false;
+        llvm::Type *llvmArgType = makeLlvmTypeOrError(args.getChild(i).getCodeLoc(), call.argTypes[i]);
+        if (llvmArgType == nullptr) return NodeVal();
         
         llvm::AllocaInst *llvmAlloca = makeLlvmAlloca(llvmArgType, getNameForLlvm(func.argNames[i]));
         llvmBuilder.CreateStore(&llvmFuncArg, llvmAlloca);
 
-        LlvmVal varLlvmVal(func.argTypes[i]);
+        LlvmVal varLlvmVal(call.argTypes[i]);
         varLlvmVal.ref = llvmAlloca;
         NodeVal varNodeVal(args.getChild(i).getCodeLoc(), varLlvmVal);
         symbolTable->addVar(func.argNames[i], move(varNodeVal));
@@ -336,18 +349,22 @@ bool Compiler::performFunctionDefinition(const NodeVal &args, const NodeVal &bod
 
     if (!processChildNodes(body)) {
         func.llvmFunc->eraseFromParent();
-        return false;
+        return NodeVal();
     }
 
     llvmBuilderAlloca.CreateBr(llvmBlockBody);
 
-    if (!func.hasRet() && !isLlvmBlockTerminated())
+    if (!call.hasRet() && !isLlvmBlockTerminated())
         llvmBuilder.CreateRetVoid();
 
     if (llvm::verifyFunction(*func.llvmFunc, &llvm::errs())) cerr << endl;
     llvmFpm->run(*func.llvmFunc);
 
-    return true;
+    LlvmVal llvmVal;
+    llvmVal.type = func.type;
+    llvmVal.val = func.llvmFunc;
+
+    return NodeVal(codeLoc, llvmVal);
 }
 
 NodeVal Compiler::performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, MacroValue &macro) {
@@ -444,19 +461,20 @@ optional<bool> Compiler::performOperComparison(CodeLoc codeLoc, const NodeVal &l
     ComparisonSignal *compSignal = (ComparisonSignal*) signal;
 
     if (!checkInLocalScope(codeLoc, true)) return nullopt;
-    
+
     NodeVal lhsPromo = promoteIfEvalValAndCheckIsLlvmVal(lhs, true);
     if (lhsPromo.isInvalid()) return nullopt;
-    
+
     NodeVal rhsPromo = promoteIfEvalValAndCheckIsLlvmVal(rhs, true);
     if (rhsPromo.isInvalid()) return nullopt;
-    
+
     bool isTypeI = typeTable->worksAsTypeI(lhsPromo.getType().value());
     bool isTypeU = typeTable->worksAsTypeU(lhsPromo.getType().value());
     bool isTypeC = typeTable->worksAsTypeC(lhsPromo.getType().value());
     bool isTypeF = typeTable->worksAsTypeF(lhsPromo.getType().value());
     bool isTypeP = typeTable->worksAsTypeAnyP(lhsPromo.getType().value());
     bool isTypeB = typeTable->worksAsTypeB(lhsPromo.getType().value());
+    bool isTypeCall = typeTable->worksAsCallable(lhsPromo.getType().value());
 
     llvm::Value *llvmValueRes = nullptr;
 
@@ -466,7 +484,7 @@ optional<bool> Compiler::performOperComparison(CodeLoc codeLoc, const NodeVal &l
             llvmValueRes = llvmBuilder.CreateICmpEQ(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "cmp_eq_tmp");
         } else if (isTypeF) {
             llvmValueRes = llvmBuilder.CreateFCmpOEQ(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fcmp_eq_tmp");
-        } else if (isTypeP) {
+        } else if (isTypeP || isTypeCall) {
             llvmValueRes = llvmBuilder.CreateICmpEQ(
                 llvmBuilder.CreatePtrToInt(lhsPromo.getLlvmVal().val, makeLlvmPrimType(TypeTable::WIDEST_I)),
                 llvmBuilder.CreatePtrToInt(rhsPromo.getLlvmVal().val, makeLlvmPrimType(TypeTable::WIDEST_I)),
@@ -478,7 +496,7 @@ optional<bool> Compiler::performOperComparison(CodeLoc codeLoc, const NodeVal &l
             llvmValueRes = llvmBuilder.CreateICmpNE(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "cmp_ne_tmp");
         } else if (isTypeF) {
             llvmValueRes = llvmBuilder.CreateFCmpONE(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fcmp_ne_tmp");
-        } else if (isTypeP) {
+        } else if (isTypeP || isTypeCall) {
             llvmValueRes = llvmBuilder.CreateICmpNE(
                 llvmBuilder.CreatePtrToInt(lhsPromo.getLlvmVal().val, makeLlvmPrimType(TypeTable::WIDEST_I)),
                 llvmBuilder.CreatePtrToInt(rhsPromo.getLlvmVal().val, makeLlvmPrimType(TypeTable::WIDEST_I)),
@@ -777,7 +795,7 @@ NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
     } else if (EvalVal::isB(eval, typeTable)) {
         llvmConst = getLlvmConstB(eval.b);
     } else if (EvalVal::isNull(eval, typeTable)) {
-        llvmConst = llvm::ConstantPointerNull::get((llvm::PointerType*)makeLlvmType(ty));
+        llvmConst = llvm::ConstantPointerNull::get((llvm::PointerType*) makeLlvmType(ty));
     } else if (EvalVal::isStr(eval, typeTable)) {
         llvmConst = stringPool->getLlvm(eval.str.value());
         if (llvmConst == nullptr) {
@@ -820,6 +838,8 @@ NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
         }
 
         llvmConst = llvm::ConstantStruct::get(llvmStructType, llvmConsts);
+    } else if (EvalVal::isCallableNoValue(eval, typeTable)) {
+        llvmConst = llvm::ConstantPointerNull::get((llvm::PointerType*) makeLlvmType(ty));
     }
 
     if (llvmConst == nullptr) {
@@ -860,6 +880,22 @@ llvm::Constant* Compiler::getLlvmConstB(bool val) {
 
 llvm::Constant* Compiler::makeLlvmConstString(const std::string &str) {
     return llvmBuilder.CreateGlobalStringPtr(str, "str_lit");
+}
+
+llvm::FunctionType* Compiler::makeLlvmFunctionType(TypeTable::Id typeId) {
+    const TypeTable::Callable *call = typeTable->extractCallable(typeId);
+    if (call == nullptr) return nullptr;
+
+    vector<llvm::Type*> llvmArgTypes(call->argCnt());
+    for (size_t i = 0; i < call->argCnt(); ++i) {
+        llvmArgTypes[i] = makeLlvmType(call->argTypes[i]);
+        if (llvmArgTypes[i] == nullptr) return nullptr;
+    }
+    
+    llvm::Type *llvmRetType = call->retType.has_value() ? makeLlvmType(call->retType.value()) : llvm::Type::getVoidTy(llvmContext);
+    if (llvmRetType == nullptr) return nullptr;
+
+    return llvm::FunctionType::get(llvmRetType, llvmArgTypes, call->variadic);
 }
 
 llvm::Type* Compiler::makeLlvmType(TypeTable::Id typeId) {
@@ -929,6 +965,11 @@ llvm::Type* Compiler::makeLlvmType(TypeTable::Id typeId) {
             }
             ((llvm::StructType*) llvmType)->setBody(memberTypes);
         }
+    } else if (typeTable->isCallable(typeId)) {
+        llvmType = makeLlvmFunctionType(typeId);
+        if (llvmType == nullptr) return nullptr;
+        // make a function pointer type
+        llvmType = llvm::PointerType::get(llvmType, 0);
     }
 
     // supported primitive type are compiled at the start of compilation
@@ -952,6 +993,7 @@ llvm::GlobalValue* Compiler::makeLlvmGlobal(llvm::Type *type, llvm::Constant *in
         *llvmModule,
         type,
         isConstant,
+        // TODO are linkage values correct (this and other(s))
         llvm::GlobalValue::PrivateLinkage,
         init,
         name);
@@ -1028,7 +1070,7 @@ llvm::Value* Compiler::makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTy
             dstLlvmVal = llvmBuilder.CreatePtrToInt(srcLlvmVal, dstLlvmType, "p2i_cast");
         } else if (typeTable->worksAsTypeU(dstTypeId)) {
             dstLlvmVal = llvmBuilder.CreatePtrToInt(srcLlvmVal, dstLlvmType, "p2u_cast");
-        } else if (typeTable->worksAsTypeAnyP(dstTypeId)) {
+        } else if (typeTable->worksAsTypeAnyP(dstTypeId) || typeTable->worksAsCallable(dstTypeId)) {
             dstLlvmVal = llvmBuilder.CreatePointerCast(srcLlvmVal, dstLlvmType, "p2p_cast");
         } else if (typeTable->worksAsTypeB(dstTypeId)) {
             llvm::Type *llvmTypeI = makeLlvmPrimType(TypeTable::WIDEST_I);
@@ -1039,9 +1081,19 @@ llvm::Value* Compiler::makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTy
                 llvm::ConstantInt::getNullValue(llvmTypeI),
                 "p2b_cast");
         }
-    } else if (typeTable->worksAsTypeArr(srcTypeId) ||
-        typeTable->worksAsTuple(srcTypeId) ||
-        typeTable->worksAsDataType(srcTypeId)) {
+    } else if (typeTable->worksAsCallable(srcTypeId)) {
+        if (typeTable->worksAsTypeAnyP(dstTypeId) || typeTable->worksAsCallable(dstTypeId)) {
+            dstLlvmVal = llvmBuilder.CreatePointerCast(srcLlvmVal, dstLlvmType, "p2p_cast");
+        } else if (typeTable->worksAsTypeB(dstTypeId)) {
+            llvm::Type *llvmTypeI = makeLlvmPrimType(TypeTable::WIDEST_I);
+            if (llvmTypeI == nullptr) return nullptr;
+
+            dstLlvmVal = llvmBuilder.CreateICmpNE(
+                llvmBuilder.CreatePtrToInt(srcLlvmVal, llvmTypeI),
+                llvm::ConstantInt::getNullValue(llvmTypeI),
+                "p2b_cast");
+        }
+    } else {
         // these types are only castable when changing constness
         if (typeTable->isImplicitCastable(srcTypeId, dstTypeId)) {
             // no action is needed in case of a cast
