@@ -1,6 +1,6 @@
 import "base.orb";
 
-fnc printf(fmt:(c8 cn []) ...) ();
+fnc printf (fmt:(c8 cn []))::variadic ();
 
 eval (fnc fibonacci (n:i32) u64 {
     if (< n 2) {

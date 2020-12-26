@@ -1,6 +1,6 @@
 import "base.orb";
 
-fnc printf(fmt:(c8 cn []) ...) ();
+fnc printf (fmt:(c8 cn []))::variadic ();
 
 mac likeThis (times what) {
     sym (r {});

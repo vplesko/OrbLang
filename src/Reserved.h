@@ -9,7 +9,6 @@ enum class Meaningful {
     CN,
     ASTERISK,
     SQUARE,
-    ELLIPSIS,
     TYPE,
     UNKNOWN
 };

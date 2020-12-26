@@ -67,6 +67,7 @@ protected:
     bool checkIsLlvmVal(CodeLoc codeLoc, const NodeVal &node, bool orError);
     bool checkIsLlvmVal(const NodeVal &node, bool orError) { return checkIsLlvmVal(node.getCodeLoc(), node, orError); }
     bool checkIsRaw(const NodeVal &node, bool orError);
+    bool checkIsEmpty(const NodeVal &node, bool orError);
     bool checkIsTopmost(CodeLoc codeLoc, bool orError);
     bool checkIsId(const NodeVal &node, bool orError);
     bool checkIsType(const NodeVal &node, bool orError);
@@ -105,6 +106,9 @@ protected:
 
     std::optional<NodeVal> getAttribute(const NodeVal &node, NamePool::Id attrName);
     std::optional<NodeVal> getAttribute(const NodeVal &node, const std::string &attrStrName);
+    // nullopt on error or attr not empty, otherwise whether has the attribute
+    std::optional<bool> hasAttributeAndCheckIsEmpty(const NodeVal &node, NamePool::Id attrName);
+    std::optional<bool> hasAttributeAndCheckIsEmpty(const NodeVal &node, const std::string &attrStrName);
 private:
     NodeVal promoteLiteralVal(const NodeVal &node);
     bool canBeTypeDescrDecor(const NodeVal &node);

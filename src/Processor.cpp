@@ -324,7 +324,7 @@ NodeVal Processor::processBlock(const NodeVal &node) {
     if (hasName) {
         NodeVal nodeName = processWithEscape(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
-        if (!NodeVal::isEmpty(nodeName, typeTable)) {
+        if (!checkIsEmpty(nodeName, false)) {
             if (!checkIsId(nodeName, true)) return NodeVal();
             name = nodeName.getEvalVal().id;
         }
@@ -334,7 +334,7 @@ NodeVal Processor::processBlock(const NodeVal &node) {
     if (hasType) {
         NodeVal nodeType = processNode(node.getChild(indType));
         if (nodeType.isInvalid()) return NodeVal();
-        if (!NodeVal::isEmpty(nodeType, typeTable)) {
+        if (!checkIsEmpty(nodeType, false)) {
             if (!checkIsType(nodeType, true)) return NodeVal();
             type = nodeType.getEvalVal().ty;
         }
@@ -665,31 +665,25 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     // arguments
     vector<NamePool::Id> argNames;
     vector<TypeTable::Id> argTypes;
-    bool variadic = false;
     const NodeVal &nodeArgs = processWithEscape(node.getChild(indArgs));
     if (nodeArgs.isInvalid()) return NodeVal();
     if (!checkIsRaw(nodeArgs, true)) return NodeVal();
+    optional<bool> variadic = hasAttributeAndCheckIsEmpty(nodeArgs, "variadic");
+    if (!variadic.has_value()) return NodeVal();
     for (size_t i = 0; i < nodeArgs.getChildrenCnt(); ++i) {
         const NodeVal &nodeArg = nodeArgs.getChild(i);
 
-        if (variadic) {
-            msgs->errorNotLastParam(nodeArg.getCodeLoc());
+        pair<NodeVal, optional<NodeVal>> arg = processForIdTypePair(nodeArg);
+        if (arg.first.isInvalid()) return NodeVal();
+
+        NamePool::Id argId = arg.first.getEvalVal().id;
+        if (!arg.second.has_value()) {
+            msgs->errorMissingTypeAttribute(nodeArg.getCodeLoc());
             return NodeVal();
         }
 
-        pair<NodeVal, optional<NodeVal>> arg = processForIdTypePair(nodeArg);
-        if (arg.first.isInvalid()) return NodeVal();
-        NamePool::Id argId = arg.first.getEvalVal().id;
-        if (isMeaningful(argId, Meaningful::ELLIPSIS)) {
-            variadic = true;
-        } else {
-            if (!arg.second.has_value()) {
-                msgs->errorMissingTypeAttribute(nodeArg.getCodeLoc());
-                return NodeVal();
-            }
-            argNames.push_back(argId);
-            argTypes.push_back(arg.second.value().getEvalVal().ty);
-        }
+        argNames.push_back(argId);
+        argTypes.push_back(arg.second.value().getEvalVal().ty);
     }
 
     // check no arg name duplicates
@@ -701,7 +695,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         const NodeVal &nodeRetType = node.getChild(indRet);
         NodeVal ty = processNode(nodeRetType);
         if (ty.isInvalid()) return NodeVal();
-        if (!NodeVal::isEmpty(ty, typeTable)) {
+        if (!checkIsEmpty(ty, false)) {
             if (!checkIsType(ty, true)) return NodeVal();
             retType = ty.getEvalVal().ty;
         }
@@ -723,7 +717,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         callable.isFunc = true;
         callable.argTypes = argTypes;
         callable.retType = retType;
-        callable.variadic = variadic;
+        callable.variadic = variadic.value();
         optional<TypeTable::Id> typeOpt = typeTable->addCallable(callable);
         if (!typeOpt.has_value()) {
             msgs->errorInternal(node.getCodeLoc());
@@ -1132,6 +1126,17 @@ optional<NodeVal> Processor::getAttribute(const NodeVal &node, NamePool::Id attr
 
 optional<NodeVal> Processor::getAttribute(const NodeVal &node, const string &attrStrName) {
     return getAttribute(node, namePool->add(attrStrName));
+}
+
+optional<bool> Processor::hasAttributeAndCheckIsEmpty(const NodeVal &node, NamePool::Id attrName) {
+    optional<NodeVal> attr = getAttribute(node, attrName);
+    if (!attr.has_value()) return false;
+    if (!checkIsEmpty(attr.value(), true)) return nullopt;
+    return true;
+}
+
+optional<bool> Processor::hasAttributeAndCheckIsEmpty(const NodeVal &node, const std::string &attrStrName) {
+    return hasAttributeAndCheckIsEmpty(node, namePool->add(attrStrName));
 }
 
 NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
@@ -1752,6 +1757,14 @@ bool Processor::checkIsEvalTime(CodeLoc codeLoc, const NodeVal &node, bool orErr
 bool Processor::checkIsRaw(const NodeVal &node, bool orError) {
     if (!NodeVal::isRawVal(node, typeTable)) {
         if (orError) msgs->errorUnexpectedIsTerminal(node.getCodeLoc());
+        return false;
+    }
+    return true;
+}
+
+bool Processor::checkIsEmpty(const NodeVal &node, bool orError) {
+    if (!NodeVal::isEmpty(node, typeTable)) {
+        if (orError) msgs->errorUnknown(node.getCodeLoc());
         return false;
     }
     return true;
