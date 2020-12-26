@@ -286,6 +286,10 @@ NodeVal Compiler::performCall(CodeLoc codeLoc, const NodeVal &func, const std::v
     }
 
     const TypeTable::Callable *call = typeTable->extractCallable(func.getLlvmVal().type);
+    if (call == nullptr) {
+        msgs->errorInternal(codeLoc);
+        return NodeVal();
+    }
 
     llvm::FunctionCallee llvmFuncCallee = llvm::FunctionCallee(makeLlvmFunctionType(func.getLlvmVal().type), func.getLlvmVal().val);
 
@@ -311,6 +315,7 @@ NodeVal Compiler::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
         return NodeVal();
     }
 
+    // TODO see if switching to PrivateLinkage speeds up compilation
     func.llvmFunc = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage, getNameForLlvm(func.name), llvmModule.get());
 
     LlvmVal llvmVal;
@@ -363,6 +368,7 @@ NodeVal Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args
     LlvmVal llvmVal;
     llvmVal.type = func.type;
     llvmVal.val = func.llvmFunc;
+    // ref left null for the case of compiled functions
 
     return NodeVal(codeLoc, llvmVal);
 }
@@ -884,7 +890,7 @@ llvm::Constant* Compiler::makeLlvmConstString(const std::string &str) {
 
 llvm::FunctionType* Compiler::makeLlvmFunctionType(TypeTable::Id typeId) {
     const TypeTable::Callable *call = typeTable->extractCallable(typeId);
-    if (call == nullptr) return nullptr;
+    if (call == nullptr || !call->isFunc) return nullptr;
 
     vector<llvm::Type*> llvmArgTypes(call->argCnt());
     for (size_t i = 0; i < call->argCnt(); ++i) {

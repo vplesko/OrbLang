@@ -1,4 +1,3 @@
-# TODO! code review
 import "util/io.orb";
 
 fnc f0 () i32 {

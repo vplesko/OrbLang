@@ -295,7 +295,7 @@ bool EvalVal::isCastable(const EvalVal &val, TypeTable::Id dstTypeId, const Stri
         return typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_ID) ||
             typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE);
     } else if (typeTable->worksAsCallable(srcTypeId)) {
-        return (!val.callId.has_value() && typeTable->worksAsTypeAnyP(dstTypeId)) ||
+        return (!val.callId.has_value() && typeTable->worksAsTypeAnyP(dstTypeId)) || (typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_BOOL)) ||
             typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId));
     } else {
         // other types are only castable when changing constness

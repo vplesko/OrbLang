@@ -1,5 +1,7 @@
 import "util/io.orb";
 
+eval (fnc foo () () {});
+
 fnc main () () {
     println_i32 (cast i32 100);
     println_i32 (cast i32 101:i16);
@@ -52,4 +54,8 @@ fnc main () () {
 
     cast (fnc (a:i32) ()) (cast (i32 *) null);
     cast (mac (a)) (cast (i32 *) null);
+
+    println_i32 (cast i32 (cast bool foo));
+    println_i32 (cast i32 (cast bool (eval (block (fnc () ()) { sym f:(fnc () ()); pass f; }))));
+    println_i32 (cast i32 (cast bool (eval (block (mac (p)) { sym m:(mac (p)); pass m; }))));
 };

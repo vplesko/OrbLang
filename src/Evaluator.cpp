@@ -897,6 +897,9 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
             if (srcEvalVal.callId.has_value() ||
                 (!assignBasedOnTypeP(dstEvalVal, nullptr, dstTypeId) && !typeTable->worksAsTypeAnyP(dstTypeId)))
                 return nullopt;
+        } else if (typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_BOOL)) {
+            if (!assignBasedOnTypeB(dstEvalVal, srcEvalVal.callId.has_value(), dstTypeId))
+                return nullopt;
         } else if (typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId))) {
             dstEvalVal = EvalVal::copyNoRef(srcEvalVal);
             dstEvalVal.type = dstTypeId;
