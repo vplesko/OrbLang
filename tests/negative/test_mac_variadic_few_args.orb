@@ -1,0 +1,7 @@
+mac foo (a b::variadic) {
+    ret \();
+};
+
+fnc main () () {
+    foo;
+};

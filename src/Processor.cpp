@@ -137,7 +137,6 @@ NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
     NodeVal::copyNonValFieldsLeaf(nodeValRaw, node, typeTable);
     NodeVal::unescape(nodeValRaw, typeTable);
 
-    bool anyRawCn = false;
     for (const auto &it : node.getEvalVal().elems) {
         NodeVal childProc = processNode(it);
         if (childProc.isInvalid()) return NodeVal();
@@ -147,16 +146,8 @@ NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
         this will also be a problem with eval pointers, when implemented
         TODO find a way to track lifetimes and make the compilation stop, instead of crashing
         */
-        if (NodeVal::isRawVal(childProc, typeTable)) {
-            if (typeTable->worksAsTypeCn(childProc.getType().value()))
-                anyRawCn = true;
-        }
-
-        nodeValRaw.getEvalVal().elems.push_back(move(childProc));
+        NodeVal::addChild(nodeValRaw, move(childProc), typeTable);
     }
-
-    if (anyRawCn)
-        nodeValRaw.getEvalVal().getType() = typeTable->addTypeCnOf(nodeValRaw.getType().value());
 
     return nodeValRaw;
 }
@@ -614,19 +605,45 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
         msgs->errorMacroNotFound(starting.getCodeLoc(), name);
         return NodeVal();
     }
+    const TypeTable::Callable &call = MacroValue::getCallable(*macroVal, typeTable);
 
     size_t providedArgCnt = node.getChildrenCnt()-1;
-    if (macroVal->argCnt() != providedArgCnt) {
+    if ((call.variadic && providedArgCnt+1 < call.argCnt()) ||
+        (!call.variadic && providedArgCnt != call.argCnt())) {
         msgs->errorUnknown(node.getCodeLoc());
         return NodeVal();    
     }
 
     vector<NodeVal> args;
-    for (size_t i = 0; i < providedArgCnt; ++i) {
+    size_t i;
+    for (i = 0; i+1 < call.argCnt(); ++i) {
         NodeVal arg = processWithEscape(node.getChild(i+1));
         if (arg.isInvalid()) return NodeVal();
 
         args.push_back(move(arg));
+    }
+    if (!call.variadic) {
+        if (i < providedArgCnt) {
+            NodeVal arg = processWithEscape(node.getChild(i+1));
+            if (arg.isInvalid()) return NodeVal();
+
+            args.push_back(move(arg));
+        }
+    } else {
+        // TODO better code loc for this
+        NodeVal totalVarArg = NodeVal::makeEmpty(node.getCodeLoc(), typeTable);
+
+        vector<NodeVal> varArgs;
+        varArgs.reserve(i < providedArgCnt ? providedArgCnt-i : 0);
+        for (; i < providedArgCnt; ++i) {
+            NodeVal arg = processWithEscape(node.getChild(i+1));
+            if (arg.isInvalid()) return NodeVal();
+
+            varArgs.push_back(move(arg));
+        }
+        NodeVal::addChildren(totalVarArg, move(varArgs), typeTable);
+
+        args.push_back(move(totalVarArg));
     }
 
     return evaluator->performInvoke(node.getCodeLoc(), *macroVal, args);
@@ -797,13 +814,22 @@ NodeVal Processor::processMac(const NodeVal &node) {
     const NodeVal &nodeArgs = processWithEscape(node.getChild(indArgs));
     if (nodeArgs.isInvalid()) return NodeVal();
     if (!checkIsRaw(nodeArgs, true)) return NodeVal();
+    bool variadic = false;
     for (size_t i = 0; i < nodeArgs.getChildrenCnt(); ++i) {
         const NodeVal &nodeArg = nodeArgs.getChild(i);
+
+        if (variadic) {
+            msgs->errorNotLastParam(nodeArg.getCodeLoc());
+            return NodeVal();
+        }
 
         NodeVal arg = processWithEscapeAndCheckIsId(nodeArg);
         if (arg.isInvalid()) return NodeVal();
         NamePool::Id argId = arg.getEvalVal().id;
         argNames.push_back(argId);
+        optional<bool> argVariadic = hasAttributeAndCheckIsEmpty(arg, "variadic");
+        if (!argVariadic.has_value()) return NodeVal();
+        variadic = argVariadic.value();
     }
     // check no arg name duplicates
     if (!checkNoArgNameDuplicates(nodeArgs, argNames, true)) return NodeVal();
@@ -823,6 +849,7 @@ NodeVal Processor::processMac(const NodeVal &node) {
         TypeTable::Callable callable;
         callable.isFunc = false;
         callable.makeFitArgCnt(argNames.size());
+        callable.variadic = variadic;
         optional<TypeTable::Id> typeOpt = typeTable->addCallable(callable);
         if (!typeOpt.has_value()) {
             msgs->errorInternal(node.getCodeLoc());

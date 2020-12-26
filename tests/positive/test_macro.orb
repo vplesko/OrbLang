@@ -43,6 +43,14 @@ eval (fnc invokeAndRet (x:i32 m:MyMac) i32 {
     ret (m ,x);
 });
 
+mac var1 (a::variadic) {
+    ret (lenOf a);
+};
+
+mac var2 (a b::variadic) {
+    ret (+ 1 (lenOf b));
+};
+
 fnc main () () {
     block {
         m1;
@@ -108,5 +116,12 @@ fnc main () () {
 
         println_i32 (invokeAndRet 215 c2);
         println_i32 (invokeAndRet 215 (cast MyMac ++));
+    };
+
+    block {
+        println_i32 (+ 300 (var1));
+        println_i32 (+ 300 (var1 x));
+        println_i32 (+ 301 (var2 x));
+        println_i32 (+ 301 (var2 x y));
     };
 };

@@ -150,11 +150,11 @@ NodeVal Parser::parseNode(bool ignoreAttrs) {
                 next();
 
                 if (children.empty()) {
-                    node.addChild(NodeVal::makeEmpty(loc(), typeTable));
+                    NodeVal::addChild(node, NodeVal::makeEmpty(loc(), typeTable), typeTable);
                 } else {
                     NodeVal tuple = NodeVal::makeEmpty(children[0].getCodeLoc(), typeTable);
-                    tuple.addChildren(move(children)); // children is emptied here
-                    node.addChild(move(tuple));
+                    NodeVal::addChildren(tuple, move(children), typeTable); // children is emptied here
+                    NodeVal::addChild(node, move(tuple), typeTable);
                 }
             } else {
                 EscapeScore escapeScore = parseEscapeScore();
@@ -172,7 +172,7 @@ NodeVal Parser::parseNode(bool ignoreAttrs) {
         
         if (!matchCloseBraceOrError(openBrace)) return NodeVal();
 
-        node.addChildren(move(children));
+        NodeVal::addChildren(node, move(children), typeTable);
     } else {
         while (peek().type != Token::T_SEMICOLON) {
             escapeScore += parseEscapeScore();
@@ -185,7 +185,7 @@ NodeVal Parser::parseNode(bool ignoreAttrs) {
             if (child.isInvalid()) return NodeVal();
             NodeVal::escape(child, typeTable, escapeScore);
             escapeScore = 0;
-            node.addChild(move(child));
+            NodeVal::addChild(node, move(child), typeTable);
         }
         next();
     }

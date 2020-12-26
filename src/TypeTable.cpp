@@ -281,6 +281,8 @@ TypeTable::Id TypeTable::addTypeArrOfLenIdOf(Id typeId, std::size_t len) {
 }
 
 TypeTable::Id TypeTable::addTypeCnOf(Id typeId) {
+    if (isDirectCn(typeId)) return typeId;
+
     if (isTypeDescr(typeId)) {
         const TypeDescr &typeDescr = typeDescrs[typeId.index].first;
         

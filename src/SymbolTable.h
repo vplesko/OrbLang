@@ -34,6 +34,8 @@ struct MacroValue {
     NodeVal body;
 
     std::size_t argCnt() const { return argNames.size(); }
+
+    static const TypeTable::Callable& getCallable(const MacroValue &macro, const TypeTable *typeTable);
 };
 
 class SymbolTable {

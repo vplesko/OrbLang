@@ -15,6 +15,12 @@ optional<TypeTable::Id> FuncValue::getRetType(const FuncValue &func, const TypeT
     return getCallable(func, typeTable).retType;
 }
 
+const TypeTable::Callable& MacroValue::getCallable(const MacroValue &macro, const TypeTable *typeTable) {
+    const TypeTable::Callable *call = typeTable->extractCallable(macro.type);
+    assert(call != nullptr);
+    return *call;
+}
+
 SymbolTable::CalleeValueInfo SymbolTable::CalleeValueInfo::make(const FuncValue &func, const TypeTable *typeTable) {
     CalleeValueInfo c;
     c.isFunc = true;

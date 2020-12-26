@@ -85,8 +85,8 @@ public:
     std::size_t getChildrenCnt() const { return getEvalVal().elems.size(); }
     NodeVal& getChild(std::size_t ind) { return getEvalVal().elems[ind]; }
     const NodeVal& getChild(std::size_t ind) const { return getEvalVal().elems[ind]; }
-    void addChild(NodeVal c);
-    void addChildren(std::vector<NodeVal> c);
+    static void addChild(NodeVal &node, NodeVal c, TypeTable *typeTable);
+    static void addChildren(NodeVal &node, std::vector<NodeVal> c, TypeTable *typeTable);
 
     bool isLlvmVal() const { return kind == Kind::kLlvm; }
     LlvmVal& getLlvmVal() { return std::get<LlvmVal>(value); }

@@ -90,15 +90,24 @@ bool NodeVal::hasRef() const {
     return false;
 }
 
-void NodeVal::addChild(NodeVal c) {
-    getEvalVal().elems.push_back(move(c));
+void NodeVal::addChild(NodeVal &node, NodeVal c, TypeTable *typeTable) {
+    if (isRawVal(c, typeTable) && typeTable->worksAsTypeCn(c.getEvalVal().getType().value()))
+        node.getEvalVal().getType() = typeTable->addTypeCnOf(node.getEvalVal().getType().value());
+
+    node.getEvalVal().elems.push_back(move(c));
 }
 
-void NodeVal::addChildren(std::vector<NodeVal> c) {
-    getEvalVal().elems.reserve(getEvalVal().elems.size()+c.size());
+void NodeVal::addChildren(NodeVal &node, vector<NodeVal> c, TypeTable *typeTable) {
+    node.getEvalVal().elems.reserve(node.getChildrenCnt()+c.size());
+
+    bool setCn = false;
     for (auto &it : c) {
-        addChild(move(it));
+        if (isRawVal(it, typeTable) && typeTable->worksAsTypeCn(it.getEvalVal().getType().value())) setCn = true;
+
+        node.getEvalVal().elems.push_back(move(it));
     }
+
+    if (setCn) node.getEvalVal().getType() = typeTable->addTypeCnOf(node.getEvalVal().getType().value());
 }
 
 void NodeVal::setTypeAttr(NodeVal t) {
