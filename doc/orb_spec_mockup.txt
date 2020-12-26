@@ -274,7 +274,6 @@ type
 ********************
 
 plan:
- - fnc decl then def
  - variadics
  - func and macro overloading (in args variad part of func type and cns past ptrs)
  - attrs: variadic, preprocess, noNameMangle

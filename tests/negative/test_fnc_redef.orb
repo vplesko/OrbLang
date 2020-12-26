@@ -1,0 +1,5 @@
+fnc foo () () {};
+
+fnc foo () () {};
+
+fnc main () () {};

@@ -309,14 +309,19 @@ NodeVal Compiler::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const 
 }
 
 NodeVal Compiler::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
-    llvm::FunctionType *llvmFuncType = makeLlvmFunctionType(func.type);
-    if (llvmFuncType == nullptr) {
-        msgs->errorUnknown(codeLoc);
-        return NodeVal();
-    }
+    string funcLlvmName = getNameForLlvm(func.name);
 
-    // TODO see if switching to PrivateLinkage speeds up compilation
-    func.llvmFunc = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage, getNameForLlvm(func.name), llvmModule.get());
+    func.llvmFunc = llvmModule->getFunction(funcLlvmName);
+    if (func.llvmFunc == nullptr) {
+        llvm::FunctionType *llvmFuncType = makeLlvmFunctionType(func.type);
+        if (llvmFuncType == nullptr) {
+            msgs->errorUnknown(codeLoc);
+            return NodeVal();
+        }
+
+        // TODO see if switching to PrivateLinkage speeds up compilation
+        func.llvmFunc = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage, funcLlvmName, llvmModule.get());
+    }
 
     LlvmVal llvmVal;
     llvmVal.type = func.type;

@@ -25,13 +25,18 @@ fnc f5 () () {
 
 fnc f6 () ();
 
+fnc f7 (x:i32) i32;
+fnc f7 (p:i32) i32;
+
+fnc f7b (f7b:i32) i32 {
+    ret (+ (f7 f7b) 1);
+};
+
 fnc f7 (f7:i32) i32 {
     ret f7;
 };
 
-fnc f7b (f7b:i32) i32 {
-    ret (+ f7b 1);
-};
+fnc f7 (x:i32) i32;
 
 fnc f8 () () {
     f3 106;

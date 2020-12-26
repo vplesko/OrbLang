@@ -654,11 +654,12 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     if (isDecl || isDef) {
         NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
-        if (!symbolTable->nameAvailable(nodeName.getEvalVal().id, namePool, typeTable)) {
-            msgs->errorFuncNameTaken(nodeName.getCodeLoc(), nodeName.getEvalVal().id);
+        name = nodeName.getEvalVal().id;
+        if (!symbolTable->nameAvailable(name, namePool, typeTable) &&
+            symbolTable->getFunction(name) == nullptr) {
+            msgs->errorFuncNameTaken(nodeName.getCodeLoc(), name);
             return NodeVal();
         }
-        name = nodeName.getEvalVal().id;
     }
 
     // arguments
@@ -738,10 +739,19 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         funcVal.argNames = argNames;
         funcVal.defined = isDef;
 
+        bool alreadyInSymTable = symbolTable->getFunction(name) != nullptr;
+
+        // funcVal is passed by mutable reference, is needed later
         NodeVal nodeFunc = performFunctionDeclaration(node.getCodeLoc(), funcVal);
         if (nodeFunc.isInvalid()) return NodeVal();
+
         FuncValue *symbVal = symbolTable->registerFunc(funcVal);
-        symbolTable->addVar(name, nodeFunc);
+        if (symbVal == nullptr) {
+            msgs->errorUnknown(node.getCodeLoc());
+            return NodeVal();
+        }
+
+        if (!alreadyInSymTable) symbolTable->addVar(name, nodeFunc);
 
         if (isDef) {
             nodeFunc = performFunctionDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal);

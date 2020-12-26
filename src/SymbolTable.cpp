@@ -78,7 +78,21 @@ NodeVal* SymbolTable::getVar(NamePool::Id name) {
 }
 
 FuncValue* SymbolTable::registerFunc(const FuncValue &val) {
-    return &(funcs[val.name] = val);
+    auto loc = funcs.find(val.name);
+
+    if (loc == funcs.end()) {
+        return &(funcs[val.name] = val);
+    }
+
+    if (loc->second.defined && val.defined) return nullptr;
+    // TODO only signature needs to match
+    if (loc->second.type != val.type) return nullptr;
+
+    if (val.defined) {
+        return &(funcs[val.name] = val);
+    } else {
+        return &funcs[val.name];
+    }
 }
 
 const FuncValue* SymbolTable::getFunction(NamePool::Id name) const {
