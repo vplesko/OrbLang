@@ -44,10 +44,10 @@ fnc main () () {
     println_i32 (. f 1);
 
     sym (g (tup 0 (& f)));
-    = (. g 1 0) 700;
-    println_i32 (. g 1 0);
+    = (. (* (. g 1)) 0) 700;
+    println_i32 (. (* (. g 1)) 0);
     = (. f 0) 701;
-    println_i32 (. g 1 0);
+    println_i32 (. (* (. g 1)) 0);
 
     = glob 800;
     println_i32 glob;

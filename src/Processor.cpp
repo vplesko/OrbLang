@@ -1513,12 +1513,6 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
     if (base.isInvalid()) return NodeVal();
 
     for (size_t i = 1; i < opers.size(); ++i) {
-        // TODO+ remove this behaviour?
-        if (typeTable->worksAsTypeP(base.getType().value())) {
-            base = dispatchOperUnaryDeref(base.getCodeLoc(), base);
-            if (base.isInvalid()) return NodeVal();
-            if (!checkHasType(base, true)) return NodeVal();
-        }
         TypeTable::Id baseType = base.getType().value();
         bool isBaseRaw = NodeVal::isRawVal(base, typeTable);
         bool isBaseTup = typeTable->worksAsTuple(baseType);

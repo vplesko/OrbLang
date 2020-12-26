@@ -38,10 +38,10 @@ fnc main () () {
     println_i32 (. f 1);
 
     eval (sym (g (tup 0 (& f))));
-    = (. g 1 0) 600;
-    println_i32 (. g 1 0);
+    = (. (* (. g 1)) 0) 600;
+    println_i32 (. (* (. g 1)) 0);
     = (. f 0) 601;
-    println_i32 (. g 1 0);
+    println_i32 (. (* (. g 1)) 0);
 
     = glob 700;
     println_i32 glob;
