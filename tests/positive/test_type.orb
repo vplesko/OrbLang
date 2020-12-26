@@ -10,6 +10,9 @@ custom myI32Tup (i32 i32);
 custom myMyI32P (myI32 *);
 custom myRaw raw;
 
+eval (sym (hello:((c8 cn []) cn) "hello"));
+eval (sym (ola:((c8 cn) []) "ola"));
+
 fnc main () () {
     sym p:i32;
 
@@ -69,12 +72,18 @@ fnc main () () {
         sym x:(i32 3);
         println_i32 (+ 300 (lenOf x));
         println_i32 (+ 300 (lenOf (i32 4)));
+        println_i32 (+ 300 (lenOf (i32 4 cn)));
+        println_i32 (+ 300 (lenOf ((i32 4) cn)));
+        println_i32 (+ 300 (lenOf (i32 4 4)));
+        println_i32 (+ 300 (lenOf ((i32 4) 4)));
+        println_i32 (+ 300 (lenOf (i32 4 4 cn)));
     };
 
     block {
         sym x:(c8 c8 c8 c8 c8);
         println_i32 (+ 300 (lenOf x));
         println_i32 (+ 300 (lenOf (c8 c8 c8 c8 c8 c8)));
+        println_i32 (+ 300 (lenOf ((c8 c8 c8 c8 c8 c8) cn)));
     };
 
     block {
@@ -146,5 +155,25 @@ fnc main () () {
         eval (sym (l:myI32Cn (cast myI32Cn 514)));
         eval (sym (m:myI64Cn (cast myI64Cn l)));
         println_i32 (cast i32 m);
+    };
+
+    block {
+        sym (x:i32 600);
+        sym (p:((i32 *) cn) (& x));
+        println_i32 (* p);
+
+        sym y:(i32 4);
+        = ([] y 0) 601;
+        sym (a (cast ((i32 []) cn) (& y)));
+        println_i32 ([] a 0);
+
+        sym (z:((i32 cn) cn) 602:i32);
+        println_i32 z;
+
+        println_c8 ([] hello 0);
+        println_str hello;
+
+        println_c8 ([] ola 0);
+        println_str ola;
     };
 };

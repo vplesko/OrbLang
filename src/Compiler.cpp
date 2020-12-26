@@ -197,7 +197,7 @@ bool Compiler::performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) {
 }
 
 optional<bool> Compiler::performBlockBody(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &nodeBody) {
-    processChildNodes(nodeBody);
+    if (!processChildNodes(nodeBody)) return nullopt;
     return false;
 }
 

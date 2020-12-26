@@ -560,6 +560,7 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVa
 
     if (typeTable->worksAsTypeArr(base.getType().value())) {
         NodeVal nodeVal = NodeVal::copyNoRef(codeLoc, base.getEvalVal().elems[index.value()]);
+        nodeVal.getEvalVal().type = resTy;
         if (base.hasRef()) {
             nodeVal.getEvalVal().ref = &base.getEvalVal().ref->getEvalVal().elems[index.value()];
         }

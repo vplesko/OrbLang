@@ -1494,10 +1494,13 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
             }
         }
 
+        TypeTable::Id resType = elemType.value();
+        if (typeTable->worksAsTypeCn(baseType)) resType = typeTable->addTypeCnOf(resType);
+
         if (checkIsEvalTime(base, false) && checkIsEvalTime(index, false)) {
-            base = evaluator->performOperIndex(codeLoc, base, index, elemType.value());
+            base = evaluator->performOperIndex(codeLoc, base, index, resType);
         } else {
-            base = performOperIndex(base.getCodeLoc(), base, index, elemType.value());
+            base = performOperIndex(base.getCodeLoc(), base, index, resType);
         }
         if (base.isInvalid()) return NodeVal();
     }
@@ -1510,7 +1513,7 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
     if (base.isInvalid()) return NodeVal();
 
     for (size_t i = 1; i < opers.size(); ++i) {
-        // TODO remove this behaviour?
+        // TODO+ remove this behaviour?
         if (typeTable->worksAsTypeP(base.getType().value())) {
             base = dispatchOperUnaryDeref(base.getCodeLoc(), base);
             if (base.isInvalid()) return NodeVal();

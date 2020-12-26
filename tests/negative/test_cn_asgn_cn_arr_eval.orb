@@ -1,8 +1,8 @@
 fnc main () () {
-    sym a:(i32 2);
+    eval (sym a:(i32 2));
     = ([] a 0) 0;
     = ([] a 1) 1;
 
-    sym (b:(i32 cn 2) a);
+    eval (sym (b:(i32 2 cn) a));
     = ([] b 0) 100;
 };

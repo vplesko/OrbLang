@@ -84,22 +84,35 @@ void TypeTable::addPrimType(NamePool::Id name, PrimIds primId, llvm::Type *type)
     primTypes[primId] = type;
 }
 
+TypeTable::TypeDescr TypeTable::normalize(const TypeDescr &descr) const {
+    if (descr.isEmpty() || !isTypeDescr(descr.base)) return descr;
+
+    TypeDescr normalized = normalize(getTypeDescr(descr.base));
+    if (descr.cn) normalized.setLastCn();
+    for (size_t i = 0; i < descr.decors.size(); ++i) {
+        normalized.addDecor(descr.decors[i], descr.cns[i]);
+    }
+
+    return normalized;
+}
+
 TypeTable::Id TypeTable::addTypeDescr(TypeDescr typeDescr) {
-    if (typeDescr.decors.empty() && typeDescr.cn == false)
-        return typeDescr.base;
-    
+    if (typeDescr.isEmpty()) return typeDescr.base;
+
+    TypeDescr normalized = normalize(typeDescr);
+
     Id id;
     id.kind = Id::kDescr;
 
     for (size_t i = 0; i < typeDescrs.size(); ++i) {
-        if (typeDescrs[i].first.eq(typeDescr)) {
+        if (typeDescrs[i].first.eq(normalized)) {
             id.index = i;
             return id;
         }
     }
 
     id.index = typeDescrs.size();
-    typeDescrs.push_back(make_pair(move(typeDescr), nullptr));
+    typeDescrs.push_back(make_pair(move(normalized), nullptr));
     return id;
 }
 
@@ -356,46 +369,22 @@ TypeTable::Id TypeTable::getTypeCharArrOfLenId(std::size_t len) {
     return addTypeArrOfLenIdOf(c8Id, len);
 }
 
-// TODO optimize, there is redundant work here
 optional<size_t> TypeTable::extractLenOfArr(Id arrTypeId) const {
-    if (!worksAsTypeArr(arrTypeId)) return nullopt;
-
-    if (isTypeDescr(arrTypeId))
-        return getTypeDescr(arrTypeId).decors.back().len;
-    else if (isCustom(arrTypeId))
-        return extractLenOfArr(getCustom(arrTypeId).type);
-    else
-        return nullopt;
+    TypeTable::Id baseTypeId = extractCustomBaseType(arrTypeId);
+    if (!worksAsTypeArr(baseTypeId)) return nullopt;
+    return getTypeDescr(baseTypeId).decors.back().len;
 }
 
-// TODO does this work for eg. ((i32 i32) cn)? (see extractCallable)
-// TODO optimize, there is redundant work here
 optional<size_t> TypeTable::extractLenOfTuple(Id tupleTypeId) const {
-    if (!worksAsTuple(tupleTypeId)) return nullopt;
-
-    if (isTuple(tupleTypeId))
-        return getTuple(tupleTypeId).members.size();
-    else if (isCustom(tupleTypeId))
-        return extractLenOfTuple(getCustom(tupleTypeId).type);
-    else
-        return nullopt;
+    TypeTable::Id baseTypeId = extractCustomBaseType(tupleTypeId);
+    if (!isTuple(baseTypeId)) return nullopt;
+    return getTuple(baseTypeId).members.size();
 }
 
-// TODO optimize, there is redundant work here
-const TypeTable::Callable* TypeTable::extractCallable(Id t) const {
-    if (!worksAsCallable(t)) return nullptr;
-
-    if (isCallable(t)) {
-        return &getCallable(t);
-    } else if (isCustom(t)) {
-        return extractCallable(getCustom(t).type);
-    } else if (isTypeDescr(t)) {
-        const TypeDescr &descr = typeDescrs[t.index].first;
-        if (!descr.decors.empty()) return nullptr;
-        return extractCallable(descr.base);
-    } else {
-        return nullptr;
-    }
+const TypeTable::Callable* TypeTable::extractCallable(Id callTypeId) const {
+    TypeTable::Id baseTypeId = extractCustomBaseType(callTypeId);
+    if (!isCallable(baseTypeId)) return nullptr;
+    return &getCallable(baseTypeId);
 }
 
 TypeTable::Id TypeTable::extractBaseType(Id t) const {
@@ -840,7 +829,6 @@ bool TypeTable::isDirectCn(Id t) const {
     }
 }
 
-// TODO allow callable to callable if same signature
 // TODO allow tuple to tuple (impl if only direct cn diff, explicit memb by memb)
 // TODO allow tuple to data (and vice-versa) (impl if only direct cn diff, explicit memb by memb)
 bool TypeTable::isImplicitCastable(Id from, Id into) const {

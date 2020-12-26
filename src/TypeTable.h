@@ -47,7 +47,6 @@ public:
         bool eq(const Tuple &other) const;
     };
 
-    // TODO tests when base is also TypeDescr
     struct TypeDescr {
         struct Decor {
             enum Type {
@@ -73,11 +72,7 @@ public:
         TypeDescr() {}
         explicit TypeDescr(Id base, bool cn_ = false) : base(base), cn(cn_) {}
 
-        TypeDescr(TypeDescr&&) = default;
-        TypeDescr& operator=(TypeDescr&&) = default;
-
-        TypeDescr(const TypeDescr&) = delete;
-        void operator=(const TypeDescr&) = delete;
+        bool isEmpty() const { return decors.empty() && !cn; }
 
         void addDecor(Decor d, bool cn_ = false);
         void setLastCn();
@@ -160,6 +155,7 @@ private:
 
     template <typename T>
     bool worksAsTypeDescrSatisfyingCondition(Id t, T cond) const;
+    TypeDescr normalize(const TypeDescr &descr) const;
 
     void addTypeStr();
 
@@ -168,6 +164,7 @@ public:
 
     void addPrimType(NamePool::Id name, PrimIds primId, llvm::Type *type);
     // if typeDescr is secretly a prim/tuple, that type's Id is returned instead
+    // if the base is also typeDescr, its decors will be combined with this one's
     Id addTypeDescr(TypeDescr typeDescr);
     // should have at least one member. if there is exactly one member,
     // the created type will not be a tuple, but the type of that member.
@@ -240,7 +237,7 @@ public:
     std::optional<Id> extractDataTypeMemberType(Id t, NamePool::Id memb);
     std::optional<std::size_t> extractLenOfArr(Id arrTypeId) const;
     std::optional<std::size_t> extractLenOfTuple(Id tupleTypeId) const;
-    const Callable* extractCallable(Id t) const;
+    const Callable* extractCallable(Id callTypeId) const;
     Id extractBaseType(Id t) const;
     // only passes through customs and cn
     Id extractCustomBaseType(Id t) const;
