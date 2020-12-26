@@ -51,6 +51,14 @@ mac var2 (a b::variadic) {
     ret (+ 1 (lenOf b));
 };
 
+mac pp0 (a::preprocess) {
+    ret \(tup ,a ,a);
+};
+
+mac pp1 (a b::(variadic preprocess)) {
+    ret \(tup ,(. b 0) ,(. b 0));
+};
+
 fnc main () () {
     block {
         m1;
@@ -123,5 +131,12 @@ fnc main () () {
         println_i32 (+ 300 (var1 x));
         println_i32 (+ 301 (var2 x));
         println_i32 (+ 301 (var2 x y));
+
+        sym (x 303);
+        pp0 (= x (+ x 1));
+        println_i32 x;
+
+        pp1 x (= x (+ x 1));
+        println_i32 x;
     };
 };

@@ -617,14 +617,14 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
     vector<NodeVal> args;
     size_t i;
     for (i = 0; i+1 < call.argCnt(); ++i) {
-        NodeVal arg = processWithEscape(node.getChild(i+1));
+        NodeVal arg = processWithEscape(node.getChild(i+1), !macroVal->argPreproc[i]);
         if (arg.isInvalid()) return NodeVal();
 
         args.push_back(move(arg));
     }
     if (!call.variadic) {
         if (i < providedArgCnt) {
-            NodeVal arg = processWithEscape(node.getChild(i+1));
+            NodeVal arg = processWithEscape(node.getChild(i+1), !macroVal->argPreproc[i]);
             if (arg.isInvalid()) return NodeVal();
 
             args.push_back(move(arg));
@@ -636,7 +636,7 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
         vector<NodeVal> varArgs;
         varArgs.reserve(i < providedArgCnt ? providedArgCnt-i : 0);
         for (; i < providedArgCnt; ++i) {
-            NodeVal arg = processWithEscape(node.getChild(i+1));
+            NodeVal arg = processWithEscape(node.getChild(i+1), !macroVal->argPreproc[i]);
             if (arg.isInvalid()) return NodeVal();
 
             varArgs.push_back(move(arg));
@@ -810,10 +810,13 @@ NodeVal Processor::processMac(const NodeVal &node) {
     }
 
     // arguments
-    vector<NamePool::Id> argNames;
     const NodeVal &nodeArgs = processWithEscape(node.getChild(indArgs));
     if (nodeArgs.isInvalid()) return NodeVal();
     if (!checkIsRaw(nodeArgs, true)) return NodeVal();
+    vector<NamePool::Id> argNames;
+    argNames.reserve(nodeArgs.getChildrenCnt());
+    vector<bool> argPreproc;
+    argPreproc.reserve(nodeArgs.getChildrenCnt());
     bool variadic = false;
     for (size_t i = 0; i < nodeArgs.getChildrenCnt(); ++i) {
         const NodeVal &nodeArg = nodeArgs.getChild(i);
@@ -825,11 +828,17 @@ NodeVal Processor::processMac(const NodeVal &node) {
 
         NodeVal arg = processWithEscapeAndCheckIsId(nodeArg);
         if (arg.isInvalid()) return NodeVal();
+
         NamePool::Id argId = arg.getEvalVal().id;
         argNames.push_back(argId);
-        optional<bool> argVariadic = hasAttributeAndCheckIsEmpty(arg, "variadic");
-        if (!argVariadic.has_value()) return NodeVal();
-        variadic = argVariadic.value();
+
+        optional<bool> isPreproc = hasAttributeAndCheckIsEmpty(arg, "preprocess");
+        if (!isPreproc.has_value()) return NodeVal();
+        argPreproc.push_back(isPreproc.value());
+
+        optional<bool> isVariadic = hasAttributeAndCheckIsEmpty(arg, "variadic");
+        if (!isVariadic.has_value()) return NodeVal();
+        variadic = isVariadic.value();
     }
     // check no arg name duplicates
     if (!checkNoArgNameDuplicates(nodeArgs, argNames, true)) return NodeVal();
@@ -863,6 +872,7 @@ NodeVal Processor::processMac(const NodeVal &node) {
         macroVal.type = type;
         macroVal.name = name;
         macroVal.argNames = move(argNames);
+        macroVal.argPreproc = move(argPreproc);
 
         MacroValue *symbVal = symbolTable->registerMacro(macroVal);
         NodeVal nodeMacro = evaluator->performMacroDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal);
@@ -1674,10 +1684,14 @@ NodeVal Processor::processAndCheckHasType(const NodeVal &node) {
     return proc;
 }
 
-NodeVal Processor::processWithEscape(const NodeVal &node) {
-    NodeVal esc = node;
-    NodeVal::escape(esc, typeTable);
-    return processNode(esc);
+NodeVal Processor::processWithEscape(const NodeVal &node, bool escape) {
+    if (escape) {
+        NodeVal esc = node;
+        NodeVal::escape(esc, typeTable);
+        return processNode(esc);
+    } else {
+        return processNode(node);
+    }
 }
 
 NodeVal Processor::processWithEscapeAndCheckIsId(const NodeVal &node) {

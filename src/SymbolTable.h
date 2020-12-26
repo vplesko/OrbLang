@@ -31,6 +31,7 @@ struct MacroValue {
 
     NamePool::Id name;
     std::vector<NamePool::Id> argNames;
+    std::vector<bool> argPreproc;
     NodeVal body;
 
     std::size_t argCnt() const { return argNames.size(); }
