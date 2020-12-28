@@ -9,6 +9,7 @@
 #include "SpecialVal.h"
 #include "EvalVal.h"
 #include "LlvmVal.h"
+#include "UndecidedCallableVal.h"
 
 class NodeVal {
 public:
@@ -23,13 +24,14 @@ private:
         kSpecial,
         kAttrMap,
         kEval,
-        kLlvm
+        kLlvm,
+        kUndecidedCallable
     };
 
     CodeLoc codeLoc;
 
     Kind kind;
-    std::variant<StringPool::Id, LiteralVal, SpecialVal, AttrMap, LlvmVal, EvalVal> value;
+    std::variant<StringPool::Id, LiteralVal, SpecialVal, AttrMap, LlvmVal, EvalVal, UndecidedCallableVal> value;
     std::unique_ptr<NodeVal> typeAttr, nonTypeAttrs;
 
     void copyAttrMap(const AttrMap &a);
@@ -46,6 +48,7 @@ public:
     NodeVal(CodeLoc codeLoc, AttrMap val);
     NodeVal(CodeLoc codeLoc, EvalVal val);
     NodeVal(CodeLoc codeLoc, LlvmVal val);
+    NodeVal(CodeLoc codeLoc, UndecidedCallableVal val);
 
     NodeVal(const NodeVal &other);
     NodeVal& operator=(const NodeVal &other);
@@ -79,6 +82,10 @@ public:
     AttrMap& getAttrMap() { return std::get<AttrMap>(value); }
     const AttrMap& getAttrMap() const { return std::get<AttrMap>(value); }
 
+    bool isLlvmVal() const { return kind == Kind::kLlvm; }
+    LlvmVal& getLlvmVal() { return std::get<LlvmVal>(value); }
+    const LlvmVal& getLlvmVal() const { return std::get<LlvmVal>(value); }
+
     bool isEvalVal() const { return kind == Kind::kEval; }
     EvalVal& getEvalVal() { return std::get<EvalVal>(value); }
     const EvalVal& getEvalVal() const { return std::get<EvalVal>(value); }
@@ -89,9 +96,9 @@ public:
     static void addChildren(NodeVal &node, std::vector<NodeVal> c, TypeTable *typeTable);
     static void addChildren(NodeVal &node, std::vector<NodeVal>::iterator start, std::vector<NodeVal>::iterator end, TypeTable *typeTable);
 
-    bool isLlvmVal() const { return kind == Kind::kLlvm; }
-    LlvmVal& getLlvmVal() { return std::get<LlvmVal>(value); }
-    const LlvmVal& getLlvmVal() const { return std::get<LlvmVal>(value); }
+    bool isUndecidedCallableVal() const { return kind == Kind::kUndecidedCallable; }
+    UndecidedCallableVal& getUndecidedCallableVal() { return std::get<UndecidedCallableVal>(value); }
+    const UndecidedCallableVal& getUndecidedCallableVal() const { return std::get<UndecidedCallableVal>(value); }
 
     bool hasTypeAttr() const { return typeAttr != nullptr; }
     NodeVal& getTypeAttr() { return *typeAttr; }

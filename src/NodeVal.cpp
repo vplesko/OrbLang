@@ -25,6 +25,9 @@ NodeVal::NodeVal(CodeLoc codeLoc, EvalVal val) : codeLoc(codeLoc), kind(Kind::kE
 NodeVal::NodeVal(CodeLoc codeLoc, LlvmVal val) : codeLoc(codeLoc), kind(Kind::kLlvm), value(val) {
 }
 
+NodeVal::NodeVal(CodeLoc codeLoc, UndecidedCallableVal val) : codeLoc(codeLoc), kind(Kind::kUndecidedCallable), value(val) {
+}
+
 void NodeVal::copyAttrMap(const AttrMap &a) {
     value = AttrMap();
     for (const auto &loc : a) {

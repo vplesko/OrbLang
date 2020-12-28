@@ -37,6 +37,7 @@ set(HEADER_FILES
     "src/SymbolTable.h"
     "src/Token.h"
     "src/TypeTable.h"
+    "src/UndecidedCallableVal.h"
     "src/utils.h"
     )
 
@@ -61,6 +62,7 @@ set(SOURCE_FILES
     "src/SymbolTable.cpp"
     "src/Token.cpp"
     "src/TypeTable.cpp"
+    "src/UndecidedCallableVal.cpp"
     "src/utils.cpp"
     )
 
