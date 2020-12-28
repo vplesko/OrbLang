@@ -205,11 +205,11 @@ optional<TypeTable::Id> TypeTable::addTypeDerefOf(Id typeId) {
 
     if (isTypeDescr(typeId)) {
         const TypeDescr &typeDescr = typeDescrs[typeId.index].first;
-        
+
         TypeDescr typeDerefDescr(typeDescr.base, typeDescr.cn);
         typeDerefDescr.decors = vector<TypeDescr::Decor>(typeDescr.decors.begin(), typeDescr.decors.end()-1);
         typeDerefDescr.cns = vector<bool>(typeDescr.cns.begin(), typeDescr.cns.end()-1);
-        
+
         return addTypeDescr(move(typeDerefDescr));
     } else if (isCustom(typeId)) {
         return addTypeDerefOf(getCustom(typeId).type);
@@ -223,11 +223,11 @@ optional<TypeTable::Id> TypeTable::addTypeIndexOf(Id typeId) {
 
     if (isTypeDescr(typeId)) {
         const TypeDescr &typeDescr = typeDescrs[typeId.index].first;
-        
+
         TypeDescr typeIndexDescr(typeDescr.base, typeDescr.cn);
         typeIndexDescr.decors = vector<TypeDescr::Decor>(typeDescr.decors.begin(), typeDescr.decors.end()-1);
         typeIndexDescr.cns = vector<bool>(typeDescr.cns.begin(), typeDescr.cns.end()-1);
-        
+
         return addTypeDescr(move(typeIndexDescr));
     } else if (isCustom(typeId)) {
         return addTypeIndexOf(getCustom(typeId).type);
@@ -240,14 +240,8 @@ TypeTable::Id TypeTable::addTypeAddrOf(Id typeId) {
     if (isTypeDescr(typeId)) {
         const TypeDescr &typeDescr = typeDescrs[typeId.index].first;
 
-        TypeDescr typeAddrDescr(typeDescr.base, typeDescr.cn);
-        typeAddrDescr.decors = vector<TypeDescr::Decor>(typeDescr.decors.size()+1);
-        typeAddrDescr.cns = vector<bool>(typeDescr.cns.size()+1);
-        for (size_t i = 0; i < typeDescr.decors.size(); ++i) {
-            typeAddrDescr.decors[i] = typeDescr.decors[i];
-            typeAddrDescr.cns[i] = typeDescr.cns[i];
-        }
-        typeAddrDescr.decors.back() = {.type=TypeDescr::Decor::D_PTR};
+        TypeDescr typeAddrDescr(typeDescr);
+        typeAddrDescr.addDecor({.type=TypeDescr::Decor::D_PTR}, false);
 
         return addTypeDescr(move(typeAddrDescr));
     } else {
@@ -299,6 +293,30 @@ TypeTable::Id TypeTable::addTypeCnOf(Id typeId) {
         typeCnDescr.setLastCn();
         
         return addTypeDescr(move(typeCnDescr));
+    }
+}
+
+TypeTable::Id TypeTable::addTypeForSig(Id typeId) {
+    if (isTypeDescr(typeId)) {
+        const TypeDescr &typeDescr = typeDescrs[typeId.index].first;
+
+        TypeDescr typeDescrSig(typeDescr);
+
+        bool pastRef = false;
+        for (size_t i = 0; i < typeDescrSig.cns.size(); ++i) {
+            size_t ind = typeDescrSig.cns.size()-1-i;
+
+            if (!pastRef) typeDescrSig.cns[ind] = false;
+
+            if (typeDescrSig.decors[ind].type == TypeDescr::Decor::D_PTR ||
+                typeDescrSig.decors[ind].type == TypeDescr::Decor::D_ARR_PTR)
+                pastRef = true;
+        }
+        if (!pastRef) typeDescrSig.cn = false;
+
+        return addTypeDescr(move(typeDescrSig));
+    } else {
+        return typeId;
     }
 }
 
@@ -877,14 +895,14 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
     }
 }
 
-// TODO ignore pre-ptr cns
-optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool) const {
-    // don't forget special delim after custom types are cast safe
+optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool, bool makeSigTy) {
+    Id ty = makeSigTy ? addTypeForSig(t) : t;
+
     stringstream ss;
 
-    if (isPrimitive(t)) {
+    if (isPrimitive(ty)) {
         ss << "$p";
-        switch (t.index) {
+        switch (ty.index) {
         case P_BOOL:
             ss << "$bool";
             break;
@@ -936,49 +954,50 @@ optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool) const 
         default:
             return nullopt;
         }
-    } else if (isTuple(t)) {
+    } else if (isTuple(ty)) {
         ss << "$t";
-        const Tuple &tup = getTuple(t);
+        const Tuple &tup = getTuple(ty);
         for (auto it : tup.members) {
-            optional<string> membStr = makeBinString(it, namePool);
+            optional<string> membStr = makeBinString(it, namePool, false);
             if (!membStr.has_value()) return nullopt;
             ss << membStr.value();
         }
-    } else if (isCustom(t)) {
-        ss << "$c" << "$" << namePool->get(getCustom(t).name);
-    } else if (isDataType(t)) {
-        ss << "$s" << "$" << namePool->get(getDataType(t).name);
-    } else if (isTypeDescr(t)) {
+    } else if (isCustom(ty)) {
+        ss << "$c" << "$" << namePool->get(getCustom(ty).name);
+    } else if (isDataType(ty)) {
+        ss << "$s" << "$" << namePool->get(getDataType(ty).name);
+    } else if (isTypeDescr(ty)) {
         ss << "$d";
-        const TypeDescr &descr = getTypeDescr(t);
-        for (size_t i = descr.decors.size()-1;; --i) {
-            if (descr.cns[i]) ss << "$cn";
-            if (descr.decors[i].type == TypeDescr::Decor::D_ARR) ss << "$arr";
-            else if (descr.decors[i].type == TypeDescr::Decor::D_ARR_PTR) ss << "$[]";
-            else if (descr.decors[i].type == TypeDescr::Decor::D_PTR) ss << "$*";
-            else return nullopt;
+        const TypeDescr &descr = getTypeDescr(ty);
+        for (size_t i = 0; i < descr.decors.size(); ++i) {
+            size_t ind = descr.decors.size()-1-i;
 
-            if (i == 0) break;
+            if (descr.cns[ind]) ss << "$cn";
+            if (descr.decors[ind].type == TypeDescr::Decor::D_ARR) ss << "$arr";
+            else if (descr.decors[ind].type == TypeDescr::Decor::D_ARR_PTR) ss << "$[]";
+            else if (descr.decors[ind].type == TypeDescr::Decor::D_PTR) ss << "$*";
+            else return nullopt;
         }
         if (descr.cn) ss << "$cn";
-        optional<string> baseStr = makeBinString(descr.base, namePool);
+        // type descrs are always normalized, so the base is never another type descr
+        optional<string> baseStr = makeBinString(descr.base, namePool, false);
         if (!baseStr.has_value()) return nullopt;
         ss << baseStr.value();
         return ss.str();
-    } else if (isCallable(t)) {
-        const Callable &call = getCallable(t);
+    } else if (isCallable(ty)) {
+        const Callable &call = getCallable(ty);
         ss << (call.isFunc ? "$f" : "$m");
         ss << "$a" << call.getArgCnt();
         if (call.variadic) ss << "+";
         if (call.isFunc) {
             for (TypeTable::Id argTy : call.argTypes) {
-                optional<string> str = makeBinString(argTy, namePool);
+                optional<string> str = makeBinString(argTy, namePool, true);
                 if (!str.has_value()) return nullopt;
                 ss << str.value();
             }
         }
         if (call.retType.has_value()) {
-            optional<string> str = makeBinString(call.retType.value(), namePool);
+            optional<string> str = makeBinString(call.retType.value(), namePool, false);
             if (!str.has_value()) return nullopt;
             ss << "$r" << str.value();
         }

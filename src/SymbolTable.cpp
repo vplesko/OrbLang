@@ -91,7 +91,7 @@ FuncValue* SymbolTable::registerFunc(const FuncValue &val) {
     }
 
     if (loc->second.defined && val.defined) return nullptr;
-    // TODO only signature needs to match
+    // TODO! only signature needs to match
     if (loc->second.type != val.type) return nullptr;
 
     if (val.defined) {

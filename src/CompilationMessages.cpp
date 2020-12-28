@@ -172,7 +172,7 @@ string CompilationMessages::errorStringOfType(TypeTable::Id ty) const {
         if (name.has_value()) {
             ss << namePool->get(name.value());
         } else {
-            optional<string> str = typeTable->makeBinString(ty, namePool);
+            optional<string> str = typeTable->makeBinString(ty, namePool, false);
             if (str.has_value()) {
                 ss << str.value();
             } else {

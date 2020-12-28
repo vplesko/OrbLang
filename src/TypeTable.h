@@ -179,6 +179,7 @@ public:
     Id addTypeAddrOf(Id typeId);
     Id addTypeArrOfLenIdOf(Id typeId, std::size_t len);
     Id addTypeCnOf(Id typeId);
+    Id addTypeForSig(Id typeId);
 
     llvm::Type* getType(Id id);
     void setType(Id id, llvm::Type *type);
@@ -250,7 +251,7 @@ public:
 
     bool isImplicitCastable(Id from, Id into) const;
 
-    std::optional<std::string> makeBinString(Id t, const NamePool *namePool) const;
+    std::optional<std::string> makeBinString(Id t, const NamePool *namePool, bool makeSigTy);
 };
 
 template <typename T>

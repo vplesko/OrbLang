@@ -1,5 +1,22 @@
 import "util/io.orb";
 
+custom Ty0 i32;
+custom Ty1 (i32 cn);
+
+data Data0 {
+    x:i32
+};
+data Data1 {
+    x:(i32 cn)
+};
+
+eval (sym (Call0a:(type cn) (fnc (x:(i32 *)) ())));
+eval (sym (Call0b:(type cn) (fnc (x:(i32 * cn)) ())));
+eval (sym (Call0c:(type cn) ((fnc (x:(i32 *)) ()) cn)));
+eval (sym (Call1:(type cn) (fnc (x:(i32 cn *)) ())));
+eval (sym (Call2:(type cn) (fnc (x:(i32 *)) i32)));
+eval (sym (Call3:(type cn) (fnc (x:(i32 *)) (i32 cn))));
+
 fnc main () () {
     sym p:i32;
 
@@ -91,6 +108,141 @@ fnc main () () {
         println_i32 (+ 314 (cast i32 (?? ,id0)));
     };
 
-    sym (a=+-*/%<>&|^!~[]._?0123456789:i32 400);
+    block {
+        eval (sym x:id y:id);
+
+        = x (cast id i32);
+        = y (cast id i32);
+        println_i32 (+ 400 (cast i32 (!= x y)));
+
+        = y (cast id (i32 cn));
+        println_i32 (+ 401 (cast i32 (!= x y)));
+
+        = x (cast id (i32 *));
+        = y (cast id (i32 cn *));
+        println_i32 (+ 401 (cast i32 (!= x y)));
+
+        = y (cast id (i32 * cn));
+        println_i32 (+ 403 (cast i32 (!= x y)));
+
+        = y (cast id (i32 cn * cn));
+        println_i32 (+ 403 (cast i32 (!= x y)));
+
+        = x (cast id (i32 * *));
+        = y (cast id (i32 * cn *));
+        println_i32 (+ 404 (cast i32 (!= x y)));
+
+        = y (cast id (i32 * * cn));
+        println_i32 (+ 406 (cast i32 (!= x y)));
+
+        = y (cast id (i32 * cn * cn));
+        println_i32 (+ 406 (cast i32 (!= x y)));
+
+        = x (cast id (i32 []));
+        = y (cast id (i32 cn []));
+        println_i32 (+ 407 (cast i32 (!= x y)));
+
+        = y (cast id (i32 [] cn));
+        println_i32 (+ 409 (cast i32 (!= x y)));
+
+        = y (cast id (i32 cn [] cn));
+        println_i32 (+ 409 (cast i32 (!= x y)));
+
+        = x (cast id (i32 [] []));
+        = y (cast id (i32 [] cn []));
+        println_i32 (+ 410 (cast i32 (!= x y)));
+
+        = y (cast id (i32 [] [] cn));
+        println_i32 (+ 412 (cast i32 (!= x y)));
+
+        = y (cast id (i32 [] cn [] cn));
+        println_i32 (+ 412 (cast i32 (!= x y)));
+
+        = x (cast id (i32 i32));
+        = y (cast id (i32 i32));
+        println_i32 (+ 414 (cast i32 (!= x y)));
+
+        = y (cast id ((i32 i32) cn));
+        println_i32 (+ 415 (cast i32 (!= x y)));
+
+        = y (cast id ((i32 cn) i32));
+        println_i32 (+ 415 (cast i32 (!= x y)));
+
+        = x (cast id ((i32 i32) *));
+        = y (cast id ((i32 i32) *));
+        println_i32 (+ 417 (cast i32 (!= x y)));
+
+        = y (cast id ((i32 i32) cn *));
+        println_i32 (+ 417 (cast i32 (!= x y)));
+
+        = x (cast id Ty0);
+        = y (cast id Ty0);
+        println_i32 (+ 419 (cast i32 (!= x y)));
+
+        = y (cast id (Ty0 cn));
+        println_i32 (+ 420 (cast i32 (!= x y)));
+
+        = x (cast id (Ty0 *));
+        = y (cast id (Ty0 cn *));
+        println_i32 (+ 420 (cast i32 (!= x y)));
+
+        = y (cast id (Ty0 * cn));
+        println_i32 (+ 422 (cast i32 (!= x y)));
+
+        = y (cast id (Ty0 cn * cn));
+        println_i32 (+ 422 (cast i32 (!= x y)));
+
+        = x (cast id Ty0);
+        = y (cast id Ty1);
+        println_i32 (+ 423 (cast i32 (!= x y)));
+
+        = x (cast id Data0);
+        = y (cast id Data0);
+        println_i32 (+ 425 (cast i32 (!= x y)));
+
+        = y (cast id (Data0 cn));
+        println_i32 (+ 426 (cast i32 (!= x y)));
+
+        = x (cast id (Data0 *));
+        = y (cast id (Data0 cn *));
+        println_i32 (+ 426 (cast i32 (!= x y)));
+
+        = y (cast id (Data0 * cn));
+        println_i32 (+ 428 (cast i32 (!= x y)));
+
+        = y (cast id (Data0 cn * cn));
+        println_i32 (+ 428 (cast i32 (!= x y)));
+
+        = x (cast id Data0);
+        = y (cast id Data1);
+        println_i32 (+ 429 (cast i32 (!= x y)));
+
+        = x (cast id ((i32 cn) *));
+        = y (cast id (i32 cn *));
+        println_i32 (+ 431 (cast i32 (!= x y)));
+
+        = x (cast id ((i32 *) cn));
+        = y (cast id (i32 * cn));
+        println_i32 (+ 432 (cast i32 (!= x y)));
+
+        = x (cast id Call0a);
+        = y (cast id Call0b);
+        println_i32 (+ 433 (cast i32 (!= x y)));
+
+        = y (cast id Call0c);
+        println_i32 (+ 434 (cast i32 (!= x y)));
+
+        = y (cast id Call1);
+        println_i32 (+ 434 (cast i32 (!= x y)));
+
+        = y (cast id Call2);
+        println_i32 (+ 435 (cast i32 (!= x y)));
+
+        = x (cast id Call2);
+        = y (cast id Call3);
+        println_i32 (+ 436 (cast i32 (!= x y)));
+    };
+
+    sym (a=+-*/%<>&|^!~[]._?0123456789:i32 500);
     println_i32 a=+-*/%<>&|^!~[]._?0123456789;
 };

@@ -756,7 +756,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
             nodeFunc = performFunctionDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal);
             if (nodeFunc.isInvalid()) return NodeVal();
             // overrides the previous call
-            // TODO refactor somehow (insert evalval with func's name above, remove this)
+            // TODO! refactor somehow (insert evalval with func's name above, remove this)
             symbolTable->addVar(name, nodeFunc);
         }
 
