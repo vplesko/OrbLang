@@ -39,6 +39,7 @@ public:
     bool performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) override;
     bool performPass(CodeLoc codeLoc, SymbolTable::Block &block, const NodeVal &val) override;
     NodeVal performCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args) override;
+    NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) override;
     NodeVal performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args) override;
     NodeVal performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) override;
     NodeVal performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) override;

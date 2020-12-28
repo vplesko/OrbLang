@@ -99,6 +99,7 @@ public:
     NodeVal* getVar(NamePool::Id name);
 
     FuncValue* registerFunc(const FuncValue &val);
+    // TODO! rename to getFunc
     const FuncValue* getFunction(NamePool::Id name) const;
 
     MacroValue* registerMacro(const MacroValue &val);

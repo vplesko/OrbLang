@@ -303,6 +303,19 @@ NodeVal Compiler::performCall(CodeLoc codeLoc, const NodeVal &func, const std::v
     }
 }
 
+NodeVal Compiler::performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) {
+    if (func.isEval()) {
+        msgs->errorInternal(codeLoc);
+        return NodeVal();
+    }
+
+    LlvmVal llvmVal;
+    llvmVal.type = func.type;
+    llvmVal.val = func.llvmFunc;
+
+    return performCall(codeLoc, NodeVal(codeLoc, llvmVal), args);
+}
+
 NodeVal Compiler::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args) {
     msgs->errorInternal(codeLoc);
     return NodeVal();
