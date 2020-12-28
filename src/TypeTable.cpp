@@ -181,7 +181,7 @@ optional<TypeTable::Id> TypeTable::addDataType(DataType data) {
     }
 }
 
-optional<TypeTable::Id> TypeTable::addCallable(Callable call) {
+TypeTable::Id TypeTable::addCallable(Callable call) {
     for (size_t i = 0; i < callables.size(); ++i) {
         if (call.eq(callables[i].first)) {
             Id id;
@@ -296,28 +296,29 @@ TypeTable::Id TypeTable::addTypeCnOf(Id typeId) {
     }
 }
 
-TypeTable::Id TypeTable::addTypeForSig(Id typeId) {
-    if (isTypeDescr(typeId)) {
-        const TypeDescr &typeDescr = typeDescrs[typeId.index].first;
+TypeTable::Id TypeTable::addTypeDescrForSig(const TypeDescr &typeDescr) {
+    TypeDescr typeDescrSig(typeDescr);
 
-        TypeDescr typeDescrSig(typeDescr);
+    bool pastRef = false;
+    for (size_t i = 0; i < typeDescrSig.cns.size(); ++i) {
+        size_t ind = typeDescrSig.cns.size()-1-i;
 
-        bool pastRef = false;
-        for (size_t i = 0; i < typeDescrSig.cns.size(); ++i) {
-            size_t ind = typeDescrSig.cns.size()-1-i;
+        if (!pastRef) typeDescrSig.cns[ind] = false;
 
-            if (!pastRef) typeDescrSig.cns[ind] = false;
-
-            if (typeDescrSig.decors[ind].type == TypeDescr::Decor::D_PTR ||
-                typeDescrSig.decors[ind].type == TypeDescr::Decor::D_ARR_PTR)
-                pastRef = true;
-        }
-        if (!pastRef) typeDescrSig.cn = false;
-
-        return addTypeDescr(move(typeDescrSig));
-    } else {
-        return typeId;
+        if (typeDescrSig.decors[ind].type == TypeDescr::Decor::D_PTR ||
+            typeDescrSig.decors[ind].type == TypeDescr::Decor::D_ARR_PTR) pastRef = true;
     }
+    if (!pastRef) typeDescrSig.cn = false;
+
+    return addTypeDescr(move(typeDescrSig));
+}
+
+TypeTable::Id TypeTable::addCallableSig(const Callable &call) {
+    Callable sig(call);
+    for (auto &it : sig.argTypes) {
+        if (isTypeDescr(it)) it = addTypeDescrForSig(getTypeDescr(it));
+    }
+    return addCallable(sig);
 }
 
 void TypeTable::addTypeStr() {
@@ -896,7 +897,8 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
 }
 
 optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool, bool makeSigTy) {
-    Id ty = makeSigTy ? addTypeForSig(t) : t;
+    Id ty = t;
+    if (makeSigTy && isTypeDescr(ty)) ty = addTypeDescrForSig(getTypeDescr(ty));
 
     stringstream ss;
 
@@ -979,25 +981,29 @@ optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool, bool m
             else return nullopt;
         }
         if (descr.cn) ss << "$cn";
+
         // type descrs are always normalized, so the base is never another type descr
         optional<string> baseStr = makeBinString(descr.base, namePool, false);
         if (!baseStr.has_value()) return nullopt;
         ss << baseStr.value();
         return ss.str();
     } else if (isCallable(ty)) {
-        const Callable &call = getCallable(ty);
-        ss << (call.isFunc ? "$f" : "$m");
-        ss << "$a" << call.getArgCnt();
-        if (call.variadic) ss << "+";
-        if (call.isFunc) {
-            for (TypeTable::Id argTy : call.argTypes) {
-                optional<string> str = makeBinString(argTy, namePool, true);
+        // inside of callable is done as sig unconditionally
+        Callable sig = getCallable(addCallableSig(getCallable(ty)));
+
+        ss << (sig.isFunc ? "$f" : "$m");
+        ss << "$a" << sig.getArgCnt();
+        if (sig.variadic) ss << "+";
+        if (sig.isFunc) {
+            for (TypeTable::Id argTy : sig.argTypes) {
+                optional<string> str = makeBinString(argTy, namePool, false);
                 if (!str.has_value()) return nullopt;
                 ss << str.value();
             }
         }
-        if (call.retType.has_value()) {
-            optional<string> str = makeBinString(call.retType.value(), namePool, false);
+
+        if (sig.retType.has_value()) {
+            optional<string> str = makeBinString(sig.retType.value(), namePool, false);
             if (!str.has_value()) return nullopt;
             ss << "$r" << str.value();
         }

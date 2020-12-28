@@ -1,8 +1,8 @@
-fnc putchar (x:c8) ();
-fnc getchar () c8;
+fnc putchar::noNameMangle (x:c8) ();
+fnc getchar::noNameMangle () c8;
 
-fnc printf (fmt:(c8 cn []))::variadic ();
-fnc scanf (fmt:(c8 cn []))::variadic ();
+fnc printf::noNameMangle (fmt:(c8 cn []))::variadic ();
+fnc scanf::noNameMangle (fmt:(c8 cn []))::variadic ();
 
-fnc malloc (size:u64) ptr;
-fnc free (addr:ptr) ();
+fnc malloc::noNameMangle (size:u64) ptr;
+fnc free::noNameMangle (addr:ptr) ();

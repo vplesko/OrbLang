@@ -32,6 +32,8 @@ class Compiler : public Processor {
     llvm::Value* makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTypeId, llvm::Type *dstLlvmType, TypeTable::Id dstTypeId);
 
     std::string getNameForLlvm(NamePool::Id name) const;
+    // handles name mangling
+    std::optional<std::string> getFuncNameForLlvm(const FuncValue &func);
 
     NodeVal promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval);
     NodeVal promoteEvalVal(const NodeVal &node);

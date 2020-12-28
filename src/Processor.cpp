@@ -656,6 +656,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
 
     // name
     NamePool::Id name;
+    bool noNameMangle;
     if (isDecl || isDef) {
         NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
@@ -665,6 +666,11 @@ NodeVal Processor::processFnc(const NodeVal &node) {
             msgs->errorFuncNameTaken(nodeName.getCodeLoc(), name);
             return NodeVal();
         }
+
+        optional<bool> noNameMangleOpt = hasAttributeAndCheckIsEmpty(nodeName, "noNameMangle");
+        if (!noNameMangleOpt.has_value()) return NodeVal();
+        bool isMain = isMeaningful(name, Meaningful::MAIN);
+        noNameMangle = noNameMangleOpt.value() || isMain;
     }
 
     // arguments
@@ -736,6 +742,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         funcVal.type = type;
         funcVal.name = name;
         funcVal.argNames = argNames;
+        funcVal.noNameMangle = noNameMangle;
         funcVal.defined = isDef;
 
         bool alreadyInSymTable = symbolTable->getFunction(name) != nullptr;

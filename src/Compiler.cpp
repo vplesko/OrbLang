@@ -309,9 +309,13 @@ NodeVal Compiler::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const 
 }
 
 NodeVal Compiler::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
-    string funcLlvmName = getNameForLlvm(func.name);
+    optional<string> funcLlvmName = getFuncNameForLlvm(func);
+    if (!funcLlvmName.has_value()) {
+        msgs->errorInternal(codeLoc);
+        return NodeVal();
+    }
 
-    func.llvmFunc = llvmModule->getFunction(funcLlvmName);
+    func.llvmFunc = llvmModule->getFunction(funcLlvmName.value());
     if (func.llvmFunc == nullptr) {
         llvm::FunctionType *llvmFuncType = makeLlvmFunctionType(func.type);
         if (llvmFuncType == nullptr) {
@@ -320,7 +324,7 @@ NodeVal Compiler::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
         }
 
         // TODO see if switching to PrivateLinkage speeds up compilation
-        func.llvmFunc = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage, funcLlvmName, llvmModule.get());
+        func.llvmFunc = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage, funcLlvmName.value(), llvmModule.get());
     }
 
     LlvmVal llvmVal;
@@ -878,6 +882,16 @@ NodeVal Compiler::promoteIfEvalValAndCheckIsLlvmVal(const NodeVal &node, bool or
 string Compiler::getNameForLlvm(NamePool::Id name) const {
     // LLVM is smart enough to put quotes around IDs with special chars, but let's keep this method in anyway.
     return namePool->get(name);
+}
+
+optional<string> Compiler::getFuncNameForLlvm(const FuncValue &func) {
+    optional<string> sigTyStr = typeTable->makeBinString(func.type, namePool, true);
+    if (!sigTyStr.has_value()) return nullopt;
+
+    stringstream ss;
+    ss << getNameForLlvm(func.name);
+    if (!func.noNameMangle) ss << sigTyStr.value();
+    return ss.str();
 }
 
 bool Compiler::isLlvmBlockTerminated() const {

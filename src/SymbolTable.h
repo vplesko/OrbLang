@@ -14,6 +14,7 @@ struct FuncValue {
 
     NamePool::Id name;
     std::vector<NamePool::Id> argNames;
+    bool noNameMangle = false;
     bool defined = false;
 
     llvm::Function *llvmFunc;

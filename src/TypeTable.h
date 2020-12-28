@@ -163,7 +163,7 @@ public:
     TypeTable();
 
     void addPrimType(NamePool::Id name, PrimIds primId, llvm::Type *type);
-    // if typeDescr is secretly a prim/tuple, that type's Id is returned instead
+    // if typeDescr is secretly a base type, that type's Id is returned instead
     // if the base is also typeDescr, its decors will be combined with this one's
     Id addTypeDescr(TypeDescr typeDescr);
     // should have at least one member. if there is exactly one member,
@@ -172,14 +172,16 @@ public:
     std::optional<Id> addCustom(Custom c);
     // if already exists, errors on redefinition, overrides otherwise
     std::optional<Id> addDataType(DataType data);
-    std::optional<Id> addCallable(Callable call);
+    Id addCallable(Callable call);
 
     std::optional<Id> addTypeDerefOf(Id typeId);
     std::optional<Id> addTypeIndexOf(Id typeId);
     Id addTypeAddrOf(Id typeId);
     Id addTypeArrOfLenIdOf(Id typeId, std::size_t len);
     Id addTypeCnOf(Id typeId);
-    Id addTypeForSig(Id typeId);
+
+    Id addTypeDescrForSig(const TypeDescr &typeDescr);
+    Id addCallableSig(const Callable &call);
 
     llvm::Type* getType(Id id);
     void setType(Id id, llvm::Type *type);
