@@ -101,7 +101,11 @@ FuncValue* SymbolTable::registerFunc(const FuncValue &val) {
     }
 }
 
-const FuncValue* SymbolTable::getFunction(NamePool::Id name) const {
+bool SymbolTable::isFuncName(NamePool::Id name) const {
+    return funcs.find(name) != funcs.end();
+}
+
+const FuncValue* SymbolTable::getFunc(NamePool::Id name) const {
     auto loc = funcs.find(name);
     if (loc == funcs.end()) return nullptr;
     return &loc->second;
@@ -109,6 +113,10 @@ const FuncValue* SymbolTable::getFunction(NamePool::Id name) const {
 
 MacroValue* SymbolTable::registerMacro(const MacroValue &val) {
     return &(macros[val.name] = val);
+}
+
+bool SymbolTable::isMacroName(NamePool::Id name) const {
+    return macros.find(name) != macros.end();
 }
 
 const MacroValue* SymbolTable::getMacro(NamePool::Id name) const {

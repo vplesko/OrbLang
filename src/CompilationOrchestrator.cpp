@@ -294,7 +294,7 @@ bool CompilationOrchestrator::compile(const std::string &output, bool exe) {
     if (!exe) {
         return compiler->binary(output);
     } else {
-        if (symbolTable->getFunction(getMeaningfulNameId(Meaningful::MAIN)) == nullptr) {
+        if (!symbolTable->isFuncName(getMeaningfulNameId(Meaningful::MAIN))) {
             msgs->errorNoMain();
             return false;
         }

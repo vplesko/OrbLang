@@ -139,7 +139,7 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const NodeVal &func, const std::
     }
     NamePool::Id name = func.getEvalVal().callId.value();
 
-    const FuncValue *funcVal = symbolTable->getFunction(name);
+    const FuncValue *funcVal = symbolTable->getFunc(name);
     if (funcVal == nullptr) {
         msgs->errorFuncNotFound(func.getCodeLoc(), name);
         return NodeVal();
@@ -169,7 +169,7 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
 
     BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(func, typeTable));
 
-    const TypeTable::Callable &call = FuncValue::getCallable(func, typeTable);
+    const TypeTable::Callable &callable = FuncValue::getCallable(func, typeTable);
 
     for (size_t i = 0; i < args.size(); ++i) {
         symbolTable->addVar(func.argNames[i], args[i]);
@@ -186,9 +186,9 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
         }
     }
 
-    if (call.hasRet()) {
+    if (callable.hasRet()) {
         if (!retVal.has_value()) {
-            msgs->errorRetNoValue(codeLoc, call.retType.value());
+            msgs->errorRetNoValue(codeLoc, callable.retType.value());
             return NodeVal();
         }
 

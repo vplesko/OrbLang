@@ -564,26 +564,25 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
     if (starting.isUndecidedCallableVal()) {
         NamePool::Id name = starting.getUndecidedCallableVal().name;
 
-        const FuncValue *funcVal = symbolTable->getFunction(name);
+        const FuncValue *funcVal = symbolTable->getFunc(name);
         if (funcVal == nullptr) {
             msgs->errorUnknown(starting.getCodeLoc());
             return NodeVal();
         }
 
-        // TODO! rename to callable (and in invoke)
-        const TypeTable::Callable &call = FuncValue::getCallable(*funcVal, typeTable);
+        const TypeTable::Callable &callable = FuncValue::getCallable(*funcVal, typeTable);
 
         size_t providedArgCnt = node.getChildrenCnt()-1;
-        if (call.getArgCnt() > providedArgCnt ||
-            (call.getArgCnt() < providedArgCnt && !call.variadic)) {
+        if (callable.getArgCnt() > providedArgCnt ||
+            (callable.getArgCnt() < providedArgCnt && !callable.variadic)) {
             msgs->errorUnknown(node.getCodeLoc());
             return NodeVal();    
         }
 
         vector<NodeVal> args;
         for (size_t i = 0; i < providedArgCnt; ++i) {
-            NodeVal arg = i < call.getArgCnt() ?
-                processAndImplicitCast(node.getChild(i+1), call.argTypes[i]) :
+            NodeVal arg = i < callable.getArgCnt() ?
+                processAndImplicitCast(node.getChild(i+1), callable.argTypes[i]) :
                 processNode(node.getChild(i+1));
             if (arg.isInvalid()) return NodeVal();
 
@@ -600,23 +599,23 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
             msgs->errorInternal(node.getCodeLoc());
             return NodeVal();
         }
-        const TypeTable::Callable *call = typeTable->extractCallable(starting.getType().value());
-        if (call == nullptr) {
+        const TypeTable::Callable *callable = typeTable->extractCallable(starting.getType().value());
+        if (callable == nullptr) {
             msgs->errorInternal(node.getCodeLoc());
             return NodeVal();
         }
 
         size_t providedArgCnt = node.getChildrenCnt()-1;
-        if (call->getArgCnt() > providedArgCnt ||
-            (call->getArgCnt() < providedArgCnt && !call->variadic)) {
+        if (callable->getArgCnt() > providedArgCnt ||
+            (callable->getArgCnt() < providedArgCnt && !callable->variadic)) {
             msgs->errorUnknown(node.getCodeLoc());
             return NodeVal();    
         }
 
         vector<NodeVal> args;
         for (size_t i = 0; i < providedArgCnt; ++i) {
-            NodeVal arg = i < call->getArgCnt() ?
-                processAndImplicitCast(node.getChild(i+1), call->argTypes[i]) :
+            NodeVal arg = i < callable->getArgCnt() ?
+                processAndImplicitCast(node.getChild(i+1), callable->argTypes[i]) :
                 processNode(node.getChild(i+1));
             if (arg.isInvalid()) return NodeVal();
 
@@ -649,11 +648,11 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
         return NodeVal();
     }
 
-    const TypeTable::Callable &call = MacroValue::getCallable(*macroVal, typeTable);
+    const TypeTable::Callable &callable = MacroValue::getCallable(*macroVal, typeTable);
 
     size_t providedArgCnt = node.getChildrenCnt()-1;
-    if ((call.variadic && providedArgCnt+1 < call.getArgCnt()) ||
-        (!call.variadic && providedArgCnt != call.getArgCnt())) {
+    if ((callable.variadic && providedArgCnt+1 < callable.getArgCnt()) ||
+        (!callable.variadic && providedArgCnt != callable.getArgCnt())) {
         msgs->errorUnknown(node.getCodeLoc());
         return NodeVal();    
     }
@@ -666,9 +665,9 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
         args.push_back(move(arg));
     }
 
-    if (call.variadic) {
+    if (callable.variadic) {
         // if it's variadic, it has to have at least 1 argument (the variadic one)
-        size_t nonVarArgCnt = call.getArgCnt()-1;
+        size_t nonVarArgCnt = callable.getArgCnt()-1;
 
         // TODO better code loc for this
         NodeVal totalVarArg = NodeVal::makeEmpty(node.getCodeLoc(), typeTable);
@@ -706,7 +705,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         if (nodeName.isInvalid()) return NodeVal();
         name = nodeName.getEvalVal().id;
         if (!symbolTable->nameAvailable(name, namePool, typeTable) &&
-            symbolTable->getFunction(name) == nullptr) {
+            symbolTable->getFunc(name) == nullptr) {
             msgs->errorFuncNameTaken(nodeName.getCodeLoc(), name);
             return NodeVal();
         }
@@ -789,7 +788,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         funcVal.noNameMangle = noNameMangle;
         funcVal.defined = isDef;
 
-        bool alreadyInSymTable = symbolTable->getFunction(name) != nullptr;
+        bool alreadyInSymTable = symbolTable->getFunc(name) != nullptr;
 
         // funcVal is passed by mutable reference, is needed later
         NodeVal nodeFunc = performFunctionDeclaration(node.getCodeLoc(), funcVal);

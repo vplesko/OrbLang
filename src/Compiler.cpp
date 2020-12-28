@@ -285,16 +285,16 @@ NodeVal Compiler::performCall(CodeLoc codeLoc, const NodeVal &func, const std::v
         }
     }
 
-    const TypeTable::Callable *call = typeTable->extractCallable(func.getLlvmVal().type);
-    if (call == nullptr) {
+    const TypeTable::Callable *callable = typeTable->extractCallable(func.getLlvmVal().type);
+    if (callable == nullptr) {
         msgs->errorInternal(codeLoc);
         return NodeVal();
     }
 
     llvm::FunctionCallee llvmFuncCallee = llvm::FunctionCallee(makeLlvmFunctionType(func.getLlvmVal().type), func.getLlvmVal().val);
 
-    if (call->hasRet()) {
-        LlvmVal retLlvmVal(call->retType.value());
+    if (callable->hasRet()) {
+        LlvmVal retLlvmVal(callable->retType.value());
         retLlvmVal.val = llvmBuilder.CreateCall(llvmFuncCallee, llvmArgValues, "call_tmp");
         return NodeVal(codeLoc, retLlvmVal);
     } else {
@@ -351,7 +351,7 @@ NodeVal Compiler::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
 NodeVal Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) {
     BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(func, typeTable));
 
-    const TypeTable::Callable &call = FuncValue::getCallable(func, typeTable);
+    const TypeTable::Callable &callable = FuncValue::getCallable(func, typeTable);
 
     llvmBuilderAlloca.SetInsertPoint(llvm::BasicBlock::Create(llvmContext, "alloca", func.llvmFunc));
 
@@ -360,13 +360,13 @@ NodeVal Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args
 
     size_t i = 0;
     for (auto &llvmFuncArg : func.llvmFunc->args()) {
-        llvm::Type *llvmArgType = makeLlvmTypeOrError(args.getChild(i).getCodeLoc(), call.argTypes[i]);
+        llvm::Type *llvmArgType = makeLlvmTypeOrError(args.getChild(i).getCodeLoc(), callable.argTypes[i]);
         if (llvmArgType == nullptr) return NodeVal();
         
         llvm::AllocaInst *llvmAlloca = makeLlvmAlloca(llvmArgType, getNameForLlvm(func.argNames[i]));
         llvmBuilder.CreateStore(&llvmFuncArg, llvmAlloca);
 
-        LlvmVal varLlvmVal(call.argTypes[i]);
+        LlvmVal varLlvmVal(callable.argTypes[i]);
         varLlvmVal.ref = llvmAlloca;
         NodeVal varNodeVal(args.getChild(i).getCodeLoc(), varLlvmVal);
         symbolTable->addVar(func.argNames[i], move(varNodeVal));
@@ -381,7 +381,7 @@ NodeVal Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args
 
     llvmBuilderAlloca.CreateBr(llvmBlockBody);
 
-    if (!call.hasRet() && !isLlvmBlockTerminated())
+    if (!callable.hasRet() && !isLlvmBlockTerminated())
         llvmBuilder.CreateRetVoid();
 
     if (llvm::verifyFunction(*func.llvmFunc, &llvm::errs())) cerr << endl;
@@ -921,19 +921,19 @@ llvm::Constant* Compiler::makeLlvmConstString(const std::string &str) {
 }
 
 llvm::FunctionType* Compiler::makeLlvmFunctionType(TypeTable::Id typeId) {
-    const TypeTable::Callable *call = typeTable->extractCallable(typeId);
-    if (call == nullptr || !call->isFunc) return nullptr;
+    const TypeTable::Callable *callable = typeTable->extractCallable(typeId);
+    if (callable == nullptr || !callable->isFunc) return nullptr;
 
-    vector<llvm::Type*> llvmArgTypes(call->getArgCnt());
-    for (size_t i = 0; i < call->getArgCnt(); ++i) {
-        llvmArgTypes[i] = makeLlvmType(call->argTypes[i]);
+    vector<llvm::Type*> llvmArgTypes(callable->getArgCnt());
+    for (size_t i = 0; i < callable->getArgCnt(); ++i) {
+        llvmArgTypes[i] = makeLlvmType(callable->argTypes[i]);
         if (llvmArgTypes[i] == nullptr) return nullptr;
     }
     
-    llvm::Type *llvmRetType = call->retType.has_value() ? makeLlvmType(call->retType.value()) : llvm::Type::getVoidTy(llvmContext);
+    llvm::Type *llvmRetType = callable->retType.has_value() ? makeLlvmType(callable->retType.value()) : llvm::Type::getVoidTy(llvmContext);
     if (llvmRetType == nullptr) return nullptr;
 
-    return llvm::FunctionType::get(llvmRetType, llvmArgTypes, call->variadic);
+    return llvm::FunctionType::get(llvmRetType, llvmArgTypes, callable->variadic);
 }
 
 llvm::Type* Compiler::makeLlvmType(TypeTable::Id typeId) {

@@ -99,10 +99,11 @@ public:
     NodeVal* getVar(NamePool::Id name);
 
     FuncValue* registerFunc(const FuncValue &val);
-    // TODO! rename to getFunc
-    const FuncValue* getFunction(NamePool::Id name) const;
+    bool isFuncName(NamePool::Id name) const;
+    const FuncValue* getFunc(NamePool::Id name) const;
 
     MacroValue* registerMacro(const MacroValue &val);
+    bool isMacroName(NamePool::Id name) const;
     const MacroValue* getMacro(NamePool::Id name) const;
 
     bool inGlobalScope() const;
