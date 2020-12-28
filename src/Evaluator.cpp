@@ -26,6 +26,20 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
     }
 }
 
+NodeVal Evaluator::performLoad(CodeLoc codeLoc, const FuncValue &func) {
+    if (!checkIsEvalFunc(codeLoc, func, true)) return NodeVal();
+
+    EvalVal evalVal = EvalVal::makeVal(func.type, typeTable);
+    evalVal.callId = func.name;
+    return NodeVal(codeLoc, evalVal);
+}
+
+NodeVal Evaluator::performLoad(CodeLoc codeLoc, const MacroValue &macro) {
+    EvalVal evalVal = EvalVal::makeVal(macro.type, typeTable);
+    evalVal.callId = macro.name;
+    return NodeVal(codeLoc, evalVal);
+}
+
 NodeVal Evaluator::performZero(CodeLoc codeLoc, TypeTable::Id ty) {
     return NodeVal(codeLoc, EvalVal::makeZero(ty, namePool, typeTable));
 }
@@ -149,7 +163,7 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const NodeVal &func, const std::
 }
 
 NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) {
-    if (!func.isEval()) {
+    if (!checkIsEvalFunc(codeLoc, func, true)) {
         msgs->errorUnknown(codeLoc);
         return NodeVal();
     }

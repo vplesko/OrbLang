@@ -107,6 +107,20 @@ NodeVal Compiler::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
     return NodeVal(codeLoc, loadLlvmVal);
 }
 
+NodeVal Compiler::performLoad(CodeLoc codeLoc, const FuncValue &func) {
+    if (!checkIsLlvmFunc(codeLoc, func, true)) return NodeVal();
+
+    LlvmVal llvmVal;
+    llvmVal.type = func.type;
+    llvmVal.val = func.llvmFunc;
+    return NodeVal(codeLoc, llvmVal);
+}
+
+NodeVal Compiler::performLoad(CodeLoc codeLoc, const MacroValue &macro) {
+    msgs->errorInternal(codeLoc);
+    return NodeVal();
+}
+
 NodeVal Compiler::performZero(CodeLoc codeLoc, TypeTable::Id ty) {
     llvm::Type *llvmType = makeLlvmTypeOrError(codeLoc, ty);
     if (llvmType == nullptr) return NodeVal();
@@ -304,16 +318,10 @@ NodeVal Compiler::performCall(CodeLoc codeLoc, const NodeVal &func, const std::v
 }
 
 NodeVal Compiler::performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) {
-    if (func.isEval()) {
-        msgs->errorInternal(codeLoc);
-        return NodeVal();
-    }
+    NodeVal nodeFunc = performLoad(codeLoc, func);
+    if (nodeFunc.isInvalid()) return NodeVal();
 
-    LlvmVal llvmVal;
-    llvmVal.type = func.type;
-    llvmVal.val = func.llvmFunc;
-
-    return performCall(codeLoc, NodeVal(codeLoc, llvmVal), args);
+    return performCall(codeLoc, nodeFunc, args);
 }
 
 NodeVal Compiler::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args) {

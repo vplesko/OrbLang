@@ -200,6 +200,8 @@ NodeVal Processor::processId(const NodeVal &node) {
     NodeVal *value = symbolTable->getVar(id);
 
     if (value != nullptr) {
+        if (value->isUndecidedCallableVal()) return loadUndecidedCallable(*value);
+
         if (checkIsEvalTime(*value, false)) {
             return evaluator->performLoad(node.getCodeLoc(), id, *value);
         } else {
@@ -1360,6 +1362,29 @@ bool Processor::implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly
     }
 }
 
+NodeVal Processor::loadUndecidedCallable(const NodeVal &node) {
+    if (node.getUndecidedCallableVal().isFunc) {
+        const FuncValue *funcVal = symbolTable->getFunc(node.getUndecidedCallableVal().name);
+        if (funcVal == nullptr) {
+            msgs->errorInternal(node.getCodeLoc());
+            return NodeVal();
+        }
+
+        if (checkIsEvalFunc(node.getCodeLoc(), *funcVal, false))
+            return evaluator->performLoad(node.getCodeLoc(), *funcVal);
+        else
+            return performLoad(node.getCodeLoc(), *funcVal);
+    } else {
+        const MacroValue *macroVal = symbolTable->getMacro(node.getUndecidedCallableVal().name);
+        if (macroVal == nullptr) {
+            msgs->errorInternal(node.getCodeLoc());
+            return NodeVal();
+        }
+
+        return evaluator->performLoad(node.getCodeLoc(), *macroVal);
+    }
+}
+
 bool Processor::processAttributes(NodeVal &node) {
     NamePool::Id typeId = getMeaningfulNameId(Meaningful::TYPE);
 
@@ -1833,6 +1858,14 @@ bool Processor::checkIsEvalTime(CodeLoc codeLoc, const NodeVal &node, bool orErr
     return checkIsEvalVal(codeLoc, node, true);
 }
 
+bool Processor::checkIsEvalFunc(CodeLoc codeLoc, const FuncValue &func, bool orError) {
+    if (!func.isEval()) {
+        if (orError) msgs->errorUnknown(codeLoc);
+        return false;
+    }
+    return true;
+}
+
 bool Processor::checkIsRaw(const NodeVal &node, bool orError) {
     if (!NodeVal::isRawVal(node, typeTable)) {
         if (orError) msgs->errorUnexpectedIsTerminal(node.getCodeLoc());
@@ -1859,6 +1892,14 @@ bool Processor::checkIsEvalVal(CodeLoc codeLoc, const NodeVal &node, bool orErro
 
 bool Processor::checkIsLlvmVal(CodeLoc codeLoc, const NodeVal &node, bool orError) {
     if (!node.isLlvmVal()) {
+        if (orError) msgs->errorUnknown(codeLoc);
+        return false;
+    }
+    return true;
+}
+
+bool Processor::checkIsLlvmFunc(CodeLoc codeLoc, const FuncValue &func, bool orError) {
+    if (func.isEval()) {
         if (orError) msgs->errorUnknown(codeLoc);
         return false;
     }

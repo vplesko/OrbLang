@@ -28,6 +28,8 @@ class Evaluator : public Processor {
 
 public:
     NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) override;
+    NodeVal performLoad(CodeLoc codeLoc, const FuncValue &func) override;
+    NodeVal performLoad(CodeLoc codeLoc, const MacroValue &macro) override;
     NodeVal performZero(CodeLoc codeLoc, TypeTable::Id ty) override;
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) override;
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) override;
