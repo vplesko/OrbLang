@@ -257,13 +257,9 @@ NodeVal Evaluator::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &arg
     return NodeVal(codeLoc, move(evalVal));
 }
 
-NodeVal Evaluator::performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, MacroValue &macro) {
+bool Evaluator::performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, MacroValue &macro) {
     macro.body = body;
-
-    EvalVal evalVal = EvalVal::makeVal(macro.type, typeTable);
-    evalVal.callId = macro.name;
-
-    return NodeVal(codeLoc, move(evalVal));
+    return true;
 }
 
 bool Evaluator::performRet(CodeLoc codeLoc) {

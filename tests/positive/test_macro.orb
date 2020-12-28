@@ -117,7 +117,8 @@ fnc main () () {
         = c0 c1;
         println_i32 (+ 209 (cast i32 (== c0 c1)));
 
-        println_i32 ((* (& passthrough)) 211);
+        = c0 passthrough;
+        println_i32 ((* (& c0)) 211);
 
         println_i32 (+ 212 (cast i32 (== (typeOf c0) (typeOf c1))));
         println_i32 (+ 212 (cast i32 (== ((mac (p)) cn) (typeOf c1))));

@@ -403,9 +403,9 @@ NodeVal Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args
     return NodeVal(codeLoc, llvmVal);
 }
 
-NodeVal Compiler::performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, MacroValue &macro) {
+bool Compiler::performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, MacroValue &macro) {
     msgs->errorInternal(body.getCodeLoc());
-    return NodeVal();
+    return false;
 }
 
 bool Compiler::performRet(CodeLoc codeLoc) {

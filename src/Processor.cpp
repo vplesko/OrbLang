@@ -914,11 +914,14 @@ NodeVal Processor::processMac(const NodeVal &node) {
         macroVal.argNames = move(argNames);
         macroVal.argPreproc = move(argPreproc);
 
-        MacroValue *symbVal = symbolTable->registerMacro(macroVal);
-        NodeVal nodeMacro = evaluator->performMacroDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal);
-        if (nodeMacro.isInvalid()) return NodeVal();
+        // TODO! only do this if first macro of its name
+        UndecidedCallableVal undecidedVal;
+        undecidedVal.isFunc = false;
+        undecidedVal.name = name;
+        symbolTable->addVar(name, NodeVal(node.getCodeLoc(), undecidedVal));
 
-        symbolTable->addVar(name, nodeMacro);
+        MacroValue *symbVal = symbolTable->registerMacro(macroVal);
+        if (!evaluator->performMacroDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();
 
         return NodeVal(node.getCodeLoc());
     } else {
@@ -1363,6 +1366,7 @@ bool Processor::implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly
 }
 
 NodeVal Processor::loadUndecidedCallable(const NodeVal &node) {
+    // TODO! if singular, load it; if type given, load of that type; otherwise return undecided
     if (node.getUndecidedCallableVal().isFunc) {
         const FuncValue *funcVal = symbolTable->getFunc(node.getUndecidedCallableVal().name);
         if (funcVal == nullptr) {
