@@ -98,13 +98,17 @@ void NodeVal::addChild(NodeVal &node, NodeVal c, TypeTable *typeTable) {
 }
 
 void NodeVal::addChildren(NodeVal &node, vector<NodeVal> c, TypeTable *typeTable) {
-    node.getEvalVal().elems.reserve(node.getChildrenCnt()+c.size());
+    addChildren(node, c.begin(), c.end(), typeTable);
+}
+
+void NodeVal::addChildren(NodeVal &node, vector<NodeVal>::iterator start, vector<NodeVal>::iterator end, TypeTable *typeTable) {
+    node.getEvalVal().elems.reserve(node.getChildrenCnt()+(end-start));
 
     bool setCn = false;
-    for (auto &it : c) {
-        if (isRawVal(it, typeTable) && typeTable->worksAsTypeCn(it.getEvalVal().getType().value())) setCn = true;
+    for (auto it = start; it != end; ++it) {
+        if (isRawVal(*it, typeTable) && typeTable->worksAsTypeCn(it->getEvalVal().getType().value())) setCn = true;
 
-        node.getEvalVal().elems.push_back(move(it));
+        node.getEvalVal().elems.push_back(move(*it));
     }
 
     if (setCn) node.getEvalVal().getType() = typeTable->addTypeCnOf(node.getEvalVal().getType().value());

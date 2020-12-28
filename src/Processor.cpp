@@ -571,15 +571,15 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
     }
 
     size_t providedArgCnt = node.getChildrenCnt()-1;
-    if (call->argCnt() > providedArgCnt ||
-        (call->argCnt() < providedArgCnt && !call->variadic)) {
+    if (call->getArgCnt() > providedArgCnt ||
+        (call->getArgCnt() < providedArgCnt && !call->variadic)) {
         msgs->errorUnknown(node.getCodeLoc());
         return NodeVal();    
     }
 
     vector<NodeVal> args;
     for (size_t i = 0; i < providedArgCnt; ++i) {
-        NodeVal arg = i < call->argCnt() ?
+        NodeVal arg = i < call->getArgCnt() ?
             processAndImplicitCast(node.getChild(i+1), call->argTypes[i]) :
             processNode(node.getChild(i+1));
         if (arg.isInvalid()) return NodeVal();
@@ -608,41 +608,29 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
     const TypeTable::Callable &call = MacroValue::getCallable(*macroVal, typeTable);
 
     size_t providedArgCnt = node.getChildrenCnt()-1;
-    if ((call.variadic && providedArgCnt+1 < call.argCnt()) ||
-        (!call.variadic && providedArgCnt != call.argCnt())) {
+    if ((call.variadic && providedArgCnt+1 < call.getArgCnt()) ||
+        (!call.variadic && providedArgCnt != call.getArgCnt())) {
         msgs->errorUnknown(node.getCodeLoc());
         return NodeVal();    
     }
 
     vector<NodeVal> args;
-    size_t i;
-    for (i = 0; i+1 < call.argCnt(); ++i) {
+    for (size_t i = 0; i < providedArgCnt; ++i) {
         NodeVal arg = processWithEscape(node.getChild(i+1), !macroVal->argPreproc[i]);
         if (arg.isInvalid()) return NodeVal();
 
         args.push_back(move(arg));
     }
-    if (!call.variadic) {
-        if (i < providedArgCnt) {
-            NodeVal arg = processWithEscape(node.getChild(i+1), !macroVal->argPreproc[i]);
-            if (arg.isInvalid()) return NodeVal();
 
-            args.push_back(move(arg));
-        }
-    } else {
+    if (call.variadic) {
+        // if it's variadic, it has to have at least 1 argument (the variadic one)
+        size_t nonVarArgCnt = call.getArgCnt()-1;
+
         // TODO better code loc for this
         NodeVal totalVarArg = NodeVal::makeEmpty(node.getCodeLoc(), typeTable);
+        NodeVal::addChildren(totalVarArg, args.begin()+nonVarArgCnt, args.end(), typeTable);
 
-        vector<NodeVal> varArgs;
-        varArgs.reserve(i < providedArgCnt ? providedArgCnt-i : 0);
-        for (; i < providedArgCnt; ++i) {
-            NodeVal arg = processWithEscape(node.getChild(i+1), !macroVal->argPreproc[i]);
-            if (arg.isInvalid()) return NodeVal();
-
-            varArgs.push_back(move(arg));
-        }
-        NodeVal::addChildren(totalVarArg, move(varArgs), typeTable);
-
+        args.resize(nonVarArgCnt);
         args.push_back(move(totalVarArg));
     }
 

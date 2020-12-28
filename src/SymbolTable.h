@@ -19,7 +19,7 @@ struct FuncValue {
     llvm::Function *llvmFunc;
     std::optional<NodeVal> evalFunc;
 
-    std::size_t argCnt() const { return argNames.size(); }
+    std::size_t getArgCnt() const { return argNames.size(); }
     bool isEval() const { return evalFunc.has_value(); }
 
     static const TypeTable::Callable& getCallable(const FuncValue &func, const TypeTable *typeTable);
@@ -34,7 +34,7 @@ struct MacroValue {
     std::vector<bool> argPreproc;
     NodeVal body;
 
-    std::size_t argCnt() const { return argNames.size(); }
+    std::size_t getArgCnt() const { return argNames.size(); }
 
     static const TypeTable::Callable& getCallable(const MacroValue &macro, const TypeTable *typeTable);
 };

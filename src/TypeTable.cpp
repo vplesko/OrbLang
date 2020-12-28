@@ -48,10 +48,10 @@ optional<size_t> TypeTable::DataType::getMembInd(NamePool::Id name) const {
 }
 
 bool TypeTable::Callable::eq(const Callable &other) const {
-    if (isFunc != other.isFunc || argCnt() != other.argCnt() ||
+    if (isFunc != other.isFunc || getArgCnt() != other.getArgCnt() ||
         retType != other.retType || variadic != other.variadic) return false;
 
-    for (size_t i = 0; i < argCnt(); ++i) {
+    for (size_t i = 0; i < getArgCnt(); ++i) {
         if (argTypes[i] != other.argTypes[i]) return false;
     }
 
@@ -877,6 +877,7 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
     }
 }
 
+// TODO ignore pre-ptr cns
 optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool) const {
     // don't forget special delim after custom types are cast safe
     stringstream ss;
@@ -967,7 +968,7 @@ optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool) const 
     } else if (isCallable(t)) {
         const Callable &call = getCallable(t);
         ss << (call.isFunc ? "$f" : "$m");
-        ss << "$a" << call.argCnt();
+        ss << "$a" << call.getArgCnt();
         if (call.variadic) ss << "+";
         if (call.isFunc) {
             for (TypeTable::Id argTy : call.argTypes) {

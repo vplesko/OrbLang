@@ -56,6 +56,10 @@ mac pp0 (a::preprocess) {
 };
 
 mac pp1 (a b::(variadic preprocess)) {
+    block {
+        exit (!= (lenOf b) 0);
+        ret ();
+    };
     ret \(tup ,(. b 0) ,(. b 0));
 };
 
@@ -136,6 +140,7 @@ fnc main () () {
         pp0 (= x (+ x 1));
         println_i32 x;
 
+        pp1 (= x -1);
         pp1 x (= x (+ x 1));
         println_i32 x;
     };

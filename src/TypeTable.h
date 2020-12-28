@@ -105,7 +105,7 @@ public:
         std::optional<TypeTable::Id> retType;
         bool variadic = false;
 
-        std::size_t argCnt() const { return argTypes.size(); }
+        std::size_t getArgCnt() const { return argTypes.size(); }
         bool hasRet() const { return retType.has_value(); }
 
         void makeFitArgCnt(std::size_t argCnt) { argTypes.resize(argCnt); }

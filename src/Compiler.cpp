@@ -897,8 +897,8 @@ llvm::FunctionType* Compiler::makeLlvmFunctionType(TypeTable::Id typeId) {
     const TypeTable::Callable *call = typeTable->extractCallable(typeId);
     if (call == nullptr || !call->isFunc) return nullptr;
 
-    vector<llvm::Type*> llvmArgTypes(call->argCnt());
-    for (size_t i = 0; i < call->argCnt(); ++i) {
+    vector<llvm::Type*> llvmArgTypes(call->getArgCnt());
+    for (size_t i = 0; i < call->getArgCnt(); ++i) {
         llvmArgTypes[i] = makeLlvmType(call->argTypes[i]);
         if (llvmArgTypes[i] == nullptr) return nullptr;
     }

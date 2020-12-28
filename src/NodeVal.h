@@ -87,6 +87,7 @@ public:
     const NodeVal& getChild(std::size_t ind) const { return getEvalVal().elems[ind]; }
     static void addChild(NodeVal &node, NodeVal c, TypeTable *typeTable);
     static void addChildren(NodeVal &node, std::vector<NodeVal> c, TypeTable *typeTable);
+    static void addChildren(NodeVal &node, std::vector<NodeVal>::iterator start, std::vector<NodeVal>::iterator end, TypeTable *typeTable);
 
     bool isLlvmVal() const { return kind == Kind::kLlvm; }
     LlvmVal& getLlvmVal() { return std::get<LlvmVal>(value); }
