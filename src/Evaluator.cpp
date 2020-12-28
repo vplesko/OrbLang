@@ -238,23 +238,15 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const
     return move(retVal.value());
 }
 
-NodeVal Evaluator::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
+bool Evaluator::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
     // mark the func as eval, but it cannot be called
     func.evalFunc = NodeVal();
-
-    EvalVal evalVal = EvalVal::makeVal(func.type, typeTable);
-    evalVal.callId = func.name;
-
-    return NodeVal(codeLoc, move(evalVal));
+    return true;
 }
 
-NodeVal Evaluator::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) {
+bool Evaluator::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) {
     func.evalFunc = body;
-
-    EvalVal evalVal = EvalVal::makeVal(func.type, typeTable);
-    evalVal.callId = func.name;
-
-    return NodeVal(codeLoc, move(evalVal));
+    return true;
 }
 
 bool Evaluator::performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, MacroValue &macro) {

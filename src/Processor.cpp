@@ -790,11 +790,16 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         funcVal.noNameMangle = noNameMangle;
         funcVal.defined = isDef;
 
-        bool alreadyInSymTable = symbolTable->getFunc(name) != nullptr;
+        // register only if first func of its name
+        if (!symbolTable->isFuncName(name)) {
+            UndecidedCallableVal undecidedVal;
+            undecidedVal.isFunc = true;
+            undecidedVal.name = name;
+            symbolTable->addVar(name, NodeVal(node.getCodeLoc(), undecidedVal));
+        }
 
         // funcVal is passed by mutable reference, is needed later
-        NodeVal nodeFunc = performFunctionDeclaration(node.getCodeLoc(), funcVal);
-        if (nodeFunc.isInvalid()) return NodeVal();
+        if (!performFunctionDeclaration(node.getCodeLoc(), funcVal)) return NodeVal();
 
         FuncValue *symbVal = symbolTable->registerFunc(funcVal);
         if (symbVal == nullptr) {
@@ -802,14 +807,8 @@ NodeVal Processor::processFnc(const NodeVal &node) {
             return NodeVal();
         }
 
-        if (!alreadyInSymTable) symbolTable->addVar(name, nodeFunc);
-
         if (isDef) {
-            nodeFunc = performFunctionDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal);
-            if (nodeFunc.isInvalid()) return NodeVal();
-            // overrides the previous call
-            // TODO! refactor somehow (insert evalval with func's name above, remove this)
-            symbolTable->addVar(name, nodeFunc);
+            if (!performFunctionDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();
         }
 
         return NodeVal(node.getCodeLoc());
@@ -914,11 +913,13 @@ NodeVal Processor::processMac(const NodeVal &node) {
         macroVal.argNames = move(argNames);
         macroVal.argPreproc = move(argPreproc);
 
-        // TODO! only do this if first macro of its name
-        UndecidedCallableVal undecidedVal;
-        undecidedVal.isFunc = false;
-        undecidedVal.name = name;
-        symbolTable->addVar(name, NodeVal(node.getCodeLoc(), undecidedVal));
+        // register only if first macro of its name
+        if (!symbolTable->isMacroName(name)) {
+            UndecidedCallableVal undecidedVal;
+            undecidedVal.isFunc = false;
+            undecidedVal.name = name;
+            symbolTable->addVar(name, NodeVal(node.getCodeLoc(), undecidedVal));
+        }
 
         MacroValue *symbVal = symbolTable->registerMacro(macroVal);
         if (!evaluator->performMacroDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();

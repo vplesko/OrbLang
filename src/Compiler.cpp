@@ -96,14 +96,8 @@ NodeVal Compiler::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
     if (!checkIsLlvmVal(codeLoc, ref, true)) return NodeVal();
 
     LlvmVal loadLlvmVal(ref.getLlvmVal().type);
-    if (ref.getLlvmVal().ref == nullptr) {
-        // this only happens in the case of global function variables
-        // in this case, the loaded value is non-ref
-        loadLlvmVal.val = ref.getLlvmVal().val;
-    } else {
-        loadLlvmVal.ref = ref.getLlvmVal().ref;
-        loadLlvmVal.val = llvmBuilder.CreateLoad(ref.getLlvmVal().ref, getNameForLlvm(id));
-    }
+    loadLlvmVal.ref = ref.getLlvmVal().ref;
+    loadLlvmVal.val = llvmBuilder.CreateLoad(ref.getLlvmVal().ref, getNameForLlvm(id));
     return NodeVal(codeLoc, loadLlvmVal);
 }
 
@@ -329,11 +323,11 @@ NodeVal Compiler::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const 
     return NodeVal();
 }
 
-NodeVal Compiler::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
+bool Compiler::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
     optional<string> funcLlvmName = getFuncNameForLlvm(func);
     if (!funcLlvmName.has_value()) {
         msgs->errorInternal(codeLoc);
-        return NodeVal();
+        return false;
     }
 
     func.llvmFunc = llvmModule->getFunction(funcLlvmName.value());
@@ -341,22 +335,17 @@ NodeVal Compiler::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
         llvm::FunctionType *llvmFuncType = makeLlvmFunctionType(func.type);
         if (llvmFuncType == nullptr) {
             msgs->errorUnknown(codeLoc);
-            return NodeVal();
+            return false;
         }
 
         // TODO see if switching to PrivateLinkage speeds up compilation
         func.llvmFunc = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage, funcLlvmName.value(), llvmModule.get());
     }
 
-    LlvmVal llvmVal;
-    llvmVal.type = func.type;
-    llvmVal.val = func.llvmFunc;
-    // ref left null for the case of compiled functions
-
-    return NodeVal(codeLoc, llvmVal);
+    return true;
 }
 
-NodeVal Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) {
+bool Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) {
     BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(func, typeTable));
 
     const TypeTable::Callable &callable = FuncValue::getCallable(func, typeTable);
@@ -369,7 +358,7 @@ NodeVal Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args
     size_t i = 0;
     for (auto &llvmFuncArg : func.llvmFunc->args()) {
         llvm::Type *llvmArgType = makeLlvmTypeOrError(args.getChild(i).getCodeLoc(), callable.argTypes[i]);
-        if (llvmArgType == nullptr) return NodeVal();
+        if (llvmArgType == nullptr) return false;
         
         llvm::AllocaInst *llvmAlloca = makeLlvmAlloca(llvmArgType, getNameForLlvm(func.argNames[i]));
         llvmBuilder.CreateStore(&llvmFuncArg, llvmAlloca);
@@ -384,7 +373,7 @@ NodeVal Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args
 
     if (!processChildNodes(body)) {
         func.llvmFunc->eraseFromParent();
-        return NodeVal();
+        return false;
     }
 
     llvmBuilderAlloca.CreateBr(llvmBlockBody);
@@ -395,12 +384,7 @@ NodeVal Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args
     if (llvm::verifyFunction(*func.llvmFunc, &llvm::errs())) cerr << endl;
     llvmFpm->run(*func.llvmFunc);
 
-    LlvmVal llvmVal;
-    llvmVal.type = func.type;
-    llvmVal.val = func.llvmFunc;
-    // ref left null for the case of compiled functions
-
-    return NodeVal(codeLoc, llvmVal);
+    return true;
 }
 
 bool Compiler::performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, MacroValue &macro) {

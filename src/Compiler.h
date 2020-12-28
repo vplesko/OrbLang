@@ -55,8 +55,8 @@ class Compiler : public Processor {
     NodeVal performCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args) override;
     NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) override;
     NodeVal performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args) override;
-    NodeVal performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) override;
-    NodeVal performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) override;
+    bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) override;
+    bool performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) override;
     bool performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, MacroValue &macro) override;
     bool performRet(CodeLoc codeLoc) override;
     bool performRet(CodeLoc codeLoc, const NodeVal &node) override;

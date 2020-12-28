@@ -41,8 +41,8 @@ protected:
     virtual NodeVal performCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args) =0;
     virtual NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) =0;
     virtual NodeVal performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args) =0;
-    virtual NodeVal performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) =0;
-    virtual NodeVal performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) =0;
+    virtual bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) =0;
+    virtual bool performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) =0;
     virtual bool performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, MacroValue &macro) =0;
     virtual bool performRet(CodeLoc codeLoc) =0;
     virtual bool performRet(CodeLoc codeLoc, const NodeVal &node) =0;
