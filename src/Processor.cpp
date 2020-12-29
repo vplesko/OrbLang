@@ -633,21 +633,21 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
 }
 
 NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
-    NamePool::Id name;
+    const MacroValue *macroVal = nullptr;
     if (starting.isUndecidedCallableVal()) {
-        name = starting.getUndecidedCallableVal().name;
+        NamePool::Id name = starting.getUndecidedCallableVal().name;
+
+        macroVal = symbolTable->getMacro(name);
+        if (macroVal == nullptr) {
+            msgs->errorMacroNotFound(starting.getCodeLoc(), name);
+            return NodeVal();
+        }
     } else {
-        if (!starting.getEvalVal().callId.has_value()) {
+        if (starting.getEvalVal().m == nullptr) {
             msgs->errorMacroNoValue(starting.getCodeLoc());
             return NodeVal();
         }
-        name = starting.getEvalVal().callId.value();
-    }
-
-    const MacroValue *macroVal = symbolTable->getMacro(name);
-    if (macroVal == nullptr) {
-        msgs->errorMacroNotFound(starting.getCodeLoc(), name);
-        return NodeVal();
+        macroVal = starting.getEvalVal().m;
     }
 
     const TypeTable::Callable &callable = MacroValue::getCallable(*macroVal, typeTable);

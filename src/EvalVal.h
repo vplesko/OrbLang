@@ -9,6 +9,8 @@
 
 class NodeVal;
 class SymbolTable;
+struct FuncValue;
+struct MacroValue;
 
 struct EvalVal {
     // type of this evaluation value
@@ -31,8 +33,8 @@ struct EvalVal {
         NamePool::Id id;
         // contains type value in case this is type or type cn
         TypeTable::Id ty;
-        // contains macro name
-        std::optional<NamePool::Id> callId;
+        const FuncValue *f;
+        const MacroValue *m;
         NodeVal *p = nullptr;
     };
     std::vector<NodeVal> elems;

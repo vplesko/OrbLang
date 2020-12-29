@@ -30,13 +30,13 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, const FuncValue &func) {
     if (!checkIsEvalFunc(codeLoc, func, true)) return NodeVal();
 
     EvalVal evalVal = EvalVal::makeVal(func.type, typeTable);
-    evalVal.callId = func.name;
+    evalVal.f = &func;
     return NodeVal(codeLoc, evalVal);
 }
 
 NodeVal Evaluator::performLoad(CodeLoc codeLoc, const MacroValue &macro) {
     EvalVal evalVal = EvalVal::makeVal(macro.type, typeTable);
-    evalVal.callId = macro.name;
+    evalVal.m = &macro;
     return NodeVal(codeLoc, evalVal);
 }
 
@@ -146,20 +146,12 @@ bool Evaluator::performPass(CodeLoc codeLoc, SymbolTable::Block &block, const No
 
 NodeVal Evaluator::performCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args) {
     if (!checkIsEvalVal(func, true)) return NodeVal();
-
-    if (!func.getEvalVal().callId.has_value()) {
-        msgs->errorFuncNoValue(func.getCodeLoc());
-        return NodeVal();
-    }
-    NamePool::Id name = func.getEvalVal().callId.value();
-
-    const FuncValue *funcVal = symbolTable->getFunc(name);
-    if (funcVal == nullptr) {
-        msgs->errorFuncNotFound(func.getCodeLoc(), name);
+    if (func.getEvalVal().f == nullptr) {
+        msgs->errorFuncNoValue(codeLoc);
         return NodeVal();
     }
 
-    return performCall(codeLoc, *funcVal, args);
+    return performCall(codeLoc, *func.getEvalVal().f, args);
 }
 
 NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) {
@@ -362,7 +354,8 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     bool isTypeB = typeTable->worksAsTypeB(ty);
     bool isTypeId = typeTable->worksAsPrimitive(ty, TypeTable::P_ID);
     bool isTypeTy = typeTable->worksAsPrimitive(ty, TypeTable::P_TYPE);
-    bool isTypeCall = typeTable->worksAsCallable(ty);
+    bool isTypeCallF = typeTable->worksAsCallable(ty, true);
+    bool isTypeCallM = typeTable->worksAsCallable(ty, false);
 
     optional<int64_t> il, ir;
     optional<uint64_t> ul, ur;
@@ -373,7 +366,8 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     optional<bool> bl, br;
     optional<NamePool::Id> idl, idr;
     optional<TypeTable::Id> tyl, tyr;
-    optional<optional<NamePool::Id>> calll, callr;
+    optional<const FuncValue*> callfl, callfr;
+    optional<const MacroValue*> callml, callmr;
     if (isTypeI) {
         il = EvalVal::getValueI(lhs.getEvalVal(), typeTable).value();
         ir = EvalVal::getValueI(rhs.getEvalVal(), typeTable).value();
@@ -405,9 +399,12 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     } else if (isTypeTy) {
         tyl = lhs.getEvalVal().ty;
         tyr = rhs.getEvalVal().ty;
-    } else if (isTypeCall) {
-        calll = lhs.getEvalVal().callId;
-        callr = rhs.getEvalVal().callId;
+    } else if (isTypeCallF) {
+        callfl = lhs.getEvalVal().f;
+        callfr = rhs.getEvalVal().f;
+    } else if (isTypeCallM) {
+        callml = lhs.getEvalVal().m;
+        callmr = rhs.getEvalVal().m;
     }
 
     switch (op) {
@@ -439,8 +436,11 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
         } else if (isTypeTy) {
             result->result = tyl.value()==tyr.value();
             return !result->result;
-        } else if (isTypeCall) {
-            result->result = calll.value()==callr.value();
+        } else if (isTypeCallF) {
+            result->result = callfl.value()==callfr.value();
+            return !result->result;            
+        } else if (isTypeCallM) {
+            result->result = callml.value()==callmr.value();
             return !result->result;            
         }
         break;
@@ -472,8 +472,11 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
         } else if (isTypeTy) {
             result->result = tyl.value()!=tyr.value();
             return !result->result;
-        } else if (isTypeCall) {
-            result->result = calll.value()!=callr.value();
+        } else if (isTypeCallF) {
+            result->result = callfl.value()!=callfr.value();
+            return !result->result;            
+        } else if (isTypeCallM) {
+            result->result = callml.value()!=callmr.value();
             return !result->result;            
         }
         break;
@@ -908,11 +911,11 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
         }
     } else if (typeTable->worksAsCallable(srcTypeId)) {
         if (typeTable->worksAsTypeAnyP(dstTypeId)) {
-            if (srcEvalVal.callId.has_value() ||
+            if (!EvalVal::isCallableNoValue(srcEvalVal, typeTable) ||
                 (!assignBasedOnTypeP(dstEvalVal, nullptr, dstTypeId) && !typeTable->worksAsTypeAnyP(dstTypeId)))
                 return nullopt;
         } else if (typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_BOOL)) {
-            if (!assignBasedOnTypeB(dstEvalVal, srcEvalVal.callId.has_value(), dstTypeId))
+            if (!assignBasedOnTypeB(dstEvalVal, !EvalVal::isCallableNoValue(srcEvalVal, typeTable), dstTypeId))
                 return nullopt;
         } else if (typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId))) {
             dstEvalVal = EvalVal::copyNoRef(srcEvalVal);

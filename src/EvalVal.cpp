@@ -158,7 +158,9 @@ bool EvalVal::isNull(const EvalVal &val, const TypeTable *typeTable) {
 
 bool EvalVal::isCallableNoValue(const EvalVal &val, const TypeTable *typeTable) {
     optional<TypeTable::Id> type = val.getType();
-    return type.has_value() && typeTable->worksAsCallable(type.value()) && !val.callId.has_value();
+    return type.has_value() &&
+        ((typeTable->worksAsCallable(type.value(), true) && val.f == nullptr) ||
+        (typeTable->worksAsCallable(type.value(), false) && val.m == nullptr));
 }
 
 optional<int64_t> EvalVal::getValueI(const EvalVal &val, const TypeTable *typeTable) {
@@ -295,7 +297,8 @@ bool EvalVal::isCastable(const EvalVal &val, TypeTable::Id dstTypeId, const Stri
         return typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_ID) ||
             typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE);
     } else if (typeTable->worksAsCallable(srcTypeId)) {
-        return (!val.callId.has_value() && typeTable->worksAsTypeAnyP(dstTypeId)) || (typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_BOOL)) ||
+        return (isCallableNoValue(val, typeTable) && typeTable->worksAsTypeAnyP(dstTypeId)) ||
+            (typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_BOOL)) ||
             typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId));
     } else {
         // other types are only castable when changing constness
