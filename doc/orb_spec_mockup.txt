@@ -274,7 +274,7 @@ type
 ********************
 
 plan:
- - func and macro overloading (in args variad part of func type and cns past ptrs; main not mangled)
+ - func and macro overloading
  - zero
  - drop, move
  - attrs: noZero, noDrop, unique

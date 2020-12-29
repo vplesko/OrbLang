@@ -787,8 +787,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
             msgs->errorInternal(node.getCodeLoc());
             return NodeVal();
         }
-        // TODO! maybe remove cn addition, globals are loaded as non-ref anyway (same for mac)
-        type = isDecl || isDef ? typeTable->addTypeCnOf(typeOpt.value()) : typeOpt.value();
+        type = typeOpt.value();
     }
 
     if (isDecl || isDef) {
@@ -913,7 +912,7 @@ NodeVal Processor::processMac(const NodeVal &node) {
             msgs->errorInternal(node.getCodeLoc());
             return NodeVal();
         }
-        type = isDef ? typeTable->addTypeCnOf(typeOpt.value()) : typeOpt.value();
+        type = typeOpt.value();
     }
 
     if (isDef) {
