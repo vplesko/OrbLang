@@ -707,7 +707,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         if (nodeName.isInvalid()) return NodeVal();
         name = nodeName.getEvalVal().id;
         if (!symbolTable->nameAvailable(name, namePool, typeTable) &&
-            symbolTable->getFunc(name) == nullptr) {
+            !symbolTable->isFuncName(name)) {
             msgs->errorFuncNameTaken(nodeName.getCodeLoc(), name);
             return NodeVal();
         }
@@ -784,7 +784,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
 
     if (isDecl || isDef) {
         FuncValue funcVal;
-        funcVal.type = type;
+        BaseCallableValue::setType(funcVal, type, typeTable);
         funcVal.name = name;
         funcVal.argNames = argNames;
         funcVal.noNameMangle = noNameMangle;
@@ -908,7 +908,7 @@ NodeVal Processor::processMac(const NodeVal &node) {
 
     if (isDef) {
         MacroValue macroVal;
-        macroVal.type = type;
+        BaseCallableValue::setType(macroVal, type, typeTable);
         macroVal.name = name;
         macroVal.argNames = move(argNames);
         macroVal.argPreproc = move(argPreproc);

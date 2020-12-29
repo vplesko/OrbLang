@@ -9,35 +9,33 @@
 #include "NodeVal.h"
 #include "llvm/IR/Instructions.h"
 
-struct FuncValue {
-    TypeTable::Id type;
+struct BaseCallableValue {
+    TypeTable::Id type, typeSig;
 
     NamePool::Id name;
     std::vector<NamePool::Id> argNames;
+
+    std::size_t getArgCnt() const { return argNames.size(); }
+
+    static void setType(BaseCallableValue &callable, TypeTable::Id type, TypeTable *typeTable);
+    static const TypeTable::Callable& getCallable(const BaseCallableValue &callable, const TypeTable *typeTable);
+};
+
+struct FuncValue : BaseCallableValue {
     bool noNameMangle = false;
     bool defined = false;
 
     llvm::Function *llvmFunc;
     std::optional<NodeVal> evalFunc;
 
-    std::size_t getArgCnt() const { return argNames.size(); }
     bool isEval() const { return evalFunc.has_value(); }
 
-    static const TypeTable::Callable& getCallable(const FuncValue &func, const TypeTable *typeTable);
     static std::optional<TypeTable::Id> getRetType(const FuncValue &func, const TypeTable *typeTable);
 };
 
-struct MacroValue {
-    TypeTable::Id type;
-
-    NamePool::Id name;
-    std::vector<NamePool::Id> argNames;
+struct MacroValue : BaseCallableValue {
     std::vector<bool> argPreproc;
     NodeVal body;
-
-    std::size_t getArgCnt() const { return argNames.size(); }
-
-    static const TypeTable::Callable& getCallable(const MacroValue &macro, const TypeTable *typeTable);
 };
 
 class SymbolTable {

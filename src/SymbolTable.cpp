@@ -5,20 +5,19 @@
 #include "utils.h"
 using namespace std;
 
-const TypeTable::Callable& FuncValue::getCallable(const FuncValue &func, const TypeTable *typeTable) {
-    const TypeTable::Callable *call = typeTable->extractCallable(func.type);
+void BaseCallableValue::setType(BaseCallableValue &callable, TypeTable::Id type, TypeTable *typeTable) {
+    callable.type = type;
+    callable.typeSig = typeTable->addCallableSig(getCallable(callable, typeTable));
+}
+
+const TypeTable::Callable& BaseCallableValue::getCallable(const BaseCallableValue &callable, const TypeTable *typeTable) {
+    const TypeTable::Callable *call = typeTable->extractCallable(callable.type);
     assert(call != nullptr);
     return *call;
 }
 
 optional<TypeTable::Id> FuncValue::getRetType(const FuncValue &func, const TypeTable *typeTable) {
     return getCallable(func, typeTable).retType;
-}
-
-const TypeTable::Callable& MacroValue::getCallable(const MacroValue &macro, const TypeTable *typeTable) {
-    const TypeTable::Callable *call = typeTable->extractCallable(macro.type);
-    assert(call != nullptr);
-    return *call;
 }
 
 SymbolTable::CalleeValueInfo SymbolTable::CalleeValueInfo::make(const FuncValue &func, const TypeTable *typeTable) {
