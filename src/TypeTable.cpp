@@ -51,8 +51,10 @@ bool TypeTable::Callable::eq(const Callable &other) const {
     if (isFunc != other.isFunc || getArgCnt() != other.getArgCnt() ||
         retType != other.retType || variadic != other.variadic) return false;
 
-    for (size_t i = 0; i < getArgCnt(); ++i) {
-        if (argTypes[i] != other.argTypes[i]) return false;
+    if (isFunc) {
+        for (size_t i = 0; i < getArgCnt(); ++i) {
+            if (argTypes[i] != other.argTypes[i]) return false;
+        }
     }
 
     return true;

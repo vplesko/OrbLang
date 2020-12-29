@@ -563,36 +563,57 @@ NodeVal Processor::processData(const NodeVal &node) {
 
 // TODO! unify the two cases
 NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
-    if (starting.isUndecidedCallableVal()) {
-        NamePool::Id name = starting.getUndecidedCallableVal().name;
+    size_t providedArgCnt = node.getChildrenCnt()-1;
 
-        // TODO! call resolution
-        // TODO! with impl casts
-        // TODO separate errors on not found and on ambigious
-        vector<const FuncValue*> funcVals = symbolTable->getFuncs(name);
-        if (funcVals.size() != 1) {
-            msgs->errorUnknown(starting.getCodeLoc());
+    vector<NodeVal> args;
+    args.reserve(providedArgCnt);
+    vector<TypeTable::Id> argTypes;
+    argTypes.reserve(providedArgCnt);
+    for (size_t i = 0; i < providedArgCnt; ++i) {
+        NodeVal arg = processNode(node.getChild(i+1));
+        if (arg.isInvalid()) return NodeVal();
+        if (!checkHasType(arg, true)) return NodeVal();
+
+        args.push_back(move(arg));
+        argTypes.push_back(arg.getType().value());
+    }
+
+    if (starting.isUndecidedCallableVal()) {
+        const FuncValue *funcVal = nullptr;
+
+        vector<const FuncValue*> funcVals = symbolTable->getFuncs(starting.getUndecidedCallableVal().name);
+
+        // first, try to find a func that doesn't require implicit casts
+        for (const FuncValue *it : funcVals) {
+            if (argsFitFuncCall(args, BaseCallableValue::getCallable(*it, typeTable), false)) {
+                funcVal = it;
+                break;
+            }
+        }
+
+        // if not found, look through functions which do require implicit casts
+        if (funcVal == nullptr) {
+            for (const FuncValue *it : funcVals) {
+                if (argsFitFuncCall(args, BaseCallableValue::getCallable(*it, typeTable), true)) {
+                    if (funcVal != nullptr) {
+                        // error due to call ambiguity
+                        msgs->errorUnknown(node.getCodeLoc());
+                        return NodeVal();
+                    }
+                    funcVal = it;
+                }
+            }
+        }
+
+        if (funcVal == nullptr) {
+            msgs->errorFuncNotFound(starting.getCodeLoc(), starting.getUndecidedCallableVal().name);
             return NodeVal();
         }
-        const FuncValue *funcVal = funcVals[0];
 
-        const TypeTable::Callable &callable = FuncValue::getCallable(*funcVal, typeTable);
-
-        size_t providedArgCnt = node.getChildrenCnt()-1;
-        if (callable.getArgCnt() > providedArgCnt ||
-            (callable.getArgCnt() < providedArgCnt && !callable.variadic)) {
-            msgs->errorUnknown(node.getCodeLoc());
-            return NodeVal();    
-        }
-
-        vector<NodeVal> args;
-        for (size_t i = 0; i < providedArgCnt; ++i) {
-            NodeVal arg = i < callable.getArgCnt() ?
-                processAndImplicitCast(node.getChild(i+1), callable.argTypes[i]) :
-                processNode(node.getChild(i+1));
-            if (arg.isInvalid()) return NodeVal();
-
-            args.push_back(move(arg));
+        const TypeTable::Callable &callable = BaseCallableValue::getCallable(*funcVal, typeTable);
+        for (size_t i = 0; i < callable.getArgCnt(); ++i) {
+            args[i] = implicitCast(args[i], callable.argTypes[i]);
+            if (args[i].isInvalid()) return NodeVal();
         }
 
         if (funcVal->isEval()) {
@@ -611,21 +632,14 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
             return NodeVal();
         }
 
-        size_t providedArgCnt = node.getChildrenCnt()-1;
-        if (callable->getArgCnt() > providedArgCnt ||
-            (callable->getArgCnt() < providedArgCnt && !callable->variadic)) {
+        if (!argsFitFuncCall(args, *callable, true)) {
             msgs->errorUnknown(node.getCodeLoc());
-            return NodeVal();    
+            return NodeVal();
         }
 
-        vector<NodeVal> args;
-        for (size_t i = 0; i < providedArgCnt; ++i) {
-            NodeVal arg = i < callable->getArgCnt() ?
-                processAndImplicitCast(node.getChild(i+1), callable->argTypes[i]) :
-                processNode(node.getChild(i+1));
-            if (arg.isInvalid()) return NodeVal();
-
-            args.push_back(move(arg));
+        for (size_t i = 0; i < callable->getArgCnt(); ++i) {
+            args[i] = implicitCast(args[i], callable->argTypes[i]);
+            if (args[i].isInvalid()) return NodeVal();
         }
 
         if (starting.isEvalVal()) {
@@ -656,7 +670,7 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
         macroVal = starting.getEvalVal().m;
     }
 
-    const TypeTable::Callable &callable = MacroValue::getCallable(*macroVal, typeTable);
+    const TypeTable::Callable &callable = BaseCallableValue::getCallable(*macroVal, typeTable);
 
     size_t providedArgCnt = node.getChildrenCnt()-1;
     if ((callable.variadic && providedArgCnt+1 < callable.getArgCnt()) ||
@@ -930,6 +944,11 @@ NodeVal Processor::processMac(const NodeVal &node) {
         }
 
         MacroValue *symbVal = symbolTable->registerMacro(macroVal, typeTable);
+        if (symbVal == nullptr) {
+            msgs->errorUnknown(node.getCodeLoc());
+            return NodeVal();
+        }
+
         if (!evaluator->performMacroDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();
 
         return NodeVal(node.getCodeLoc());
@@ -1357,6 +1376,15 @@ bool Processor::applyTupleMemb(TypeTable::Tuple &tup, const NodeVal &node) {
     return true;
 }
 
+NodeVal Processor::implicitCast(const NodeVal &node, TypeTable::Id ty) {
+    if (!checkImplicitCastable(node, ty, true)) return NodeVal();
+
+    if (node.getType().value() == ty)
+        return NodeVal::copyNoRef(node.getCodeLoc(), node);
+
+    return dispatchCast(node.getCodeLoc(), node, ty);
+}
+
 bool Processor::implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly) {
     if (lhs.getType().value() == rhs.getType().value()) return true;
 
@@ -1371,6 +1399,22 @@ bool Processor::implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly
         else msgs->errorExprCannotImplicitCastEither(rhs.getCodeLoc(), rhs.getType().value(), lhs.getType().value());
         return false;
     }
+}
+
+bool Processor::argsFitFuncCall(const vector<NodeVal> &args, const TypeTable::Callable &callable, bool allowImplicitCasts) {
+    if (callable.getArgCnt() != args.size() && !(callable.variadic && callable.getArgCnt() <= args.size()))
+        return false;
+
+    for (size_t i = 0; i < callable.getArgCnt(); ++i) {
+        if (!checkHasType(args[i], false)) return false;
+
+        bool sameType = args[i].getType().value() == callable.argTypes[i];
+
+        if (!sameType && !(allowImplicitCasts && checkImplicitCastable(args[i], callable.argTypes[i], false)))
+            return false;
+    }
+
+    return true;
 }
 
 NodeVal Processor::loadUndecidedCallable(const NodeVal &node) {
@@ -1852,12 +1896,7 @@ NodeVal Processor::processAndImplicitCast(const NodeVal &node, TypeTable::Id ty)
     NodeVal proc = processNode(node);
     if (proc.isInvalid()) return NodeVal();
 
-    if (!checkImplicitCastable(proc, ty, true)) return NodeVal();
-
-    if (proc.getType().value() == ty)
-        return NodeVal::copyNoRef(proc.getCodeLoc(), proc);
-
-    return dispatchCast(proc.getCodeLoc(), proc, ty);
+    return implicitCast(proc, ty);
 }
 
 NodeVal Processor::dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
