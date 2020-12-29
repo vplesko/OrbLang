@@ -318,6 +318,8 @@ TypeTable::Id TypeTable::addCallableSig(const Callable &call) {
     for (auto &it : sig.argTypes) {
         if (isTypeDescr(it)) it = addTypeDescrForSig(getTypeDescr(it));
     }
+    // ret type is not part of sig
+    sig.retType.reset();
     return addCallable(sig);
 }
 
@@ -988,8 +990,9 @@ optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool, bool m
         ss << baseStr.value();
         return ss.str();
     } else if (isCallable(ty)) {
+        Callable callable = getCallable(ty);
         // inside of callable is done as sig unconditionally
-        Callable sig = getCallable(addCallableSig(getCallable(ty)));
+        Callable sig = getCallable(addCallableSig(callable));
 
         ss << (sig.isFunc ? "$f" : "$m");
         ss << "$a" << sig.getArgCnt();
@@ -1002,8 +1005,9 @@ optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool, bool m
             }
         }
 
-        if (sig.retType.has_value()) {
-            optional<string> str = makeBinString(sig.retType.value(), namePool, false);
+        // ret type is not part of sig, so fetch from original
+        if (callable.retType.has_value()) {
+            optional<string> str = makeBinString(callable.retType.value(), namePool, false);
             if (!str.has_value()) return nullopt;
             ss << "$r" << str.value();
         }

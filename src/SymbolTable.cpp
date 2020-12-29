@@ -83,20 +83,40 @@ NodeVal* SymbolTable::getVar(NamePool::Id name) {
 }
 
 FuncValue* SymbolTable::registerFunc(const FuncValue &val) {
-    auto loc = funcs.find(val.name);
+    // cannot combine funcs and macros in overloading
+    if (isMacroName(val.name)) return nullptr;
 
-    if (loc == funcs.end()) {
-        return &(funcs[val.name] = val);
+    if (funcs.find(val.name) == funcs.end()) {
+        funcs[val.name] = vector<unique_ptr<FuncValue>>();
     }
 
-    if (loc->second.defined && val.defined) return nullptr;
-    // TODO! only signature needs to match
-    if (loc->second.type != val.type) return nullptr;
+    // funcs with no name mangling cannot be overloaded (note: variadic funcs are always noNameMangle)
+    if (val.noNameMangle) {
+        for (const auto &it : funcs[val.name]) {
+            if (it->typeSig != val.typeSig) return nullptr;
+        }
+    }
 
-    if (val.defined) {
-        return &(funcs[val.name] = val);
+    // find the other decl with the same sig, if exists
+    auto loc = funcs[val.name].end();
+    for (auto it = funcs[val.name].begin(); it != funcs[val.name].end(); ++it) {
+        if (val.typeSig == (*it)->typeSig) {
+            if (val.type != (*it)->type || val.noNameMangle != (*it)->noNameMangle || (val.defined && (*it)->defined)) {
+                return nullptr;
+            }
+            loc = it;
+            break;
+        }
+    }
+
+    if (loc == funcs[val.name].end()) {
+        // if no decls with same sig, simply add
+        funcs[val.name].push_back(make_unique<FuncValue>(val));
+        return funcs[val.name].back().get();
     } else {
-        return &funcs[val.name];
+        // otherwise, replace with new one only if definition
+        if (val.defined) *loc = make_unique<FuncValue>(val);
+        return (*loc).get();
     }
 }
 
@@ -104,24 +124,61 @@ bool SymbolTable::isFuncName(NamePool::Id name) const {
     return funcs.find(name) != funcs.end();
 }
 
-const FuncValue* SymbolTable::getFunc(NamePool::Id name) const {
-    auto loc = funcs.find(name);
-    if (loc == funcs.end()) return nullptr;
-    return &loc->second;
+vector<const FuncValue*> SymbolTable::getFuncs(NamePool::Id name) const {
+    if (funcs.find(name) == funcs.end()) return vector<const FuncValue*>();
+
+    vector<const FuncValue*> ret;
+    ret.reserve(funcs.find(name)->second.size());
+    for (const auto &it : funcs.find(name)->second) {
+        ret.push_back(it.get());
+    }
+
+    return ret;
 }
 
-MacroValue* SymbolTable::registerMacro(const MacroValue &val) {
-    return &(macros[val.name] = val);
+MacroValue* SymbolTable::registerMacro(const MacroValue &val, const TypeTable *typeTable) {
+    // cannot combine funcs and macros in overloading
+    if (isFuncName(val.name)) return nullptr;
+
+    if (macros.find(val.name) == macros.end()) {
+        macros[val.name] = vector<unique_ptr<MacroValue>>();
+    }
+
+    // cannot have more than one macro with the same sig (macros cannot be declared)
+    for (const auto &it : macros[val.name]) {
+        if (val.typeSig == it->typeSig) return nullptr;
+    }
+
+    // don't allow ambiguity in variadic args
+    const TypeTable::Callable &call = MacroValue::getCallable(val, typeTable);
+    for (const auto &it : macros[val.name]) {
+        const TypeTable::Callable &otherCall = MacroValue::getCallable(*it, typeTable);
+
+        if ((call.variadic && otherCall.variadic) ||
+            (call.variadic && otherCall.getArgCnt() >= call.getArgCnt()-1) ||
+            (otherCall.variadic && call.getArgCnt() >= otherCall.getArgCnt()-1)) {
+            return nullptr;
+        }
+    }
+
+    macros[val.name].push_back(make_unique<MacroValue>(val));
+    return macros[val.name].back().get();
 }
 
 bool SymbolTable::isMacroName(NamePool::Id name) const {
     return macros.find(name) != macros.end();
 }
 
-const MacroValue* SymbolTable::getMacro(NamePool::Id name) const {
-    auto loc = macros.find(name);
-    if (loc == macros.end()) return nullptr;
-    return &loc->second;
+vector<const MacroValue*> SymbolTable::getMacros(NamePool::Id name) const {
+    if (macros.find(name) == macros.end()) return vector<const MacroValue*>();
+
+    vector<const MacroValue*> ret;
+    ret.reserve(macros.find(name)->second.size());
+    for (const auto &it : macros.find(name)->second) {
+        ret.push_back(it.get());
+    }
+
+    return ret;
 }
 
 bool SymbolTable::inGlobalScope() const {

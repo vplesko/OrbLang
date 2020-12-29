@@ -74,9 +74,9 @@ private:
     friend class BlockControl;
 
     // Guarantees pointer stability of values.
-    std::unordered_map<NamePool::Id, FuncValue> funcs;
+    std::unordered_map<NamePool::Id, std::vector<std::unique_ptr<FuncValue>>> funcs;
     // Guarantees pointer stability of values.
-    std::unordered_map<NamePool::Id, MacroValue> macros;
+    std::unordered_map<NamePool::Id, std::vector<std::unique_ptr<MacroValue>>> macros;
 
     // Do NOT guarantee pointer stability of blocks.
     std::vector<BlockInternal> globalBlockChain;
@@ -98,11 +98,11 @@ public:
 
     FuncValue* registerFunc(const FuncValue &val);
     bool isFuncName(NamePool::Id name) const;
-    const FuncValue* getFunc(NamePool::Id name) const;
+    std::vector<const FuncValue*> getFuncs(NamePool::Id name) const;
 
-    MacroValue* registerMacro(const MacroValue &val);
+    MacroValue* registerMacro(const MacroValue &val, const TypeTable *typeTable);
     bool isMacroName(NamePool::Id name) const;
-    const MacroValue* getMacro(NamePool::Id name) const;
+    std::vector<const MacroValue*> getMacros(NamePool::Id name) const;
 
     bool inGlobalScope() const;
     const Block* getLastBlock() const;

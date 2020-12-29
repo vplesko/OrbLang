@@ -566,11 +566,15 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
     if (starting.isUndecidedCallableVal()) {
         NamePool::Id name = starting.getUndecidedCallableVal().name;
 
-        const FuncValue *funcVal = symbolTable->getFunc(name);
-        if (funcVal == nullptr) {
+        // TODO! call resolution
+        // TODO! with impl casts
+        // TODO separate errors on not found and on ambigious
+        vector<const FuncValue*> funcVals = symbolTable->getFuncs(name);
+        if (funcVals.size() != 1) {
             msgs->errorUnknown(starting.getCodeLoc());
             return NodeVal();
         }
+        const FuncValue *funcVal = funcVals[0];
 
         const TypeTable::Callable &callable = FuncValue::getCallable(*funcVal, typeTable);
 
@@ -637,11 +641,14 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
     if (starting.isUndecidedCallableVal()) {
         NamePool::Id name = starting.getUndecidedCallableVal().name;
 
-        macroVal = symbolTable->getMacro(name);
-        if (macroVal == nullptr) {
+        // TODO! call resolution
+        // TODO! with impl casts
+        vector<const MacroValue*> macroVals = symbolTable->getMacros(name);
+        if (macroVals.size() != 1) {
             msgs->errorMacroNotFound(starting.getCodeLoc(), name);
             return NodeVal();
         }
+        macroVal = macroVals[0];
     } else {
         if (starting.getEvalVal().m == nullptr) {
             msgs->errorMacroNoValue(starting.getCodeLoc());
@@ -702,6 +709,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     // name
     NamePool::Id name;
     bool noNameMangle;
+    bool isMain;
     if (isDecl || isDef) {
         NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
@@ -714,8 +722,8 @@ NodeVal Processor::processFnc(const NodeVal &node) {
 
         optional<bool> noNameMangleOpt = hasAttributeAndCheckIsEmpty(nodeName, "noNameMangle");
         if (!noNameMangleOpt.has_value()) return NodeVal();
-        bool isMain = isMeaningful(name, Meaningful::MAIN);
-        noNameMangle = noNameMangleOpt.value() || isMain;
+        isMain = isMeaningful(name, Meaningful::MAIN);
+        noNameMangle = noNameMangleOpt.value();
     }
 
     // arguments
@@ -779,6 +787,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
             msgs->errorInternal(node.getCodeLoc());
             return NodeVal();
         }
+        // TODO! maybe remove cn addition, globals are loaded as non-ref anyway (same for mac)
         type = isDecl || isDef ? typeTable->addTypeCnOf(typeOpt.value()) : typeOpt.value();
     }
 
@@ -787,7 +796,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         BaseCallableValue::setType(funcVal, type, typeTable);
         funcVal.name = name;
         funcVal.argNames = argNames;
-        funcVal.noNameMangle = noNameMangle;
+        funcVal.noNameMangle = noNameMangle || isMain || variadic.value();
         funcVal.defined = isDef;
 
         // register only if first func of its name
@@ -841,7 +850,8 @@ NodeVal Processor::processMac(const NodeVal &node) {
     if (isDef) {
         NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
-        if (!symbolTable->nameAvailable(nodeName.getEvalVal().id, namePool, typeTable)) {
+        if (!symbolTable->nameAvailable(nodeName.getEvalVal().id, namePool, typeTable) &&
+            !symbolTable->isMacroName(nodeName.getEvalVal().id)) {
             msgs->errorMacroNameTaken(nodeName.getCodeLoc(), nodeName.getEvalVal().id);
             return NodeVal();
         }
@@ -921,7 +931,7 @@ NodeVal Processor::processMac(const NodeVal &node) {
             symbolTable->addVar(name, NodeVal(node.getCodeLoc(), undecidedVal));
         }
 
-        MacroValue *symbVal = symbolTable->registerMacro(macroVal);
+        MacroValue *symbVal = symbolTable->registerMacro(macroVal, typeTable);
         if (!evaluator->performMacroDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();
 
         return NodeVal(node.getCodeLoc());
@@ -1367,26 +1377,40 @@ bool Processor::implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly
 }
 
 NodeVal Processor::loadUndecidedCallable(const NodeVal &node) {
-    // TODO! if singular, load it; if type given, load of that type; otherwise return undecided
+    // TODO! if type given, load of that type
     if (node.getUndecidedCallableVal().isFunc) {
-        const FuncValue *funcVal = symbolTable->getFunc(node.getUndecidedCallableVal().name);
-        if (funcVal == nullptr) {
+        vector<const FuncValue*> funcVals = symbolTable->getFuncs(node.getUndecidedCallableVal().name);
+        if (funcVals.empty()) {
             msgs->errorInternal(node.getCodeLoc());
             return NodeVal();
         }
 
-        if (checkIsEvalFunc(node.getCodeLoc(), *funcVal, false))
-            return evaluator->performLoad(node.getCodeLoc(), *funcVal);
-        else
-            return performLoad(node.getCodeLoc(), *funcVal);
+        if (funcVals.size() > 1) {
+            // still undecided
+            return node;
+        } else {
+            const FuncValue *funcVal = funcVals[0];
+
+            if (checkIsEvalFunc(node.getCodeLoc(), *funcVal, false))
+                return evaluator->performLoad(node.getCodeLoc(), *funcVal);
+            else
+                return performLoad(node.getCodeLoc(), *funcVal);
+        }
     } else {
-        const MacroValue *macroVal = symbolTable->getMacro(node.getUndecidedCallableVal().name);
-        if (macroVal == nullptr) {
+        vector<const MacroValue*> macroVals = symbolTable->getMacros(node.getUndecidedCallableVal().name);
+        if (macroVals.empty()) {
             msgs->errorInternal(node.getCodeLoc());
             return NodeVal();
         }
 
-        return evaluator->performLoad(node.getCodeLoc(), *macroVal);
+        if (macroVals.size() > 1) {
+            // still undecided
+            return node;
+        } else {
+            const MacroValue *macroVal = macroVals[0];
+
+            return evaluator->performLoad(node.getCodeLoc(), *macroVal);
+        }
     }
 }
 
