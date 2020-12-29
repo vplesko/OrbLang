@@ -274,7 +274,7 @@ type
 ********************
 
 plan:
- - func and macro overloading
+ - func and macro overloading TODO! tests
  - zero
  - drop, move
  - attrs: noZero, noDrop, unique

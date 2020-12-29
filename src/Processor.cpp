@@ -1283,8 +1283,7 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
         NodeVal::copyNonValFieldsLeaf(prom, node, typeTable);
 
     if (node.hasTypeAttr() && !isId) {
-        NodeVal nodeTy = node.getTypeAttr();
-        TypeTable::Id ty = nodeTy.getEvalVal().ty;
+        TypeTable::Id ty = node.getTypeAttr().getEvalVal().ty;
 
         if (!EvalVal::isImplicitCastable(prom.getEvalVal(), ty, stringPool, typeTable)) {
             msgs->errorExprCannotPromote(node.getCodeLoc(), ty);
@@ -1376,7 +1375,6 @@ bool Processor::implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly
 }
 
 NodeVal Processor::loadUndecidedCallable(const NodeVal &node) {
-    // TODO! if type given, load of that type
     if (node.getUndecidedCallableVal().isFunc) {
         vector<const FuncValue*> funcVals = symbolTable->getFuncs(node.getUndecidedCallableVal().name);
         if (funcVals.empty()) {
@@ -1384,17 +1382,31 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node) {
             return NodeVal();
         }
 
-        if (funcVals.size() > 1) {
+        const FuncValue *funcVal = nullptr;
+
+        if (node.hasTypeAttr()) {
+            TypeTable::Id ty = node.getTypeAttr().getEvalVal().ty;
+            for (const FuncValue *it : funcVals) {
+                if (it->type == ty) {
+                    funcVal = it;
+                    break;
+                }
+            }
+            if (funcVal == nullptr) {
+                msgs->errorFuncNotFound(node.getCodeLoc(), node.getUndecidedCallableVal().name);
+                return NodeVal();
+            }
+        } else if (funcVals.size() == 1) {
+            funcVal = funcVals.front();
+        } else {
             // still undecided
             return node;
-        } else {
-            const FuncValue *funcVal = funcVals[0];
-
-            if (checkIsEvalFunc(node.getCodeLoc(), *funcVal, false))
-                return evaluator->performLoad(node.getCodeLoc(), *funcVal);
-            else
-                return performLoad(node.getCodeLoc(), *funcVal);
         }
+
+        if (checkIsEvalFunc(node.getCodeLoc(), *funcVal, false))
+            return evaluator->performLoad(node.getCodeLoc(), *funcVal);
+        else
+            return performLoad(node.getCodeLoc(), *funcVal);
     } else {
         vector<const MacroValue*> macroVals = symbolTable->getMacros(node.getUndecidedCallableVal().name);
         if (macroVals.empty()) {
@@ -1402,14 +1414,28 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node) {
             return NodeVal();
         }
 
-        if (macroVals.size() > 1) {
+        const MacroValue *macroVal = nullptr;
+
+        if (node.hasTypeAttr()) {
+            TypeTable::Id ty = node.getTypeAttr().getEvalVal().ty;
+            for (const MacroValue *it : macroVals) {
+                if (it->type == ty) {
+                    macroVal = it;
+                    break;
+                }
+            }
+            if (macroVal == nullptr) {
+                msgs->errorMacroNotFound(node.getCodeLoc(), node.getUndecidedCallableVal().name);
+                return NodeVal();
+            }
+        } else if (macroVals.size() == 1) {
+            macroVal = macroVals.front();
+        } else {
             // still undecided
             return node;
-        } else {
-            const MacroValue *macroVal = macroVals[0];
-
-            return evaluator->performLoad(node.getCodeLoc(), *macroVal);
         }
+
+        return evaluator->performLoad(node.getCodeLoc(), *macroVal);
     }
 }
 
