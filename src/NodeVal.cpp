@@ -138,8 +138,21 @@ bool NodeVal::isRawVal(const NodeVal &node, const TypeTable *typeTable) {
 }
 
 bool NodeVal::isFunc(const NodeVal &val, const TypeTable *typeTable) {
+    if (val.isUndecidedCallableVal()) {
+        return val.getUndecidedCallableVal().isFunc;
+    }
+
     optional<TypeTable::Id> type = val.getType();
     return type.has_value() && typeTable->worksAsCallable(type.value(), true);
+}
+
+bool NodeVal::isMacro(const NodeVal &val, const TypeTable *typeTable) {
+    if (val.isUndecidedCallableVal()) {
+        return !val.getUndecidedCallableVal().isFunc;
+    }
+
+    optional<TypeTable::Id> type = val.getType();
+    return type.has_value() && typeTable->worksAsCallable(type.value(), false);
 }
 
 void NodeVal::escape(NodeVal &node, const TypeTable *typeTable, EscapeScore amount) {

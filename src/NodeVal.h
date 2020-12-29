@@ -117,6 +117,7 @@ public:
     static bool isRawVal(const NodeVal &node, const TypeTable *typeTable);
 
     static bool isFunc(const NodeVal &val, const TypeTable *typeTable);
+    static bool isMacro(const NodeVal &val, const TypeTable *typeTable);
 
     static void escape(NodeVal &node, const TypeTable *typeTable, EscapeScore amount = 1);
     static void unescape(NodeVal &node, const TypeTable *typeTable);

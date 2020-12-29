@@ -50,7 +50,7 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
     NodeVal starting = processNode(node.getChild(0));
     if (starting.isInvalid()) return NodeVal();
 
-    if (starting.isEvalVal() && EvalVal::isMacro(starting.getEvalVal(), typeTable)) {
+    if (NodeVal::isMacro(starting, typeTable)) {
         NodeVal invoked = processInvoke(node, starting);
         if (invoked.isInvalid()) return NodeVal();
 
