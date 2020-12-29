@@ -181,6 +181,18 @@ vector<const MacroValue*> SymbolTable::getMacros(NamePool::Id name) const {
     return ret;
 }
 
+const MacroValue* SymbolTable::getMacro(MacroCallSite callSite, const TypeTable *typeTable) const {
+    for (const auto &it : macros.find(callSite.name)->second) {
+        const TypeTable::Callable &callable = MacroValue::getCallable(*it, typeTable);
+
+        if (it->getArgCnt() == callSite.argCnt || (callable.variadic && it->getArgCnt()-1 <= callSite.argCnt)) {
+            return it.get();
+        }
+    }
+
+    return nullptr;
+}
+
 bool SymbolTable::inGlobalScope() const {
     return localBlockChains.empty() && globalBlockChain.size() == 1;
 }

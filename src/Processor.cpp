@@ -639,16 +639,15 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
 NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
     const MacroValue *macroVal = nullptr;
     if (starting.isUndecidedCallableVal()) {
-        NamePool::Id name = starting.getUndecidedCallableVal().name;
-
-        // TODO! call resolution
-        // TODO! with impl casts
-        vector<const MacroValue*> macroVals = symbolTable->getMacros(name);
-        if (macroVals.size() != 1) {
-            msgs->errorMacroNotFound(starting.getCodeLoc(), name);
+        SymbolTable::MacroCallSite callSite;
+        callSite.name = starting.getUndecidedCallableVal().name;
+        callSite.argCnt = node.getChildrenCnt()-1;
+    
+        macroVal = symbolTable->getMacro(callSite, typeTable);
+        if (macroVal == nullptr) {
+            msgs->errorMacroNotFound(node.getCodeLoc(), starting.getUndecidedCallableVal().name);
             return NodeVal();
         }
-        macroVal = macroVals[0];
     } else {
         if (starting.getEvalVal().m == nullptr) {
             msgs->errorMacroNoValue(starting.getCodeLoc());

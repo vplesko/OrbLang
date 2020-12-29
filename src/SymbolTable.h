@@ -50,6 +50,11 @@ public:
         bool isEval() const { return blockExit == nullptr && blockLoop == nullptr && phi == nullptr; }
     };
 
+    struct MacroCallSite {
+        NamePool::Id name;
+        std::size_t argCnt;
+    };
+
     struct CalleeValueInfo {
         bool isFunc, isEval;
         std::optional<TypeTable::Id> retType;
@@ -103,6 +108,7 @@ public:
     MacroValue* registerMacro(const MacroValue &val, const TypeTable *typeTable);
     bool isMacroName(NamePool::Id name) const;
     std::vector<const MacroValue*> getMacros(NamePool::Id name) const;
+    const MacroValue* getMacro(MacroCallSite callSite, const TypeTable *typeTable) const;
 
     bool inGlobalScope() const;
     const Block* getLastBlock() const;
