@@ -31,7 +31,8 @@ private:
     CodeLoc codeLoc;
 
     Kind kind;
-    std::variant<StringPool::Id, LiteralVal, SpecialVal, AttrMap, LlvmVal, EvalVal, UndecidedCallableVal> value;
+    std::variant<StringPool::Id, LiteralVal, SpecialVal, LlvmVal, EvalVal, UndecidedCallableVal> value;
+    AttrMap valueAttrMap;
     std::unique_ptr<NodeVal> typeAttr, nonTypeAttrs;
 
     void copyAttrMap(const AttrMap &a);
@@ -79,8 +80,8 @@ public:
     const SpecialVal& getSpecialVal() const { return std::get<SpecialVal>(value); }
 
     bool isAttrMap() const { return kind == Kind::kAttrMap; }
-    AttrMap& getAttrMap() { return std::get<AttrMap>(value); }
-    const AttrMap& getAttrMap() const { return std::get<AttrMap>(value); }
+    AttrMap& getAttrMap() { return valueAttrMap; }
+    const AttrMap& getAttrMap() const { return valueAttrMap; }
 
     bool isLlvmVal() const { return kind == Kind::kLlvm; }
     LlvmVal& getLlvmVal() { return std::get<LlvmVal>(value); }

@@ -274,7 +274,7 @@ type
 ********************
 
 plan:
- - func and macro overloading TODO! tests, delete branch dump, example
+ - func and macro overloading TODO! tests, delete branch dump
  - zero
  - drop, move
  - attrs: noZero, noDrop, unique

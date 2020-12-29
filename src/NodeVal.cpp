@@ -16,7 +16,7 @@ NodeVal::NodeVal(CodeLoc codeLoc, LiteralVal val) : codeLoc(codeLoc), kind(Kind:
 NodeVal::NodeVal(CodeLoc codeLoc, SpecialVal val) : codeLoc(codeLoc), kind(Kind::kSpecial), value(val) {
 }
 
-NodeVal::NodeVal(CodeLoc codeLoc, AttrMap val) : codeLoc(codeLoc), kind(Kind::kAttrMap), value(move(val)) {
+NodeVal::NodeVal(CodeLoc codeLoc, AttrMap val) : codeLoc(codeLoc), kind(Kind::kAttrMap), valueAttrMap(move(val)) {
 }
 
 NodeVal::NodeVal(CodeLoc codeLoc, EvalVal val) : codeLoc(codeLoc), kind(Kind::kEval), value(move(val)) {
@@ -29,7 +29,7 @@ NodeVal::NodeVal(CodeLoc codeLoc, UndecidedCallableVal val) : codeLoc(codeLoc), 
 }
 
 void NodeVal::copyAttrMap(const AttrMap &a) {
-    value = AttrMap();
+    valueAttrMap = AttrMap();
     for (const auto &loc : a) {
         getAttrMap().insert({loc.first, make_unique<NodeVal>(*loc.second)});
     }
@@ -39,12 +39,8 @@ void NodeVal::copyFrom(const NodeVal &other) {
     codeLoc = other.codeLoc;
     kind = other.kind;
 
-    if (other.isImport()) value = other.getImportFile();
-    else if (other.isLiteralVal()) value = other.getLiteralVal();
-    else if (other.isSpecialVal()) value = other.getSpecialVal();
-    else if (other.isEvalVal()) value = other.getEvalVal();
-    else if (other.isLlvmVal()) value = other.getLlvmVal();
-    else if (other.isAttrMap()) copyAttrMap(other.getAttrMap());
+    if (other.isAttrMap()) copyAttrMap(other.getAttrMap());
+    else value = other.value;
 
     if (other.hasTypeAttr()) {
         typeAttr = make_unique<NodeVal>(other.getTypeAttr());
