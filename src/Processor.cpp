@@ -200,7 +200,7 @@ NodeVal Processor::processId(const NodeVal &node) {
     NodeVal *value = symbolTable->getVar(id);
 
     if (value != nullptr) {
-        if (value->isUndecidedCallableVal()) return loadUndecidedCallable(*value);
+        if (value->isUndecidedCallableVal()) return loadUndecidedCallable(node, *value);
 
         if (checkIsEvalTime(*value, false)) {
             return evaluator->performLoad(node.getCodeLoc(), id, *value);
@@ -561,7 +561,6 @@ NodeVal Processor::processData(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
-// TODO! unify the two cases
 NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
     size_t providedArgCnt = node.getChildrenCnt()-1;
 
@@ -585,7 +584,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
 
         // first, try to find a func that doesn't require implicit casts
         for (const FuncValue *it : funcVals) {
-            if (argsFitFuncCall(args, BaseCallableValue::getCallable(*it, typeTable), false)) {
+            if (argsFitFuncCall(args, BaseCallableValue::getCallableSig(*it, typeTable), false)) {
                 funcVal = it;
                 break;
             }
@@ -594,7 +593,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
         // if not found, look through functions which do require implicit casts
         if (funcVal == nullptr) {
             for (const FuncValue *it : funcVals) {
-                if (argsFitFuncCall(args, BaseCallableValue::getCallable(*it, typeTable), true)) {
+                if (argsFitFuncCall(args, BaseCallableValue::getCallableSig(*it, typeTable), true)) {
                     if (funcVal != nullptr) {
                         // error due to call ambiguity
                         msgs->errorUnknown(node.getCodeLoc());
@@ -1297,8 +1296,7 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
     }
     NodeVal prom(node.getCodeLoc(), eval);
 
-    if (node.isEscaped())
-        NodeVal::copyNonValFieldsLeaf(prom, node, typeTable);
+    NodeVal::copyNonValFieldsLeaf(prom, node, typeTable);
 
     if (node.hasTypeAttr() && !isId) {
         TypeTable::Id ty = node.getTypeAttr().getEvalVal().ty;
@@ -1408,7 +1406,10 @@ bool Processor::argsFitFuncCall(const vector<NodeVal> &args, const TypeTable::Ca
     for (size_t i = 0; i < callable.getArgCnt(); ++i) {
         if (!checkHasType(args[i], false)) return false;
 
-        bool sameType = args[i].getType().value() == callable.argTypes[i];
+        // remove trailing cns
+        TypeTable::Id typeSig = typeTable->addTypeDescrForSig(args[i].getType().value());
+
+        bool sameType = typeSig == callable.argTypes[i];
 
         if (!sameType && !(allowImplicitCasts && checkImplicitCastable(args[i], callable.argTypes[i], false)))
             return false;
@@ -1417,9 +1418,9 @@ bool Processor::argsFitFuncCall(const vector<NodeVal> &args, const TypeTable::Ca
     return true;
 }
 
-NodeVal Processor::loadUndecidedCallable(const NodeVal &node) {
-    if (node.getUndecidedCallableVal().isFunc) {
-        vector<const FuncValue*> funcVals = symbolTable->getFuncs(node.getUndecidedCallableVal().name);
+NodeVal Processor::loadUndecidedCallable(const NodeVal &node, const NodeVal &val) {
+    if (val.getUndecidedCallableVal().isFunc) {
+        vector<const FuncValue*> funcVals = symbolTable->getFuncs(val.getUndecidedCallableVal().name);
         if (funcVals.empty()) {
             msgs->errorInternal(node.getCodeLoc());
             return NodeVal();
@@ -1436,14 +1437,14 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node) {
                 }
             }
             if (funcVal == nullptr) {
-                msgs->errorFuncNotFound(node.getCodeLoc(), node.getUndecidedCallableVal().name);
+                msgs->errorFuncNotFound(node.getCodeLoc(), val.getUndecidedCallableVal().name);
                 return NodeVal();
             }
         } else if (funcVals.size() == 1) {
             funcVal = funcVals.front();
         } else {
             // still undecided
-            return node;
+            return val;
         }
 
         if (checkIsEvalFunc(node.getCodeLoc(), *funcVal, false))
@@ -1451,7 +1452,7 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node) {
         else
             return performLoad(node.getCodeLoc(), *funcVal);
     } else {
-        vector<const MacroValue*> macroVals = symbolTable->getMacros(node.getUndecidedCallableVal().name);
+        vector<const MacroValue*> macroVals = symbolTable->getMacros(val.getUndecidedCallableVal().name);
         if (macroVals.empty()) {
             msgs->errorInternal(node.getCodeLoc());
             return NodeVal();
@@ -1468,14 +1469,14 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node) {
                 }
             }
             if (macroVal == nullptr) {
-                msgs->errorMacroNotFound(node.getCodeLoc(), node.getUndecidedCallableVal().name);
+                msgs->errorMacroNotFound(node.getCodeLoc(), val.getUndecidedCallableVal().name);
                 return NodeVal();
             }
         } else if (macroVals.size() == 1) {
             macroVal = macroVals.front();
         } else {
             // still undecided
-            return node;
+            return val;
         }
 
         return evaluator->performLoad(node.getCodeLoc(), *macroVal);
@@ -1730,13 +1731,6 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
         bool isBaseTup = typeTable->worksAsTuple(baseType);
         bool isBaseData = typeTable->worksAsDataType(baseType);
 
-        NodeVal index = processWithEscape(*opers[i]);
-        if (index.isInvalid()) return NodeVal();
-        if (!index.isEvalVal()) {
-            msgs->errorMemberIndex(index.getCodeLoc());
-            return NodeVal();
-        }
-
         size_t baseLen = 0;
         if (isBaseRaw) {
             baseLen = base.getChildrenCnt();
@@ -1754,12 +1748,20 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
             return NodeVal();
         }
 
+        NodeVal index;
         uint64_t indexVal;
         if (isBaseData) {
+            index = processWithEscape(*opers[i]);
+            if (index.isInvalid()) return NodeVal();
+            if (!index.isEvalVal()) {
+                msgs->errorMemberIndex(index.getCodeLoc());
+                return NodeVal();
+            }
             if (!EvalVal::isId(index.getEvalVal(), typeTable)) {
                 msgs->errorUnknown(index.getCodeLoc());
                 return NodeVal();
             }
+
             NamePool::Id indexName = index.getEvalVal().id;
             optional<uint64_t> indexValOpt = typeTable->extractDataType(baseType).value()->getMembInd(indexName);
             if (!indexValOpt.has_value()) {
@@ -1768,6 +1770,13 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
             }
             indexVal = indexValOpt.value();
         } else {
+            index = processNode(*opers[i]);
+            if (index.isInvalid()) return NodeVal();
+            if (!index.isEvalVal()) {
+                msgs->errorMemberIndex(index.getCodeLoc());
+                return NodeVal();
+            }
+
             optional<uint64_t> indexValOpt = EvalVal::getValueNonNeg(index.getEvalVal(), typeTable);
             if (!indexValOpt.has_value() || indexValOpt.value() >= baseLen) {
                 msgs->errorMemberIndex(index.getCodeLoc());

@@ -122,7 +122,7 @@ private:
     NodeVal implicitCast(const NodeVal &node, TypeTable::Id ty);
     bool implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly);
     bool argsFitFuncCall(const std::vector<NodeVal> &args, const TypeTable::Callable &callable, bool allowImplicitCasts);
-    NodeVal loadUndecidedCallable(const NodeVal &node);
+    NodeVal loadUndecidedCallable(const NodeVal &node, const NodeVal &val);
 
     NodeVal processType(const NodeVal &node, const NodeVal &starting);
     NodeVal processId(const NodeVal &node);

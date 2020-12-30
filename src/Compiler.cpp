@@ -338,7 +338,6 @@ bool Compiler::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
             return false;
         }
 
-        // TODO see if switching to PrivateLinkage speeds up compilation
         func.llvmFunc = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage, funcLlvmName.value(), llvmModule.get());
     }
 

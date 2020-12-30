@@ -1,0 +1,69 @@
+import "util/io.orb";
+
+fnc print (x:(i16 cn)) () {
+    println_i16 x;
+};
+
+fnc print (p:i32) ();
+fnc print (p:i32) ();
+
+fnc print (x:i32) () {
+    println_i32 x;
+};
+
+fnc print (p:i32) ();
+
+fnc print (x:i64) () {
+    println_i64 x;
+};
+
+eval (fnc print (x:u32) u32 {
+    ret x;
+});
+
+mac doPrint (a) {
+    ret \(print ,a);
+};
+
+mac doPrint (a b) {
+    ret \(block {
+        print ,a;
+        print ,b;
+    });
+};
+
+mac doPrint (a b c d::variadic) {
+    sym (r0 \{
+        print ,a;
+        print ,b;
+        print ,c;
+    });
+
+    sym (r1 {});
+    sym (i 0);
+    block {
+        exit (>= i (lenOf d));
+        = r1 (+ r1 \{ print ,(. d i); });
+        = i (+ i 1);
+        loop true;
+    };
+
+    ret \(block ,(+ r0 r1));
+};
+
+fnc main () () {
+    print 100:i32;
+    print 101:i64;
+    print 102:(i32 cn);
+    print 103:i16;
+    print:(fnc (a:i32) ()) 104:i8;
+    println_u32 (print 105:u32);
+    println_u32 (print:(fnc (a:u32) u32) 106);
+    print 999:u32;
+    print 999:(u32 cn);
+
+    doPrint 200;
+    doPrint 201 202;
+    doPrint 203 204 205;
+    doPrint 206 207 208 209 210;
+};

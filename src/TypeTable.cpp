@@ -315,6 +315,11 @@ TypeTable::Id TypeTable::addTypeDescrForSig(const TypeDescr &typeDescr) {
     return addTypeDescr(move(typeDescrSig));
 }
 
+TypeTable::Id TypeTable::addTypeDescrForSig(Id t) {
+    if (!isTypeDescr(t)) return t;
+    return addTypeDescrForSig(getTypeDescr(t));
+}
+
 TypeTable::Id TypeTable::addCallableSig(const Callable &call) {
     Callable sig(call);
     for (auto &it : sig.argTypes) {

@@ -16,6 +16,12 @@ const TypeTable::Callable& BaseCallableValue::getCallable(const BaseCallableValu
     return *call;
 }
 
+const TypeTable::Callable& BaseCallableValue::getCallableSig(const BaseCallableValue &callable, const TypeTable *typeTable) {
+    const TypeTable::Callable *call = typeTable->extractCallable(callable.typeSig);
+    assert(call != nullptr);
+    return *call;
+}
+
 optional<TypeTable::Id> FuncValue::getRetType(const FuncValue &func, const TypeTable *typeTable) {
     return getCallable(func, typeTable).retType;
 }

@@ -19,6 +19,7 @@ struct BaseCallableValue {
 
     static void setType(BaseCallableValue &callable, TypeTable::Id type, TypeTable *typeTable);
     static const TypeTable::Callable& getCallable(const BaseCallableValue &callable, const TypeTable *typeTable);
+    static const TypeTable::Callable& getCallableSig(const BaseCallableValue &callable, const TypeTable *typeTable);
 };
 
 struct FuncValue : BaseCallableValue {
