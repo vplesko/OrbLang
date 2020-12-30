@@ -1,0 +1,7 @@
+fnc foo (x:i32) () {};
+fnc foo (y:i64) () {};
+
+fnc main () () {
+    sym z:i16;
+    foo z;
+};

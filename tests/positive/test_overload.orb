@@ -1,5 +1,7 @@
 import "util/io.orb";
 
+fnc printf::noNameMangle (fmt:(c8 cn []))::variadic ();
+
 fnc print (x:(i16 cn)) () {
     println_i16 x;
 };

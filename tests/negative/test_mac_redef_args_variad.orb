@@ -2,7 +2,7 @@ mac foo () {
     ret ();
 };
 
-mac foo () {
+mac foo (a::variadic) {
     ret ();
 };
 

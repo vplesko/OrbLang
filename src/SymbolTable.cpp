@@ -97,10 +97,8 @@ FuncValue* SymbolTable::registerFunc(const FuncValue &val) {
     }
 
     // funcs with no name mangling cannot be overloaded (note: variadic funcs are always noNameMangle)
-    if (val.noNameMangle) {
-        for (const auto &it : funcs[val.name]) {
-            if (it->typeSig != val.typeSig) return nullptr;
-        }
+    for (const auto &it : funcs[val.name]) {
+        if ((val.noNameMangle || it->noNameMangle) && it->typeSig != val.typeSig) return nullptr;
     }
 
     // find the other decl with the same sig, if exists

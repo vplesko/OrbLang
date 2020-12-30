@@ -1,0 +1,4 @@
+fnc foo (x:i32) ();
+fnc foo (y:i64)::variadic ();
+
+fnc main () () {};

@@ -1,0 +1,2 @@
+fnc main () () {};
+fnc main (x:i32) () {};

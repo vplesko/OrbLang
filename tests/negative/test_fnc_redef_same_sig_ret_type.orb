@@ -1,0 +1,4 @@
+fnc foo (x:i32) () {};
+fnc foo (y:i32) i32 { ret 0; };
+
+fnc main () () {};

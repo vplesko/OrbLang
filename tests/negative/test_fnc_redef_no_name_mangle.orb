@@ -1,0 +1,4 @@
+fnc foo (x:i32) ();
+fnc foo::noNameMangle (y:i64) ();
+
+fnc main () () {};

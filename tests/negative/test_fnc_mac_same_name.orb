@@ -1,0 +1,6 @@
+fnc foo (x:i32) () {};
+mac foo (a b) {
+    ret \();
+};
+
+fnc main () () {};
