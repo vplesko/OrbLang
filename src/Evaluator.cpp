@@ -281,22 +281,18 @@ NodeVal Evaluator::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper o
     } else if (op == Oper::SUB) {
         if (EvalVal::isI(evalVal, typeTable)) {
             int64_t x = EvalVal::getValueI(evalVal, typeTable).value();
-            x = -x;
-            if (assignBasedOnTypeI(evalVal, (int64_t) x, ty)) success = true;
+            if (assignBasedOnTypeI(evalVal, -x, ty)) success = true;
         } else if (EvalVal::isF(evalVal, typeTable)) {
             double x = EvalVal::getValueF(evalVal, typeTable).value();
-            x = -x;
-            if (assignBasedOnTypeF(evalVal, x, ty)) success = true;
+            if (assignBasedOnTypeF(evalVal, -x, ty)) success = true;
         }
     } else if (op == Oper::BIT_NOT) {
         if (EvalVal::isI(evalVal, typeTable)) {
             int64_t x = EvalVal::getValueI(evalVal, typeTable).value();
-            x = ~x;
-            if (assignBasedOnTypeI(evalVal, (int64_t) x, ty)) success = true;
+            if (assignBasedOnTypeI(evalVal, ~x, ty)) success = true;
         } else if (EvalVal::isU(evalVal, typeTable)) {
             uint64_t x = EvalVal::getValueU(evalVal, typeTable).value();
-            x = ~x;
-            if (assignBasedOnTypeU(evalVal, (uint64_t) x, ty)) success = true;
+            if (assignBasedOnTypeU(evalVal, ~x, ty)) success = true;
         }
     } else if (op == Oper::NOT) {
         if (EvalVal::isB(evalVal, typeTable)) {
@@ -546,7 +542,7 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     return nullopt;    
 }
 
-// if processing an operand threw ExceptionEvaluatorJump, teardown won't get called
+// TODO fix - if processing an operand threw ExceptionEvaluatorJump, teardown won't get called
 NodeVal Evaluator::performOperComparisonTearDown(CodeLoc codeLoc, bool success, void *signal) {
     if (!success) return NodeVal();
 

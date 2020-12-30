@@ -1073,12 +1073,11 @@ NodeVal Processor::processTup(const NodeVal &node) {
     TypeTable::Tuple tup;
     tup.members.reserve(membs.size());
     for (const NodeVal &memb : membs) {
-        optional<TypeTable::Id> membType = memb.getType();
-        if (!membType.has_value()) {
+        if (!memb.getType().has_value()) {
             msgs->errorUnknown(memb.getCodeLoc());
             return NodeVal();
         }
-        tup.addMember(membType.value());
+        tup.addMember(memb.getType().value());
     }
     optional<TypeTable::Id> tupTypeIdOpt = typeTable->addTuple(move(tup));
     if (!tupTypeIdOpt.has_value()) {
@@ -1124,8 +1123,8 @@ NodeVal Processor::processLenOf(const NodeVal &node) {
         return NodeVal();
     }
 
-    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_U64), typeTable);
-    evalVal.u64 = len;
+    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::WIDEST_U), typeTable);
+    evalVal.getWidestU() = len;
     return NodeVal(node.getCodeLoc(), move(evalVal));
 }
 
@@ -1143,8 +1142,8 @@ NodeVal Processor::processSizeOf(const NodeVal &node) {
     optional<uint64_t> size = compiler->performSizeOf(node.getCodeLoc(), ty);
     if (!size.has_value()) return NodeVal();
 
-    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_U64), typeTable);
-    evalVal.u64 = size.value();
+    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::WIDEST_U), typeTable);
+    evalVal.getWidestU() = size.value();
     return NodeVal(node.getCodeLoc(), move(evalVal));
 }
 

@@ -35,7 +35,7 @@ struct EvalVal {
         TypeTable::Id ty;
         const FuncValue *f;
         const MacroValue *m;
-        NodeVal *p = nullptr;
+        NodeVal *p;
     };
     std::vector<NodeVal> elems;
 
@@ -43,12 +43,18 @@ struct EvalVal {
 
     EscapeScore escapeScore = 0;
 
-    EvalVal() {}
+    EvalVal() {
+        // because of union, this takes care of all other primitives
+        u64 = 0LL;
+    }
 
     const std::optional<TypeTable::Id>& getType() const { return type; }
     std::optional<TypeTable::Id>& getType() { return type; }
 
     bool isEscaped() const { return escapeScore > 0; }
+
+    std::uint64_t& getWidestU() { return u64; }
+    const std::uint64_t& getWidestU() const { return u64; }
 
     static EvalVal makeVal(TypeTable::Id t, TypeTable *typeTable);
     static EvalVal makeZero(TypeTable::Id t, NamePool *namePool, TypeTable *typeTable);

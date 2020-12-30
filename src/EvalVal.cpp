@@ -56,9 +56,7 @@ EvalVal EvalVal::makeZero(TypeTable::Id t, NamePool *namePool, TypeTable *typeTa
     } else if (typeTable->worksAsPrimitive(t, TypeTable::P_TYPE)) {
         evalVal.ty = typeTable->getPrimTypeId(TypeTable::P_ID);
     } else {
-        // because of union, this takes care of all other primitives
-        evalVal.u64 = 0LL;
-        //evalVal.p = nullptr;
+        // do nothing, zeroing of primitives taken care of in the default ctor
     }
 
     return evalVal;
