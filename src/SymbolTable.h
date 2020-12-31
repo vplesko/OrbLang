@@ -10,12 +10,17 @@
 #include "llvm/IR/Instructions.h"
 
 struct BaseCallableValue {
+protected:
     TypeTable::Id type, typeSig;
 
+public:
     NamePool::Id name;
     std::vector<NamePool::Id> argNames;
 
     std::size_t getArgCnt() const { return argNames.size(); }
+
+    TypeTable::Id getType() const { return type; }
+    TypeTable::Id getTypeSig() const { return typeSig; }
 
     static void setType(BaseCallableValue &callable, TypeTable::Id type, TypeTable *typeTable);
     static const TypeTable::Callable& getCallable(const BaseCallableValue &callable, const TypeTable *typeTable);

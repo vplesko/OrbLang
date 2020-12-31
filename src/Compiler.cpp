@@ -105,7 +105,7 @@ NodeVal Compiler::performLoad(CodeLoc codeLoc, const FuncValue &func) {
     if (!checkIsLlvmFunc(codeLoc, func, true)) return NodeVal();
 
     LlvmVal llvmVal;
-    llvmVal.type = func.type;
+    llvmVal.type = func.getType();
     llvmVal.val = func.llvmFunc;
     return NodeVal(codeLoc, llvmVal);
 }
@@ -332,7 +332,7 @@ bool Compiler::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
 
     func.llvmFunc = llvmModule->getFunction(funcLlvmName.value());
     if (func.llvmFunc == nullptr) {
-        llvm::FunctionType *llvmFuncType = makeLlvmFunctionType(func.type);
+        llvm::FunctionType *llvmFuncType = makeLlvmFunctionType(func.getType());
         if (llvmFuncType == nullptr) {
             msgs->errorUnknown(codeLoc);
             return false;
@@ -889,7 +889,7 @@ string Compiler::getNameForLlvm(NamePool::Id name) const {
 }
 
 optional<string> Compiler::getFuncNameForLlvm(const FuncValue &func) {
-    optional<string> sigTyStr = typeTable->makeBinString(func.type, namePool, true);
+    optional<string> sigTyStr = typeTable->makeBinString(func.getType(), namePool, true);
     if (!sigTyStr.has_value()) return nullopt;
 
     stringstream ss;

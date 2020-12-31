@@ -30,7 +30,7 @@ SymbolTable::CalleeValueInfo SymbolTable::CalleeValueInfo::make(const FuncValue 
     CalleeValueInfo c;
     c.isFunc = true;
     c.isEval = func.isEval();
-    const TypeTable::Callable *call = typeTable->extractCallable(func.type);
+    const TypeTable::Callable *call = typeTable->extractCallable(func.getType());
     assert(call != nullptr);
     c.retType = call->retType;
     return c;
@@ -98,14 +98,14 @@ FuncValue* SymbolTable::registerFunc(const FuncValue &val) {
 
     // funcs with no name mangling cannot be overloaded (note: variadic funcs are always noNameMangle)
     for (const auto &it : funcs[val.name]) {
-        if ((val.noNameMangle || it->noNameMangle) && it->typeSig != val.typeSig) return nullptr;
+        if ((val.noNameMangle || it->noNameMangle) && it->getTypeSig() != val.getTypeSig()) return nullptr;
     }
 
     // find the other decl with the same sig, if exists
     auto loc = funcs[val.name].end();
     for (auto it = funcs[val.name].begin(); it != funcs[val.name].end(); ++it) {
-        if (val.typeSig == (*it)->typeSig) {
-            if (val.type != (*it)->type || val.noNameMangle != (*it)->noNameMangle || (val.defined && (*it)->defined)) {
+        if (val.getTypeSig() == (*it)->getTypeSig()) {
+            if (val.getType() != (*it)->getType() || val.noNameMangle != (*it)->noNameMangle || (val.defined && (*it)->defined)) {
                 return nullptr;
             }
             loc = it;
@@ -150,7 +150,7 @@ MacroValue* SymbolTable::registerMacro(const MacroValue &val, const TypeTable *t
 
     // cannot have more than one macro with the same sig (macros cannot be declared)
     for (const auto &it : macros[val.name]) {
-        if (val.typeSig == it->typeSig) return nullptr;
+        if (val.getTypeSig() == it->getTypeSig()) return nullptr;
     }
 
     // don't allow ambiguity in variadic args

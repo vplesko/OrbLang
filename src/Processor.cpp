@@ -1430,7 +1430,7 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node, const NodeVal &val
         if (node.hasTypeAttr()) {
             TypeTable::Id ty = node.getTypeAttr().getEvalVal().ty;
             for (const FuncValue *it : funcVals) {
-                if (it->type == ty) {
+                if (it->getType() == ty) {
                     funcVal = it;
                     break;
                 }
@@ -1462,7 +1462,7 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node, const NodeVal &val
         if (node.hasTypeAttr()) {
             TypeTable::Id ty = node.getTypeAttr().getEvalVal().ty;
             for (const MacroValue *it : macroVals) {
-                if (it->type == ty) {
+                if (it->getType() == ty) {
                     macroVal = it;
                     break;
                 }

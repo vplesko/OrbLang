@@ -29,13 +29,13 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
 NodeVal Evaluator::performLoad(CodeLoc codeLoc, const FuncValue &func) {
     if (!checkIsEvalFunc(codeLoc, func, true)) return NodeVal();
 
-    EvalVal evalVal = EvalVal::makeVal(func.type, typeTable);
+    EvalVal evalVal = EvalVal::makeVal(func.getType(), typeTable);
     evalVal.f = &func;
     return NodeVal(codeLoc, evalVal);
 }
 
 NodeVal Evaluator::performLoad(CodeLoc codeLoc, const MacroValue &macro) {
-    EvalVal evalVal = EvalVal::makeVal(macro.type, typeTable);
+    EvalVal evalVal = EvalVal::makeVal(macro.getType(), typeTable);
     evalVal.m = &macro;
     return NodeVal(codeLoc, evalVal);
 }
