@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.4.3)
 
 project(OrbCompiler VERSION 0.1)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(ORBC_LIBS_SUBDIR lib/Orb)
@@ -112,10 +112,14 @@ llvm_map_components_to_libnames(LLVM_LIBS
     xcorecodegen
     )
 
-target_link_libraries(orbc stdc++fs)
-
-target_link_libraries(orbc LLVM)
-target_link_libraries(orbc clangTooling)
+if(WIN32)
+	target_link_libraries(orbc ${LLVM_LIBS})
+	target_link_libraries(orbc clangTooling)
+else()
+	target_link_libraries(orbc stdc++fs)
+	target_link_libraries(orbc LLVM)
+	target_link_libraries(orbc clangTooling)
+endif()
 
 # install targets
 install(TARGETS orbc DESTINATION bin)
