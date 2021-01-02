@@ -1,4 +1,4 @@
-import "util/clib.orb";
+import "../libs/clib.orb";
 
 fnc println () () { putchar '\n'; };
 

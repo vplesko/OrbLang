@@ -1,5 +1,5 @@
 import "util/io.orb";
-import "util/clib.orb";
+import "../libs/clib.orb";
 import "util/io.orb";
 import "util/empty.orb";
 

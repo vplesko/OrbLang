@@ -1,4 +1,4 @@
-fnc putchar::noNameMangle (x:c8) ();
+fnc putchar::noNameMangle (x:c8) c8;
 fnc getchar::noNameMangle () c8;
 
 fnc printf::noNameMangle (fmt:(c8 cn []))::variadic ();

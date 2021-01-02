@@ -1,6 +1,5 @@
 import "base.orb";
-
-fnc printf::noNameMangle (fmt:(c8 cn []))::variadic ();
+import "clib.orb";
 
 fnc fizzbuzz (n:i32) () {
     range i n {

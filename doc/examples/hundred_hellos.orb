@@ -1,6 +1,5 @@
 import "base.orb";
-
-fnc printf::noNameMangle (fmt:(c8 cn []))::variadic ();
+import "clib.orb";
 
 eval (mac sayHellos (cnt) {
     sym (r {});
