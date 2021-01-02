@@ -1,17 +1,17 @@
 # Orb
 
-Orb is a general-purpose compiled programming language. It features static typing, manual memory management, and extensive compile-time computations. Identifiers, types, and even Orb code itself are all first-class values during compilation of Orb programs (referred to as evaluation time).
+Orb is a general-purpose compiled programming language. It features static typing, manual memory management, and extensive compile-time computations. Identifiers, types, and even Orb code itself are all first-class values during compilation of Orb programs (referred to as evaluation time). Orb's powerful macro system allows you to freely extend the language syntax and offers a very decent code reuse potential.
 
 **This project is a hobby effort and very much a work in progress. A good number of key features are still missing and the tooling may not be very user-friendly.**
 
-> **Check `doc/examples` for some examples of Orb code.**
+> **Check `doc/examples/` for some examples of Orb code.**
 
 ## Install
 
 Following are required:
  - Cmake version 3.4.3 or greater
- - LLVM version 11
- - Clang version 11
+ - LLVM version 12
+ - Clang version 12
  - Python 3 (for testing, optional)
 
 From the top directory of the project, execute the following:
@@ -21,12 +21,11 @@ mkdir build
 cd build
 cmake ..
 cmake --build .
+make install
 cd ..
 ```
 
-The executable `orbc` should appear somewhere within directory `build`, depending on your platform and Cmake configuration.
-
-You may run the tests with:
+Optionally, you can also run the tests with:
 
 ```
 cd tests

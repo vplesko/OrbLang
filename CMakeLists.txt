@@ -112,3 +112,5 @@ target_link_libraries(orbc stdc++fs)
 target_link_libraries(orbc LLVM)
 
 target_link_libraries(orbc clangTooling)
+
+install(TARGETS orbc DESTINATION bin)
