@@ -207,7 +207,7 @@ optional<string> locateOrbFile(const string &file) {
 
     {
         filesystem::path libFile = filesystem::path(ORBC_LIBS_PATH) / file;
-        if (exists(libFile)) return canonical(libFile);
+        if (exists(libFile)) return canonical(libFile).string();
     }
 
     return nullopt;

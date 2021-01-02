@@ -54,9 +54,6 @@ public:
     NodeVal(const NodeVal &other);
     NodeVal& operator=(const NodeVal &other);
 
-    NodeVal(NodeVal &&other) = default;
-    NodeVal& operator=(NodeVal &&other) = default;
-
     static NodeVal makeEmpty(CodeLoc codeLoc, TypeTable *typeTable);
 
     CodeLoc getCodeLoc() const { return codeLoc; }
