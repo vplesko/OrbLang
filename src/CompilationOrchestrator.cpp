@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <stack>
 #include <filesystem>
+#include "OrbCompilerConfig.h"
 #include "Reserved.h"
 #include "SymbolTable.h"
 #include "Lexer.h"
@@ -201,6 +202,17 @@ string canonical(const string &file) {
     return filesystem::canonical(file).string();
 }
 
+optional<string> locateOrbFile(const string &file) {
+    if (exists(file)) return canonical(file);
+
+    {
+        filesystem::path libFile = filesystem::path(ORBC_LIBS_PATH) / file;
+        if (exists(libFile)) return canonical(libFile);
+    }
+
+    return nullopt;
+}
+
 ImportTransRes followImport(
     const string &path, Parser &par, NamePool *names, StringPool *strings, CompilationMessages *msgs,
     unordered_map<string, unique_ptr<Lexer>> &lexers) {
@@ -229,11 +241,13 @@ bool CompilationOrchestrator::parse(const vector<string> &inputs) {
     stack<Lexer*> trace;
 
     for (const string &in : inputs) {
-        if (!exists(in)) {
+        optional<string> pathOpt = locateOrbFile(in);
+        if (!pathOpt.has_value()) {
             msgs->errorInputFileNotFound(in);
             return false;
         }
-        string path = canonical(in);
+        const string &path = pathOpt.value();
+
         ImportTransRes imres = followImport(path, par, namePool.get(), stringPool.get(), msgs.get(), lexers);
         if (imres == ITR_CYCLICAL || imres == ITR_FAIL) {
             // cyclical should logically not happen here
@@ -261,11 +275,13 @@ bool CompilationOrchestrator::parse(const vector<string> &inputs) {
 
                 if (val.isImport()) {
                     const string &file = stringPool->get(val.getImportFile());
-                    if (!exists(file)) {
+                    optional<string> pathOpt = locateOrbFile(file);
+                    if (!pathOpt.has_value()) {
                         msgs->errorImportNotFound(node.getCodeLoc(), file);
                         return false;
                     }
-                    string path = canonical(file);
+                    const string &path = pathOpt.value();
+
                     ImportTransRes imres = followImport(path, par, namePool.get(), stringPool.get(), msgs.get(), lexers);
                     if (imres == ITR_FAIL) {
                         return false;
