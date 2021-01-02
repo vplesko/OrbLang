@@ -1,0 +1,6 @@
+// the configured version for OrbCompiler
+#define OrbCompiler_VERSION_MAJOR @OrbCompiler_VERSION_MAJOR@
+#define OrbCompiler_VERSION_MINOR @OrbCompiler_VERSION_MINOR@
+
+// the configured libs path for OrbCompiler
+#define ORBC_LIBS_PATH "@ORBC_LIBS_PATH@"

@@ -61,7 +61,7 @@ fnc main () () {
 This can be compiled to an executable with:
 
 ```
-./orbc main.orb main
+orbc main.orb main
 ```
 
 Here is an implementation of Fizzbuzz:
@@ -109,7 +109,7 @@ fnc main () () {
 };
 ```
 
-Orb has no knowledge of ifs and for loops, instead providing more primitive instructions. However, such constructs can be defined from within Orb source code. Check `doc/examples/base.orb` for a taste of how this works.
+Orb has no knowledge of ifs and for loops, instead providing more primitive instructions. However, such constructs can be defined from within Orb source code. Check `libs/base.orb` for a taste of how this works.
 
 Here is an illustration of Orb's type system:
 

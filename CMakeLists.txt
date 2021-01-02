@@ -1,12 +1,18 @@
 cmake_minimum_required(VERSION 3.4.3)
 
-project(OrbCompiler)
-
-find_package(LLVM REQUIRED CONFIG)
-find_package(Clang REQUIRED)
+project(OrbCompiler VERSION 0.1)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(ORBC_LIBS_SUBDIR lib/Orb)
+set(ORBC_LIBS_PATH "${CMAKE_INSTALL_PREFIX}/${ORBC_LIBS_SUBDIR}" CACHE PATH "Path to Orb libraries directory.")
+
+configure_file("src/OrbCompilerConfig.h.in" OrbCompilerConfig.h @ONLY)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
+find_package(LLVM REQUIRED CONFIG)
+find_package(Clang REQUIRED)
 
 include_directories(${LLVM_INCLUDE_DIRS})
 include_directories(${CLANG_INCLUDE_DIRS})
@@ -108,9 +114,9 @@ llvm_map_components_to_libnames(LLVM_LIBS
 
 target_link_libraries(orbc stdc++fs)
 
-# Link against LLVM libraries
 target_link_libraries(orbc LLVM)
-
 target_link_libraries(orbc clangTooling)
 
+# install targets
 install(TARGETS orbc DESTINATION bin)
+install(DIRECTORY libs/ DESTINATION ${ORBC_LIBS_SUBDIR})
