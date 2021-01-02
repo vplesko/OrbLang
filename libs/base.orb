@@ -1,34 +1,70 @@
-eval (mac ++ (x) {
-    ret \(= ,x (+ ,x 1));
+eval (sym (base.-genSymToken 0:u64));
+
+eval (fnc genSym () id {
+    sym (s (+ \G (cast id base.-genSymToken)));
+    ++ base.-genSymToken;
+    ret s;
 });
 
-eval (mac if (cond body) {
+mac if (cond then) {
     ret \(block {
         (exit (! ,cond))
-        (block ,body)
+        (block ,then)
     });
-});
+};
 
-eval (mac for (init cond iter body) {
+mac if (cond then else) {
+    ret \(block base.-ifBlock () {
+        (if ,cond ,(+ then \{ exit base.-ifBlock true; }))
+        (block ,else)
+    });
+};
+
+mac while (cond body) {
+    ret \(block base.-loopWhole () {
+        (exit (! ,cond))
+        (block ,body)
+        (loop true)
+    });
+};
+
+mac for (init cond iter body) {
     ret \(block {
         ,init
-        (block for-loop-whole () {
+        (block base.-loopWhole () {
             (exit (! ,cond))
-            (block for-loop-body () ,body)
+            (block base.-loopBody () ,body)
             ,iter
             (loop true)
         })
     });
-});
+};
 
-eval (mac break () {
-    ret \(exit for-loop-whole true);
-});
+mac break () {
+    ret \(exit base.-loopWhole true);
+};
 
-eval (mac continue () {
-    ret \(exit for-loop-body true);
-});
+mac continue () {
+    ret \(exit base.-loopBody true);
+};
 
-eval (mac range (i n body) {
-    ret \(for (sym (,i 0)) (< ,i ,n) (++ ,i) ,body);
-});
+mac range (i lo::preprocess hi::preprocess body) {
+    ret \(for (sym (,i ,lo)) (< ,i ,hi) (++ ,i) ,body);
+};
+
+mac range (i n::preprocess body) {
+    ret \(range ,i 0:(typeOf n) ,n ,body);
+};
+
+mac times (n::preprocess body) {
+    sym (i (genSym));
+    ret \(range ,i ,n ,body);
+};
+
+mac ++ (x::preprocess) {
+    ret \(= ,x (+ ,x 1:(typeOf x)));
+};
+
+mac -- (x::preprocess) {
+    ret \(= ,x (- ,x 1:(typeOf x)));
+};

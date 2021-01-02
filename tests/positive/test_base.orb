@@ -1,0 +1,46 @@
+import "../libs/base.orb";
+import "util/io.orb";
+
+fnc main () () {
+    if true {
+        println_i32 100;
+    };
+    if false {
+        println_i32 -1;
+    };
+    if true {
+        println_i32 101;
+    } {
+        println_i32 -1;
+    };
+    if false {
+        println_i32 -1;
+    } {
+        println_i32 102;
+    };
+
+    while true {
+        println_i32 200;
+        break;
+    };
+    for (sym (i 0)) (< i 3) (++ i) {
+        if (== i 0) { continue; };
+        println_i32 (+ 200 i);
+    };
+    times 2 {
+        println_i32 203;
+    };
+    range i 2 {
+        println_i32 (+ i 204);
+    };
+    range i 206 208 {
+        println_i32 i;
+    };
+
+    block {
+        sym (x 299);
+        println_i32 (++ x);
+        = x 303;
+        println_i32 (-- (-- x));
+    };
+};
