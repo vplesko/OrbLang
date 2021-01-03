@@ -98,7 +98,7 @@ NodeVal Compiler::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
     LlvmVal loadLlvmVal(ref.getLlvmVal().type);
     loadLlvmVal.ref = ref.getLlvmVal().ref;
     loadLlvmVal.val = llvmBuilder.CreateLoad(ref.getLlvmVal().ref, getNameForLlvm(id));
-    return NodeVal(codeLoc, loadLlvmVal);
+    return NodeVal(ref.getCodeLoc(), loadLlvmVal);
 }
 
 NodeVal Compiler::performLoad(CodeLoc codeLoc, const FuncValue &func) {

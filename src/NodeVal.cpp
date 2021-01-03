@@ -39,14 +39,18 @@ void NodeVal::copyFrom(const NodeVal &other) {
     codeLoc = other.codeLoc;
     kind = other.kind;
 
-    if (other.isAttrMap()) copyAttrMap(other.getAttrMap());
-    else value = other.value;
+    value = other.value;
+    copyAttrMap(other.getAttrMap());
 
     if (other.hasTypeAttr()) {
         typeAttr = make_unique<NodeVal>(other.getTypeAttr());
+    } else {
+        typeAttr = nullptr;
     }
     if (other.hasNonTypeAttrs()) {
         nonTypeAttrs = make_unique<NodeVal>(other.getNonTypeAttrs());
+    } else {
+        nonTypeAttrs = nullptr;
     }
 }
 

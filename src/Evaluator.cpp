@@ -12,9 +12,10 @@ Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *type
     setEvaluator(this);
 }
 
+// TODO+ take codeLoc from ref, same in index, memb, etc. and in Compiler
 NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
     if (checkIsEvalVal(codeLoc, ref, false)) {
-        NodeVal nodeVal = NodeVal::copyNoRef(codeLoc, ref);
+        NodeVal nodeVal = NodeVal::copyNoRef(ref);
         nodeVal.getEvalVal().ref = &ref;
         return nodeVal;
     } else {

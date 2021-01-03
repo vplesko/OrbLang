@@ -6,30 +6,33 @@ eval (fnc genSym () id {
     ret s;
 });
 
-mac if (cond then) {
-    ret \(block {
+mac rule (name args pattern) {
+    ret \(mac ,name ,args {
+        ret ,pattern;
+    });
+};
+
+rule if (cond then)
+    \(block {
         (exit (! ,cond))
         (block ,then)
     });
-};
 
-mac if (cond then else) {
-    ret \(block base.-ifBlock () {
+rule if (cond then else)
+    \(block base.-ifBlock () {
         (if ,cond ,(+ then \{ exit base.-ifBlock true; }))
         (block ,else)
     });
-};
 
-mac while (cond body) {
-    ret \(block base.-loopWhole () {
+rule while (cond body)
+    \(block base.-loopWhole () {
         (exit (! ,cond))
         (block ,body)
         (loop true)
     });
-};
 
-mac for (init cond iter body) {
-    ret \(block {
+rule for (init cond iter body)
+    \(block {
         ,init
         (block base.-loopWhole () {
             (exit (! ,cond))
@@ -38,33 +41,24 @@ mac for (init cond iter body) {
             (loop true)
         })
     });
-};
 
-mac break () {
-    ret \(exit base.-loopWhole true);
-};
+rule break ()
+    \(exit base.-loopWhole true);
 
-mac continue () {
-    ret \(exit base.-loopBody true);
-};
+rule continue ()
+    \(exit base.-loopBody true);
 
-mac range (i lo::preprocess hi::preprocess body) {
-    ret \(for (sym (,i ,lo)) (< ,i ,hi) (++ ,i) ,body);
-};
+rule range (i lo::preprocess hi::preprocess body)
+    \(for (sym (,i ,lo)) (< ,i ,hi) (++ ,i) ,body);
 
-mac range (i n::preprocess body) {
-    ret \(range ,i 0:(typeOf n) ,n ,body);
-};
+rule range (i n::preprocess body)
+    \(range ,i 0 ,n ,body);
 
-mac times (n::preprocess body) {
-    sym (i (genSym));
-    ret \(range ,i ,n ,body);
-};
+rule times (n::preprocess body)
+    \(range ,(genSym) ,n ,body);
 
-mac ++ (x::preprocess) {
-    ret \(= ,x (+ ,x 1:(typeOf x)));
-};
+rule ++ (x::preprocess)
+    \(= ,x (+ ,x 1));
 
-mac -- (x::preprocess) {
-    ret \(= ,x (- ,x 1:(typeOf x)));
-};
+rule -- (x::preprocess)
+    \(= ,x (- ,x 1));
