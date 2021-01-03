@@ -267,7 +267,7 @@ bool Compiler::performPass(CodeLoc codeLoc, SymbolTable::Block &block, const Nod
 
     NodeVal valPromo = promoteIfEvalValAndCheckIsLlvmVal(val, true);
     if (valPromo.isInvalid()) return false;
-    
+
     llvm::BasicBlock *llvmBlockExit = block.blockExit;
     block.phi->addIncoming(valPromo.getLlvmVal().val, llvmBuilder.GetInsertBlock());
     llvmBuilder.CreateBr(llvmBlockExit);

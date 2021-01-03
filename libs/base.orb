@@ -49,16 +49,24 @@ rule continue ()
     (exit base.-loopBody true);
 
 rule range (i lo::preprocess hi::preprocess body)
-    (for (sym (,i ,lo)) (< ,i ,hi) (++ ,i) ,body);
+    (for (sym (,i ,lo)) (<= ,i ,hi) (++ ,i) ,body);
 
 rule range (i n::preprocess body)
-    (range ,i 0 ,n ,body);
+    (range ,i 0 (- ,n 1) ,body);
 
 rule times (n::preprocess body)
-    (range ,(genSym) ,n ,body);
+    (range ,(genSym) 1 ,n ,body);
 
 rule ++ (x::preprocess)
     (= ,x (+ ,x 1));
 
 rule -- (x::preprocess)
     (= ,x (- ,x 1));
+
+rule ?_ (cond::preprocess onTrue::preprocess onFalse::preprocess)
+    (block base.-blockTernSel ,(typeOf onTrue) {
+        if ,cond {
+            pass base.-blockTernSel ,onTrue;
+        };
+        pass base.-blockTernSel ,onFalse;
+    });
