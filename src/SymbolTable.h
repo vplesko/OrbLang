@@ -4,17 +4,18 @@
 #include <vector>
 #include <string>
 #include <variant>
+#include "CodeLoc.h"
 #include "NamePool.h"
 #include "TypeTable.h"
 #include "NodeVal.h"
 #include "llvm/IR/Instructions.h"
 
-// TODO+ put a CodeLoc in this, and use it in performLoads
 struct BaseCallableValue {
 protected:
     TypeTable::Id type, typeSig;
 
 public:
+    CodeLoc codeLoc;
     NamePool::Id name;
     std::vector<NamePool::Id> argNames;
 

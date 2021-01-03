@@ -12,7 +12,6 @@ Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *type
     setEvaluator(this);
 }
 
-// TODO+ take codeLoc from ref, same in index, memb, etc. and in Compiler
 NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
     if (checkIsEvalVal(codeLoc, ref, false)) {
         NodeVal nodeVal = NodeVal::copyNoRef(ref);
@@ -32,13 +31,13 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, const FuncValue &func) {
 
     EvalVal evalVal = EvalVal::makeVal(func.getType(), typeTable);
     evalVal.f = &func;
-    return NodeVal(codeLoc, evalVal);
+    return NodeVal(func.codeLoc, evalVal);
 }
 
 NodeVal Evaluator::performLoad(CodeLoc codeLoc, const MacroValue &macro) {
     EvalVal evalVal = EvalVal::makeVal(macro.getType(), typeTable);
     evalVal.m = &macro;
-    return NodeVal(codeLoc, evalVal);
+    return NodeVal(macro.codeLoc, evalVal);
 }
 
 NodeVal Evaluator::performZero(CodeLoc codeLoc, TypeTable::Id ty) {
@@ -557,9 +556,9 @@ NodeVal Evaluator::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const No
 
     *lhs.getEvalVal().ref = NodeVal::copyNoRef(lhs.getEvalVal().ref->getCodeLoc(), rhs);
 
-    EvalVal evalVal(rhs.getEvalVal());
-    evalVal.ref = lhs.getEvalVal().ref;
-    return NodeVal(codeLoc, move(evalVal));
+    NodeVal nodeVal = NodeVal::copyNoRef(lhs.getCodeLoc(), rhs);
+    nodeVal.getEvalVal().ref = lhs.getEvalVal().ref;
+    return nodeVal;
 }
 
 NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) {
@@ -572,7 +571,7 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVa
     }
 
     if (typeTable->worksAsTypeArr(base.getType().value())) {
-        NodeVal nodeVal = NodeVal::copyNoRef(codeLoc, base.getEvalVal().elems[index.value()]);
+        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[index.value()]);
         nodeVal.getEvalVal().type = resTy;
         if (base.hasRef()) {
             nodeVal.getEvalVal().ref = &base.getEvalVal().ref->getEvalVal().elems[index.value()];
@@ -593,7 +592,7 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVa
         // not a ref-val
         EvalVal evalVal = EvalVal::makeVal(resTy, typeTable);
         evalVal.c8 = str[index.value()];
-        return NodeVal(codeLoc, move(evalVal));
+        return NodeVal(base.getCodeLoc(), move(evalVal));
     } else if (typeTable->worksAsTypeArrP(base.getType().value())) {
         msgs->errorUnknown(codeLoc);
         return NodeVal();
@@ -618,7 +617,7 @@ NodeVal Evaluator::performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64
         }
         return nodeVal;
     } else {
-        NodeVal nodeVal = NodeVal::copyNoRef(codeLoc, base.getEvalVal().elems[ind]);
+        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[ind]);
         nodeVal.getEvalVal().type = resTy;
         if (base.hasRef()) {
             nodeVal.getEvalVal().ref = &base.getEvalVal().ref->getEvalVal().elems[ind];

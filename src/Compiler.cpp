@@ -107,7 +107,7 @@ NodeVal Compiler::performLoad(CodeLoc codeLoc, const FuncValue &func) {
     LlvmVal llvmVal;
     llvmVal.type = func.getType();
     llvmVal.val = func.llvmFunc;
-    return NodeVal(codeLoc, llvmVal);
+    return NodeVal(func.codeLoc, llvmVal);
 }
 
 NodeVal Compiler::performLoad(CodeLoc codeLoc, const MacroValue &macro) {
@@ -648,7 +648,7 @@ NodeVal Compiler::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal
         msgs->errorInternal(codeLoc);
         return NodeVal();
     }
-    return NodeVal(codeLoc, llvmVal);
+    return NodeVal(basePromo.getCodeLoc(), llvmVal);
 }
 
 NodeVal Compiler::performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
@@ -664,7 +664,7 @@ NodeVal Compiler::performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64_
     } else {
         llvmVal.val = llvmBuilder.CreateExtractValue(basePromo.getLlvmVal().val, {(unsigned) ind}, "dot_tmp");
     }
-    return NodeVal(codeLoc, llvmVal);
+    return NodeVal(basePromo.getCodeLoc(), llvmVal);
 }
 
 NodeVal Compiler::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op) {

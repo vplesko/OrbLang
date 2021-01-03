@@ -719,16 +719,18 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     size_t indBody = isDef ? 4 : 0;
 
     // name
+    CodeLoc nameCodeLoc;
     NamePool::Id name;
     bool noNameMangle;
     bool isMain;
     if (isDecl || isDef) {
         NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
+        nameCodeLoc = nodeName.getCodeLoc();
         name = nodeName.getEvalVal().id;
         if (!symbolTable->nameAvailable(name, namePool, typeTable) &&
             !symbolTable->isFuncName(name)) {
-            msgs->errorFuncNameTaken(nodeName.getCodeLoc(), name);
+            msgs->errorFuncNameTaken(nameCodeLoc, name);
             return NodeVal();
         }
 
@@ -804,6 +806,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
 
     if (isDecl || isDef) {
         FuncValue funcVal;
+        funcVal.codeLoc = nameCodeLoc;
         BaseCallableValue::setType(funcVal, type, typeTable);
         funcVal.name = name;
         funcVal.argNames = argNames;
@@ -857,16 +860,18 @@ NodeVal Processor::processMac(const NodeVal &node) {
     size_t indBody = isDef ? 3 : 0;
 
     // name
+    CodeLoc nameCodeLoc;
     NamePool::Id name;
     if (isDef) {
         NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
-        if (!symbolTable->nameAvailable(nodeName.getEvalVal().id, namePool, typeTable) &&
-            !symbolTable->isMacroName(nodeName.getEvalVal().id)) {
-            msgs->errorMacroNameTaken(nodeName.getCodeLoc(), nodeName.getEvalVal().id);
+        nameCodeLoc = nodeName.getCodeLoc();
+        name = nodeName.getEvalVal().id;
+        if (!symbolTable->nameAvailable(name, namePool, typeTable) &&
+            !symbolTable->isMacroName(name)) {
+            msgs->errorMacroNameTaken(nameCodeLoc, name);
             return NodeVal();
         }
-        name = nodeName.getEvalVal().id;
     }
 
     // arguments
@@ -929,6 +934,7 @@ NodeVal Processor::processMac(const NodeVal &node) {
 
     if (isDef) {
         MacroValue macroVal;
+        macroVal.codeLoc = nameCodeLoc;
         BaseCallableValue::setType(macroVal, type, typeTable);
         macroVal.name = name;
         macroVal.argNames = move(argNames);
