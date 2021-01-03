@@ -128,6 +128,10 @@ bool EvalVal::isStr(const EvalVal &val, const TypeTable *typeTable) {
     return type.has_value() && typeTable->worksAsTypeStr(type.value());
 }
 
+bool EvalVal::isNonNullStr(const EvalVal &val, const TypeTable *typeTable) {
+    return isStr(val, typeTable) && val.str.has_value();
+}
+
 bool EvalVal::isAnyP(const EvalVal &val, const TypeTable *typeTable) {
     optional<TypeTable::Id> type = val.getType();
     return type.has_value() && typeTable->worksAsTypeAnyP(type.value());
@@ -221,7 +225,7 @@ bool EvalVal::isImplicitCastable(const EvalVal &val, TypeTable::Id t, const Stri
     if (typeTable->worksAsTypePtr(val.getType().value()) &&
         (typeTable->worksAsTypeAnyP(t) || typeTable->worksAsCallable(t))) return true;
     
-    if (isStr(val, typeTable) && !isNull(val, typeTable))
+    if (isNonNullStr(val, typeTable))
         return typeTable->worksAsTypeStr(t) ||
             typeTable->worksAsTypeCharArrOfLen(t, LiteralVal::getStringLen(stringPool->get(val.str.value())));
 

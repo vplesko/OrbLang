@@ -91,14 +91,14 @@ llvm::Type* Compiler::genPrimTypePtr() {
     return llvm::Type::getInt8PtrTy(llvmContext);
 }
 
-NodeVal Compiler::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
+NodeVal Compiler::performLoad(CodeLoc codeLoc, NamePool::Id id, SymbolTable::VarEntry &ref) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
-    if (!checkIsLlvmVal(codeLoc, ref, true)) return NodeVal();
+    if (!checkIsLlvmVal(codeLoc, ref.var, true)) return NodeVal();
 
-    LlvmVal loadLlvmVal(ref.getLlvmVal().type);
-    loadLlvmVal.ref = ref.getLlvmVal().ref;
-    loadLlvmVal.val = llvmBuilder.CreateLoad(ref.getLlvmVal().ref, getNameForLlvm(id));
-    return NodeVal(ref.getCodeLoc(), loadLlvmVal);
+    LlvmVal loadLlvmVal(ref.var.getLlvmVal().type);
+    loadLlvmVal.ref = ref.var.getLlvmVal().ref;
+    loadLlvmVal.val = llvmBuilder.CreateLoad(ref.var.getLlvmVal().ref, getNameForLlvm(id));
+    return NodeVal(ref.var.getCodeLoc(), loadLlvmVal);
 }
 
 NodeVal Compiler::performLoad(CodeLoc codeLoc, const FuncValue &func) {
@@ -815,7 +815,7 @@ NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
         llvmConst = getLlvmConstB(eval.b);
     } else if (EvalVal::isNull(eval, typeTable)) {
         llvmConst = llvm::ConstantPointerNull::get((llvm::PointerType*) makeLlvmType(ty));
-    } else if (EvalVal::isStr(eval, typeTable)) {
+    } else if (EvalVal::isNonNullStr(eval, typeTable)) {
         llvmConst = stringPool->getLlvm(eval.str.value());
         if (llvmConst == nullptr) {
             llvmConst = makeLlvmConstString(stringPool->get(eval.str.value()));

@@ -221,8 +221,20 @@ inline void CompilationMessages::error(CodeLoc loc, const string &str) {
     error(str);
 }
 
-void CompilationMessages::userMessage(CodeLoc codeLoc, StringPool::Id str) {
-    info(codeLoc, stringPool->get(str));
+void CompilationMessages::userMessage(CodeLoc loc, std::int64_t x) {
+    stringstream ss;
+    ss << x;
+    info(loc, ss.str());
+}
+
+void CompilationMessages::userMessage(CodeLoc loc, std::uint64_t x) {
+    stringstream ss;
+    ss << x;
+    info(loc, ss.str());
+}
+
+void CompilationMessages::userMessage(CodeLoc loc, StringPool::Id str) {
+    info(loc, stringPool->get(str));
 }
 
 void CompilationMessages::errorInputFileNotFound(const string &path) {

@@ -199,12 +199,12 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
 NodeVal Processor::processId(const NodeVal &node) {
     NamePool::Id id = node.getEvalVal().id;
 
-    NodeVal *value = symbolTable->getVar(id);
+    SymbolTable::VarEntry *value = symbolTable->getVar(id);
 
     if (value != nullptr) {
-        if (value->isUndecidedCallableVal()) return loadUndecidedCallable(node, *value);
+        if (value->var.isUndecidedCallableVal()) return loadUndecidedCallable(node, value->var);
 
-        if (checkIsEvalTime(*value, false)) {
+        if (checkIsEvalTime(value->var, false)) {
             return evaluator->performLoad(node.getCodeLoc(), id, *value);
         } else {
             return performLoad(node.getCodeLoc(), id, *value);
@@ -1035,8 +1035,7 @@ NodeVal Processor::processImport(const NodeVal &node) {
 
     NodeVal file = processNode(node.getChild(1));
     if (file.isInvalid()) return NodeVal();
-    if (!file.isEvalVal() || !EvalVal::isStr(file.getEvalVal(), typeTable) ||
-        EvalVal::isNull(file.getEvalVal(), typeTable)) {
+    if (!file.isEvalVal() || !EvalVal::isNonNullStr(file.getEvalVal(), typeTable)) {
         msgs->errorImportNotString(file.getCodeLoc());
         return NodeVal();
     }
@@ -1045,19 +1044,28 @@ NodeVal Processor::processImport(const NodeVal &node) {
 }
 
 NodeVal Processor::processMessage(const NodeVal &node) {
-    if (!checkExactlyChildren(node, 2, true)) {
+    if (!checkAtLeastChildren(node, 2, true)) {
         return NodeVal();
     }
 
-    NodeVal file = processNode(node.getChild(1));
-    if (file.isInvalid()) return NodeVal();
-    if (!file.isEvalVal() || !EvalVal::isStr(file.getEvalVal(), typeTable) ||
-        EvalVal::isNull(file.getEvalVal(), typeTable)) {
-        msgs->errorUnknown(file.getCodeLoc());
-        return NodeVal();
-    }
+    for (size_t i = 1; i < node.getChildrenCnt(); ++i) {
+        NodeVal nodeVal = processNode(node.getChild(i));
+        if (nodeVal.isInvalid()) return NodeVal();
+        if (!checkIsEvalVal(nodeVal, true)) return NodeVal();
 
-    msgs->userMessage(node.getCodeLoc(), file.getEvalVal().str.value());
+        EvalVal evalVal = nodeVal.getEvalVal();
+
+        if (EvalVal::isI(evalVal, typeTable)) {
+            msgs->userMessage(node.getCodeLoc(), EvalVal::getValueI(evalVal, typeTable).value());
+        } else if (EvalVal::isU(evalVal, typeTable)) {
+            msgs->userMessage(node.getCodeLoc(), EvalVal::getValueU(evalVal, typeTable).value());
+        } else if (EvalVal::isNonNullStr(evalVal, typeTable)) {
+            msgs->userMessage(node.getCodeLoc(), evalVal.str.value());
+        } else {
+            msgs->errorUnknown(node.getCodeLoc());
+            return NodeVal();
+        }
+    }
 
     return NodeVal(node.getCodeLoc());
 }

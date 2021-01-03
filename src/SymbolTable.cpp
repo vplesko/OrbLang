@@ -69,11 +69,17 @@ void SymbolTable::endBlock() {
     }
 }
 
-void SymbolTable::addVar(NamePool::Id name, NodeVal var) {
+void SymbolTable::addVar(NamePool::Id name, NodeVal val) {
+    VarEntry varEntry;
+    varEntry.var = move(val);
+    addVar(name, move(varEntry));
+}
+
+void SymbolTable::addVar(NamePool::Id name, VarEntry var) {
     getLastBlockInternal()->vars.insert(make_pair(name, move(var)));
 }
 
-const NodeVal* SymbolTable::getVar(NamePool::Id name) const {
+const SymbolTable::VarEntry* SymbolTable::getVar(NamePool::Id name) const {
     if (!localBlockChains.empty()) {
         for (auto it = localBlockChains.back().second.rbegin();
             it != localBlockChains.back().second.rend();
@@ -92,8 +98,8 @@ const NodeVal* SymbolTable::getVar(NamePool::Id name) const {
     return nullptr;
 }
 
-NodeVal* SymbolTable::getVar(NamePool::Id name) {
-    return const_cast<NodeVal*>(const_cast<const SymbolTable*>(this)->getVar(name));
+SymbolTable::VarEntry* SymbolTable::getVar(NamePool::Id name) {
+    return const_cast<SymbolTable::VarEntry*>(const_cast<const SymbolTable*>(this)->getVar(name));
 }
 
 FuncValue* SymbolTable::registerFunc(const FuncValue &val) {

@@ -46,7 +46,9 @@ public:
     Status getStatus() const {return status; }
     bool isFail() const { return status >= S_ERROR; }
 
-    void userMessage(CodeLoc codeLoc, StringPool::Id str);
+    void userMessage(CodeLoc loc, std::int64_t x);
+    void userMessage(CodeLoc loc, std::uint64_t x);
+    void userMessage(CodeLoc loc, StringPool::Id str);
 
     void errorInputFileNotFound(const std::string &path);
     void errorBadToken(CodeLoc loc);

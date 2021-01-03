@@ -39,7 +39,7 @@ class Compiler : public Processor {
     NodeVal promoteEvalVal(const NodeVal &node);
     NodeVal promoteIfEvalValAndCheckIsLlvmVal(const NodeVal &node, bool orError);
 
-    NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) override;
+    NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, SymbolTable::VarEntry &ref) override;
     NodeVal performLoad(CodeLoc codeLoc, const FuncValue &func) override;
     NodeVal performLoad(CodeLoc codeLoc, const MacroValue &macro) override;
     NodeVal performZero(CodeLoc codeLoc, TypeTable::Id ty) override;

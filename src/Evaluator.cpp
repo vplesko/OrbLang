@@ -12,17 +12,21 @@ Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *type
     setEvaluator(this);
 }
 
-NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) {
-    if (checkIsEvalVal(codeLoc, ref, false)) {
-        NodeVal nodeVal = NodeVal::copyNoRef(ref);
-        nodeVal.getEvalVal().ref = &ref;
-        return nodeVal;
+NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, SymbolTable::VarEntry &ref) {
+    if (checkIsEvalVal(codeLoc, ref.var, false)) {
+        if (ref.isInvokeArg) {
+            return ref.var;
+        } else {
+            NodeVal nodeVal = NodeVal::copyNoRef(ref.var);
+            nodeVal.getEvalVal().ref = &ref.var;
+            return nodeVal;
+        }
     } else {
         // allowing eval to load compiled variables risks fetching outdated values from symbol table
         // however, eval needs to be able to do this for macros to be able to work with compiled args
         // TODO find a way to limit this behaviour to make it correct
         // maybe allow to load invoke args and their attrs only
-        return ref;
+        return ref.var;
     }
 }
 
@@ -178,7 +182,8 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
     const TypeTable::Callable &callable = FuncValue::getCallable(func, typeTable);
 
     for (size_t i = 0; i < args.size(); ++i) {
-        symbolTable->addVar(func.argNames[i], args[i]);
+        // TODO should attributes on non-raw be removed?
+        symbolTable->addVar(func.argNames[i], NodeVal::copyNoRef(args[i]));
     }
 
     try {
@@ -208,7 +213,10 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const
     BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(macro));
 
     for (size_t i = 0; i < args.size(); ++i) {
-        symbolTable->addVar(macro.argNames[i], args[i]);
+        SymbolTable::VarEntry varEntry;
+        varEntry.var = args[i];
+        varEntry.isInvokeArg = true;
+        symbolTable->addVar(macro.argNames[i], move(varEntry));
     }
 
     try {

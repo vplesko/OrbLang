@@ -24,7 +24,7 @@ protected:
     unsigned topmost;
 
 protected:
-    virtual NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, NodeVal &ref) =0;
+    virtual NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, SymbolTable::VarEntry &ref) =0;
     virtual NodeVal performLoad(CodeLoc codeLoc, const FuncValue &func) =0;
     virtual NodeVal performLoad(CodeLoc codeLoc, const MacroValue &macro) =0;
     virtual NodeVal performZero(CodeLoc codeLoc, TypeTable::Id ty) =0;

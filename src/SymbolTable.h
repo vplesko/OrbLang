@@ -66,6 +66,11 @@ public:
         bool isEval() const { return blockExit == nullptr && blockLoop == nullptr && phi == nullptr; }
     };
 
+    struct VarEntry {
+        NodeVal var;
+        bool isInvokeArg = false;
+    };
+
     struct MacroCallSite {
         NamePool::Id name;
         std::size_t argCnt;
@@ -89,7 +94,7 @@ private:
     struct BlockInternal {
         Block block;
         // Guarantees pointer stability of values.
-        std::unordered_map<NamePool::Id, NodeVal> vars;
+        std::unordered_map<NamePool::Id, VarEntry> vars;
     };
 
     friend class BlockControl;
@@ -113,9 +118,10 @@ private:
 public:
     SymbolTable();
 
-    void addVar(NamePool::Id name, NodeVal var);
-    const NodeVal* getVar(NamePool::Id name) const;
-    NodeVal* getVar(NamePool::Id name);
+    void addVar(NamePool::Id name, NodeVal val);
+    void addVar(NamePool::Id name, VarEntry var);
+    const VarEntry* getVar(NamePool::Id name) const;
+    VarEntry* getVar(NamePool::Id name);
 
     FuncValue* registerFunc(const FuncValue &val);
     bool isFuncName(NamePool::Id name) const;

@@ -1,0 +1,8 @@
+mac foo (a::preprocess) {
+    = a {};
+    ret {};
+};
+
+fnc main () () {
+    foo {};
+};

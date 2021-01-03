@@ -63,6 +63,10 @@ mac pp1 (a b::(variadic preprocess)) {
     ret \(tup ,(. b 0) ,(. b 0));
 };
 
+mac pp++ (a::preprocess) {
+    ret \(= ,a (+ ,a 1));
+};
+
 mac pe (a::plusEscape) {
     ret ,a;
 };
@@ -82,7 +86,7 @@ fnc main () () {
         = x 107;
         ++ x;
         println_i32 x;
-        println_i32 (++ x);
+        println_i32 (++ ,x);
         = x 0;
         = (++ x) 110;
         println_i32 x;
@@ -92,6 +96,9 @@ fnc main () () {
         = x 113;
         println_i32 (getSecond \(-1 ,x));
         say 114;
+        eval (sym (y 114));
+        ++ ,y;
+        println_i32 y;
     };
 
     block {
@@ -149,6 +156,13 @@ fnc main () () {
         pp1 x (= x (+ x 1));
         println_i32 x;
 
-        println_i32 (. (pe {foo bar 306}) 2);
+        pp++ x;
+        println_i32 x;
+
+        eval (sym (y 306));
+        pp++ y;
+        println_i32 y;
+
+        println_i32 (. (pe {foo bar 308}) 2);
     };
 };
