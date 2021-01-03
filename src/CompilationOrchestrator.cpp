@@ -72,6 +72,7 @@ void CompilationOrchestrator::genReserved() {
     addKeyword(namePool.get(), "attrOf", Keyword::ATTR_OF);
     addKeyword(namePool.get(), "attr??", Keyword::ATTR_IS_DEF);
     addKeyword(namePool.get(), "import", Keyword::IMPORT);
+    addKeyword(namePool.get(), "message", Keyword::MESSAGE);
 
     addOper(namePool.get(), "+", Oper::ADD);
     addOper(namePool.get(), "-", Oper::SUB);

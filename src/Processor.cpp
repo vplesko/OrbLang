@@ -113,6 +113,8 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
                 return processAttrIsDef(node);
             case Keyword::IMPORT:
                 return processImport(node);
+            case Keyword::MESSAGE:
+                return processMessage(node);
             default:
                 msgs->errorUnexpectedKeyword(starting.getCodeLoc(), keyw.value());
                 return NodeVal();
@@ -1040,6 +1042,24 @@ NodeVal Processor::processImport(const NodeVal &node) {
     }
 
     return NodeVal(node.getCodeLoc(), file.getEvalVal().str.value());
+}
+
+NodeVal Processor::processMessage(const NodeVal &node) {
+    if (!checkExactlyChildren(node, 2, true)) {
+        return NodeVal();
+    }
+
+    NodeVal file = processNode(node.getChild(1));
+    if (file.isInvalid()) return NodeVal();
+    if (!file.isEvalVal() || !EvalVal::isStr(file.getEvalVal(), typeTable) ||
+        EvalVal::isNull(file.getEvalVal(), typeTable)) {
+        msgs->errorUnknown(file.getCodeLoc());
+        return NodeVal();
+    }
+
+    msgs->userMessage(node.getCodeLoc(), file.getEvalVal().str.value());
+
+    return NodeVal(node.getCodeLoc());
 }
 
 NodeVal Processor::processOper(const NodeVal &node, Oper op) {

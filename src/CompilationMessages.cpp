@@ -192,6 +192,15 @@ inline string toString(CodeLoc loc, const StringPool *stringPool) {
     return ss.str();
 }
 
+inline void CompilationMessages::info(const std::string &str) {
+    (*out) << "info: " << str << endl;
+}
+
+inline void CompilationMessages::info(CodeLoc loc, const std::string &str) {
+    (*out) << toString(loc, stringPool) << ' ';
+    info(str);
+}
+
 inline void CompilationMessages::warn(const std::string &str) {
     status = max(status, S_WARN);
     (*out) << "warn: " << str << endl;
@@ -210,6 +219,10 @@ inline void CompilationMessages::error(const string &str) {
 inline void CompilationMessages::error(CodeLoc loc, const string &str) {
     (*out) << toString(loc, stringPool) << ' ';
     error(str);
+}
+
+void CompilationMessages::userMessage(CodeLoc codeLoc, StringPool::Id str) {
+    info(codeLoc, stringPool->get(str));
 }
 
 void CompilationMessages::errorInputFileNotFound(const string &path) {

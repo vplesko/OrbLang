@@ -34,6 +34,7 @@ enum class Keyword {
     ATTR_OF,
     ATTR_IS_DEF,
     IMPORT,
+    MESSAGE,
     UNKNOWN
 };
 

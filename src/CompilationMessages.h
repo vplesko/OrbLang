@@ -27,6 +27,8 @@ private:
     std::ostream *out;
     Status status;
 
+    void info(const std::string &str);
+    void info(CodeLoc loc, const std::string &str);
     void warn(const std::string &str);
     void warn(CodeLoc loc, const std::string &str);
     void error(const std::string &str);
@@ -43,6 +45,8 @@ public:
 
     Status getStatus() const {return status; }
     bool isFail() const { return status >= S_ERROR; }
+
+    void userMessage(CodeLoc codeLoc, StringPool::Id str);
 
     void errorInputFileNotFound(const std::string &path);
     void errorBadToken(CodeLoc loc);
