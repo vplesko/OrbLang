@@ -1,0 +1,5 @@
+mac foo (a::(preprocess plusEscape)) {
+    ret ();
+};
+
+fnc main () () {};

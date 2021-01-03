@@ -63,6 +63,10 @@ mac pp1 (a b::(variadic preprocess)) {
     ret \(tup ,(. b 0) ,(. b 0));
 };
 
+mac pe (a::plusEscape) {
+    ret ,a;
+};
+
 fnc main () () {
     block {
         m1;
@@ -144,5 +148,7 @@ fnc main () () {
         pp1 (= x -1);
         pp1 x (= x (+ x 1));
         println_i32 x;
+
+        println_i32 (. (pe {foo bar 306}) 2);
     };
 };

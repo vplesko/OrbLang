@@ -6,33 +6,33 @@ eval (fnc genSym () id {
     ret s;
 });
 
-mac rule (name args pattern) {
+mac rule (name args pattern::plusEscape) {
     ret \(mac ,name ,args {
         ret ,pattern;
     });
 };
 
 rule if (cond then)
-    \(block {
+    (block {
         (exit (! ,cond))
         (block ,then)
     });
 
 rule if (cond then else)
-    \(block base.-ifBlock () {
+    (block base.-ifBlock () {
         (if ,cond ,(+ then \{ exit base.-ifBlock true; }))
         (block ,else)
     });
 
 rule while (cond body)
-    \(block base.-loopWhole () {
+    (block base.-loopWhole () {
         (exit (! ,cond))
         (block ,body)
         (loop true)
     });
 
 rule for (init cond iter body)
-    \(block {
+    (block {
         ,init
         (block base.-loopWhole () {
             (exit (! ,cond))
@@ -43,22 +43,22 @@ rule for (init cond iter body)
     });
 
 rule break ()
-    \(exit base.-loopWhole true);
+    (exit base.-loopWhole true);
 
 rule continue ()
-    \(exit base.-loopBody true);
+    (exit base.-loopBody true);
 
 rule range (i lo::preprocess hi::preprocess body)
-    \(for (sym (,i ,lo)) (< ,i ,hi) (++ ,i) ,body);
+    (for (sym (,i ,lo)) (< ,i ,hi) (++ ,i) ,body);
 
 rule range (i n::preprocess body)
-    \(range ,i 0 ,n ,body);
+    (range ,i 0 ,n ,body);
 
 rule times (n::preprocess body)
-    \(range ,(genSym) ,n ,body);
+    (range ,(genSym) ,n ,body);
 
 rule ++ (x::preprocess)
-    \(= ,x (+ ,x 1));
+    (= ,x (+ ,x 1));
 
 rule -- (x::preprocess)
-    \(= ,x (- ,x 1));
+    (= ,x (- ,x 1));

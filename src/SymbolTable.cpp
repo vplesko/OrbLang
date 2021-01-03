@@ -26,6 +26,14 @@ optional<TypeTable::Id> FuncValue::getRetType(const FuncValue &func, const TypeT
     return getCallable(func, typeTable).retType;
 }
 
+EscapeScore MacroValue::toEscapeScore(PreHandling h) {
+    switch (h) {
+    case MacroValue::PREPROC: return 0;
+    case MacroValue::PLUS_ESC: return 2;
+    default: return 1;
+    }
+}
+
 SymbolTable::CalleeValueInfo SymbolTable::CalleeValueInfo::make(const FuncValue &func, const TypeTable *typeTable) {
     CalleeValueInfo c;
     c.isFunc = true;

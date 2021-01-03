@@ -42,8 +42,16 @@ struct FuncValue : BaseCallableValue {
 };
 
 struct MacroValue : BaseCallableValue {
-    std::vector<bool> argPreproc;
+    enum PreHandling {
+        REGULAR,
+        PREPROC,
+        PLUS_ESC
+    };
+
+    std::vector<PreHandling> argPreHandling;
     NodeVal body;
+    
+    static EscapeScore toEscapeScore(PreHandling h);
 };
 
 class SymbolTable {

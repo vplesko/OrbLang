@@ -680,7 +680,7 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
 
     vector<NodeVal> args;
     for (size_t i = 0; i < providedArgCnt; ++i) {
-        NodeVal arg = processWithEscape(node.getChild(i+1), !macroVal->argPreproc[i]);
+        NodeVal arg = processWithEscape(node.getChild(i+1), MacroValue::toEscapeScore(macroVal->argPreHandling[i]));
         if (arg.isInvalid()) return NodeVal();
 
         args.push_back(move(arg));
@@ -880,8 +880,8 @@ NodeVal Processor::processMac(const NodeVal &node) {
     if (!checkIsRaw(nodeArgs, true)) return NodeVal();
     vector<NamePool::Id> argNames;
     argNames.reserve(nodeArgs.getChildrenCnt());
-    vector<bool> argPreproc;
-    argPreproc.reserve(nodeArgs.getChildrenCnt());
+    vector<MacroValue::PreHandling> argPreHandling;
+    argPreHandling.reserve(nodeArgs.getChildrenCnt());
     bool variadic = false;
     for (size_t i = 0; i < nodeArgs.getChildrenCnt(); ++i) {
         const NodeVal &nodeArg = nodeArgs.getChild(i);
@@ -899,7 +899,15 @@ NodeVal Processor::processMac(const NodeVal &node) {
 
         optional<bool> isPreproc = hasAttributeAndCheckIsEmpty(arg, "preprocess");
         if (!isPreproc.has_value()) return NodeVal();
-        argPreproc.push_back(isPreproc.value());
+        optional<bool> isPlusEsc = hasAttributeAndCheckIsEmpty(arg, "plusEscape");
+        if (!isPlusEsc.has_value()) return NodeVal();
+        if (isPreproc.value() && isPlusEsc.value()) {
+            msgs->errorUnknown(arg.getNonTypeAttrs().getCodeLoc());
+            return NodeVal();
+        }
+        if (isPreproc.value()) argPreHandling.push_back(MacroValue::PREPROC);
+        else if (isPlusEsc.value()) argPreHandling.push_back(MacroValue::PLUS_ESC);
+        else argPreHandling.push_back(MacroValue::REGULAR);
 
         optional<bool> isVariadic = hasAttributeAndCheckIsEmpty(arg, "variadic");
         if (!isVariadic.has_value()) return NodeVal();
@@ -938,7 +946,7 @@ NodeVal Processor::processMac(const NodeVal &node) {
         BaseCallableValue::setType(macroVal, type, typeTable);
         macroVal.name = name;
         macroVal.argNames = move(argNames);
-        macroVal.argPreproc = move(argPreproc);
+        macroVal.argPreHandling = move(argPreHandling);
 
         // register only if first macro of its name
         if (!symbolTable->isMacroName(name)) {
@@ -1858,10 +1866,10 @@ NodeVal Processor::processAndCheckHasType(const NodeVal &node) {
     return proc;
 }
 
-NodeVal Processor::processWithEscape(const NodeVal &node, bool escape) {
-    if (escape) {
+NodeVal Processor::processWithEscape(const NodeVal &node, EscapeScore amount) {
+    if (amount != 0) {
         NodeVal esc = node;
-        NodeVal::escape(esc, typeTable);
+        NodeVal::escape(esc, typeTable, amount);
         return processNode(esc);
     } else {
         return processNode(node);
