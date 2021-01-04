@@ -91,4 +91,20 @@ fnc main () () {
         = x 0b1100; ^= x 0b1010; # 0b0110 = 6
         println_i32 (+ 307 x);
     };
+
+    block {
+        sym a:(i32 i32 i32);
+
+        sym (b (tup (& a) 0));
+        = (. a 0) 400;
+        println_i32 (-> (. b 0) 0);
+
+        sym (c (tup (& b) 0));
+        = (. a 1) 401;
+        println_i32 (-> (. c 0) 0 1);
+
+        sym (d (& c));
+        = (. a 2) 402;
+        println_i32 (-> d 0 0 2);
+    };
 };

@@ -142,3 +142,14 @@ mac |= (x::preprocess y::preprocess) {
 mac ^= (x::preprocess y::preprocess) {
     ret \(= ,x (^ ,x ,y));
 };
+
+mac -> (x::preprocess m::preprocess rest::(variadic preprocess)) {
+    sym (ops (+ \(,x ,m) rest));
+
+    sym (code \(base.-passthrough ,(. ops 0)));
+    range i 1 (- (lenOf ops) 1) {
+        = code \(. (* ,code) ,(. ops i));
+    };
+
+    ret code;
+};
