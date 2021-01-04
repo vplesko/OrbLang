@@ -2,71 +2,72 @@ eval (sym (base.-genSymToken 0:u64));
 
 eval (fnc genSym () id {
     sym (s (+ \G (cast id base.-genSymToken)));
-    ++ base.-genSymToken;
+    = base.-genSymToken (+ base.-genSymToken 1);
     ret s;
 });
 
-mac rule (name args pattern::plusEscape) {
-    ret \(mac ,name ,args {
-        ret ,pattern;
-    });
-};
-
-rule if (cond then)
-    (block {
+mac if (cond then) {
+    ret \(block {
         (exit (! ,cond))
         (block ,then)
     });
+};
 
-rule if (cond then else)
-    (block base.-ifBlock () {
-        (if ,cond ,(+ then \{ exit base.-ifBlock true; }))
+mac if (cond then else) {
+    ret \(block base.-blockIf () {
+        (block {
+            (exit (! ,cond))
+            (block ,then)
+            (exit base.-blockIf true)
+        })
         (block ,else)
     });
+};
 
-rule while (cond body)
-    (block base.-loopWhole () {
-        (exit (! ,cond))
-        (block ,body)
+mac while (cond body) {
+    ret \(block base.-blockLoop () {
+        (block base.-blockLoopInner () {
+            (exit base.-blockLoop (! ,cond))
+            (block ,body)
+        })
         (loop true)
     });
+};
 
-rule for (init cond iter body)
-    (block {
+mac for (init cond step body) {
+    ret \(block base.-blockLoop () {
         ,init
-        (block base.-loopWhole () {
-            (exit (! ,cond))
-            (block base.-loopBody () ,body)
-            ,iter
+        (block {
+            (block base.-blockLoopInner () {
+                (exit base.-blockLoop (! ,cond))
+                (block ,body)
+            })
+            ,step
             (loop true)
         })
     });
+};
 
-rule break ()
-    (exit base.-loopWhole true);
+mac break () {
+    ret \(exit base.-blockLoop true);
+};
 
-rule continue ()
-    (exit base.-loopBody true);
+mac continue () {
+    ret \(exit base.-blockLoopInner true);
+};
 
-rule range (i lo::preprocess hi::preprocess body)
-    (for (sym (,i ,lo)) (<= ,i ,hi) (++ ,i) ,body);
+mac range (i up::preprocess body) {
+    ret \(for (sym (,i 0:(typeOf up))) (< ,i ,up) (= ,i (+ ,i 1)) ,body);
+};
 
-rule range (i n::preprocess body)
-    (range ,i 0 (- ,n 1) ,body);
+mac range (i lo::preprocess hi::preprocess body) {
+    ret \(for (sym (,i ,lo)) (<= ,i ,hi) (= ,i (+ ,i 1)) ,body);
+};
 
-rule times (n::preprocess body)
-    (range ,(genSym) 1 ,n ,body);
+mac ++ (x::preprocess) {
+    ret \(= ,x (+ ,x 1));
+};
 
-rule ++ (x::preprocess)
-    (= ,x (+ ,x 1));
-
-rule -- (x::preprocess)
-    (= ,x (- ,x 1));
-
-rule ?_ (cond::preprocess onTrue::preprocess onFalse::preprocess)
-    (block base.-blockTernSel ,(typeOf onTrue) {
-        if ,cond {
-            pass base.-blockTernSel ,onTrue;
-        };
-        pass base.-blockTernSel ,onFalse;
-    });
+mac -- (x::preprocess) {
+    ret \(= ,x (- ,x 1));
+};

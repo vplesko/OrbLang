@@ -27,20 +27,17 @@ fnc main () () {
         if (== i 0) { continue; };
         println_i32 (+ 200 i);
     };
-    times 2 {
-        println_i32 203;
-    };
     range i 2 {
-        println_i32 (+ i 204);
+        println_i32 (+ i 203);
     };
-    range i 206 207 {
+    range i 205 206 {
+        println_i32 i;
+    };
+    range i 207 207 {
         println_i32 i;
     };
     range i 1 {
         println_i32 208;
-    };
-    times 0 {
-        println_i32 -1;
     };
 
     block {
@@ -48,7 +45,5 @@ fnc main () () {
         println_i32 (++ x);
         = x 303;
         println_i32 (-- (-- x));
-
-        println_i32 (?_ true (++ x) -1);
     };
 };
