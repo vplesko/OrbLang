@@ -1,7 +1,7 @@
 eval (sym (base.-genSymToken 0:u64));
 
 eval (fnc genSym () id {
-    sym (s (+ \G (cast id base.-genSymToken)));
+    sym (s (+ \base.-genSym (cast id base.-genSymToken)));
     = base.-genSymToken (+ base.-genSymToken 1);
     ret s;
 });
@@ -60,8 +60,26 @@ mac range (i up::preprocess body) {
     ret \(for (sym (,i 0:(typeOf up))) (< ,i ,up) (= ,i (+ ,i 1)) ,body);
 };
 
+mac rangeRev (i up::preprocess body) {
+    sym (s (genSym));
+
+    ret \(range ,s ,up {
+        (sym (,i (- ,up 1 ,s)))
+        (block ,body)
+    });
+};
+
 mac range (i lo::preprocess hi::preprocess body) {
     ret \(for (sym (,i ,lo)) (<= ,i ,hi) (= ,i (+ ,i 1)) ,body);
+};
+
+mac rangeRev (i hi::preprocess lo::preprocess body) {
+    sym (s (genSym));
+
+    ret \(range ,s ,lo ,hi {
+        (sym (,i (+ ,lo (- ,hi ,s))))
+        (block ,body)
+    });
 };
 
 mac ++ (x::preprocess) {

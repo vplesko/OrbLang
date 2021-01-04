@@ -39,6 +39,29 @@ fnc main () () {
     range i 1 {
         println_i32 208;
     };
+    rangeRev i 2 {
+        println_i32 (- 210 i);
+    };
+    rangeRev i 1 {
+        println_i32 211;
+    };
+    rangeRev i 2 {
+        if (> i 0) { continue; };
+        println_i32 212;
+    };
+    rangeRev i 2 0 {
+        println_i32 (+ 213 (- 2 i));
+    };
+    rangeRev i 1 1 {
+        println_i32 216;
+    };
+    rangeRev i 0 0 {
+        println_i32 217;
+    };
+    rangeRev i 2 0 {
+        if (> i 0) { continue; };
+        println_i32 218;
+    };
 
     block {
         sym (x 299);
