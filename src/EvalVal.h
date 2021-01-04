@@ -28,8 +28,6 @@ struct EvalVal {
         double f64;
         char c8;
         bool b;
-        // TODO+ unsafe init, fix
-        std::optional<StringPool::Id> str;
         // contains id value
         NamePool::Id id;
         // contains type value in case this is type or type cn
@@ -38,6 +36,7 @@ struct EvalVal {
         const MacroValue *m;
         NodeVal *p;
     };
+    std::optional<StringPool::Id> str;
     std::vector<NodeVal> elems;
 
     NodeVal *ref = nullptr;
@@ -45,7 +44,8 @@ struct EvalVal {
     EscapeScore escapeScore = 0;
 
     EvalVal() {
-        // because of union, this takes care of all other primitives
+        // because of union, this takes care of primitives other than id and type
+        // this init is expected by Evaluator::makeCast, TODO break this expectation
         u64 = 0LL;
     }
 
