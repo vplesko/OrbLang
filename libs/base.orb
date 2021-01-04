@@ -6,6 +6,10 @@ eval (fnc genSym () id {
     ret s;
 });
 
+mac base.-passthrough (x::preprocess) {
+    ret x;
+};
+
 mac if (cond then) {
     ret \(block {
         (exit (! ,cond))
@@ -97,4 +101,44 @@ mac ?_ (cond::preprocess onTrue::preprocess onFalse::preprocess) {
         })
         (pass ,onFalse)
     });
+};
+
+mac += (x::preprocess y::preprocess) {
+    ret \(= ,x (+ ,x ,y));
+};
+
+mac -= (x::preprocess y::preprocess) {
+    ret \(= ,x (- ,x ,y));
+};
+
+mac *= (x::preprocess y::preprocess) {
+    ret \(= ,x (* ,x ,y));
+};
+
+mac /= (x::preprocess y::preprocess) {
+    ret \(= ,x (/ ,x ,y));
+};
+
+mac %= (x::preprocess y::preprocess) {
+    ret \(= ,x (% ,x ,y));
+};
+
+mac <<= (x::preprocess y::preprocess) {
+    ret \(= ,x (<< ,x ,y));
+};
+
+mac >>= (x::preprocess y::preprocess) {
+    ret \(= ,x (>> ,x ,y));
+};
+
+mac &= (x::preprocess y::preprocess) {
+    ret \(= ,x (& ,x ,y));
+};
+
+mac |= (x::preprocess y::preprocess) {
+    ret \(= ,x (| ,x ,y));
+};
+
+mac ^= (x::preprocess y::preprocess) {
+    ret \(= ,x (^ ,x ,y));
 };
