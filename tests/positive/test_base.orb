@@ -45,5 +45,8 @@ fnc main () () {
         println_i32 (++ x);
         = x 303;
         println_i32 (-- (-- x));
+
+        println_i32 (?_ true (++ x) -1);
+        println_i32 (?_ false -1 (++ x));
     };
 };

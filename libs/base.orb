@@ -71,3 +71,12 @@ mac ++ (x::preprocess) {
 mac -- (x::preprocess) {
     ret \(= ,x (- ,x 1));
 };
+
+mac ?_ (cond::preprocess onTrue::preprocess onFalse::preprocess) {
+    ret \(block base.-blockTernSel ,(typeOf onTrue) {
+        (if ,cond {
+            (pass base.-blockTernSel ,onTrue)
+        })
+        (pass ,onFalse)
+    });
+};
