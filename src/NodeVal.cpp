@@ -1,56 +1,45 @@
 #include "NodeVal.h"
 using namespace std;
 
-NodeVal::NodeVal() : kind(Kind::kInvalid) {
+NodeVal::NodeVal() : value(false) {
 }
 
-NodeVal::NodeVal(CodeLoc codeLoc) : codeLoc(codeLoc), kind(Kind::kValid) {
+NodeVal::NodeVal(CodeLoc codeLoc) : codeLoc(codeLoc), value(true) {
 }
 
-NodeVal::NodeVal(CodeLoc codeLoc, StringPool::Id import) : codeLoc(codeLoc), kind(Kind::kImport), value(import) {
+NodeVal::NodeVal(CodeLoc codeLoc, StringPool::Id import) : codeLoc(codeLoc), value(import) {
 }
 
-NodeVal::NodeVal(CodeLoc codeLoc, LiteralVal val) : codeLoc(codeLoc), kind(Kind::kLiteral), value(val) {
+NodeVal::NodeVal(CodeLoc codeLoc, LiteralVal val) : codeLoc(codeLoc), value(val) {
 }
 
-NodeVal::NodeVal(CodeLoc codeLoc, SpecialVal val) : codeLoc(codeLoc), kind(Kind::kSpecial), value(val) {
+NodeVal::NodeVal(CodeLoc codeLoc, SpecialVal val) : codeLoc(codeLoc), value(val) {
 }
 
-NodeVal::NodeVal(CodeLoc codeLoc, AttrMap val) : codeLoc(codeLoc), kind(Kind::kAttrMap), valueAttrMap(move(val)) {
+NodeVal::NodeVal(CodeLoc codeLoc, AttrMap val) : codeLoc(codeLoc), value(move(val)) {
 }
 
-NodeVal::NodeVal(CodeLoc codeLoc, EvalVal val) : codeLoc(codeLoc), kind(Kind::kEval), value(move(val)) {
+NodeVal::NodeVal(CodeLoc codeLoc, EvalVal val) : codeLoc(codeLoc), value(move(val)) {
 }
 
-NodeVal::NodeVal(CodeLoc codeLoc, LlvmVal val) : codeLoc(codeLoc), kind(Kind::kLlvm), value(val) {
+NodeVal::NodeVal(CodeLoc codeLoc, LlvmVal val) : codeLoc(codeLoc), value(val) {
 }
 
-NodeVal::NodeVal(CodeLoc codeLoc, UndecidedCallableVal val) : codeLoc(codeLoc), kind(Kind::kUndecidedCallable), value(val) {
-}
-
-void NodeVal::copyAttrMap(const AttrMap &a) {
-    valueAttrMap = AttrMap();
-    for (const auto &loc : a) {
-        getAttrMap().insert({loc.first, make_unique<NodeVal>(*loc.second)});
-    }
+NodeVal::NodeVal(CodeLoc codeLoc, UndecidedCallableVal val) : codeLoc(codeLoc), value(val) {
 }
 
 void NodeVal::copyFrom(const NodeVal &other) {
     codeLoc = other.codeLoc;
-    kind = other.kind;
 
     value = other.value;
-    copyAttrMap(other.getAttrMap());
 
+    typeAttr.reset();
     if (other.hasTypeAttr()) {
         typeAttr = make_unique<NodeVal>(other.getTypeAttr());
-    } else {
-        typeAttr = nullptr;
     }
+    nonTypeAttrs.reset();
     if (other.hasNonTypeAttrs()) {
         nonTypeAttrs = make_unique<NodeVal>(other.getNonTypeAttrs());
-    } else {
-        nonTypeAttrs = nullptr;
     }
 }
 

@@ -28,6 +28,7 @@ struct EvalVal {
         double f64;
         char c8;
         bool b;
+        // TODO+ unsafe init, fix
         std::optional<StringPool::Id> str;
         // contains id value
         NamePool::Id id;

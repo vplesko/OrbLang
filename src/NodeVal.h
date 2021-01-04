@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <variant>
 #include "CodeLoc.h"
+#include "AttrMap.h"
 #include "LiteralVal.h"
 #include "SpecialVal.h"
 #include "EvalVal.h"
@@ -12,30 +13,11 @@
 #include "UndecidedCallableVal.h"
 
 class NodeVal {
-public:
-    typedef std::unordered_map<NamePool::Id, std::unique_ptr<NodeVal>> AttrMap;
-
-private:
-    enum class Kind {
-        kInvalid,
-        kValid,
-        kImport,
-        kLiteral,
-        kSpecial,
-        kAttrMap,
-        kEval,
-        kLlvm,
-        kUndecidedCallable
-    };
-
     CodeLoc codeLoc;
 
-    Kind kind;
-    std::variant<StringPool::Id, LiteralVal, SpecialVal, LlvmVal, EvalVal, UndecidedCallableVal> value;
-    AttrMap valueAttrMap;
+    std::variant<bool, StringPool::Id, LiteralVal, SpecialVal, AttrMap, LlvmVal, EvalVal, UndecidedCallableVal> value;
     std::unique_ptr<NodeVal> typeAttr, nonTypeAttrs;
 
-    void copyAttrMap(const AttrMap &a);
     void copyFrom(const NodeVal &other);
 
 public:
@@ -63,28 +45,28 @@ public:
     bool hasRef() const;
 
     // Remember to check when returned to you before any other checks or usages.
-    bool isInvalid() const { return kind == Kind::kInvalid; }
+    bool isInvalid() const { return std::holds_alternative<bool>(value) && std::get<bool>(value) == false; }
 
-    bool isImport() const { return kind == Kind::kImport; }
+    bool isImport() const { return std::holds_alternative<StringPool::Id>(value); }
     StringPool::Id getImportFile() const { return std::get<StringPool::Id>(value); }
 
-    bool isLiteralVal() const { return kind == Kind::kLiteral; }
+    bool isLiteralVal() const { return std::holds_alternative<LiteralVal>(value); }
     LiteralVal& getLiteralVal() { return std::get<LiteralVal>(value); }
     const LiteralVal& getLiteralVal() const { return std::get<LiteralVal>(value); }
 
-    bool isSpecialVal() const { return kind == Kind::kSpecial; }
+    bool isSpecialVal() const { return std::holds_alternative<SpecialVal>(value); }
     SpecialVal& getSpecialVal() { return std::get<SpecialVal>(value); }
     const SpecialVal& getSpecialVal() const { return std::get<SpecialVal>(value); }
 
-    bool isAttrMap() const { return kind == Kind::kAttrMap; }
-    AttrMap& getAttrMap() { return valueAttrMap; }
-    const AttrMap& getAttrMap() const { return valueAttrMap; }
+    bool isAttrMap() const { return std::holds_alternative<AttrMap>(value); }
+    AttrMap& getAttrMap() { return std::get<AttrMap>(value); }
+    const AttrMap& getAttrMap() const { return std::get<AttrMap>(value); }
 
-    bool isLlvmVal() const { return kind == Kind::kLlvm; }
+    bool isLlvmVal() const { return std::holds_alternative<LlvmVal>(value); }
     LlvmVal& getLlvmVal() { return std::get<LlvmVal>(value); }
     const LlvmVal& getLlvmVal() const { return std::get<LlvmVal>(value); }
 
-    bool isEvalVal() const { return kind == Kind::kEval; }
+    bool isEvalVal() const { return std::holds_alternative<EvalVal>(value); }
     EvalVal& getEvalVal() { return std::get<EvalVal>(value); }
     const EvalVal& getEvalVal() const { return std::get<EvalVal>(value); }
     std::size_t getChildrenCnt() const { return getEvalVal().elems.size(); }
@@ -94,7 +76,7 @@ public:
     static void addChildren(NodeVal &node, std::vector<NodeVal> c, TypeTable *typeTable);
     static void addChildren(NodeVal &node, std::vector<NodeVal>::iterator start, std::vector<NodeVal>::iterator end, TypeTable *typeTable);
 
-    bool isUndecidedCallableVal() const { return kind == Kind::kUndecidedCallable; }
+    bool isUndecidedCallableVal() const { return std::holds_alternative<UndecidedCallableVal>(value); }
     UndecidedCallableVal& getUndecidedCallableVal() { return std::get<UndecidedCallableVal>(value); }
     const UndecidedCallableVal& getUndecidedCallableVal() const { return std::get<UndecidedCallableVal>(value); }
 

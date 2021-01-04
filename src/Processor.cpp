@@ -1242,7 +1242,7 @@ NodeVal Processor::processAttrIsDef(const NodeVal &node) {
         } else {
             const NodeVal &nonTypeAttrs = operand.getNonTypeAttrs();
 
-            attrIsDef = nonTypeAttrs.getAttrMap().find(attrName) != nonTypeAttrs.getAttrMap().end();
+            attrIsDef = nonTypeAttrs.getAttrMap().attrMap.find(attrName) != nonTypeAttrs.getAttrMap().attrMap.end();
         }
     }
 
@@ -1265,8 +1265,8 @@ optional<NodeVal> Processor::getAttribute(const NodeVal &node, NamePool::Id attr
 
         const NodeVal &nonTypeAttrs = node.getNonTypeAttrs();
 
-        auto loc = nonTypeAttrs.getAttrMap().find(attrName);
-        if (loc == nonTypeAttrs.getAttrMap().end()) return nullopt;
+        auto loc = nonTypeAttrs.getAttrMap().attrMap.find(attrName);
+        if (loc == nonTypeAttrs.getAttrMap().attrMap.end()) return nullopt;
 
         return *loc->second;
     }
@@ -1536,7 +1536,7 @@ bool Processor::processAttributes(NodeVal &node) {
     }
 
     if (node.hasNonTypeAttrs() && !node.getNonTypeAttrs().isAttrMap()) {
-        NodeVal::AttrMap attrMap;
+        AttrMap attrMap;
 
         NodeVal nodeAttrs = processWithEscape(node.getNonTypeAttrs());
         if (nodeAttrs.isInvalid()) return false;
@@ -1545,14 +1545,14 @@ bool Processor::processAttributes(NodeVal &node) {
             if (!checkIsId(nodeAttrs, true)) return false;
 
             NamePool::Id attrName = nodeAttrs.getEvalVal().id;
-            if (attrName == typeId || attrMap.find(attrName) != attrMap.end()) {
+            if (attrName == typeId || attrMap.attrMap.find(attrName) != attrMap.attrMap.end()) {
                 msgs->errorUnknown(nodeAttrs.getCodeLoc());
                 return false;
             }
 
             NodeVal attrVal = NodeVal::makeEmpty(nodeAttrs.getCodeLoc(), typeTable);
 
-            attrMap.insert({attrName, make_unique<NodeVal>(move(attrVal))});
+            attrMap.attrMap.insert({attrName, make_unique<NodeVal>(move(attrVal))});
         } else {
             for (size_t i = 0; i < nodeAttrs.getChildrenCnt(); ++i) {
                 const NodeVal &nodeAttrEntry = nodeAttrs.getChild(i);
@@ -1570,7 +1570,7 @@ bool Processor::processAttributes(NodeVal &node) {
                 if (!checkIsId(*nodeAttrEntryName, true)) return false;
 
                 NamePool::Id attrName = nodeAttrEntryName->getEvalVal().id;
-                if (attrName == typeId || attrMap.find(attrName) != attrMap.end()) {
+                if (attrName == typeId || attrMap.attrMap.find(attrName) != attrMap.attrMap.end()) {
                     msgs->errorUnknown(nodeAttrEntry.getCodeLoc());
                     return false;
                 }
@@ -1583,7 +1583,7 @@ bool Processor::processAttributes(NodeVal &node) {
                     if (attrVal.isInvalid()) return false;
                 }
 
-                attrMap.insert({attrName, make_unique<NodeVal>(move(attrVal))});
+                attrMap.attrMap.insert({attrName, make_unique<NodeVal>(move(attrVal))});
             }
         }
 

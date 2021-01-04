@@ -21,6 +21,7 @@ add_definitions(${LLVM_DEFINITIONS})
 add_definitions(${CLANG_DEFINITIONS})
 
 set(HEADER_FILES
+    "src/AttrMap.h"
     "src/ClangAdapter.h"
     "src/CodeLoc.h"
     "src/CompilationOrchestrator.h"
@@ -48,6 +49,7 @@ set(HEADER_FILES
     )
 
 set(SOURCE_FILES
+    "src/AttrMap.cpp"
     "src/ClangAdapter.cpp"
     "src/CompilationOrchestrator.cpp"
     "src/CompilationMessages.cpp"
