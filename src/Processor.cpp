@@ -1688,12 +1688,21 @@ NodeVal Processor::processOperComparison(CodeLoc codeLoc, const std::vector<cons
 }
 
 NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
-    NodeVal rhs = processAndCheckHasType(*opers.back());
-    if (rhs.isInvalid()) return NodeVal();
+    vector<NodeVal> procOpers;
+    procOpers.reserve(opers.size());
+    for (const NodeVal *oper : opers) {
+        NodeVal procOper = processAndCheckHasType(*oper);
+        if (procOper.isInvalid()) return NodeVal();
 
-    for (size_t i = opers.size()-2;; --i) {
-        NodeVal lhs = processAndCheckHasType(*opers[i]);
-        if (lhs.isInvalid()) return NodeVal();
+        procOpers.push_back(move(procOper));
+    }
+
+    NodeVal rhs = move(procOpers.back());
+    procOpers.pop_back();
+
+    while (!procOpers.empty()) {
+        NodeVal lhs = move(procOpers.back());
+        procOpers.pop_back();
 
         if (!lhs.hasRef()) {
             msgs->errorExprAsgnNonRef(lhs.getCodeLoc());
@@ -1712,8 +1721,6 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
             rhs = performOperAssignment(codeLoc, lhs, rhs);
         }
         if (rhs.isInvalid()) return NodeVal();
-
-        if (i == 0) break;
     }
 
     return rhs;
