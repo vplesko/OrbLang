@@ -260,7 +260,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
             NodeVal init = hasType ? processAndImplicitCast(nodeInit, optType.value()) : processNode(nodeInit);
             if (init.isInvalid()) return NodeVal();
 
-            NodeVal nodeReg = performRegister(entry.getCodeLoc(), id, init);
+            NodeVal nodeReg = performRegister(pair.first.getCodeLoc(), id, init);
             if (nodeReg.isInvalid()) return NodeVal();
 
             symbolTable->addVar(id, move(nodeReg));
@@ -277,7 +277,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
             NodeVal nodeZero = performZero(entry.getCodeLoc(), optType.value());
             if (nodeZero.isInvalid()) return NodeVal();
 
-            NodeVal nodeReg = performRegister(entry.getCodeLoc(), id, nodeZero);
+            NodeVal nodeReg = performRegister(pair.first.getCodeLoc(), id, nodeZero);
             if (nodeReg.isInvalid()) return NodeVal();
 
             symbolTable->addVar(id, move(nodeReg));

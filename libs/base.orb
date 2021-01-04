@@ -153,3 +153,35 @@ mac -> (x::preprocess m::preprocess rest::(variadic preprocess)) {
 
     ret code;
 };
+
+mac && (a b rest::variadic) {
+    sym (ops (+ \(,a ,b) rest));
+
+    sym (innerCode {});
+    range i (lenOf ops) {
+        += \innerCode \\{
+            (block {
+                (exit ,(. ops i))
+                (pass base.-blockLogAnd false)
+            })};
+    };
+    += \innerCode \\{ (pass true) };
+
+    ret \(block base.-blockLogAnd bool ,innerCode);
+};
+
+mac || (a b rest::variadic) {
+    sym (ops (+ \(,a ,b) rest));
+
+    sym (innerCode {});
+    range i (lenOf ops) {
+        += \innerCode \\{
+            (block {
+                (exit (! ,(. ops i)))
+                (pass base.-blockLogAnd true)
+            })};
+    };
+    += \innerCode \\{ (pass false) };
+
+    ret \(block base.-blockLogAnd bool ,innerCode);
+};

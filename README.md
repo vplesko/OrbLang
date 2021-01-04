@@ -15,7 +15,7 @@ Additionally, you may also browse `.orb` files in `tests/positive/`. These are t
 ## Install
 
 The following are required:
- - Cmake version 3.4.3 or greater
+ - CMake version 3.4.3 or greater
  - LLVM version 12
  - Clang version 12
  - Python 3 (for testing, optional)
