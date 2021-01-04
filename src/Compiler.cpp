@@ -877,7 +877,10 @@ NodeVal Compiler::promoteEvalVal(const NodeVal &node) {
 }
 
 NodeVal Compiler::promoteIfEvalValAndCheckIsLlvmVal(const NodeVal &node, bool orError) {
-    NodeVal promo = node.isEvalVal() ? promoteEvalVal(node) : node;
+    NodeVal promo;
+    if (node.isEvalVal()) promo = promoteEvalVal(node);
+    else promo = node;
+
     if (promo.isInvalid()) return NodeVal();
     if (!checkIsLlvmVal(promo, orError)) return NodeVal();
     return promo;

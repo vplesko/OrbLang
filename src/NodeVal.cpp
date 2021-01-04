@@ -47,11 +47,8 @@ NodeVal::NodeVal(const NodeVal &other) {
     copyFrom(other);
 }
 
-NodeVal& NodeVal::operator=(const NodeVal &other) {
-    if (this != &other) {
-        copyFrom(other);
-    }
-    return *this;
+void NodeVal::operator=(const NodeVal &other) {
+    if (this != &other) copyFrom(other);
 }
 
 NodeVal NodeVal::makeEmpty(CodeLoc codeLoc, TypeTable *typeTable) {

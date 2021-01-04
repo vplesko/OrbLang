@@ -16,7 +16,7 @@ public:
     AttrMap() = default;
 
     AttrMap(const AttrMap &other);
-    AttrMap& operator=(const AttrMap &other);
+    void operator=(const AttrMap &other);
 
     ~AttrMap();
 };

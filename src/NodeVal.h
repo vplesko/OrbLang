@@ -34,7 +34,10 @@ public:
     NodeVal(CodeLoc codeLoc, UndecidedCallableVal val);
 
     NodeVal(const NodeVal &other);
-    NodeVal& operator=(const NodeVal &other);
+    void operator=(const NodeVal &other);
+
+    NodeVal(NodeVal &&other) = default;
+    NodeVal& operator=(NodeVal &&other) = default;
 
     static NodeVal makeEmpty(CodeLoc codeLoc, TypeTable *typeTable);
 

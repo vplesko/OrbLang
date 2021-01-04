@@ -13,11 +13,8 @@ AttrMap::AttrMap(const AttrMap &other) {
     copyFrom(other);
 }
 
-AttrMap& AttrMap::operator=(const AttrMap &other) {
-    if (this != &other) {
-        copyFrom(other);
-    }
-    return *this;
+void AttrMap::operator=(const AttrMap &other) {
+    if (this != &other) copyFrom(other);
 }
 
 AttrMap::~AttrMap() {}

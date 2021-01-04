@@ -74,7 +74,7 @@ NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::
         return NodeVal();
     }
 
-    return evalValCast.value();
+    return move(evalValCast.value());
 }
 
 optional<bool> Evaluator::performBlockBody(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &nodeBody) {

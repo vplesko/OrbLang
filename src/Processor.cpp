@@ -31,7 +31,9 @@ NodeVal Processor::processNode(const NodeVal &node) {
 }
 
 NodeVal Processor::processLeaf(const NodeVal &node) {
-    NodeVal prom = node.isLiteralVal() ? promoteLiteralVal(node) : node;
+    NodeVal prom;
+    if (node.isLiteralVal()) prom = promoteLiteralVal(node);
+    else prom = node;
 
     if (!prom.isEscaped() && prom.isEvalVal() && EvalVal::isId(prom.getEvalVal(), typeTable)) {
         return processId(prom);
@@ -1218,7 +1220,7 @@ NodeVal Processor::processAttrOf(const NodeVal &node) {
         return NodeVal();
     }
 
-    return nodeAttr.value();
+    return move(nodeAttr.value());
 }
 
 NodeVal Processor::processAttrIsDef(const NodeVal &node) {
@@ -1939,12 +1941,12 @@ NodeVal Processor::processForTypeArg(const NodeVal &node) {
 }
 
 pair<NodeVal, optional<NodeVal>> Processor::processForIdTypePair(const NodeVal &node) {
-    const pair<NodeVal, optional<NodeVal>> retInvalid = make_pair<NodeVal, optional<NodeVal>>(NodeVal(), nullopt);
+    pair<NodeVal, optional<NodeVal>> retInvalid = make_pair<NodeVal, optional<NodeVal>>(NodeVal(), nullopt);
 
     NodeVal esc = processWithEscape(node);
     if (esc.isInvalid()) return retInvalid;
-
     if (!checkIsId(esc, true)) return retInvalid;
+
     NodeVal id = esc;
     id.clearTypeAttr();
 
