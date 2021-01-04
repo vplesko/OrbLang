@@ -10,7 +10,7 @@ fnc main() () {
     println_i32 (+ 103 (cast i32 (! (block bool { pass false; }))));
     println_i8 (~ (block i8 { pass 104; }));
 
-    println_i32 (+ 200 (cast i32 (!= (block i32 { pass 1; }) 1 2)));
+    println_i32 (+ 200 (cast i32 (!= (block i32 { pass 1; }) 1)));
     println_i32 (+ 200 (cast i32 (== (block i32 { pass 1; }) 1)));
     println_i32 (+ 201 (cast i32 (< (block i32 { pass 1; }) 2 3 4 5)));
     println_i32 (+ 203 (cast i32 (>= (block i32 { pass 3; }) (- 3 1) (+ 1 2))));

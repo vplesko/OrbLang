@@ -1624,11 +1624,16 @@ NodeVal Processor::processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper o
 }
 
 NodeVal Processor::processOperComparison(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op) {
+    if (op == Oper::NE && opers.size() > 2) {
+        msgs->errorUnknown(codeLoc);
+        return NodeVal();
+    }
+
     NodeVal lhs = processAndCheckHasType(*opers[0]);
     if (lhs.isInvalid()) return NodeVal();
 
     // redirecting to evaluator when all operands are EvalVals is more complicated in the case of comparisons
-    // the reason for is that LLVM's phi nodes need to be started up and closed appropriately
+    // the reason is that LLVM's phi nodes need to be started up and closed appropriately
     void *evalSignal = nullptr;
     DeferredCallback evalSignalDeleteGuard([=] { delete (int*) evalSignal; });
 
