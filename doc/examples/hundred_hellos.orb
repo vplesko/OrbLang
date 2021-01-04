@@ -3,7 +3,7 @@ import "clib.orb";
 
 eval (mac sayHellos (cnt) {
     sym (r {});
-    range i cnt {
+    times cnt {
         = r (+ r \{ printf "Hello!\n"; });
     };
     ret \(block ,r);

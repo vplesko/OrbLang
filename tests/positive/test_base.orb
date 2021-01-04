@@ -39,6 +39,9 @@ fnc main () () {
     range i 1 {
         println_i32 208;
     };
+    range i 0 {
+        println_i32 -1;
+    };
     rangeRev i 2 {
         println_i32 (- 210 i);
     };
@@ -61,6 +64,15 @@ fnc main () () {
     rangeRev i 2 0 {
         if (> i 0) { continue; };
         println_i32 218;
+    };
+    times 2 {
+        println_i32 219;
+    };
+    times 1 {
+        println_i32 220;
+    };
+    times 0 {
+        println_i32 -1;
     };
 
     block {

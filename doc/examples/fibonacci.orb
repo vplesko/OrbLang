@@ -10,7 +10,7 @@ eval (fnc fibonacci (n:i32) u64 {
     = ([] a 0) 0;
     = ([] a 1) 1;
 
-    for (sym (i 2)) (<= i n) (++ i) {
+    times (- n 1) {
         = ([] a 2) (+ ([] a 0) ([] a 1));
         
         = ([] a 0) ([] a 1);
@@ -21,5 +21,5 @@ eval (fnc fibonacci (n:i32) u64 {
 });
 
 fnc main () () {
-    printf "%lld\n" (fibonacci 20);
+    printf "%lld\n" (fibonacci 20); # 6765
 };
