@@ -1176,10 +1176,7 @@ NodeVal Processor::processLenOf(const NodeVal &node) {
     if (typeTable->worksAsTypeArr(ty)) len = typeTable->extractLenOfArr(ty).value();
     else if (typeTable->worksAsTuple(ty)) len = typeTable->extractLenOfTuple(ty).value();
     else if (typeTable->worksAsPrimitive(ty, TypeTable::P_RAW)) len = operand.getChildrenCnt();
-    else {
-        msgs->errorUnknown(node.getCodeLoc());
-        return NodeVal();
-    }
+    else len = 1;
 
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::WIDEST_U), typeTable);
     evalVal.getWidestU() = len;
