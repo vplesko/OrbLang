@@ -84,8 +84,16 @@ fnc callAndRet (x:i32 f:MyFnc) i32 {
     ret (f x);
 };
 
-fnc passthroughFnc (f:MyFnc) MyFnc {
+fnc passthrough (f:MyFnc) MyFnc {
     ret f;
+};
+
+fnc passthrough::evaluable (x:i32) i32 {
+    ret x;
+};
+
+fnc canEval::evaluable (x:i32) i32 {
+    ret x;
 };
 
 fnc main () () {
@@ -141,7 +149,17 @@ fnc main () () {
         println_i32 (callAndRet 213 c2);
         println_i32 (callAndRet 213 (cast MyFnc f7b));
 
-        println_i32 ((passthroughFnc (cast MyFnc f7)) 215);
-        println_i32 ((passthroughFnc c2) 216);
+        println_i32 ((passthrough (cast MyFnc f7)) 215);
+        println_i32 ((passthrough c2) 216);
+    };
+
+    block {
+        sym (x 300);
+        println_i32 (passthrough x);
+        println_i32 (eval (passthrough 301));
+
+        = x 302;
+        println_i32 (canEval x);
+        println_i32 (eval (canEval 303));
     };
 };

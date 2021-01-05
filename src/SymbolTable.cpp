@@ -37,6 +37,7 @@ EscapeScore MacroValue::toEscapeScore(PreHandling h) {
 SymbolTable::CalleeValueInfo SymbolTable::CalleeValueInfo::make(const FuncValue &func, const TypeTable *typeTable) {
     CalleeValueInfo c;
     c.isFunc = true;
+    c.isLlvm = func.isLlvm();
     c.isEval = func.isEval();
     const TypeTable::Callable *call = typeTable->extractCallable(func.getType());
     assert(call != nullptr);

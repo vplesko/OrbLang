@@ -205,6 +205,12 @@ optional<uint64_t> EvalVal::getValueNonNeg(const EvalVal &val, const TypeTable *
     return nullopt;
 }
 
+optional<const FuncValue*> EvalVal::getValueFunc(const EvalVal &val, const TypeTable *typeTable) {
+    if (!val.getType().has_value()) return nullopt;
+    if (typeTable->worksAsCallable(val.getType().value(), true)) return val.f;
+    return nullopt;
+}
+
 bool EvalVal::isImplicitCastable(const EvalVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable) {
     if (typeTable->isImplicitCastable(val.getType().value(), t))
         return true;

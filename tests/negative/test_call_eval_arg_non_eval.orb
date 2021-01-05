@@ -1,0 +1,6 @@
+eval (fnc foo (x:i32) () {});
+
+fnc main () () {
+    sym (x:i32 0);
+    foo x;
+};

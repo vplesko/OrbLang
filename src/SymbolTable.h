@@ -36,6 +36,7 @@ struct FuncValue : BaseCallableValue {
     llvm::Function *llvmFunc;
     std::optional<NodeVal> evalFunc;
 
+    bool isLlvm() const { return llvmFunc != nullptr; }
     bool isEval() const { return evalFunc.has_value(); }
 
     static std::optional<TypeTable::Id> getRetType(const FuncValue &func, const TypeTable *typeTable);
@@ -77,7 +78,8 @@ public:
     };
 
     struct CalleeValueInfo {
-        bool isFunc, isEval;
+        bool isFunc;
+        bool isLlvm, isEval;
         std::optional<TypeTable::Id> retType;
 
         static CalleeValueInfo make(const FuncValue &func, const TypeTable *typeTable);

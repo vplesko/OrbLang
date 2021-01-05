@@ -163,6 +163,9 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
         msgs->errorUnknown(codeLoc);
         return NodeVal();
     }
+    for (const NodeVal &arg : args) {
+        if (!checkIsEvalVal(arg, true)) return NodeVal();
+    }
 
     if (!func.defined) {
         msgs->errorUnknown(codeLoc);

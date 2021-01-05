@@ -277,7 +277,9 @@ bool Compiler::performPass(CodeLoc codeLoc, SymbolTable::Block &block, const Nod
 
 NodeVal Compiler::performCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
-    if (!checkIsLlvmVal(func, true)) return NodeVal();
+
+    NodeVal funcPromo = promoteIfEvalValAndCheckIsLlvmVal(func, true);
+    if (funcPromo.isInvalid()) return NodeVal();
 
     vector<llvm::Value*> llvmArgValues(args.size());
     for (size_t i = 0; i < args.size(); ++i) {
@@ -293,13 +295,13 @@ NodeVal Compiler::performCall(CodeLoc codeLoc, const NodeVal &func, const std::v
         }
     }
 
-    const TypeTable::Callable *callable = typeTable->extractCallable(func.getLlvmVal().type);
+    const TypeTable::Callable *callable = typeTable->extractCallable(funcPromo.getLlvmVal().type);
     if (callable == nullptr) {
         msgs->errorInternal(codeLoc);
         return NodeVal();
     }
 
-    llvm::FunctionCallee llvmFuncCallee = llvm::FunctionCallee(makeLlvmFunctionType(func.getLlvmVal().type), func.getLlvmVal().val);
+    llvm::FunctionCallee llvmFuncCallee = llvm::FunctionCallee(makeLlvmFunctionType(funcPromo.getLlvmVal().type), funcPromo.getLlvmVal().val);
 
     if (callable->hasRet()) {
         LlvmVal retLlvmVal(callable->retType.value());
@@ -857,8 +859,13 @@ NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
         }
 
         llvmConst = llvm::ConstantStruct::get(llvmStructType, llvmConsts);
-    } else if (EvalVal::isCallableNoValue(eval, typeTable)) {
-        llvmConst = llvm::ConstantPointerNull::get((llvm::PointerType*) makeLlvmType(ty));
+    } else if (EvalVal::isFunc(eval, typeTable)) {
+        const FuncValue *funcVal = EvalVal::getValueFunc(eval, typeTable).value();
+        if (funcVal == nullptr) {
+            llvmConst = llvm::ConstantPointerNull::get((llvm::PointerType*) makeLlvmType(ty));
+        } else {
+            if (funcVal->isLlvm()) llvmConst = funcVal->llvmFunc;
+        }
     }
 
     if (llvmConst == nullptr) {

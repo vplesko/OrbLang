@@ -86,6 +86,7 @@ struct EvalVal {
     static std::optional<std::uint64_t> getValueU(const EvalVal &val, const TypeTable *typeTable);
     static std::optional<double> getValueF(const EvalVal &val, const TypeTable *typeTable);
     static std::optional<std::uint64_t> getValueNonNeg(const EvalVal &val, const TypeTable *typeTable);
+    static std::optional<const FuncValue*> getValueFunc(const EvalVal &val, const TypeTable *typeTable);
 
     static bool isImplicitCastable(const EvalVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable);
     static bool isCastable(const EvalVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable);

@@ -572,10 +572,13 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
     args.reserve(providedArgCnt);
     vector<TypeTable::Id> argTypes;
     argTypes.reserve(providedArgCnt);
+    bool allArgsEval = true;
     for (size_t i = 0; i < providedArgCnt; ++i) {
         NodeVal arg = processNode(node.getChild(i+1));
         if (arg.isInvalid()) return NodeVal();
         if (!checkHasType(arg, true)) return NodeVal();
+
+        if (!checkIsEvalVal(arg, false)) allArgsEval = false;
 
         args.push_back(move(arg));
         argTypes.push_back(arg.getType().value());
@@ -619,7 +622,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
             if (args[i].isInvalid()) return NodeVal();
         }
 
-        if (funcVal->isEval()) {
+        if (funcVal->isEval() && allArgsEval) {
             return evaluator->performCall(node.getCodeLoc(), *funcVal, args);
         } else {
             return performCall(node.getCodeLoc(), *funcVal, args);
@@ -645,7 +648,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
             if (args[i].isInvalid()) return NodeVal();
         }
 
-        if (starting.isEvalVal()) {
+        if (starting.isEvalVal() && allArgsEval) {
             return evaluator->performCall(node.getCodeLoc(), starting, args);
         } else {
             return performCall(node.getCodeLoc(), starting, args);
@@ -727,6 +730,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     NamePool::Id name;
     bool noNameMangle;
     bool isMain;
+    bool evaluable;
     if (isDecl || isDef) {
         NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
@@ -742,6 +746,10 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         if (!noNameMangleOpt.has_value()) return NodeVal();
         isMain = isMeaningful(name, Meaningful::MAIN);
         noNameMangle = noNameMangleOpt.value();
+
+        optional<bool> evaluableOpt = hasAttributeAndCheckIsEmpty(nodeName, "evaluable");
+        if (!evaluableOpt.has_value()) return NodeVal();
+        evaluable = evaluableOpt.value();
     }
 
     // arguments
@@ -827,6 +835,9 @@ NodeVal Processor::processFnc(const NodeVal &node) {
 
         // funcVal is passed by mutable reference, is needed later
         if (!performFunctionDeclaration(node.getCodeLoc(), funcVal)) return NodeVal();
+        if (evaluable && this != evaluator) {
+            if (!evaluator->performFunctionDeclaration(node.getCodeLoc(), funcVal)) return NodeVal();
+        }
 
         FuncValue *symbVal = symbolTable->registerFunc(funcVal);
         if (symbVal == nullptr) {
@@ -836,6 +847,9 @@ NodeVal Processor::processFnc(const NodeVal &node) {
 
         if (isDef) {
             if (!performFunctionDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();
+            if (evaluable && this != evaluator) {
+                if (!evaluator->performFunctionDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();
+            }
         }
 
         return NodeVal(node.getCodeLoc());
@@ -2055,7 +2069,7 @@ bool Processor::checkIsLlvmVal(CodeLoc codeLoc, const NodeVal &node, bool orErro
 }
 
 bool Processor::checkIsLlvmFunc(CodeLoc codeLoc, const FuncValue &func, bool orError) {
-    if (func.isEval()) {
+    if (!func.isLlvm()) {
         if (orError) msgs->errorUnknown(codeLoc);
         return false;
     }
