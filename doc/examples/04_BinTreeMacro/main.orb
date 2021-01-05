@@ -1,0 +1,95 @@
+import "base.orb";
+import "clib.orb";
+
+data Node {
+    val:i32
+    left:(Node *)
+    right:(Node *)
+};
+
+fnc makeNode (val:i32 left:(Node *) right:(Node *)) Node {
+    sym node:Node;
+    = (. node val) val;
+    = (. node left) left;
+    = (. node right) right;
+    ret node;
+};
+
+eval (fnc symBinTreeEntries (name:id val:i32) raw {
+    ret \( (,name (makeNode ,val null null)) );
+});
+
+eval (fnc symBinTreeEntries (name:id tree:raw) raw {
+    sym (childEntries ()) (makeNodeCall \(makeNode ,(. tree 0)));
+
+    range i 1 2 {
+        if (== (lenOf (. tree i)) 0) {
+            = makeNodeCall (+ makeNodeCall \( null ));
+        } {
+            sym (childName (genSym));
+            = childEntries (+ childEntries (symBinTreeEntries childName (. tree i)));
+            = makeNodeCall (+ makeNodeCall \( (& ,childName) ));
+        };
+    };
+
+    ret (+ childEntries \( (,name ,makeNodeCall) ));
+});
+
+mac symBinTree (name tree) {
+    ret (+ \( sym ) (symBinTreeEntries name tree));
+};
+
+fnc sumAndCnt (node:(Node cn *)) (i32 i32) {
+    if (== node null) {
+        ret (tup 0 0);
+    };
+
+    sym (leftRes (sumAndCnt (-> node left)))
+        (rightRes (sumAndCnt (-> node right)));
+
+    ret (tup (+ (. leftRes 0) (. rightRes 0) (-> node val))
+        (+ (. leftRes 1) (. rightRes 1) 1));
+};
+
+fnc main () () {
+    symBinTree tree0
+        (2
+            (3
+                (1
+                    ()
+                    ())
+                ())
+            (-1
+                (0
+                    ()
+                    ())
+                (5
+                    ()
+                    ())));
+
+    sym (result (sumAndCnt (& tree0)));
+    printf "%d %d\n" (. result 0) (. result 1);
+
+    symBinTree tree1
+        (2
+            (3
+                1
+                ())
+            (-1
+                0
+                5));
+
+    = result (sumAndCnt (& tree1));
+    printf "%d %d\n" (. result 0) (. result 1);
+
+    symBinTree tree2
+        (3 () ());
+
+    = result (sumAndCnt (& tree2));
+    printf "%d %d\n" (. result 0) (. result 1);
+
+    symBinTree tree3 3;
+
+    = result (sumAndCnt (& tree3));
+    printf "%d %d\n" (. result 0) (. result 1);
+};

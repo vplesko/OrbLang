@@ -7,7 +7,7 @@ data Node {
     right:(Node *)
 };
 
-fnc makeNode(val:i32 left:(Node *) right:(Node *)) Node {
+fnc makeNode (val:i32 left:(Node *) right:(Node *)) Node {
     sym node:Node;
     = (. node val) val;
     = (. node left) left;
@@ -15,7 +15,7 @@ fnc makeNode(val:i32 left:(Node *) right:(Node *)) Node {
     ret node;
 };
 
-fnc sumAndCnt(node:(Node cn *)) (i32 i32) {
+fnc sumAndCnt (node:(Node cn *)) (i32 i32) {
     if (== node null) {
         ret (tup 0 0);
     };

@@ -15,7 +15,7 @@ data Node {
 While we're at it, let's define a utility function for constructing a `Node`. Members of data types are accessed with `.` operator.
 
 ```
-fnc makeNode(val:i32 left:(Node *) right:(Node *)) Node {
+fnc makeNode (val:i32 left:(Node *) right:(Node *)) Node {
     sym node:Node;
     = (. node val) val;
     = (. node left) left;
@@ -27,7 +27,7 @@ fnc makeNode(val:i32 left:(Node *) right:(Node *)) Node {
 Our goal is to define `sumAndCnt`, a function that calculates the sum and number of elements in a binary tree.
 
 ```
-fnc sumAndCnt(node:(Node cn *)) (i32 i32) {
+fnc sumAndCnt (node:(Node cn *)) (i32 i32) {
 ```
 
 `Node cn *` is a pointer to a constant `Node`. The value it points to cannot be modified. Note that the pointer itself is not constant, though we could have declared it as such with `Node cn * cn`.
@@ -56,7 +56,7 @@ To call `sumAndCnt` from `main`, we need to construct a binary tree. We will con
 
 ```
             2
-    3              -1
+    3               -1
 1       X       0       5
 ```
 
@@ -92,7 +92,7 @@ data Node {
     right:(Node *)
 };
 
-fnc makeNode(val:i32 left:(Node *) right:(Node *)) Node {
+fnc makeNode (val:i32 left:(Node *) right:(Node *)) Node {
     sym node:Node;
     = (. node val) val;
     = (. node left) left;
@@ -100,7 +100,7 @@ fnc makeNode(val:i32 left:(Node *) right:(Node *)) Node {
     ret node;
 };
 
-fnc sumAndCnt(node:(Node cn *)) (i32 i32) {
+fnc sumAndCnt (node:(Node cn *)) (i32 i32) {
     if (== node null) {
         ret (tup 0 0);
     };
