@@ -1,6 +1,10 @@
 import "../libs/base.orb";
 import "util/io.orb";
 
+data Foo {
+    x:i32
+};
+
 fnc main () () {
     if true {
         println_i32 100;
@@ -118,6 +122,12 @@ fnc main () () {
         sym (d (& c));
         = (. a 2) 402;
         println_i32 (-> d 0 0 2);
+
+        sym p:Foo;
+
+        sym (q (& p));
+        = (. p x) 403;
+        println_i32 (-> q x);
     };
 
     block {

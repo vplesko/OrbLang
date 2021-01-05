@@ -148,7 +148,7 @@ mac ^= (x::preprocess y::preprocess) {
     ret \(= ,x (^ ,x ,y));
 };
 
-mac -> (x::preprocess m::preprocess rest::(variadic preprocess)) {
+mac -> (x::preprocess m rest::variadic) {
     sym (ops (+ \(,x ,m) rest));
 
     sym (code \(base.-passthrough ,(. ops 0)));
