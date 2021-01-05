@@ -1,24 +1,20 @@
 import "base.orb";
 import "clib.orb";
 
-fnc fizzbuzz (n:i32) () {
-    range i n {
+fnc main () () {
+    range i 1 100 {
         if (== (% i 15) 0) {
-            printf "fizzbuzz\n";
+            printf "FizzBuzz\n";
             continue;
         };
         if (== (% i 3) 0) {
-            printf "fizz\n";
+            printf "Fizz\n";
             continue;
         };
         if (== (% i 5) 0) {
-            printf "buzz\n";
+            printf "Buzz\n";
             continue;
         };
         printf "%d\n" i;
     };
-};
-
-fnc main () () {
-    fizzbuzz 101;
 };

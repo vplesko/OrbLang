@@ -33,41 +33,12 @@ BOOL is true or false
 NULL is null
 
 \ increases escape score, , decreases it
+escaping of attrs is independent of escaping of node itself
 if score is >0, considered to be escaped
 
 comments are # for single line, #* ... *# for multiline
 
 Char unescape sequences are: \', \", \?, \\, \a, \b, \f, \n, \r, \t, \v, \0, and \xNN (where N is a hex digit in [0-9a-fA-F]).
-
-********************
-
-class LiteralVal:
-	literal stuff
-
-class EvalVal:
-	TypeTable::Id
-	oneof:
-		prim stuff
-		id
-		type
-		repeated EvalVal
-	optional ref
-
-class LlvmVal:
-	TypeTable::Id
-	val
-	ref
-
-class NodeVal:
-	CodeLoc
-	oneof:
-		LiteralVal
-		EvalVal
-		LlvmVal
-	type node
-	is import
-	is invalid
-	is valid
 
 ********************
 
@@ -98,11 +69,13 @@ processing node:
 		process as leaf
 	else:
 		process as non-leaf
+	if had attrs:
+		attach prior attrs
 
 when promoting literal to evalVal, type attribute is respected as eval impl cast, unless id
-	if escaped, escape score and type attribute preserved
+	escape score and type attribute preserved
 compiler cannot gen type, id or raw vars, cannot gen code in global
-evaluator can have pointers only be null, strings may be non-null or null
+evaluator can have array pointers only be null, strings may be non-null or null
 
 type attr
 	:a
@@ -240,7 +213,7 @@ import
 	// TODO import ...a
 
 =
-	= ...a
+	= a ...b
 	r-assoc
 	assigns val of right to left
 	returns ref-val
@@ -271,10 +244,40 @@ type
 	type ...a
 	if past first is type decor, pre-escape
 
+message
+	message ...a
+	prints info during compilation
+
+********************
+
+types:
+
+bool - boolean
+i8, i16, i32, i64 - signed integrals
+u8, u16, u32, u64 - unsigned integrals
+f32, f64 - floating point numerals
+c8 - 8-bit char
+ptr - non-descript pointer (void* in C)
+id - identifier (first-class value at evaluation)
+type - type of a value (first-class value at evaluation)
+raw - unprocessed list of values, usually represents Orb code (first-class value at evaluation)
+fnc ({...id:type}) {type or ()} - function that takes given args and returns given type or nothing
+mac ({...id}) - macro that takes given number of args
+{type} cn - constant type
+{type int} - array of type of given size
+{type} * - pointer to a given type (can be dereferenced)
+{type} [] - array pointer to a given type (can be indexed, but not dereferenced)
+({...type}2+) - tuple of given types
+
+custom types restrict impl casts
+data types have named members
+
 ********************
 
 plan:
+ - tup, arr
+ - arr ptrs in eval
  - zero
  - drop, move
  - attrs: noZero, noDrop, unique
- - include C headers
+ - import C headers

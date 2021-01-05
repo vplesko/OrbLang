@@ -1,0 +1,40 @@
+import "base.orb";
+import "clib.orb";
+
+data Node {
+    val:i32
+    left:(Node *)
+    right:(Node *)
+};
+
+fnc makeNode(val:i32 left:(Node *) right:(Node *)) Node {
+    sym node:Node;
+    = (. node val) val;
+    = (. node left) left;
+    = (. node right) right;
+    ret node;
+};
+
+fnc sumAndCnt(node:(Node cn *)) (i32 i32) {
+    if (== node null) {
+        ret (tup 0 0);
+    };
+
+    sym (leftRes (sumAndCnt (-> node left)))
+        (rightRes (sumAndCnt (-> node right)));
+
+    ret (tup (+ (. leftRes 0) (. rightRes 0) (-> node val))
+        (+ (. leftRes 1) (. rightRes 1) 1));
+};
+
+fnc main () () {
+    sym (ll (makeNode 1 null null));
+    sym (l (makeNode 3 (& ll) null));
+    sym (rl (makeNode 0 null null)) (rr (makeNode 5 null null));
+    sym (r (makeNode -1 (& rl) (& rr)));
+    sym (root (makeNode 2 (& l) (& r)));
+
+    sym (result (sumAndCnt (& root)));
+
+    printf "%d %d\n" (. result 0) (. result 1);
+};
