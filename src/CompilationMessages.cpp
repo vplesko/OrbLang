@@ -488,6 +488,10 @@ void CompilationMessages::errorMacroNoValue(CodeLoc loc) {
     error(loc, "Trying to invoke a macro with no value.");
 }
 
+void CompilationMessages::errorDataCnMember(CodeLoc loc) {
+    error(loc, "Data members may not be constant.");
+}
+
 void CompilationMessages::errorBlockNotFound(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "No enclosing blocks with name '" << namePool->get(name) << "' have been found.";

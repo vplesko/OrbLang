@@ -106,6 +106,7 @@ public:
     void errorMacroNotFound(CodeLoc loc, NamePool::Id name);
     void errorFuncNoValue(CodeLoc loc);
     void errorMacroNoValue(CodeLoc loc);
+    void errorDataCnMember(CodeLoc loc);
     void errorBlockNotFound(CodeLoc loc, NamePool::Id name);
     void errorBlockNoPass(CodeLoc loc);
     void errorMemberIndex(CodeLoc loc);

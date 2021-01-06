@@ -859,8 +859,6 @@ bool TypeTable::isDirectCn(Id t) const {
     }
 }
 
-// TODO allow tuple to tuple (impl if only direct cn diff, explicit memb by memb)
-// TODO allow tuple to data (and vice-versa) (impl if only direct cn diff, explicit memb by memb)
 bool TypeTable::isImplicitCastable(Id from, Id into) const {
     // if it's <type> cn, just look at <type>
     if (isTypeDescr(from) && typeDescrs[from.index].first.decors.empty())

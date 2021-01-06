@@ -289,6 +289,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
+// TODO allow tuple to tuple, memb by memb
 NodeVal Processor::processCast(const NodeVal &node) {
     if (!checkExactlyChildren(node, 3, true)) {
         return NodeVal();
@@ -547,12 +548,20 @@ NodeVal Processor::processData(const NodeVal &node) {
 
             pair<NodeVal, optional<NodeVal>> memb = processForIdTypePair(nodeMemb);
             if (memb.first.isInvalid()) return NodeVal();
-            NamePool::Id membNameId = memb.first.getEvalVal().id;
+
+            NamePool::Id membName = memb.first.getEvalVal().id;
+
             if (!memb.second.has_value()) {
                 msgs->errorMissingTypeAttribute(nodeMemb.getCodeLoc());
                 return NodeVal();
             }
-            dataType.members.push_back(make_pair(membNameId, memb.second.value().getEvalVal().ty));
+            TypeTable::Id membType = memb.second.value().getEvalVal().ty;
+            if (typeTable->worksAsTypeCn(membType)) {
+                msgs->errorDataCnMember(memb.second.value().getCodeLoc());
+                return NodeVal();
+            }
+
+            dataType.members.push_back(make_pair(membName, membType));
         }
 
         optional<TypeTable::Id> typeIdOpt = typeTable->addDataType(dataType);
