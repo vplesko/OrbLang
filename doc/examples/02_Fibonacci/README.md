@@ -20,7 +20,7 @@ If `n` is 0 or 1, immediately return the Fibonacci number.
 If not, calculate the number by starting with the 0th and 1st Fibonacci numbers, and iteratively moving through the sequence.
 
 ```
-    sym (a:(u32 3));
+    sym a:(u32 3);
     = ([] a 0) 0;
     = ([] a 1) 1;
 ```
@@ -75,7 +75,7 @@ fnc fibonacci::evaluable (n:u32) u32 {
         ret n;
     };
 
-    sym (a:(u32 3));
+    sym a:(u32 3);
     = ([] a 0) 0;
     = ([] a 1) 1;
 

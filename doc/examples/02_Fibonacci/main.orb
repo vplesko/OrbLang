@@ -6,7 +6,7 @@ fnc fibonacci::evaluable (n:u32) u32 {
         ret n;
     };
 
-    sym (a:(u32 3));
+    sym a:(u32 3);
     = ([] a 0) 0;
     = ([] a 1) 1;
 

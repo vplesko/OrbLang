@@ -86,8 +86,7 @@ fnc main () () {
     = result (sumAndCnt (& tree1));
     printf "%d %d\n" (. result 0) (. result 1);
 
-    symBinTree tree2
-        (3 () ());
+    symBinTree tree2 (3 () ());
 
     = result (sumAndCnt (& tree2));
     printf "%d %d\n" (. result 0) (. result 1);
