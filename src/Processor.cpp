@@ -1176,7 +1176,10 @@ NodeVal Processor::processLenOf(const NodeVal &node) {
     if (typeTable->worksAsTypeArr(ty)) len = typeTable->extractLenOfArr(ty).value();
     else if (typeTable->worksAsTuple(ty)) len = typeTable->extractLenOfTuple(ty).value();
     else if (typeTable->worksAsPrimitive(ty, TypeTable::P_RAW)) len = operand.getChildrenCnt();
-    else len = 1; // TODO should this return 1? or 0? should there be separate special for tuple/raw and for arrs?
+    else {
+        msgs->errorLenOfBadType(node.getCodeLoc());
+        return NodeVal();
+    }
 
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::WIDEST_U), typeTable);
     evalVal.getWidestU() = len;

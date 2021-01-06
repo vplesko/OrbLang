@@ -23,7 +23,9 @@ eval (fnc symBinTreeEntries (name:id tree:raw) raw {
     sym (childEntries ()) (makeNodeCall \(makeNode ,(. tree 0)));
 
     range i 1 2 {
-        if (== (lenOf (. tree i)) 0) {
+        sym (isRaw (|| (== (typeOf (. tree i)) raw) (== (typeOf (. tree i)) (raw cn))));
+
+        if (&& isRaw (== (lenOf (. tree i)) 0)) {
             = makeNodeCall (+ makeNodeCall \( null ));
         } {
             sym (childName (genSym));

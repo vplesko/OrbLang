@@ -89,7 +89,9 @@ If the subtree is described with `()` it is nonexistent. We denote this with `nu
 
 ```
     range i 1 2 {
-        if (== (lenOf (. tree i)) 0) {
+        sym (isRaw (|| (== (typeOf (. tree i)) raw) (== (typeOf (. tree i)) (raw cn))));
+
+        if (&& isRaw (== (lenOf (. tree i)) 0)) {
 ```
 
 There are 2 subtrees, accessible with `. tree 1` and `. tree 2`. Both are handled the same way, so `range` is used.
@@ -191,7 +193,9 @@ eval (fnc symBinTreeEntries (name:id tree:raw) raw {
     sym (childEntries ()) (makeNodeCall \(makeNode ,(. tree 0)));
 
     range i 1 2 {
-        if (== (lenOf (. tree i)) 0) {
+        sym (isRaw (|| (== (typeOf (. tree i)) raw) (== (typeOf (. tree i)) (raw cn))));
+
+        if (&& isRaw (== (lenOf (. tree i)) 0)) {
             = makeNodeCall (+ makeNodeCall \( null ));
         } {
             sym (childName (genSym));

@@ -502,6 +502,10 @@ void CompilationMessages::errorMemberIndex(CodeLoc loc) {
     error(loc, "Invalid member index.");
 }
 
+void CompilationMessages::errorLenOfBadType(CodeLoc loc) {
+    error(loc, "Cannot get length of this type. lenOf can operate on tuple, array, and raw types.");
+}
+
 void CompilationMessages::errorExprIndexOnBadType(CodeLoc loc) {
     error(loc, "Cannot index on this value.");
 }

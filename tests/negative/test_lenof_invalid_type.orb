@@ -1,0 +1,4 @@
+fnc main () () {
+    sym x:(i32 *);
+    lenOf x;
+}; 

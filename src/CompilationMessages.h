@@ -109,6 +109,7 @@ public:
     void errorBlockNotFound(CodeLoc loc, NamePool::Id name);
     void errorBlockNoPass(CodeLoc loc);
     void errorMemberIndex(CodeLoc loc);
+    void errorLenOfBadType(CodeLoc loc);
     void errorMissingTypeAttribute(CodeLoc loc);
     void errorNotGlobalScope(CodeLoc loc);
     void errorNotTopmost(CodeLoc loc);
