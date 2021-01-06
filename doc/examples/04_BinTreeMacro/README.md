@@ -42,7 +42,7 @@ G0-4 represent some internally generated identifiers. Take the time to figure ou
 
 We will generate this instruction recursively. First, we will collect all `sym` entries needed to define the left subtree, then the right subtree. We will concatenate those, and append the entry for the root. Finally, we wrap everything in a `sym` form.
 
-Callers will provide the names for variables of left/right subtree's roots. If a subtree is empty (denoted by `()`), we will not make a recursive call.
+Recursion callers will provide the names for variables of left/right subtree's roots. If a subtree is empty (denoted by `()`), we will not make a recursive call.
 
 ## Implementation
 
@@ -116,15 +116,15 @@ We need to know whether the subtree is described with `()`. First, let's ask if 
 
 `||` is a macro for logical OR. `typeOf` returns the type of a value.
 
-Now, let's check if this raw contains nothing.
+Now, let's check if this raw is empty.
 
 ```
         if (&& isRaw (== (lenOf (. tree i)) 0)) {
 ```
 
-`&&` is a macro for logical AND. `lenOf` returns the count of values in a `raw`. It can also return the count of members in a tuple, or count of elements in an array.
+`&&` is a macro for logical AND. `lenOf` returns the number of values in a `raw`. It can also return the number of members in a tuple, or number of elements in an array.
 
-In the case of `()`, we don't make a recursive call, and use `null` as argument to `makeNode`.
+In the case of `()`, don't make a recursive call, and use `null` as argument to `makeNode`.
 
 ```
         if (&& isRaw (== (lenOf (. tree i)) 0)) {
@@ -133,7 +133,7 @@ In the case of `()`, we don't make a recursive call, and use `null` as argument 
 
 Using `+`, we can concatenate the children of multiple `raw`s, thus generating a new `raw` value.
 
-In the case when the subtree does exist, we recursively generate its entries and append them to `childEntries`. We append `(& G0)` as argument to `makeNodeCall`.
+In the case when the subtree does exist, recursively generate its entries and append them to `childEntries`. We append `(& G0)` as argument to `makeNodeCall`.
 
 `if` can take an additional argument - the else clause. This is where we will insert the following code.
 
@@ -156,7 +156,7 @@ The last thing left to do in `symBinTreeEntries` is return the concatenation of 
         \( (,name ,makeNodeCall) ));
 ```
 
-Finally, in `symBinTree` we return a `sym` form which contains all the generated entries.
+Finally, in `symBinTree` return a `sym` form which contains all the generated entries.
 
 ```
 mac symBinTree (name tree) {
