@@ -41,7 +41,7 @@ Depending on `i`, print the appropriate string, or just print the value of `i`.
 
 Orb's syntax is strictly prefix. The first element of a node determines what it represents. For example, `(== (% i 15) 0)` here is checking whether `i` is divisible by 15.
 
-`continue` will skip the remainder of the current iteration in this loop. This means that only one entry will be printed.
+`continue` skips the remainder of the current loop iteration. If no `continue` is executed, `i` gets printed.
 
 ## Final code
 

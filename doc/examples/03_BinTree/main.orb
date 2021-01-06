@@ -28,11 +28,12 @@ fnc sumAndCnt (node:(Node cn *)) (i32 i32) {
 };
 
 fnc main () () {
-    sym (ll (makeNode 1 null null));
-    sym (l (makeNode 3 (& ll) null));
-    sym (rl (makeNode 0 null null)) (rr (makeNode 5 null null));
-    sym (r (makeNode -1 (& rl) (& rr)));
-    sym (root (makeNode 2 (& l) (& r)));
+    sym (ll (makeNode 1 null null))
+        (l (makeNode 3 (& ll) null))
+        (rl (makeNode 0 null null))
+        (rr (makeNode 5 null null))
+        (r (makeNode -1 (& rl) (& rr)))
+        (root (makeNode 2 (& l) (& r)));
 
     sym (result (sumAndCnt (& root)));
 

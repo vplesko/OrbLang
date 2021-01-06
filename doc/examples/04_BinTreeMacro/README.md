@@ -1,12 +1,12 @@
 # BinTreeMacro
 
-In the previous example, we saw how to define and work with data types. You may have gotten the impression that Orb's syntax gets unwieldy at times. Fortunately, there is a tool to aid you - macros.
+In the previous example, we saw how we can define and work with data types. You may have gotten the impression that Orb's syntax gets unwieldy at times. Fortunately, there is a tool to aid you - macros.
 
 Macros are procedures, in some ways similar to functions, which return Orb code which will get processed in place of their invocations.
 
 ## Idea
 
-While there are a few places in the previous example that could be simplified, here we will focus on a single problem - providing a better syntax for constructing binary trees.
+While there are a few places in the previous example that could be simplified, here we will focus on a single problem - providing convenient syntax for constructing binary trees.
 
 ```
 symBinTree tree
@@ -25,7 +25,7 @@ symBinTree tree
                 ())));
 ```
 
-We will write a macro `symBinTree`, which will allow us to build a binary tree with the syntax you see above. This is the same tree from the previous example. Later, we will improve the syntax further.
+We will write a macro `symBinTree`, which will allow us to build a binary tree with the syntax you see above. This is the same tree from the previous example. Later, we will simplify the syntax further.
 
 When writing a macro, it is a good idea to first write out what it should expand into.
 
@@ -38,11 +38,11 @@ sym (G0 (makeNode 1 null null))
     (tree (makeNode 2 (& G1) (& G4)));
 ```
 
-G0-4 represent some internally generated identifiers.
+G0-4 represent some internally generated identifiers. Take the time to figure out how this code maps to the invocation above.
 
-We will generate this recursively. First, we will collect all `sym` entries needed to define the left subtree, then the right subtree. We will concatenate those entries, and append the entry for the root. Finally, we wrap everything in a `sym` form.
+We will generate this instruction recursively. First, we will collect all `sym` entries needed to define the left subtree, then the right subtree. We will concatenate those, and append the entry for the root. Finally, we wrap everything in a `sym` form.
 
-Recursive calls will provide the names for variables of left/right subtree's roots. If a subtree is empty (denoted by `()`), we will not generate any entries, and just use `null` in our call to `makeNode` instead.
+Callers will provide the names for variables of left/right subtree's roots. If a subtree is empty (denoted by `()`), we will not make a recursive call.
 
 ## Implementation
 
@@ -53,56 +53,85 @@ mac symBinTree (name tree) {
 };
 ```
 
-It takes two arguments. Macro arguments are untyped, as they can accept values of any type (and some special untyped values). They return elements of Orb syntax, which can also vary in their type, so are not specified either.
+It takes two arguments. Macro arguments and return values are untyped, as they can be of any type (or some special untyped values). They always do return some value.
 
-For recursion, we will define a function `symBinTreeEntries`.
+For recursion, we will define a function `symBinTreeEntries`. In it, we generate a list of `sym` entries for defining a subtree.
+
+It will take two arguments. `name` will be the name under which we are to define the root of the subtree. `tree` will contain 3 values - `i32` value of the node, and descriptions of the left and right subtrees written by the caller of our macro.
 
 ```
 eval (fnc symBinTreeEntries (name:id tree:raw) raw {
+});
 ```
 
-There are several things going on here. This function takes an argument of type `id`. This type represents an identifier, its value will be the name under which we want the root of the subtree to be declared.
+There are several things to note here. The first argument is of type `id`. This type represents an identifier.
 
-The second argument is of type `raw`. Technically, a `raw` is a collection of any number of values of any type (or untyped). Practically, you can think of them as chunks of Orb syntax that can be operated on. This argument will be a piece of code provided by the user of our macro.
+The second argument is of type `raw`. Technically, a `raw` is a collection of any number of values of any type (or untyped). Practically, you can think of it as a chunk of Orb syntax that can be operated on.
 
-The function returns a `raw` containing as elements entries to be appended to the final `sym` statement.
+(It's called `raw` because usually it represents unprocessed Orb code. Evaluations and compilations are both referred to as processing.)
 
-Functions which work with `id`, `type`, or `raw` cannot be compiled. That is ok, we only need this function while user code is compiling.
+The function returns a `raw` containing entries to be appended to the final `sym` statement.
 
-We surround it in `eval`. `eval` tells the compiler that a code needs to be evaluated, rather then compiled. Here, it means that this function is only usable at compile-time, and will not be compiled. Compare this to `::evaluable` which tells the compiler that a function can both be evaluated at compile-time, and executed at runtime.
+Functions which work with `id`, `type`, or `raw` cannot be compiled. That is ok, we only need this function while user code is compiling. For this, we need to wrap it in `eval`.
+
+`eval` tells the compiler that code within is meant for compile-time evaluations, and should not be compiled. Here, it means that this function is only available at compile-time.
+
+Compare this to `::evaluable` which tells the compiler that a function can both be evaluated at compile-time, and executed at runtime.
+
+We will declare a variable `childEntries` in which we will accumulate entries received from recursive calls.
 
 ```
-    sym (childEntries ()) (makeNodeCall \(makeNode ,(. tree 0)));
+    sym (childEntries ());
 ```
 
-`()` is a `raw` with no elements - an empty `raw`. We will be appending elements to `childEntries` soon. It represents entries in `sym` needed to construct our node's left and right subtrees.
+`()` is a `raw` with no elements - an empty `raw`.
 
-`makeNodeCall` is a `raw`, but not an empty one. It will contain the code for making a call to `makeNode` with all needed arguments.
+We also declare `makeNodeCall` as a raw containing code for calling `makeNode` with all necessary arguments. For now, we only know one argument and that is the `i32` value of the tree node. We will append the other 2 arguments later on.
 
-`\` is used for escaping - it means that the elements within (which also get escaped) are to be used in constructing a `raw` object. If you escape an identifier, it will denote a simple `id` value. Otherwise, the compiler would perform a lookup and fetch the value it points to.
+```
+    sym (childEntries ())
+        (makeNodeCall \(makeNode ,(. tree 0)));
+```
 
-`,` is used for unescaping. This counteracts `\` and tells the compiler that this expression is actually supposed to be evaluated right now.
+`\` is used for escaping. When applied to a node in parenthesis, it states that the elements within (which also get escaped) are to be used in constructing a `raw` object.
 
-This all sums up into `\(makeNode ,(. tree 0))`. This is a piece of code that would make a call to `makeNode` with the first value from `tree` - the value of the current node. Remember, we are giving 3 elements in each node - node's `i32` value, description of the left subtree, and description of the right subtree. The other 2 arguments will be appended soon.
+If you escape an identifier, it will denote a simple `id` value. Otherwise, the compiler would perform a lookup and fetch the value it points to.
 
-If the subtree is described with `()` it is nonexistent. We denote this with `null` in our `Node`.
+`,` is used for unescaping. This counteracts `\` and tells the compiler that this expression is actually supposed to be evaluated right now. We use it to fetch member 0 from `tree`.
+
+Take note that while `makeNodeCall` contains actual code, `childEntries` is used as an extensible list of values. Both are valid uses of `raw` variables.
+
+There are 2 subtrees, accessible with `. tree 1` and `. tree 2`. Both are handled the same way, so `range` with two bounds can be used.
 
 ```
     range i 1 2 {
-        sym (isRaw (|| (== (typeOf (. tree i)) raw) (== (typeOf (. tree i)) (raw cn))));
+    };
+```
 
+We need to know whether the subtree is described with `()`. First, let's ask if it is even a `raw` value.
+
+```
+        sym (isRaw (|| (== (typeOf (. tree i)) raw) (== (typeOf (. tree i)) (raw cn))));
+```
+
+`||` is a macro for logical OR. `typeOf` returns the type of a value.
+
+Now, let's check if this raw contains nothing.
+
+```
         if (&& isRaw (== (lenOf (. tree i)) 0)) {
 ```
 
-There are 2 subtrees, accessible with `. tree 1` and `. tree 2`. Both are handled the same way, so `range` is used.
+`&&` is a macro for logical AND. `lenOf` returns the count of values in a `raw`. It can also return the count of members in a tuple, or count of elements in an array.
 
-If `lenOf` of a `raw` is 0, then its value is `()`. In this case we append `null` as argument to `makeNodeCall`.
-
-Using `+`, we can concatenate the children of multiple `raw`s, thus generating a new `raw` value.
+In the case of `()`, we don't make a recursive call, and use `null` as argument to `makeNode`.
 
 ```
+        if (&& isRaw (== (lenOf (. tree i)) 0)) {
             = makeNodeCall (+ makeNodeCall \( null ));
 ```
+
+Using `+`, we can concatenate the children of multiple `raw`s, thus generating a new `raw` value.
 
 In the case when the subtree does exist, we recursively generate its entries and append them to `childEntries`. We append `(& G0)` as argument to `makeNodeCall`.
 
@@ -116,12 +145,15 @@ In the case when the subtree does exist, we recursively generate its entries and
         };
 ```
 
-Using macros can be dangerous (look up hygienic macros to understand why). If the code you are returning defines new variables, make sure to use `genSym` to generate their names. We do this for our node's children.
+Note the call to `genSym` to generate the name of the subtree's root.
 
-The last thing we do in `symBinTreeEntries` is return the concatenation of `childEntries` and the entry for the current node (the root of the recursive subtree).
+Using macros can be dangerous (look up hygienic macros to understand why). If the code you are returning defines new variables, make sure to use `genSym` to generate their names.
+
+The last thing left to do in `symBinTreeEntries` is return the concatenation of `childEntries` and the entry for the current node.
 
 ```
-    ret (+ childEntries \( (,name ,makeNodeCall) ));
+    ret (+ childEntries
+        \( (,name ,makeNodeCall) ));
 ```
 
 Finally, in `symBinTree` we return a `sym` form which contains all the generated entries.
@@ -147,9 +179,9 @@ symBinTree tree0
             5));
 ```
 
-This is the same tree from above, but written with fewer `()`s.
+This is the same tree from above, but cluttered with fewer `()`s.
 
-To accomplish this, we need to somehow handle the case when a subtree is a single integer, rather than a `raw`.
+To accomplish this, we need to somehow handle the case when a subtree is described with a single integer, rather than a `raw`.
 
 The solution turns out to be simple.
 
@@ -159,11 +191,11 @@ eval (fnc symBinTreeEntries (name:id val:i32) raw {
 });
 ```
 
-This overloads `symBinTreeEntries` with a new function. This one takes an `i32` for its second argument, instead of `raw`.
+Adding this overloads `symBinTreeEntries` with another function. This one takes an `i32` for its second argument, instead of `raw`.
 
-When calling an overloaded function, which one gets called depends on provided arguments and signatures of the candidate functions.
+When calling an overloaded function, which one gets called is decided based on provided arguments and signatures of candidate functions.
 
-You can inspect the final code for how `symBinTree` is tested. It can also be simplified. For example, the macro can be changed to be able to define multiple trees in one invocation, similar to how `sym` can declare multiple values.
+You can inspect the final code to see how `symBinTree` is called. This can also be simplified. For example, the macro can be changed to allow defining multiple trees in one invocation, similar to how `sym` can declare multiple values.
 
 ## Final code
 
@@ -190,7 +222,8 @@ eval (fnc symBinTreeEntries (name:id val:i32) raw {
 });
 
 eval (fnc symBinTreeEntries (name:id tree:raw) raw {
-    sym (childEntries ()) (makeNodeCall \(makeNode ,(. tree 0)));
+    sym (childEntries ())
+        (makeNodeCall \(makeNode ,(. tree 0)));
 
     range i 1 2 {
         sym (isRaw (|| (== (typeOf (. tree i)) raw) (== (typeOf (. tree i)) (raw cn))));
@@ -204,7 +237,8 @@ eval (fnc symBinTreeEntries (name:id tree:raw) raw {
         };
     };
 
-    ret (+ childEntries \( (,name ,makeNodeCall) ));
+    ret (+ childEntries
+        \( (,name ,makeNodeCall) ));
 });
 
 mac symBinTree (name tree) {

@@ -20,7 +20,8 @@ eval (fnc symBinTreeEntries (name:id val:i32) raw {
 });
 
 eval (fnc symBinTreeEntries (name:id tree:raw) raw {
-    sym (childEntries ()) (makeNodeCall \(makeNode ,(. tree 0)));
+    sym (childEntries ())
+        (makeNodeCall \(makeNode ,(. tree 0)));
 
     range i 1 2 {
         sym (isRaw (|| (== (typeOf (. tree i)) raw) (== (typeOf (. tree i)) (raw cn))));
@@ -34,7 +35,8 @@ eval (fnc symBinTreeEntries (name:id tree:raw) raw {
         };
     };
 
-    ret (+ childEntries \( (,name ,makeNodeCall) ));
+    ret (+ childEntries
+        \( (,name ,makeNodeCall) ));
 });
 
 mac symBinTree (name tree) {

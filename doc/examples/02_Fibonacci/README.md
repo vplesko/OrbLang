@@ -17,7 +17,7 @@ If `n` is 0 or 1, immediately return the Fibonacci number.
     };
 ```
 
-If not, calculate the number by starting with the 0th and 1st Fibonacci numbers, and iteratively move through the sequence.
+If not, calculate the number by starting with the 0th and 1st Fibonacci numbers, and iteratively moving through the sequence.
 
 ```
     sym (a:(u32 3));
@@ -25,7 +25,9 @@ If not, calculate the number by starting with the 0th and 1st Fibonacci numbers,
     = ([] a 1) 1;
 ```
 
-`sym` is used to declare variables. Here, `a` is an array of 3 `u32`s. Its element at index 2 will be the latest calculated number in the sequence. `[]` is the indexing operator.
+`sym` is used to declare variables. Here, `a` is an array of 3 `u32`s. `[]` is the indexing operator.
+
+Element at index 2 of `a` will be the latest calculated number in the sequence. Let's repeatedly calculate the next Fibonacci number, then update the first two elements of `a` to prepare for the next iteration.
 
 ```
     times (- n 1) {
@@ -36,9 +38,9 @@ If not, calculate the number by starting with the 0th and 1st Fibonacci numbers,
     };
 ```
 
-`times` is a macro which repeats a block of instructions a given number of times. In the body, we calculate the next Fibonacci number, and shift the elements in `a` using the assignment operator `=`.
+`times` is a macro which repeats a block of instructions a given number of times. `=` is the assignment operator.
 
-Return the Fibonacci number.
+Finally, return the N-th Fibonacci number.
 
 ```
     ret ([] a 2);
@@ -60,7 +62,7 @@ fnc fibonacci::evaluable (n:u32) u32 {
 
 `::` is used to apply attributes to syntax elements. `:` is also used for attributes - specifically for type attributes.
 
-`evaluable` tells the compiler that this function can be evaluated at compile-time. Of course, this can only be done when the arguments are known at compile-time.
+`evaluable` tells the compiler that this function can be evaluated at compile-time. Of course, this can only be done when the arguments are known at compile-time. If not, its execution will take place at runtime.
 
 ## Final code
 

@@ -1,6 +1,6 @@
 # Orb
 
-Orb is a general-purpose programming language. It is procedural, statically-typed, and compiled. A major feature is its compile-time evaluation of code, when you are able to use identifiers, types, and even Orb code itself as first-class values.
+Orb is a general-purpose programming language. It is procedural, statically-typed, and compiled. A major feature are its compile-time evaluations, when you are able to use identifiers, types, and even Orb code itself as first-class values.
 
 It offers a powerful macro system - procedures which return Orb code to be compiled. This allows you to parameterize and reuse similar bits of code, making your codebase more succint and easily readable.
 
