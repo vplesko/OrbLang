@@ -86,7 +86,7 @@ mac rangeRev (i hi::preprocess lo::preprocess body) {
     });
 };
 
-mac times (n::preprocess body) {
+mac repeat (n::preprocess body) {
     sym (s (genSym));
     ret \(range ,s ,n ,body);
 };

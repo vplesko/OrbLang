@@ -30,7 +30,7 @@ If not, calculate the number by starting with the 0th and 1st Fibonacci numbers,
 Element at index 2 of `a` will be the latest calculated number in the sequence. Let's repeatedly calculate the next Fibonacci number, then update the first two elements of `a` to prepare for the next iteration.
 
 ```
-    times (- n 1) {
+    repeat (- n 1) {
         = ([] a 2) (+ ([] a 0) ([] a 1));
         
         = ([] a 0) ([] a 1);
@@ -38,7 +38,7 @@ Element at index 2 of `a` will be the latest calculated number in the sequence. 
     };
 ```
 
-`times` is a macro which repeats a block of instructions a given number of times. `=` is the assignment operator.
+`repeat` is a macro which repeats a block of instructions a given number of times. `=` is the assignment operator.
 
 Finally, return the N-th Fibonacci number.
 
@@ -79,7 +79,7 @@ fnc fibonacci::evaluable (n:u32) u32 {
     = ([] a 0) 0;
     = ([] a 1) 1;
 
-    times (- n 1) {
+    repeat (- n 1) {
         = ([] a 2) (+ ([] a 0) ([] a 1));
         
         = ([] a 0) ([] a 1);

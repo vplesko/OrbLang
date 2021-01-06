@@ -69,13 +69,13 @@ fnc main () () {
         if (> i 0) { continue; };
         println_i32 218;
     };
-    times 2 {
+    repeat 2 {
         println_i32 219;
     };
-    times 1 {
+    repeat 1 {
         println_i32 220;
     };
-    times 0 {
+    repeat 0 {
         println_i32 -1;
     };
 
