@@ -276,7 +276,7 @@ data types have named members
 ********************
 
 plan:
- - tup, arr, init
+ - tup, init
  - zero
  - drop, move
  - attrs: noZero, noDrop, unique

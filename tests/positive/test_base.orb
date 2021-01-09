@@ -5,6 +5,8 @@ data Foo {
     x:i32
 };
 
+sym (globArr (eval (arr i32 603 -1)));
+
 fnc main () () {
     if true {
         println_i32 100;
@@ -160,5 +162,16 @@ fnc main () () {
 
         || (cast bool (++ x)) true;
         println_i32 x;
+    };
+
+    block {
+        sym (a (arr i32 600));
+        println_i32 ([] a 0);
+
+        sym (b (arr i32 601 602:i16));
+        println_i32 ([] b 0);
+        println_i32 ([] b 1);
+
+        println_i32 ([] globArr 0);
     };
 };

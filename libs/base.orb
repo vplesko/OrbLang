@@ -190,3 +190,16 @@ mac || (a b rest::variadic) {
 
     ret \(block base.-blockLogAnd bool ,innerCode);
 };
+
+mac arr (ty::preprocess a::preprocess rest::(variadic preprocess)) {
+    sym (els (+ \(,a) rest));
+    sym (arrTy (ty (lenOf els)));
+
+    sym (innerCode \{ sym res:arrTy; });
+    range i (lenOf els) {
+        += \innerCode \\{ (= ([] res ,i) ,(. els i)) };
+    };
+    += \innerCode \\{ (pass res) };
+
+    ret \(block ,arrTy ,innerCode);
+};

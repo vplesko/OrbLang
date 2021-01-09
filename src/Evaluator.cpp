@@ -201,7 +201,9 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
             return NodeVal();
         }
 
-        return move(retVal.value());
+        NodeVal ret = move(retVal.value());
+        retVal.reset();
+        return move(ret);
     } else {
         return NodeVal(codeLoc);
     }
@@ -233,7 +235,9 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const
         return NodeVal();
     }
 
-    return move(retVal.value());
+    NodeVal ret = move(retVal.value());
+    retVal.reset();
+    return move(ret);
 }
 
 bool Evaluator::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
