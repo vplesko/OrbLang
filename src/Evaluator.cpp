@@ -62,14 +62,14 @@ NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeV
 }
 
 NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
-    if (!checkIsEvalVal(node, true) || !checkHasType(node, true)) return NodeVal();
+    if (!checkIsEvalVal(node, true)) return NodeVal();
 
-    optional<NodeVal> evalValCast = makeCast(codeLoc, node, node.getEvalVal().type.value(), ty);
+    optional<NodeVal> evalValCast = makeCast(codeLoc, node, node.getEvalVal().type, ty);
     if (!evalValCast.has_value()) {
         if (EvalVal::isCastable(node.getEvalVal(), ty, stringPool, typeTable)) {
             msgs->errorInternal(codeLoc);
         } else {
-            msgs->errorExprCannotCast(codeLoc, node.getEvalVal().type.value(), ty);
+            msgs->errorExprCannotCast(codeLoc, node.getEvalVal().type, ty);
         }
         return NodeVal();
     }
@@ -276,10 +276,10 @@ bool Evaluator::performRet(CodeLoc codeLoc, const NodeVal &node) {
 }
 
 NodeVal Evaluator::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) {
-    if (!checkIsEvalVal(oper, true) || !checkHasType(oper, true)) return NodeVal();
+    if (!checkIsEvalVal(oper, true)) return NodeVal();
 
     EvalVal evalVal = EvalVal::copyNoRef(oper.getEvalVal());
-    TypeTable::Id ty = evalVal.type.value();
+    TypeTable::Id ty = evalVal.type;
     bool success = false, errorGiven = false;
     if (op == Oper::ADD) {
         if (EvalVal::isI(evalVal, typeTable) ||

@@ -33,7 +33,7 @@ struct FuncValue : BaseCallableValue {
     bool noNameMangle = false;
     bool defined = false;
 
-    llvm::Function *llvmFunc;
+    llvm::Function *llvmFunc = nullptr;
     std::optional<NodeVal> evalFunc;
 
     bool isLlvm() const { return llvmFunc != nullptr; }

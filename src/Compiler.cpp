@@ -798,11 +798,7 @@ optional<uint64_t> Compiler::performSizeOf(CodeLoc codeLoc, TypeTable::Id ty) {
 }
 
 NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
-    if (!eval.type.has_value()) {
-        msgs->errorExprCannotPromote(codeLoc);
-        return NodeVal();
-    }
-    TypeTable::Id ty = eval.type.value();
+    TypeTable::Id ty = eval.type;
 
     llvm::Constant *llvmConst = nullptr;
     if (EvalVal::isI(eval, typeTable)) {
@@ -824,7 +820,7 @@ NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
             stringPool->setLlvm(eval.str.value(), llvmConst);
         }
     } else if (EvalVal::isArr(eval, typeTable)) {
-        llvm::ArrayType *llvmArrayType = (llvm::ArrayType*) makeLlvmTypeOrError(codeLoc, eval.type.value());
+        llvm::ArrayType *llvmArrayType = (llvm::ArrayType*) makeLlvmTypeOrError(codeLoc, eval.type);
         if (llvmArrayType == nullptr) return NodeVal();
 
         vector<llvm::Constant*> llvmConsts;
@@ -847,7 +843,7 @@ NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
 
         llvmConst = llvm::ConstantStruct::getAnon(llvmContext, llvmConsts);
     } else if (EvalVal::isDataType(eval, typeTable)) {
-        llvm::StructType *llvmStructType = (llvm::StructType*) makeLlvmTypeOrError(codeLoc, eval.type.value());
+        llvm::StructType *llvmStructType = (llvm::StructType*) makeLlvmTypeOrError(codeLoc, eval.type);
         if (llvmStructType == nullptr) return NodeVal();
 
         vector<llvm::Constant*> llvmConsts;

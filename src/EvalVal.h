@@ -14,8 +14,7 @@ struct MacroValue;
 
 struct EvalVal {
     // type of this evaluation value
-    // TODO+ can optional be removed?
-    std::optional<TypeTable::Id> type;
+    TypeTable::Id type;
     union {
         std::int8_t i8;
         std::int16_t i16;
@@ -49,9 +48,6 @@ struct EvalVal {
         // this init is expected by Evaluator::makeCast, TODO+ break this expectation
         u64 = 0LL;
     }
-
-    const std::optional<TypeTable::Id>& getType() const { return type; }
-    std::optional<TypeTable::Id>& getType() { return type; }
 
     bool isEscaped() const { return escapeScore > 0; }
 

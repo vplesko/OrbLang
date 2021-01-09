@@ -68,7 +68,7 @@ EscapeScore NodeVal::getEscapeScore() const {
 }
 
 optional<TypeTable::Id> NodeVal::getType() const {
-    if (isEvalVal()) return getEvalVal().getType();
+    if (isEvalVal()) return getEvalVal().type;
     if (isLlvmVal()) return getLlvmVal().type;
     return nullopt;
 }
@@ -80,8 +80,8 @@ bool NodeVal::hasRef() const {
 }
 
 void NodeVal::addChild(NodeVal &node, NodeVal c, TypeTable *typeTable) {
-    if (isRawVal(c, typeTable) && typeTable->worksAsTypeCn(c.getEvalVal().getType().value()))
-        node.getEvalVal().getType() = typeTable->addTypeCnOf(node.getEvalVal().getType().value());
+    if (isRawVal(c, typeTable) && typeTable->worksAsTypeCn(c.getEvalVal().type))
+        node.getEvalVal().type = typeTable->addTypeCnOf(node.getEvalVal().type);
 
     node.getEvalVal().elems.push_back(move(c));
 }
@@ -95,12 +95,12 @@ void NodeVal::addChildren(NodeVal &node, vector<NodeVal>::iterator start, vector
 
     bool setCn = false;
     for (auto it = start; it != end; ++it) {
-        if (isRawVal(*it, typeTable) && typeTable->worksAsTypeCn(it->getEvalVal().getType().value())) setCn = true;
+        if (isRawVal(*it, typeTable) && typeTable->worksAsTypeCn(it->getEvalVal().type)) setCn = true;
 
         node.getEvalVal().elems.push_back(move(*it));
     }
 
-    if (setCn) node.getEvalVal().getType() = typeTable->addTypeCnOf(node.getEvalVal().getType().value());
+    if (setCn) node.getEvalVal().type = typeTable->addTypeCnOf(node.getEvalVal().type);
 }
 
 void NodeVal::setTypeAttr(NodeVal t) {

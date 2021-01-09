@@ -69,62 +69,62 @@ EvalVal EvalVal::copyNoRef(const EvalVal &k) {
 }
 
 bool EvalVal::isId(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.getType();
+    optional<TypeTable::Id> type = val.type;
     return type.has_value() && typeTable->worksAsPrimitive(type.value(), TypeTable::P_ID);
 }
 
 bool EvalVal::isType(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.getType();
+    optional<TypeTable::Id> type = val.type;
     return type.has_value() && typeTable->worksAsPrimitive(type.value(), TypeTable::P_TYPE);
 }
 
 bool EvalVal::isRaw(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.getType();
+    optional<TypeTable::Id> type = val.type;
     return type.has_value() && typeTable->worksAsPrimitive(type.value(), TypeTable::P_RAW);
 }
 
 bool EvalVal::isFunc(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.getType();
+    optional<TypeTable::Id> type = val.type;
     return type.has_value() && typeTable->worksAsCallable(type.value(), true);
 }
 
 bool EvalVal::isMacro(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.getType();
+    optional<TypeTable::Id> type = val.type;
     return type.has_value() && typeTable->worksAsCallable(type.value(), false);
 }
 
 bool EvalVal::isI(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.getType();
+    optional<TypeTable::Id> type = val.type;
     return type.has_value() && typeTable->worksAsTypeI(type.value());
 }
 
 bool EvalVal::isU(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.getType();
+    optional<TypeTable::Id> type = val.type;
     return type.has_value() && typeTable->worksAsTypeU(type.value());
 }
 
 bool EvalVal::isF(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.getType();
+    optional<TypeTable::Id> type = val.type;
     return type.has_value() && typeTable->worksAsTypeF(type.value());
 }
 
 bool EvalVal::isB(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.getType();
+    optional<TypeTable::Id> type = val.type;
     return type.has_value() && typeTable->worksAsTypeB(type.value());
 }
 
 bool EvalVal::isC(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.getType();
+    optional<TypeTable::Id> type = val.type;
     return type.has_value() && typeTable->worksAsTypeC(type.value());
 }
 
 bool EvalVal::isP(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.getType();
+    optional<TypeTable::Id> type = val.type;
     return type.has_value() && typeTable->worksAsTypeP(type.value());
 }
 
 bool EvalVal::isStr(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.getType();
+    optional<TypeTable::Id> type = val.type;
     return type.has_value() && typeTable->worksAsTypeStr(type.value());
 }
 
@@ -133,22 +133,22 @@ bool EvalVal::isNonNullStr(const EvalVal &val, const TypeTable *typeTable) {
 }
 
 bool EvalVal::isAnyP(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.getType();
+    optional<TypeTable::Id> type = val.type;
     return type.has_value() && typeTable->worksAsTypeAnyP(type.value());
 }
 
 bool EvalVal::isArr(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.getType();
+    optional<TypeTable::Id> type = val.type;
     return type.has_value() && typeTable->worksAsTypeArr(type.value());
 }
 
 bool EvalVal::isTuple(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.getType();
+    optional<TypeTable::Id> type = val.type;
     return type.has_value() && typeTable->worksAsTuple(type.value());
 }
 
 bool EvalVal::isDataType(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.getType();
+    optional<TypeTable::Id> type = val.type;
     return type.has_value() && typeTable->worksAsDataType(type.value());
 }
 
@@ -159,34 +159,31 @@ bool EvalVal::isNull(const EvalVal &val, const TypeTable *typeTable) {
 }
 
 bool EvalVal::isCallableNoValue(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.getType();
+    optional<TypeTable::Id> type = val.type;
     return type.has_value() &&
         ((typeTable->worksAsCallable(type.value(), true) && val.f == nullptr) ||
         (typeTable->worksAsCallable(type.value(), false) && val.m == nullptr));
 }
 
 optional<int64_t> EvalVal::getValueI(const EvalVal &val, const TypeTable *typeTable) {
-    if (!val.getType().has_value()) return nullopt;
-    if (typeTable->worksAsPrimitive(val.getType().value(), TypeTable::P_I8)) return val.i8;
-    if (typeTable->worksAsPrimitive(val.getType().value(), TypeTable::P_I16)) return val.i16;
-    if (typeTable->worksAsPrimitive(val.getType().value(), TypeTable::P_I32)) return val.i32;
-    if (typeTable->worksAsPrimitive(val.getType().value(), TypeTable::P_I64)) return val.i64;
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_I8)) return val.i8;
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_I16)) return val.i16;
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_I32)) return val.i32;
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_I64)) return val.i64;
     return nullopt;
 }
 
 optional<uint64_t> EvalVal::getValueU(const EvalVal &val, const TypeTable *typeTable) {
-    if (!val.getType().has_value()) return nullopt;
-    if (typeTable->worksAsPrimitive(val.getType().value(), TypeTable::P_U8)) return val.u8;
-    if (typeTable->worksAsPrimitive(val.getType().value(), TypeTable::P_U16)) return val.u16;
-    if (typeTable->worksAsPrimitive(val.getType().value(), TypeTable::P_U32)) return val.u32;
-    if (typeTable->worksAsPrimitive(val.getType().value(), TypeTable::P_U64)) return val.u64;
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_U8)) return val.u8;
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_U16)) return val.u16;
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_U32)) return val.u32;
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_U64)) return val.u64;
     return nullopt;
 }
 
 optional<double> EvalVal::getValueF(const EvalVal &val, const TypeTable *typeTable) {
-    if (!val.getType().has_value()) return nullopt;
-    if (typeTable->worksAsPrimitive(val.getType().value(), TypeTable::P_F32)) return val.f32;
-    if (typeTable->worksAsPrimitive(val.getType().value(), TypeTable::P_F64)) return val.f64;
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_F32)) return val.f32;
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_F64)) return val.f64;
     return nullopt;
 }
 
@@ -206,16 +203,15 @@ optional<uint64_t> EvalVal::getValueNonNeg(const EvalVal &val, const TypeTable *
 }
 
 optional<const FuncValue*> EvalVal::getValueFunc(const EvalVal &val, const TypeTable *typeTable) {
-    if (!val.getType().has_value()) return nullopt;
-    if (typeTable->worksAsCallable(val.getType().value(), true)) return val.f;
+    if (typeTable->worksAsCallable(val.type, true)) return val.f;
     return nullopt;
 }
 
 bool EvalVal::isImplicitCastable(const EvalVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable) {
-    if (typeTable->isImplicitCastable(val.getType().value(), t))
+    if (typeTable->isImplicitCastable(val.type, t))
         return true;
 
-    if (typeTable->worksAsCustom(val.getType().value()) || typeTable->worksAsCustom(t))
+    if (typeTable->worksAsCustom(val.type) || typeTable->worksAsCustom(t))
         return false;
 
     optional<int64_t> valI = getValueI(val, typeTable);
@@ -228,7 +224,7 @@ bool EvalVal::isImplicitCastable(const EvalVal &val, TypeTable::Id t, const Stri
     if (valF.has_value()) return typeTable->fitsTypeF(valF.value(), t);
 
     // if an eval val is ptr, it has to be null
-    if (typeTable->worksAsTypePtr(val.getType().value()) &&
+    if (typeTable->worksAsTypePtr(val.type) &&
         (typeTable->worksAsTypeAnyP(t) || typeTable->worksAsCallable(t))) return true;
     
     if (isNonNullStr(val, typeTable))
@@ -241,7 +237,7 @@ bool EvalVal::isImplicitCastable(const EvalVal &val, TypeTable::Id t, const Stri
 // keep in sync with Evaluator::performCast
 // TODO+ change to isCastableButNotEvalCastable to not have to keep in sync
 bool EvalVal::isCastable(const EvalVal &val, TypeTable::Id dstTypeId, const StringPool *stringPool, const TypeTable *typeTable) {
-    TypeTable::Id srcTypeId = val.type.value();
+    TypeTable::Id srcTypeId = val.type;
 
     if (srcTypeId == dstTypeId) return true;
 
@@ -318,7 +314,7 @@ bool EvalVal::isCastable(const EvalVal &val, TypeTable::Id dstTypeId, const Stri
 void EvalVal::equalizeAllRawElemTypes(EvalVal &val, const TypeTable *typeTable) {
     for (auto &it : val.elems) {
         if (NodeVal::isRawVal(it, typeTable)) {
-            it.getEvalVal().getType() = val.getType();
+            it.getEvalVal().type = val.type;
             equalizeAllRawElemTypes(it.getEvalVal(), typeTable);
         }
     }
