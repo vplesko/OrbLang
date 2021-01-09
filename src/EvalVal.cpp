@@ -234,81 +234,40 @@ bool EvalVal::isImplicitCastable(const EvalVal &val, TypeTable::Id t, const Stri
     return false;
 }
 
-// keep in sync with Evaluator::performCast
-// TODO+ change to isCastableButNotEvalCastable to not have to keep in sync
-bool EvalVal::isCastable(const EvalVal &val, TypeTable::Id dstTypeId, const StringPool *stringPool, const TypeTable *typeTable) {
+bool EvalVal::isCompileCastableNotEvalCastable(const EvalVal &val, TypeTable::Id dstTypeId, const StringPool *stringPool, const TypeTable *typeTable) {
     TypeTable::Id srcTypeId = val.type;
 
-    if (srcTypeId == dstTypeId) return true;
+    if (typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId)))
+        return false;
 
     if (typeTable->worksAsTypeI(srcTypeId)) {
-        int64_t x = EvalVal::getValueI(val, typeTable).value();
-
-        return typeTable->worksAsTypeI(dstTypeId) ||
-            typeTable->worksAsTypeU(dstTypeId) ||
-            typeTable->worksAsTypeF(dstTypeId) ||
-            typeTable->worksAsTypeC(dstTypeId) ||
-            typeTable->worksAsTypeB(dstTypeId) ||
-            (typeTable->worksAsTypeAnyP(dstTypeId) && x == 0);
+        if (EvalVal::getValueI(val, typeTable).value() != 0) {
+            return typeTable->worksAsTypeAnyP(dstTypeId);
+        }
     } else if (typeTable->worksAsTypeU(srcTypeId)) {
-        uint64_t x = EvalVal::getValueU(val, typeTable).value();
-
-        return typeTable->worksAsTypeI(dstTypeId) ||
-            typeTable->worksAsTypeU(dstTypeId) ||
-            typeTable->worksAsTypeF(dstTypeId) ||
-            typeTable->worksAsTypeC(dstTypeId) ||
-            typeTable->worksAsTypeB(dstTypeId) ||
-            (typeTable->worksAsTypeAnyP(dstTypeId) && x == 0) ||
-            typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_ID);
-    } else if (typeTable->worksAsTypeF(srcTypeId)) {
-        return typeTable->worksAsTypeI(dstTypeId) ||
-            typeTable->worksAsTypeU(dstTypeId) ||
-            typeTable->worksAsTypeF(dstTypeId);
-    } else if (typeTable->worksAsTypeC(srcTypeId)) {
-        return typeTable->worksAsTypeI(dstTypeId) ||
-            typeTable->worksAsTypeU(dstTypeId) ||
-            typeTable->worksAsTypeC(dstTypeId) ||
-            typeTable->worksAsTypeB(dstTypeId);
-    } else if (typeTable->worksAsTypeB(srcTypeId)) {
-        return typeTable->worksAsTypeI(dstTypeId) ||
-            typeTable->worksAsTypeU(dstTypeId) ||
-            typeTable->worksAsTypeB(dstTypeId) ||
-            typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_ID);
+        if (EvalVal::getValueU(val, typeTable).value() != 0) {
+            return typeTable->worksAsTypeAnyP(dstTypeId);
+        }
     } else if (typeTable->worksAsTypeStr(srcTypeId)) {
         if (val.str.has_value()) {
-            const string &str = stringPool->get(val.str.value());
-
-            return typeTable->worksAsTypeStr(dstTypeId) ||
-                typeTable->worksAsTypeB(dstTypeId) ||
-                typeTable->worksAsTypeCharArrOfLen(dstTypeId, LiteralVal::getStringLen(str));
-        } else {
-            // if it's not string, it's null
+            return typeTable->worksAsTypeI(dstTypeId) ||
+                typeTable->worksAsTypeU(dstTypeId) ||
+                typeTable->worksAsTypeAnyP(dstTypeId);
+        }
+    } else if (typeTable->worksAsTypeAnyP(srcTypeId)) {
+        if (!isNull(val, typeTable)) {
             return typeTable->worksAsTypeI(dstTypeId) ||
                 typeTable->worksAsTypeU(dstTypeId) ||
                 typeTable->worksAsTypeB(dstTypeId) ||
                 typeTable->worksAsTypeAnyP(dstTypeId);
         }
-    } else if (typeTable->worksAsTypeAnyP(srcTypeId)) {
-        if (isNull(val, typeTable)) {
-            return typeTable->worksAsTypeI(dstTypeId) ||
-                typeTable->worksAsTypeU(dstTypeId) ||
-                typeTable->worksAsTypeB(dstTypeId) ||
-                typeTable->worksAsTypeAnyP(dstTypeId) ||
-                typeTable->worksAsCallable(dstTypeId);
-        } else {
-            return typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId));
-        }
-    } else if (typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE)) {
-        return typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_ID) ||
-            typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE);
     } else if (typeTable->worksAsCallable(srcTypeId)) {
-        return (isCallableNoValue(val, typeTable) && typeTable->worksAsTypeAnyP(dstTypeId)) ||
-            (typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_BOOL)) ||
-            typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId));
-    } else {
-        // other types are only castable when changing constness
-        return typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId));
+        if (!isCallableNoValue(val, typeTable)) {
+            return typeTable->worksAsTypeAnyP(dstTypeId);
+        }
     }
+
+    return false;
 }
 
 void EvalVal::equalizeAllRawElemTypes(EvalVal &val, const TypeTable *typeTable) {

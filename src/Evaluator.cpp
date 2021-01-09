@@ -66,11 +66,7 @@ NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::
 
     optional<NodeVal> evalValCast = makeCast(codeLoc, node, node.getEvalVal().type, ty);
     if (!evalValCast.has_value()) {
-        if (EvalVal::isCastable(node.getEvalVal(), ty, stringPool, typeTable)) {
-            msgs->errorInternal(codeLoc);
-        } else {
-            msgs->errorExprCannotCast(codeLoc, node.getEvalVal().type, ty);
-        }
+        msgs->errorExprCannotCast(codeLoc, node.getEvalVal().type, ty);
         return NodeVal();
     }
 
@@ -920,7 +916,7 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
             if (!EvalVal::isCallableNoValue(srcEvalVal, typeTable) ||
                 (!assignBasedOnTypeP(dstEvalVal, nullptr, dstTypeId) && !typeTable->worksAsTypeAnyP(dstTypeId)))
                 return nullopt;
-        } else if (typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_BOOL)) {
+        } else if (typeTable->worksAsTypeB(dstTypeId)) {
             if (!assignBasedOnTypeB(dstEvalVal, !EvalVal::isCallableNoValue(srcEvalVal, typeTable), dstTypeId))
                 return nullopt;
         } else if (typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId))) {

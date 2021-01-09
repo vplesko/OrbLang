@@ -1987,7 +1987,7 @@ NodeVal Processor::processAndImplicitCast(const NodeVal &node, TypeTable::Id ty)
 }
 
 NodeVal Processor::dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
-    if (checkIsEvalTime(node, false) && EvalVal::isCastable(node.getEvalVal(), ty, stringPool, typeTable))
+    if (checkIsEvalTime(node, false) && !EvalVal::isCompileCastableNotEvalCastable(node.getEvalVal(), ty, stringPool, typeTable))
         return evaluator->performCast(node.getCodeLoc(), node, ty);
     else
         return performCast(node.getCodeLoc(), node, ty);

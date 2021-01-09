@@ -45,7 +45,6 @@ struct EvalVal {
 
     EvalVal() {
         // because of union, this takes care of primitives other than id and type
-        // this init is expected by Evaluator::makeCast, TODO+ break this expectation
         u64 = 0LL;
     }
 
@@ -86,7 +85,9 @@ struct EvalVal {
     static std::optional<const FuncValue*> getValueFunc(const EvalVal &val, const TypeTable *typeTable);
 
     static bool isImplicitCastable(const EvalVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable);
-    static bool isCastable(const EvalVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable);
+    // Returns whether this is NOT castable in evaluation AND is castable in compilation.
+    // Think of it as set difference (cast. in comp. DIFF cast. in eval.).
+    static bool isCompileCastableNotEvalCastable(const EvalVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable);
 
     static void equalizeAllRawElemTypes(EvalVal &val, const TypeTable *typeTable);
 };
