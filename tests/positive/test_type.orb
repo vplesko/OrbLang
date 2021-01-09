@@ -94,6 +94,11 @@ fnc main () () {
     };
 
     block {
+        println_i32 (+ 308 (lenOf ""));
+        println_i32 (+ 305 (lenOf "abcd"));
+    };
+
+    block {
         sym x:c8 (y:(i16 cn) 0);
         println_i32 (+ 399 (sizeOf x));
         println_i32 (+ 399 (sizeOf y));

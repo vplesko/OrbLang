@@ -289,7 +289,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
-// TODO+ allow tuple to tuple, memb by memb
+// TODO allow tuple to tuple (memb by memb) and arr to arr (by elem)?
 NodeVal Processor::processCast(const NodeVal &node) {
     if (!checkExactlyChildren(node, 3, true)) {
         return NodeVal();
@@ -1182,10 +1182,15 @@ NodeVal Processor::processLenOf(const NodeVal &node) {
     else ty = operand.getType().value();
 
     uint64_t len;
-    if (typeTable->worksAsTypeArr(ty)) len = typeTable->extractLenOfArr(ty).value();
-    else if (typeTable->worksAsTuple(ty)) len = typeTable->extractLenOfTuple(ty).value();
-    else if (typeTable->worksAsPrimitive(ty, TypeTable::P_RAW)) len = operand.getChildrenCnt();
-    else {
+    if (typeTable->worksAsTypeArr(ty)){
+        len = typeTable->extractLenOfArr(ty).value();
+    } else if (typeTable->worksAsTuple(ty)) {
+        len = typeTable->extractLenOfTuple(ty).value();
+    } else if (typeTable->worksAsPrimitive(ty, TypeTable::P_RAW)) {
+        len = operand.getChildrenCnt();
+    } else if (checkIsEvalVal(operand, false) && EvalVal::isNonNullStr(operand.getEvalVal(), typeTable)) {
+        len = LiteralVal::getStringLen(stringPool->get(operand.getEvalVal().str.value()));
+    } else {
         msgs->errorLenOfBadType(node.getCodeLoc());
         return NodeVal();
     }

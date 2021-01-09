@@ -176,6 +176,7 @@ lenOf
 		if val is a type arr, returns its length
 		if val is a type tuple, returns its num of membs
 		if val is a type raw, returns its num of children
+		if val is a non-null eval string, returns its len (including terminal char)
 		otherwise, error
 	else:
 		return lenOf its type
@@ -276,7 +277,6 @@ data types have named members
 
 plan:
  - tup, arr, init
- - arr ptrs in eval (lenOf gives num of elems)
  - zero
  - drop, move
  - attrs: noZero, noDrop, unique
