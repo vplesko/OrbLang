@@ -275,7 +275,7 @@ data types have named members
 ********************
 
 plan:
- - tup, arr
+ - tup, arr, init
  - arr ptrs in eval (lenOf gives num of elems)
  - zero
  - drop, move

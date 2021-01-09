@@ -14,6 +14,7 @@ struct MacroValue;
 
 struct EvalVal {
     // type of this evaluation value
+    // TODO+ can optional be removed?
     std::optional<TypeTable::Id> type;
     union {
         std::int8_t i8;
@@ -45,7 +46,7 @@ struct EvalVal {
 
     EvalVal() {
         // because of union, this takes care of primitives other than id and type
-        // this init is expected by Evaluator::makeCast, TODO break this expectation
+        // this init is expected by Evaluator::makeCast, TODO+ break this expectation
         u64 = 0LL;
     }
 

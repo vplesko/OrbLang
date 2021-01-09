@@ -1,5 +1,9 @@
 import "util/io.orb";
 
+eval (fnc foo (x:i32) i32 {
+    ret (attrOf x foo);
+});
+
 fnc main () () {
     eval (sym (x \()));
     println_i32 (cast i32 (attr?? x foo));
@@ -70,4 +74,9 @@ fnc main () () {
 
     = x \():(i32:type);
     = x \():(i32:(type cn));
+
+    eval (sym (q 0::((foo 22))));
+    println_i32 (attrOf q foo);
+
+    println_i32 (foo 0::((foo 23)));
 };

@@ -185,7 +185,6 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
     const TypeTable::Callable &callable = FuncValue::getCallable(func, typeTable);
 
     for (size_t i = 0; i < args.size(); ++i) {
-        // TODO should attributes on non-raw be removed?
         symbolTable->addVar(func.argNames[i], NodeVal::copyNoRef(args[i]));
     }
 

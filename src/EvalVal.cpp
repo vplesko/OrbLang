@@ -239,6 +239,7 @@ bool EvalVal::isImplicitCastable(const EvalVal &val, TypeTable::Id t, const Stri
 }
 
 // keep in sync with Evaluator::performCast
+// TODO+ change to isCastableButNotEvalCastable to not have to keep in sync
 bool EvalVal::isCastable(const EvalVal &val, TypeTable::Id dstTypeId, const StringPool *stringPool, const TypeTable *typeTable) {
     TypeTable::Id srcTypeId = val.type.value();
 
