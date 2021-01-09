@@ -5,7 +5,7 @@
 class Evaluator : public Processor {
     friend class Processor;
 
-    // TODO+ put this into an exception?
+    // TODO put this into an exception?
     std::optional<NodeVal> retVal;
 
     bool assignBasedOnTypeI(EvalVal &val, std::int64_t x, TypeTable::Id ty);

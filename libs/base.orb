@@ -108,6 +108,7 @@ mac ?_ (cond::preprocess onTrue::preprocess onFalse::preprocess) {
     });
 };
 
+# Not intended for use on raw.
 mac += (x::preprocess y::preprocess) {
     ret \(= ,x (+ ,x ,y));
 };
@@ -164,13 +165,13 @@ mac && (a b rest::variadic) {
 
     sym (innerCode {});
     range i (lenOf ops) {
-        += \innerCode \\{
+        = innerCode (+ innerCode \{
             (block {
                 (exit ,(. ops i))
                 (pass base.-blockLogAnd false)
-            })};
+            })});
     };
-    += \innerCode \\{ (pass true) };
+    = innerCode (+ innerCode \{ (pass true) });
 
     ret \(block base.-blockLogAnd bool ,innerCode);
 };
@@ -180,13 +181,13 @@ mac || (a b rest::variadic) {
 
     sym (innerCode {});
     range i (lenOf ops) {
-        += \innerCode \\{
+        = innerCode (+ innerCode \{
             (block {
                 (exit (! ,(. ops i)))
                 (pass base.-blockLogAnd true)
-            })};
+            })});
     };
-    += \innerCode \\{ (pass false) };
+    = innerCode (+ innerCode \{ (pass false) });
 
     ret \(block base.-blockLogAnd bool ,innerCode);
 };
@@ -197,9 +198,9 @@ mac arr (ty::preprocess a::preprocess rest::(variadic preprocess)) {
 
     sym (innerCode \{ sym res:arrTy; });
     range i (lenOf els) {
-        += \innerCode \\{ (= ([] res ,i) ,(. els i)) };
+        = innerCode (+ innerCode \{ (= ([] res ,i) ,(. els i)) });
     };
-    += \innerCode \\{ (pass res) };
+    = innerCode (+ innerCode \{ (pass res) });
 
     ret \(block ,arrTy ,innerCode);
 };

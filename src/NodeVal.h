@@ -33,7 +33,6 @@ public:
     NodeVal(CodeLoc codeLoc, LlvmVal val);
     NodeVal(CodeLoc codeLoc, UndecidedCallableVal val);
 
-    // TODO+ forbid and offer explicit copying method?
     NodeVal(const NodeVal &other);
     void operator=(const NodeVal &other);
 
