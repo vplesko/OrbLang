@@ -341,21 +341,20 @@ NodeVal Processor::processBlock(const NodeVal &node) {
     SymbolTable::Block block;
     block.name = name;
     block.type = type;
-
     if (!performBlockSetUp(node.getCodeLoc(), block)) return NodeVal();
 
     do {
         BlockControl blockCtrl(symbolTable, block);
 
-        optional<bool> blockSuccess = performBlockBody(node.getCodeLoc(), *symbolTable->getLastBlock(), nodeBody);
+        optional<bool> blockSuccess = performBlockBody(node.getCodeLoc(), symbolTable->getLastBlock(), nodeBody);
         if (!blockSuccess.has_value()) {
-            performBlockTearDown(node.getCodeLoc(), *symbolTable->getLastBlock(), false);
+            performBlockTearDown(node.getCodeLoc(), symbolTable->getLastBlock(), false);
             return NodeVal();
         }
 
         if (blockSuccess.value()) continue;
 
-        NodeVal ret = performBlockTearDown(node.getCodeLoc(), *symbolTable->getLastBlock(), true);
+        NodeVal ret = performBlockTearDown(node.getCodeLoc(), symbolTable->getLastBlock(), true);
         if (ret.isInvalid()) return NodeVal();
         return ret;
     } while (true);
@@ -380,26 +379,27 @@ NodeVal Processor::processExit(const NodeVal &node) {
     if (nodeCond.isInvalid()) return NodeVal();
     if (!checkIsBool(nodeCond, true)) return NodeVal();
 
-    const SymbolTable::Block *targetBlock;
+    SymbolTable::Block targetBlock;
     if (hasName) {
-        targetBlock = symbolTable->getBlock(name.value());
-        if (targetBlock == nullptr) {
+        optional<SymbolTable::Block> targetBlockOpt = symbolTable->getBlock(name.value());
+        if (!targetBlockOpt.has_value()) {
             msgs->errorBlockNotFound(node.getChild(indName).getCodeLoc(), name.value());
             return NodeVal();
         }
+        targetBlock = targetBlockOpt.value();
     } else {
         targetBlock = symbolTable->getLastBlock();
-        if (checkInGlobalScope(node.getCodeLoc(), false) || targetBlock == nullptr) {
+        if (checkInGlobalScope(node.getCodeLoc(), false)) {
             msgs->errorExitNowhere(node.getCodeLoc());
             return NodeVal();
         }
     }
-    if (targetBlock->type.has_value()) {
+    if (targetBlock.type.has_value()) {
         msgs->errorExitPassingBlock(node.getCodeLoc());
         return NodeVal();
     }
 
-    if (!performExit(node.getCodeLoc(), *targetBlock, nodeCond)) return NodeVal();
+    if (!performExit(node.getCodeLoc(), targetBlock, nodeCond)) return NodeVal();
     return NodeVal(node.getCodeLoc());
 }
 
@@ -422,22 +422,23 @@ NodeVal Processor::processLoop(const NodeVal &node) {
     if (nodeCond.isInvalid()) return NodeVal();
     if (!checkIsBool(nodeCond, true)) return NodeVal();
 
-    const SymbolTable::Block *targetBlock;
+    SymbolTable::Block targetBlock;
     if (hasName) {
-        targetBlock = symbolTable->getBlock(name.value());
-        if (targetBlock == nullptr) {
+        optional<SymbolTable::Block> targetBlockOpt = symbolTable->getBlock(name.value());
+        if (!targetBlockOpt.has_value()) {
             msgs->errorBlockNotFound(node.getChild(indName).getCodeLoc(), name.value());
             return NodeVal();
         }
+        targetBlock = targetBlockOpt.value();
     } else {
         targetBlock = symbolTable->getLastBlock();
-        if (checkInGlobalScope(node.getCodeLoc(), false) || targetBlock == nullptr) {
+        if (checkInGlobalScope(node.getCodeLoc(), false)) {
             msgs->errorLoopNowhere(node.getCodeLoc());
             return NodeVal();
         }
     }
 
-    if (!performLoop(node.getCodeLoc(), *targetBlock, nodeCond)) return NodeVal();
+    if (!performLoop(node.getCodeLoc(), targetBlock, nodeCond)) return NodeVal();
     return NodeVal(node.getCodeLoc());
 }
 
@@ -456,29 +457,30 @@ NodeVal Processor::processPass(const NodeVal &node) {
         name = nodeName.getEvalVal().id;
     }
 
-    SymbolTable::Block *targetBlock;
+    SymbolTable::Block targetBlock;
     if (hasName) {
-        targetBlock = symbolTable->getBlock(name.value());
-        if (targetBlock == nullptr) {
+        optional<SymbolTable::Block> targetBlockOpt = symbolTable->getBlock(name.value());
+        if (!targetBlockOpt.has_value()) {
             msgs->errorBlockNotFound(node.getChild(indName).getCodeLoc(), name.value());
             return NodeVal();
         }
+        targetBlock = targetBlockOpt.value();
     } else {
         targetBlock = symbolTable->getLastBlock();
-        if (checkInGlobalScope(node.getCodeLoc(), false) || targetBlock == nullptr) {
+        if (checkInGlobalScope(node.getCodeLoc(), false)) {
             msgs->errorPassNonPassingBlock(node.getCodeLoc());
             return NodeVal();
         }
     }
-    if (!targetBlock->type.has_value()) {
+    if (!targetBlock.type.has_value()) {
         msgs->errorPassNonPassingBlock(node.getCodeLoc());
         return NodeVal();
     }
 
-    NodeVal nodeValue = processAndImplicitCast(node.getChild(indVal), targetBlock->type.value());
+    NodeVal nodeValue = processAndImplicitCast(node.getChild(indVal), targetBlock.type.value());
     if (nodeValue.isInvalid()) return NodeVal();
 
-    if (!performPass(node.getCodeLoc(), *targetBlock, nodeValue)) return NodeVal();
+    if (!performPass(node.getCodeLoc(), targetBlock, nodeValue)) return NodeVal();
     return NodeVal(node.getCodeLoc());
 }
 

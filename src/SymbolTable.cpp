@@ -232,33 +232,25 @@ SymbolTable::BlockInternal* SymbolTable::getLastBlockInternal() {
     }
 }
 
-const SymbolTable::Block* SymbolTable::getLastBlock() const {
-    return &getLastBlockInternal()->block;
+SymbolTable::Block SymbolTable::getLastBlock() const {
+    return getLastBlockInternal()->block;
 }
 
-SymbolTable::Block* SymbolTable::getLastBlock() {
-    return &getLastBlockInternal()->block;
-}
-
-const SymbolTable::Block* SymbolTable::getBlock(NamePool::Id name) const {
+optional<SymbolTable::Block> SymbolTable::getBlock(NamePool::Id name) const {
     if (!localBlockChains.empty()) {
         for (auto it = localBlockChains.back().second.rbegin();
             it != localBlockChains.back().second.rend();
             ++it) {
-            if (it->block.name == name) return &it->block;
+            if (it->block.name == name) return it->block;
         }
     }
     for (auto it = globalBlockChain.rbegin();
         it != globalBlockChain.rend();
         ++it) {
-        if (it->block.name == name) return &it->block;
+        if (it->block.name == name) return it->block;
     }
 
-    return nullptr;
-}
-
-SymbolTable::Block* SymbolTable::getBlock(NamePool::Id name) {
-    return const_cast<SymbolTable::Block*>(const_cast<const SymbolTable*>(this)->getBlock(name));
+    return nullopt;
 }
 
 optional<SymbolTable::CalleeValueInfo> SymbolTable::getCurrCallee() const {

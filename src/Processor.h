@@ -33,11 +33,11 @@ protected:
     virtual NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) =0;
     virtual bool performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) =0;
     // Returns nullopt in case of fail. Otherwise, returns whether the body should be processed again.
-    virtual std::optional<bool> performBlockBody(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &nodeBody) =0;
-    virtual NodeVal performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) =0;
-    virtual bool performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) =0;
-    virtual bool performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) =0;
-    virtual bool performPass(CodeLoc codeLoc, SymbolTable::Block &block, const NodeVal &val) =0;
+    virtual std::optional<bool> performBlockBody(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &nodeBody) =0;
+    virtual NodeVal performBlockTearDown(CodeLoc codeLoc, SymbolTable::Block block, bool success) =0;
+    virtual bool performExit(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) =0;
+    virtual bool performLoop(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) =0;
+    virtual bool performPass(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &val) =0;
     virtual NodeVal performCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args) =0;
     virtual NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) =0;
     virtual NodeVal performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args) =0;

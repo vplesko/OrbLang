@@ -204,13 +204,13 @@ bool Compiler::performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) {
     return true;
 }
 
-optional<bool> Compiler::performBlockBody(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &nodeBody) {
+optional<bool> Compiler::performBlockBody(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &nodeBody) {
     if (!processChildNodes(nodeBody)) return nullopt;
     return false;
 }
 
 // TODO if a compiled block has a jump not at the end, llvm will report it instead of this compiler
-NodeVal Compiler::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) {
+NodeVal Compiler::performBlockTearDown(CodeLoc codeLoc, SymbolTable::Block block, bool success) {
     if (!success) return NodeVal();
 
     if (!isLlvmBlockTerminated()) {
@@ -234,7 +234,7 @@ NodeVal Compiler::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block
     }
 }
 
-bool Compiler::performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) {
+bool Compiler::performExit(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) {
     if (!checkInLocalScope(codeLoc, true)) return false;
 
     NodeVal condPromo = promoteIfEvalValAndCheckIsLlvmVal(cond, true);
@@ -248,7 +248,7 @@ bool Compiler::performExit(CodeLoc codeLoc, const SymbolTable::Block &block, con
     return true;
 }
 
-bool Compiler::performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) {
+bool Compiler::performLoop(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) {
     if (!checkInLocalScope(codeLoc, true)) return false;
 
     NodeVal condPromo = promoteIfEvalValAndCheckIsLlvmVal(cond, true);
@@ -262,7 +262,7 @@ bool Compiler::performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, con
     return true;
 }
 
-bool Compiler::performPass(CodeLoc codeLoc, SymbolTable::Block &block, const NodeVal &val) {
+bool Compiler::performPass(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &val) {
     if (!checkInLocalScope(codeLoc, true)) return false;
 
     NodeVal valPromo = promoteIfEvalValAndCheckIsLlvmVal(val, true);

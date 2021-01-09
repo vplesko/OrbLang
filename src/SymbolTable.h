@@ -60,7 +60,6 @@ public:
     struct Block {
         std::optional<NamePool::Id> name;
         std::optional<TypeTable::Id> type;
-        std::optional<NodeVal> val;
         llvm::BasicBlock *blockExit = nullptr, *blockLoop = nullptr;
         llvm::PHINode *phi = nullptr;
 
@@ -135,10 +134,8 @@ public:
     const MacroValue* getMacro(MacroCallSite callSite, const TypeTable *typeTable) const;
 
     bool inGlobalScope() const;
-    const Block* getLastBlock() const;
-    Block* getLastBlock();
-    const Block* getBlock(NamePool::Id name) const;
-    Block* getBlock(NamePool::Id name);
+    Block getLastBlock() const;
+    std::optional<Block> getBlock(NamePool::Id name) const;
 
     std::optional<CalleeValueInfo> getCurrCallee() const;
 

@@ -73,7 +73,7 @@ NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::
     return move(evalValCast.value());
 }
 
-optional<bool> Evaluator::performBlockBody(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &nodeBody) {
+optional<bool> Evaluator::performBlockBody(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &nodeBody) {
     try {
         bool bodySuccess = processChildNodes(nodeBody);
         if (!bodySuccess) return nullopt;
@@ -89,11 +89,11 @@ optional<bool> Evaluator::performBlockBody(CodeLoc codeLoc, const SymbolTable::B
     }
 }
 
-NodeVal Evaluator::performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) {
+NodeVal Evaluator::performBlockTearDown(CodeLoc codeLoc, SymbolTable::Block block, bool success) {
     return doBlockTearDown(codeLoc, block, success, false);
 }
 
-bool Evaluator::performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) {
+bool Evaluator::performExit(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) {
     if (!checkIsEvalVal(cond, true)) return false;
     if (!block.isEval()) {
         msgs->errorEvaluationNotSupported(codeLoc);
@@ -111,7 +111,7 @@ bool Evaluator::performExit(CodeLoc codeLoc, const SymbolTable::Block &block, co
     return true;
 }
 
-bool Evaluator::performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) {
+bool Evaluator::performLoop(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) {
     if (!checkIsEvalVal(cond, true)) return false;
     if (!block.isEval()) {
         msgs->errorEvaluationNotSupported(codeLoc);
@@ -130,14 +130,14 @@ bool Evaluator::performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, co
     return true;
 }
 
-bool Evaluator::performPass(CodeLoc codeLoc, SymbolTable::Block &block, const NodeVal &val) {
+bool Evaluator::performPass(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &val) {
     if (!checkIsEvalVal(val, true)) return false;
     if (!block.isEval()) {
         msgs->errorEvaluationNotSupported(codeLoc);
         return false;
     }
 
-    block.val = NodeVal::copyNoRef(codeLoc, val);
+    retVal = NodeVal::copyNoRef(codeLoc, val);
 
     ExceptionEvaluatorJump ex;
     ex.blockName = block.name;
@@ -784,16 +784,18 @@ optional<uint64_t> Evaluator::performSizeOf(CodeLoc codeLoc, TypeTable::Id ty) {
     return nullopt;
 }
 
-NodeVal Evaluator::doBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success, bool jumpingOut) {
+NodeVal Evaluator::doBlockTearDown(CodeLoc codeLoc, SymbolTable::Block block, bool success, bool jumpingOut) {
     if (!success) return NodeVal();
 
     if (!jumpingOut && block.type.has_value()) {
-        if (!block.val.has_value()) {
+        if (!retVal.has_value()) {
             msgs->errorBlockNoPass(codeLoc);
             return NodeVal();
         }
 
-        return block.val.value();
+        NodeVal ret = move(retVal.value());
+        retVal.reset();
+        return move(ret);
     }
 
     return NodeVal(codeLoc);

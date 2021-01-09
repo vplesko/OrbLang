@@ -5,6 +5,7 @@
 class Evaluator : public Processor {
     friend class Processor;
 
+    // TODO+ put this into an exception?
     std::optional<NodeVal> retVal;
 
     bool assignBasedOnTypeI(EvalVal &val, std::int64_t x, TypeTable::Id ty);
@@ -24,7 +25,7 @@ class Evaluator : public Processor {
     NamePool::Id makeIdConcat(NamePool::Id lhs, NamePool::Id rhs);
     std::vector<NodeVal> makeRawConcat(const EvalVal &lhs, const EvalVal &rhs) const;
 
-    NodeVal doBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success, bool jumpingOut);
+    NodeVal doBlockTearDown(CodeLoc codeLoc, SymbolTable::Block block, bool success, bool jumpingOut);
 
 public:
     NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, SymbolTable::VarEntry &ref) override;
@@ -35,11 +36,11 @@ public:
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) override;
     NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) override;
     bool performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) override { return true; }
-    std::optional<bool> performBlockBody(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &nodeBody) override;
-    NodeVal performBlockTearDown(CodeLoc codeLoc, const SymbolTable::Block &block, bool success) override;
-    bool performExit(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) override;
-    bool performLoop(CodeLoc codeLoc, const SymbolTable::Block &block, const NodeVal &cond) override;
-    bool performPass(CodeLoc codeLoc, SymbolTable::Block &block, const NodeVal &val) override;
+    std::optional<bool> performBlockBody(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &nodeBody) override;
+    NodeVal performBlockTearDown(CodeLoc codeLoc, SymbolTable::Block block, bool success) override;
+    bool performExit(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) override;
+    bool performLoop(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) override;
+    bool performPass(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &val) override;
     NodeVal performCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args) override;
     NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) override;
     NodeVal performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args) override;
