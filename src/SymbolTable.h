@@ -24,12 +24,14 @@ public:
     TypeTable::Id getType() const { return type; }
     TypeTable::Id getTypeSig() const { return typeSig; }
 
+    virtual ~BaseCallableValue() {}
+
     static void setType(BaseCallableValue &callable, TypeTable::Id type, TypeTable *typeTable);
     static const TypeTable::Callable& getCallable(const BaseCallableValue &callable, const TypeTable *typeTable);
     static const TypeTable::Callable& getCallableSig(const BaseCallableValue &callable, const TypeTable *typeTable);
 };
 
-struct FuncValue : BaseCallableValue {
+struct FuncValue : public BaseCallableValue {
     bool noNameMangle = false;
     bool defined = false;
 
@@ -42,7 +44,7 @@ struct FuncValue : BaseCallableValue {
     static std::optional<TypeTable::Id> getRetType(const FuncValue &func, const TypeTable *typeTable);
 };
 
-struct MacroValue : BaseCallableValue {
+struct MacroValue : public BaseCallableValue {
     enum PreHandling {
         REGULAR,
         PREPROC,

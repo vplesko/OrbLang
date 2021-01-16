@@ -719,6 +719,7 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
     return evaluator->performInvoke(node.getCodeLoc(), *macroVal, args);
 }
 
+// TODO+ diff syntax for type
 NodeVal Processor::processFnc(const NodeVal &node) {
     if (!checkBetweenChildren(node, 3, 5, true)) return NodeVal();
 
@@ -871,6 +872,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     }
 }
 
+// TODO+ diff syntax for type
 NodeVal Processor::processMac(const NodeVal &node) {
     if (!checkExactlyChildren(node, 2, false) && !checkExactlyChildren(node, 4, true)) {
         return NodeVal();
