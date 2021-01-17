@@ -26,7 +26,6 @@ enum class Keyword {
     RET,
     MAC,
     EVAL,
-    TUP,
     TYPE_OF,
     LEN_OF,
     SIZE_OF,

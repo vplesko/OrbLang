@@ -761,30 +761,6 @@ NodeVal Compiler::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const 
     return NodeVal(rhs.getCodeLoc(), llvmVal);
 }
 
-NodeVal Compiler::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) {
-    if (!checkInLocalScope(codeLoc, true)) return NodeVal();
-
-    llvm::StructType *llvmTupType = (llvm::StructType*) makeLlvmTypeOrError(codeLoc, ty);
-    if (llvmTupType == nullptr) return NodeVal();
-
-    vector<llvm::Value*> llvmMembVals;
-    llvmMembVals.reserve(membs.size());
-    for (const NodeVal &memb : membs) {
-        NodeVal promo = promoteIfEvalValAndCheckIsLlvmVal(memb, true);
-        if (promo.isInvalid()) return NodeVal();
-        llvmMembVals.push_back(promo.getLlvmVal().val);
-    }
-
-    llvm::Value *llvmTupVal = llvm::UndefValue::get(llvmTupType);
-    for (size_t i = 0; i < llvmMembVals.size(); ++i) {
-        llvmTupVal = llvmBuilder.CreateInsertValue(llvmTupVal, llvmMembVals[i], {(unsigned) i});
-    }
-
-    LlvmVal llvmVal(ty);
-    llvmVal.val = llvmTupVal;
-    return NodeVal(codeLoc, llvmVal);
-}
-
 optional<uint64_t> Compiler::performSizeOf(CodeLoc codeLoc, TypeTable::Id ty) {
     if (targetMachine == nullptr && !initLlvmTargetMachine()) {
         msgs->errorInternal(codeLoc);

@@ -56,7 +56,6 @@ protected:
     virtual NodeVal performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) =0;
     virtual NodeVal performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) =0;
     virtual NodeVal performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op) =0;
-    virtual NodeVal performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) =0;
     virtual std::optional<std::uint64_t> performSizeOf(CodeLoc codeLoc, TypeTable::Id ty) =0;
 
 protected:
@@ -147,7 +146,6 @@ private:
     NodeVal processImport(const NodeVal &node);
     NodeVal processMessage(const NodeVal &node);
     NodeVal processOper(const NodeVal &node, Oper op);
-    NodeVal processTup(const NodeVal &node);
     NodeVal processTypeOf(const NodeVal &node);
     NodeVal processLenOf(const NodeVal &node);
     NodeVal processSizeOf(const NodeVal &node);

@@ -193,17 +193,41 @@ mac || (a b rest::variadic) {
 };
 
 mac arr (ty::preprocess a::preprocess rest::(variadic preprocess)) {
-    sym (els (+ \(,a) rest));
-    sym (arrTy (ty (lenOf els)));
+    sym (elems (+ \(,a) rest));
+    sym (arrTy (ty (lenOf elems)));
 
     # genSym not needed since only visible in inner code, and elements are preprocessed
     sym (innerCode \{ (sym res:arrTy) });
-    range i (lenOf els) {
-        = innerCode (+ innerCode \{ (= ([] res ,i) ,(. els i)) });
+    range i (lenOf elems) {
+        = innerCode (+ innerCode \{ (= ([] res ,i) ,(. elems i)) });
     };
     = innerCode (+ innerCode \{ (pass res) });
 
     ret \(block ,arrTy ,innerCode);
+};
+
+mac base.-tupType (a::preprocess b::preprocess rest::preprocess) {
+    sym (res \(,(typeOf a) ,(typeOf b)));
+
+    range i (lenOf rest) {
+        = res (+ res \(,(typeOf (. rest i))));
+    };
+
+    ret res;
+};
+
+mac tup (a::preprocess b::preprocess rest::(variadic preprocess)) {
+    sym (membs (+ \(,a ,b) rest));
+    sym (tupTy (base.-tupType a b rest));
+
+    # genSym not needed since only visible in inner code, and members are preprocessed
+    sym (innerCode \{ (sym res:tupTy) });
+    range i (lenOf membs) {
+        = innerCode (+ innerCode \{ (= (. res ,i) ,(. membs i)) });
+    };
+    = innerCode (+ innerCode \{ (pass res) });
+
+    ret \(block ,tupTy ,innerCode);
 };
 
 mac make (ty::preprocess pair rest::variadic) {

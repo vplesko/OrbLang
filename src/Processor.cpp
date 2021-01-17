@@ -99,8 +99,6 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
                 return processMac(node);
             case Keyword::EVAL:
                 return processEval(node);
-            case Keyword::TUP:
-                return processTup(node);
             case Keyword::TYPE_OF:
                 return processTypeOf(node);
             case Keyword::LEN_OF:
@@ -1124,41 +1122,6 @@ NodeVal Processor::processOper(const NodeVal &node, Oper op) {
     } else {
         return processOperRegular(node.getCodeLoc(), operands, op);
     }
-}
-
-// TODO remove tup after replacing with macro
-NodeVal Processor::processTup(const NodeVal &node) {
-    if (!checkAtLeastChildren(node, 3, true)) return NodeVal();
-
-    vector<NodeVal> membs;
-    membs.reserve(node.getChildrenCnt()-1);
-    bool allEval = true;
-    for (size_t i = 1; i < node.getChildrenCnt(); ++i) {
-        NodeVal memb = processNode(node.getChild(i));
-        if (memb.isInvalid()) return NodeVal();
-        membs.push_back(move(memb));
-        if (allEval && !checkIsEvalTime(memb, false)) allEval = false;
-    }
-
-    TypeTable::Tuple tup;
-    tup.members.reserve(membs.size());
-    for (const NodeVal &memb : membs) {
-        if (!memb.getType().has_value()) {
-            msgs->errorUnknown(memb.getCodeLoc());
-            return NodeVal();
-        }
-        tup.addMember(memb.getType().value());
-    }
-    optional<TypeTable::Id> tupTypeIdOpt = typeTable->addTuple(move(tup));
-    if (!tupTypeIdOpt.has_value()) {
-        msgs->errorInternal(node.getCodeLoc());
-        return NodeVal();
-    }
-
-    if (allEval)
-        return evaluator->performTuple(node.getCodeLoc(), tupTypeIdOpt.value(), membs);
-    else
-        return performTuple(node.getCodeLoc(), tupTypeIdOpt.value(), membs);
 }
 
 NodeVal Processor::processTypeOf(const NodeVal &node) {

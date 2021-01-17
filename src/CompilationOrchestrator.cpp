@@ -64,7 +64,6 @@ void CompilationOrchestrator::genReserved() {
     addKeyword(namePool.get(), "ret", Keyword::RET);
     addKeyword(namePool.get(), "mac", Keyword::MAC);
     addKeyword(namePool.get(), "eval", Keyword::EVAL);
-    addKeyword(namePool.get(), "tup", Keyword::TUP);
     addKeyword(namePool.get(), "typeOf", Keyword::TYPE_OF);
     addKeyword(namePool.get(), "lenOf", Keyword::LEN_OF);
     addKeyword(namePool.get(), "sizeOf", Keyword::SIZE_OF);

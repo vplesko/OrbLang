@@ -770,19 +770,6 @@ NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const
     return NodeVal(codeLoc, move(evalVal));
 }
 
-NodeVal Evaluator::performTuple(CodeLoc codeLoc, TypeTable::Id ty, const std::vector<NodeVal> &membs) {
-    EvalVal evalVal = EvalVal::makeVal(ty, typeTable);
-
-    for (size_t i = 0; i < membs.size(); ++i) {
-        const NodeVal &memb = membs[i];
-        if (!checkIsEvalVal(memb, true)) return NodeVal();
-        
-        evalVal.elems[i] = NodeVal::copyNoRef(memb.getCodeLoc(), memb);
-    }
-
-    return NodeVal(codeLoc, move(evalVal));
-}
-
 optional<uint64_t> Evaluator::performSizeOf(CodeLoc codeLoc, TypeTable::Id ty) {
     msgs->errorInternal(codeLoc);
     return nullopt;

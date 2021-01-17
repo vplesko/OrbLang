@@ -162,10 +162,6 @@ eval
 	eval inst
 	evaluates instruction
 
-tup
-	tup a ...b
-	creates a tuple out of provided vals
-
 typeOf
 	typeOf val
 	returns the type of val
@@ -276,7 +272,6 @@ data types have named members
 ********************
 
 plan:
- - tup
  - zero
  - drop, move
  - attrs: noZero, noDrop, unique

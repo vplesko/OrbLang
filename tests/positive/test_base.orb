@@ -7,6 +7,7 @@ data Foo {
 };
 
 sym (globArr (eval (arr i32 603 -1)));
+sym (globTup (eval (tup 704 -1)));
 
 fnc main () () {
     if true {
@@ -179,11 +180,23 @@ fnc main () () {
     };
 
     block {
-        sym (a (make Foo (x 700) (y 701)));
+        sym (a (tup 700 701));
+        println_i32 (. a 0);
+        println_i32 (. a 1);
+
+        sym (b (tup 702 703:i16));
+        println_i32 (. b 0);
+        println_i32 (. b 1);
+
+        println_i32 (. globTup 0);
+    };
+
+    block {
+        sym (a (make Foo (x 800) (y 801)));
         println_i32 (. a x);
         println_i32 (. a y);
 
-        = a (make Foo (y 702));
+        = a (make Foo (y 802));
         println_i32 (. a y);
     };
 };
