@@ -52,7 +52,7 @@ mac var2 (a b::variadic) {
 };
 
 mac pp0 (a::preprocess) {
-    ret \(tup ,a ,a);
+    ret \(block { ,a ,a });
 };
 
 mac pp1 (a b::(variadic preprocess)) {
@@ -60,7 +60,7 @@ mac pp1 (a b::(variadic preprocess)) {
         exit (!= (lenOf b) 0);
         ret ();
     };
-    ret \(tup ,(. b 0) ,(. b 0));
+    ret \(block { ,(. b 0) ,(. b 0) });
 };
 
 mac pp++ (a::preprocess) {

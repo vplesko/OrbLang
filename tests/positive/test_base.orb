@@ -114,11 +114,13 @@ fnc main () () {
     block {
         sym a:(i32 i32 i32);
 
-        sym (b (tup (& a) 0));
+        sym b:(((i32 i32 i32) *) i32);
+        = (. b 0) (& a);
         = (. a 0) 400;
         println_i32 (-> (. b 0) 0);
 
-        sym (c (tup (& b) 0));
+        sym c:(((((i32 i32 i32) *) i32) *) i32);
+        = (. c 0) (& b);
         = (. a 1) 401;
         println_i32 (-> (. c 0) 0 1);
 

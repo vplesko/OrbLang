@@ -2,6 +2,27 @@ import "util/io.orb";
 
 eval (fnc foo () () {});
 
+eval (fnc tuple (a:i32 b:i32) (i32 i32) {
+    sym r:(i32 i32);
+    = (. r 0) a;
+    = (. r 1) b;
+    ret (cast (i32 i32) r);
+});
+
+eval (fnc tuple (a:i16 b:ptr) (i32 i32) {
+    sym r:(i16 ptr);
+    = (. r 0) a;
+    = (. r 1) b;
+    ret (cast (i32 i32) r);
+});
+
+eval (fnc tuple (a:i16 b:i8) (i32 i32) {
+    sym r:(i16 i8);
+    = (. r 0) a;
+    = (. r 1) b;
+    ret r;
+});
+
 fnc main () () {
     println_i32 (cast i32 100);
     println_i32 (cast i32 101:i16);
@@ -24,10 +45,10 @@ fnc main () () {
     println_f32 (cast f32 302.0:f64);
 
     println_i32 (+ 400 (cast i32 (cast (i32 *) (cast (i32 cn * cn) (cast (i32 cn *) (cast (i32 *) null))))));
-    println_i32 (. (cast (i32 i32) (tup 401 -1)) 0);
-    println_i32 (. (cast ((i32 i32) cn) (tup 402 -1)) 0);
-    println_i32 (. (cast (i32 i32) (tup 403:i16 null)) 0);
-    println_i32 (. (eval (block (i32 i32) { pass (tup 404:i16 0:i8); })) 0);
+    println_i32 (. (tuple 401 -1) 0);
+    println_i32 (. (cast ((i32 i32) cn) (tuple 402 -1)) 0);
+    println_i32 (. (tuple 403:i16 null) 0);
+    println_i32 (. (tuple 404:i16 0:i8) 0);
 
     println_c8 (cast c8 65);
     println_c8 (cast c8 66:u32);

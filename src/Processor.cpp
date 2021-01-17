@@ -289,7 +289,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
-// TODO+ allow arr to arr (by elem)
+// TODO allow arr to arr (by elem)?
 NodeVal Processor::processCast(const NodeVal &node) {
     if (!checkExactlyChildren(node, 3, true)) {
         return NodeVal();

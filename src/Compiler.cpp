@@ -1046,7 +1046,7 @@ llvm::Value* Compiler::makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTy
 }
 
 llvm::Value* Compiler::makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTypeId, llvm::Type *dstLlvmType, TypeTable::Id dstTypeId) {
-    // TODO+ catch case when just changing constness
+    // TODO early catch case when just changing constness
     if (srcTypeId == dstTypeId) return srcLlvmVal;
 
     llvm::Value *dstLlvmVal = nullptr;

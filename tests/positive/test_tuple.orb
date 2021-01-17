@@ -7,6 +7,13 @@ fnc pair (x:i32 y:i32) (i32 i32) {
     ret r;
 };
 
+fnc pair (x:(i32 i32) y:(i32 i32)) ((i32 i32) (i32 i32)) {
+    sym r:((i32 i32) (i32 i32));
+    = (. r 0) x;
+    = (. r 1) y;
+    ret r;
+};
+
 fnc dot (x:(i32 i32) y:i32) i32 {
     ret (block b0 i32 {
         block {
@@ -147,28 +154,14 @@ fnc main () () {
         println_i32 (. y 1);
     };
     block {
-        sym (x:(i32 i32) (tup 1900:i32 1901:i32));
-        println_i32 (. x 1);
-    };
-    block {
-        sym (x:((i32 cn) (i32 cn)) (tup 2000:(i32 cn) 2001:(i32 cn)));
-        println_i32 (. x 0);
-    };
-    block {
-        println_i32 (. (tup 2100:i32 2101:i32) 1);
-    };
-    block {
-        println_i32 (dot (tup 2200:i32 2201:i32) 0);
-    };
-    block {
-        sym (y:(i32 i32) (pair 2300 2300));
-        sym (x:((i32 i32) (i32 i32)) (tup y (tup 2301:i32 2301:i32)));
+        sym (y:(i32 i32) (pair 1900 1900));
+        sym (x:((i32 i32) (i32 i32)) (pair y (pair 1901:i32 1901:i32)));
         println_i32 (. (. x 0) 0);
         println_i32 (. x 1 0);
     };
     block {
         sym x:((i32 i32) (i32 i32));
-        = (. x 0 0) 2400;
+        = (. x 0 0) 2000;
         println_i32 (. x 0 0);
     };
 };

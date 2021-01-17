@@ -29,7 +29,8 @@ fnc main () () {
     eval (= ([] c 0) 102);
     println_i32 (eval ([] c 0));
 
-    eval (sym (d:(ty0 (= ty0 bool)) (tup 103 false)));
+    eval (sym d:(ty0 (= ty0 bool)));
+    = (. d 0) 103;
     println_i32 (eval (. d 0));
 
     eval (= ty0 i32);

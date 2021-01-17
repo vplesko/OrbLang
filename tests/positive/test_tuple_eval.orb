@@ -7,6 +7,13 @@ eval (fnc pair (x:i32 y:i32) (i32 i32) {
     ret r;
 });
 
+eval (fnc pair (x:(i32 i32) y:(i32 i32)) ((i32 i32) (i32 i32)) {
+    sym r:((i32 i32) (i32 i32));
+    = (. r 0) x;
+    = (. r 1) y;
+    ret r;
+});
+
 eval (fnc dot (x:(i32 i32) y:i32) i32 {
     ret (block b0 i32 {
         block {
@@ -29,7 +36,7 @@ eval (fnc copy (x:((i32 i32) *)) (i32 i32) {
 });
 
 eval (fnc addCn (x:(i32 i32)) ((i32 cn) (i32 cn)) {
-    ret (tup (cast (i32 cn) (. x 0)) (cast (i32 cn) (. x 1)));
+    ret x;
 });
 
 eval (sym glob1:(i32 i32));
@@ -162,30 +169,8 @@ fnc main () () {
     });
 
     eval (block {
-        sym (x:(i32 i32) (tup 1600:i32 1601:i32));
-        = p0 (. x 1);
-    });
-    println_i32 p0;
-
-    eval (block {
-        sym (x:((i32 cn) (i32 cn)) (tup 1700:(i32 cn) 1701:(i32 cn)));
-        = p0 (. x 0);
-    });
-    println_i32 p0;
-
-    eval (block {
-        = p0 (. (tup 1800:i32 1801:i32) 1);
-    });
-    println_i32 p0;
-
-    eval (block {
-        = p0 (dot (tup 1900:i32 1901:i32) 0);
-    });
-    println_i32 p0;
-
-    eval (block {
-        sym (y:(i32 i32) (pair 2000 2000));
-        sym (x:((i32 i32) (i32 i32)) (tup y (tup 2001:i32 2001:i32)));
+        sym (y:(i32 i32) (pair 1600 1600));
+        sym (x:((i32 i32) (i32 i32)) (pair y (pair 1601:i32 1601:i32)));
         = p0 (. (. x 0) 0);
         = p1 (. x 1 0);
     });
@@ -194,7 +179,7 @@ fnc main () () {
 
     eval (block {
         sym x:((i32 i32) (i32 i32));
-        = (. x 0 0) 2100;
+        = (. x 0 0) 1700;
         = p0 (. x 0 0);
     });
     println_i32 p0;
