@@ -136,7 +136,7 @@ data
 	global scope only
 
 fnc
-	fnc args type OR fnc name args type OR fnc name args type body
+	fnc argTypes type OR fnc name args type OR fnc name args type body
 	first makes a type, second declares, third defines a function
 	args is list of args as a:t
 	type is ret type or no ret if it's ()
@@ -145,7 +145,7 @@ fnc
 	global scope only
 
 mac
-	mac args OR mac name args subst
+	mac argNum OR mac name args subst
 	first makes a type, second defines a macro
 	when defined, type is cn
 	args is list of args as names
@@ -262,8 +262,8 @@ ptr - non-descript pointer (void* in C)
 id - identifier (first-class value at evaluation)
 type - type of a value (first-class value at evaluation)
 raw - unprocessed list of values, usually represents Orb code (first-class value at evaluation)
-fnc ({...id:type}) {type or ()} - function that takes given args and returns given type or nothing
-mac ({...id}) - macro that takes given number of args
+fnc ({...type}) {type or ()} - function that takes given args and returns given type or nothing
+mac int - macro that takes given number of args
 {type} cn - constant type
 {type int} - array of type of given size
 {type} * - pointer to a given type (can be dereferenced)

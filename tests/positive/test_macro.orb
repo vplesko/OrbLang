@@ -35,9 +35,9 @@ mac say (x) {
     ret r;
 };
 
-eval (sym (glob:(mac (p)) ++));
+eval (sym (glob:(mac 1) ++));
 
-custom MyMac (mac (p));
+custom MyMac (mac 1);
 
 eval (fnc invokeAndRet (x:i32 m:MyMac) i32 {
     ret (m ,x);
@@ -109,7 +109,7 @@ fnc main () () {
         = x 202;
         println_i32 (glob ,x);
 
-        eval (sym (c0:(mac (p))));
+        eval (sym (c0:(mac 1)));
         println_i32 (+ 203 (cast i32 (cast ptr c0)));
         = c0 ++;
         c0 x;
@@ -120,7 +120,7 @@ fnc main () () {
         = c0 null;
         println_i32 (+ 206 (cast i32 (cast (i32 *) c0)));
 
-        eval (sym (c1:((mac (p)) cn) c0));
+        eval (sym (c1:((mac 1) cn) c0));
         println_i32 (+ 207 (cast i32 (!= c0 c1)));
         = c0 ++;
         println_i32 (+ 207 (cast i32 (!= c0 c1)));
@@ -132,7 +132,7 @@ fnc main () () {
         println_i32 ((* (& c0)) 211);
 
         println_i32 (+ 212 (cast i32 (== (typeOf c0) (typeOf c1))));
-        println_i32 (+ 212 (cast i32 (== ((mac (p)) cn) (typeOf c1))));
+        println_i32 (+ 212 (cast i32 (== ((mac 1) cn) (typeOf c1))));
 
         eval (sym (c2:MyMac));
         = c2 (cast MyMac passthrough);

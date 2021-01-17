@@ -1,4 +1,4 @@
-eval (sym m:(mac ()));
+eval (sym m:(mac 0));
 
 fnc main () () {
     sym (p m);

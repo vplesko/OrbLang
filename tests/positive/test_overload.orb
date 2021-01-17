@@ -58,9 +58,9 @@ fnc main () () {
     print 101:i64;
     print 102:(i32 cn);
     print 103:i16;
-    print:(fnc (a:i32) ()) 104:i8;
+    print:(fnc (i32) ()) 104:i8;
     println_u32 (print 105:u32);
-    println_u32 (print:(fnc (a:u32) u32) 106);
+    println_u32 (print:(fnc (u32) u32) 106);
     print 999:u32;
     print 999:(u32 cn);
 

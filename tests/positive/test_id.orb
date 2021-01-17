@@ -11,12 +11,12 @@ data Data1 {
     y:i32
 };
 
-eval (sym (Call0a:(type cn) (fnc (x:(i32 *)) ())));
-eval (sym (Call0b:(type cn) (fnc (x:(i32 * cn)) ())));
-eval (sym (Call0c:(type cn) ((fnc (x:(i32 *)) ()) cn)));
-eval (sym (Call1:(type cn) (fnc (x:(i32 cn *)) ())));
-eval (sym (Call2:(type cn) (fnc (x:(i32 *)) i32)));
-eval (sym (Call3:(type cn) (fnc (x:(i32 *)) (i32 cn))));
+eval (sym (Call0a:(type cn) (fnc ((i32 *)) ())));
+eval (sym (Call0b:(type cn) (fnc ((i32 * cn)) ())));
+eval (sym (Call0c:(type cn) ((fnc ((i32 *)) ()) cn)));
+eval (sym (Call1:(type cn) (fnc ((i32 cn *)) ())));
+eval (sym (Call2:(type cn) (fnc ((i32 *)) i32)));
+eval (sym (Call3:(type cn) (fnc ((i32 *)) (i32 cn))));
 
 fnc main () () {
     sym p:i32;

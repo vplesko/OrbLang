@@ -98,6 +98,8 @@ private:
     std::pair<NodeVal, std::optional<NodeVal>> processForIdTypePair(const NodeVal &node);
     NodeVal processAndImplicitCast(const NodeVal &node, TypeTable::Id ty);
 
+    NodeVal processFncType(const NodeVal &node);
+    NodeVal processMacType(const NodeVal &node);
     NodeVal processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op);
     NodeVal processOperComparison(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op);
     NodeVal processOperAssignment(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers);

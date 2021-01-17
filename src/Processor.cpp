@@ -719,7 +719,6 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
     return evaluator->performInvoke(node.getCodeLoc(), *macroVal, args);
 }
 
-// TODO+ diff syntax for type
 NodeVal Processor::processFnc(const NodeVal &node) {
     if (!checkBetweenChildren(node, 3, 5, true)) return NodeVal();
 
@@ -727,14 +726,16 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     bool isDecl = node.getChildrenCnt() == 4;
     bool isDef = node.getChildrenCnt() == 5;
 
-    if ((isDecl || isDef) && !checkInGlobalScope(node.getCodeLoc(), true)) {
+    if (isType) return processFncType(node);
+
+    if (!checkInGlobalScope(node.getCodeLoc(), true)) {
         return NodeVal();
     }
 
-    // fnc args ret OR fnc name args ret OR fnc name args ret body
-    size_t indName = isDecl || isDef ? 1 : 0;
-    size_t indArgs = isType ? 1 : 2;
-    size_t indRet = isType ? 2 : 3;
+    // fnc name args ret OR fnc name args ret body
+    size_t indName = 1;
+    size_t indArgs = 2;
+    size_t indRet = 3;
     size_t indBody = isDef ? 4 : 0;
 
     // name
@@ -770,6 +771,8 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     const NodeVal &nodeArgs = processWithEscape(node.getChild(indArgs));
     if (nodeArgs.isInvalid()) return NodeVal();
     if (!checkIsRaw(nodeArgs, true)) return NodeVal();
+    argNames.reserve(nodeArgs.getChildrenCnt());
+    argTypes.reserve(nodeArgs.getChildrenCnt());
     optional<bool> variadic = hasAttributeAndCheckIsEmpty(nodeArgs, "variadic");
     if (!variadic.has_value()) return NodeVal();
     for (size_t i = 0; i < nodeArgs.getChildrenCnt(); ++i) {
@@ -828,51 +831,44 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         type = typeOpt.value();
     }
 
-    if (isDecl || isDef) {
-        FuncValue funcVal;
-        funcVal.codeLoc = nameCodeLoc;
-        BaseCallableValue::setType(funcVal, type, typeTable);
-        funcVal.name = name;
-        funcVal.argNames = argNames;
-        funcVal.noNameMangle = noNameMangle || isMain || variadic.value();
-        funcVal.defined = isDef;
+    FuncValue funcVal;
+    funcVal.codeLoc = nameCodeLoc;
+    BaseCallableValue::setType(funcVal, type, typeTable);
+    funcVal.name = name;
+    funcVal.argNames = argNames;
+    funcVal.noNameMangle = noNameMangle || isMain || variadic.value();
+    funcVal.defined = isDef;
 
-        // register only if first func of its name
-        if (!symbolTable->isFuncName(name)) {
-            UndecidedCallableVal undecidedVal;
-            undecidedVal.isFunc = true;
-            undecidedVal.name = name;
-            symbolTable->addVar(name, NodeVal(node.getCodeLoc(), undecidedVal));
-        }
-
-        // funcVal is passed by mutable reference, is needed later
-        if (!performFunctionDeclaration(node.getCodeLoc(), funcVal)) return NodeVal();
-        if (evaluable && this != evaluator) {
-            if (!evaluator->performFunctionDeclaration(node.getCodeLoc(), funcVal)) return NodeVal();
-        }
-
-        FuncValue *symbVal = symbolTable->registerFunc(funcVal);
-        if (symbVal == nullptr) {
-            msgs->errorUnknown(node.getCodeLoc());
-            return NodeVal();
-        }
-
-        if (isDef) {
-            if (!performFunctionDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();
-            if (evaluable && this != evaluator) {
-                if (!evaluator->performFunctionDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();
-            }
-        }
-
-        return NodeVal(node.getCodeLoc());
-    } else {
-        EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
-        evalVal.ty = type;
-        return NodeVal(node.getCodeLoc(), move(evalVal));
+    // register only if first func of its name
+    if (!symbolTable->isFuncName(name)) {
+        UndecidedCallableVal undecidedVal;
+        undecidedVal.isFunc = true;
+        undecidedVal.name = name;
+        symbolTable->addVar(name, NodeVal(node.getCodeLoc(), undecidedVal));
     }
+
+    // funcVal is passed by mutable reference, is needed later
+    if (!performFunctionDeclaration(node.getCodeLoc(), funcVal)) return NodeVal();
+    if (evaluable && this != evaluator) {
+        if (!evaluator->performFunctionDeclaration(node.getCodeLoc(), funcVal)) return NodeVal();
+    }
+
+    FuncValue *symbVal = symbolTable->registerFunc(funcVal);
+    if (symbVal == nullptr) {
+        msgs->errorUnknown(node.getCodeLoc());
+        return NodeVal();
+    }
+
+    if (isDef) {
+        if (!performFunctionDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();
+        if (evaluable && this != evaluator) {
+            if (!evaluator->performFunctionDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();
+        }
+    }
+
+    return NodeVal(node.getCodeLoc());
 }
 
-// TODO+ diff syntax for type
 NodeVal Processor::processMac(const NodeVal &node) {
     if (!checkExactlyChildren(node, 2, false) && !checkExactlyChildren(node, 4, true)) {
         return NodeVal();
@@ -880,6 +876,8 @@ NodeVal Processor::processMac(const NodeVal &node) {
 
     bool isType = node.getChildrenCnt() == 2;
     bool isDef = node.getChildrenCnt() == 4;
+
+    if (isType) return processMacType(node);
 
     if (isDef && !checkInGlobalScope(node.getCodeLoc(), true)) {
         return NodeVal();
@@ -906,7 +904,7 @@ NodeVal Processor::processMac(const NodeVal &node) {
     }
 
     // arguments
-    const NodeVal &nodeArgs = processWithEscape(node.getChild(indArgs));
+    NodeVal nodeArgs = processWithEscape(node.getChild(indArgs));
     if (nodeArgs.isInvalid()) return NodeVal();
     if (!checkIsRaw(nodeArgs, true)) return NodeVal();
     vector<NamePool::Id> argNames;
@@ -944,6 +942,7 @@ NodeVal Processor::processMac(const NodeVal &node) {
         if (!isVariadic.has_value()) return NodeVal();
         variadic = isVariadic.value();
     }
+
     // check no arg name duplicates
     if (!checkNoArgNameDuplicates(nodeArgs, argNames, true)) return NodeVal();
 
@@ -1634,6 +1633,100 @@ bool Processor::processChildNodes(const NodeVal &node) {
     }
 
     return true;
+}
+
+NodeVal Processor::processFncType(const NodeVal &node) {
+    // fnc argTypes ret
+    size_t indArgs = 1;
+    size_t indRet = 2;
+
+    // arguments
+    vector<TypeTable::Id> argTypes;
+    const NodeVal &nodeArgs = processWithEscape(node.getChild(indArgs));
+    if (nodeArgs.isInvalid()) return NodeVal();
+    if (!checkIsRaw(nodeArgs, true)) return NodeVal();
+    argTypes.reserve(nodeArgs.getChildrenCnt());
+    optional<bool> variadic = hasAttributeAndCheckIsEmpty(nodeArgs, "variadic");
+    if (!variadic.has_value()) return NodeVal();
+    for (size_t i = 0; i < nodeArgs.getChildrenCnt(); ++i) {
+        const NodeVal &nodeArg = nodeArgs.getChild(i);
+
+        NodeVal argTy = processAndCheckIsType(nodeArg);
+        if (argTy.isInvalid()) return NodeVal();
+
+        argTypes.push_back(argTy.getEvalVal().ty);
+    }
+
+    // ret type
+    optional<TypeTable::Id> retType;
+    {
+        const NodeVal &nodeRetType = node.getChild(indRet);
+        NodeVal ty = processNode(nodeRetType);
+        if (ty.isInvalid()) return NodeVal();
+        if (!checkIsEmpty(ty, false)) {
+            if (!checkIsType(ty, true)) return NodeVal();
+            retType = ty.getEvalVal().ty;
+        }
+    }
+
+    // function type
+    TypeTable::Id type;
+    {
+        TypeTable::Callable callable;
+        callable.isFunc = true;
+        callable.argTypes = argTypes;
+        callable.retType = retType;
+        callable.variadic = variadic.value();
+        optional<TypeTable::Id> typeOpt = typeTable->addCallable(callable);
+        if (!typeOpt.has_value()) {
+            msgs->errorInternal(node.getCodeLoc());
+            return NodeVal();
+        }
+        type = typeOpt.value();
+    }
+
+    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
+    evalVal.ty = type;
+    return NodeVal(node.getCodeLoc(), move(evalVal));
+}
+
+NodeVal Processor::processMacType(const NodeVal &node) {
+    // mac argNum
+    size_t indArgNum = 1;
+
+    // argument number
+    NodeVal nodeArgNum = processNode(node.getChild(indArgNum));
+    if (nodeArgNum.isInvalid()) return NodeVal();
+    if (!nodeArgNum.isEvalVal()) {
+        msgs->errorUnknown(nodeArgNum.getCodeLoc());
+        return NodeVal();
+    }
+    optional<uint64_t> argNum = EvalVal::getValueNonNeg(nodeArgNum.getEvalVal(), typeTable);
+    if (!argNum.has_value()) {
+        msgs->errorUnknown(nodeArgNum.getCodeLoc());
+        return NodeVal();
+    }
+    optional<bool> variadic = hasAttributeAndCheckIsEmpty(nodeArgNum, "variadic");
+    if (!variadic.has_value()) return NodeVal();
+
+    // macro type
+    TypeTable::Id type;
+    {
+        TypeTable::Callable callable;
+        callable.isFunc = false;
+        callable.makeFitArgCnt(argNum.value());
+        callable.variadic = variadic.value();
+        optional<TypeTable::Id> typeOpt = typeTable->addCallable(callable);
+        if (!typeOpt.has_value()) {
+            msgs->errorInternal(node.getCodeLoc());
+            return NodeVal();
+        }
+        type = typeOpt.value();
+    }
+
+    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
+    evalVal.ty = type;
+    return NodeVal(node.getCodeLoc(), move(evalVal));
 }
 
 NodeVal Processor::processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) {

@@ -1,6 +1,6 @@
-fnc foo (x:i32) () {};
-fnc foo (x:f32) () {};
+fnc foo (i32) () {};
+fnc foo (f32) () {};
 
 fnc main () () {
-    foo:(fnc (x:u32) ()) 100;
+    foo:(fnc (u32) ()) 100;
 };
