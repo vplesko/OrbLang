@@ -196,11 +196,29 @@ mac arr (ty::preprocess a::preprocess rest::(variadic preprocess)) {
     sym (els (+ \(,a) rest));
     sym (arrTy (ty (lenOf els)));
 
-    sym (innerCode \{ sym res:arrTy; });
+    # genSym not needed since only visible in inner code, and elements are preprocessed
+    sym (innerCode \{ (sym res:arrTy) });
     range i (lenOf els) {
         = innerCode (+ innerCode \{ (= ([] res ,i) ,(. els i)) });
     };
     = innerCode (+ innerCode \{ (pass res) });
 
     ret \(block ,arrTy ,innerCode);
+};
+
+mac make (ty::preprocess pair rest::variadic) {
+    sym (pairs (+ \(,pair) rest));
+    sym (inst (genSym));
+
+    sym (innerCode \{ (sym ,inst:ty) });
+    range i (lenOf pairs) {
+        # ensure it's raw
+        cast raw (. pairs i);
+        # TODO ensure all pairs have exactly 2 values
+
+        = innerCode (+ innerCode \{ (= (. ,inst ,(. pairs i 0)) ,(. pairs i 1)) });
+    };
+    = innerCode (+ innerCode \{ (pass ,inst) });
+
+    ret \(block ,ty ,innerCode);
 };

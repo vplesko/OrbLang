@@ -1320,6 +1320,7 @@ optional<bool> Processor::hasAttributeAndCheckIsEmpty(const NodeVal &node, const
     return hasAttributeAndCheckIsEmpty(node, namePool->add(attrStrName));
 }
 
+// TODO errors on Windows, cannot implicitly cast 0 from i32 to u32
 NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
     bool isId = false;
 

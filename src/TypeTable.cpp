@@ -784,6 +784,7 @@ bool TypeTable::fitsTypeI(int64_t x, Id t) const {
             break;
         case TypeTable::P_U64:
             lo = (int64_t) numeric_limits<uint64_t>::min();
+            // int64_t's max used intentionally, uint64_t's max couldn't fit and literals cannot exceed this value anyway
             hi = (int64_t) numeric_limits<int64_t>::max();
             break;
         default:
