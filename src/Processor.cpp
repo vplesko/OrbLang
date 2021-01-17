@@ -289,7 +289,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
-// TODO allow tuple to tuple (memb by memb) and arr to arr (by elem)?
+// TODO+ allow arr to arr (by elem)
 NodeVal Processor::processCast(const NodeVal &node) {
     if (!checkExactlyChildren(node, 3, true)) {
         return NodeVal();
@@ -1458,6 +1458,57 @@ NodeVal Processor::implicitCast(const NodeVal &node, TypeTable::Id ty) {
     return dispatchCast(node.getCodeLoc(), node, ty);
 }
 
+bool Processor::shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id dstTypeId) const {
+    if (!node.isEvalVal()) return true;
+
+    const EvalVal &val = node.getEvalVal();
+
+    TypeTable::Id srcTypeId = val.type;
+
+    if (typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId)))
+        return false;
+
+    if (typeTable->worksAsTypeI(srcTypeId)) {
+        if (EvalVal::getValueI(val, typeTable).value() != 0) {
+            return typeTable->worksAsTypeAnyP(dstTypeId);
+        }
+    } else if (typeTable->worksAsTypeU(srcTypeId)) {
+        if (EvalVal::getValueU(val, typeTable).value() != 0) {
+            return typeTable->worksAsTypeAnyP(dstTypeId);
+        }
+    } else if (typeTable->worksAsTypeStr(srcTypeId)) {
+        if (val.str.has_value()) {
+            return typeTable->worksAsTypeI(dstTypeId) ||
+                typeTable->worksAsTypeU(dstTypeId) ||
+                typeTable->worksAsTypeAnyP(dstTypeId);
+        }
+    } else if (typeTable->worksAsTypeAnyP(srcTypeId)) {
+        if (!EvalVal::isNull(val, typeTable)) {
+            return typeTable->worksAsTypeI(dstTypeId) ||
+                typeTable->worksAsTypeU(dstTypeId) ||
+                typeTable->worksAsTypeB(dstTypeId) ||
+                typeTable->worksAsTypeAnyP(dstTypeId);
+        }
+    } else if (typeTable->worksAsCallable(srcTypeId)) {
+        if (!EvalVal::isCallableNoValue(val, typeTable)) {
+            return typeTable->worksAsTypeAnyP(dstTypeId);
+        }
+    } else if (typeTable->worksAsTuple(srcTypeId)) {
+        if (typeTable->worksAsTuple(dstTypeId)) {
+            const TypeTable::Tuple &tupSrc = *typeTable->extractTuple(srcTypeId).value();
+            const TypeTable::Tuple &tupDst = *typeTable->extractTuple(dstTypeId).value();
+
+            if (tupSrc.members.size() != tupDst.members.size()) return false;
+
+            for (size_t i = 0; i < tupSrc.members.size(); ++i) {
+                if (shouldNotDispatchCastToEval(val.elems[i], tupDst.members[i])) return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 bool Processor::implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly) {
     if (lhs.getType().value() == rhs.getType().value()) return true;
 
@@ -2090,7 +2141,7 @@ NodeVal Processor::processAndImplicitCast(const NodeVal &node, TypeTable::Id ty)
 }
 
 NodeVal Processor::dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
-    if (checkIsEvalTime(node, false) && !EvalVal::isCompileCastableNotEvalCastable(node.getEvalVal(), ty, stringPool, typeTable))
+    if (checkIsEvalTime(node, false) && !shouldNotDispatchCastToEval(node, ty))
         return evaluator->performCast(node.getCodeLoc(), node, ty);
     else
         return performCast(node.getCodeLoc(), node, ty);

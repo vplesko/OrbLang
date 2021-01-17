@@ -805,9 +805,9 @@ NodeVal Evaluator::doBlockTearDown(CodeLoc codeLoc, SymbolTable::Block block, bo
     return NodeVal(codeLoc);
 }
 
-// keep in sync with EvalVal::isCastable
 // TODO warn on lossy
 optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId) {
+    // TODO+ catch case when just changing constness
     if (srcTypeId == dstTypeId) return NodeVal::copyNoRef(codeLoc, srcVal);
 
     const EvalVal &srcEvalVal = srcVal.getEvalVal();
@@ -914,6 +914,22 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
             optional<NamePool::Id> id = makeIdFromTy(srcEvalVal.ty);
             if (id.has_value()) dstEvalVal.id = id.value();
             else return nullopt;
+        } else {
+            return nullopt;
+        }
+    } else if (typeTable->worksAsTuple(srcTypeId)) {
+        if (typeTable->worksAsTuple(dstTypeId)) {
+            const TypeTable::Tuple &tupSrc = *typeTable->extractTuple(srcTypeId).value();
+            const TypeTable::Tuple &tupDst = *typeTable->extractTuple(dstTypeId).value();
+
+            if (tupSrc.members.size() != tupDst.members.size()) return nullopt;
+
+            for (size_t i = 0; i < tupSrc.members.size(); ++i) {
+                optional<NodeVal> membCast = makeCast(codeLoc, srcEvalVal.elems[i], tupSrc.members[i], tupDst.members[i]);
+                if (!membCast.has_value()) return nullopt;
+
+                dstEvalVal.elems[i] = move(membCast.value());
+            }
         } else {
             return nullopt;
         }

@@ -1038,7 +1038,15 @@ llvm::AllocaInst* Compiler::makeLlvmAlloca(llvm::Type *type, const std::string &
     return llvmBuilderAlloca.CreateAlloca(type, nullptr, name);
 }
 
+llvm::Value* Compiler::makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId) {
+    llvm::Type *dstLlvmType = makeLlvmType(dstTypeId);
+    if (dstLlvmType == nullptr) return nullptr;
+
+    return makeLlvmCast(srcLlvmVal, srcTypeId, dstLlvmType, dstTypeId);
+}
+
 llvm::Value* Compiler::makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTypeId, llvm::Type *dstLlvmType, TypeTable::Id dstTypeId) {
+    // TODO+ catch case when just changing constness
     if (srcTypeId == dstTypeId) return srcLlvmVal;
 
     llvm::Value *dstLlvmVal = nullptr;
@@ -1115,6 +1123,23 @@ llvm::Value* Compiler::makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTy
                 llvmBuilder.CreatePtrToInt(srcLlvmVal, llvmTypeI),
                 llvm::ConstantInt::getNullValue(llvmTypeI),
                 "p2b_cast");
+        }
+    } else if (typeTable->worksAsTuple(srcTypeId)) {
+        if (typeTable->worksAsTuple(dstTypeId)) {
+            const TypeTable::Tuple &tupSrc = *typeTable->extractTuple(srcTypeId).value();
+            const TypeTable::Tuple &tupDst = *typeTable->extractTuple(dstTypeId).value();
+
+            if (tupSrc.members.size() != tupDst.members.size()) return nullptr;
+
+            dstLlvmVal = llvm::UndefValue::get(dstLlvmType);
+            for (size_t i = 0; i < tupSrc.members.size(); ++i) {
+                llvm::Value *srcLlvmMembVal = llvmBuilder.CreateExtractValue(srcLlvmVal, {(unsigned) i});
+
+                llvm::Value *dstLlvmMembVal = makeLlvmCast(srcLlvmMembVal, tupSrc.members[i], tupDst.members[i]);
+                if (dstLlvmMembVal == nullptr) return nullptr;
+
+                dstLlvmVal = llvmBuilder.CreateInsertValue(dstLlvmVal, dstLlvmMembVal, {(unsigned) i});
+            }
         }
     } else if (typeTable->worksAsCallable(srcTypeId)) {
         if (typeTable->worksAsTypeAnyP(dstTypeId) || typeTable->worksAsCallable(dstTypeId)) {

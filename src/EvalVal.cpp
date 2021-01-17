@@ -231,40 +231,17 @@ bool EvalVal::isImplicitCastable(const EvalVal &val, TypeTable::Id t, const Stri
         return typeTable->worksAsTypeStr(t) ||
             typeTable->worksAsTypeCharArrOfLen(t, LiteralVal::getStringLen(stringPool->get(val.str.value())));
 
-    return false;
-}
+    if (typeTable->worksAsTuple(val.type) && typeTable->worksAsTuple(t)) {
+        const TypeTable::Tuple &tupSrc = *typeTable->extractTuple(val.type).value();
+        const TypeTable::Tuple &tupDst = *typeTable->extractTuple(t).value();
 
-bool EvalVal::isCompileCastableNotEvalCastable(const EvalVal &val, TypeTable::Id dstTypeId, const StringPool *stringPool, const TypeTable *typeTable) {
-    TypeTable::Id srcTypeId = val.type;
+        if (tupSrc.members.size() != tupDst.members.size()) return false;
 
-    if (typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId)))
-        return false;
+        for (size_t i = 0; i < tupSrc.members.size(); ++i) {
+            if (!isImplicitCastable(val.elems[i].getEvalVal(), tupDst.members[i], stringPool, typeTable)) return false;
+        }
 
-    if (typeTable->worksAsTypeI(srcTypeId)) {
-        if (EvalVal::getValueI(val, typeTable).value() != 0) {
-            return typeTable->worksAsTypeAnyP(dstTypeId);
-        }
-    } else if (typeTable->worksAsTypeU(srcTypeId)) {
-        if (EvalVal::getValueU(val, typeTable).value() != 0) {
-            return typeTable->worksAsTypeAnyP(dstTypeId);
-        }
-    } else if (typeTable->worksAsTypeStr(srcTypeId)) {
-        if (val.str.has_value()) {
-            return typeTable->worksAsTypeI(dstTypeId) ||
-                typeTable->worksAsTypeU(dstTypeId) ||
-                typeTable->worksAsTypeAnyP(dstTypeId);
-        }
-    } else if (typeTable->worksAsTypeAnyP(srcTypeId)) {
-        if (!isNull(val, typeTable)) {
-            return typeTable->worksAsTypeI(dstTypeId) ||
-                typeTable->worksAsTypeU(dstTypeId) ||
-                typeTable->worksAsTypeB(dstTypeId) ||
-                typeTable->worksAsTypeAnyP(dstTypeId);
-        }
-    } else if (typeTable->worksAsCallable(srcTypeId)) {
-        if (!isCallableNoValue(val, typeTable)) {
-            return typeTable->worksAsTypeAnyP(dstTypeId);
-        }
+        return true;
     }
 
     return false;

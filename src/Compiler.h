@@ -29,6 +29,7 @@ class Compiler : public Processor {
     llvm::Type* makeLlvmTypeOrError(CodeLoc codeLoc, TypeTable::Id typeId);
     llvm::GlobalValue* makeLlvmGlobal(llvm::Type *type, llvm::Constant *init, bool isConstant, const std::string &name);
     llvm::AllocaInst* makeLlvmAlloca(llvm::Type *type, const std::string &name);
+    llvm::Value* makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
     llvm::Value* makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTypeId, llvm::Type *dstLlvmType, TypeTable::Id dstTypeId);
 
     std::string getNameForLlvm(NamePool::Id name) const;

@@ -882,7 +882,7 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
     } else if (isTypeDescr(from)) {
         if (!isTypeDescr(into)) return false;
 
-        const TypeDescr &s = typeDescrs[from.index].first, &d = typeDescrs[into.index].first;
+        const TypeDescr &s = getTypeDescr(from), &d = getTypeDescr(into);
 
         if (s.decors.size() != d.decors.size()) return false;
 
@@ -897,6 +897,17 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
         }
         if (s.base != d.base) return false;
         if (pastRef && s.cn && !d.cn) return false;
+
+        return true;
+    } else if (isTuple(from)) {
+        if (!isTuple(into)) return false;
+
+        const Tuple &s = getTuple(from), &d = getTuple(into);
+
+        if (s.members.size() != d.members.size()) return false;
+        for (size_t i = 0; i < s.members.size(); ++i) {
+            if (!isImplicitCastable(s.members[i], d.members[i])) return false;
+        }
 
         return true;
     } else {

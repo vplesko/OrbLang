@@ -28,6 +28,8 @@ fnc main () () {
     println_i32 (+ 400 (cast i32 (cast (i32 *) (cast (i32 cn * cn) (cast (i32 cn *) (cast (i32 *) (block ptr { pass null; })))))));
     println_i32 (. (cast (i32 i32) (tup (block i32 { pass 401; }) -1)) 0);
     println_i32 (. (cast ((i32 i32) cn) (tup (block i32 { pass 402; }) -1)) 0);
+    println_i32 (. (cast (i32 i32) (tup (block i16 { pass 403:i16; }) null)) 0);
+    println_i32 (. (block (i32 i32) { pass (tup 404:i16 (block i8 { pass 0; })); }) 0);
 
     println_c8 (cast c8 (block i32 { pass 65; }));
     println_c8 (cast c8 (block u32 { pass 66; }));
