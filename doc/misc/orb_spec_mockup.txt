@@ -272,7 +272,7 @@ data types have named members
 ********************
 
 plan:
- - zero
- - drop, move
- - attrs: noZero, noDrop, unique
+ - zero, ::noZero
+ - drop, ::noDrop
+ - unique, move
  - import C headers
