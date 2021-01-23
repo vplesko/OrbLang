@@ -134,6 +134,7 @@ NodeVal Compiler::performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::I
         llvmVal.ref = makeLlvmGlobal(llvmType, nullptr, typeTable->worksAsTypeCn(ty), getNameForLlvm(id));
     } else {
         llvmVal.ref = makeLlvmAlloca(llvmType, getNameForLlvm(id));
+        llvmBuilderAlloca.CreateStore(llvm::UndefValue::get(llvmType), llvmVal.ref);
     }
 
     return NodeVal(codeLoc, llvmVal);

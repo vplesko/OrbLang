@@ -43,4 +43,6 @@ fnc main () () {
     println_i32 (. t 0);
     println_i32 (cast i32 (. t 1));
     println_i32 (cast i32 (. t 2));
+
+    sym noZ:i32::noZero;
 };

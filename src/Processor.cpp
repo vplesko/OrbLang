@@ -235,7 +235,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
     if (!checkAtLeastChildren(node, 2, true)) return NodeVal();
 
     for (size_t i = 1; i < node.getChildrenCnt(); ++i) {
-        const NodeVal &entry = processWithEscape(node.getChild(i));
+        NodeVal entry = processWithEscape(node.getChild(i));
         if (entry.isInvalid()) return NodeVal();
 
         if (!NodeVal::isLeaf(entry, typeTable) && !checkBetweenChildren(entry, 1, 2, true)) return NodeVal();
@@ -274,11 +274,20 @@ NodeVal Processor::processSym(const NodeVal &node) {
                 return NodeVal();
             }
 
-            NodeVal nodeZero = performZero(entry.getCodeLoc(), optType.value());
-            if (nodeZero.isInvalid()) return NodeVal();
+            optional<bool> attrNoZero = hasAttributeAndCheckIsEmpty(pair.first, "noZero");
+            if (!attrNoZero.has_value()) return NodeVal();
 
-            NodeVal nodeReg = performRegister(pair.first.getCodeLoc(), id, nodeZero);
-            if (nodeReg.isInvalid()) return NodeVal();
+            NodeVal nodeReg;
+            if (attrNoZero.value()) {
+                nodeReg = performRegister(pair.first.getCodeLoc(), id, optType.value());
+                if (nodeReg.isInvalid()) return NodeVal();
+            } else {
+                NodeVal nodeZero = performZero(entry.getCodeLoc(), optType.value());
+                if (nodeZero.isInvalid()) return NodeVal();
+
+                nodeReg = performRegister(pair.first.getCodeLoc(), id, nodeZero);
+                if (nodeReg.isInvalid()) return NodeVal();
+            }
 
             symbolTable->addVar(id, move(nodeReg));
         }
@@ -1247,6 +1256,7 @@ NodeVal Processor::processAttrIsDef(const NodeVal &node) {
     return NodeVal(node.getCodeLoc(), move(evalVal));
 }
 
+// returns nullopt if not found
 // not able to fail, only to not find
 // update callers if that changes
 optional<NodeVal> Processor::getAttribute(const NodeVal &node, NamePool::Id attrName) {
@@ -1272,6 +1282,7 @@ optional<NodeVal> Processor::getAttribute(const NodeVal &node, const string &att
     return getAttribute(node, namePool->add(attrStrName));
 }
 
+// returns nullopt on error
 optional<bool> Processor::hasAttributeAndCheckIsEmpty(const NodeVal &node, NamePool::Id attrName) {
     optional<NodeVal> attr = getAttribute(node, attrName);
     if (!attr.has_value()) return false;
@@ -1279,6 +1290,7 @@ optional<bool> Processor::hasAttributeAndCheckIsEmpty(const NodeVal &node, NameP
     return true;
 }
 
+// returns nullopt on error
 optional<bool> Processor::hasAttributeAndCheckIsEmpty(const NodeVal &node, const std::string &attrStrName) {
     return hasAttributeAndCheckIsEmpty(node, namePool->add(attrStrName));
 }

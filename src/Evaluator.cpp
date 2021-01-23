@@ -48,11 +48,8 @@ NodeVal Evaluator::performZero(CodeLoc codeLoc, TypeTable::Id ty) {
     return NodeVal(codeLoc, EvalVal::makeZero(ty, namePool, typeTable));
 }
 
-// not used right now, because of mandatory zero init
-// once ::noZero is introduced, will be reachable again
-// then, make sure to still zero init ids and types (to avoid segfaults)
 NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) {
-    return NodeVal(codeLoc, EvalVal::makeVal(ty, typeTable));
+    return NodeVal(codeLoc, EvalVal::makeZero(ty, namePool, typeTable));
 }
 
 NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) {
