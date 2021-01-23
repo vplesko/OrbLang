@@ -128,13 +128,12 @@ NodeVal Compiler::performZero(CodeLoc codeLoc, TypeTable::Id ty) {
 NodeVal Compiler::performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) {
     llvm::Type *llvmType = makeLlvmTypeOrError(codeLoc, ty);
     if (llvmType == nullptr) return NodeVal();
-    
+
     LlvmVal llvmVal(ty);
     if (symbolTable->inGlobalScope()) {
         llvmVal.ref = makeLlvmGlobal(llvmType, nullptr, typeTable->worksAsTypeCn(ty), getNameForLlvm(id));
     } else {
         llvmVal.ref = makeLlvmAlloca(llvmType, getNameForLlvm(id));
-        llvmBuilderAlloca.CreateStore(llvm::UndefValue::get(llvmType), llvmVal.ref);
     }
 
     return NodeVal(codeLoc, llvmVal);
