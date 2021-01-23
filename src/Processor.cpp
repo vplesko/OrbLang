@@ -569,6 +569,12 @@ NodeVal Processor::processData(const NodeVal &node) {
             msgs->errorUnknown(node.getCodeLoc());
             return NodeVal();
         }
+
+        optional<NodeVal> zeroAttr = getAttribute(nodeMembs, "zero");
+        if (zeroAttr.has_value()) {
+            if (!checkIsMacro1(zeroAttr.value(), true)) return NodeVal();
+            symbolTable->registerZero(typeIdOpt.value(), zeroAttr.value().getEvalVal().m);
+        }
     }
 
     return NodeVal(node.getCodeLoc());
@@ -1247,6 +1253,7 @@ NodeVal Processor::processAttrIsDef(const NodeVal &node) {
     return NodeVal(node.getCodeLoc(), move(evalVal));
 }
 
+// nullopt if not found
 // not able to fail, only to not find
 // update callers if that changes
 optional<NodeVal> Processor::getAttribute(const NodeVal &node, NamePool::Id attrName) {
@@ -2228,6 +2235,14 @@ bool Processor::checkIsType(const NodeVal &node, bool orError) {
 
 bool Processor::checkIsBool(const NodeVal &node, bool orError) {
     if (!node.getType().has_value() || !typeTable->worksAsTypeB(node.getType().value())) {
+        if (orError) msgs->errorUnknown(node.getCodeLoc());
+        return false;
+    }
+    return true;
+}
+
+bool Processor::checkIsMacro1(const NodeVal &node, bool orError) {
+    if (!node.getType().has_value() || !typeTable->worksAsMacroWithArgs(node.getType().value(), 1)) {
         if (orError) msgs->errorUnknown(node.getCodeLoc());
         return false;
     }

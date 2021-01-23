@@ -1,5 +1,14 @@
 import "util/io.orb";
 
+mac zeroFoo (x) {
+    ret \(block {});
+};
+
+data Foo {
+    x:i32
+    y:i32
+}::((zero zeroFoo));
+
 fnc main () () {
     sym bool_:bool;
     println_i32 (cast i32 bool_);
