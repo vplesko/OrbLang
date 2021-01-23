@@ -576,13 +576,6 @@ bool TypeTable::worksAsCallable(Id t, bool isFunc) const {
     return getCallable(extractCustomBaseType(t)).isFunc == isFunc;
 }
 
-bool TypeTable::worksAsMacroWithArgs(Id t, std::size_t argCnt, bool variadic) const {
-    if (!worksAsCallable(t)) return false;
-
-    const Callable &call = getCallable(extractCustomBaseType(t));
-    return !call.isFunc && call.getArgCnt() == argCnt && call.variadic == variadic;
-}
-
 bool TypeTable::isPrimitive(Id t) const {
     return t.kind == Id::kPrim && t.index < primTypes.size();
 }

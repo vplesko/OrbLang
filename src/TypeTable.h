@@ -219,7 +219,6 @@ public:
     bool worksAsDataType(Id t) const;
     bool worksAsCallable(Id t) const;
     bool worksAsCallable(Id t, bool isFunc) const;
-    bool worksAsMacroWithArgs(Id t, std::size_t argCnt, bool variadic = false) const;
     bool worksAsTypeI(Id t) const { return worksAsPrimitive(t, P_I8, P_I64); }
     bool worksAsTypeU(Id t) const { return worksAsPrimitive(t, P_U8, P_U64); }
     bool worksAsTypeF(Id t) const { return worksAsPrimitive(t, P_F32, P_F64); }
