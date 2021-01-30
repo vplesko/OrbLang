@@ -119,9 +119,27 @@ NodeVal Compiler::performZero(CodeLoc codeLoc, TypeTable::Id ty) {
     llvm::Type *llvmType = makeLlvmTypeOrError(codeLoc, ty);
     if (llvmType == nullptr) return NodeVal();
 
+    llvm::Value *llvmNull = llvm::Constant::getNullValue(llvmType);
+    if (typeTable->worksAsDataType(ty)) {
+        const TypeTable::DataType &dataType = *typeTable->extractDataType(ty).value();
+
+        if (dataType.anyMembIsNoZeroInit()) {
+            vector<llvm::Constant*> membVals;
+            membVals.reserve(dataType.members.size());
+            for (const TypeTable::DataType::MembEntry &memb : dataType.members) {
+                // was able to make LLVM type for entire data type, so can make for any member with no error
+                llvm::Type *membLlvmType = makeLlvmType(memb.type);
+
+                membVals.push_back(memb.noZeroInit ? llvm::UndefValue::get(membLlvmType) : llvm::Constant::getNullValue(membLlvmType));
+            }
+
+            llvmNull = llvm::ConstantStruct::get((llvm::StructType*) llvmType, membVals);
+        }
+    }
+
     LlvmVal llvmVal;
     llvmVal.type = ty;
-    llvmVal.val = llvm::Constant::getNullValue(llvmType);
+    llvmVal.val = llvmNull;
     return NodeVal(codeLoc, llvmVal);
 }
 
@@ -970,7 +988,7 @@ llvm::Type* Compiler::makeLlvmType(TypeTable::Id typeId) {
 
             vector<llvm::Type*> memberTypes(data.members.size());
             for (size_t i = 0; i < data.members.size(); ++i) {
-                llvm::Type *memberType = makeLlvmType(data.members[i].second);
+                llvm::Type *memberType = makeLlvmType(data.members[i].type);
                 if (memberType == nullptr) return nullptr;
                 memberTypes[i] = memberType;
             }

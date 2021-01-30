@@ -552,6 +552,7 @@ NodeVal Processor::processData(const NodeVal &node) {
         if (nodeMembs.isInvalid()) return NodeVal();
         if (!checkIsRaw(nodeMembs, true)) return NodeVal();
         if (!checkAtLeastChildren(nodeMembs, 1, true)) return NodeVal();
+
         for (size_t i = 0; i < nodeMembs.getChildrenCnt(); ++i) {
             const NodeVal &nodeMemb = nodeMembs.getChild(i);
 
@@ -564,13 +565,22 @@ NodeVal Processor::processData(const NodeVal &node) {
                 msgs->errorMissingTypeAttribute(nodeMemb.getCodeLoc());
                 return NodeVal();
             }
+
             TypeTable::Id membType = memb.second.value().getEvalVal().ty;
             if (typeTable->worksAsTypeCn(membType)) {
                 msgs->errorDataCnMember(memb.second.value().getCodeLoc());
                 return NodeVal();
             }
 
-            dataType.members.push_back(make_pair(membName, membType));
+            optional<bool> attrNoZero = hasAttributeAndCheckIsEmpty(nodeMemb, "noZero");
+            if (!attrNoZero.has_value()) return NodeVal();
+
+            TypeTable::DataType::MembEntry membEntry;
+            membEntry.name = membName;
+            membEntry.type = membType;
+            membEntry.noZeroInit = attrNoZero.value();
+
+            dataType.members.push_back(membEntry);
         }
 
         optional<TypeTable::Id> typeIdOpt = typeTable->addDataType(dataType);

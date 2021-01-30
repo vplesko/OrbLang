@@ -18,7 +18,7 @@ EvalVal EvalVal::makeVal(TypeTable::Id t, TypeTable *typeTable) {
         const TypeTable::DataType *data = typeTable->extractDataType(t).value();
         evalVal.elems.reserve(data->members.size());
         for (const auto &memb : data->members) {
-            evalVal.elems.push_back(NodeVal(CodeLoc(), makeVal(memb.second, typeTable)));
+            evalVal.elems.push_back(NodeVal(CodeLoc(), makeVal(memb.type, typeTable)));
         }
     } else if (typeTable->worksAsTypeArr(t)) {
         size_t len = typeTable->extractLenOfArr(t).value();
@@ -43,7 +43,7 @@ EvalVal EvalVal::makeZero(TypeTable::Id t, NamePool *namePool, TypeTable *typeTa
         const TypeTable::DataType *data = typeTable->extractDataType(t).value();
         evalVal.elems.reserve(data->members.size());
         for (const auto &memb : data->members) {
-            evalVal.elems.push_back(NodeVal(CodeLoc(), makeZero(memb.second, namePool, typeTable)));
+            evalVal.elems.push_back(NodeVal(CodeLoc(), makeZero(memb.type, namePool, typeTable)));
         }
     } else if (typeTable->worksAsTypeArr(t)) {
         size_t len = typeTable->extractLenOfArr(t).value();

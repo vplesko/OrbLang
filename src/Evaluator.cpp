@@ -44,6 +44,8 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, const MacroValue &macro) {
     return NodeVal(macro.codeLoc, evalVal);
 }
 
+// id and type vals must contain valid NamePool/TypeTable indexes
+// because of this, ::noZero is ignored on EvalVals
 NodeVal Evaluator::performZero(CodeLoc codeLoc, TypeTable::Id ty) {
     return NodeVal(codeLoc, EvalVal::makeZero(ty, namePool, typeTable));
 }

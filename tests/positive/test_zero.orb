@@ -1,5 +1,9 @@
 import "util/io.orb";
 
+data dataWithNoZ {
+    x:i32::noZero
+};
+
 fnc main () () {
     sym bool_:bool;
     println_i32 (cast i32 bool_);
@@ -44,5 +48,6 @@ fnc main () () {
     println_i32 (cast i32 (. t 1));
     println_i32 (cast i32 (. t 2));
 
-    sym noZ:i32::noZero;
+    sym noZ0:i32::noZero;
+    sym noZ1:dataWithNoZ;
 };

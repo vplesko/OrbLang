@@ -1,5 +1,6 @@
 #include "TypeTable.h"
 #include <sstream>
+#include <algorithm>
 using namespace std;
 
 void TypeTable::Tuple::addMember(TypeTable::Id m) {
@@ -41,10 +42,14 @@ void TypeTable::TypeDescr::setLastCn() {
 
 optional<size_t> TypeTable::DataType::getMembInd(NamePool::Id name) const {
     for (size_t i = 0; i < members.size(); ++i) {
-        if (members[i].first == name) return i;
+        if (members[i].name == name) return i;
     }
 
     return nullopt;
+}
+
+bool TypeTable::DataType::anyMembIsNoZeroInit() const {
+    return any_of(members.begin(), members.end(), [](const MembEntry &m) { return m.noZeroInit; });
 }
 
 bool TypeTable::Callable::eq(const Callable &other) const {
@@ -647,7 +652,7 @@ optional<TypeTable::Id> TypeTable::extractDataTypeMemberType(Id t, NamePool::Id 
     optional<size_t> ind = data.value()->getMembInd(memb);
     if (!ind.has_value()) return nullopt;
 
-    Id id = data.value()->members[ind.value()].second;
+    Id id = data.value()->members[ind.value()].type;
     return isDirectCn(t) ? addTypeCnOf(id) : id;
 }
 

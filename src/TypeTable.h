@@ -89,14 +89,22 @@ public:
     };
 
     struct DataType {
+        struct MembEntry {
+            NamePool::Id name;
+            TypeTable::Id type;
+            bool noZeroInit = false;
+        };
+
         bool defined = false;
         NamePool::Id name;
-        std::vector<std::pair<NamePool::Id, Id>> members;
+        std::vector<MembEntry> members;
 
         DataType() {}
-        DataType(NamePool::Id name, std::vector<std::pair<NamePool::Id, Id>> membs) : name(name), members(std::move(membs)) {}
+        DataType(NamePool::Id name, std::vector<MembEntry> membs) : name(name), members(std::move(membs)) {}
 
         std::optional<std::size_t> getMembInd(NamePool::Id name) const;
+
+        bool anyMembIsNoZeroInit() const;
     };
 
     struct Callable {
@@ -235,6 +243,7 @@ public:
     bool worksAsTypeCharArrOfLen(Id t, std::size_t len) const;
     bool worksAsTypeCn(Id t) const;
 
+    // TODO+ change API
     std::optional<const Tuple*> extractTuple(Id t) const;
     std::optional<Id> extractTupleMemberType(Id t, std::size_t ind);
     std::optional<const DataType*> extractDataType(Id t) const;
