@@ -9,13 +9,13 @@ EvalVal EvalVal::makeVal(TypeTable::Id t, TypeTable *typeTable) {
     evalVal.type = t;
 
     if (typeTable->worksAsTuple(t)) {
-        const TypeTable::Tuple *tup = typeTable->extractTuple(t).value();
+        const TypeTable::Tuple *tup = typeTable->extractTuple(t);
         evalVal.elems.reserve(tup->members.size());
         for (TypeTable::Id memb : tup->members) {
             evalVal.elems.push_back(NodeVal(CodeLoc(), makeVal(memb, typeTable)));
         }
     } else if (typeTable->worksAsDataType(t)) {
-        const TypeTable::DataType *data = typeTable->extractDataType(t).value();
+        const TypeTable::DataType *data = typeTable->extractDataType(t);
         evalVal.elems.reserve(data->members.size());
         for (const auto &memb : data->members) {
             evalVal.elems.push_back(NodeVal(CodeLoc(), makeVal(memb.type, typeTable)));
@@ -34,13 +34,13 @@ EvalVal EvalVal::makeZero(TypeTable::Id t, NamePool *namePool, TypeTable *typeTa
     evalVal.type = t;
 
     if (typeTable->worksAsTuple(t)) {
-        const TypeTable::Tuple *tup = typeTable->extractTuple(t).value();
+        const TypeTable::Tuple *tup = typeTable->extractTuple(t);
         evalVal.elems.reserve(tup->members.size());
         for (TypeTable::Id memb : tup->members) {
             evalVal.elems.push_back(NodeVal(CodeLoc(), makeZero(memb, namePool, typeTable)));
         }
     } if (typeTable->worksAsDataType(t)) {
-        const TypeTable::DataType *data = typeTable->extractDataType(t).value();
+        const TypeTable::DataType *data = typeTable->extractDataType(t);
         evalVal.elems.reserve(data->members.size());
         for (const auto &memb : data->members) {
             evalVal.elems.push_back(NodeVal(CodeLoc(), makeZero(memb.type, namePool, typeTable)));
@@ -232,8 +232,8 @@ bool EvalVal::isImplicitCastable(const EvalVal &val, TypeTable::Id t, const Stri
             typeTable->worksAsTypeCharArrOfLen(t, LiteralVal::getStringLen(stringPool->get(val.str.value())));
 
     if (typeTable->worksAsTuple(val.type) && typeTable->worksAsTuple(t)) {
-        const TypeTable::Tuple &tupSrc = *typeTable->extractTuple(val.type).value();
-        const TypeTable::Tuple &tupDst = *typeTable->extractTuple(t).value();
+        const TypeTable::Tuple &tupSrc = *typeTable->extractTuple(val.type);
+        const TypeTable::Tuple &tupDst = *typeTable->extractTuple(t);
 
         if (tupSrc.members.size() != tupDst.members.size()) return false;
 

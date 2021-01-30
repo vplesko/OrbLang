@@ -905,8 +905,8 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
         }
     } else if (typeTable->worksAsTuple(srcTypeId)) {
         if (typeTable->worksAsTuple(dstTypeId)) {
-            const TypeTable::Tuple &tupSrc = *typeTable->extractTuple(srcTypeId).value();
-            const TypeTable::Tuple &tupDst = *typeTable->extractTuple(dstTypeId).value();
+            const TypeTable::Tuple &tupSrc = *typeTable->extractTuple(srcTypeId);
+            const TypeTable::Tuple &tupDst = *typeTable->extractTuple(dstTypeId);
 
             if (tupSrc.members.size() != tupDst.members.size()) return nullopt;
 

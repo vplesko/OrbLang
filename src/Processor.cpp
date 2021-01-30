@@ -1480,8 +1480,8 @@ bool Processor::shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id d
         }
     } else if (typeTable->worksAsTuple(srcTypeId)) {
         if (typeTable->worksAsTuple(dstTypeId)) {
-            const TypeTable::Tuple &tupSrc = *typeTable->extractTuple(srcTypeId).value();
-            const TypeTable::Tuple &tupDst = *typeTable->extractTuple(dstTypeId).value();
+            const TypeTable::Tuple &tupSrc = *typeTable->extractTuple(srcTypeId);
+            const TypeTable::Tuple &tupDst = *typeTable->extractTuple(dstTypeId);
 
             if (tupSrc.members.size() != tupDst.members.size()) return false;
 
@@ -1952,12 +1952,12 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
         if (isBaseRaw) {
             baseLen = base.getChildrenCnt();
         } else if (isBaseTup) {
-            optional<const TypeTable::Tuple*> tupleOpt = typeTable->extractTuple(baseType);
-            if (!tupleOpt.has_value()) {
+            const TypeTable::Tuple *tuple = typeTable->extractTuple(baseType);
+            if (tuple == nullptr) {
                 msgs->errorExprDotInvalidBase(base.getCodeLoc());
                 return NodeVal();
             }
-            baseLen = tupleOpt.value()->members.size();
+            baseLen = tuple->members.size();
         } else if (isBaseData) {
             // base len not needed
         } else {
@@ -1980,7 +1980,7 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
             }
 
             NamePool::Id indexName = index.getEvalVal().id;
-            optional<uint64_t> indexValOpt = typeTable->extractDataType(baseType).value()->getMembInd(indexName);
+            optional<uint64_t> indexValOpt = typeTable->extractDataType(baseType)->getMembInd(indexName);
             if (!indexValOpt.has_value()) {
                 msgs->errorUnknown(index.getCodeLoc());
                 return NodeVal();

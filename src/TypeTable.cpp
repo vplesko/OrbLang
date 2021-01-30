@@ -605,8 +605,8 @@ bool TypeTable::isCallable(Id t) const {
     return t.kind == Id::kCallable && t.index < callables.size();
 }
 
-optional<const TypeTable::Tuple*> TypeTable::extractTuple(Id t) const {
-    if (!isValidType(t)) return nullopt;
+const TypeTable::Tuple* TypeTable::extractTuple(Id t) const {
+    if (!isValidType(t)) return nullptr;
 
     if (isTuple(t)) return &(getTuple(t));
 
@@ -617,7 +617,7 @@ optional<const TypeTable::Tuple*> TypeTable::extractTuple(Id t) const {
         if (descr.decors.empty()) return extractTuple(descr.base);
     }
 
-    return nullopt;
+    return nullptr;
 }
 
 optional<TypeTable::Id> TypeTable::extractTupleMemberType(Id t, size_t ind) {
@@ -630,8 +630,8 @@ optional<TypeTable::Id> TypeTable::extractTupleMemberType(Id t, size_t ind) {
     return isDirectCn(t) ? addTypeCnOf(id) : id;
 }
 
-optional<const TypeTable::DataType*> TypeTable::extractDataType(Id t) const {
-    if (!isValidType(t)) return nullopt;
+const TypeTable::DataType* TypeTable::extractDataType(Id t) const {
+    if (!isValidType(t)) return nullptr;
 
     if (isDataType(t)) return &(getDataType(t));
 
@@ -642,17 +642,17 @@ optional<const TypeTable::DataType*> TypeTable::extractDataType(Id t) const {
         if (descr.decors.empty()) return extractDataType(descr.base);
     }
 
-    return nullopt;
+    return nullptr;
 }
 
 optional<TypeTable::Id> TypeTable::extractDataTypeMemberType(Id t, NamePool::Id memb) {
-    optional<const DataType*> data = extractDataType(t);
-    if (!data.has_value()) return nullopt;
+    const DataType *data = extractDataType(t);
+    if (data == nullptr) return nullopt;
 
-    optional<size_t> ind = data.value()->getMembInd(memb);
+    optional<size_t> ind = data->getMembInd(memb);
     if (!ind.has_value()) return nullopt;
 
-    Id id = data.value()->members[ind.value()].type;
+    Id id = data->members[ind.value()].type;
     return isDirectCn(t) ? addTypeCnOf(id) : id;
 }
 

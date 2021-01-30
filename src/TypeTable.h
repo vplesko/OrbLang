@@ -243,14 +243,16 @@ public:
     bool worksAsTypeCharArrOfLen(Id t, std::size_t len) const;
     bool worksAsTypeCn(Id t) const;
 
-    // TODO+ change API
-    std::optional<const Tuple*> extractTuple(Id t) const;
-    std::optional<Id> extractTupleMemberType(Id t, std::size_t ind);
-    std::optional<const DataType*> extractDataType(Id t) const;
-    std::optional<Id> extractDataTypeMemberType(Id t, NamePool::Id memb);
+    const Tuple* extractTuple(Id t) const;
+    const DataType* extractDataType(Id t) const;
+    const Callable* extractCallable(Id callTypeId) const;
+
     std::optional<std::size_t> extractLenOfArr(Id arrTypeId) const;
     std::optional<std::size_t> extractLenOfTuple(Id tupleTypeId) const;
-    const Callable* extractCallable(Id callTypeId) const;
+    std::optional<Id> extractTupleMemberType(Id t, std::size_t ind);
+    std::optional<Id> extractDataTypeMemberType(Id t, NamePool::Id memb);
+
+    // passes through customs and decors
     Id extractBaseType(Id t) const;
     // only passes through customs and cn
     Id extractCustomBaseType(Id t) const;
