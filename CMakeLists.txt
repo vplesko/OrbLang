@@ -22,6 +22,7 @@ add_definitions(${CLANG_DEFINITIONS})
 
 set(HEADER_FILES
     "src/AttrMap.h"
+    "src/BlockControl.h"
     "src/ClangAdapter.h"
     "src/CodeLoc.h"
     "src/CompilationOrchestrator.h"
@@ -50,6 +51,7 @@ set(HEADER_FILES
 
 set(SOURCE_FILES
     "src/AttrMap.cpp"
+    "src/BlockControl.cpp"
     "src/ClangAdapter.cpp"
     "src/CompilationOrchestrator.cpp"
     "src/CompilationMessages.cpp"

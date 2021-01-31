@@ -9,6 +9,7 @@
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
+#include "BlockControl.h"
 using namespace std;
 
 struct ComparisonSignal {

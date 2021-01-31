@@ -1,6 +1,7 @@
 #include "Processor.h"
 #include "Reserved.h"
 #include "Evaluator.h"
+#include "BlockControl.h"
 using namespace std;
 
 Processor::Processor(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs)

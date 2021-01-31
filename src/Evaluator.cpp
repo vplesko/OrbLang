@@ -1,6 +1,7 @@
 #include "Evaluator.h"
 #include <sstream>
 #include "exceptions.h"
+#include "BlockControl.h"
 using namespace std;
 
 struct ComparisonSignal {

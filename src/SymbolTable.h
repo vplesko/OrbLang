@@ -94,13 +94,13 @@ public:
     };
 
 private:
+    friend class BlockControl;
+
     struct BlockInternal {
         Block block;
         // Guarantees pointer stability of values.
         std::unordered_map<NamePool::Id, VarEntry> vars;
     };
-
-    friend class BlockControl;
 
     // Guarantees pointer stability of values.
     std::unordered_map<NamePool::Id, std::vector<std::unique_ptr<FuncValue>>> funcs;
@@ -149,30 +149,4 @@ public:
     bool isVarName(NamePool::Id name) const { return getVar(name) != nullptr; }
 
     bool nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable) const;
-};
-
-class BlockControl {
-    SymbolTable *symTable;
-
-public:
-    explicit BlockControl(SymbolTable *symTable = nullptr) : symTable(symTable) {
-        if (symTable != nullptr) symTable->newBlock(SymbolTable::Block());
-    }
-    BlockControl(SymbolTable *symTable, SymbolTable::Block bo) : symTable(symTable) {
-        if (symTable != nullptr) symTable->newBlock(bo);
-    }
-    // ref cuz must not be null
-    BlockControl(SymbolTable *symTable, const SymbolTable::CalleeValueInfo &c) : symTable(symTable) {
-        if (symTable != nullptr) symTable->newBlock(c);
-    }
-
-    BlockControl(const BlockControl&) = delete;
-    void operator=(const BlockControl&) = delete;
-
-    BlockControl(const BlockControl&&) = delete;
-    void operator=(const BlockControl&&) = delete;
-
-    ~BlockControl() {
-        if (symTable != nullptr) symTable->endBlock();
-    }
 };
