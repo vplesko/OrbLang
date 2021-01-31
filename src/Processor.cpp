@@ -232,6 +232,7 @@ NodeVal Processor::processId(const NodeVal &node, const NodeVal &starting) {
     return processId(starting);
 }
 
+// TODO demand global vars with non-trivial drop be marked noDrop
 NodeVal Processor::processSym(const NodeVal &node) {
     if (!checkAtLeastChildren(node, 2, true)) return NodeVal();
 
@@ -1540,6 +1541,31 @@ NodeVal Processor::dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) 
     }
 }
 
+NodeVal Processor::getElem(CodeLoc codeLoc, NodeVal &array, std::size_t index) {
+    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::WIDEST_U), typeTable);
+    evalVal.getWidestU() = index;
+    return getElem(codeLoc, array, NodeVal(codeLoc, move(evalVal)));
+}
+
+NodeVal Processor::getElem(CodeLoc codeLoc, NodeVal &array, const NodeVal &index) {
+    TypeTable::Id arrayType = array.getType().value();
+
+    optional<TypeTable::Id> elemType = typeTable->addTypeIndexOf(arrayType);
+    if (!elemType.has_value()) {
+        msgs->errorExprIndexOnBadType(array.getCodeLoc(), arrayType);
+        return NodeVal();
+    }
+
+    TypeTable::Id resType = elemType.value();
+    if (typeTable->worksAsTypeCn(arrayType)) resType = typeTable->addTypeCnOf(resType);
+
+    if (checkIsEvalTime(array, false) && checkIsEvalTime(index, false)) {
+        return evaluator->performOperIndex(codeLoc, array, index, resType);
+    } else {
+        return performOperIndex(array.getCodeLoc(), array, index, resType);
+    }
+}
+
 bool Processor::argsFitFuncCall(const vector<NodeVal> &args, const TypeTable::Callable &callable, bool allowImplicitCasts) {
     if (callable.getArgCnt() != args.size() && !(callable.variadic && callable.getArgCnt() <= args.size()))
         return false;
@@ -1932,12 +1958,6 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
     for (size_t i = 1; i < opers.size(); ++i) {
         TypeTable::Id baseType = base.getType().value();
 
-        optional<TypeTable::Id> elemType = typeTable->addTypeIndexOf(baseType);
-        if (!elemType.has_value()) {
-            msgs->errorExprIndexOnBadType(base.getCodeLoc(), baseType);
-            return NodeVal();
-        }
-
         NodeVal index = processAndCheckHasType(*opers[i]);
         if (index.isInvalid()) return NodeVal();
         if (!typeTable->worksAsTypeI(index.getType().value()) && !typeTable->worksAsTypeU(index.getType().value())) {
@@ -1954,14 +1974,7 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
             }
         }
 
-        TypeTable::Id resType = elemType.value();
-        if (typeTable->worksAsTypeCn(baseType)) resType = typeTable->addTypeCnOf(resType);
-
-        if (checkIsEvalTime(base, false) && checkIsEvalTime(index, false)) {
-            base = evaluator->performOperIndex(codeLoc, base, index, resType);
-        } else {
-            base = performOperIndex(base.getCodeLoc(), base, index, resType);
-        }
+        base = getElem(base.getCodeLoc(), base, index);
         if (base.isInvalid()) return NodeVal();
     }
 

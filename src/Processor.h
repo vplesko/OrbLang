@@ -123,6 +123,8 @@ private:
     bool shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id dstTypeId) const;
     NodeVal dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty);
     NodeVal dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
+    NodeVal getElem(CodeLoc codeLoc, NodeVal &array, std::size_t index);
+    NodeVal getElem(CodeLoc codeLoc, NodeVal &array, const NodeVal &index);
     bool argsFitFuncCall(const std::vector<NodeVal> &args, const TypeTable::Callable &callable, bool allowImplicitCasts);
     NodeVal loadUndecidedCallable(const NodeVal &node, const NodeVal &val);
 
