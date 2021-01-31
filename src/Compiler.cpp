@@ -354,7 +354,7 @@ bool Compiler::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
 }
 
 bool Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) {
-    BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(func, typeTable));
+    BlockControl blockCtrl(this, symbolTable, SymbolTable::CalleeValueInfo::make(func, typeTable));
 
     const TypeTable::Callable &callable = FuncValue::getCallable(func, typeTable);
 

@@ -100,6 +100,7 @@ private:
         Block block;
         // Guarantees pointer stability of values.
         std::unordered_map<NamePool::Id, VarEntry> vars;
+        std::vector<VarEntry*> varsInOrder;
     };
 
     // Guarantees pointer stability of values.

@@ -176,7 +176,7 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
         return NodeVal();
     }
 
-    BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(func, typeTable));
+    BlockControl blockCtrl(this, symbolTable, SymbolTable::CalleeValueInfo::make(func, typeTable));
 
     const TypeTable::Callable &callable = FuncValue::getCallable(func, typeTable);
 
@@ -210,7 +210,7 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
 }
 
 NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args) {
-    BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(macro));
+    BlockControl blockCtrl(this, symbolTable, SymbolTable::CalleeValueInfo::make(macro));
 
     for (size_t i = 0; i < args.size(); ++i) {
         SymbolTable::VarEntry varEntry;

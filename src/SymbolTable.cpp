@@ -77,7 +77,9 @@ void SymbolTable::addVar(NamePool::Id name, NodeVal val) {
 }
 
 void SymbolTable::addVar(NamePool::Id name, VarEntry var) {
-    getLastBlockInternal()->vars.insert(make_pair(name, move(var)));
+    BlockInternal *lastBlock = getLastBlockInternal();
+    auto loc = lastBlock->vars.insert(make_pair(name, move(var)));
+    lastBlock->varsInOrder.push_back(&loc.first->second);
 }
 
 const SymbolTable::VarEntry* SymbolTable::getVar(NamePool::Id name) const {

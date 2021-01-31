@@ -352,7 +352,7 @@ NodeVal Processor::processBlock(const NodeVal &node) {
     if (!performBlockSetUp(node.getCodeLoc(), block)) return NodeVal();
 
     do {
-        BlockControl blockCtrl(symbolTable, block);
+        BlockControl blockCtrl(this, symbolTable, block);
 
         optional<bool> blockSuccess = performBlockBody(node.getCodeLoc(), symbolTable->getLastBlock(), nodeBody);
         if (!blockSuccess.has_value()) {
@@ -1450,6 +1450,22 @@ NodeVal Processor::implicitCast(const NodeVal &node, TypeTable::Id ty) {
     return dispatchCast(node.getCodeLoc(), node, ty);
 }
 
+bool Processor::implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly) {
+    if (lhs.getType().value() == rhs.getType().value()) return true;
+
+    if (checkImplicitCastable(rhs, lhs.getType().value(), false)) {
+        rhs = dispatchCast(rhs.getCodeLoc(), rhs, lhs.getType().value());
+        return !rhs.isInvalid();
+    } else if (!oneWayOnly && checkImplicitCastable(lhs, rhs.getType().value(), false)) {
+        lhs = dispatchCast(lhs.getCodeLoc(), lhs, rhs.getType().value());
+        return !lhs.isInvalid();
+    } else {
+        if (oneWayOnly) msgs->errorExprCannotImplicitCast(rhs.getCodeLoc(), rhs.getType().value(), lhs.getType().value());
+        else msgs->errorExprCannotImplicitCastEither(rhs.getCodeLoc(), rhs.getType().value(), lhs.getType().value());
+        return false;
+    }
+}
+
 bool Processor::shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id dstTypeId) const {
     if (!node.isEvalVal()) return true;
 
@@ -1501,19 +1517,26 @@ bool Processor::shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id d
     return false;
 }
 
-bool Processor::implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly) {
-    if (lhs.getType().value() == rhs.getType().value()) return true;
+NodeVal Processor::dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
+    if (checkIsEvalTime(node, false) && !shouldNotDispatchCastToEval(node, ty))
+        return evaluator->performCast(node.getCodeLoc(), node, ty);
+    else
+        return performCast(node.getCodeLoc(), node, ty);
+}
 
-    if (checkImplicitCastable(rhs, lhs.getType().value(), false)) {
-        rhs = dispatchCast(rhs.getCodeLoc(), rhs, lhs.getType().value());
-        return !rhs.isInvalid();
-    } else if (!oneWayOnly && checkImplicitCastable(lhs, rhs.getType().value(), false)) {
-        lhs = dispatchCast(lhs.getCodeLoc(), lhs, rhs.getType().value());
-        return !lhs.isInvalid();
+NodeVal Processor::dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
+    if (!checkHasType(oper, true)) return NodeVal();
+
+    optional<TypeTable::Id> resTy = typeTable->addTypeDerefOf(oper.getType().value());
+    if (!resTy.has_value()) {
+        msgs->errorUnknown(codeLoc);
+        return NodeVal();
+    }
+
+    if (checkIsEvalTime(oper, false)) {
+        return evaluator->performOperUnaryDeref(codeLoc, oper, resTy.value());
     } else {
-        if (oneWayOnly) msgs->errorExprCannotImplicitCast(rhs.getCodeLoc(), rhs.getType().value(), lhs.getType().value());
-        else msgs->errorExprCannotImplicitCastEither(rhs.getCodeLoc(), rhs.getType().value(), lhs.getType().value());
-        return false;
+        return performOperUnaryDeref(codeLoc, oper, resTy.value());
     }
 }
 
@@ -2130,29 +2153,6 @@ NodeVal Processor::processAndImplicitCast(const NodeVal &node, TypeTable::Id ty)
     if (proc.isInvalid()) return NodeVal();
 
     return implicitCast(proc, ty);
-}
-
-NodeVal Processor::dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
-    if (checkIsEvalTime(node, false) && !shouldNotDispatchCastToEval(node, ty))
-        return evaluator->performCast(node.getCodeLoc(), node, ty);
-    else
-        return performCast(node.getCodeLoc(), node, ty);
-}
-
-NodeVal Processor::dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
-    if (!checkHasType(oper, true)) return NodeVal();
-
-    optional<TypeTable::Id> resTy = typeTable->addTypeDerefOf(oper.getType().value());
-    if (!resTy.has_value()) {
-        msgs->errorUnknown(codeLoc);
-        return NodeVal();
-    }
-
-    if (checkIsEvalTime(oper, false)) {
-        return evaluator->performOperUnaryDeref(codeLoc, oper, resTy.value());
-    } else {
-        return performOperUnaryDeref(codeLoc, oper, resTy.value());
-    }
 }
 
 bool Processor::checkInGlobalScope(CodeLoc codeLoc, bool orError) {
