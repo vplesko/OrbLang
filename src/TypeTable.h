@@ -103,8 +103,6 @@ public:
         DataType(NamePool::Id name, std::vector<MembEntry> membs) : name(name), members(std::move(membs)) {}
 
         std::optional<std::size_t> getMembInd(NamePool::Id name) const;
-
-        bool anyMembIsNoZeroInit() const;
     };
 
     struct Callable {

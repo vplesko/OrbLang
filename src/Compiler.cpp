@@ -119,27 +119,15 @@ NodeVal Compiler::performZero(CodeLoc codeLoc, TypeTable::Id ty) {
     llvm::Type *llvmType = makeLlvmTypeOrError(codeLoc, ty);
     if (llvmType == nullptr) return NodeVal();
 
-    llvm::Value *llvmNull = llvm::Constant::getNullValue(llvmType);
-    if (typeTable->worksAsDataType(ty)) {
-        const TypeTable::DataType &dataType = *typeTable->extractDataType(ty);
-
-        if (dataType.anyMembIsNoZeroInit()) {
-            vector<llvm::Constant*> membVals;
-            membVals.reserve(dataType.members.size());
-            for (const TypeTable::DataType::MembEntry &memb : dataType.members) {
-                // was able to make LLVM type for entire data type, so can make for any member with no error
-                llvm::Type *membLlvmType = makeLlvmType(memb.type);
-
-                membVals.push_back(memb.noZeroInit ? llvm::UndefValue::get(membLlvmType) : llvm::Constant::getNullValue(membLlvmType));
-            }
-
-            llvmNull = llvm::ConstantStruct::get((llvm::StructType*) llvmType, membVals);
-        }
+    llvm::Constant *llvmZero = makeLlvmZero(llvmType, ty);
+    if (llvmZero == nullptr) {
+        msgs->errorInternal(codeLoc);
+        return NodeVal();
     }
 
     LlvmVal llvmVal;
     llvmVal.type = ty;
-    llvmVal.val = llvmNull;
+    llvmVal.val = llvmZero;
     return NodeVal(codeLoc, llvmVal);
 }
 
@@ -1013,6 +1001,48 @@ llvm::Type* Compiler::makeLlvmTypeOrError(CodeLoc codeLoc, TypeTable::Id typeId)
         msgs->errorUnknown(codeLoc);
     }
     return ret;
+}
+
+llvm::Constant* Compiler::makeLlvmZero(TypeTable::Id typeId) {
+    return makeLlvmZero(makeLlvmType(typeId), typeId);
+}
+
+llvm::Constant* Compiler::makeLlvmZero(llvm::Type *llvmType, TypeTable::Id typeId) {
+    llvm::Constant *llvmZero;
+    if (typeTable->worksAsTypeArr(typeId)) {
+        TypeTable::Id elemTypeId = typeTable->addTypeIndexOf(typeId).value();
+        llvm::Constant *elemLlvmZero = makeLlvmZero(elemTypeId);
+        vector<llvm::Constant*> elemVals(typeTable->extractLenOfArr(typeId).value(), elemLlvmZero);
+
+        llvmZero = llvm::ConstantArray::get((llvm::ArrayType*) llvmType, elemVals);
+    } else if (typeTable->worksAsTuple(typeId)) {
+        const TypeTable::Tuple &tuple = *typeTable->extractTuple(typeId);
+
+        vector<llvm::Constant*> membVals;
+        membVals.reserve(tuple.members.size());
+        for (TypeTable::Id memb : tuple.members) {
+            llvm::Constant *membLlvmZero = makeLlvmZero(memb);
+            membVals.push_back(membLlvmZero);
+        }
+
+        llvmZero = llvm::ConstantStruct::get((llvm::StructType*) llvmType, membVals);
+    } else if (typeTable->worksAsDataType(typeId)) {
+        const TypeTable::DataType &dataType = *typeTable->extractDataType(typeId);
+
+        vector<llvm::Constant*> membVals;
+        membVals.reserve(dataType.members.size());
+        for (const TypeTable::DataType::MembEntry &memb : dataType.members) {
+            llvm::Type *membLlvmType = makeLlvmType(memb.type);
+            llvm::Constant *membLlvmZero = memb.noZeroInit ? llvm::UndefValue::get(membLlvmType) : makeLlvmZero(membLlvmType, memb.type);
+            membVals.push_back(membLlvmZero);
+        }
+
+        llvmZero = llvm::ConstantStruct::get((llvm::StructType*) llvmType, membVals);
+    } else {
+        llvmZero = llvm::Constant::getNullValue(llvmType);
+    }
+
+    return llvmZero;
 }
 
 llvm::GlobalValue* Compiler::makeLlvmGlobal(llvm::Type *type, llvm::Constant *init, bool isConstant, const std::string &name) {

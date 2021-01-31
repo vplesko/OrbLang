@@ -48,10 +48,6 @@ optional<size_t> TypeTable::DataType::getMembInd(NamePool::Id name) const {
     return nullopt;
 }
 
-bool TypeTable::DataType::anyMembIsNoZeroInit() const {
-    return any_of(members.begin(), members.end(), [](const MembEntry &m) { return m.noZeroInit; });
-}
-
 bool TypeTable::Callable::eq(const Callable &other) const {
     if (isFunc != other.isFunc || getArgCnt() != other.getArgCnt() ||
         retType != other.retType || variadic != other.variadic) return false;

@@ -27,6 +27,8 @@ class Compiler : public Processor {
     llvm::Type* makeLlvmType(TypeTable::Id typeId);
     llvm::Type* makeLlvmPrimType(TypeTable::PrimIds primTypeId) { return makeLlvmType(typeTable->getPrimTypeId(primTypeId)); }
     llvm::Type* makeLlvmTypeOrError(CodeLoc codeLoc, TypeTable::Id typeId);
+    llvm::Constant* makeLlvmZero(TypeTable::Id typeId);
+    llvm::Constant* makeLlvmZero(llvm::Type *llvmType, TypeTable::Id typeId);
     llvm::GlobalValue* makeLlvmGlobal(llvm::Type *type, llvm::Constant *init, bool isConstant, const std::string &name);
     llvm::AllocaInst* makeLlvmAlloca(llvm::Type *type, const std::string &name);
     llvm::Value* makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId);
