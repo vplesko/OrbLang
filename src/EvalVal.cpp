@@ -4,6 +4,10 @@
 #include "NodeVal.h"
 using namespace std;
 
+void EvalVal::removeRef() {
+    ref = nullptr;
+}
+
 EvalVal EvalVal::makeVal(TypeTable::Id t, TypeTable *typeTable) {
     EvalVal evalVal;
     evalVal.type = t;
@@ -64,7 +68,7 @@ EvalVal EvalVal::makeZero(TypeTable::Id t, NamePool *namePool, TypeTable *typeTa
 
 EvalVal EvalVal::copyNoRef(const EvalVal &k) {
     EvalVal evalVal(k);
-    evalVal.ref = nullptr;
+    evalVal.removeRef();
     return evalVal;
 }
 

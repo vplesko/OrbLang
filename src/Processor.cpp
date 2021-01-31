@@ -729,7 +729,7 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
         args.push_back(move(arg));
     }
 
-    return invoke(node.getCodeLoc(), *macroVal, args);
+    return invoke(node.getCodeLoc(), *macroVal, move(args));
 }
 
 NodeVal Processor::processFnc(const NodeVal &node) {

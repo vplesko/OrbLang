@@ -12,6 +12,8 @@
 class Evaluator;
 
 class Processor {
+    friend class BlockControl;
+
 protected:
     NamePool *namePool;
     StringPool *stringPool;

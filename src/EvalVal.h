@@ -53,6 +53,8 @@ struct EvalVal {
     std::uint64_t& getWidestU() { return u64; }
     const std::uint64_t& getWidestU() const { return u64; }
 
+    void removeRef();
+
     static EvalVal makeVal(TypeTable::Id t, TypeTable *typeTable);
     static EvalVal makeZero(TypeTable::Id t, NamePool *namePool, TypeTable *typeTable);
     // use NodeVal::copyNoRef unless sure attrs aren't needed

@@ -39,8 +39,6 @@ public:
     NodeVal(NodeVal &&other) = default;
     NodeVal& operator=(NodeVal &&other) = default;
 
-    static NodeVal makeEmpty(CodeLoc codeLoc, TypeTable *typeTable);
-
     CodeLoc getCodeLoc() const { return codeLoc; }
     bool isEscaped() const;
     EscapeScore getEscapeScore() const;
@@ -49,6 +47,8 @@ public:
 
     // Remember to check when returned to you before any other checks or usages.
     bool isInvalid() const { return std::holds_alternative<bool>(value) && std::get<bool>(value) == false; }
+
+    void removeRef();
 
     bool isImport() const { return std::holds_alternative<StringPool::Id>(value); }
     StringPool::Id getImportFile() const { return std::get<StringPool::Id>(value); }
@@ -104,6 +104,8 @@ public:
 
     static void escape(NodeVal &node, const TypeTable *typeTable, EscapeScore amount = 1);
     static void unescape(NodeVal &node, const TypeTable *typeTable);
+
+    static NodeVal makeEmpty(CodeLoc codeLoc, TypeTable *typeTable);
 
     static NodeVal copyNoRef(const NodeVal &k);
     static NodeVal copyNoRef(CodeLoc codeLoc, const NodeVal &k);
