@@ -729,19 +729,7 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
         args.push_back(move(arg));
     }
 
-    if (callable.variadic) {
-        // if it's variadic, it has to have at least 1 argument (the variadic one)
-        size_t nonVarArgCnt = callable.getArgCnt()-1;
-
-        // TODO better code loc for this
-        NodeVal totalVarArg = NodeVal::makeEmpty(node.getCodeLoc(), typeTable);
-        NodeVal::addChildren(totalVarArg, args.begin()+nonVarArgCnt, args.end(), typeTable);
-
-        args.resize(nonVarArgCnt);
-        args.push_back(move(totalVarArg));
-    }
-
-    return evaluator->performInvoke(node.getCodeLoc(), *macroVal, args);
+    return invoke(node.getCodeLoc(), *macroVal, args);
 }
 
 NodeVal Processor::processFnc(const NodeVal &node) {
@@ -1681,6 +1669,24 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node, const NodeVal &val
 
         return evaluator->performLoad(node.getCodeLoc(), *macroVal);
     }
+}
+
+NodeVal Processor::invoke(CodeLoc codeLoc, const MacroValue &macroVal, vector<NodeVal> args) {
+    const TypeTable::Callable &callable = BaseCallableValue::getCallable(macroVal, typeTable);
+
+    if (callable.variadic) {
+        // if it's variadic, it has to have at least 1 argument (the variadic one)
+        size_t nonVarArgCnt = callable.getArgCnt()-1;
+
+        // TODO better code loc for this
+        NodeVal totalVarArg = NodeVal::makeEmpty(codeLoc, typeTable);
+        NodeVal::addChildren(totalVarArg, args.begin()+nonVarArgCnt, args.end(), typeTable);
+
+        args.resize(nonVarArgCnt);
+        args.push_back(move(totalVarArg));
+    }
+
+    return evaluator->performInvoke(codeLoc, macroVal, args);
 }
 
 bool Processor::processAttributes(NodeVal &node) {
