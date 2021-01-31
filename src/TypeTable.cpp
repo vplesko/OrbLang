@@ -557,24 +557,19 @@ bool TypeTable::worksAsDataType(Id t) const {
 }
 
 bool TypeTable::worksAsCallable(Id t) const {
-    if (!isValidType(t)) return false;
-
-    if (isCallable(t)) {
-        return true;
-    } else if (isCustom(t)) {
-        return worksAsCallable(getCustom(t).type);
-    } else if (isTypeDescr(t)) {
-        const TypeDescr &descr = typeDescrs[t.index].first;
-        if (!descr.decors.empty()) return false;
-        return worksAsCallable(descr.base);
-    } else {
-        return false;
-    }
+    return extractCallable(t) != nullptr;
 }
 
 bool TypeTable::worksAsCallable(Id t, bool isFunc) const {
-    if (!worksAsCallable(t)) return false;
-    return getCallable(extractCustomBaseType(t)).isFunc == isFunc;
+    const Callable *call = extractCallable(t);
+    if (call == nullptr) return false;
+    return call->isFunc == isFunc;
+}
+
+bool TypeTable::worksAsMacroWithArgs(Id t, std::size_t argCnt, bool variadic) const {
+    const Callable *call = extractCallable(t);
+    if (call == nullptr) return false;
+    return !call->isFunc && call->getArgCnt() == argCnt && call->variadic == variadic;
 }
 
 bool TypeTable::isPrimitive(Id t) const {

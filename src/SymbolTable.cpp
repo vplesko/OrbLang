@@ -212,6 +212,16 @@ const MacroValue* SymbolTable::getMacro(MacroCallSite callSite, const TypeTable 
     return nullptr;
 }
 
+void SymbolTable::registerDropMacro(TypeTable::Id ty, const MacroValue *mac) {
+    dropMacros.insert({ty, mac});
+}
+
+const MacroValue* SymbolTable::getDropMacro(TypeTable::Id ty) {
+    auto loc = dropMacros.find(ty);
+    if (loc == dropMacros.end()) return nullptr;
+    return loc->second;
+}
+
 bool SymbolTable::inGlobalScope() const {
     return localBlockChains.empty() && globalBlockChain.size() == 1;
 }

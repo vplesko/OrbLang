@@ -76,6 +76,7 @@ protected:
     bool checkIsId(const NodeVal &node, bool orError);
     bool checkIsType(const NodeVal &node, bool orError);
     bool checkIsBool(const NodeVal &node, bool orError);
+    bool checkIsMacroOneArg(const NodeVal &node, bool orError);
     // Checks that the node is EvalVal or LlvmVal.
     bool checkIsValue(const NodeVal &node, bool orError);
     bool checkExactlyChildren(const NodeVal &node, std::size_t n, bool orError);

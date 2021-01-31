@@ -1,0 +1,12 @@
+import "util/io.orb";
+
+mac dropFoo (val) {
+    ret \(println_i32 (. ,val x));
+};
+
+data Foo {
+    x:i32
+}::((drop dropFoo));
+
+fnc main () () {
+};

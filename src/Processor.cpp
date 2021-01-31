@@ -588,6 +588,12 @@ NodeVal Processor::processData(const NodeVal &node) {
             msgs->errorUnknown(node.getCodeLoc());
             return NodeVal();
         }
+
+        optional<NodeVal> dropAttr = getAttribute(nodeMembs, "drop");
+        if (dropAttr.has_value()) {
+            if (!checkIsMacroOneArg(dropAttr.value(), true)) return NodeVal();
+            symbolTable->registerDropMacro(typeIdOpt.value(), dropAttr.value().getEvalVal().m);
+        }
     }
 
     return NodeVal(node.getCodeLoc());
@@ -2250,6 +2256,14 @@ bool Processor::checkIsType(const NodeVal &node, bool orError) {
 
 bool Processor::checkIsBool(const NodeVal &node, bool orError) {
     if (!node.getType().has_value() || !typeTable->worksAsTypeB(node.getType().value())) {
+        if (orError) msgs->errorUnknown(node.getCodeLoc());
+        return false;
+    }
+    return true;
+}
+
+bool Processor::checkIsMacroOneArg(const NodeVal &node, bool orError) {
+    if (!node.getType().has_value() || !typeTable->worksAsMacroWithArgs(node.getType().value(), 1)) {
         if (orError) msgs->errorUnknown(node.getCodeLoc());
         return false;
     }
