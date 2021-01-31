@@ -248,8 +248,13 @@ public:
 
     std::optional<std::size_t> extractLenOfArr(Id arrTypeId) const;
     std::optional<std::size_t> extractLenOfTuple(Id tupleTypeId) const;
+
+    // handles constness of resulting type
     std::optional<Id> extractTupleMemberType(Id t, std::size_t ind);
+    // handles constness of resulting type
     std::optional<Id> extractDataTypeMemberType(Id t, NamePool::Id memb);
+    // handles constness of resulting type
+    std::optional<Id> extractDataTypeMemberType(Id t, std::size_t ind);
 
     // passes through customs and decors
     Id extractBaseType(Id t) const;

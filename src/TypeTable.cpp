@@ -618,6 +618,7 @@ optional<TypeTable::Id> TypeTable::extractTupleMemberType(Id t, size_t ind) {
     if (ind >= tup.value()->members.size()) return nullopt;
 
     Id id = tup.value()->members[ind];
+    // worksAsTypeCn would be incorrect, as that returns true if not direct cn but a different member is cn
     return isDirectCn(t) ? addTypeCnOf(id) : id;
 }
 
@@ -644,6 +645,16 @@ optional<TypeTable::Id> TypeTable::extractDataTypeMemberType(Id t, NamePool::Id 
     if (!ind.has_value()) return nullopt;
 
     Id id = data->members[ind.value()].type;
+    // worksAsTypeCn would be incorrect, as that returns true if not direct cn but a different member is cn
+    return isDirectCn(t) ? addTypeCnOf(id) : id;
+}
+
+optional<TypeTable::Id> TypeTable::extractDataTypeMemberType(Id t, size_t ind) {
+    const DataType *data = extractDataType(t);
+    if (data == nullptr) return nullopt;
+
+    Id id = data->members[ind].type;
+    // worksAsTypeCn would be incorrect, as that returns true if not direct cn but a different member is cn
     return isDirectCn(t) ? addTypeCnOf(id) : id;
 }
 

@@ -612,7 +612,7 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVa
     }
 }
 
-NodeVal Evaluator::performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
+NodeVal Evaluator::performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
     if (!checkIsEvalVal(base, true)) return NodeVal();
 
     if (NodeVal::isRawVal(base, typeTable)) {

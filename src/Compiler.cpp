@@ -660,7 +660,7 @@ NodeVal Compiler::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal
     return NodeVal(basePromo.getCodeLoc(), llvmVal);
 }
 
-NodeVal Compiler::performOperMember(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
+NodeVal Compiler::performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     
     NodeVal basePromo = promoteIfEvalValAndCheckIsLlvmVal(base, true);

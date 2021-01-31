@@ -1145,7 +1145,7 @@ NodeVal Processor::processOper(const NodeVal &node, Oper op) {
     } else if (op == Oper::IND) {
         return processOperIndex(node.getCodeLoc(), operands);
     } else if (op == Oper::DOT) {
-        return processOperMember(node.getCodeLoc(), operands);
+        return processOperDot(node.getCodeLoc(), operands);
     } else {
         return processOperRegular(node.getCodeLoc(), operands, op);
     }
@@ -1541,13 +1541,13 @@ NodeVal Processor::dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) 
     }
 }
 
-NodeVal Processor::getElem(CodeLoc codeLoc, NodeVal &array, std::size_t index) {
+NodeVal Processor::getElement(CodeLoc codeLoc, NodeVal &array, size_t index) {
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::WIDEST_U), typeTable);
     evalVal.getWidestU() = index;
-    return getElem(codeLoc, array, NodeVal(codeLoc, move(evalVal)));
+    return getElement(codeLoc, array, NodeVal(codeLoc, move(evalVal)));
 }
 
-NodeVal Processor::getElem(CodeLoc codeLoc, NodeVal &array, const NodeVal &index) {
+NodeVal Processor::getElement(CodeLoc codeLoc, NodeVal &array, const NodeVal &index) {
     TypeTable::Id arrayType = array.getType().value();
 
     optional<TypeTable::Id> elemType = typeTable->addTypeIndexOf(arrayType);
@@ -1563,6 +1563,39 @@ NodeVal Processor::getElem(CodeLoc codeLoc, NodeVal &array, const NodeVal &index
         return evaluator->performOperIndex(codeLoc, array, index, resType);
     } else {
         return performOperIndex(array.getCodeLoc(), array, index, resType);
+    }
+}
+
+NodeVal Processor::getRawMember(CodeLoc codeLoc, NodeVal &raw, size_t index) {
+    TypeTable::Id rawType = raw.getType().value();
+
+    TypeTable::Id resType = raw.getChild(index).getType().value();
+    if (typeTable->worksAsTypeCn(rawType)) resType = typeTable->addTypeCnOf(resType);
+
+    return evaluator->performOperDot(codeLoc, raw, index, resType);
+}
+
+NodeVal Processor::getTupleMember(CodeLoc codeLoc, NodeVal &tuple, size_t index) {
+    TypeTable::Id tupleType = tuple.getType().value();
+
+    TypeTable::Id resType = typeTable->extractTupleMemberType(tupleType, index).value();
+
+    if (checkIsEvalTime(tuple, false)) {
+        return evaluator->performOperDot(codeLoc, tuple, index, resType);
+    } else {
+        return performOperDot(codeLoc, tuple, index, resType);
+    }
+}
+
+NodeVal Processor::getDataMember(CodeLoc codeLoc, NodeVal &data, size_t index) {
+    TypeTable::Id dataType = data.getType().value();
+
+    TypeTable::Id resType = typeTable->extractDataTypeMemberType(dataType, index).value();
+
+    if (checkIsEvalTime(data, false)) {
+        return evaluator->performOperDot(codeLoc, data, index, resType);
+    } else {
+        return performOperDot(codeLoc, data, index, resType);
     }
 }
 
@@ -1974,14 +2007,14 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
             }
         }
 
-        base = getElem(base.getCodeLoc(), base, index);
+        base = getElement(base.getCodeLoc(), base, index);
         if (base.isInvalid()) return NodeVal();
     }
 
     return base;
 }
 
-NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
+NodeVal Processor::processOperDot(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
     NodeVal base = processAndCheckHasType(*opers[0]);
     if (base.isInvalid()) return NodeVal();
 
@@ -2045,27 +2078,14 @@ NodeVal Processor::processOperMember(CodeLoc codeLoc, const std::vector<const No
             indexVal = indexValOpt.value();
         }
 
-        optional<TypeTable::Id> resType;
         if (isBaseRaw) {
-            resType = base.getChild(indexVal).getType();
-            if (typeTable->worksAsPrimitive(resType.value(), TypeTable::P_RAW) && typeTable->worksAsTypeCn(baseType)) {
-                resType = typeTable->addTypeCnOf(resType.value());
-            }
+            base = getRawMember(index.getCodeLoc(), base, (size_t) indexVal);
         } else if (isBaseTup) {
-            resType = typeTable->extractTupleMemberType(baseType, (size_t) indexVal);
+            base = getTupleMember(index.getCodeLoc(), base, (size_t) indexVal);
         } else {
-            resType = typeTable->extractDataTypeMemberType(baseType, index.getEvalVal().id);
-        }
-        if (!resType.has_value()) {
-            msgs->errorInternal(base.getCodeLoc());
-            return NodeVal();
+            base = getDataMember(index.getCodeLoc(), base, (size_t) indexVal);
         }
 
-        if (checkIsEvalTime(base, false)) {
-            base = evaluator->performOperMember(index.getCodeLoc(), base, indexVal, resType.value());
-        } else {
-            base = performOperMember(index.getCodeLoc(), base, indexVal, resType.value());
-        }
         if (base.isInvalid()) return NodeVal();
     }
 
