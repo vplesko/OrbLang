@@ -374,7 +374,10 @@ bool Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, c
         LlvmVal varLlvmVal(callable.argTypes[i]);
         varLlvmVal.ref = llvmAlloca;
         NodeVal varNodeVal(args.getChild(i).getCodeLoc(), varLlvmVal);
-        symbolTable->addVar(func.argNames[i], move(varNodeVal));
+        if (!symbolTable->addVar(func.argNames[i], move(varNodeVal))) {
+            msgs->errorInternal(args.getChild(i).getCodeLoc());
+            return false;
+        }
 
         ++i;
     }

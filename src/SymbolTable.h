@@ -71,6 +71,7 @@ public:
     struct VarEntry {
         NodeVal var;
         bool isInvokeArg = false;
+        bool dropped = false;
     };
 
     struct MacroCallSite {
@@ -98,6 +99,7 @@ private:
 
     struct BlockInternal {
         Block block;
+        bool dropsOngoing = false;
         // Guarantees pointer stability of values.
         std::unordered_map<NamePool::Id, VarEntry> vars;
         std::vector<VarEntry*> varsInOrder;
@@ -124,8 +126,8 @@ private:
 public:
     SymbolTable();
 
-    void addVar(NamePool::Id name, NodeVal val);
-    void addVar(NamePool::Id name, VarEntry var);
+    bool addVar(NamePool::Id name, NodeVal val);
+    bool addVar(NamePool::Id name, VarEntry var);
     const VarEntry* getVar(NamePool::Id name) const;
     VarEntry* getVar(NamePool::Id name);
 

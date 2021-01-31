@@ -70,16 +70,21 @@ void SymbolTable::endBlock() {
     }
 }
 
-void SymbolTable::addVar(NamePool::Id name, NodeVal val) {
+bool SymbolTable::addVar(NamePool::Id name, NodeVal val) {
     VarEntry varEntry;
     varEntry.var = move(val);
-    addVar(name, move(varEntry));
+    return addVar(name, move(varEntry));
 }
 
-void SymbolTable::addVar(NamePool::Id name, VarEntry var) {
+bool SymbolTable::addVar(NamePool::Id name, VarEntry var) {
     BlockInternal *lastBlock = getLastBlockInternal();
+
+    if (lastBlock->dropsOngoing) return false;
+
     auto loc = lastBlock->vars.insert(make_pair(name, move(var)));
     lastBlock->varsInOrder.push_back(&loc.first->second);
+
+    return true;
 }
 
 const SymbolTable::VarEntry* SymbolTable::getVar(NamePool::Id name) const {
@@ -88,14 +93,14 @@ const SymbolTable::VarEntry* SymbolTable::getVar(NamePool::Id name) const {
             it != localBlockChains.back().second.rend();
             ++it) {
             auto loc = it->vars.find(name);
-            if (loc != it->vars.end()) return &loc->second;
+            if (loc != it->vars.end() && !loc->second.dropped) return &loc->second;
         }
     }
     for (auto it = globalBlockChain.rbegin();
         it != globalBlockChain.rend();
         ++it) {
         auto loc = it->vars.find(name);
-        if (loc != it->vars.end()) return &loc->second;
+        if (loc != it->vars.end() && !loc->second.dropped) return &loc->second;
     }
 
     return nullptr;

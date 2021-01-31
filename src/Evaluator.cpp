@@ -181,7 +181,10 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
     const TypeTable::Callable &callable = FuncValue::getCallable(func, typeTable);
 
     for (size_t i = 0; i < args.size(); ++i) {
-        symbolTable->addVar(func.argNames[i], NodeVal::copyNoRef(args[i]));
+        if (!symbolTable->addVar(func.argNames[i], NodeVal::copyNoRef(args[i]))) {
+            msgs->errorInternal(args[i].getCodeLoc());
+            return NodeVal();
+        }
     }
 
     try {
@@ -216,7 +219,10 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const
         SymbolTable::VarEntry varEntry;
         varEntry.var = args[i];
         varEntry.isInvokeArg = true;
-        symbolTable->addVar(macro.argNames[i], move(varEntry));
+        if (!symbolTable->addVar(macro.argNames[i], move(varEntry))) {
+            msgs->errorInternal(args[i].getCodeLoc());
+            return NodeVal();
+        }
     }
 
     try {

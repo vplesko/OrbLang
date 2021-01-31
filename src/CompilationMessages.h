@@ -76,6 +76,7 @@ public:
     void errorNonBinOp(CodeLoc loc, Oper op);
     void errorSymNameTaken(CodeLoc loc, NamePool::Id name);
     void errorSymNotFound(CodeLoc loc, NamePool::Id name);
+    void errorSymDropOngoing(CodeLoc loc);
     void errorCnNoInit(CodeLoc loc, NamePool::Id name);
     void errorExprCannotPromote(CodeLoc loc);
     void errorExprCannotPromote(CodeLoc loc, TypeTable::Id into);

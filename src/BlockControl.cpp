@@ -2,13 +2,26 @@
 #include "Processor.h"
 using namespace std;
 
-// TODO! make dropped no ref, remove from symbol table
 // TODO! test (pos and neg) referring to other vars within drop
-// TODO! what if sym or block within drop
-// TODO! what if this not in block, but in func/macro, so next outer scope is global
-// TODO! propagate fails in drops
+// TODO! test block within drop
 BlockControl::~BlockControl() {
-    if (symTable != nullptr) {
-        symTable->endBlock();
+    if (symbolTable != nullptr) {
+        if (processor != nullptr) {
+            SymbolTable::BlockInternal *lastBlock = symbolTable->getLastBlockInternal();
+            lastBlock->dropsOngoing = true;
+
+            vector<SymbolTable::VarEntry*> vars = lastBlock->varsInOrder;
+            for (auto it = vars.rbegin(); it != vars.rend(); ++it) {
+                NodeVal var = move((*it)->var);
+
+                (*it)->dropped = true;
+                var.removeRef();
+
+                // if fails, will be detected after func/macro is done processing
+                processor->invokeDrop(move(var));
+            }
+        }
+    
+        symbolTable->endBlock();
     }
 }

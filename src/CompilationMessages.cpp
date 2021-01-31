@@ -386,6 +386,10 @@ void CompilationMessages::errorSymNotFound(CodeLoc loc, NamePool::Id name) {
     error(loc, ss.str());
 }
 
+void CompilationMessages::errorSymDropOngoing(CodeLoc loc) {
+    error(loc, "Symbols cannot be registered in a block once it starts invoking drops.");
+}
+
 void CompilationMessages::errorCnNoInit(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Constant with name '" << namePool->get(name) << "' is not initialized.";

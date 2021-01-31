@@ -265,7 +265,10 @@ NodeVal Processor::processSym(const NodeVal &node) {
             NodeVal nodeReg = performRegister(pair.first.getCodeLoc(), id, init);
             if (nodeReg.isInvalid()) return NodeVal();
 
-            symbolTable->addVar(id, move(nodeReg));
+            if (!symbolTable->addVar(id, move(nodeReg))) {
+                msgs->errorSymDropOngoing(pair.first.getCodeLoc());
+                return NodeVal();
+            }
         } else {
             if (!hasType) {
                 msgs->errorMissingTypeAttribute(nodePair.getCodeLoc());
@@ -291,7 +294,10 @@ NodeVal Processor::processSym(const NodeVal &node) {
                 if (nodeReg.isInvalid()) return NodeVal();
             }
 
-            symbolTable->addVar(id, move(nodeReg));
+            if (!symbolTable->addVar(id, move(nodeReg))) {
+                msgs->errorSymDropOngoing(pair.first.getCodeLoc());
+                return NodeVal();
+            }
         }
     }
 
@@ -857,7 +863,10 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         UndecidedCallableVal undecidedVal;
         undecidedVal.isFunc = true;
         undecidedVal.name = name;
-        symbolTable->addVar(name, NodeVal(node.getCodeLoc(), undecidedVal));
+        if (!symbolTable->addVar(name, NodeVal(node.getCodeLoc(), undecidedVal))) {
+            msgs->errorInternal(node.getCodeLoc());
+            return NodeVal();
+        }
     }
 
     // funcVal is passed by mutable reference, is needed later
@@ -996,7 +1005,10 @@ NodeVal Processor::processMac(const NodeVal &node) {
             UndecidedCallableVal undecidedVal;
             undecidedVal.isFunc = false;
             undecidedVal.name = name;
-            symbolTable->addVar(name, NodeVal(node.getCodeLoc(), undecidedVal));
+            if (!symbolTable->addVar(name, NodeVal(node.getCodeLoc(), undecidedVal))) {
+                msgs->errorInternal(node.getCodeLoc());
+                return NodeVal();
+            }
         }
 
         MacroValue *symbVal = symbolTable->registerMacro(macroVal, typeTable);
@@ -1687,6 +1699,10 @@ NodeVal Processor::invoke(CodeLoc codeLoc, const MacroValue &macroVal, vector<No
     }
 
     return evaluator->performInvoke(codeLoc, macroVal, args);
+}
+
+void Processor::invokeDrop(NodeVal val) {
+    // TODO!
 }
 
 bool Processor::processAttributes(NodeVal &node) {
