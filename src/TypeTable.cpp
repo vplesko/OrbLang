@@ -331,6 +331,10 @@ TypeTable::Id TypeTable::addCallableSig(const Callable &call) {
     return addCallable(sig);
 }
 
+TypeTable::Id TypeTable::addCallableSig(Id t) {
+    return addCallableSig(*extractCallable(t));
+}
+
 void TypeTable::addTypeStr() {
     Id c8Id{Id::kPrim, P_C8};
 

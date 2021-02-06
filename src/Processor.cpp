@@ -593,8 +593,8 @@ NodeVal Processor::processData(const NodeVal &node) {
 
         optional<NodeVal> dropAttr = getAttribute(nodeMembs, "drop");
         if (dropAttr.has_value()) {
-            if (!checkIsMacroOneArg(dropAttr.value(), true)) return NodeVal();
-            symbolTable->registerDropMacro(typeIdOpt.value(), dropAttr.value().getEvalVal().m);
+            if (!checkIsDropFuncType(dropAttr.value(), typeIdOpt.value(), true)) return NodeVal();
+            symbolTable->registerDropFunc(typeIdOpt.value(), dropAttr.value());
         }
     }
 
@@ -2302,8 +2302,21 @@ bool Processor::checkIsBool(const NodeVal &node, bool orError) {
     return true;
 }
 
-bool Processor::checkIsMacroOneArg(const NodeVal &node, bool orError) {
-    if (!node.getType().has_value() || !typeTable->worksAsMacroWithArgs(node.getType().value(), 1)) {
+bool Processor::checkIsDropFuncType(const NodeVal &node, TypeTable::Id dropeeTy, bool orError) {
+    bool check = node.getType().has_value();
+    if (check) {
+        TypeTable::Id nodeTy = node.getType().value();
+        check = typeTable->worksAsCallable(nodeTy, true);
+        if (check) {
+            TypeTable::Callable dropCallable;
+            dropCallable.isFunc = true;
+            dropCallable.argTypes = {dropeeTy};
+
+            check = typeTable->addCallableSig(dropCallable) == typeTable->addCallableSig(nodeTy);
+        }
+    }
+
+    if (!check) {
         if (orError) msgs->errorUnknown(node.getCodeLoc());
         return false;
     }

@@ -112,7 +112,7 @@ private:
     std::vector<BlockInternal> globalBlockChain;
     std::vector<std::pair<CalleeValueInfo, std::vector<BlockInternal>>> localBlockChains;
 
-    std::unordered_map<TypeTable::Id, const MacroValue*, TypeTable::Id::Hasher> dropMacros;
+    std::unordered_map<TypeTable::Id, NodeVal, TypeTable::Id::Hasher> dropFuncs;
 
     void newBlock(Block b);
     void newBlock(const CalleeValueInfo &c);
@@ -138,8 +138,8 @@ public:
     std::vector<const MacroValue*> getMacros(NamePool::Id name) const;
     const MacroValue* getMacro(MacroCallSite callSite, const TypeTable *typeTable) const;
 
-    void registerDropMacro(TypeTable::Id ty, const MacroValue *mac);
-    const MacroValue* getDropMacro(TypeTable::Id ty);
+    void registerDropFunc(TypeTable::Id ty, NodeVal func);
+    const NodeVal* getDropFunc(TypeTable::Id ty);
 
     bool inGlobalScope() const;
     Block getLastBlock() const;

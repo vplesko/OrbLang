@@ -215,14 +215,14 @@ const MacroValue* SymbolTable::getMacro(MacroCallSite callSite, const TypeTable 
     return nullptr;
 }
 
-void SymbolTable::registerDropMacro(TypeTable::Id ty, const MacroValue *mac) {
-    dropMacros.insert({ty, mac});
+void SymbolTable::registerDropFunc(TypeTable::Id ty, NodeVal func) {
+    dropFuncs.insert({ty, move(func)});
 }
 
-const MacroValue* SymbolTable::getDropMacro(TypeTable::Id ty) {
-    auto loc = dropMacros.find(ty);
-    if (loc == dropMacros.end()) return nullptr;
-    return loc->second;
+const NodeVal* SymbolTable::getDropFunc(TypeTable::Id ty) {
+    auto loc = dropFuncs.find(ty);
+    if (loc == dropFuncs.end()) return nullptr;
+    return &loc->second;
 }
 
 bool SymbolTable::inGlobalScope() const {

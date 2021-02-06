@@ -189,6 +189,7 @@ public:
     Id addTypeDescrForSig(const TypeDescr &typeDescr);
     Id addTypeDescrForSig(Id t);
     Id addCallableSig(const Callable &call);
+    Id addCallableSig(Id t);
 
     llvm::Type* getType(Id id);
     void setType(Id id, llvm::Type *type);

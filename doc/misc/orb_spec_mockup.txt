@@ -272,6 +272,8 @@ data types have named members
 ********************
 
 plan:
+ - zero
  - drop, ::noDrop
+ - lam, pat
  - unique, move
  - import C headers
