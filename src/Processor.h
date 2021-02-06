@@ -134,6 +134,8 @@ private:
     NodeVal loadUndecidedCallable(const NodeVal &node, const NodeVal &val);
     NodeVal invoke(CodeLoc codeLoc, const MacroValue &macroVal, std::vector<NodeVal> args);
     bool callDropFunc(CodeLoc codeLoc, NodeVal val);
+    bool callDropFuncNonRef(NodeVal val);
+    bool callDropFuncsNonRef(std::vector<NodeVal> val);
     bool callDropFuncs(CodeLoc codeLoc, std::vector<SymbolTable::VarEntry*> vars);
 protected:
     bool callDropFuncsCurrBlock(CodeLoc codeLoc);

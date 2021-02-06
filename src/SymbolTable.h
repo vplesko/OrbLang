@@ -70,6 +70,7 @@ public:
 
     struct VarEntry {
         NodeVal var;
+        // TODO! NodeVal should know if it's noDrop, and propagate on . and []
         bool isNoDrop = false;
         bool isInvokeArg = false;
     };
