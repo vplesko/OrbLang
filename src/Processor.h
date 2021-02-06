@@ -24,7 +24,7 @@ protected:
     unsigned topmost;
 
 protected:
-    virtual NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, SymbolTable::VarEntry &ref) =0;
+    virtual NodeVal performLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, std::optional<NamePool::Id> id = std::nullopt) =0;
     virtual NodeVal performLoad(CodeLoc codeLoc, const FuncValue &func) =0;
     virtual NodeVal performLoad(CodeLoc codeLoc, const MacroValue &macro) =0;
     virtual NodeVal performZero(CodeLoc codeLoc, TypeTable::Id ty) =0;
@@ -118,10 +118,12 @@ private:
     bool canBeTypeDescrDecor(const NodeVal &node);
     bool applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &node);
     bool applyTupleMemb(TypeTable::Tuple &tup, const NodeVal &node);
+    NodeVal dispatchLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, std::optional<NamePool::Id> id = std::nullopt);
     NodeVal implicitCast(const NodeVal &node, TypeTable::Id ty);
     bool implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly);
     bool shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id dstTypeId) const;
     NodeVal dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty);
+    NodeVal dispatchCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args, bool allArgsEval);
     NodeVal dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
     NodeVal getElement(CodeLoc codeLoc, NodeVal &array, std::size_t index);
     NodeVal getElement(CodeLoc codeLoc, NodeVal &array, const NodeVal &index);
@@ -131,8 +133,8 @@ private:
     bool argsFitFuncCall(const std::vector<NodeVal> &args, const TypeTable::Callable &callable, bool allowImplicitCasts);
     NodeVal loadUndecidedCallable(const NodeVal &node, const NodeVal &val);
     NodeVal invoke(CodeLoc codeLoc, const MacroValue &macroVal, std::vector<NodeVal> args);
-    bool callDropFunc(CodeLoc codeLoc, const NodeVal &val);
-    bool callDropFuncs(CodeLoc codeLoc, std::vector<const SymbolTable::VarEntry*> vars);
+    bool callDropFunc(CodeLoc codeLoc, NodeVal val);
+    bool callDropFuncs(CodeLoc codeLoc, std::vector<SymbolTable::VarEntry*> vars);
 protected:
     bool callDropFuncsCurrBlock(CodeLoc codeLoc);
     bool callDropFuncsFromBlockToCurrBlock(CodeLoc codeLoc, NamePool::Id name);

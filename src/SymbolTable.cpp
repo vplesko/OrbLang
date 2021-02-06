@@ -272,21 +272,21 @@ optional<SymbolTable::CalleeValueInfo> SymbolTable::getCurrCallee() const {
     return localBlockChains.back().first;
 }
 
-void SymbolTable::collectVarsInRevOrder(const BlockInternal *block, vector<const VarEntry*> &v) const {
+void SymbolTable::collectVarsInRevOrder(const BlockInternal *block, vector<VarEntry*> &v) const {
     const auto &vars = block->varsInOrder;
     for_each(vars.rbegin(), vars.rend(), [&](SymbolTable::VarEntry *var){
         v.push_back(var);
     });
 }
 
-vector<const SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderCurrBlock() const {
-    vector<const SymbolTable::VarEntry*> ret;
+vector<SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderCurrBlock() const {
+    vector<SymbolTable::VarEntry*> ret;
     collectVarsInRevOrder(getLastBlockInternal(), ret);
     return ret;
 }
 
-vector<const SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderFromBlockToCurrBlock(NamePool::Id name) const {
-    vector<const SymbolTable::VarEntry*> ret;
+vector<SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderFromBlockToCurrBlock(NamePool::Id name) const {
+    vector<SymbolTable::VarEntry*> ret;
 
     if (!localBlockChains.empty()) {
         for (auto it = localBlockChains.back().second.rbegin();
@@ -308,8 +308,8 @@ vector<const SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderFromBlockToCu
     return ret;
 }
 
-vector<const SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderCurrCallable() const {
-    vector<const SymbolTable::VarEntry*> ret;
+vector<SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderCurrCallable() const {
+    vector<SymbolTable::VarEntry*> ret;
 
     for (auto it = localBlockChains.back().second.rbegin();
         it != localBlockChains.back().second.rend();

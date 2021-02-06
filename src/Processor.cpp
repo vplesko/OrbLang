@@ -205,11 +205,7 @@ NodeVal Processor::processId(const NodeVal &node) {
     if (value != nullptr) {
         if (value->var.isUndecidedCallableVal()) return loadUndecidedCallable(node, value->var);
 
-        if (checkIsEvalTime(value->var, false)) {
-            return evaluator->performLoad(node.getCodeLoc(), id, *value);
-        } else {
-            return performLoad(node.getCodeLoc(), id, *value);
-        }
+        return dispatchLoad(node.getCodeLoc(), *value, id);
     } else if (isKeyword(id) || isOper(id)) {
         SpecialVal spec;
         spec.id = id;
@@ -692,11 +688,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
             if (args[i].isInvalid()) return NodeVal();
         }
 
-        if (starting.isEvalVal() && allArgsEval) {
-            return evaluator->performCall(node.getCodeLoc(), starting, args);
-        } else {
-            return performCall(node.getCodeLoc(), starting, args);
-        }
+        return dispatchCall(node.getCodeLoc(), starting, args, allArgsEval);
     }
 }
 
@@ -1446,6 +1438,14 @@ bool Processor::applyTupleMemb(TypeTable::Tuple &tup, const NodeVal &node) {
     return true;
 }
 
+NodeVal Processor::dispatchLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, optional<NamePool::Id> id) {
+    if (checkIsEvalTime(ref.var, false)) {
+        return evaluator->performLoad(codeLoc, ref, id);
+    } else {
+        return performLoad(codeLoc, ref, id);
+    }
+}
+
 NodeVal Processor::implicitCast(const NodeVal &node, TypeTable::Id ty) {
     if (!checkImplicitCastable(node, ty, true)) return NodeVal();
 
@@ -1527,6 +1527,14 @@ NodeVal Processor::dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable:
         return evaluator->performCast(node.getCodeLoc(), node, ty);
     else
         return performCast(node.getCodeLoc(), node, ty);
+}
+
+NodeVal Processor::dispatchCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args, bool allArgsEval) {
+    if (func.isEvalVal() && allArgsEval) {
+        return evaluator->performCall(codeLoc, func, args);
+    } else {
+        return performCall(codeLoc, func, args);
+    }
 }
 
 NodeVal Processor::dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) {
@@ -1706,16 +1714,75 @@ NodeVal Processor::invoke(CodeLoc codeLoc, const MacroValue &macroVal, vector<No
     return evaluator->performInvoke(codeLoc, macroVal, args);
 }
 
-bool Processor::callDropFunc(CodeLoc codeLoc, const NodeVal &val) {
-    // TODO!
+bool Processor::callDropFunc(CodeLoc codeLoc, NodeVal val) {
+    if (!checkHasType(val, false)) return true;
+
+    TypeTable::Id valTy = val.getType().value();
+
+    if (typeTable->worksAsPrimitive(valTy, TypeTable::P_RAW)) {
+        for (size_t i = 0; i < val.getChildrenCnt(); ++i) {
+            size_t ind = val.getChildrenCnt()-1-i;
+
+            NodeVal memb = getRawMember(codeLoc, val, ind);
+            if (memb.isInvalid()) return false;
+
+            if (!callDropFunc(codeLoc, move(memb))) return false;
+        }
+    } else if (typeTable->worksAsTypeArr(valTy)) {
+        size_t len = typeTable->extractLenOfArr(valTy).value();
+        for (size_t i = 0; i < len; ++i) {
+            size_t ind = len-1-i;
+
+            NodeVal elem = getElement(codeLoc, val, ind);
+            if (elem.isInvalid()) return false;
+
+            if (!callDropFunc(codeLoc, move(elem))) return false;
+        }
+    } else if (typeTable->worksAsTuple(valTy)) {
+        size_t len = typeTable->extractLenOfTuple(valTy).value();
+        for (size_t i = 0; i < len; ++i) {
+            size_t ind = len-1-i;
+
+            NodeVal memb = getTupleMember(codeLoc, val, ind);
+            if (memb.isInvalid()) return false;
+
+            if (!callDropFunc(codeLoc, move(memb))) return false;
+        }
+    } else if (typeTable->worksAsDataType(valTy)) {
+        const NodeVal *dropFunc = symbolTable->getDropFunc(typeTable->extractCustomBaseType(valTy));
+        if (dropFunc != nullptr) {
+            const TypeTable::Callable &dropCallable = *typeTable->extractCallable(dropFunc->getType().value());
+
+            // explicit cast cuz could be a custom
+            NodeVal afterCast = dispatchCast(codeLoc, val, dropCallable.getArgType(0));
+            if (afterCast.isInvalid()) return false;
+
+            bool isEval = checkIsEvalVal(afterCast, true);
+
+            if (dispatchCall(codeLoc, *dropFunc, {move(afterCast)}, isEval).isInvalid()) return false;
+        }
+
+        size_t len = typeTable->extractLenOfDataType(valTy).value();
+        for (size_t i = 0; i < len; ++i) {
+            size_t ind = len-1-i;
+
+            NodeVal memb = getDataMember(codeLoc, val, ind);
+            if (memb.isInvalid()) return false;
+
+            if (!callDropFunc(codeLoc, move(memb))) return false;
+        }
+    }
+
     return true;
 }
 
-bool Processor::callDropFuncs(CodeLoc codeLoc, vector<const SymbolTable::VarEntry*> vars) {
+bool Processor::callDropFuncs(CodeLoc codeLoc, vector<SymbolTable::VarEntry*> vars) {
     for (auto it : vars) {
         if (it->isNoDrop) continue;
 
-        if (!callDropFunc(codeLoc, it->var)) return false;
+        NodeVal loaded = dispatchLoad(codeLoc, *it);
+
+        if (!callDropFunc(codeLoc, move(loaded))) return false;
     }
 
     return true;

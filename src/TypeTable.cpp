@@ -428,6 +428,12 @@ optional<size_t> TypeTable::extractLenOfTuple(Id tupleTypeId) const {
     return getTuple(baseTypeId).members.size();
 }
 
+optional<size_t> TypeTable::extractLenOfDataType(Id dataTypeId) const {
+    TypeTable::Id baseTypeId = extractCustomBaseType(dataTypeId);
+    if (!isDataType(baseTypeId)) return nullopt;
+    return getDataType(baseTypeId).members.size();
+}
+
 const TypeTable::Callable* TypeTable::extractCallable(Id callTypeId) const {
     TypeTable::Id baseTypeId = extractCustomBaseType(callTypeId);
     if (!isCallable(baseTypeId)) return nullptr;

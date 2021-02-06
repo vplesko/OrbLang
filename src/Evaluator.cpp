@@ -13,7 +13,7 @@ Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *type
     setEvaluator(this);
 }
 
-NodeVal Evaluator::performLoad(CodeLoc codeLoc, NamePool::Id id, SymbolTable::VarEntry &ref) {
+NodeVal Evaluator::performLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, optional<NamePool::Id> id) {
     if (checkIsEvalVal(codeLoc, ref.var, false)) {
         if (ref.isInvokeArg) {
             return ref.var;

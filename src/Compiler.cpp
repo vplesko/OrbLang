@@ -92,13 +92,14 @@ llvm::Type* Compiler::genPrimTypePtr() {
     return llvm::Type::getInt8PtrTy(llvmContext);
 }
 
-NodeVal Compiler::performLoad(CodeLoc codeLoc, NamePool::Id id, SymbolTable::VarEntry &ref) {
+NodeVal Compiler::performLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, optional<NamePool::Id> id) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     if (!checkIsLlvmVal(codeLoc, ref.var, true)) return NodeVal();
 
     LlvmVal loadLlvmVal(ref.var.getLlvmVal().type);
     loadLlvmVal.ref = ref.var.getLlvmVal().ref;
-    loadLlvmVal.val = llvmBuilder.CreateLoad(ref.var.getLlvmVal().ref, getNameForLlvm(id));
+    if (id.has_value()) loadLlvmVal.val = llvmBuilder.CreateLoad(ref.var.getLlvmVal().ref, getNameForLlvm(id.value()));
+    else loadLlvmVal.val = llvmBuilder.CreateLoad(ref.var.getLlvmVal().ref);
     return NodeVal(ref.var.getCodeLoc(), loadLlvmVal);
 }
 

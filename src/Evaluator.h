@@ -28,7 +28,7 @@ class Evaluator : public Processor {
     NodeVal doBlockTearDown(CodeLoc codeLoc, SymbolTable::Block block, bool success, bool jumpingOut);
 
 public:
-    NodeVal performLoad(CodeLoc codeLoc, NamePool::Id id, SymbolTable::VarEntry &ref) override;
+    NodeVal performLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, std::optional<NamePool::Id> id) override;
     NodeVal performLoad(CodeLoc codeLoc, const FuncValue &func) override;
     NodeVal performLoad(CodeLoc codeLoc, const MacroValue &macro) override;
     NodeVal performZero(CodeLoc codeLoc, TypeTable::Id ty) override;
