@@ -176,15 +176,12 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
         return NodeVal();
     }
 
-    BlockControl blockCtrl(this, symbolTable, SymbolTable::CalleeValueInfo::make(func, typeTable));
+    BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(func, typeTable));
 
     const TypeTable::Callable &callable = FuncValue::getCallable(func, typeTable);
 
     for (size_t i = 0; i < args.size(); ++i) {
-        if (!symbolTable->addVar(func.argNames[i], NodeVal::copyNoRef(args[i]))) {
-            msgs->errorInternal(args[i].getCodeLoc());
-            return NodeVal();
-        }
+        symbolTable->addVar(func.argNames[i], NodeVal::copyNoRef(args[i]));
     }
 
     try {
@@ -213,16 +210,13 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
 }
 
 NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args) {
-    BlockControl blockCtrl(this, symbolTable, SymbolTable::CalleeValueInfo::make(macro));
+    BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(macro));
 
     for (size_t i = 0; i < args.size(); ++i) {
         SymbolTable::VarEntry varEntry;
         varEntry.var = args[i];
         varEntry.isInvokeArg = true;
-        if (!symbolTable->addVar(macro.argNames[i], move(varEntry))) {
-            msgs->errorInternal(args[i].getCodeLoc());
-            return NodeVal();
-        }
+        symbolTable->addVar(macro.argNames[i], move(varEntry));
     }
 
     try {

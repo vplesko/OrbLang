@@ -12,8 +12,6 @@
 class Evaluator;
 
 class Processor {
-    friend class BlockControl;
-
 protected:
     NamePool *namePool;
     StringPool *stringPool;
@@ -133,7 +131,6 @@ private:
     bool argsFitFuncCall(const std::vector<NodeVal> &args, const TypeTable::Callable &callable, bool allowImplicitCasts);
     NodeVal loadUndecidedCallable(const NodeVal &node, const NodeVal &val);
     NodeVal invoke(CodeLoc codeLoc, const MacroValue &macroVal, std::vector<NodeVal> args);
-    void invokeDrop(NodeVal val);
 
     NodeVal processType(const NodeVal &node, const NodeVal &starting);
     NodeVal processId(const NodeVal &node);

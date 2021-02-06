@@ -354,7 +354,7 @@ bool Compiler::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
 }
 
 bool Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) {
-    BlockControl blockCtrl(this, symbolTable, SymbolTable::CalleeValueInfo::make(func, typeTable));
+    BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(func, typeTable));
 
     const TypeTable::Callable &callable = FuncValue::getCallable(func, typeTable);
 
@@ -374,10 +374,7 @@ bool Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, c
         LlvmVal varLlvmVal(callable.argTypes[i]);
         varLlvmVal.ref = llvmAlloca;
         NodeVal varNodeVal(args.getChild(i).getCodeLoc(), varLlvmVal);
-        if (!symbolTable->addVar(func.argNames[i], move(varNodeVal))) {
-            msgs->errorInternal(args.getChild(i).getCodeLoc());
-            return false;
-        }
+        symbolTable->addVar(func.argNames[i], move(varNodeVal));
 
         ++i;
     }
