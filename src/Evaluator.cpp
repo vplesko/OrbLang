@@ -77,8 +77,13 @@ optional<bool> Evaluator::performBlockBody(CodeLoc codeLoc, SymbolTable::Block b
     try {
         bool bodySuccess = processChildNodes(nodeBody);
         if (!bodySuccess) return nullopt;
+
+        if (!callDropFuncsCurrBlock(codeLoc)) return nullopt;
+
         return false;
     } catch (ExceptionEvaluatorJump ex) {
+        if (!callDropFuncsCurrBlock(codeLoc)) return nullopt;
+
         bool forCurrBlock = !ex.isRet && (!ex.blockName.has_value() || ex.blockName == block.name);
         if (!forCurrBlock) {
             doBlockTearDown(codeLoc, block, true, true);
@@ -198,6 +203,8 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
         }
     }
 
+    if (!callDropFuncsCurrCallable(codeLoc)) return NodeVal();
+
     if (callable.hasRet()) {
         if (!retVal.has_value()) {
             msgs->errorRetNoValue(codeLoc, callable.retType.value());
@@ -233,6 +240,8 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const
             return NodeVal();
         }
     }
+
+    if (!callDropFuncsCurrCallable(codeLoc)) return NodeVal();
 
     if (!retVal.has_value()) {
         msgs->errorUnknown(codeLoc);

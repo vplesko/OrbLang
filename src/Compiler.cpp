@@ -213,6 +213,12 @@ bool Compiler::performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) {
 
 optional<bool> Compiler::performBlockBody(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &nodeBody) {
     if (!processChildNodes(nodeBody)) return nullopt;
+
+    if (!isLlvmBlockTerminated()) {
+        // if llvm block is terminated, these have been called already
+        if (!callDropFuncsCurrBlock(codeLoc)) return nullopt;
+    }
+
     return false;
 }
 
@@ -242,35 +248,21 @@ NodeVal Compiler::performBlockTearDown(CodeLoc codeLoc, SymbolTable::Block block
 }
 
 bool Compiler::performExit(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) {
-    if (!checkInLocalScope(codeLoc, true)) return false;
-
-    NodeVal condPromo = promoteIfEvalValAndCheckIsLlvmVal(cond, true);
-    if (condPromo.isInvalid()) return false;
-
-    llvm::BasicBlock *llvmBlockAfter = llvm::BasicBlock::Create(llvmContext, "after");
-    llvmBuilder.CreateCondBr(condPromo.getLlvmVal().val, block.blockExit, llvmBlockAfter);
-    getLlvmCurrFunction()->getBasicBlockList().push_back(llvmBlockAfter);
-    llvmBuilder.SetInsertPoint(llvmBlockAfter);
-
-    return true;
+    return doCondBlockJump(codeLoc, cond, block.name, block.blockExit);
 }
 
 bool Compiler::performLoop(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) {
-    if (!checkInLocalScope(codeLoc, true)) return false;
-
-    NodeVal condPromo = promoteIfEvalValAndCheckIsLlvmVal(cond, true);
-    if (condPromo.isInvalid()) return false;
-
-    llvm::BasicBlock *llvmBlockAfter = llvm::BasicBlock::Create(llvmContext, "after");
-    llvmBuilder.CreateCondBr(condPromo.getLlvmVal().val, block.blockLoop, llvmBlockAfter);
-    getLlvmCurrFunction()->getBasicBlockList().push_back(llvmBlockAfter);
-    llvmBuilder.SetInsertPoint(llvmBlockAfter);
-
-    return true;
+    return doCondBlockJump(codeLoc, cond, block.name, block.blockLoop);
 }
 
 bool Compiler::performPass(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &val) {
     if (!checkInLocalScope(codeLoc, true)) return false;
+
+    if (block.name.has_value()) {
+        if (!callDropFuncsFromBlockToCurrBlock(codeLoc, block.name.value())) return false;
+    } else {
+        if (!callDropFuncsCurrBlock(codeLoc)) return false;
+    }
 
     NodeVal valPromo = promoteIfEvalValAndCheckIsLlvmVal(val, true);
     if (valPromo.isInvalid()) return false;
@@ -390,8 +382,12 @@ bool Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, c
 
     llvmBuilderAlloca.CreateBr(llvmBlockBody);
 
-    if (!callable.hasRet() && !isLlvmBlockTerminated())
+    if (!callable.hasRet() && !isLlvmBlockTerminated()) {
+        // if llvm block is terminated, these have been called already
+        if (!callDropFuncsCurrCallable(codeLoc)) return false;
+
         llvmBuilder.CreateRetVoid();
+    }
 
     if (llvm::verifyFunction(*func.llvmFunc, &llvm::errs())) cerr << endl;
     llvmFpm->run(*func.llvmFunc);
@@ -405,15 +401,20 @@ bool Compiler::performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, cons
 }
 
 bool Compiler::performRet(CodeLoc codeLoc) {
+    if (!callDropFuncsCurrCallable(codeLoc)) return false;
     llvmBuilder.CreateRetVoid();
+
     return true;
 }
 
 bool Compiler::performRet(CodeLoc codeLoc, const NodeVal &node) {
+    if (!callDropFuncsCurrCallable(codeLoc)) return false;
+
     NodeVal promo = promoteIfEvalValAndCheckIsLlvmVal(node, true);
     if (promo.isInvalid()) return false;
 
     llvmBuilder.CreateRet(promo.getLlvmVal().val);
+
     return true;
 }
 
@@ -782,6 +783,34 @@ optional<uint64_t> Compiler::performSizeOf(CodeLoc codeLoc, TypeTable::Id ty) {
     if (llvmType == nullptr) return nullopt;
 
     return targetMachine->createDataLayout().getTypeAllocSize(llvmType).getFixedSize();
+}
+
+bool Compiler::doCondBlockJump(CodeLoc codeLoc, const NodeVal &cond, optional<NamePool::Id> blockName, llvm::BasicBlock *llvmBlock) {
+    if (!checkInLocalScope(codeLoc, true)) return false;
+
+    NodeVal condPromo = promoteIfEvalValAndCheckIsLlvmVal(cond, true);
+    if (condPromo.isInvalid()) return false;
+
+    llvm::BasicBlock *llvmBlockDrops = llvm::BasicBlock::Create(llvmContext, "drops");
+    llvm::BasicBlock *llvmBlockAfter = llvm::BasicBlock::Create(llvmContext, "after");
+
+    llvmBuilder.CreateCondBr(condPromo.getLlvmVal().val, llvmBlockDrops, llvmBlockAfter);
+
+    getLlvmCurrFunction()->getBasicBlockList().push_back(llvmBlockDrops);
+    llvmBuilder.SetInsertPoint(llvmBlockDrops);
+
+    if (blockName.has_value()) {
+        if (!callDropFuncsFromBlockToCurrBlock(codeLoc, blockName.value())) return false;
+    } else {
+        if (!callDropFuncsCurrBlock(codeLoc)) return false;
+    }
+
+    llvmBuilder.CreateBr(llvmBlock);
+
+    getLlvmCurrFunction()->getBasicBlockList().push_back(llvmBlockAfter);
+    llvmBuilder.SetInsertPoint(llvmBlockAfter);
+
+    return true;
 }
 
 NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
