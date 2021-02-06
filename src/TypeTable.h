@@ -106,15 +106,25 @@ public:
     };
 
     struct Callable {
+    private:
+        friend class TypeTable;
+
+        std::vector<TypeTable::Id> args;
+
+    public:
         bool isFunc;
-        std::vector<TypeTable::Id> argTypes;
         std::optional<TypeTable::Id> retType;
         bool variadic = false;
 
-        std::size_t getArgCnt() const { return argTypes.size(); }
-        bool hasRet() const { return retType.has_value(); }
+        std::size_t getArgCnt() const { return args.size(); }
+        // args are left undefined
+        void setArgCnt(std::size_t argCnt) { args.resize(argCnt); }
 
-        void makeFitArgCnt(std::size_t argCnt) { argTypes.resize(argCnt); }
+        TypeTable::Id getArgType(std::size_t ind) const { return args[ind]; }
+        void setArgType(std::size_t ind, TypeTable::Id ty) { args[ind] = ty; }
+        void setArgTypes(const std::vector<TypeTable::Id> &argTys);
+    
+        bool hasRet() const { return retType.has_value(); }
 
         bool eq(const Callable &other) const;
     };

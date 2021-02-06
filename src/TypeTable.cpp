@@ -48,13 +48,20 @@ optional<size_t> TypeTable::DataType::getMembInd(NamePool::Id name) const {
     return nullopt;
 }
 
+void TypeTable::Callable::setArgTypes(const std::vector<TypeTable::Id> &argTys) {
+    setArgCnt(argTys.size());
+    for (size_t i = 0; i < argTys.size(); ++i) {
+        args[i] = argTys[i];
+    }
+}
+
 bool TypeTable::Callable::eq(const Callable &other) const {
     if (isFunc != other.isFunc || getArgCnt() != other.getArgCnt() ||
         retType != other.retType || variadic != other.variadic) return false;
 
     if (isFunc) {
         for (size_t i = 0; i < getArgCnt(); ++i) {
-            if (argTypes[i] != other.argTypes[i]) return false;
+            if (args[i] != other.args[i]) return false;
         }
     }
 
@@ -323,7 +330,7 @@ TypeTable::Id TypeTable::addTypeDescrForSig(Id t) {
 
 TypeTable::Id TypeTable::addCallableSig(const Callable &call) {
     Callable sig(call);
-    for (auto &it : sig.argTypes) {
+    for (auto &it : sig.args) {
         if (isTypeDescr(it)) it = addTypeDescrForSig(getTypeDescr(it));
     }
     // ret type is not part of sig
@@ -1026,8 +1033,8 @@ optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool, bool m
         ss << "$a" << sig.getArgCnt();
         if (sig.variadic) ss << "+";
         if (sig.isFunc) {
-            for (TypeTable::Id argTy : sig.argTypes) {
-                optional<string> str = makeBinString(argTy, namePool, false);
+            for (const auto &arg : sig.args) {
+                optional<string> str = makeBinString(arg, namePool, false);
                 if (!str.has_value()) return nullopt;
                 ss << str.value();
             }

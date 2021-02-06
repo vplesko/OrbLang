@@ -654,7 +654,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
 
         const TypeTable::Callable &callable = BaseCallableValue::getCallable(*funcVal, typeTable);
         for (size_t i = 0; i < callable.getArgCnt(); ++i) {
-            args[i] = implicitCast(args[i], callable.argTypes[i]);
+            args[i] = implicitCast(args[i], callable.getArgType(i));
             if (args[i].isInvalid()) return NodeVal();
         }
 
@@ -680,7 +680,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
         }
 
         for (size_t i = 0; i < callable->getArgCnt(); ++i) {
-            args[i] = implicitCast(args[i], callable->argTypes[i]);
+            args[i] = implicitCast(args[i], callable->getArgType(i));
             if (args[i].isInvalid()) return NodeVal();
         }
 
@@ -833,7 +833,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     {
         TypeTable::Callable callable;
         callable.isFunc = true;
-        callable.argTypes = argTypes;
+        callable.setArgTypes(argTypes);
         callable.retType = retType;
         callable.variadic = variadic.value();
         optional<TypeTable::Id> typeOpt = typeTable->addCallable(callable);
@@ -973,7 +973,7 @@ NodeVal Processor::processMac(const NodeVal &node) {
     {
         TypeTable::Callable callable;
         callable.isFunc = false;
-        callable.makeFitArgCnt(argNames.size());
+        callable.setArgCnt(argNames.size());
         callable.variadic = variadic;
         optional<TypeTable::Id> typeOpt = typeTable->addCallable(callable);
         if (!typeOpt.has_value()) {
@@ -1597,10 +1597,11 @@ bool Processor::argsFitFuncCall(const vector<NodeVal> &args, const TypeTable::Ca
         // remove trailing cns
         TypeTable::Id typeSig = typeTable->addTypeDescrForSig(args[i].getType().value());
 
-        bool sameType = typeSig == callable.argTypes[i];
+        bool sameType = typeSig == callable.getArgType(i);
 
-        if (!sameType && !(allowImplicitCasts && checkImplicitCastable(args[i], callable.argTypes[i], false)))
+        if (!sameType && !(allowImplicitCasts && checkImplicitCastable(args[i], callable.getArgType(i), false))) {
             return false;
+        }
     }
 
     return true;
@@ -1806,7 +1807,7 @@ NodeVal Processor::processFncType(const NodeVal &node) {
     {
         TypeTable::Callable callable;
         callable.isFunc = true;
-        callable.argTypes = argTypes;
+        callable.setArgTypes(argTypes);
         callable.retType = retType;
         callable.variadic = variadic.value();
         optional<TypeTable::Id> typeOpt = typeTable->addCallable(callable);
@@ -1846,7 +1847,7 @@ NodeVal Processor::processMacType(const NodeVal &node) {
     {
         TypeTable::Callable callable;
         callable.isFunc = false;
-        callable.makeFitArgCnt(argNum.value());
+        callable.setArgCnt(argNum.value());
         callable.variadic = variadic.value();
         optional<TypeTable::Id> typeOpt = typeTable->addCallable(callable);
         if (!typeOpt.has_value()) {
@@ -2310,7 +2311,7 @@ bool Processor::checkIsDropFuncType(const NodeVal &node, TypeTable::Id dropeeTy,
         if (check) {
             TypeTable::Callable dropCallable;
             dropCallable.isFunc = true;
-            dropCallable.argTypes = {dropeeTy};
+            dropCallable.setArgTypes({dropeeTy});
 
             check = typeTable->addCallableSig(dropCallable) == typeTable->addCallableSig(nodeTy);
         }

@@ -365,13 +365,13 @@ bool Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, c
 
     size_t i = 0;
     for (auto &llvmFuncArg : func.llvmFunc->args()) {
-        llvm::Type *llvmArgType = makeLlvmTypeOrError(args.getChild(i).getCodeLoc(), callable.argTypes[i]);
+        llvm::Type *llvmArgType = makeLlvmTypeOrError(args.getChild(i).getCodeLoc(), callable.getArgType(i));
         if (llvmArgType == nullptr) return false;
         
         llvm::AllocaInst *llvmAlloca = makeLlvmAlloca(llvmArgType, getNameForLlvm(func.argNames[i]));
         llvmBuilder.CreateStore(&llvmFuncArg, llvmAlloca);
 
-        LlvmVal varLlvmVal(callable.argTypes[i]);
+        LlvmVal varLlvmVal(callable.getArgType(i));
         varLlvmVal.ref = llvmAlloca;
         NodeVal varNodeVal(args.getChild(i).getCodeLoc(), varLlvmVal);
         symbolTable->addVar(func.argNames[i], move(varNodeVal));
@@ -906,7 +906,7 @@ llvm::FunctionType* Compiler::makeLlvmFunctionType(TypeTable::Id typeId) {
 
     vector<llvm::Type*> llvmArgTypes(callable->getArgCnt());
     for (size_t i = 0; i < callable->getArgCnt(); ++i) {
-        llvmArgTypes[i] = makeLlvmType(callable->argTypes[i]);
+        llvmArgTypes[i] = makeLlvmType(callable->getArgType(i));
         if (llvmArgTypes[i] == nullptr) return nullptr;
     }
     
