@@ -374,7 +374,11 @@ bool Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, c
         LlvmVal varLlvmVal(callable.getArgType(i));
         varLlvmVal.ref = llvmAlloca;
         NodeVal varNodeVal(args.getChild(i).getCodeLoc(), varLlvmVal);
-        symbolTable->addVar(func.argNames[i], move(varNodeVal));
+
+        SymbolTable::VarEntry varEntry;
+        varEntry.var = move(varNodeVal);
+        varEntry.isNoDrop = callable.getArgNoDrop(i);
+        symbolTable->addVar(func.argNames[i], move(varEntry));
 
         ++i;
     }

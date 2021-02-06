@@ -257,6 +257,12 @@ NodeVal Processor::processSym(const NodeVal &node) {
 
         bool hasType = optType.has_value();
 
+        optional<bool> attrNoDrop = hasAttributeAndCheckIsEmpty(pair.first, "noDrop");
+        if (!attrNoDrop.has_value()) return NodeVal();
+
+        SymbolTable::VarEntry varEntry;
+        varEntry.isNoDrop = attrNoDrop.value();
+
         if (hasInit) {
             const NodeVal &nodeInit = entry.getChild(1);
             NodeVal init = hasType ? processAndImplicitCast(nodeInit, optType.value()) : processNode(nodeInit);
@@ -265,7 +271,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
             NodeVal nodeReg = performRegister(pair.first.getCodeLoc(), id, init);
             if (nodeReg.isInvalid()) return NodeVal();
 
-            symbolTable->addVar(id, move(nodeReg));
+            varEntry.var = move(nodeReg);
         } else {
             if (!hasType) {
                 msgs->errorMissingTypeAttribute(nodePair.getCodeLoc());
@@ -291,8 +297,10 @@ NodeVal Processor::processSym(const NodeVal &node) {
                 if (nodeReg.isInvalid()) return NodeVal();
             }
 
-            symbolTable->addVar(id, move(nodeReg));
+            varEntry.var = move(nodeReg);
         }
+
+        symbolTable->addVar(id, move(varEntry));
     }
 
     return NodeVal(node.getCodeLoc());

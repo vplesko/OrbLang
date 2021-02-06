@@ -181,7 +181,10 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
     const TypeTable::Callable &callable = FuncValue::getCallable(func, typeTable);
 
     for (size_t i = 0; i < args.size(); ++i) {
-        symbolTable->addVar(func.argNames[i], NodeVal::copyNoRef(args[i]));
+        SymbolTable::VarEntry varEntry;
+        varEntry.var = NodeVal::copyNoRef(args[i]);
+        varEntry.isNoDrop = callable.getArgNoDrop(i);
+        symbolTable->addVar(func.argNames[i], move(varEntry));
     }
 
     try {
