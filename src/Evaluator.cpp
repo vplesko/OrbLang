@@ -218,6 +218,7 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const
     for (size_t i = 0; i < args.size(); ++i) {
         SymbolTable::VarEntry varEntry;
         varEntry.var = args[i];
+        varEntry.isNoDrop = true;
         varEntry.isInvokeArg = true;
         symbolTable->addVar(macro.argNames[i], move(varEntry));
     }

@@ -1,5 +1,6 @@
 #include "SymbolTable.h"
 #include <cassert>
+#include <algorithm>
 #include "TypeTable.h"
 #include "Reserved.h"
 #include "utils.h"
@@ -269,6 +270,54 @@ optional<SymbolTable::Block> SymbolTable::getBlock(NamePool::Id name) const {
 optional<SymbolTable::CalleeValueInfo> SymbolTable::getCurrCallee() const {
     if (localBlockChains.empty()) return nullopt;
     return localBlockChains.back().first;
+}
+
+void SymbolTable::collectVarsInRevOrder(const BlockInternal *block, vector<const VarEntry*> &v) const {
+    const auto &vars = block->varsInOrder;
+    for_each(vars.rbegin(), vars.rend(), [&](SymbolTable::VarEntry *var){
+        v.push_back(var);
+    });
+}
+
+vector<const SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderCurrBlock() const {
+    vector<const SymbolTable::VarEntry*> ret;
+    collectVarsInRevOrder(getLastBlockInternal(), ret);
+    return ret;
+}
+
+vector<const SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderFromBlockToCurrBlock(NamePool::Id name) const {
+    vector<const SymbolTable::VarEntry*> ret;
+
+    if (!localBlockChains.empty()) {
+        for (auto it = localBlockChains.back().second.rbegin();
+            it != localBlockChains.back().second.rend();
+            ++it) {
+            collectVarsInRevOrder(&(*it), ret);
+            if (it->block.name == name) return ret;
+        }
+    }
+    for (auto it = globalBlockChain.rbegin();
+        it != globalBlockChain.rend();
+        ++it) {
+        collectVarsInRevOrder(&(*it), ret);
+        if (it->block.name == name) return ret;
+    }
+
+    // assumed that block with given name exists
+    assert(false);
+    return ret;
+}
+
+vector<const SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderCurrCallable() const {
+    vector<const SymbolTable::VarEntry*> ret;
+
+    for (auto it = localBlockChains.back().second.rbegin();
+        it != localBlockChains.back().second.rend();
+        ++it) {
+        collectVarsInRevOrder(&(*it), ret);
+    }
+
+    return ret;
 }
 
 bool SymbolTable::nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable) const {

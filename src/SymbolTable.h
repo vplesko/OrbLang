@@ -122,6 +122,8 @@ private:
     const BlockInternal* getLastBlockInternal() const;
     BlockInternal* getLastBlockInternal();
 
+    void collectVarsInRevOrder(const BlockInternal *block, std::vector<const VarEntry*> &v) const;
+
 public:
     SymbolTable();
 
@@ -147,6 +149,10 @@ public:
     std::optional<Block> getBlock(NamePool::Id name) const;
 
     std::optional<CalleeValueInfo> getCurrCallee() const;
+
+    std::vector<const VarEntry*> getVarsInRevOrderCurrBlock() const;
+    std::vector<const VarEntry*> getVarsInRevOrderFromBlockToCurrBlock(NamePool::Id name) const;
+    std::vector<const VarEntry*> getVarsInRevOrderCurrCallable() const;
 
     bool isVarName(NamePool::Id name) const { return getVar(name) != nullptr; }
 

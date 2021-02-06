@@ -1706,6 +1706,33 @@ NodeVal Processor::invoke(CodeLoc codeLoc, const MacroValue &macroVal, vector<No
     return evaluator->performInvoke(codeLoc, macroVal, args);
 }
 
+bool Processor::callDropFunc(CodeLoc codeLoc, const NodeVal &val) {
+    // TODO!
+    return true;
+}
+
+bool Processor::callDropFuncs(CodeLoc codeLoc, vector<const SymbolTable::VarEntry*> vars) {
+    for (auto it : vars) {
+        if (it->isNoDrop) continue;
+
+        if (!callDropFunc(codeLoc, it->var)) return false;
+    }
+
+    return true;
+}
+
+bool Processor::callDropFuncsCurrBlock(CodeLoc codeLoc) {
+    return callDropFuncs(codeLoc, symbolTable->getVarsInRevOrderCurrBlock());
+}
+
+bool Processor::callDropFuncsFromBlockToCurrBlock(CodeLoc codeLoc, NamePool::Id name) {
+    return callDropFuncs(codeLoc, symbolTable->getVarsInRevOrderFromBlockToCurrBlock(name));
+}
+
+bool Processor::callDropFuncsCurrCallable(CodeLoc codeLoc) {
+    return callDropFuncs(codeLoc, symbolTable->getVarsInRevOrderCurrCallable());
+}
+
 bool Processor::processAttributes(NodeVal &node) {
     NamePool::Id typeId = getMeaningfulNameId(Meaningful::TYPE);
 
