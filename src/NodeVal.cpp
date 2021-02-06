@@ -51,11 +51,6 @@ void NodeVal::operator=(const NodeVal &other) {
     if (this != &other) copyFrom(other);
 }
 
-NodeVal NodeVal::makeEmpty(CodeLoc codeLoc, TypeTable *typeTable) {
-    EvalVal emptyRaw = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_RAW), typeTable);
-    return NodeVal(codeLoc, emptyRaw);
-}
-
 bool NodeVal::isEscaped() const {
     return (isLiteralVal() && getLiteralVal().isEscaped()) ||
         (isEvalVal() && getEvalVal().isEscaped());
@@ -77,6 +72,11 @@ bool NodeVal::hasRef() const {
     if (isEvalVal()) return getEvalVal().ref != nullptr;
     if (isLlvmVal()) return getLlvmVal().ref != nullptr;
     return false;
+}
+
+void NodeVal::removeRef() {
+    if (isEvalVal()) getEvalVal().removeRef();
+    else if (isLlvmVal()) getLlvmVal().removeRef();
 }
 
 void NodeVal::addChild(NodeVal &node, NodeVal c, TypeTable *typeTable) {
@@ -169,10 +169,14 @@ void NodeVal::unescape(NodeVal &node, const TypeTable *typeTable) {
     }
 }
 
+NodeVal NodeVal::makeEmpty(CodeLoc codeLoc, TypeTable *typeTable) {
+    EvalVal emptyRaw = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_RAW), typeTable);
+    return NodeVal(codeLoc, emptyRaw);
+}
+
 NodeVal NodeVal::copyNoRef(const NodeVal &k) {
     NodeVal nodeVal(k);
-    if (nodeVal.isLlvmVal()) nodeVal.getLlvmVal().ref = nullptr;
-    else if (nodeVal.isEvalVal()) nodeVal.getEvalVal().ref = nullptr;
+    nodeVal.removeRef();
     return nodeVal;
 }
 

@@ -12,4 +12,6 @@ struct LlvmVal {
 
     bool valBroken() const { return val == nullptr; }
     bool refBroken() const { return ref == nullptr; }
+
+    void removeRef() { ref = nullptr; }
 };

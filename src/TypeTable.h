@@ -112,9 +112,10 @@ public:
         bool variadic = false;
 
         std::size_t getArgCnt() const { return argTypes.size(); }
-        bool hasRet() const { return retType.has_value(); }
+        // leaves arg types as undefined
+        void setArgCnt(std::size_t argCnt) { argTypes.resize(argCnt); }
 
-        void makeFitArgCnt(std::size_t argCnt) { argTypes.resize(argCnt); }
+        bool hasRet() const { return retType.has_value(); }
 
         bool eq(const Callable &other) const;
     };
@@ -247,8 +248,14 @@ public:
 
     std::optional<std::size_t> extractLenOfArr(Id arrTypeId) const;
     std::optional<std::size_t> extractLenOfTuple(Id tupleTypeId) const;
+    std::optional<std::size_t> extractLenOfDataType(Id dataTypeId) const;
+
+    // handles constness of resulting type
     std::optional<Id> extractTupleMemberType(Id t, std::size_t ind);
+    // handles constness of resulting type
     std::optional<Id> extractDataTypeMemberType(Id t, NamePool::Id memb);
+    // handles constness of resulting type
+    std::optional<Id> extractDataTypeMemberType(Id t, std::size_t ind);
 
     // passes through customs and decors
     Id extractBaseType(Id t) const;

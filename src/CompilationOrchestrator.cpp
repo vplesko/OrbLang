@@ -316,12 +316,13 @@ bool CompilationOrchestrator::compile(const std::string &output, bool exe) {
         }
 
         const static string tempObjName = isOsWindows ? "a.obj" : "a.o";
-        // TODO doesn't get called on linker failure
-        DeferredCallback delObjTemp([&] { remove(tempObjName.c_str()); });
 
         if (!compiler->binary(tempObjName)) return false;
-        
-        return buildExecutable(tempObjName, output);
+
+        bool success = buildExecutable(tempObjName, output);
+
+        remove(tempObjName.c_str());
+        return success;
     }
 }
 

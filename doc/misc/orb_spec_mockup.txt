@@ -223,10 +223,14 @@ import
 	+ - * & can be unary, others not
 	^ not variadic
 
-== != < <= > >=
+== < <= > >=
 	op a ...b
-	compares in pairs (this means that (!= 1 2 1) gives true)
+	compares in pairs
 	breaks on first false and rets false, otherwise true
+
+!=
+	!= a b
+	returns whether not equal
 
 ! ~
 	op a
@@ -268,10 +272,3 @@ mac int - macro that takes given number of args
 
 custom types restrict impl casts
 data types have named members
-
-********************
-
-plan:
- - drop, ::noDrop
- - unique, move
- - import C headers

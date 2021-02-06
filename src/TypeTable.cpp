@@ -412,6 +412,12 @@ optional<size_t> TypeTable::extractLenOfTuple(Id tupleTypeId) const {
     return getTuple(baseTypeId).members.size();
 }
 
+optional<size_t> TypeTable::extractLenOfDataType(Id dataTypeId) const {
+    TypeTable::Id baseTypeId = extractCustomBaseType(dataTypeId);
+    if (!isDataType(baseTypeId)) return nullopt;
+    return getDataType(baseTypeId).members.size();
+}
+
 const TypeTable::Callable* TypeTable::extractCallable(Id callTypeId) const {
     TypeTable::Id baseTypeId = extractCustomBaseType(callTypeId);
     if (!isCallable(baseTypeId)) return nullptr;
@@ -557,24 +563,13 @@ bool TypeTable::worksAsDataType(Id t) const {
 }
 
 bool TypeTable::worksAsCallable(Id t) const {
-    if (!isValidType(t)) return false;
-
-    if (isCallable(t)) {
-        return true;
-    } else if (isCustom(t)) {
-        return worksAsCallable(getCustom(t).type);
-    } else if (isTypeDescr(t)) {
-        const TypeDescr &descr = typeDescrs[t.index].first;
-        if (!descr.decors.empty()) return false;
-        return worksAsCallable(descr.base);
-    } else {
-        return false;
-    }
+    return extractCallable(t) != nullptr;
 }
 
 bool TypeTable::worksAsCallable(Id t, bool isFunc) const {
-    if (!worksAsCallable(t)) return false;
-    return getCallable(extractCustomBaseType(t)).isFunc == isFunc;
+    const Callable *call = extractCallable(t);
+    if (call == nullptr) return false;
+    return call->isFunc == isFunc;
 }
 
 bool TypeTable::isPrimitive(Id t) const {
@@ -623,6 +618,7 @@ optional<TypeTable::Id> TypeTable::extractTupleMemberType(Id t, size_t ind) {
     if (ind >= tup.value()->members.size()) return nullopt;
 
     Id id = tup.value()->members[ind];
+    // worksAsTypeCn would be incorrect, as that returns true if not direct cn but a different member is cn
     return isDirectCn(t) ? addTypeCnOf(id) : id;
 }
 
@@ -649,6 +645,16 @@ optional<TypeTable::Id> TypeTable::extractDataTypeMemberType(Id t, NamePool::Id 
     if (!ind.has_value()) return nullopt;
 
     Id id = data->members[ind.value()].type;
+    // worksAsTypeCn would be incorrect, as that returns true if not direct cn but a different member is cn
+    return isDirectCn(t) ? addTypeCnOf(id) : id;
+}
+
+optional<TypeTable::Id> TypeTable::extractDataTypeMemberType(Id t, size_t ind) {
+    const DataType *data = extractDataType(t);
+    if (data == nullptr) return nullopt;
+
+    Id id = data->members[ind].type;
+    // worksAsTypeCn would be incorrect, as that returns true if not direct cn but a different member is cn
     return isDirectCn(t) ? addTypeCnOf(id) : id;
 }
 
