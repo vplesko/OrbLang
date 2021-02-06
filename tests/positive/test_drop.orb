@@ -2,13 +2,13 @@ import "util/io.orb";
 
 data Foo;
 
-fnc dropFoo (val:Foo) ();
+fnc dropFoo (val:Foo::noDrop) ();
 
 data Foo {
     x:i32
 }::((drop dropFoo));
 
-fnc dropFoo (val:Foo) () {
+fnc dropFoo (val:Foo::noDrop) () {
     println_i32 (. val x);
 };
 

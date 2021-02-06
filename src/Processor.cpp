@@ -781,11 +781,13 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     // arguments
     vector<NamePool::Id> argNames;
     vector<TypeTable::Id> argTypes;
+    vector<bool> argNoDrops;
     const NodeVal &nodeArgs = processWithEscape(node.getChild(indArgs));
     if (nodeArgs.isInvalid()) return NodeVal();
     if (!checkIsRaw(nodeArgs, true)) return NodeVal();
     argNames.reserve(nodeArgs.getChildrenCnt());
     argTypes.reserve(nodeArgs.getChildrenCnt());
+    argNoDrops.reserve(nodeArgs.getChildrenCnt());
     optional<bool> variadic = hasAttributeAndCheckIsEmpty(nodeArgs, "variadic");
     if (!variadic.has_value()) return NodeVal();
     for (size_t i = 0; i < nodeArgs.getChildrenCnt(); ++i) {
@@ -800,8 +802,12 @@ NodeVal Processor::processFnc(const NodeVal &node) {
             return NodeVal();
         }
 
+        optional<bool> noDropOpt = hasAttributeAndCheckIsEmpty(arg.first, "noDrop");
+        if (!noDropOpt.has_value()) return NodeVal();
+
         argNames.push_back(argId);
         argTypes.push_back(arg.second.value().getEvalVal().ty);
+        argNoDrops.push_back(noDropOpt.value());
     }
 
     // check no arg name duplicates
@@ -833,7 +839,9 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     {
         TypeTable::Callable callable;
         callable.isFunc = true;
+        callable.setArgCnt(argTypes.size());
         callable.setArgTypes(argTypes);
+        callable.setArgNoDrops(argNoDrops);
         callable.retType = retType;
         callable.variadic = variadic.value();
         optional<TypeTable::Id> typeOpt = typeTable->addCallable(callable);
@@ -1775,10 +1783,12 @@ NodeVal Processor::processFncType(const NodeVal &node) {
 
     // arguments
     vector<TypeTable::Id> argTypes;
+    vector<bool> argNoDrops;
     const NodeVal &nodeArgs = processWithEscape(node.getChild(indArgs));
     if (nodeArgs.isInvalid()) return NodeVal();
     if (!checkIsRaw(nodeArgs, true)) return NodeVal();
     argTypes.reserve(nodeArgs.getChildrenCnt());
+    argNoDrops.reserve(nodeArgs.getChildrenCnt());
     optional<bool> variadic = hasAttributeAndCheckIsEmpty(nodeArgs, "variadic");
     if (!variadic.has_value()) return NodeVal();
     for (size_t i = 0; i < nodeArgs.getChildrenCnt(); ++i) {
@@ -1787,7 +1797,11 @@ NodeVal Processor::processFncType(const NodeVal &node) {
         NodeVal argTy = processAndCheckIsType(nodeArg);
         if (argTy.isInvalid()) return NodeVal();
 
+        optional<bool> noDropOpt = hasAttributeAndCheckIsEmpty(argTy, "noDrop");
+        if (!noDropOpt.has_value()) return NodeVal();
+
         argTypes.push_back(argTy.getEvalVal().ty);
+        argNoDrops.push_back(noDropOpt.value());
     }
 
     // ret type
@@ -1807,7 +1821,9 @@ NodeVal Processor::processFncType(const NodeVal &node) {
     {
         TypeTable::Callable callable;
         callable.isFunc = true;
+        callable.setArgCnt(argTypes.size());
         callable.setArgTypes(argTypes);
+        callable.setArgNoDrops(argNoDrops);
         callable.retType = retType;
         callable.variadic = variadic.value();
         optional<TypeTable::Id> typeOpt = typeTable->addCallable(callable);
@@ -2309,11 +2325,16 @@ bool Processor::checkIsDropFuncType(const NodeVal &node, TypeTable::Id dropeeTy,
         TypeTable::Id nodeTy = node.getType().value();
         check = typeTable->worksAsCallable(nodeTy, true);
         if (check) {
-            TypeTable::Callable dropCallable;
-            dropCallable.isFunc = true;
-            dropCallable.setArgTypes({dropeeTy});
+            const TypeTable::Callable *givenCallable = typeTable->extractCallable(nodeTy);
 
-            check = typeTable->addCallableSig(dropCallable) == typeTable->addCallableSig(nodeTy);
+            TypeTable::Callable wantedCallable;
+            wantedCallable.isFunc = true;
+            wantedCallable.setArgCnt(1);
+            wantedCallable.setArgTypes({dropeeTy});
+
+            check = typeTable->addCallableSig(wantedCallable) == typeTable->addCallableSig(*givenCallable);
+
+            if (check) check = givenCallable->getArgNoDrop(0);
         }
     }
 

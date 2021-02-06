@@ -48,11 +48,14 @@ optional<size_t> TypeTable::DataType::getMembInd(NamePool::Id name) const {
     return nullopt;
 }
 
-void TypeTable::Callable::setArgTypes(const std::vector<TypeTable::Id> &argTys) {
-    setArgCnt(argTys.size());
-    for (size_t i = 0; i < argTys.size(); ++i) {
-        args[i] = argTys[i];
-    }
+void TypeTable::Callable::setArgTypes(const vector<TypeTable::Id> &argTys) {
+    for (size_t i = 0; i < argTys.size(); ++i)
+        args[i].ty = argTys[i];
+}
+
+void TypeTable::Callable::setArgNoDrops(const vector<bool> &argNoDrops) {
+    for (size_t i = 0; i < argNoDrops.size(); ++i)
+        args[i].noDrop = argNoDrops[i];
 }
 
 bool TypeTable::Callable::eq(const Callable &other) const {
@@ -61,7 +64,7 @@ bool TypeTable::Callable::eq(const Callable &other) const {
 
     if (isFunc) {
         for (size_t i = 0; i < getArgCnt(); ++i) {
-            if (args[i] != other.args[i]) return false;
+            if (!args[i].eq(other.args[i])) return false;
         }
     }
 
@@ -331,7 +334,9 @@ TypeTable::Id TypeTable::addTypeDescrForSig(Id t) {
 TypeTable::Id TypeTable::addCallableSig(const Callable &call) {
     Callable sig(call);
     for (auto &it : sig.args) {
-        if (isTypeDescr(it)) it = addTypeDescrForSig(getTypeDescr(it));
+        if (isTypeDescr(it.ty)) it.ty = addTypeDescrForSig(getTypeDescr(it.ty));
+        // noDrop not part of sig
+        it.noDrop = false;
     }
     // ret type is not part of sig
     sig.retType.reset();
@@ -1034,7 +1039,7 @@ optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool, bool m
         if (sig.variadic) ss << "+";
         if (sig.isFunc) {
             for (const auto &arg : sig.args) {
-                optional<string> str = makeBinString(arg, namePool, false);
+                optional<string> str = makeBinString(arg.ty, namePool, false);
                 if (!str.has_value()) return nullopt;
                 ss << str.value();
             }

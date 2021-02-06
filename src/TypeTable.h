@@ -109,7 +109,15 @@ public:
     private:
         friend class TypeTable;
 
-        std::vector<TypeTable::Id> args;
+        struct ArgEntry {
+            TypeTable::Id ty;
+            bool noDrop = false;
+
+            bool eq(const ArgEntry &other) const
+            { return ty == other.ty && noDrop == other.noDrop; }
+        };
+
+        std::vector<ArgEntry> args;
 
     public:
         bool isFunc;
@@ -120,9 +128,15 @@ public:
         // args are left undefined
         void setArgCnt(std::size_t argCnt) { args.resize(argCnt); }
 
-        TypeTable::Id getArgType(std::size_t ind) const { return args[ind]; }
-        void setArgType(std::size_t ind, TypeTable::Id ty) { args[ind] = ty; }
+        TypeTable::Id getArgType(std::size_t ind) const { return args[ind].ty; }
+        void setArgType(std::size_t ind, TypeTable::Id ty) { args[ind].ty = ty; }
+        // assumed to have the same arg size
         void setArgTypes(const std::vector<TypeTable::Id> &argTys);
+
+        bool getArgNoDrop(std::size_t ind) const { return args[ind].noDrop; }
+        void setArgNoDrop(std::size_t ind, bool b) { args[ind].noDrop = b; }
+        // assumed to have the same arg size
+        void setArgNoDrops(const std::vector<bool> &argNoDrops);
     
         bool hasRet() const { return retType.has_value(); }
 
