@@ -58,7 +58,7 @@ NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::
 NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) {
     if (!checkIsEvalVal(init, true)) return NodeVal();
 
-    return NodeVal::copyNoRef(codeLoc, init);
+    return NodeVal::copyNoRef(codeLoc, init, false);
 }
 
 NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
@@ -577,9 +577,11 @@ NodeVal Evaluator::performOperComparisonTearDown(CodeLoc codeLoc, bool success, 
 NodeVal Evaluator::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) {
     if (!checkIsEvalVal(lhs, true) || !checkIsEvalVal(rhs, true)) return NodeVal();
 
-    *lhs.getEvalVal().ref = NodeVal::copyNoRef(lhs.getEvalVal().ref->getCodeLoc(), rhs);
+    bool lhsNoDrop = lhs.isNoDrop();
 
-    NodeVal nodeVal = NodeVal::copyNoRef(lhs.getCodeLoc(), rhs);
+    *lhs.getEvalVal().ref = NodeVal::copyNoRef(lhs.getEvalVal().ref->getCodeLoc(), rhs, lhsNoDrop);
+
+    NodeVal nodeVal = NodeVal::copyNoRef(lhs.getCodeLoc(), rhs, lhsNoDrop);
     nodeVal.getEvalVal().ref = lhs.getEvalVal().ref;
     return nodeVal;
 }
@@ -594,7 +596,7 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVa
     }
 
     if (typeTable->worksAsTypeArr(base.getType().value())) {
-        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[index.value()]);
+        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[index.value()], base.isNoDrop());
         nodeVal.getEvalVal().type = resTy;
         if (base.hasRef()) {
             nodeVal.getEvalVal().ref = &base.getEvalVal().ref->getEvalVal().elems[index.value()];
@@ -638,9 +640,10 @@ NodeVal Evaluator::performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t 
                 nodeVal.getEvalVal().ref = nullptr;
             }
         }
+        nodeVal.setNoDrop(nodeVal.isNoDrop() || base.isNoDrop());
         return nodeVal;
     } else {
-        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[ind]);
+        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[ind], base.isNoDrop());
         nodeVal.getEvalVal().type = resTy;
         if (base.hasRef()) {
             nodeVal.getEvalVal().ref = &base.getEvalVal().ref->getEvalVal().elems[ind];

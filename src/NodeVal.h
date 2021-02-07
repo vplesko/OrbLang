@@ -110,6 +110,8 @@ public:
     static NodeVal makeEmpty(CodeLoc codeLoc, TypeTable *typeTable);
 
     static NodeVal copyNoRef(const NodeVal &k);
+    static NodeVal copyNoRef(const NodeVal &k, bool noDrop);
     static NodeVal copyNoRef(CodeLoc codeLoc, const NodeVal &k);
+    static NodeVal copyNoRef(CodeLoc codeLoc, const NodeVal &k, bool noDrop);
     static void copyNonValFieldsLeaf(NodeVal &dst, const NodeVal &src, const TypeTable *typeTable);
 };

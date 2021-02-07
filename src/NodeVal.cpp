@@ -198,10 +198,22 @@ NodeVal NodeVal::copyNoRef(const NodeVal &k) {
     return nodeVal;
 }
 
+NodeVal NodeVal::copyNoRef(const NodeVal &k, bool noDrop) {
+    NodeVal ret = copyNoRef(k);
+    ret.setNoDrop(noDrop);
+    return ret;
+}
+
 NodeVal NodeVal::copyNoRef(CodeLoc codeLoc, const NodeVal &k) {
     NodeVal nodeVal = copyNoRef(k);
     nodeVal.codeLoc = codeLoc;
     return nodeVal;
+}
+
+NodeVal NodeVal::copyNoRef(CodeLoc codeLoc, const NodeVal &k, bool noDrop) {
+    NodeVal ret = copyNoRef(codeLoc, k);
+    ret.setNoDrop(noDrop);
+    return ret;
 }
 
 void NodeVal::copyNonValFieldsLeaf(NodeVal &dst, const NodeVal &src, const TypeTable *typeTable) {
