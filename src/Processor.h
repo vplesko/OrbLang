@@ -128,6 +128,7 @@ private:
     NodeVal dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty);
     NodeVal dispatchCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args, bool allArgsEval);
     NodeVal dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
+    NodeVal dispatchAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs);
     NodeVal getElement(CodeLoc codeLoc, NodeVal &array, std::size_t index);
     NodeVal getElement(CodeLoc codeLoc, NodeVal &array, const NodeVal &index);
     NodeVal getRawMember(CodeLoc codeLoc, NodeVal &raw, std::size_t index);
@@ -135,6 +136,7 @@ private:
     NodeVal getDataMember(CodeLoc codeLoc, NodeVal &data, std::size_t index);
     bool argsFitFuncCall(const std::vector<NodeVal> &args, const TypeTable::Callable &callable, bool allowImplicitCasts);
     NodeVal loadUndecidedCallable(const NodeVal &node, const NodeVal &val);
+    NodeVal moveNode(CodeLoc codeLoc, NodeVal &val);
     NodeVal invoke(CodeLoc codeLoc, const MacroValue &macroVal, std::vector<NodeVal> args);
     bool hasTrivialDrop(TypeTable::Id ty);
     bool callDropFunc(CodeLoc codeLoc, NodeVal val);

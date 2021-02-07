@@ -25,7 +25,7 @@ const unordered_map<Oper, OperInfo> operInfos = {
     {Oper::BIT_OR, {.binary=true}},
     {Oper::BIT_XOR, {.binary=true}},
     {Oper::SHL, {.binary=true}},
-    {Oper::SHR, {.binary=true}},
+    {Oper::SHR, {.unary=true, .binary=true}},
     {Oper::IND, {.binary=true}},
     {Oper::DOT, {.binary=true}}
 };

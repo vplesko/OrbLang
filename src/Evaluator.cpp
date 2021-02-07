@@ -1007,9 +1007,11 @@ vector<NodeVal> Evaluator::makeRawConcat(const EvalVal &lhs, const EvalVal &rhs)
 
     for (const auto &it : lhs.elems) {
         elems.push_back(it);
+        elems.back().setNoDrop(elems.back().isNoDrop() || lhs.noDrop);
     }
     for (const auto &it : rhs.elems) {
         elems.push_back(it);
+        elems.back().setNoDrop(elems.back().isNoDrop() || rhs.noDrop);
     }
 
     return elems;

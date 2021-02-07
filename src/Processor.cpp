@@ -1606,6 +1606,14 @@ NodeVal Processor::dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) 
     }
 }
 
+NodeVal Processor::dispatchAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) {
+    if (checkIsEvalTime(lhs, false) && checkIsEvalTime(rhs, false)) {
+        return evaluator->performOperAssignment(codeLoc, lhs, rhs);
+    } else {
+        return performOperAssignment(codeLoc, lhs, rhs);
+    }
+}
+
 NodeVal Processor::getElement(CodeLoc codeLoc, NodeVal &array, size_t index) {
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::WIDEST_U), typeTable);
     evalVal.getWidestU() = index;
@@ -1749,6 +1757,34 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node, const NodeVal &val
     }
 }
 
+// TODO optimize on raw - don't need to copy children, can just move instead
+NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal &val) {
+    if (!checkHasType(val, true)) return NodeVal();
+
+    if (val.isNoDrop()) {
+        msgs->errorUnknown(codeLoc);
+        return NodeVal();
+    }
+
+    if (!val.hasRef()) return NodeVal::copyNoRef(val);
+
+    TypeTable::Id valTy = val.getType().value();
+
+    if (typeTable->worksAsTypeCn(valTy)) {
+        msgs->errorUnknown(codeLoc);
+        return NodeVal();
+    }
+
+    NodeVal prev = NodeVal::copyNoRef(val);
+
+    NodeVal zero = performZero(codeLoc, valTy);
+    if (zero.isInvalid()) return NodeVal();
+
+    if (dispatchAssignment(codeLoc, val, zero).isInvalid()) return NodeVal();
+
+    return prev;
+}
+
 NodeVal Processor::invoke(CodeLoc codeLoc, const MacroValue &macroVal, vector<NodeVal> args) {
     const TypeTable::Callable &callable = BaseCallableValue::getCallable(macroVal, typeTable);
 
@@ -1843,7 +1879,7 @@ bool Processor::callDropFunc(CodeLoc codeLoc, NodeVal val) {
             NodeVal afterCast = dispatchCast(codeLoc, val, dropCallable.getArgType(0));
             if (afterCast.isInvalid()) return false;
 
-            bool isEval = checkIsEvalVal(afterCast, true);
+            bool isEval = checkIsEvalVal(afterCast, false);
 
             if (dispatchCall(codeLoc, *dropFunc, {move(afterCast)}, isEval).isInvalid()) return false;
         }
@@ -2096,6 +2132,8 @@ NodeVal Processor::processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper o
 
     if (op == Oper::MUL) {
         return dispatchOperUnaryDeref(codeLoc, operProc);
+    } else if (op == Oper::SHR) {
+        return moveNode(codeLoc, operProc);
     } else {
         if (checkIsEvalTime(operProc, false)) {
             return evaluator->performOperUnary(codeLoc, operProc, op);
@@ -2205,12 +2243,7 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
 
         if (!implicitCastOperands(lhs, rhs, true)) return NodeVal();
 
-        NodeVal nextRhs;
-        if (checkIsEvalTime(lhs, false) && checkIsEvalTime(rhs, false)) {
-            nextRhs = evaluator->performOperAssignment(codeLoc, lhs, rhs);
-        } else {
-            nextRhs = performOperAssignment(codeLoc, lhs, rhs);
-        }
+        NodeVal nextRhs = dispatchAssignment(codeLoc, lhs, rhs);
         if (nextRhs.isInvalid()) return NodeVal();
 
         if (firstIter) {
