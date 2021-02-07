@@ -32,11 +32,9 @@ NodeVal Processor::processNode(const NodeVal &node) {
 
     if (checkIsTopmost(node.getCodeLoc(), false)) {
         if (!callDropFuncNonRef(ret)) return NodeVal();
-
-        return NodeVal(node.getCodeLoc());
-    } else {
-        return ret;
     }
+
+    return ret;
 }
 
 NodeVal Processor::processLeaf(const NodeVal &node) {
@@ -236,7 +234,7 @@ NodeVal Processor::processId(const NodeVal &node, const NodeVal &starting) {
     return processId(starting);
 }
 
-// TODO! demand global vars with non-trivial drop be marked noDrop
+// TODO+ demand global vars with non-trivial drop be marked noDrop
 NodeVal Processor::processSym(const NodeVal &node) {
     if (!checkAtLeastChildren(node, 2, true)) return NodeVal();
 
@@ -261,6 +259,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
 
         bool hasType = optType.has_value();
 
+        // TODO+ get rid of this
         optional<bool> attrNoDrop = hasAttributeAndCheckIsEmpty(pair.first, "noDrop");
         if (!attrNoDrop.has_value()) return NodeVal();
 
@@ -277,10 +276,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
 
             varEntry.var = move(nodeReg);
 
-            // TODO forbid if init not ref
-            if (varEntry.isNoDrop) {
-                if (!callDropFuncNonRef(init)) return NodeVal();
-            }
+            if (!callDropFuncNonRef(init)) return NodeVal();
         } else {
             if (!hasType) {
                 msgs->errorMissingTypeAttribute(nodePair.getCodeLoc());
@@ -719,9 +715,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
     for (size_t i = 0; i < args.size(); ++i) {
         size_t ind = args.size()-1-i;
 
-        if (callable->getArgNoDrop(i)) {
-            if (!callDropFuncsNonRef(move(args))) return NodeVal();
-        }
+        if (!callDropFuncsNonRef(move(args))) return NodeVal();
     }
 
     return ret;
@@ -1873,7 +1867,7 @@ bool Processor::callDropFuncsCurrCallable(CodeLoc codeLoc) {
     return callDropFuncs(codeLoc, symbolTable->getVarsInRevOrderCurrCallable());
 }
 
-// TODO! demand attr vals have trivial drop
+// TODO+ demand attr vals have trivial drop
 bool Processor::processAttributes(NodeVal &node) {
     NamePool::Id typeId = getMeaningfulNameId(Meaningful::TYPE);
 
@@ -2146,7 +2140,6 @@ NodeVal Processor::processOperComparison(CodeLoc codeLoc, const std::vector<cons
     }
 }
 
-// TODO forbid assignment to ::noDrop where it exceeds rhs's scoping
 NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
     vector<NodeVal> procOpers;
     procOpers.reserve(opers.size());
@@ -2160,7 +2153,7 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
     NodeVal rhs = move(procOpers.back());
     procOpers.pop_back();
 
-    // all but rightmost are ref, so don't call drop for them here
+    // all but rightmost must be ref, so don't call drop for them
     bool firstIter = true;
 
     while (!procOpers.empty()) {
@@ -2187,7 +2180,6 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
         if (nextRhs.isInvalid()) return NodeVal();
 
         if (firstIter) {
-            // TODO! don't call if lhs is not noDrop
             if (!callDropFuncNonRef(move(rhs)));
 
             firstIter = false;
@@ -2199,14 +2191,15 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
     return rhs;
 }
 
-// TODO! CONTINUE ADDING CALLS TO callDropFuncNonRef
-
 NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
+    // value kept so drop can be called
     NodeVal base = processAndCheckHasType(*opers[0]);
     if (base.isInvalid()) return NodeVal();
 
+    NodeVal lhs = base;
+
     for (size_t i = 1; i < opers.size(); ++i) {
-        TypeTable::Id baseType = base.getType().value();
+        TypeTable::Id baseType = lhs.getType().value();
 
         NodeVal index = processAndCheckHasType(*opers[i]);
         if (index.isInvalid()) return NodeVal();
@@ -2224,37 +2217,42 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
             }
         }
 
-        base = getElement(base.getCodeLoc(), base, index);
-        if (base.isInvalid()) return NodeVal();
+        lhs = getElement(lhs.getCodeLoc(), lhs, index);
+        if (lhs.isInvalid()) return NodeVal();
     }
 
-    return base;
+    if (!callDropFuncNonRef(move(base))) return NodeVal();
+
+    return lhs;
 }
 
 NodeVal Processor::processOperDot(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
+    // value kept so drop can be called
     NodeVal base = processAndCheckHasType(*opers[0]);
     if (base.isInvalid()) return NodeVal();
 
+    NodeVal lhs = base;
+
     for (size_t i = 1; i < opers.size(); ++i) {
-        TypeTable::Id baseType = base.getType().value();
-        bool isBaseRaw = NodeVal::isRawVal(base, typeTable);
+        TypeTable::Id baseType = lhs.getType().value();
+        bool isBaseRaw = NodeVal::isRawVal(lhs, typeTable);
         bool isBaseTup = typeTable->worksAsTuple(baseType);
         bool isBaseData = typeTable->worksAsDataType(baseType);
 
         size_t baseLen = 0;
         if (isBaseRaw) {
-            baseLen = base.getChildrenCnt();
+            baseLen = lhs.getChildrenCnt();
         } else if (isBaseTup) {
             const TypeTable::Tuple *tuple = typeTable->extractTuple(baseType);
             if (tuple == nullptr) {
-                msgs->errorExprDotInvalidBase(base.getCodeLoc());
+                msgs->errorExprDotInvalidBase(lhs.getCodeLoc());
                 return NodeVal();
             }
             baseLen = tuple->members.size();
         } else if (isBaseData) {
             // base len not needed
         } else {
-            msgs->errorUnknown(base.getCodeLoc());
+            msgs->errorUnknown(lhs.getCodeLoc());
             return NodeVal();
         }
 
@@ -2296,17 +2294,19 @@ NodeVal Processor::processOperDot(CodeLoc codeLoc, const std::vector<const NodeV
         }
 
         if (isBaseRaw) {
-            base = getRawMember(index.getCodeLoc(), base, (size_t) indexVal);
+            lhs = getRawMember(index.getCodeLoc(), lhs, (size_t) indexVal);
         } else if (isBaseTup) {
-            base = getTupleMember(index.getCodeLoc(), base, (size_t) indexVal);
+            lhs = getTupleMember(index.getCodeLoc(), lhs, (size_t) indexVal);
         } else {
-            base = getDataMember(index.getCodeLoc(), base, (size_t) indexVal);
+            lhs = getDataMember(index.getCodeLoc(), lhs, (size_t) indexVal);
         }
 
-        if (base.isInvalid()) return NodeVal();
+        if (lhs.isInvalid()) return NodeVal();
     }
 
-    return base;
+    if (!callDropFuncNonRef(move(base))) return NodeVal();
+
+    return lhs;
 }
 
 NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op) {
