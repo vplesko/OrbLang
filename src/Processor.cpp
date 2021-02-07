@@ -287,7 +287,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
 
             varType = optType.value();
 
-            optional<bool> attrNoZero = hasAttributeAndCheckIsEmpty(pair.first, "noZero");
+            optional<bool> attrNoZero = getAttributeForBool(pair.first, "noZero");
             if (!attrNoZero.has_value()) return NodeVal();
 
             NodeVal nodeReg;
@@ -597,7 +597,7 @@ NodeVal Processor::processData(const NodeVal &node) {
                 return NodeVal();
             }
 
-            optional<bool> attrNoZero = hasAttributeAndCheckIsEmpty(nodeMemb, "noZero");
+            optional<bool> attrNoZero = getAttributeForBool(nodeMemb, "noZero");
             if (!attrNoZero.has_value()) return NodeVal();
 
             TypeTable::DataType::MembEntry membEntry;
@@ -805,12 +805,12 @@ NodeVal Processor::processFnc(const NodeVal &node) {
             return NodeVal();
         }
 
-        optional<bool> noNameMangleOpt = hasAttributeAndCheckIsEmpty(nodeName, "noNameMangle");
+        optional<bool> noNameMangleOpt = getAttributeForBool(nodeName, "noNameMangle");
         if (!noNameMangleOpt.has_value()) return NodeVal();
         isMain = isMeaningful(name, Meaningful::MAIN);
         noNameMangle = noNameMangleOpt.value();
 
-        optional<bool> evaluableOpt = hasAttributeAndCheckIsEmpty(nodeName, "evaluable");
+        optional<bool> evaluableOpt = getAttributeForBool(nodeName, "evaluable");
         if (!evaluableOpt.has_value()) return NodeVal();
         evaluable = evaluableOpt.value();
     }
@@ -825,7 +825,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     argNames.reserve(nodeArgs.getChildrenCnt());
     argTypes.reserve(nodeArgs.getChildrenCnt());
     argNoDrops.reserve(nodeArgs.getChildrenCnt());
-    optional<bool> variadic = hasAttributeAndCheckIsEmpty(nodeArgs, "variadic");
+    optional<bool> variadic = getAttributeForBool(nodeArgs, "variadic");
     if (!variadic.has_value()) return NodeVal();
     for (size_t i = 0; i < nodeArgs.getChildrenCnt(); ++i) {
         const NodeVal &nodeArg = nodeArgs.getChild(i);
@@ -839,7 +839,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
             return NodeVal();
         }
 
-        optional<bool> noDropOpt = hasAttributeAndCheckIsEmpty(arg.first, "noDrop");
+        optional<bool> noDropOpt = getAttributeForBool(arg.first, "noDrop");
         if (!noDropOpt.has_value()) return NodeVal();
 
         argNames.push_back(argId);
@@ -984,9 +984,9 @@ NodeVal Processor::processMac(const NodeVal &node) {
         NamePool::Id argId = arg.getEvalVal().id;
         argNames.push_back(argId);
 
-        optional<bool> isPreproc = hasAttributeAndCheckIsEmpty(arg, "preprocess");
+        optional<bool> isPreproc = getAttributeForBool(arg, "preprocess");
         if (!isPreproc.has_value()) return NodeVal();
-        optional<bool> isPlusEsc = hasAttributeAndCheckIsEmpty(arg, "plusEscape");
+        optional<bool> isPlusEsc = getAttributeForBool(arg, "plusEscape");
         if (!isPlusEsc.has_value()) return NodeVal();
         if (isPreproc.value() && isPlusEsc.value()) {
             msgs->errorUnknown(arg.getNonTypeAttrs().getCodeLoc());
@@ -996,7 +996,7 @@ NodeVal Processor::processMac(const NodeVal &node) {
         else if (isPlusEsc.value()) argPreHandling.push_back(MacroValue::PLUS_ESC);
         else argPreHandling.push_back(MacroValue::REGULAR);
 
-        optional<bool> isVariadic = hasAttributeAndCheckIsEmpty(arg, "variadic");
+        optional<bool> isVariadic = getAttributeForBool(arg, "variadic");
         if (!isVariadic.has_value()) return NodeVal();
         variadic = isVariadic.value();
     }
@@ -1264,9 +1264,7 @@ NodeVal Processor::processIsDef(const NodeVal &node) {
 
     NamePool::Id id = name.getEvalVal().id;
 
-    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_BOOL), typeTable);
-    evalVal.b = symbolTable->isVarName(id);
-    return NodeVal(node.getCodeLoc(), move(evalVal));
+    return promoteBool(node.getCodeLoc(), symbolTable->isVarName(id));
 }
 
 NodeVal Processor::processAttrOf(const NodeVal &node) {
@@ -1315,12 +1313,9 @@ NodeVal Processor::processAttrIsDef(const NodeVal &node) {
         }
     }
 
-    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_BOOL), typeTable);
-    evalVal.b = attrIsDef;
-
     if (!callDropFuncNonRef(move(operand))) return NodeVal();
 
-    return NodeVal(node.getCodeLoc(), move(evalVal));
+    return promoteBool(node.getCodeLoc(), attrIsDef);
 }
 
 // returns nullopt if not found
@@ -1349,20 +1344,25 @@ optional<NodeVal> Processor::getAttribute(const NodeVal &node, const string &att
     return getAttribute(node, namePool->add(attrStrName));
 }
 
-// returns nullopt on error
-optional<bool> Processor::hasAttributeAndCheckIsEmpty(const NodeVal &node, NamePool::Id attrName) {
+optional<bool> Processor::getAttributeForBool(const NodeVal &node, NamePool::Id attrName) {
     optional<NodeVal> attr = getAttribute(node, attrName);
     if (!attr.has_value()) return false;
-    if (!checkIsEmpty(attr.value(), true)) return nullopt;
-    return true;
+    if (!checkIsEvalVal(attr.value(), true)) return nullopt;
+    if (!checkIsBool(attr.value(), true)) return nullopt;
+    return attr.value().getEvalVal().b;
 }
 
-// returns nullopt on error
-optional<bool> Processor::hasAttributeAndCheckIsEmpty(const NodeVal &node, const std::string &attrStrName) {
-    return hasAttributeAndCheckIsEmpty(node, namePool->add(attrStrName));
+optional<bool> Processor::getAttributeForBool(const NodeVal &node, const std::string &attrStrName) {
+    return getAttributeForBool(node, namePool->add(attrStrName));
 }
 
-// TODO errors on Windows, cannot implicitly cast 0 from i32 to u32
+NodeVal Processor::promoteBool(CodeLoc codeLoc, bool b) const {
+    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_BOOL), typeTable);
+    evalVal.b = b;
+    return NodeVal(codeLoc, evalVal);
+}
+
+// TODO errors on Windows, cannot implicitly cast 0 from i32 to u32?
 NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
     bool isId = false;
 
@@ -1900,8 +1900,6 @@ bool Processor::callDropFuncsCurrCallable(CodeLoc codeLoc) {
     return callDropFuncs(codeLoc, symbolTable->getVarsInRevOrderCurrCallable());
 }
 
-// TODO+ attrs with no val are bool true
-// TODO+ demand attr vals have trivial drop
 bool Processor::processAttributes(NodeVal &node) {
     NamePool::Id typeId = getMeaningfulNameId(Meaningful::TYPE);
 
@@ -1928,7 +1926,7 @@ bool Processor::processAttributes(NodeVal &node) {
                 return false;
             }
 
-            NodeVal attrVal = NodeVal::makeEmpty(nodeAttrs.getCodeLoc(), typeTable);
+            NodeVal attrVal = promoteBool(nodeAttrs.getCodeLoc(), true);
 
             attrMap.attrMap.insert({attrName, make_unique<NodeVal>(move(attrVal))});
         } else {
@@ -1955,10 +1953,12 @@ bool Processor::processAttributes(NodeVal &node) {
 
                 NodeVal attrVal;
                 if (nodeAttrEntryVal == nullptr) {
-                    attrVal = NodeVal::makeEmpty(nodeAttrEntryName->getCodeLoc(), typeTable);
+                    attrVal = promoteBool(nodeAttrEntryName->getCodeLoc(), true);
                 } else {
                     attrVal = processNode(*nodeAttrEntryVal);
                     if (attrVal.isInvalid()) return false;
+                    if (!checkHasType(attrVal, true)) return false;
+                    if (!checkHasTrivialDrop(attrVal.getCodeLoc(), attrVal.getType().value(), true)) return false;
                 }
 
                 attrMap.attrMap.insert({attrName, make_unique<NodeVal>(move(attrVal))});
@@ -1995,7 +1995,7 @@ NodeVal Processor::processFncType(const NodeVal &node) {
     if (!checkIsRaw(nodeArgs, true)) return NodeVal();
     argTypes.reserve(nodeArgs.getChildrenCnt());
     argNoDrops.reserve(nodeArgs.getChildrenCnt());
-    optional<bool> variadic = hasAttributeAndCheckIsEmpty(nodeArgs, "variadic");
+    optional<bool> variadic = getAttributeForBool(nodeArgs, "variadic");
     if (!variadic.has_value()) return NodeVal();
     for (size_t i = 0; i < nodeArgs.getChildrenCnt(); ++i) {
         const NodeVal &nodeArg = nodeArgs.getChild(i);
@@ -2003,7 +2003,7 @@ NodeVal Processor::processFncType(const NodeVal &node) {
         NodeVal argTy = processAndCheckIsType(nodeArg);
         if (argTy.isInvalid()) return NodeVal();
 
-        optional<bool> noDropOpt = hasAttributeAndCheckIsEmpty(argTy, "noDrop");
+        optional<bool> noDropOpt = getAttributeForBool(argTy, "noDrop");
         if (!noDropOpt.has_value()) return NodeVal();
 
         argTypes.push_back(argTy.getEvalVal().ty);
@@ -2061,7 +2061,7 @@ NodeVal Processor::processMacType(const NodeVal &node) {
         msgs->errorUnknown(nodeArgNum.getCodeLoc());
         return NodeVal();
     }
-    optional<bool> variadic = hasAttributeAndCheckIsEmpty(nodeArgNum, "variadic");
+    optional<bool> variadic = getAttributeForBool(nodeArgNum, "variadic");
     if (!variadic.has_value()) return NodeVal();
 
     // macro type
@@ -2542,6 +2542,14 @@ bool Processor::checkIsType(const NodeVal &node, bool orError) {
 bool Processor::checkIsBool(const NodeVal &node, bool orError) {
     if (!node.getType().has_value() || !typeTable->worksAsTypeB(node.getType().value())) {
         if (orError) msgs->errorUnknown(node.getCodeLoc());
+        return false;
+    }
+    return true;
+}
+
+bool Processor::checkHasTrivialDrop(CodeLoc codeLoc, TypeTable::Id ty, bool orError) {
+    if (!hasTrivialDrop(ty)) {
+        if (orError) msgs->errorUnknown(codeLoc);
         return false;
     }
     return true;

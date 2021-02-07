@@ -76,6 +76,7 @@ protected:
     bool checkIsId(const NodeVal &node, bool orError);
     bool checkIsType(const NodeVal &node, bool orError);
     bool checkIsBool(const NodeVal &node, bool orError);
+    bool checkHasTrivialDrop(CodeLoc codeLoc, TypeTable::Id ty, bool orError);
     bool checkIsDropFuncType(const NodeVal &node, TypeTable::Id dropeeTy, bool orError);
     // Checks that the node is EvalVal or LlvmVal.
     bool checkIsValue(const NodeVal &node, bool orError);
@@ -110,10 +111,12 @@ protected:
 
     std::optional<NodeVal> getAttribute(const NodeVal &node, NamePool::Id attrName);
     std::optional<NodeVal> getAttribute(const NodeVal &node, const std::string &attrStrName);
-    // nullopt on error or attr not empty, otherwise whether has the attribute
-    std::optional<bool> hasAttributeAndCheckIsEmpty(const NodeVal &node, NamePool::Id attrName);
-    std::optional<bool> hasAttributeAndCheckIsEmpty(const NodeVal &node, const std::string &attrStrName);
+    // nullopt on error or attr not eval bool, false if not present, otherwise attribute value
+    std::optional<bool> getAttributeForBool(const NodeVal &node, NamePool::Id attrName);
+    // nullopt on error or attr not eval bool, false if not present, otherwise attribute value
+    std::optional<bool> getAttributeForBool(const NodeVal &node, const std::string &attrStrName);
 private:
+    NodeVal promoteBool(CodeLoc codeLoc, bool b) const;
     NodeVal promoteLiteralVal(const NodeVal &node);
     bool canBeTypeDescrDecor(const NodeVal &node);
     bool applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &node);

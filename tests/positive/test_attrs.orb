@@ -67,8 +67,8 @@ fnc main () () {
     };
     println_i32 p;
 
-    println_i32 (+ 19 (lenOf (attrOf \()::foo foo)));
-    println_i32 (+ 20 (lenOf (attrOf \()::(foo) foo)));
+    println_i32 (+ 18 (cast i32 (attrOf \()::foo foo)));
+    println_i32 (+ 19 (cast i32 (attrOf \()::(foo) foo)));
 
     println_i32 (attrOf (+ 1 1)::((foo 21)) foo);
 
