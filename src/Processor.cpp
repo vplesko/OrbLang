@@ -1900,6 +1900,7 @@ bool Processor::callDropFuncsCurrCallable(CodeLoc codeLoc) {
     return callDropFuncs(codeLoc, symbolTable->getVarsInRevOrderCurrCallable());
 }
 
+// TODO+ attrs with no val are bool true
 // TODO+ demand attr vals have trivial drop
 bool Processor::processAttributes(NodeVal &node) {
     NamePool::Id typeId = getMeaningfulNameId(Meaningful::TYPE);
