@@ -40,6 +40,7 @@ struct EvalVal {
     std::vector<NodeVal> elems;
 
     NodeVal *ref = nullptr;
+    bool noDrop = false;
 
     EscapeScore escapeScore = 0;
 

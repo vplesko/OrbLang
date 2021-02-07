@@ -70,7 +70,6 @@ public:
 
     struct VarEntry {
         NodeVal var;
-        bool isNoDrop = false;
         bool isInvokeArg = false;
     };
 

@@ -44,11 +44,13 @@ public:
     EscapeScore getEscapeScore() const;
     std::optional<TypeTable::Id> getType() const;
     bool hasRef() const;
+    void removeRef();
+    bool isNoDrop() const;
+    // returns whether set successfully
+    bool setNoDrop(bool b);
 
     // Remember to check when returned to you before any other checks or usages.
     bool isInvalid() const { return std::holds_alternative<bool>(value) && std::get<bool>(value) == false; }
-
-    void removeRef();
 
     bool isImport() const { return std::holds_alternative<StringPool::Id>(value); }
     StringPool::Id getImportFile() const { return std::get<StringPool::Id>(value); }

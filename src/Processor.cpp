@@ -1624,11 +1624,16 @@ NodeVal Processor::getElement(CodeLoc codeLoc, NodeVal &array, const NodeVal &in
     TypeTable::Id resType = elemType.value();
     if (typeTable->worksAsTypeCn(arrayType)) resType = typeTable->addTypeCnOf(resType);
 
+    NodeVal elem;
     if (checkIsEvalTime(array, false) && checkIsEvalTime(index, false)) {
-        return evaluator->performOperIndex(codeLoc, array, index, resType);
+        elem = evaluator->performOperIndex(codeLoc, array, index, resType);
     } else {
-        return performOperIndex(array.getCodeLoc(), array, index, resType);
+        elem = performOperIndex(array.getCodeLoc(), array, index, resType);
     }
+    // only for arrays, not array pointers
+    if (typeTable->worksAsTypeArr(arrayType)) elem.setNoDrop(array.isNoDrop());
+
+    return elem;
 }
 
 NodeVal Processor::getRawMember(CodeLoc codeLoc, NodeVal &raw, size_t index) {
@@ -1637,7 +1642,10 @@ NodeVal Processor::getRawMember(CodeLoc codeLoc, NodeVal &raw, size_t index) {
     TypeTable::Id resType = raw.getChild(index).getType().value();
     if (typeTable->worksAsTypeCn(rawType)) resType = typeTable->addTypeCnOf(resType);
 
-    return evaluator->performOperDot(codeLoc, raw, index, resType);
+    NodeVal memb = evaluator->performOperDot(codeLoc, raw, index, resType);
+    memb.setNoDrop(raw.isNoDrop());
+
+    return memb;
 }
 
 NodeVal Processor::getTupleMember(CodeLoc codeLoc, NodeVal &tuple, size_t index) {
@@ -1645,11 +1653,15 @@ NodeVal Processor::getTupleMember(CodeLoc codeLoc, NodeVal &tuple, size_t index)
 
     TypeTable::Id resType = typeTable->extractTupleMemberType(tupleType, index).value();
 
+    NodeVal memb;
     if (checkIsEvalTime(tuple, false)) {
-        return evaluator->performOperDot(codeLoc, tuple, index, resType);
+        memb = evaluator->performOperDot(codeLoc, tuple, index, resType);
     } else {
-        return performOperDot(codeLoc, tuple, index, resType);
+        memb = performOperDot(codeLoc, tuple, index, resType);
     }
+    memb.setNoDrop(tuple.isNoDrop());
+
+    return memb;
 }
 
 NodeVal Processor::getDataMember(CodeLoc codeLoc, NodeVal &data, size_t index) {
@@ -1657,11 +1669,15 @@ NodeVal Processor::getDataMember(CodeLoc codeLoc, NodeVal &data, size_t index) {
 
     TypeTable::Id resType = typeTable->extractDataTypeMemberType(dataType, index).value();
 
+    NodeVal memb;
     if (checkIsEvalTime(data, false)) {
-        return evaluator->performOperDot(codeLoc, data, index, resType);
+        memb = evaluator->performOperDot(codeLoc, data, index, resType);
     } else {
-        return performOperDot(codeLoc, data, index, resType);
+        memb = performOperDot(codeLoc, data, index, resType);
     }
+    memb.setNoDrop(data.isNoDrop());
+
+    return memb;
 }
 
 bool Processor::argsFitFuncCall(const vector<NodeVal> &args, const TypeTable::Callable &callable, bool allowImplicitCasts) {
@@ -1878,7 +1894,7 @@ bool Processor::callDropFuncsNonRef(vector<NodeVal> val) {
 
 bool Processor::callDropFuncs(CodeLoc codeLoc, vector<SymbolTable::VarEntry*> vars) {
     for (auto it : vars) {
-        if (it->isNoDrop) continue;
+        if (it->var.isNoDrop()) continue;
 
         NodeVal loaded = dispatchLoad(codeLoc, *it);
 

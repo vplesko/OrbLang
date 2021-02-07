@@ -188,7 +188,7 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
     for (size_t i = 0; i < args.size(); ++i) {
         SymbolTable::VarEntry varEntry;
         varEntry.var = NodeVal::copyNoRef(args[i]);
-        varEntry.isNoDrop = callable.getArgNoDrop(i);
+        varEntry.var.setNoDrop(callable.getArgNoDrop(i));
         symbolTable->addVar(func.argNames[i], move(varEntry));
     }
 
@@ -225,7 +225,7 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const
     for (size_t i = 0; i < args.size(); ++i) {
         SymbolTable::VarEntry varEntry;
         varEntry.var = args[i];
-        varEntry.isNoDrop = true;
+        varEntry.var.setNoDrop(true);
         varEntry.isInvokeArg = true;
         symbolTable->addVar(macro.argNames[i], move(varEntry));
     }

@@ -79,6 +79,24 @@ void NodeVal::removeRef() {
     else if (isLlvmVal()) getLlvmVal().removeRef();
 }
 
+bool NodeVal::isNoDrop() const {
+    if (isEvalVal()) return getEvalVal().noDrop;
+    else if (isLlvmVal()) return getLlvmVal().noDrop;
+    else return false;
+}
+
+bool NodeVal::setNoDrop(bool b) {
+    if (isEvalVal()) {
+        getEvalVal().noDrop = b;
+        return true;
+    } else if (isLlvmVal()) {
+        getLlvmVal().noDrop = b;
+        return true;
+    } else {
+        return false;
+    }
+}
+
 void NodeVal::addChild(NodeVal &node, NodeVal c, TypeTable *typeTable) {
     if (isRawVal(c, typeTable) && typeTable->worksAsTypeCn(c.getEvalVal().type))
         node.getEvalVal().type = typeTable->addTypeCnOf(node.getEvalVal().type);

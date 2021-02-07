@@ -6,6 +6,7 @@ struct LlvmVal {
     TypeTable::Id type;
     llvm::Value *val = nullptr;
     llvm::Value *ref = nullptr;
+    bool noDrop = false;
 
     LlvmVal() {}
     LlvmVal(TypeTable::Id ty) : type(ty) {}
