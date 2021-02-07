@@ -133,6 +133,7 @@ private:
     bool argsFitFuncCall(const std::vector<NodeVal> &args, const TypeTable::Callable &callable, bool allowImplicitCasts);
     NodeVal loadUndecidedCallable(const NodeVal &node, const NodeVal &val);
     NodeVal invoke(CodeLoc codeLoc, const MacroValue &macroVal, std::vector<NodeVal> args);
+    bool hasTrivialDrop(TypeTable::Id ty);
     bool callDropFunc(CodeLoc codeLoc, NodeVal val);
     bool callDropFuncNonRef(NodeVal val);
     bool callDropFuncsNonRef(std::vector<NodeVal> val);

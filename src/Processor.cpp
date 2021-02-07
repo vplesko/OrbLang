@@ -234,7 +234,6 @@ NodeVal Processor::processId(const NodeVal &node, const NodeVal &starting) {
     return processId(starting);
 }
 
-// TODO+ demand global vars have trivial drop
 NodeVal Processor::processSym(const NodeVal &node) {
     if (!checkAtLeastChildren(node, 2, true)) return NodeVal();
 
@@ -259,12 +258,16 @@ NodeVal Processor::processSym(const NodeVal &node) {
 
         bool hasType = optType.has_value();
 
+        TypeTable::Id varType;
         SymbolTable::VarEntry varEntry;
 
         if (hasInit) {
             const NodeVal &nodeInit = entry.getChild(1);
             NodeVal init = hasType ? processAndImplicitCast(nodeInit, optType.value()) : processNode(nodeInit);
             if (init.isInvalid()) return NodeVal();
+            if (!checkHasType(init, true)) return NodeVal();
+
+            varType = init.getType().value();
 
             NodeVal nodeReg = performRegister(pair.first.getCodeLoc(), id, init);
             if (nodeReg.isInvalid()) return NodeVal();
@@ -282,6 +285,8 @@ NodeVal Processor::processSym(const NodeVal &node) {
                 return NodeVal();
             }
 
+            varType = optType.value();
+
             optional<bool> attrNoZero = hasAttributeAndCheckIsEmpty(pair.first, "noZero");
             if (!attrNoZero.has_value()) return NodeVal();
 
@@ -298,6 +303,11 @@ NodeVal Processor::processSym(const NodeVal &node) {
             }
 
             varEntry.var = move(nodeReg);
+        }
+
+        if (checkInGlobalScope(pair.first.getCodeLoc(), false) && !hasTrivialDrop(varType)) {
+            msgs->errorUnknown(pair.first.getCodeLoc());
+            return NodeVal();
         }
 
         symbolTable->addVar(id, move(varEntry));
@@ -1760,6 +1770,34 @@ NodeVal Processor::invoke(CodeLoc codeLoc, const MacroValue &macroVal, vector<No
     if (!callDropFuncsNonRef(move(args))) return NodeVal();
 
     return ret;
+}
+
+bool Processor::hasTrivialDrop(TypeTable::Id ty) {
+    if (typeTable->worksAsPrimitive(ty, TypeTable::P_RAW)) {
+        return false;
+    } else if (typeTable->worksAsTypeArr(ty)) {
+        TypeTable::Id elemTy = typeTable->addTypeIndexOf(ty).value();
+        return hasTrivialDrop(elemTy);
+    } else if (typeTable->worksAsTuple(ty)) {
+        size_t len = typeTable->extractLenOfTuple(ty).value();
+        for (size_t i = 0; i < len; ++i) {
+            if (!hasTrivialDrop(typeTable->extractTupleMemberType(ty, i).value())) return false;
+        }
+
+        return true;
+    } else if (typeTable->worksAsDataType(ty)) {
+        const NodeVal *dropFunc = symbolTable->getDropFunc(typeTable->extractCustomBaseType(ty));
+        if (dropFunc != nullptr) return false;
+
+        size_t len = typeTable->extractLenOfDataType(ty).value();
+        for (size_t i = 0; i < len; ++i) {
+            if (!hasTrivialDrop(typeTable->extractDataTypeMemberType(ty, i).value())) return false;
+        }
+
+        return true;
+    }
+
+    return true;
 }
 
 bool Processor::callDropFunc(CodeLoc codeLoc, NodeVal val) {
