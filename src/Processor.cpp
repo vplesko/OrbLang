@@ -234,7 +234,7 @@ NodeVal Processor::processId(const NodeVal &node, const NodeVal &starting) {
     return processId(starting);
 }
 
-// TODO+ demand global vars with non-trivial drop be marked noDrop
+// TODO+ demand global vars have trivial drop
 NodeVal Processor::processSym(const NodeVal &node) {
     if (!checkAtLeastChildren(node, 2, true)) return NodeVal();
 
@@ -259,12 +259,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
 
         bool hasType = optType.has_value();
 
-        // TODO+ get rid of this
-        optional<bool> attrNoDrop = hasAttributeAndCheckIsEmpty(pair.first, "noDrop");
-        if (!attrNoDrop.has_value()) return NodeVal();
-
         SymbolTable::VarEntry varEntry;
-        varEntry.isNoDrop = attrNoDrop.value();
 
         if (hasInit) {
             const NodeVal &nodeInit = entry.getChild(1);
