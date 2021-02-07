@@ -1,4 +1,5 @@
 # TODO+ tests, pos/neg, eval/compl
+# TODO+ check examples still work
 import "util/io.orb";
 
 data Foo;

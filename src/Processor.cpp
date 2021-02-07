@@ -2359,12 +2359,17 @@ NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const N
 
         if (!implicitCastOperands(lhs, rhs, false)) return NodeVal();
 
+        NodeVal nextLhs;
         if (checkIsEvalTime(lhs, false) && checkIsEvalTime(rhs, false)) {
-            lhs = evaluator->performOperRegular(codeLoc, lhs, rhs, op);
+            nextLhs = evaluator->performOperRegular(codeLoc, lhs, rhs, op);
         } else {
-            lhs = performOperRegular(codeLoc, lhs, rhs, op);
+            nextLhs = performOperRegular(codeLoc, lhs, rhs, op);
         }
-        if (lhs.isInvalid()) return NodeVal();
+        if (nextLhs.isInvalid()) return NodeVal();
+
+        if (!callDropFuncNonRef(move(rhs)) || !callDropFuncNonRef(move(lhs))) return NodeVal();
+
+        lhs = move(nextLhs);
     }
 
     return lhs;
