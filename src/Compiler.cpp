@@ -404,6 +404,7 @@ bool Compiler::performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, cons
 
 bool Compiler::performRet(CodeLoc codeLoc) {
     if (!callDropFuncsCurrCallable(codeLoc)) return false;
+
     llvmBuilder.CreateRetVoid();
 
     return true;

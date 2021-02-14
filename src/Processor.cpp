@@ -262,6 +262,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
         SymbolTable::VarEntry varEntry;
 
         if (hasInit) {
+            // TODO! copy guard
             const NodeVal &nodeInit = entry.getChild(1);
             NodeVal init = hasType ? processAndImplicitCast(nodeInit, optType.value()) : processNode(nodeInit);
             if (init.isInvalid()) return NodeVal();
@@ -317,6 +318,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
 }
 
 // TODO allow arr to arr (by elem)?
+// TODO! copy guard (on noDrop gives noDrop, ref non trivial drop and not noDrop not allowed) [see dispatchCast]
 NodeVal Processor::processCast(const NodeVal &node) {
     if (!checkExactlyChildren(node, 3, true)) {
         return NodeVal();
@@ -330,8 +332,6 @@ NodeVal Processor::processCast(const NodeVal &node) {
 
     NodeVal ret = dispatchCast(node.getCodeLoc(), value, ty.getEvalVal().ty);
     if (ret.isInvalid()) return NodeVal();
-
-    if (!callDropFuncNonRef(value)) return NodeVal();
 
     return ret;
 }
@@ -474,6 +474,7 @@ NodeVal Processor::processLoop(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
+// TODO! copy guard (impl move (before impl cast), noDrop not allowed)
 NodeVal Processor::processPass(const NodeVal &node) {
     if (!checkBetweenChildren(node, 2, 3, true)) return NodeVal();
 
@@ -624,6 +625,7 @@ NodeVal Processor::processData(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
+// TODO! copy guard (noDrop not allowed)
 NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
     size_t providedArgCnt = node.getChildrenCnt()-1;
 
@@ -1060,6 +1062,7 @@ NodeVal Processor::processMac(const NodeVal &node) {
     }
 }
 
+// TODO! copy guard (impl move (before impl cast), noDrop not allowed)
 NodeVal Processor::processRet(const NodeVal &node) {
     if (!checkBetweenChildren(node, 1, 2, true)) {
         return NodeVal();
@@ -1575,6 +1578,7 @@ bool Processor::shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id d
     return false;
 }
 
+// TODO! copy guard (on noDrop gives noDrop, ref non trivial drop and not noDrop not allowed)
 NodeVal Processor::dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
     if (checkIsEvalTime(node, false) && !shouldNotDispatchCastToEval(node, ty))
         return evaluator->performCast(node.getCodeLoc(), node, ty);
@@ -1785,6 +1789,7 @@ NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal &val) {
     return prev;
 }
 
+// TODO warn if non-trivial drop (and not noDrop) passed as arg
 NodeVal Processor::invoke(CodeLoc codeLoc, const MacroValue &macroVal, vector<NodeVal> args) {
     const TypeTable::Callable &callable = BaseCallableValue::getCallable(macroVal, typeTable);
 
@@ -1802,8 +1807,6 @@ NodeVal Processor::invoke(CodeLoc codeLoc, const MacroValue &macroVal, vector<No
 
     NodeVal ret = evaluator->performInvoke(codeLoc, macroVal, args);
     if (ret.isInvalid()) return NodeVal();
-
-    if (!callDropFuncsNonRef(move(args))) return NodeVal();
 
     return ret;
 }
@@ -1914,7 +1917,7 @@ bool Processor::callDropFuncsNonRef(vector<NodeVal> val) {
 
 bool Processor::callDropFuncs(CodeLoc codeLoc, vector<SymbolTable::VarEntry*> vars) {
     for (auto it : vars) {
-        if (it->var.isNoDrop()) continue;
+        if (it->var.isNoDrop() || it->isInvokeArg) continue;
 
         NodeVal loaded = dispatchLoad(codeLoc, *it);
 
@@ -2212,6 +2215,7 @@ NodeVal Processor::processOperComparison(CodeLoc codeLoc, const std::vector<cons
     }
 }
 
+// TODO! copy guard
 NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
     vector<NodeVal> procOpers;
     procOpers.reserve(opers.size());
@@ -2258,6 +2262,7 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
     return rhs;
 }
 
+// TODO! forbid on non-ref not trivial drop (and not noDrop)
 NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
     // value kept so drop can be called
     NodeVal base = processAndCheckHasType(*opers[0]);
@@ -2293,6 +2298,7 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
     return lhs;
 }
 
+// TODO! forbid on non-ref not trivial drop (and not noDrop)
 NodeVal Processor::processOperDot(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
     // value kept so drop can be called
     NodeVal base = processAndCheckHasType(*opers[0]);
@@ -2376,6 +2382,7 @@ NodeVal Processor::processOperDot(CodeLoc codeLoc, const std::vector<const NodeV
     return lhs;
 }
 
+// TODO! on raws, can't + if either ref and not noDrop or noDrop different; result has same noDrop as ops
 NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op) {
     OperInfo operInfo = operInfos.find(op)->second;
     if (!operInfo.binary) {
