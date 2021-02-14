@@ -318,7 +318,6 @@ NodeVal Processor::processSym(const NodeVal &node) {
 }
 
 // TODO allow arr to arr (by elem)?
-// TODO! copy guard (on noDrop gives noDrop, ref non trivial drop and not noDrop not allowed) [see dispatchCast]
 NodeVal Processor::processCast(const NodeVal &node) {
     if (!checkExactlyChildren(node, 3, true)) {
         return NodeVal();
@@ -627,7 +626,6 @@ NodeVal Processor::processData(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
-// TODO! copy guard (noDrop not allowed)
 NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
     size_t providedArgCnt = node.getChildrenCnt()-1;
 
@@ -687,13 +685,11 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
         for (size_t i = 0; i < callable->getArgCnt(); ++i) {
             args[i] = implicitCast(args[i], callable->getArgType(i));
             if (args[i].isInvalid()) return NodeVal();
+
+            if (!checkTransferValueOk(args[i].getCodeLoc(), args[i], callable->getArgNoDrop(i), true)) return NodeVal();
         }
 
-        if (funcVal->isEval() && allArgsEval) {
-            ret = evaluator->performCall(node.getCodeLoc(), *funcVal, args);
-        } else {
-            ret = performCall(node.getCodeLoc(), *funcVal, args);
-        }
+        ret = dispatchCall(node.getCodeLoc(), *funcVal, args, allArgsEval);
     } else {
         if (!starting.getType().has_value()) {
             msgs->errorInternal(node.getCodeLoc());
@@ -714,6 +710,8 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
         for (size_t i = 0; i < callable->getArgCnt(); ++i) {
             args[i] = implicitCast(args[i], callable->getArgType(i));
             if (args[i].isInvalid()) return NodeVal();
+
+            if (!checkTransferValueOk(args[i].getCodeLoc(), args[i], callable->getArgNoDrop(i), true)) return NodeVal();
         }
 
         ret = dispatchCall(node.getCodeLoc(), starting, args, allArgsEval);
@@ -724,7 +722,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
     for (size_t i = 0; i < args.size(); ++i) {
         size_t ind = args.size()-1-i;
 
-        if (!callDropFuncsNonRef(move(args))) return NodeVal();
+        if (callable->getArgNoDrop(i) && !callDropFuncsNonRef(move(args))) return NodeVal();
     }
 
     return ret;
@@ -1582,16 +1580,26 @@ bool Processor::shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id d
     return false;
 }
 
-// TODO! copy guard (on noDrop gives noDrop, ref non trivial drop and not noDrop not allowed)
 NodeVal Processor::dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
-    if (checkIsEvalTime(node, false) && !shouldNotDispatchCastToEval(node, ty))
+    if (node.hasRef() && !checkNotNeedsDrop(node.getCodeLoc(), node, true)) return NodeVal();
+
+    if (checkIsEvalTime(node, false) && !shouldNotDispatchCastToEval(node, ty)) {
         return evaluator->performCast(node.getCodeLoc(), node, ty);
-    else
+    } else {
         return performCast(node.getCodeLoc(), node, ty);
+    }
 }
 
 NodeVal Processor::dispatchCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args, bool allArgsEval) {
     if (func.isEvalVal() && allArgsEval) {
+        return evaluator->performCall(codeLoc, func, args);
+    } else {
+        return performCall(codeLoc, func, args);
+    }
+}
+
+NodeVal Processor::dispatchCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args, bool allArgsEval) {
+    if (func.isEval() && allArgsEval) {
         return evaluator->performCall(codeLoc, func, args);
     } else {
         return performCall(codeLoc, func, args);
@@ -1859,8 +1867,8 @@ bool Processor::hasTrivialDrop(TypeTable::Id ty) {
     return true;
 }
 
-bool Processor::checkNotIsTempAndNeedsDrop(CodeLoc codeLoc, const NodeVal &val, bool orError) {
-    if (!val.hasRef() && !val.isNoDrop() && checkHasType(val, false) && !hasTrivialDrop(val.getType().value())) {
+bool Processor::checkNotNeedsDrop(CodeLoc codeLoc, const NodeVal &val, bool orError) {
+    if (!val.isNoDrop() && checkHasType(val, false) && !hasTrivialDrop(val.getType().value())) {
         if (orError) msgs->errorUnknown(codeLoc);
         return false;
     }
@@ -2291,7 +2299,7 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
     NodeVal lhs = base;
 
     for (size_t i = 1; i < opers.size(); ++i) {
-        if (!checkNotIsTempAndNeedsDrop(lhs.getCodeLoc(), lhs, true)) return NodeVal();
+        if (!lhs.hasRef() && !checkNotNeedsDrop(lhs.getCodeLoc(), lhs, true)) return NodeVal();
 
         TypeTable::Id baseType = lhs.getType().value();
 
@@ -2326,7 +2334,7 @@ NodeVal Processor::processOperDot(CodeLoc codeLoc, const std::vector<const NodeV
     NodeVal lhs = base;
 
     for (size_t i = 1; i < opers.size(); ++i) {
-        if (!checkNotIsTempAndNeedsDrop(lhs.getCodeLoc(), lhs, true)) return NodeVal();
+        if (!lhs.hasRef() && !checkNotNeedsDrop(lhs.getCodeLoc(), lhs, true)) return NodeVal();
 
         TypeTable::Id baseType = lhs.getType().value();
         bool isBaseRaw = NodeVal::isRawVal(lhs, typeTable);

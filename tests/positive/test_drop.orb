@@ -1,7 +1,5 @@
-# TODO+ can't pass/ret noDrop (unless ret in macro)
-# TODO+ tests, pos/neg, eval/compl (cast on noDrop, raw containing noDrop)
-# TODO+ verify base.orb
-# TODO+ check examples still work
+# TODO+ tests, pos/neg, eval/compl (cast on noDrop; raw containing noDrop; can't pass/ret noDrop (unless ret in macro))
+# TODO+ verify base.orb and examples
 import "util/io.orb";
 
 data Foo;

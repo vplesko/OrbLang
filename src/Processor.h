@@ -78,7 +78,7 @@ protected:
     bool checkIsBool(const NodeVal &node, bool orError);
     bool checkHasTrivialDrop(CodeLoc codeLoc, TypeTable::Id ty, bool orError);
     bool checkTransferValueOk(CodeLoc codeLoc, const NodeVal &src, bool dstNoDrop, bool orError);
-    bool checkNotIsTempAndNeedsDrop(CodeLoc codeLoc, const NodeVal &val, bool orError);
+    bool checkNotNeedsDrop(CodeLoc codeLoc, const NodeVal &val, bool orError);
     bool checkIsDropFuncType(const NodeVal &node, TypeTable::Id dropeeTy, bool orError);
     // Checks that the node is EvalVal or LlvmVal.
     bool checkIsValue(const NodeVal &node, bool orError);
@@ -129,6 +129,7 @@ private:
     bool shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id dstTypeId) const;
     NodeVal dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty);
     NodeVal dispatchCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args, bool allArgsEval);
+    NodeVal dispatchCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args, bool allArgsEval);
     NodeVal dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
     NodeVal dispatchAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs);
     NodeVal getElement(CodeLoc codeLoc, NodeVal &array, std::size_t index);

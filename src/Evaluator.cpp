@@ -965,6 +965,8 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
         }
     }
 
+    dstEvalVal.noDrop = srcEvalVal.noDrop;
+
     return NodeVal(codeLoc, move(dstEvalVal));
 }
 
