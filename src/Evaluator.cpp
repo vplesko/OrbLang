@@ -639,7 +639,6 @@ NodeVal Evaluator::performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t 
                 nodeVal.getEvalVal().ref = nullptr;
             }
         }
-        nodeVal.setNoDrop(nodeVal.isNoDrop() || base.isNoDrop());
         return nodeVal;
     } else {
         NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[ind], base.isNoDrop());

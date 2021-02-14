@@ -1,6 +1,6 @@
-# TODO+ + on ref raw(s) requires move
-# TODO+ can't pass/ret noDrop
-# TODO+ tests, pos/neg, eval/compl (cast on noDrop, raw containing noDrop (but not whole raw noDrop), + on nonDrop raw not allowed (cuz move not allowed))
+# TODO+ can't pass/ret noDrop (unless ret in macro)
+# TODO+ tests, pos/neg, eval/compl (cast on noDrop, raw containing noDrop)
+# TODO+ verify base.orb
 # TODO+ check examples still work
 import "util/io.orb";
 

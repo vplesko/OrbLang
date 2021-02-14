@@ -77,6 +77,8 @@ protected:
     bool checkIsType(const NodeVal &node, bool orError);
     bool checkIsBool(const NodeVal &node, bool orError);
     bool checkHasTrivialDrop(CodeLoc codeLoc, TypeTable::Id ty, bool orError);
+    bool checkTransferValueOk(CodeLoc codeLoc, const NodeVal &src, bool dstNoDrop, bool orError);
+    bool checkNotIsTempAndNeedsDrop(CodeLoc codeLoc, const NodeVal &val, bool orError);
     bool checkIsDropFuncType(const NodeVal &node, TypeTable::Id dropeeTy, bool orError);
     // Checks that the node is EvalVal or LlvmVal.
     bool checkIsValue(const NodeVal &node, bool orError);

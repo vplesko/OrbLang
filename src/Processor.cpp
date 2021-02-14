@@ -262,20 +262,20 @@ NodeVal Processor::processSym(const NodeVal &node) {
         SymbolTable::VarEntry varEntry;
 
         if (hasInit) {
-            // TODO! copy guard
+            // TODO if noDrop gets allowed, ensure lifetimes on ownership transfers are ok
             const NodeVal &nodeInit = entry.getChild(1);
             NodeVal init = hasType ? processAndImplicitCast(nodeInit, optType.value()) : processNode(nodeInit);
             if (init.isInvalid()) return NodeVal();
             if (!checkHasType(init, true)) return NodeVal();
 
+            if (!checkTransferValueOk(pair.first.getCodeLoc(), init, false, true)) return NodeVal();
+
             varType = init.getType().value();
 
-            NodeVal nodeReg = performRegister(pair.first.getCodeLoc(), id, init);
-            if (nodeReg.isInvalid()) return NodeVal();
+            NodeVal reg = performRegister(pair.first.getCodeLoc(), id, init);
+            if (reg.isInvalid()) return NodeVal();
 
-            varEntry.var = move(nodeReg);
-
-            if (!callDropFuncNonRef(init)) return NodeVal();
+            varEntry.var = move(reg);
         } else {
             if (!hasType) {
                 msgs->errorMissingTypeAttribute(nodePair.getCodeLoc());
@@ -474,7 +474,7 @@ NodeVal Processor::processLoop(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
-// TODO! copy guard (impl move (before impl cast), noDrop not allowed)
+// TODO implicit move (before implicit cast) when value from enclosed scope
 NodeVal Processor::processPass(const NodeVal &node) {
     if (!checkBetweenChildren(node, 2, 3, true)) return NodeVal();
 
@@ -510,10 +510,12 @@ NodeVal Processor::processPass(const NodeVal &node) {
         return NodeVal();
     }
 
-    NodeVal nodeValue = processAndImplicitCast(node.getChild(indVal), targetBlock.type.value());
-    if (nodeValue.isInvalid()) return NodeVal();
+    NodeVal processed = processAndImplicitCast(node.getChild(indVal), targetBlock.type.value());
+    if (processed.isInvalid()) return NodeVal();
 
-    if (!performPass(node.getCodeLoc(), targetBlock, nodeValue)) return NodeVal();
+    if (!checkTransferValueOk(processed.getCodeLoc(), processed, false, true)) return NodeVal();
+
+    if (!performPass(node.getCodeLoc(), targetBlock, processed)) return NodeVal();
     return NodeVal(node.getCodeLoc());
 }
 
@@ -1062,7 +1064,7 @@ NodeVal Processor::processMac(const NodeVal &node) {
     }
 }
 
-// TODO! copy guard (impl move (before impl cast), noDrop not allowed)
+// TODO implicit move (before implicit cast) when value from enclosed scope
 NodeVal Processor::processRet(const NodeVal &node) {
     if (!checkBetweenChildren(node, 1, 2, true)) {
         return NodeVal();
@@ -1084,6 +1086,8 @@ NodeVal Processor::processRet(const NodeVal &node) {
 
             NodeVal val = processAndImplicitCast(node.getChild(1), optCallee.value().retType.value());
             if (val.isInvalid()) return NodeVal();
+
+            if (!checkTransferValueOk(val.getCodeLoc(), val, false, true)) return NodeVal();
 
             if (!performRet(node.getCodeLoc(), val)) return NodeVal();
         } else {
@@ -1636,11 +1640,17 @@ NodeVal Processor::getElement(CodeLoc codeLoc, NodeVal &array, const NodeVal &in
     TypeTable::Id resType = elemType.value();
     if (typeTable->worksAsTypeCn(arrayType)) resType = typeTable->addTypeCnOf(resType);
 
+    NodeVal ret;
     if (checkIsEvalTime(array, false) && checkIsEvalTime(index, false)) {
-        return evaluator->performOperIndex(codeLoc, array, index, resType);
+        ret = evaluator->performOperIndex(codeLoc, array, index, resType);
     } else {
-        return performOperIndex(array.getCodeLoc(), array, index, resType);
+        ret = performOperIndex(array.getCodeLoc(), array, index, resType);
     }
+    if (ret.isInvalid()) return NodeVal();
+
+    if (array.isNoDrop()) ret.setNoDrop(true);
+
+    return ret;
 }
 
 NodeVal Processor::getRawMember(CodeLoc codeLoc, NodeVal &raw, size_t index) {
@@ -1657,11 +1667,17 @@ NodeVal Processor::getTupleMember(CodeLoc codeLoc, NodeVal &tuple, size_t index)
 
     TypeTable::Id resType = typeTable->extractTupleMemberType(tupleType, index).value();
 
+    NodeVal ret;
     if (checkIsEvalTime(tuple, false)) {
-        return evaluator->performOperDot(codeLoc, tuple, index, resType);
+        ret = evaluator->performOperDot(codeLoc, tuple, index, resType);
     } else {
-        return performOperDot(codeLoc, tuple, index, resType);
+        ret = performOperDot(codeLoc, tuple, index, resType);
     }
+    if (ret.isInvalid()) return NodeVal();
+
+    if (tuple.isNoDrop()) ret.setNoDrop(true);
+
+    return ret;
 }
 
 NodeVal Processor::getDataMember(CodeLoc codeLoc, NodeVal &data, size_t index) {
@@ -1669,11 +1685,17 @@ NodeVal Processor::getDataMember(CodeLoc codeLoc, NodeVal &data, size_t index) {
 
     TypeTable::Id resType = typeTable->extractDataTypeMemberType(dataType, index).value();
 
+    NodeVal ret;
     if (checkIsEvalTime(data, false)) {
-        return evaluator->performOperDot(codeLoc, data, index, resType);
+        ret = evaluator->performOperDot(codeLoc, data, index, resType);
     } else {
-        return performOperDot(codeLoc, data, index, resType);
+        ret = performOperDot(codeLoc, data, index, resType);
     }
+    if (ret.isInvalid()) return NodeVal();
+
+    if (data.isNoDrop()) ret.setNoDrop(true);
+
+    return ret;
 }
 
 bool Processor::argsFitFuncCall(const vector<NodeVal> &args, const TypeTable::Callable &callable, bool allowImplicitCasts) {
@@ -1812,9 +1834,7 @@ NodeVal Processor::invoke(CodeLoc codeLoc, const MacroValue &macroVal, vector<No
 }
 
 bool Processor::hasTrivialDrop(TypeTable::Id ty) {
-    if (typeTable->worksAsPrimitive(ty, TypeTable::P_RAW)) {
-        return false;
-    } else if (typeTable->worksAsTypeArr(ty)) {
+    if (typeTable->worksAsTypeArr(ty)) {
         TypeTable::Id elemTy = typeTable->addTypeIndexOf(ty).value();
         return hasTrivialDrop(elemTy);
     } else if (typeTable->worksAsTuple(ty)) {
@@ -1839,21 +1859,20 @@ bool Processor::hasTrivialDrop(TypeTable::Id ty) {
     return true;
 }
 
+bool Processor::checkNotIsTempAndNeedsDrop(CodeLoc codeLoc, const NodeVal &val, bool orError) {
+    if (!val.hasRef() && !val.isNoDrop() && checkHasType(val, false) && !hasTrivialDrop(val.getType().value())) {
+        if (orError) msgs->errorUnknown(codeLoc);
+        return false;
+    }
+    return true;
+}
+
 bool Processor::callDropFunc(CodeLoc codeLoc, NodeVal val) {
     if (!checkHasType(val, false) || val.isNoDrop()) return true;
 
     TypeTable::Id valTy = val.getType().value();
 
-    if (typeTable->worksAsPrimitive(valTy, TypeTable::P_RAW)) {
-        for (size_t i = 0; i < val.getChildrenCnt(); ++i) {
-            size_t ind = val.getChildrenCnt()-1-i;
-
-            NodeVal memb = getRawMember(codeLoc, val, ind);
-            if (memb.isInvalid()) return false;
-
-            if (!callDropFunc(codeLoc, move(memb))) return false;
-        }
-    } else if (typeTable->worksAsTypeArr(valTy)) {
+    if (typeTable->worksAsTypeArr(valTy)) {
         size_t len = typeTable->extractLenOfArr(valTy).value();
         for (size_t i = 0; i < len; ++i) {
             size_t ind = len-1-i;
@@ -2215,7 +2234,7 @@ NodeVal Processor::processOperComparison(CodeLoc codeLoc, const std::vector<cons
     }
 }
 
-// TODO! copy guard
+// TODO if noDrop gets allowed, ensure lifetimes on ownership transfers are ok
 NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
     vector<NodeVal> procOpers;
     procOpers.reserve(opers.size());
@@ -2247,6 +2266,8 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
 
         if (!implicitCastOperands(lhs, rhs, true)) return NodeVal();
 
+        if (!checkTransferValueOk(codeLoc, rhs, lhs.isNoDrop(), true)) return NodeVal();
+
         NodeVal nextRhs = dispatchAssignment(codeLoc, lhs, rhs);
         if (nextRhs.isInvalid()) return NodeVal();
 
@@ -2262,7 +2283,6 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
     return rhs;
 }
 
-// TODO! forbid on non-ref not trivial drop (and not noDrop)
 NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
     // value kept so drop can be called
     NodeVal base = processAndCheckHasType(*opers[0]);
@@ -2271,6 +2291,8 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
     NodeVal lhs = base;
 
     for (size_t i = 1; i < opers.size(); ++i) {
+        if (!checkNotIsTempAndNeedsDrop(lhs.getCodeLoc(), lhs, true)) return NodeVal();
+
         TypeTable::Id baseType = lhs.getType().value();
 
         NodeVal index = processAndCheckHasType(*opers[i]);
@@ -2293,12 +2315,9 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
         if (lhs.isInvalid()) return NodeVal();
     }
 
-    if (!callDropFuncNonRef(move(base))) return NodeVal();
-
     return lhs;
 }
 
-// TODO! forbid on non-ref not trivial drop (and not noDrop)
 NodeVal Processor::processOperDot(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
     // value kept so drop can be called
     NodeVal base = processAndCheckHasType(*opers[0]);
@@ -2307,6 +2326,8 @@ NodeVal Processor::processOperDot(CodeLoc codeLoc, const std::vector<const NodeV
     NodeVal lhs = base;
 
     for (size_t i = 1; i < opers.size(); ++i) {
+        if (!checkNotIsTempAndNeedsDrop(lhs.getCodeLoc(), lhs, true)) return NodeVal();
+
         TypeTable::Id baseType = lhs.getType().value();
         bool isBaseRaw = NodeVal::isRawVal(lhs, typeTable);
         bool isBaseTup = typeTable->worksAsTuple(baseType);
@@ -2377,12 +2398,9 @@ NodeVal Processor::processOperDot(CodeLoc codeLoc, const std::vector<const NodeV
         if (lhs.isInvalid()) return NodeVal();
     }
 
-    if (!callDropFuncNonRef(move(base))) return NodeVal();
-
     return lhs;
 }
 
-// TODO! on raws, can't + if either ref and not noDrop or noDrop different; result has same noDrop as ops
 NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op) {
     OperInfo operInfo = operInfos.find(op)->second;
     if (!operInfo.binary) {
@@ -2406,8 +2424,6 @@ NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const N
             nextLhs = performOperRegular(codeLoc, lhs, rhs, op);
         }
         if (nextLhs.isInvalid()) return NodeVal();
-
-        if (!callDropFuncNonRef(move(rhs)) || !callDropFuncNonRef(move(lhs))) return NodeVal();
 
         lhs = move(nextLhs);
     }
@@ -2597,6 +2613,20 @@ bool Processor::checkHasTrivialDrop(CodeLoc codeLoc, TypeTable::Id ty, bool orEr
         if (orError) msgs->errorUnknown(codeLoc);
         return false;
     }
+    return true;
+}
+
+bool Processor::checkTransferValueOk(CodeLoc codeLoc, const NodeVal &src, bool dstNoDrop, bool orError) {
+    if (!hasTrivialDrop(src.getType().value()) && !dstNoDrop) {
+        if (src.hasRef()) {
+            if (orError) msgs->errorUnknown(codeLoc);
+            return false;
+        } else if (src.isNoDrop()) {
+            if (orError) msgs->errorUnknown(codeLoc);
+            return false;
+        }
+    }
+
     return true;
 }
 
