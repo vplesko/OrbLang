@@ -1507,9 +1507,6 @@ NodeVal Processor::dispatchLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, opt
 NodeVal Processor::implicitCast(const NodeVal &node, TypeTable::Id ty) {
     if (!checkImplicitCastable(node, ty, true)) return NodeVal();
 
-    if (node.getType().value() == ty)
-        return NodeVal::copyNoRef(node.getCodeLoc(), node);
-
     return dispatchCast(node.getCodeLoc(), node, ty);
 }
 
@@ -1581,6 +1578,8 @@ bool Processor::shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id d
 }
 
 NodeVal Processor::dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
+    if (node.getType().value() == ty) return node;
+
     if (node.hasRef() && !checkNotNeedsDrop(node.getCodeLoc(), node, true)) return NodeVal();
 
     if (checkIsEvalTime(node, false) && !shouldNotDispatchCastToEval(node, ty)) {

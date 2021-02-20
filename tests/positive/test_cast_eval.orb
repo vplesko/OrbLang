@@ -50,6 +50,12 @@ fnc main () () {
     println_i32 (. (tuple 403:i16 null) 0);
     println_i32 (. (tuple 404:i16 0:i8) 0);
 
+    println_i32 (block i32 {
+        eval (sym x:i32);
+        eval (= (cast i32 x) 500);
+        pass x;
+    });
+
     println_c8 (cast c8 65);
     println_c8 (cast c8 66:u32);
     println_c8 (cast c8 'X');

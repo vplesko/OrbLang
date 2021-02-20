@@ -281,7 +281,7 @@ bool Evaluator::performRet(CodeLoc codeLoc) {
 }
 
 bool Evaluator::performRet(CodeLoc codeLoc, const NodeVal &node) {
-    retVal = node;
+    retVal = NodeVal::copyNoRef(node);
     performRet(codeLoc);
 
     return false; // unreachable

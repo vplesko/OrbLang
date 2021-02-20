@@ -1,4 +1,0 @@
-fnc main () () {
-    eval (sym (x 0));
-    eval (= (cast i32 x) 0);
-};

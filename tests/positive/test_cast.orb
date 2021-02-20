@@ -52,6 +52,12 @@ fnc main () () {
     println_i32 (. (tuple 403:i16 null) 0);
     println_i32 (. (tuple 404:i16 0:i8) 0);
 
+    block {
+        sym x:i32;
+        = (cast i32 x) 500;
+        println_i32 x;
+    };
+
     println_c8 (cast c8 (block i32 { pass 65; }));
     println_c8 (cast c8 (block u32 { pass 66; }));
     println_c8 (cast c8 (block c8 { pass 'X'; }));
