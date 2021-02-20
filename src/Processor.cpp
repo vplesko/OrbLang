@@ -2263,9 +2263,6 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
     NodeVal rhs = move(procOpers.back());
     procOpers.pop_back();
 
-    // all but rightmost must be ref, so don't call drop for them
-    bool firstIter = true;
-
     while (!procOpers.empty()) {
         NodeVal lhs = move(procOpers.back());
         procOpers.pop_back();
@@ -2283,16 +2280,8 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
 
         if (!checkTransferValueOk(codeLoc, rhs, lhs.isNoDrop(), true)) return NodeVal();
 
-        NodeVal nextRhs = dispatchAssignment(codeLoc, lhs, rhs);
-        if (nextRhs.isInvalid()) return NodeVal();
-
-        if (firstIter) {
-            if (!callDropFuncNonRef(move(rhs)));
-
-            firstIter = false;
-        }
-
-        rhs = move(nextRhs);
+        rhs = dispatchAssignment(codeLoc, lhs, rhs);
+        if (rhs.isInvalid()) return NodeVal();
     }
 
     return rhs;
