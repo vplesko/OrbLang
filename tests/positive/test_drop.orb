@@ -1,4 +1,4 @@
-# TODO+ tests, pos/neg, eval/compl (cast on noDrop; raw containing noDrop; can't pass/ret noDrop (except ret in macro))
+# TODO+ tests, pos/neg, eval/compl (can't trasnfer w/o move; cast on noDrop; can't pass/ret noDrop (except ret in macro))
 # TODO+ verify base.orb and examples
 
 import "util/io.orb";
@@ -15,9 +15,147 @@ fnc dropFoo (val:Foo::noDrop) () {
     println_i32 (. val x);
 };
 
+data Bar {
+    f0:Foo
+    f1:Foo
+};
+
+fnc foo0 (x:i32) () {
+    sym f:Foo;
+    = (. f x) x;
+};
+
+fnc foo1 (x:i32) () {
+    block {
+        sym f:Foo;
+        = (. f x) x;
+        ret;
+    };
+    sym f:Foo;
+};
+
+fnc foo2 (f:Foo::noDrop) () {
+};
+
+fnc foo3 (f:(Foo cn)::noDrop) () {
+};
+
+fnc foo4 (f:Foo) () {
+};
+
+fnc foo5 (f:(Foo cn)) () {
+};
+
+fnc foo6 (f:Foo x:i32) () {
+    sym f0:Foo;
+    = (. f0 x) x;
+};
+
 fnc main () () {
     block {
         sym f:Foo;
         = (. f x) 100;
+    };
+
+    block {
+        sym f0:Foo f1:Foo;
+        = (. f0 x) 201;
+        = (. f1 x) 200;
+    };
+
+    block {
+        sym f0:Foo;
+        = (. f0 x) 300;
+        exit true;
+        sym f1:Foo;
+    };
+
+    block {
+        sym f0:Foo;
+        = (. f0 x) 401;
+        exit false;
+        sym f1:Foo;
+        = (. f1 x) 400;
+    };
+
+    sym i:i32;
+
+    = i -1;
+    block {
+        = i (+ i 1);
+        sym f0:Foo;
+        = (. f0 x) (+ 500 (* 2 i));
+        loop (== i 0);
+        sym f1:Foo;
+        = (. f1 x) 501;
+    };
+
+    block b0 i32 {
+        block {
+            sym f0:Foo;
+            = (. f0 x) 600;
+            pass b0 0;
+        };
+        pass 0;
+    };
+
+    block b0 () {
+        sym f0:Foo;
+        = (. f0 x) 701;
+        block {
+            sym f0:Foo;
+            = (. f0 x) 700;
+            exit b0 true;
+        };
+        sym f1:Foo;
+    };
+
+    block {
+        sym f:(Foo 2);
+        = (. ([] f 0) x) 801;
+        = (. ([] f 1) x) 800;
+    };
+
+    block {
+        sym f:(Foo Foo);
+        = (. f 0 x) 901;
+        = (. f 1 x) 900;
+    };
+
+    block {
+        sym b:Bar;
+        = (. b f0 x) 1001;
+        = (. b f1 x) 1000;
+    };
+
+    foo0 1100;
+
+    foo1 1200;
+
+    block {
+        sym f:Foo;
+        cast Foo f;
+        = (. f x) 1300;
+    };
+
+    block {
+        sym f:Foo;
+        = (. f x) 1400;
+        foo2 f;
+        foo3 f;
+    };
+
+    block {
+        sym f:Foo;
+        = (. f x) 1500;
+        foo4 (>> f);
+        = (. f x) 1501;
+        foo5 (>> f);
+    };
+
+    block {
+        sym f:Foo;
+        = (. f x) 1601;
+        foo6 (>> f) 1600;
     };
 };
