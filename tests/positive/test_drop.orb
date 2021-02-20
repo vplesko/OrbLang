@@ -1,4 +1,4 @@
-# TODO+ tests, pos/neg, eval/compl (can't transfer w/o move; cast on noDrop; can't pass/ret noDrop; not noDrop in global or attrs; raw unsafety)
+# TODO+ eval tests (get memb/elem of non-ref; raw unsafety; drop on global returned)
 # TODO+ verify base.orb and examples
 
 import "util/io.orb";
@@ -35,6 +35,7 @@ fnc foo1 (x:i32) () {
 };
 
 fnc foo2 (f:Foo::noDrop) () {
+    cast (Foo cn) f;
 };
 
 fnc foo3 (f:(Foo cn)::noDrop) () {
@@ -138,18 +139,21 @@ fnc main () () {
         sym f:(Foo 2);
         = (. ([] f 0) x) 801;
         = (. ([] f 1) x) 800;
+        [] f 0;
     };
 
     block {
         sym f:(Foo Foo);
         = (. f 0 x) 901;
         = (. f 1 x) 900;
+        . f 0;
     };
 
     block {
         sym b:Bar;
         = (. b f0 x) 1001;
         = (. b f1 x) 1000;
+        . b f0;
     };
 
     foo0 1100;
@@ -210,4 +214,6 @@ fnc main () () {
     foo9 ,(foo7 2300);
 
     foo10 (foo7 2400);
+
+    >> (foo7 2500);
 };

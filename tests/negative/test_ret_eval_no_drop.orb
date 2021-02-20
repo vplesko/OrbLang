@@ -1,0 +1,18 @@
+data Foo;
+
+eval (fnc dropFoo (val:Foo::noDrop) ());
+
+data Foo {
+    x:i32
+}::((drop dropFoo));
+
+eval (fnc dropFoo (val:Foo::noDrop) () {});
+
+eval (fnc bar (f:Foo::noDrop) Foo {
+    ret f;
+});
+
+fnc main () () {
+    eval (sym f:Foo);
+    eval (bar f);
+};

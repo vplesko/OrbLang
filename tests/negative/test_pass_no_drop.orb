@@ -1,0 +1,17 @@
+data Foo;
+
+fnc dropFoo (val:Foo::noDrop) ();
+
+data Foo {
+    x:i32
+}::((drop dropFoo));
+
+fnc dropFoo (val:Foo::noDrop) () {};
+
+fnc bar (f:Foo::noDrop) () {
+    block Foo {
+        pass f;
+    };
+};
+
+fnc main () () {};

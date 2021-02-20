@@ -98,6 +98,7 @@ NodeVal Compiler::performLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, optio
 
     LlvmVal loadLlvmVal(ref.var.getLlvmVal().type);
     loadLlvmVal.ref = ref.var.getLlvmVal().ref;
+    loadLlvmVal.noDrop = ref.var.isNoDrop();
     if (id.has_value()) loadLlvmVal.val = llvmBuilder.CreateLoad(ref.var.getLlvmVal().ref, getNameForLlvm(id.value()));
     else loadLlvmVal.val = llvmBuilder.CreateLoad(ref.var.getLlvmVal().ref);
     return NodeVal(ref.var.getCodeLoc(), loadLlvmVal);

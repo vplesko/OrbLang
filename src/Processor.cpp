@@ -1507,19 +1507,19 @@ NodeVal Processor::dispatchLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, opt
     }
 }
 
-NodeVal Processor::implicitCast(const NodeVal &node, TypeTable::Id ty, bool intoNoDrop) {
+NodeVal Processor::implicitCast(const NodeVal &node, TypeTable::Id ty, bool turnIntoNoDrop) {
     if (!checkImplicitCastable(node, ty, true)) return NodeVal();
 
-    return castNode(node.getCodeLoc(), node, ty, intoNoDrop);
+    return castNode(node.getCodeLoc(), node, ty, turnIntoNoDrop);
 }
 
-NodeVal Processor::castNode(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty, bool intoNoDrop) {
+NodeVal Processor::castNode(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty, bool turnIntoNoDrop) {
     if (node.getType().value() == ty) {
-        if (node.isNoDrop() == intoNoDrop) return node;
-        else return NodeVal::copyNoRef(node, intoNoDrop);
+        if (turnIntoNoDrop) return NodeVal::copyNoRef(node, turnIntoNoDrop);
+        else return node;
     }
 
-    if (!intoNoDrop && node.hasRef() && !checkNotNeedsDrop(node.getCodeLoc(), node, true)) return NodeVal();
+    if (!turnIntoNoDrop && node.hasRef() && !checkNotNeedsDrop(node.getCodeLoc(), node, true)) return NodeVal();
 
     NodeVal ret;
     if (checkIsEvalTime(node, false) && !shouldNotDispatchCastToEval(node, ty)) {
@@ -1528,7 +1528,7 @@ NodeVal Processor::castNode(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id 
         ret = performCast(node.getCodeLoc(), node, ty);
     }
     if (ret.isInvalid()) return NodeVal();
-    ret.setNoDrop(ret.isNoDrop() || intoNoDrop);
+    ret.setNoDrop(ret.isNoDrop() || turnIntoNoDrop);
 
     return ret;
 }

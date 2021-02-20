@@ -124,8 +124,8 @@ private:
     bool applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &node);
     bool applyTupleMemb(TypeTable::Tuple &tup, const NodeVal &node);
     NodeVal dispatchLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, std::optional<NamePool::Id> id = std::nullopt);
-    NodeVal implicitCast(const NodeVal &node, TypeTable::Id ty, bool intoNoDrop = false);
-    NodeVal castNode(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty, bool intoNoDrop = false);
+    NodeVal implicitCast(const NodeVal &node, TypeTable::Id ty, bool turnIntoNoDrop = false);
+    NodeVal castNode(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty, bool turnIntoNoDrop = false);
     bool implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly);
     bool shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id dstTypeId) const;
     NodeVal dispatchCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args, bool allArgsEval);
