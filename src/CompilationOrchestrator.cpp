@@ -270,7 +270,7 @@ bool CompilationOrchestrator::parse(const vector<string> &inputs) {
                 NodeVal node = par.parseNode();
                 if (msgs->isFail()) return false;
 
-                NodeVal val = compiler->processNode(node);
+                NodeVal val = compiler->processNode(node, true);
                 if (msgs->isFail()) return false;
 
                 if (val.isImport()) {

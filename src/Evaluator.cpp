@@ -160,10 +160,8 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const NodeVal &func, const std::
 }
 
 NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) {
-    if (!checkIsEvalFunc(codeLoc, func, true)) {
-        msgs->errorUnknown(codeLoc);
-        return NodeVal();
-    }
+    if (!checkIsEvalFunc(codeLoc, func, true)) return NodeVal();
+
     for (const NodeVal &arg : args) {
         if (!checkIsEvalVal(arg, true)) return NodeVal();
     }

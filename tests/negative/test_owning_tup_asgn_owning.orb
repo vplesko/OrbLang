@@ -1,0 +1,14 @@
+data Foo;
+
+fnc dropFoo (val:Foo::noDrop) ();
+
+data Foo {
+    x:i32
+}::((drop dropFoo));
+
+fnc dropFoo (val:Foo::noDrop) () {};
+
+fnc main () () {
+    sym f0:(Foo Foo) f1:(Foo Foo);
+    = f0 f1;
+};

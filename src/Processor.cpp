@@ -5,32 +5,28 @@
 using namespace std;
 
 Processor::Processor(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs)
-    : namePool(namePool), stringPool(stringPool), typeTable(typeTable), symbolTable(symbolTable), msgs(msgs), compiler(nullptr), evaluator(nullptr), topmost(0) {
+    : namePool(namePool), stringPool(stringPool), typeTable(typeTable), symbolTable(symbolTable), msgs(msgs), compiler(nullptr), evaluator(nullptr) {
 }
 
-NodeVal Processor::processNode(const NodeVal &node) {
-    unsigned oldTopmost = topmost;
-    if (topmost < 2) ++topmost;
-    DeferredCallback guard([&, oldTopmost] { topmost = oldTopmost; });
-
+NodeVal Processor::processNode(const NodeVal &node, bool topmost) {
     NodeVal ret;
     if (node.hasTypeAttr() || node.hasNonTypeAttrs()) {
         NodeVal procAttrs = node;
         if (!processAttributes(procAttrs)) return NodeVal();
 
         if (NodeVal::isLeaf(procAttrs, typeTable)) ret = processLeaf(procAttrs);
-        else ret = processNonLeaf(procAttrs);
+        else ret = processNonLeaf(procAttrs, topmost);
         if (ret.isInvalid()) return NodeVal();
 
         if (procAttrs.hasTypeAttr()) ret.setTypeAttr(move(procAttrs.getTypeAttr()));
         if (procAttrs.hasNonTypeAttrs()) ret.setNonTypeAttrs(move(procAttrs.getNonTypeAttrs()));
     } else {
         if (NodeVal::isLeaf(node, typeTable)) ret = processLeaf(node);
-        else ret = processNonLeaf(node);
+        else ret = processNonLeaf(node, topmost);
     }
     if (ret.isInvalid()) return NodeVal();
 
-    if (checkIsTopmost(node.getCodeLoc(), false)) {
+    if (topmost) {
         if (!callDropFuncNonRef(ret)) return NodeVal();
     }
 
@@ -51,7 +47,7 @@ NodeVal Processor::processLeaf(const NodeVal &node) {
     return prom;
 }
 
-NodeVal Processor::processNonLeaf(const NodeVal &node) {
+NodeVal Processor::processNonLeaf(const NodeVal &node, bool topmost) {
     if (node.isEscaped()) {
         return processNonLeafEscaped(node);
     }
@@ -119,7 +115,7 @@ NodeVal Processor::processNonLeaf(const NodeVal &node) {
             case Keyword::ATTR_IS_DEF:
                 return processAttrIsDef(node);
             case Keyword::IMPORT:
-                return processImport(node);
+                return processImport(node, topmost);
             case Keyword::MESSAGE:
                 return processMessage(node);
             default:
@@ -1121,9 +1117,13 @@ NodeVal Processor::processEval(const NodeVal &node) {
     return evaluator->processNode(node.getChild(1));
 }
 
-NodeVal Processor::processImport(const NodeVal &node) {
-    if (!checkIsTopmost(node.getCodeLoc(), true) ||
-        !checkExactlyChildren(node, 2, true)) {
+NodeVal Processor::processImport(const NodeVal &node, bool topmost) {
+    if (!topmost) {
+        msgs->errorNotTopmost(node.getCodeLoc());
+        return NodeVal();
+    }
+
+    if (!checkExactlyChildren(node, 2, true)) {
         return NodeVal();
     }
 
@@ -2578,14 +2578,6 @@ bool Processor::checkIsLlvmVal(CodeLoc codeLoc, const NodeVal &node, bool orErro
 bool Processor::checkIsLlvmFunc(CodeLoc codeLoc, const FuncValue &func, bool orError) {
     if (!func.isLlvm()) {
         if (orError) msgs->errorUnknown(codeLoc);
-        return false;
-    }
-    return true;
-}
-
-bool Processor::checkIsTopmost(CodeLoc codeLoc, bool orError) {
-    if (topmost != 1) {
-        if (orError) msgs->errorNotTopmost(codeLoc);
         return false;
     }
     return true;

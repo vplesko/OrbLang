@@ -21,8 +21,6 @@ protected:
     Evaluator *evaluator;
     Processor *compiler;
 
-    unsigned topmost;
-
 protected:
     virtual NodeVal performLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, std::optional<NamePool::Id> id = std::nullopt) =0;
     virtual NodeVal performLoad(CodeLoc codeLoc, const FuncValue &func) =0;
@@ -72,7 +70,6 @@ protected:
     bool checkIsLlvmFunc(CodeLoc codeLoc, const FuncValue &func, bool orError);
     bool checkIsRaw(const NodeVal &node, bool orError);
     bool checkIsEmpty(const NodeVal &node, bool orError);
-    bool checkIsTopmost(CodeLoc codeLoc, bool orError);
     bool checkIsId(const NodeVal &node, bool orError);
     bool checkIsType(const NodeVal &node, bool orError);
     bool checkIsBool(const NodeVal &node, bool orError);
@@ -169,7 +166,7 @@ private:
     NodeVal processMac(const NodeVal &node);
     NodeVal processRet(const NodeVal &node);
     NodeVal processEval(const NodeVal &node);
-    NodeVal processImport(const NodeVal &node);
+    NodeVal processImport(const NodeVal &node, bool topmost);
     NodeVal processMessage(const NodeVal &node);
     NodeVal processOper(const NodeVal &node, Oper op);
     NodeVal processTypeOf(const NodeVal &node);
@@ -180,7 +177,7 @@ private:
     NodeVal processAttrIsDef(const NodeVal &node);
 
     NodeVal processLeaf(const NodeVal &node);
-    NodeVal processNonLeaf(const NodeVal &node);
+    NodeVal processNonLeaf(const NodeVal &node, bool topmost = false);
     NodeVal processNonLeafEscaped(const NodeVal &node);
 
 public:
@@ -189,7 +186,7 @@ public:
     void setEvaluator(Evaluator *evaluator) { this->evaluator = evaluator; }
     void setCompiler(Processor *compiler) { this->compiler = compiler; }
 
-    NodeVal processNode(const NodeVal &node);
+    NodeVal processNode(const NodeVal &node, bool topmost = false);
 
     virtual ~Processor() {}
 };
