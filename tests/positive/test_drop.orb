@@ -1,4 +1,4 @@
-# TODO+ tests, pos/neg, eval/compl (can't trasnfer w/o move; cast on noDrop; can't pass/ret noDrop (except ret in macro))
+# TODO+ tests, pos/neg, eval/compl (can't transfer w/o move; cast on noDrop; can't pass/ret noDrop; not noDrop in global or attrs; raw unsafety)
 # TODO+ verify base.orb and examples
 
 import "util/io.orb";
@@ -49,6 +49,30 @@ fnc foo5 (f:(Foo cn)) () {
 fnc foo6 (f:Foo x:i32) () {
     sym f0:Foo;
     = (. f0 x) x;
+};
+
+fnc foo7 (x:i32) Foo {
+    sym f:Foo;
+    = (. f x) x;
+    ret (>> f);
+};
+
+fnc foo8 (x:i32) Foo {
+    ret (block Foo {
+        sym f:Foo;
+        = (. f x) x;
+        pass (>> f);
+    });
+};
+
+mac foo9 (x) {
+    ret x;
+};
+
+mac foo10 (x::preprocess) {
+    ret \(block {
+        sym (f0 ,x) (f1 ,x);
+    });
 };
 
 fnc main () () {
@@ -170,4 +194,20 @@ fnc main () () {
         = (. f x) 1801;
         foo6 (>> f) 1800;
     };
+
+    block Foo {
+        sym f:Foo;
+        = (. f x) 1900;
+        pass (>> f);
+    };
+
+    foo7 2000;
+
+    foo8 2100;
+
+    cast (Foo cn) (foo7 2200);
+
+    foo9 ,(foo7 2300);
+
+    foo10 (foo7 2400);
 };
