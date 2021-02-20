@@ -149,7 +149,7 @@ NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
         /*
         raws can contain ref values, but this can result in segfaults (or worse!) if a ref is passed out of its lifetime
         this will also be a problem with eval pointers, when implemented
-        TODO find a way to track lifetimes and make the compilation stop, instead of crashing
+        TODO+ find a way to track lifetimes and make the compilation stop, instead of crashing
         */
         NodeVal::addChild(nodeValRaw, move(childProc), typeTable);
     }
@@ -469,7 +469,7 @@ NodeVal Processor::processLoop(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
-// TODO implicit move (before implicit cast) when value from enclosed scope
+// TODO+ implicit move (before implicit cast) when value from enclosed scope
 NodeVal Processor::processPass(const NodeVal &node) {
     if (!checkBetweenChildren(node, 2, 3, true)) return NodeVal();
 
@@ -1058,7 +1058,7 @@ NodeVal Processor::processMac(const NodeVal &node) {
     }
 }
 
-// TODO implicit move (before implicit cast) when value from enclosed scope
+// TODO+ implicit move (before implicit cast) when value from enclosed scope
 NodeVal Processor::processRet(const NodeVal &node) {
     if (!checkBetweenChildren(node, 1, 2, true)) {
         return NodeVal();
@@ -1100,7 +1100,7 @@ NodeVal Processor::processRet(const NodeVal &node) {
         NodeVal val = processNode(node.getChild(1));
         if (val.isInvalid()) return NodeVal();
 
-        // TODO allow if value from outside of macro or from macro arg
+        // TODO+ allow if value from outside of macro or from macro arg
         if (!checkTransferValueOk(val.getCodeLoc(), val, false, true)) return NodeVal();
 
         if (!performRet(node.getCodeLoc(), val)) return NodeVal();
@@ -1829,7 +1829,6 @@ NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal &val) {
     return prev;
 }
 
-// TODO warn if non-trivial drop (and not noDrop) passed as arg
 NodeVal Processor::invoke(CodeLoc codeLoc, const MacroValue &macroVal, vector<NodeVal> args) {
     const TypeTable::Callable &callable = BaseCallableValue::getCallable(macroVal, typeTable);
 
