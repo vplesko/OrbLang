@@ -469,7 +469,6 @@ NodeVal Processor::processLoop(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
-// TODO+ implicit move (before implicit cast) when value from enclosed scope
 NodeVal Processor::processPass(const NodeVal &node) {
     if (!checkBetweenChildren(node, 2, 3, true)) return NodeVal();
 
@@ -505,12 +504,24 @@ NodeVal Processor::processPass(const NodeVal &node) {
         return NodeVal();
     }
 
-    NodeVal processed = processAndImplicitCast(node.getChild(indVal), targetBlock.type.value());
+    NodeVal processed = processNode(node.getChild(indVal));
     if (processed.isInvalid()) return NodeVal();
 
-    if (!checkTransferValueOk(processed.getCodeLoc(), processed, false, true)) return NodeVal();
+    NodeVal moved;
+    if (processed.getLifetimeInfo().nestLevel.has_value() &&
+        !processed.getLifetimeInfo().nestLevel.value().greaterThan(symbolTable->currNestLevel())) {
+        moved = moveNode(processed.getCodeLoc(), processed);
+    } else {
+        moved = move(processed);
+    }
+    if (moved.isInvalid()) return NodeVal();
 
-    if (!performPass(node.getCodeLoc(), targetBlock, processed)) return NodeVal();
+    NodeVal casted = implicitCast(moved, targetBlock.type.value());
+    if (casted.isInvalid()) return NodeVal();
+
+    if (!checkTransferValueOk(casted.getCodeLoc(), casted, false, true)) return NodeVal();
+
+    if (!performPass(node.getCodeLoc(), targetBlock, casted)) return NodeVal();
     return NodeVal(node.getCodeLoc());
 }
 
@@ -1077,15 +1088,15 @@ NodeVal Processor::processRet(const NodeVal &node) {
                 return NodeVal();
             }
 
-            NodeVal val = processNode(node.getChild(1));
-            if (val.isInvalid()) return NodeVal();
+            NodeVal processed = processNode(node.getChild(1));
+            if (processed.isInvalid()) return NodeVal();
 
             NodeVal moved;
-            if (val.getLifetimeInfo().nestLevel.has_value() &&
-                !val.getLifetimeInfo().nestLevel.value().callableGreaterThan(symbolTable->currNestLevel())) {
-                moved = moveNode(val.getCodeLoc(), val);
+            if (processed.getLifetimeInfo().nestLevel.has_value() &&
+                !processed.getLifetimeInfo().nestLevel.value().callableGreaterThan(symbolTable->currNestLevel())) {
+                moved = moveNode(processed.getCodeLoc(), processed);
             } else {
-                moved = move(val);
+                moved = move(processed);
             }
             if (moved.isInvalid()) return NodeVal();
 
@@ -1108,15 +1119,15 @@ NodeVal Processor::processRet(const NodeVal &node) {
     } else {
         if (!checkExactlyChildren(node, 2, true)) return NodeVal();
 
-        NodeVal val = processNode(node.getChild(1));
-        if (val.isInvalid()) return NodeVal();
+        NodeVal processed = processNode(node.getChild(1));
+        if (processed.isInvalid()) return NodeVal();
 
         NodeVal moved;
-        if (val.getLifetimeInfo().nestLevel.has_value() &&
-            !val.getLifetimeInfo().nestLevel.value().callableGreaterThan(symbolTable->currNestLevel())) {
-            moved = moveNode(val.getCodeLoc(), val);
+        if (processed.getLifetimeInfo().nestLevel.has_value() &&
+            !processed.getLifetimeInfo().nestLevel.value().callableGreaterThan(symbolTable->currNestLevel())) {
+            moved = moveNode(processed.getCodeLoc(), processed);
         } else {
-            moved = move(val);
+            moved = move(processed);
         }
         if (moved.isInvalid()) return NodeVal();
 
@@ -1822,7 +1833,9 @@ NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal &val) {
 
     NodeVal prev = NodeVal::copyNoRef(val);
 
-    NodeVal zero = performZero(codeLoc, valTy);
+    NodeVal zero;
+    if (checkIsEvalTime(val, false)) zero = evaluator->performZero(codeLoc, valTy);
+    else zero = performZero(codeLoc, valTy);
     if (zero.isInvalid()) return NodeVal();
 
     if (dispatchAssignment(codeLoc, val, zero).isInvalid()) return NodeVal();

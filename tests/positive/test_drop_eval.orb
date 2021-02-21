@@ -63,7 +63,7 @@ eval (fnc foo8 (x:i32) Foo {
     ret (block Foo {
         sym f:Foo;
         = (. f x) x;
-        pass (>> f);
+        pass f;
     });
 });
 
@@ -209,7 +209,7 @@ fnc main () () {
     eval (block Foo {
         sym f:Foo;
         = (. f x) 1900;
-        pass (>> f);
+        pass f;
     });
 
     foo7 2000;
