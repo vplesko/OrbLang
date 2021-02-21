@@ -134,13 +134,12 @@ Token Lexer::next() {
         }
 
         if (ch == '#') {
-            // TODO change multiline to #% ... %#
-            if (peekCh() == '*') {
+            if (peekCh() == '$') {
                 nextCh();
                 do {
                     do {
                         ch = nextCh();
-                    } while (ch != '*' && !over());
+                    } while (ch != '$' && !over());
                 } while (peekCh() != '#' && !over());
 
                 if (over()) {

@@ -36,7 +36,7 @@ NULL is null
 escaping of attrs is independent of escaping of node itself
 if score is >0, considered to be escaped
 
-comments are # for single line, #* ... *# for multiline
+comments are # for single line, #$ ... $# for multiline
 
 Char unescape sequences are: \', \", \?, \\, \a, \b, \f, \n, \r, \t, \v, \0, and \xNN (where N is a hex digit in [0-9a-fA-F]).
 
