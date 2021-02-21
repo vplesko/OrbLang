@@ -1,3 +1,4 @@
+# TODO+ test cast on noDrop gives noDrop
 # TODO+ base.orb some macros unsafe, make so macros don't drop those coming from outside, this requires scope tracing
 # TODO+ verify examples still work
 

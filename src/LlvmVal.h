@@ -1,12 +1,13 @@
 #pragma once
 
 #include "TypeTable.h"
+#include "LifetimeInfo.h"
 
 struct LlvmVal {
     TypeTable::Id type;
     llvm::Value *val = nullptr;
     llvm::Value *ref = nullptr;
-    bool noDrop = false;
+    LifetimeInfo lifetimeInfo;
 
     LlvmVal() {}
     LlvmVal(TypeTable::Id ty) : type(ty) {}

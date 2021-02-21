@@ -80,17 +80,34 @@ void NodeVal::removeRef() {
 }
 
 bool NodeVal::isNoDrop() const {
-    if (isEvalVal()) return getEvalVal().noDrop;
-    else if (isLlvmVal()) return getLlvmVal().noDrop;
+    if (isEvalVal()) return getEvalVal().lifetimeInfo.noDrop;
+    else if (isLlvmVal()) return getLlvmVal().lifetimeInfo.noDrop;
     else return false;
 }
 
 bool NodeVal::setNoDrop(bool b) {
     if (isEvalVal()) {
-        getEvalVal().noDrop = b;
+        getEvalVal().lifetimeInfo.noDrop = b;
         return true;
     } else if (isLlvmVal()) {
-        getLlvmVal().noDrop = b;
+        getLlvmVal().lifetimeInfo.noDrop = b;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+LifetimeInfo NodeVal::getLifetimeInfo() const {
+    if (isEvalVal()) return getEvalVal().lifetimeInfo;
+    else return getLlvmVal().lifetimeInfo;
+}
+
+bool NodeVal::setLifetimeInfo(LifetimeInfo lifetimeInfo) {
+    if (isEvalVal()) {
+        getEvalVal().lifetimeInfo = lifetimeInfo;
+        return true;
+    } else if (isLlvmVal()) {
+        getLlvmVal().lifetimeInfo = lifetimeInfo;
         return true;
     } else {
         return false;
@@ -198,9 +215,9 @@ NodeVal NodeVal::copyNoRef(const NodeVal &k) {
     return nodeVal;
 }
 
-NodeVal NodeVal::copyNoRef(const NodeVal &k, bool noDrop) {
+NodeVal NodeVal::copyNoRef(const NodeVal &k, LifetimeInfo lifetimeInfo) {
     NodeVal ret = copyNoRef(k);
-    ret.setNoDrop(noDrop);
+    ret.setLifetimeInfo(lifetimeInfo);
     return ret;
 }
 
@@ -210,9 +227,9 @@ NodeVal NodeVal::copyNoRef(CodeLoc codeLoc, const NodeVal &k) {
     return nodeVal;
 }
 
-NodeVal NodeVal::copyNoRef(CodeLoc codeLoc, const NodeVal &k, bool noDrop) {
+NodeVal NodeVal::copyNoRef(CodeLoc codeLoc, const NodeVal &k, LifetimeInfo lifetimeInfo) {
     NodeVal ret = copyNoRef(codeLoc, k);
-    ret.setNoDrop(noDrop);
+    ret.setLifetimeInfo(lifetimeInfo);
     return ret;
 }
 

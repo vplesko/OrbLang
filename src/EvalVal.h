@@ -6,6 +6,7 @@
 #include "NamePool.h"
 #include "StringPool.h"
 #include "TypeTable.h"
+#include "LifetimeInfo.h"
 
 class NodeVal;
 class SymbolTable;
@@ -40,7 +41,7 @@ struct EvalVal {
     std::vector<NodeVal> elems;
 
     NodeVal *ref = nullptr;
-    bool noDrop = false;
+    LifetimeInfo lifetimeInfo;
 
     EscapeScore escapeScore = 0;
 

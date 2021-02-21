@@ -1515,8 +1515,13 @@ NodeVal Processor::implicitCast(const NodeVal &node, TypeTable::Id ty, bool turn
 
 NodeVal Processor::castNode(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty, bool turnIntoNoDrop) {
     if (node.getType().value() == ty) {
-        if (turnIntoNoDrop) return NodeVal::copyNoRef(node, turnIntoNoDrop);
-        else return node;
+        if (turnIntoNoDrop) {
+            NodeVal ret = NodeVal::copyNoRef(node);
+            ret.setNoDrop(true);
+            return ret;
+        } else {
+            return node;
+        }
     }
 
     if (!turnIntoNoDrop && node.hasRef() && !checkNotNeedsDrop(node.getCodeLoc(), node, true)) return NodeVal();

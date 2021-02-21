@@ -11,6 +11,7 @@
 #include "EvalVal.h"
 #include "LlvmVal.h"
 #include "UndecidedCallableVal.h"
+#include "LifetimeInfo.h"
 
 class NodeVal {
     CodeLoc codeLoc;
@@ -48,6 +49,9 @@ public:
     bool isNoDrop() const;
     // returns whether set successfully
     bool setNoDrop(bool b);
+    LifetimeInfo getLifetimeInfo() const;
+    // returns whether set successfully
+    bool setLifetimeInfo(LifetimeInfo lifetimeInfo);
 
     // Remember to check when returned to you before any other checks or usages.
     bool isInvalid() const { return std::holds_alternative<bool>(value) && std::get<bool>(value) == false; }
@@ -110,8 +114,8 @@ public:
     static NodeVal makeEmpty(CodeLoc codeLoc, TypeTable *typeTable);
 
     static NodeVal copyNoRef(const NodeVal &k);
-    static NodeVal copyNoRef(const NodeVal &k, bool noDrop);
+    static NodeVal copyNoRef(const NodeVal &k, LifetimeInfo lifetimeInfo);
     static NodeVal copyNoRef(CodeLoc codeLoc, const NodeVal &k);
-    static NodeVal copyNoRef(CodeLoc codeLoc, const NodeVal &k, bool noDrop);
+    static NodeVal copyNoRef(CodeLoc codeLoc, const NodeVal &k, LifetimeInfo lifetimeInfo);
     static void copyNonValFieldsLeaf(NodeVal &dst, const NodeVal &src, const TypeTable *typeTable);
 };

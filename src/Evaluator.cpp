@@ -58,7 +58,7 @@ NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::
 NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) {
     if (!checkIsEvalVal(init, true)) return NodeVal();
 
-    return NodeVal::copyNoRef(codeLoc, init, false);
+    return NodeVal::copyNoRef(codeLoc, init, LifetimeInfo());
 }
 
 NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty, bool turnIntoNoDrop) {
@@ -575,11 +575,11 @@ NodeVal Evaluator::performOperComparisonTearDown(CodeLoc codeLoc, bool success, 
 NodeVal Evaluator::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) {
     if (!checkIsEvalVal(lhs, true) || !checkIsEvalVal(rhs, true)) return NodeVal();
 
-    bool lhsNoDrop = lhs.isNoDrop();
+    LifetimeInfo lhsLifetimeInfo = lhs.getLifetimeInfo();
 
-    *lhs.getEvalVal().ref = NodeVal::copyNoRef(lhs.getEvalVal().ref->getCodeLoc(), rhs, lhsNoDrop);
+    *lhs.getEvalVal().ref = NodeVal::copyNoRef(lhs.getEvalVal().ref->getCodeLoc(), rhs, lhsLifetimeInfo);
 
-    NodeVal nodeVal = NodeVal::copyNoRef(lhs.getCodeLoc(), rhs, lhsNoDrop);
+    NodeVal nodeVal = NodeVal::copyNoRef(lhs.getCodeLoc(), rhs, lhsLifetimeInfo);
     nodeVal.getEvalVal().ref = lhs.getEvalVal().ref;
     return nodeVal;
 }
@@ -594,7 +594,7 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVa
     }
 
     if (typeTable->worksAsTypeArr(base.getType().value())) {
-        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[index.value()], base.isNoDrop());
+        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[index.value()], base.getLifetimeInfo());
         nodeVal.getEvalVal().type = resTy;
         if (base.hasRef()) {
             nodeVal.getEvalVal().ref = &base.getEvalVal().ref->getEvalVal().elems[index.value()];
@@ -640,7 +640,7 @@ NodeVal Evaluator::performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t 
         }
         return nodeVal;
     } else {
-        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[ind], base.isNoDrop());
+        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[ind], base.getLifetimeInfo());
         nodeVal.getEvalVal().type = resTy;
         if (base.hasRef()) {
             nodeVal.getEvalVal().ref = &base.getEvalVal().ref->getEvalVal().elems[ind];
@@ -964,7 +964,8 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
         }
     }
 
-    dstEvalVal.noDrop = srcEvalVal.noDrop;
+    dstEvalVal.lifetimeInfo = LifetimeInfo();
+    dstEvalVal.lifetimeInfo.noDrop = srcEvalVal.lifetimeInfo.noDrop;
 
     return NodeVal(codeLoc, move(dstEvalVal));
 }

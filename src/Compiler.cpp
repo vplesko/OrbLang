@@ -98,7 +98,7 @@ NodeVal Compiler::performLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, optio
 
     LlvmVal loadLlvmVal(ref.var.getLlvmVal().type);
     loadLlvmVal.ref = ref.var.getLlvmVal().ref;
-    loadLlvmVal.noDrop = ref.var.isNoDrop();
+    loadLlvmVal.lifetimeInfo = ref.var.getLifetimeInfo();
     if (id.has_value()) loadLlvmVal.val = llvmBuilder.CreateLoad(ref.var.getLlvmVal().ref, getNameForLlvm(id.value()));
     else loadLlvmVal.val = llvmBuilder.CreateLoad(ref.var.getLlvmVal().ref);
     return NodeVal(ref.var.getCodeLoc(), loadLlvmVal);
@@ -184,7 +184,7 @@ NodeVal Compiler::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::I
 
     LlvmVal llvmVal(ty);
     llvmVal.val = llvmValueCast;
-    llvmVal.noDrop = promo.isNoDrop() || turnIntoNoDrop;
+    llvmVal.lifetimeInfo.noDrop = promo.isNoDrop() || turnIntoNoDrop;
     return NodeVal(codeLoc, llvmVal);
 }
 
@@ -368,7 +368,7 @@ bool Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, c
 
         LlvmVal varLlvmVal(callable.getArgType(i));
         varLlvmVal.ref = llvmAlloca;
-        varLlvmVal.noDrop = callable.getArgNoDrop(i);
+        varLlvmVal.lifetimeInfo.noDrop = callable.getArgNoDrop(i);
         NodeVal varNodeVal(args.getChild(i).getCodeLoc(), varLlvmVal);
 
         SymbolTable::VarEntry varEntry;
@@ -627,7 +627,7 @@ NodeVal Compiler::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const Nod
     LlvmVal llvmVal(lhs.getType().value());
     llvmVal.val = rhsPromo.getLlvmVal().val;
     llvmVal.ref = lhs.getLlvmVal().ref;
-    llvmVal.noDrop = lhs.isNoDrop();
+    llvmVal.lifetimeInfo = lhs.getLifetimeInfo();
     return NodeVal(lhs.getCodeLoc(), llvmVal);
 }
 
@@ -664,7 +664,7 @@ NodeVal Compiler::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal
             llvmVal.val = llvmBuilder.CreateLoad(tmp, "index_tmp");
         }
 
-        llvmVal.noDrop = basePromo.isNoDrop();
+        llvmVal.lifetimeInfo = basePromo.getLifetimeInfo();
     } else {
         msgs->errorInternal(codeLoc);
         return NodeVal();
@@ -685,7 +685,7 @@ NodeVal Compiler::performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t i
     } else {
         llvmVal.val = llvmBuilder.CreateExtractValue(basePromo.getLlvmVal().val, {(unsigned) ind}, "dot_tmp");
     }
-    llvmVal.noDrop = base.isNoDrop();
+    llvmVal.lifetimeInfo = base.getLifetimeInfo();
     return NodeVal(basePromo.getCodeLoc(), llvmVal);
 }
 
@@ -895,7 +895,7 @@ NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
 
     LlvmVal llvmVal(ty);
     llvmVal.val = llvmConst;
-    llvmVal.noDrop = eval.noDrop;
+    llvmVal.lifetimeInfo.noDrop = eval.lifetimeInfo.noDrop;
 
     return NodeVal(codeLoc, llvmVal);
 }

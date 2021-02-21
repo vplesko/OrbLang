@@ -33,6 +33,7 @@ set(HEADER_FILES
     "src/EscapeScore.h"
     "src/exceptions.h"
     "src/Lexer.h"
+    "src/LifetimeInfo.h"
     "src/LiteralVal.h"
     "src/LlvmVal.h"
     "src/NamePool.h"
