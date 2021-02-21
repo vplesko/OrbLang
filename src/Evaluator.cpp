@@ -15,7 +15,7 @@ Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *type
 
 NodeVal Evaluator::performLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, optional<NamePool::Id> id) {
     if (checkIsEvalVal(codeLoc, ref.var, false)) {
-        if (ref.isInvokeArg) {
+        if (ref.var.getLifetimeInfo().invokeArg) {
             return ref.var;
         } else {
             NodeVal nodeVal = NodeVal::copyNoRef(ref.var);
@@ -23,10 +23,10 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, opti
             return nodeVal;
         }
     } else {
-        // allowing eval to load compiled variables risks fetching outdated values from symbol table
-        // however, eval needs to be able to do this for macros to be able to work with compiled args
-        // TODO+ find a way to limit this behaviour to make it correct
-        // maybe allow to load invoke args and their attrs only
+        if (!ref.var.getLifetimeInfo().invokeArg) {
+            msgs->errorUnknown(codeLoc);
+            return NodeVal();
+        }
         return ref.var;
     }
 }
@@ -233,12 +233,12 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const
 
     for (size_t i = 0; i < args.size(); ++i) {
         LifetimeInfo lifetimeInfo = args[i].getLifetimeInfo();
+        lifetimeInfo.invokeArg = true;
         if (!lifetimeInfo.nestLevel.has_value()) lifetimeInfo.nestLevel = nestLevel;
 
         SymbolTable::VarEntry varEntry;
         varEntry.var = args[i];
         varEntry.var.setLifetimeInfo(lifetimeInfo);
-        varEntry.isInvokeArg = true;
         symbolTable->addVar(macro.argNames[i], move(varEntry));
     }
 
@@ -652,6 +652,7 @@ NodeVal Evaluator::performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t 
                 nodeVal.getEvalVal().ref = nullptr;
             }
         }
+        if (base.getLifetimeInfo().invokeArg) nodeVal.getLifetimeInfo().invokeArg = true;
         return nodeVal;
     } else {
         NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[ind], base.getLifetimeInfo());

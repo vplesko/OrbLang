@@ -1,0 +1,9 @@
+sym x:i32;
+
+eval (mac foo () {
+    ret ,x;
+});
+
+fnc main () () {
+    foo;
+};

@@ -1902,9 +1902,7 @@ bool Processor::callDropFunc(CodeLoc codeLoc, NodeVal val) {
     if (!checkHasType(val, false) || val.isNoDrop()) return true;
 
     // don't drop values propagated through macro args
-    if (val.getLifetimeInfo().nestLevel.has_value() &&
-        val.getLifetimeInfo().nestLevel.value().callableGreaterThan(symbolTable->currNestLevel()))
-        return true;
+    if (val.getLifetimeInfo().invokeArg) return true;
 
     TypeTable::Id valTy = val.getType().value();
 

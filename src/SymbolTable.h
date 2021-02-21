@@ -70,8 +70,6 @@ public:
 
     struct VarEntry {
         NodeVal var;
-        // TODO+ remove if unused
-        bool isInvokeArg = false;
     };
 
     struct MacroCallSite {

@@ -50,6 +50,7 @@ public:
     // returns whether set successfully
     bool setNoDrop(bool b);
     LifetimeInfo getLifetimeInfo() const;
+    LifetimeInfo& getLifetimeInfo();
     // returns whether set successfully
     bool setLifetimeInfo(LifetimeInfo lifetimeInfo);
 

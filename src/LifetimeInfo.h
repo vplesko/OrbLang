@@ -13,5 +13,6 @@ struct LifetimeInfo {
     };
 
     bool noDrop = false;
+    bool invokeArg = false;
     std::optional<NestLevel> nestLevel;
 };

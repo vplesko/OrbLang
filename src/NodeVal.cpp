@@ -102,6 +102,11 @@ LifetimeInfo NodeVal::getLifetimeInfo() const {
     else return getLlvmVal().lifetimeInfo;
 }
 
+LifetimeInfo& NodeVal::getLifetimeInfo() {
+    if (isEvalVal()) return getEvalVal().lifetimeInfo;
+    else return getLlvmVal().lifetimeInfo;
+}
+
 bool NodeVal::setLifetimeInfo(LifetimeInfo lifetimeInfo) {
     if (isEvalVal()) {
         getEvalVal().lifetimeInfo = lifetimeInfo;
