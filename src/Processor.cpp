@@ -149,7 +149,7 @@ NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
         /*
         raws can contain ref values, but this can result in segfaults (or worse!) if a ref is passed out of its lifetime
         this will also be a problem with eval pointers, when implemented
-        TODO+ find a way to track lifetimes and make the compilation stop, instead of crashing
+        TODO find a way to track lifetimes and make the compilation stop, instead of crashing
         */
         NodeVal::addChild(nodeValRaw, move(childProc), typeTable);
     }
