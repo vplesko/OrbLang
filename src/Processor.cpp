@@ -1058,7 +1058,6 @@ NodeVal Processor::processMac(const NodeVal &node) {
     }
 }
 
-// TODO+ implicit move (before implicit cast) when value from enclosed scope
 NodeVal Processor::processRet(const NodeVal &node) {
     if (!checkBetweenChildren(node, 1, 2, true)) {
         return NodeVal();
@@ -1078,12 +1077,24 @@ NodeVal Processor::processRet(const NodeVal &node) {
                 return NodeVal();
             }
 
-            NodeVal val = processAndImplicitCast(node.getChild(1), optCallee.value().retType.value());
+            NodeVal val = processNode(node.getChild(1));
             if (val.isInvalid()) return NodeVal();
 
-            if (!checkTransferValueOk(val.getCodeLoc(), val, false, true)) return NodeVal();
+            NodeVal moved;
+            if (val.getLifetimeInfo().nestLevel.has_value() &&
+                !val.getLifetimeInfo().nestLevel.value().callableGreaterThan(symbolTable->currNestLevel())) {
+                moved = moveNode(val.getCodeLoc(), val);
+            } else {
+                moved = move(val);
+            }
+            if (moved.isInvalid()) return NodeVal();
 
-            if (!performRet(node.getCodeLoc(), val)) return NodeVal();
+            NodeVal casted = implicitCast(moved, optCallee.value().retType.value());
+            if (casted.isInvalid()) return NodeVal();
+
+            if (!checkTransferValueOk(casted.getCodeLoc(), casted, false, true)) return NodeVal();
+
+            if (!performRet(node.getCodeLoc(), casted)) return NodeVal();
         } else {
             if (optCallee.value().retType.has_value()) {
                 msgs->errorRetNoValue(node.getCodeLoc(), optCallee.value().retType.value());
@@ -1100,9 +1111,18 @@ NodeVal Processor::processRet(const NodeVal &node) {
         NodeVal val = processNode(node.getChild(1));
         if (val.isInvalid()) return NodeVal();
 
-        if (!checkTransferValueOk(val.getCodeLoc(), val, false, true)) return NodeVal();
+        NodeVal moved;
+        if (val.getLifetimeInfo().nestLevel.has_value() &&
+            !val.getLifetimeInfo().nestLevel.value().callableGreaterThan(symbolTable->currNestLevel())) {
+            moved = moveNode(val.getCodeLoc(), val);
+        } else {
+            moved = move(val);
+        }
+        if (moved.isInvalid()) return NodeVal();
 
-        if (!performRet(node.getCodeLoc(), val)) return NodeVal();
+        if (!checkTransferValueOk(moved.getCodeLoc(), moved, false, true)) return NodeVal();
+
+        if (!performRet(node.getCodeLoc(), moved)) return NodeVal();
 
         return NodeVal(node.getCodeLoc());
     }

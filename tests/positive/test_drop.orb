@@ -52,7 +52,7 @@ fnc foo6 (f:Foo x:i32) () {
 fnc foo7 (x:i32) Foo {
     sym f:Foo;
     = (. f x) x;
-    ret (>> f);
+    ret f;
 };
 
 fnc foo8 (x:i32) Foo {

@@ -56,7 +56,7 @@ eval (fnc foo6 (f:Foo x:i32) () {
 eval (fnc foo7 (x:i32) Foo {
     sym f:Foo;
     = (. f x) x;
-    ret (>> f);
+    ret f;
 });
 
 eval (fnc foo8 (x:i32) Foo {
