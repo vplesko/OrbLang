@@ -28,7 +28,7 @@ protected:
     virtual NodeVal performZero(CodeLoc codeLoc, TypeTable::Id ty) =0;
     virtual NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) =0;
     virtual NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) =0;
-    virtual NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) =0;
+    virtual NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty, bool turnIntoNoDrop) =0;
     virtual bool performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) =0;
     // Returns nullopt in case of fail. Otherwise, returns whether the body should be processed again.
     virtual std::optional<bool> performBlockBody(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &nodeBody) =0;

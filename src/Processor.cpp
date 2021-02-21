@@ -1430,7 +1430,7 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
             msgs->errorExprCannotPromote(node.getCodeLoc(), ty);
             return NodeVal();
         }
-        prom = evaluator->performCast(prom.getCodeLoc(), prom, ty);
+        prom = evaluator->performCast(prom.getCodeLoc(), prom, ty, false);
     }
 
     return prom;
@@ -1521,16 +1521,11 @@ NodeVal Processor::castNode(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id 
 
     if (!turnIntoNoDrop && node.hasRef() && !checkNotNeedsDrop(node.getCodeLoc(), node, true)) return NodeVal();
 
-    NodeVal ret;
     if (checkIsEvalTime(node, false) && !shouldNotDispatchCastToEval(node, ty)) {
-        ret = evaluator->performCast(node.getCodeLoc(), node, ty);
+        return evaluator->performCast(node.getCodeLoc(), node, ty, turnIntoNoDrop);
     } else {
-        ret = performCast(node.getCodeLoc(), node, ty);
+        return performCast(node.getCodeLoc(), node, ty, turnIntoNoDrop);
     }
-    if (ret.isInvalid()) return NodeVal();
-    ret.setNoDrop(ret.isNoDrop() || turnIntoNoDrop);
-
-    return ret;
 }
 
 bool Processor::implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly) {
@@ -1658,17 +1653,11 @@ NodeVal Processor::getElement(CodeLoc codeLoc, NodeVal &array, const NodeVal &in
     TypeTable::Id resType = elemType.value();
     if (typeTable->worksAsTypeCn(arrayType)) resType = typeTable->addTypeCnOf(resType);
 
-    NodeVal ret;
     if (checkIsEvalTime(array, false) && checkIsEvalTime(index, false)) {
-        ret = evaluator->performOperIndex(codeLoc, array, index, resType);
+        return evaluator->performOperIndex(codeLoc, array, index, resType);
     } else {
-        ret = performOperIndex(array.getCodeLoc(), array, index, resType);
+        return performOperIndex(array.getCodeLoc(), array, index, resType);
     }
-    if (ret.isInvalid()) return NodeVal();
-
-    if (array.isNoDrop()) ret.setNoDrop(true);
-
-    return ret;
 }
 
 NodeVal Processor::getRawMember(CodeLoc codeLoc, NodeVal &raw, size_t index) {
@@ -1685,17 +1674,11 @@ NodeVal Processor::getTupleMember(CodeLoc codeLoc, NodeVal &tuple, size_t index)
 
     TypeTable::Id resType = typeTable->extractTupleMemberType(tupleType, index).value();
 
-    NodeVal ret;
     if (checkIsEvalTime(tuple, false)) {
-        ret = evaluator->performOperDot(codeLoc, tuple, index, resType);
+        return evaluator->performOperDot(codeLoc, tuple, index, resType);
     } else {
-        ret = performOperDot(codeLoc, tuple, index, resType);
+        return performOperDot(codeLoc, tuple, index, resType);
     }
-    if (ret.isInvalid()) return NodeVal();
-
-    if (tuple.isNoDrop()) ret.setNoDrop(true);
-
-    return ret;
 }
 
 NodeVal Processor::getDataMember(CodeLoc codeLoc, NodeVal &data, size_t index) {
@@ -1703,17 +1686,11 @@ NodeVal Processor::getDataMember(CodeLoc codeLoc, NodeVal &data, size_t index) {
 
     TypeTable::Id resType = typeTable->extractDataTypeMemberType(dataType, index).value();
 
-    NodeVal ret;
     if (checkIsEvalTime(data, false)) {
-        ret = evaluator->performOperDot(codeLoc, data, index, resType);
+        return evaluator->performOperDot(codeLoc, data, index, resType);
     } else {
-        ret = performOperDot(codeLoc, data, index, resType);
+        return performOperDot(codeLoc, data, index, resType);
     }
-    if (ret.isInvalid()) return NodeVal();
-
-    if (data.isNoDrop()) ret.setNoDrop(true);
-
-    return ret;
 }
 
 bool Processor::argsFitFuncCall(const vector<NodeVal> &args, const TypeTable::Callable &callable, bool allowImplicitCasts) {

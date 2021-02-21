@@ -167,7 +167,7 @@ NodeVal Compiler::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVa
     return NodeVal(codeLoc, llvmVal);
 }
 
-NodeVal Compiler::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
+NodeVal Compiler::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty, bool turnIntoNoDrop) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
     NodeVal promo = promoteIfEvalValAndCheckIsLlvmVal(node, true);
@@ -184,7 +184,7 @@ NodeVal Compiler::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::I
 
     LlvmVal llvmVal(ty);
     llvmVal.val = llvmValueCast;
-    llvmVal.noDrop = promo.isNoDrop();
+    llvmVal.noDrop = promo.isNoDrop() || turnIntoNoDrop;
     return NodeVal(codeLoc, llvmVal);
 }
 
@@ -647,7 +647,7 @@ NodeVal Compiler::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal
     } else if (typeTable->worksAsTypeArr(basePromo.getType().value())) {
         llvm::Type *llvmTypeInd = makeLlvmTypeOrError(indPromo.getCodeLoc(), indPromo.getType().value());
         if (llvmTypeInd == nullptr) return NodeVal();
-        
+
         if (basePromo.hasRef()) {
             llvmVal.ref = llvmBuilder.CreateGEP(basePromo.getLlvmVal().ref,
                 {llvm::ConstantInt::get(llvmTypeInd, 0), indPromo.getLlvmVal().val});

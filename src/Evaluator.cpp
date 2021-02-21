@@ -61,7 +61,7 @@ NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeV
     return NodeVal::copyNoRef(codeLoc, init, false);
 }
 
-NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
+NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty, bool turnIntoNoDrop) {
     if (!checkIsEvalVal(node, true)) return NodeVal();
 
     optional<NodeVal> evalValCast = makeCast(codeLoc, node, node.getEvalVal().type, ty);
@@ -69,6 +69,7 @@ NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::
         msgs->errorExprCannotCast(codeLoc, node.getEvalVal().type, ty);
         return NodeVal();
     }
+    if (turnIntoNoDrop) evalValCast.value().setNoDrop(true);
 
     return move(evalValCast.value());
 }
