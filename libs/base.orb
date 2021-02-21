@@ -6,7 +6,7 @@ eval (fnc genSym () id {
     ret s;
 });
 
-mac passthrough (x::preprocess) {
+mac base.-passthrough (x::preprocess) {
     ret x;
 };
 
@@ -152,7 +152,7 @@ mac ^= (x::preprocess y::preprocess) {
 mac -> (x::preprocess m rest::variadic) {
     sym (ops (+ \(,x ,m) rest));
 
-    sym (code \(passthrough ,(. ops 0)));
+    sym (code \(base.-passthrough ,(. ops 0)));
     range i 1 (- (lenOf ops) 1) {
         = code \(. (* ,code) ,(. ops i));
     };

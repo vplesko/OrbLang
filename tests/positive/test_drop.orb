@@ -1,6 +1,3 @@
-# TODO+ verify base.orb
-# TODO+ verify examples still work
-
 import "util/io.orb";
 
 data Foo;

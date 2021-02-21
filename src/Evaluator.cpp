@@ -233,7 +233,7 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const
 
     for (size_t i = 0; i < args.size(); ++i) {
         LifetimeInfo lifetimeInfo = args[i].getLifetimeInfo();
-        lifetimeInfo.nestLevel = nestLevel;
+        if (!lifetimeInfo.nestLevel.has_value()) lifetimeInfo.nestLevel = nestLevel;
 
         SymbolTable::VarEntry varEntry;
         varEntry.var = args[i];

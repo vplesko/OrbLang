@@ -1100,7 +1100,6 @@ NodeVal Processor::processRet(const NodeVal &node) {
         NodeVal val = processNode(node.getChild(1));
         if (val.isInvalid()) return NodeVal();
 
-        // TODO+ allow if value from outside of macro or from macro arg
         if (!checkTransferValueOk(val.getCodeLoc(), val, false, true)) return NodeVal();
 
         if (!performRet(node.getCodeLoc(), val)) return NodeVal();
