@@ -99,8 +99,8 @@ mac -- (x::preprocess) {
     ret \(= ,x (- ,x 1));
 };
 
-mac ?_ (cond::preprocess onTrue::preprocess onFalse::preprocess) {
-    ret \(block base.-blockTernSel ,(typeOf onTrue) {
+mac ?_ (cond::preprocess ty::preprocess onTrue onFalse) {
+    ret \(block base.-blockTernSel ,ty {
         (if ,cond {
             (pass base.-blockTernSel ,onTrue)
         })

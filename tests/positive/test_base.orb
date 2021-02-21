@@ -89,8 +89,9 @@ fnc main () () {
         = x 303;
         println_i32 (-- (-- x));
 
-        println_i32 (?_ true (++ x) -1);
-        println_i32 (?_ false -1 (++ x));
+        println_i32 (?_ true i32 (++ x) -1);
+        ?_ false i32 (++ x) -1;
+        println_i32 (?_ false i32 -1 (++ x));
 
         println_i32 (+= x 1);
         println_i32 (-= x -1);
