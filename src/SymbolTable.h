@@ -70,7 +70,7 @@ public:
 
     struct VarEntry {
         NodeVal var;
-        // TODO! remove
+        // TODO+ remove if unused
         bool isInvokeArg = false;
     };
 

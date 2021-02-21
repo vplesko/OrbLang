@@ -77,6 +77,10 @@ mac foo10 (x::preprocess) {
     });
 };
 
+mac foo11 (x::preprocess) {
+    ret (typeOf x);
+};
+
 fnc main () () {
     block {
         sym f:Foo;
@@ -217,4 +221,6 @@ fnc main () () {
     foo10 (foo7 2400);
 
     >> (foo7 2500);
+
+    foo11 (foo7 -1);
 };

@@ -1869,6 +1869,11 @@ bool Processor::checkNotNeedsDrop(CodeLoc codeLoc, const NodeVal &val, bool orEr
 bool Processor::callDropFunc(CodeLoc codeLoc, NodeVal val) {
     if (!checkHasType(val, false) || val.isNoDrop()) return true;
 
+    // don't drop values propagated through macro args
+    if (val.getLifetimeInfo().nestLevel.has_value() &&
+        val.getLifetimeInfo().nestLevel.value().callableGreaterThan(symbolTable->currNestLevel()))
+        return true;
+
     TypeTable::Id valTy = val.getType().value();
 
     if (typeTable->worksAsTypeArr(valTy)) {
@@ -1935,7 +1940,7 @@ bool Processor::callDropFuncsNonRef(vector<NodeVal> val) {
 
 bool Processor::callDropFuncs(CodeLoc codeLoc, vector<SymbolTable::VarEntry*> vars) {
     for (auto it : vars) {
-        if (it->var.isNoDrop() || it->isInvokeArg) continue;
+        if (it->var.isNoDrop()) continue;
 
         NodeVal loaded = dispatchLoad(codeLoc, *it);
 

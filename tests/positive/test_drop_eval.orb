@@ -77,6 +77,10 @@ mac foo10 (x::preprocess) {
     });
 };
 
+mac foo11 (x::preprocess) {
+    ret (typeOf x);
+};
+
 eval (foo7 90);
 
 fnc main () () {
@@ -220,6 +224,8 @@ fnc main () () {
     eval (foo10 (foo7 2400));
 
     >> (foo7 2500);
+
+    foo11 (foo7 -1);
 
     eval (block {
         sym (r \(,(foo7 2600)));
