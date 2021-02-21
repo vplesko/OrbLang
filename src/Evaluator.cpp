@@ -25,7 +25,7 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, opti
     } else {
         // allowing eval to load compiled variables risks fetching outdated values from symbol table
         // however, eval needs to be able to do this for macros to be able to work with compiled args
-        // TODO find a way to limit this behaviour to make it correct
+        // TODO+ find a way to limit this behaviour to make it correct
         // maybe allow to load invoke args and their attrs only
         return ref.var;
     }
@@ -52,13 +52,18 @@ NodeVal Evaluator::performZero(CodeLoc codeLoc, TypeTable::Id ty) {
 }
 
 NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) {
-    return NodeVal(codeLoc, EvalVal::makeZero(ty, namePool, typeTable));
+    EvalVal evalVal = EvalVal::makeZero(ty, namePool, typeTable);
+    evalVal.lifetimeInfo.nestLevel = symbolTable->currNestLevel();
+    return NodeVal(codeLoc, move(evalVal));
 }
 
 NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) {
     if (!checkIsEvalVal(init, true)) return NodeVal();
 
-    return NodeVal::copyNoRef(codeLoc, init, LifetimeInfo());
+    LifetimeInfo lifetimeInfo;
+    lifetimeInfo.nestLevel = symbolTable->currNestLevel();
+
+    return NodeVal::copyNoRef(codeLoc, init, lifetimeInfo);
 }
 
 NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty, bool turnIntoNoDrop) {
@@ -143,7 +148,7 @@ bool Evaluator::performPass(CodeLoc codeLoc, SymbolTable::Block block, const Nod
         return false;
     }
 
-    retVal = NodeVal::copyNoRef(codeLoc, val);
+    retVal = NodeVal::copyNoRef(codeLoc, val, LifetimeInfo());
 
     ExceptionEvaluatorJump ex;
     ex.blockName = block.name;
@@ -185,9 +190,12 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
     const TypeTable::Callable &callable = FuncValue::getCallable(func, typeTable);
 
     for (size_t i = 0; i < args.size(); ++i) {
+        LifetimeInfo lifetimeInfo;
+        lifetimeInfo.noDrop = callable.getArgNoDrop(i);
+        lifetimeInfo.nestLevel = symbolTable->currNestLevel();
+
         SymbolTable::VarEntry varEntry;
-        varEntry.var = NodeVal::copyNoRef(args[i]);
-        varEntry.var.setNoDrop(callable.getArgNoDrop(i));
+        varEntry.var = NodeVal::copyNoRef(args[i], lifetimeInfo);
         symbolTable->addVar(func.argNames[i], move(varEntry));
     }
 
@@ -219,11 +227,17 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
 }
 
 NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args) {
+    LifetimeInfo::NestLevel nestLevel = symbolTable->currNestLevel();
+
     BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(macro));
 
     for (size_t i = 0; i < args.size(); ++i) {
+        LifetimeInfo lifetimeInfo = args[i].getLifetimeInfo();
+        lifetimeInfo.nestLevel = nestLevel;
+
         SymbolTable::VarEntry varEntry;
         varEntry.var = args[i];
+        varEntry.var.setLifetimeInfo(lifetimeInfo);
         varEntry.isInvokeArg = true;
         symbolTable->addVar(macro.argNames[i], move(varEntry));
     }
@@ -280,7 +294,7 @@ bool Evaluator::performRet(CodeLoc codeLoc) {
 }
 
 bool Evaluator::performRet(CodeLoc codeLoc, const NodeVal &node) {
-    retVal = NodeVal::copyNoRef(node);
+    retVal = NodeVal::copyNoRef(node, LifetimeInfo());
     performRet(codeLoc);
 
     return false; // unreachable

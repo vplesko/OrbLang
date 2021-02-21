@@ -230,6 +230,14 @@ bool SymbolTable::inGlobalScope() const {
     return localBlockChains.empty() && globalBlockChain.size() == 1;
 }
 
+LifetimeInfo::NestLevel SymbolTable::currNestLevel() const {
+    LifetimeInfo::NestLevel nestLevel;
+    nestLevel.callable = localBlockChains.size();
+    if (!localBlockChains.empty()) nestLevel.local = localBlockChains.back().second.size();
+    else nestLevel.local = globalBlockChain.size();
+    return nestLevel;
+}
+
 const SymbolTable::BlockInternal* SymbolTable::getLastBlockInternal() const {
     if (localBlockChains.empty()) {
         return &globalBlockChain.back();

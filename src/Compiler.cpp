@@ -144,6 +144,7 @@ NodeVal Compiler::performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::I
     } else {
         llvmVal.ref = makeLlvmAlloca(llvmType, getNameForLlvm(id));
     }
+    llvmVal.lifetimeInfo.nestLevel = symbolTable->currNestLevel();
 
     return NodeVal(codeLoc, llvmVal);
 }
@@ -163,6 +164,7 @@ NodeVal Compiler::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVa
         llvmVal.ref = makeLlvmAlloca(llvmType, getNameForLlvm(id));
         llvmBuilder.CreateStore(promo.getLlvmVal().val, llvmVal.ref);
     }
+    llvmVal.lifetimeInfo.nestLevel = symbolTable->currNestLevel();
 
     return NodeVal(codeLoc, llvmVal);
 }
@@ -369,6 +371,8 @@ bool Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, c
         LlvmVal varLlvmVal(callable.getArgType(i));
         varLlvmVal.ref = llvmAlloca;
         varLlvmVal.lifetimeInfo.noDrop = callable.getArgNoDrop(i);
+        varLlvmVal.lifetimeInfo.nestLevel = symbolTable->currNestLevel();
+
         NodeVal varNodeVal(args.getChild(i).getCodeLoc(), varLlvmVal);
 
         SymbolTable::VarEntry varEntry;

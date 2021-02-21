@@ -70,6 +70,7 @@ public:
 
     struct VarEntry {
         NodeVal var;
+        // TODO! remove
         bool isInvokeArg = false;
     };
 
@@ -144,6 +145,7 @@ public:
     const NodeVal* getDropFunc(TypeTable::Id ty);
 
     bool inGlobalScope() const;
+    LifetimeInfo::NestLevel currNestLevel() const;
     Block getLastBlock() const;
     std::optional<Block> getBlock(NamePool::Id name) const;
 
