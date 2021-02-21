@@ -86,9 +86,6 @@ protected:
     bool checkNoArgNameDuplicates(const NodeVal &nodeArgs, const std::vector<NamePool::Id> &argNames, bool orError);
 
 private:
-    NodeVal dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty);
-    NodeVal dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
-
     NodeVal processAndCheckIsType(const NodeVal &node);
     NodeVal processAndCheckHasType(const NodeVal &node);
     NodeVal processWithEscape(const NodeVal &node, EscapeScore amount = 1);
@@ -121,8 +118,10 @@ private:
     bool applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &node);
     bool applyTupleMemb(TypeTable::Tuple &tup, const NodeVal &node);
     NodeVal implicitCast(const NodeVal &node, TypeTable::Id ty);
-    bool shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id dstTypeId) const;
     bool implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly);
+    bool shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id dstTypeId) const;
+    NodeVal dispatchCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty);
+    NodeVal dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
     bool argsFitFuncCall(const std::vector<NodeVal> &args, const TypeTable::Callable &callable, bool allowImplicitCasts);
     NodeVal loadUndecidedCallable(const NodeVal &node, const NodeVal &val);
 
