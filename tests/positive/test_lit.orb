@@ -1,7 +1,7 @@
-import "util/io.orb";
-
 sym (glob 111:i8);
 sym (hello "HELLO");
+
+import "util/io.orb";
 
 fnc main () () {
     println_i32 100;

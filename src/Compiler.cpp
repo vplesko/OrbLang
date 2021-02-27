@@ -410,6 +410,7 @@ bool Compiler::performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, cons
 bool Compiler::performRet(CodeLoc codeLoc) {
     if (!callDropFuncsCurrCallable(codeLoc)) return false;
 
+    // Processor already checked we are in local scope
     llvmBuilder.CreateRetVoid();
 
     return true;
@@ -421,6 +422,7 @@ bool Compiler::performRet(CodeLoc codeLoc, const NodeVal &node) {
     NodeVal promo = promoteIfEvalValAndCheckIsLlvmVal(node, true);
     if (promo.isInvalid()) return false;
 
+    // Processor already checked we are in local scope
     llvmBuilder.CreateRet(promo.getLlvmVal().val);
 
     return true;
@@ -943,7 +945,7 @@ llvm::Constant* Compiler::getLlvmConstB(bool val) {
 }
 
 llvm::Constant* Compiler::makeLlvmConstString(const std::string &str) {
-    return llvmBuilder.CreateGlobalStringPtr(str, "str_lit");
+    return llvmBuilder.CreateGlobalStringPtr(str, "str_lit", 0, llvmModule.get());
 }
 
 llvm::FunctionType* Compiler::makeLlvmFunctionType(TypeTable::Id typeId) {
