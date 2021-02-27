@@ -250,7 +250,14 @@ NodeVal Processor::processSym(const NodeVal &node) {
             return NodeVal();
         }
         optional<TypeTable::Id> optType;
-        if (pair.second.has_value()) optType = pair.second.value().getEvalVal().ty;
+        if (pair.second.has_value()) {
+            optType = pair.second.value().getEvalVal().ty;
+            if (typeTable->worksAsDataType(optType.value()) &&
+                !typeTable->extractDataType(optType.value())->defined) {
+                msgs->errorUnknown(nodePair.getCodeLoc());
+                return NodeVal();
+            }
+        }
 
         bool hasType = optType.has_value();
 
