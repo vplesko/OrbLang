@@ -135,7 +135,7 @@ data
 	first declares, second defines a data type
 	name is id, membs is list of a:t
 	must have at least one member
-	global scope only
+	global only
 
 // TODO return the created func
 fnc
@@ -145,7 +145,7 @@ fnc
 	type is ret type or no ret if it's ()
 	fnc has its own scope, goes through body
 	if retting, expects ret
-	global scope only
+	global only
 
 // TODO return the created macro
 mac
@@ -155,7 +155,7 @@ mac
 	args is list of args as names
 	invoked not evaluating its args, invocations repeteadly resolved until no longer macro invocation, after code processed normally
 	when invoked, replaces invoke node with subst, but appearances of any arg replaced with passed node
-	global scope only
+	global only
 
 ret
 	ret OR ret val

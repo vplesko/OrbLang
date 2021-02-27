@@ -91,7 +91,7 @@ NodeVal Processor::processNonLeaf(const NodeVal &node, bool topmost) {
             case Keyword::PASS:
                 return processPass(node);
             case Keyword::CUSTOM:
-                return processCustom(node);
+                return processCustom(node, starting);
             case Keyword::DATA:
                 return processData(node, starting);
             case Keyword::FNC:
@@ -532,14 +532,20 @@ NodeVal Processor::processPass(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
-NodeVal Processor::processCustom(const NodeVal &node) {
-    if (!checkInGlobalScope(node.getCodeLoc(), true)) return NodeVal();
+NodeVal Processor::processCustom(const NodeVal &node, const NodeVal &starting) {
     if (!checkExactlyChildren(node, 3, true)) return NodeVal();
+
+    optional<bool> attrGlobal = getAttributeForBool(starting, "global");
+    if (!attrGlobal.has_value()) return NodeVal();
+
+    if (!attrGlobal.value() && !checkInGlobalScope(node.getCodeLoc(), true)) {
+        return NodeVal();
+    }
 
     NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(1));
     if (nodeName.isInvalid()) return NodeVal();
     NamePool::Id name = nodeName.getEvalVal().id;
-    if (!symbolTable->nameAvailable(name, namePool, typeTable)) {
+    if (!symbolTable->nameAvailable(name, namePool, typeTable, true)) {
         msgs->errorUnknown(nodeName.getCodeLoc());
         return NodeVal();
     }
