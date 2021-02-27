@@ -93,7 +93,7 @@ NodeVal Processor::processNonLeaf(const NodeVal &node, bool topmost) {
             case Keyword::CUSTOM:
                 return processCustom(node);
             case Keyword::DATA:
-                return processData(node);
+                return processData(node, starting);
             case Keyword::FNC:
                 return processFnc(node, starting);
             case Keyword::RET:
@@ -554,9 +554,15 @@ NodeVal Processor::processCustom(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
-NodeVal Processor::processData(const NodeVal &node) {
-    if (!checkInGlobalScope(node.getCodeLoc(), true)) return NodeVal();
+NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
     if (!checkBetweenChildren(node, 2, 3, true)) return NodeVal();
+
+    optional<bool> attrGlobal = getAttributeForBool(starting, "global");
+    if (!attrGlobal.has_value()) return NodeVal();
+
+    if (!attrGlobal.value() && !checkInGlobalScope(node.getCodeLoc(), true)) {
+        return NodeVal();
+    }
 
     bool definition = node.getChildrenCnt() == 3;
 
@@ -566,7 +572,7 @@ NodeVal Processor::processData(const NodeVal &node) {
     NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(1));
     if (nodeName.isInvalid()) return NodeVal();
     dataType.name = nodeName.getEvalVal().id;
-    if (!symbolTable->nameAvailable(dataType.name, namePool, typeTable)) {
+    if (!symbolTable->nameAvailable(dataType.name, namePool, typeTable, true)) {
         if (optional<TypeTable::Id> oldTy = typeTable->getTypeId(dataType.name);
             !(oldTy.has_value() && typeTable->isDataType(oldTy.value()))) {
             msgs->errorUnknown(nodeName.getCodeLoc());
@@ -623,10 +629,10 @@ NodeVal Processor::processData(const NodeVal &node) {
             return NodeVal();
         }
 
-        optional<NodeVal> dropAttr = getAttribute(nodeMembs, "drop");
-        if (dropAttr.has_value()) {
-            if (!checkIsDropFuncType(dropAttr.value(), typeIdOpt.value(), true)) return NodeVal();
-            symbolTable->registerDropFunc(typeIdOpt.value(), dropAttr.value());
+        optional<NodeVal> attrDrop = getAttribute(nodeMembs, "drop");
+        if (attrDrop.has_value()) {
+            if (!checkIsDropFuncType(attrDrop.value(), typeIdOpt.value(), true)) return NodeVal();
+            symbolTable->registerDropFunc(typeIdOpt.value(), attrDrop.value());
         }
     }
 
@@ -795,10 +801,10 @@ NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
 
     // fnc
     {
-        optional<bool> globalOpt = getAttributeForBool(starting, "global");
-        if (!globalOpt.has_value()) return NodeVal();
+        optional<bool> attrGlobal = getAttributeForBool(starting, "global");
+        if (!attrGlobal.has_value()) return NodeVal();
 
-        if (!globalOpt.value() && !checkInGlobalScope(node.getCodeLoc(), true)) {
+        if (!attrGlobal.value() && !checkInGlobalScope(node.getCodeLoc(), true)) {
             return NodeVal();
         }
     }
@@ -820,19 +826,19 @@ NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
             return NodeVal();
         }
 
-        optional<bool> noNameMangleOpt = getAttributeForBool(nodeName, "noNameMangle");
-        if (!noNameMangleOpt.has_value()) return NodeVal();
+        optional<bool> attrNoNameMangle = getAttributeForBool(nodeName, "noNameMangle");
+        if (!attrNoNameMangle.has_value()) return NodeVal();
         isMain = isMeaningful(name, Meaningful::MAIN);
-        noNameMangle = noNameMangleOpt.value();
+        noNameMangle = attrNoNameMangle.value();
 
-        optional<optional<bool>> evaluableOptOpt = getAttributeForBoolOrNotPresent(nodeName, "evaluable");
-        if (!evaluableOptOpt.has_value()) return NodeVal();
-        if (evaluableOptOpt.value().has_value()) evaluable = evaluableOptOpt.value().value();
+        optional<optional<bool>> attrEvaluableOpt = getAttributeForBoolOrNotPresent(nodeName, "evaluable");
+        if (!attrEvaluableOpt.has_value()) return NodeVal();
+        if (attrEvaluableOpt.value().has_value()) evaluable = attrEvaluableOpt.value().value();
         else evaluable = this == evaluator;
 
-        optional<optional<bool>> compilableOptOpt = getAttributeForBoolOrNotPresent(nodeName, "compilable");
-        if (!compilableOptOpt.has_value()) return NodeVal();
-        if (compilableOptOpt.value().has_value()) compilable = compilableOptOpt.value().value();
+        optional<optional<bool>> attrCompilableOpt = getAttributeForBoolOrNotPresent(nodeName, "compilable");
+        if (!attrCompilableOpt.has_value()) return NodeVal();
+        if (attrCompilableOpt.value().has_value()) compilable = attrCompilableOpt.value().value();
         else compilable = this == compiler;
 
         if (!evaluable && !compilable) {
@@ -865,12 +871,12 @@ NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
             return NodeVal();
         }
 
-        optional<bool> noDropOpt = getAttributeForBool(arg.first, "noDrop");
-        if (!noDropOpt.has_value()) return NodeVal();
+        optional<bool> attrNoDrop = getAttributeForBool(arg.first, "noDrop");
+        if (!attrNoDrop.has_value()) return NodeVal();
 
         argNames.push_back(argId);
         argTypes.push_back(arg.second.value().getEvalVal().ty);
-        argNoDrops.push_back(noDropOpt.value());
+        argNoDrops.push_back(attrNoDrop.value());
     }
 
     // check no arg name duplicates
@@ -974,10 +980,10 @@ NodeVal Processor::processMac(const NodeVal &node, const NodeVal &starting) {
 
     // mac
     {
-        optional<bool> globalOpt = getAttributeForBool(starting, "global");
-        if (!globalOpt.has_value()) return NodeVal();
+        optional<bool> attrGlobal = getAttributeForBool(starting, "global");
+        if (!attrGlobal.has_value()) return NodeVal();
 
-        if (!globalOpt.value() && !checkInGlobalScope(node.getCodeLoc(), true)) {
+        if (!attrGlobal.value() && !checkInGlobalScope(node.getCodeLoc(), true)) {
             return NodeVal();
         }
     }
@@ -2131,11 +2137,11 @@ NodeVal Processor::processFncType(const NodeVal &node) {
         NodeVal argTy = processAndCheckIsType(nodeArg);
         if (argTy.isInvalid()) return NodeVal();
 
-        optional<bool> noDropOpt = getAttributeForBool(argTy, "noDrop");
-        if (!noDropOpt.has_value()) return NodeVal();
+        optional<bool> attrNoDrop = getAttributeForBool(argTy, "noDrop");
+        if (!attrNoDrop.has_value()) return NodeVal();
 
         argTypes.push_back(argTy.getEvalVal().ty);
-        argNoDrops.push_back(noDropOpt.value());
+        argNoDrops.push_back(attrNoDrop.value());
     }
 
     // ret type

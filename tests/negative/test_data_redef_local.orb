@@ -1,0 +1,11 @@
+data Foo {
+    x:i32
+    y:i32
+};
+
+fnc main () () {
+    data::global Foo {
+        x:i32
+        y:i32
+    };
+};

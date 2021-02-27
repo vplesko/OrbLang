@@ -121,6 +121,7 @@ pass
 	if name given, exits that block, otherwise innermost enclosing block
 	has to be retting block
 
+// TODO return the created type
 custom
 	custom name t
 	declares a custom type
@@ -128,6 +129,7 @@ custom
 	same type as t, but restricts impl cast
 	global only
 
+// TODO return the created type
 data
 	data name OR data name membs
 	first declares, second defines a data type
@@ -135,6 +137,7 @@ data
 	must have at least one member
 	global scope only
 
+// TODO return the created func
 fnc
 	fnc argTypes type OR fnc name args type OR fnc name args type body
 	first makes a type, second declares, third defines a function
@@ -144,6 +147,7 @@ fnc
 	if retting, expects ret
 	global scope only
 
+// TODO return the created macro
 mac
 	mac argNum OR mac name args subst
 	first makes a type, second defines a macro
