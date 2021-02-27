@@ -135,7 +135,6 @@ data
 	must have at least one member
 	global only
 
-// TODO return the created func
 fnc
 	fnc argTypes type OR fnc name args type OR fnc name args type body
 	first makes a type, second declares, third defines a function
@@ -145,7 +144,6 @@ fnc
 	if retting, expects ret
 	global only
 
-// TODO return the created macro
 mac
 	mac argNum OR mac name args subst
 	first makes a type, second defines a macro

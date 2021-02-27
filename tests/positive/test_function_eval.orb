@@ -180,8 +180,9 @@ fnc main () () {
     };
 
     block {
-        eval (fnc::global globInLocal (x:i32) i32 { ret x; });
+        println_i32 ((eval (fnc::global globInLocal (x:i32) i32 { ret x; })) 400);
 
-        println_i32 (globInLocal 400);
+        sym (x 401);
+        println_i32 ((eval (fnc::global globInLocalCanCompNotEval::((evaluable false) (compilable true)) (x:i32) i32 { ret x; })) x);
     };
 };

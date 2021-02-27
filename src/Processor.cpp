@@ -973,7 +973,11 @@ NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
         }
     }
 
-    return NodeVal(node.getCodeLoc());
+    if (checkIsEvalFunc(node.getCodeLoc(), *symbVal, false)) {
+        return evaluator->performLoad(node.getCodeLoc(), *symbVal);
+    } else {
+        return compiler->performLoad(node.getCodeLoc(), *symbVal);
+    }
 }
 
 NodeVal Processor::processMac(const NodeVal &node, const NodeVal &starting) {
@@ -1107,7 +1111,7 @@ NodeVal Processor::processMac(const NodeVal &node, const NodeVal &starting) {
 
         if (!evaluator->performMacroDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();
 
-        return NodeVal(node.getCodeLoc());
+        return evaluator->performLoad(node.getCodeLoc(), *symbVal);
     } else {
         return promoteType(node.getCodeLoc(), type);
     }

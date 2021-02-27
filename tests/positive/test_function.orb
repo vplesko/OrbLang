@@ -105,6 +105,8 @@ fnc canEvalNotComp::((evaluable true) (compilable false)) (x:i32) i32 {
     ret x;
 };
 
+((fnc canEvalDummy::evaluable (x:i32) () {}) -1);
+
 fnc main () () {
     block {
         println_i32 (f0);
@@ -178,10 +180,10 @@ fnc main () () {
     };
 
     block {
-        fnc::global globInLocal (x:i32) i32;
-
-        println_i32 (globInLocal 400);
-
+        println_i32 ((fnc::global globInLocal (x:i32) i32) 400);
         fnc::global globInLocal (x:i32) i32 { ret x; };
+
+        sym (x -1);
+        canEvalDummy x;
     };
 };
