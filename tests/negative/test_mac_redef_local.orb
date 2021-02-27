@@ -1,0 +1,9 @@
+mac foo () {
+    ret ();
+};
+
+fnc main () () {
+    mac::global foo () {
+        ret ();
+    };
+};

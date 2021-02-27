@@ -176,4 +176,12 @@ fnc main () () {
 
         println_i32 (canEvalNotComp 305);
     };
+
+    block {
+        fnc::global globInLocal (x:i32) i32;
+
+        println_i32 (globInLocal 400);
+
+        fnc::global globInLocal (x:i32) i32 { ret x; };
+    };
 };

@@ -95,6 +95,7 @@ public:
 private:
     friend class BlockControl;
 
+    // TODO optimize by keeping all vals (including elems in EvalVals) in a single vector (this makes for fewer allocations)
     struct BlockInternal {
         Block block;
         // Guarantees pointer stability of values.
@@ -119,14 +120,16 @@ private:
 
     const BlockInternal* getLastBlockInternal() const;
     BlockInternal* getLastBlockInternal();
+    const BlockInternal* getGlobalBlockInternal() const;
+    BlockInternal* getGlobalBlockInternal();
 
     void collectVarsInRevOrder(const BlockInternal *block, std::vector<VarEntry*> &v) const;
 
 public:
     SymbolTable();
 
-    void addVar(NamePool::Id name, NodeVal val);
-    void addVar(NamePool::Id name, VarEntry var);
+    void addVar(NamePool::Id name, NodeVal val, bool forGlobal = false);
+    void addVar(NamePool::Id name, VarEntry var, bool forGlobal = false);
     const VarEntry* getVar(NamePool::Id name) const;
     VarEntry* getVar(NamePool::Id name);
 
@@ -155,5 +158,5 @@ public:
 
     bool isVarName(NamePool::Id name) const { return getVar(name) != nullptr; }
 
-    bool nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable) const;
+    bool nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable, bool forGlobal = false) const;
 };

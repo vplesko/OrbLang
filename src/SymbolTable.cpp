@@ -71,17 +71,17 @@ void SymbolTable::endBlock() {
     }
 }
 
-void SymbolTable::addVar(NamePool::Id name, NodeVal val) {
+void SymbolTable::addVar(NamePool::Id name, NodeVal val, bool forGlobal) {
     VarEntry varEntry;
     varEntry.var = move(val);
-    addVar(name, move(varEntry));
+    addVar(name, move(varEntry), forGlobal);
 }
 
-void SymbolTable::addVar(NamePool::Id name, VarEntry var) {
-    BlockInternal *lastBlock = getLastBlockInternal();
+void SymbolTable::addVar(NamePool::Id name, VarEntry var, bool forGlobal) {
+    BlockInternal *block = forGlobal ? getGlobalBlockInternal() : getLastBlockInternal();
 
-    auto loc = lastBlock->vars.insert(make_pair(name, move(var)));
-    lastBlock->varsInOrder.push_back(&loc.first->second);
+    auto loc = block->vars.insert(make_pair(name, move(var)));
+    block->varsInOrder.push_back(&loc.first->second);
 }
 
 const SymbolTable::VarEntry* SymbolTable::getVar(NamePool::Id name) const {
@@ -254,6 +254,14 @@ SymbolTable::BlockInternal* SymbolTable::getLastBlockInternal() {
     }
 }
 
+const SymbolTable::BlockInternal* SymbolTable::getGlobalBlockInternal() const {
+    return &globalBlockChain.front();
+}
+
+SymbolTable::BlockInternal* SymbolTable::getGlobalBlockInternal() {
+    return &globalBlockChain.front();
+}
+
 SymbolTable::Block SymbolTable::getLastBlock() const {
     return getLastBlockInternal()->block;
 }
@@ -328,9 +336,9 @@ vector<SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderCurrCallable() cons
     return ret;
 }
 
-bool SymbolTable::nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable) const {
+bool SymbolTable::nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable, bool forGlobal) const {
     if (isReserved(name) || typeTable->isType(name)) return false;
 
-    const BlockInternal *last = getLastBlockInternal();
-    return last->vars.find(name) == last->vars.end();
+    const BlockInternal *block = forGlobal ? getGlobalBlockInternal() : getLastBlockInternal();
+    return block->vars.find(name) == block->vars.end();
 }

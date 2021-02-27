@@ -165,4 +165,10 @@ fnc main () () {
 
         println_i32 (. (pe {foo bar 308}) 2);
     };
+
+    block {
+        mac::global globInLocal (x) { ret x; };
+
+        println_i32 (globInLocal 400);
+    };
 };

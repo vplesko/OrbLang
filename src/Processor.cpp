@@ -95,11 +95,11 @@ NodeVal Processor::processNonLeaf(const NodeVal &node, bool topmost) {
             case Keyword::DATA:
                 return processData(node);
             case Keyword::FNC:
-                return processFnc(node);
+                return processFnc(node, starting);
             case Keyword::RET:
                 return processRet(node);
             case Keyword::MAC:
-                return processMac(node);
+                return processMac(node, starting);
             case Keyword::EVAL:
                 return processEval(node);
             case Keyword::TYPE_OF:
@@ -778,7 +778,7 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
     return ret;
 }
 
-NodeVal Processor::processFnc(const NodeVal &node) {
+NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
     if (!checkBetweenChildren(node, 3, 5, true)) return NodeVal();
 
     bool isType = node.getChildrenCnt() == 3;
@@ -787,15 +787,21 @@ NodeVal Processor::processFnc(const NodeVal &node) {
 
     if (isType) return processFncType(node);
 
-    if (!checkInGlobalScope(node.getCodeLoc(), true)) {
-        return NodeVal();
-    }
-
     // fnc name args ret OR fnc name args ret body
     size_t indName = 1;
     size_t indArgs = 2;
     size_t indRet = 3;
     size_t indBody = isDef ? 4 : 0;
+
+    // fnc
+    {
+        optional<bool> globalOpt = getAttributeForBool(starting, "global");
+        if (!globalOpt.has_value()) return NodeVal();
+
+        if (!globalOpt.value() && !checkInGlobalScope(node.getCodeLoc(), true)) {
+            return NodeVal();
+        }
+    }
 
     // name
     CodeLoc nameCodeLoc;
@@ -808,7 +814,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         if (nodeName.isInvalid()) return NodeVal();
         nameCodeLoc = nodeName.getCodeLoc();
         name = nodeName.getEvalVal().id;
-        if (!symbolTable->nameAvailable(name, namePool, typeTable) &&
+        if (!symbolTable->nameAvailable(name, namePool, typeTable, true) &&
             !symbolTable->isFuncName(name)) {
             msgs->errorFuncNameTaken(nameCodeLoc, name);
             return NodeVal();
@@ -922,7 +928,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         UndecidedCallableVal undecidedVal;
         undecidedVal.isFunc = true;
         undecidedVal.name = name;
-        symbolTable->addVar(name, NodeVal(node.getCodeLoc(), undecidedVal));
+        symbolTable->addVar(name, NodeVal(node.getCodeLoc(), undecidedVal), true);
     }
 
     // funcVal is passed by mutable reference, is needed later
@@ -951,7 +957,7 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
-NodeVal Processor::processMac(const NodeVal &node) {
+NodeVal Processor::processMac(const NodeVal &node, const NodeVal &starting) {
     if (!checkExactlyChildren(node, 2, false) && !checkExactlyChildren(node, 4, true)) {
         return NodeVal();
     }
@@ -961,14 +967,20 @@ NodeVal Processor::processMac(const NodeVal &node) {
 
     if (isType) return processMacType(node);
 
-    if (isDef && !checkInGlobalScope(node.getCodeLoc(), true)) {
-        return NodeVal();
-    }
-
     // mac args OR mac name args body
     size_t indName = isDef ? 1 : 0;
     size_t indArgs = isType ? 1 : 2;
     size_t indBody = isDef ? 3 : 0;
+
+    // mac
+    {
+        optional<bool> globalOpt = getAttributeForBool(starting, "global");
+        if (!globalOpt.has_value()) return NodeVal();
+
+        if (!globalOpt.value() && !checkInGlobalScope(node.getCodeLoc(), true)) {
+            return NodeVal();
+        }
+    }
 
     // name
     CodeLoc nameCodeLoc;
@@ -978,7 +990,7 @@ NodeVal Processor::processMac(const NodeVal &node) {
         if (nodeName.isInvalid()) return NodeVal();
         nameCodeLoc = nodeName.getCodeLoc();
         name = nodeName.getEvalVal().id;
-        if (!symbolTable->nameAvailable(name, namePool, typeTable) &&
+        if (!symbolTable->nameAvailable(name, namePool, typeTable, true) &&
             !symbolTable->isMacroName(name)) {
             msgs->errorMacroNameTaken(nameCodeLoc, name);
             return NodeVal();
@@ -1065,7 +1077,7 @@ NodeVal Processor::processMac(const NodeVal &node) {
             UndecidedCallableVal undecidedVal;
             undecidedVal.isFunc = false;
             undecidedVal.name = name;
-            symbolTable->addVar(name, NodeVal(node.getCodeLoc(), undecidedVal));
+            symbolTable->addVar(name, NodeVal(node.getCodeLoc(), undecidedVal), true);
         }
 
         MacroValue *symbVal = symbolTable->registerMacro(macroVal, typeTable);
