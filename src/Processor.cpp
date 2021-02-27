@@ -564,7 +564,7 @@ NodeVal Processor::processCustom(const NodeVal &node, const NodeVal &starting) {
         return NodeVal();
     }
 
-    return NodeVal(node.getCodeLoc());
+    return promoteType(node.getCodeLoc(), typeId.value());
 }
 
 NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
@@ -636,7 +636,7 @@ NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
             dataType.members.push_back(membEntry);
         }
 
-        optional<TypeTable::Id> typeIdOpt = typeTable->addDataType(dataType);
+        typeIdOpt = typeTable->addDataType(dataType);
         if (!typeIdOpt.has_value()) {
             msgs->errorUnknown(node.getCodeLoc());
             return NodeVal();
@@ -649,7 +649,7 @@ NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
         }
     }
 
-    return NodeVal(node.getCodeLoc());
+    return promoteType(node.getCodeLoc(), typeIdOpt.value());
 }
 
 NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
@@ -1109,9 +1109,7 @@ NodeVal Processor::processMac(const NodeVal &node, const NodeVal &starting) {
 
         return NodeVal(node.getCodeLoc());
     } else {
-        EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
-        evalVal.ty = type;
-        return NodeVal(node.getCodeLoc(), move(evalVal));
+        return promoteType(node.getCodeLoc(), type);
     }
 }
 
@@ -1277,12 +1275,11 @@ NodeVal Processor::processTypeOf(const NodeVal &node) {
     if (operand.isInvalid()) return NodeVal();
     if (!checkHasType(operand, true)) return NodeVal();
 
-    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
-    evalVal.ty = operand.getType().value();
+    TypeTable::Id ty = operand.getType().value();
 
     if (!callDropFuncNonRef(move(operand))) return NodeVal();
 
-    return NodeVal(node.getCodeLoc(), move(evalVal));
+    return promoteType(node.getCodeLoc(), ty);
 }
 
 NodeVal Processor::processLenOf(const NodeVal &node) {
@@ -1454,6 +1451,12 @@ NodeVal Processor::promoteBool(CodeLoc codeLoc, bool b) const {
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_BOOL), typeTable);
     evalVal.b = b;
     return NodeVal(codeLoc, evalVal);
+}
+
+NodeVal Processor::promoteType(CodeLoc codeLoc, TypeTable::Id ty) const {
+    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
+    evalVal.ty = ty;
+    return NodeVal(codeLoc, move(evalVal));
 }
 
 NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
@@ -2187,9 +2190,7 @@ NodeVal Processor::processFncType(const NodeVal &node) {
         type = typeOpt.value();
     }
 
-    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
-    evalVal.ty = type;
-    return NodeVal(node.getCodeLoc(), move(evalVal));
+    return promoteType(node.getCodeLoc(), type);
 }
 
 NodeVal Processor::processMacType(const NodeVal &node) {
@@ -2226,9 +2227,7 @@ NodeVal Processor::processMacType(const NodeVal &node) {
         type = typeOpt.value();
     }
 
-    EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
-    evalVal.ty = type;
-    return NodeVal(node.getCodeLoc(), move(evalVal));
+    return promoteType(node.getCodeLoc(), type);
 }
 
 NodeVal Processor::processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) {

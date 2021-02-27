@@ -120,6 +120,7 @@ protected:
     std::optional<std::optional<bool>> getAttributeForBoolOrNotPresent(const NodeVal &node, const std::string &attrStrName);
 private:
     NodeVal promoteBool(CodeLoc codeLoc, bool b) const;
+    NodeVal promoteType(CodeLoc codeLoc, TypeTable::Id ty) const;
     NodeVal promoteLiteralVal(const NodeVal &node);
     bool canBeTypeDescrDecor(const NodeVal &node);
     bool applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &node);

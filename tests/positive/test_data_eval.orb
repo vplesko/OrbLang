@@ -81,8 +81,7 @@ fnc main () () {
         println_i32 (eval (. (makePoint3 105 -1 -1) x));
     };
     block {
-        data::global GlobInLocal { v:i32 };
-        eval (sym x:GlobInLocal);
+        eval (sym x:(data::global GlobInLocal { v:i32 }));
         = (. x v) 106;
         println_i32 (. x v);
     };

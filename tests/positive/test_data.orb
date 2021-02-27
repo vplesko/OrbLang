@@ -87,8 +87,7 @@ fnc main () () {
     };
     block {
         data::global GlobInLocal;
-        data::global GlobInLocal { v:i32 };
-        sym x:GlobInLocal;
+        sym x:(data::global GlobInLocal { v:i32 });
         = (. x v) 107;
         println_i32 (. x v);
     };

@@ -162,9 +162,8 @@ fnc main () () {
         eval (sym (m:myI64Cn (cast myI64Cn l)));
         println_i32 (cast i32 m);
 
-        custom::global GlobalInLocal i32;
-        sym n:GlobalInLocal;
-        = n (cast (GlobalInLocal) 515);
+        sym n:(custom::global GlobalInLocal i32);
+        = n (cast (typeOf n) 515);
         println_i32 (cast i32 n);
     };
 
