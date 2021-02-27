@@ -247,3 +247,23 @@ mac make (ty::preprocess pair rest::variadic) {
 
     ret \(block ,ty ,innerCode);
 };
+
+mac lam (body) {
+    ret \(fnc::global ,(genSym) () () ,body);
+};
+
+mac lam (retTy::preprocess body) {
+    ret \(fnc::global ,(genSym) () ,retTy ,body);
+};
+
+mac lam (args retTy::preprocess body) {
+    ret \(fnc::global ,(genSym) ,args ,retTy ,body);
+};
+
+mac pat (body) {
+    ret \(mac::global ,(genSym) () ,body);
+};
+
+mac pat (args body) {
+    ret \(mac::global ,(genSym) ,args ,body);
+};

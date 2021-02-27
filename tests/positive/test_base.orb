@@ -200,4 +200,13 @@ fnc main () () {
         = a (make Foo (y 802));
         println_i32 (. a y);
     };
+
+    block {
+        (lam { println_i32 900; });
+        println_i32 ((lam i32 { ret 901; }));
+        println_i32 ((lam (x:i32) i32 { ret x; }) 902);
+
+        (pat { ret \(println_i32 903); });
+        (pat (x) { ret \(println_i32 ,x); }) 904;
+    };
 };
