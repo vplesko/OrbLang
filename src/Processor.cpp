@@ -802,8 +802,8 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     NamePool::Id name;
     bool noNameMangle;
     bool isMain;
-    bool evaluable;
-    if (isDecl || isDef) {
+    bool evaluable, compilable;
+    {
         NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
         nameCodeLoc = nodeName.getCodeLoc();
@@ -819,9 +819,20 @@ NodeVal Processor::processFnc(const NodeVal &node) {
         isMain = isMeaningful(name, Meaningful::MAIN);
         noNameMangle = noNameMangleOpt.value();
 
-        optional<bool> evaluableOpt = getAttributeForBool(nodeName, "evaluable");
-        if (!evaluableOpt.has_value()) return NodeVal();
-        evaluable = evaluableOpt.value();
+        optional<optional<bool>> evaluableOptOpt = getAttributeForBoolOrNotPresent(nodeName, "evaluable");
+        if (!evaluableOptOpt.has_value()) return NodeVal();
+        if (evaluableOptOpt.value().has_value()) evaluable = evaluableOptOpt.value().value();
+        else evaluable = this == evaluator;
+
+        optional<optional<bool>> compilableOptOpt = getAttributeForBoolOrNotPresent(nodeName, "compilable");
+        if (!compilableOptOpt.has_value()) return NodeVal();
+        if (compilableOptOpt.value().has_value()) compilable = compilableOptOpt.value().value();
+        else compilable = this == compiler;
+
+        if (!evaluable && !compilable) {
+            msgs->errorUnknown(node.getCodeLoc());
+            return NodeVal();
+        }
     }
 
     // arguments
@@ -915,9 +926,11 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     }
 
     // funcVal is passed by mutable reference, is needed later
-    if (!performFunctionDeclaration(node.getCodeLoc(), funcVal)) return NodeVal();
-    if (evaluable && this != evaluator) {
+    if (evaluable) {
         if (!evaluator->performFunctionDeclaration(node.getCodeLoc(), funcVal)) return NodeVal();
+    }
+    if (compilable) {
+        if (!compiler->performFunctionDeclaration(node.getCodeLoc(), funcVal)) return NodeVal();
     }
 
     FuncValue *symbVal = symbolTable->registerFunc(funcVal);
@@ -927,9 +940,11 @@ NodeVal Processor::processFnc(const NodeVal &node) {
     }
 
     if (isDef) {
-        if (!performFunctionDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();
-        if (evaluable && this != evaluator) {
+        if (evaluable) {
             if (!evaluator->performFunctionDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();
+        }
+        if (compilable) {
+            if (!compiler->performFunctionDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, *symbVal)) return NodeVal();
         }
     }
 
@@ -1383,15 +1398,25 @@ optional<NodeVal> Processor::getAttribute(const NodeVal &node, const string &att
 }
 
 optional<bool> Processor::getAttributeForBool(const NodeVal &node, NamePool::Id attrName) {
+    optional<optional<bool>> attr = getAttributeForBoolOrNotPresent(node, attrName);
+    if (!attr.has_value()) return nullopt;
+    return attr.value().has_value() && attr.value().value();
+}
+
+optional<bool> Processor::getAttributeForBool(const NodeVal &node, const std::string &attrStrName) {
+    return getAttributeForBool(node, namePool->add(attrStrName));
+}
+
+optional<optional<bool>> Processor::getAttributeForBoolOrNotPresent(const NodeVal &node, NamePool::Id attrName) {
     optional<NodeVal> attr = getAttribute(node, attrName);
-    if (!attr.has_value()) return false;
+    if (!attr.has_value()) return optional<bool>();
     if (!checkIsEvalVal(attr.value(), true)) return nullopt;
     if (!checkIsBool(attr.value(), true)) return nullopt;
     return attr.value().getEvalVal().b;
 }
 
-optional<bool> Processor::getAttributeForBool(const NodeVal &node, const std::string &attrStrName) {
-    return getAttributeForBool(node, namePool->add(attrStrName));
+optional<optional<bool>> Processor::getAttributeForBoolOrNotPresent(const NodeVal &node, const std::string &attrStrName) {
+    return getAttributeForBoolOrNotPresent(node, namePool->add(attrStrName));
 }
 
 NodeVal Processor::promoteBool(CodeLoc codeLoc, bool b) const {
@@ -1400,7 +1425,6 @@ NodeVal Processor::promoteBool(CodeLoc codeLoc, bool b) const {
     return NodeVal(codeLoc, evalVal);
 }
 
-// TODO errors on Windows, cannot implicitly cast 0 from i32 to u32?
 NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
     bool isId = false;
 

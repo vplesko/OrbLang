@@ -114,6 +114,10 @@ protected:
     std::optional<bool> getAttributeForBool(const NodeVal &node, NamePool::Id attrName);
     // nullopt on error or attr not eval bool, false if not present, otherwise attribute value
     std::optional<bool> getAttributeForBool(const NodeVal &node, const std::string &attrStrName);
+    // outer optional is nullopt on error, inner is nullopt if not present, bool is attribute value
+    std::optional<std::optional<bool>> getAttributeForBoolOrNotPresent(const NodeVal &node, NamePool::Id attrName);
+    // outer optional is nullopt on error, inner is nullopt if not present, bool is attribute value
+    std::optional<std::optional<bool>> getAttributeForBoolOrNotPresent(const NodeVal &node, const std::string &attrStrName);
 private:
     NodeVal promoteBool(CodeLoc codeLoc, bool b) const;
     NodeVal promoteLiteralVal(const NodeVal &node);

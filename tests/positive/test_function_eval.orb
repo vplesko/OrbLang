@@ -99,6 +99,14 @@ eval (fnc canEval::evaluable (x:i32) i32 {
     ret x;
 });
 
+eval (fnc canComp::compilable (x:i32) i32 {
+    ret x;
+});
+
+eval (fnc canCompNotEval::((evaluable false) (compilable true)) (x:i32) i32 {
+    ret x;
+});
+
 fnc main () () {
     block {
         println_i32 (f0);
@@ -158,10 +166,16 @@ fnc main () () {
     };
 
     block {
+        sym x:i32;
         println_i32 (passthrough 300);
         println_i32 (eval (passthrough 301));
 
         println_i32 (canEval 302);
         println_i32 (eval (canEval 303));
+
+        println_i32 (canComp 304);
+
+        = x 305;
+        println_i32 (canCompNotEval x);
     };
 };

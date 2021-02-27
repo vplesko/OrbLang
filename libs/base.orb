@@ -1,3 +1,5 @@
+# TODO detect errors in invocations
+
 eval (sym (base.-genSymToken 0:u64));
 
 eval (fnc genSym () id {
@@ -238,7 +240,6 @@ mac make (ty::preprocess pair rest::variadic) {
     range i (lenOf pairs) {
         # ensure it's raw
         cast raw (. pairs i);
-        # TODO ensure all pairs have exactly 2 values
 
         = innerCode (+ innerCode \{ (= (. ,inst ,(. pairs i 0)) ,(. pairs i 1)) });
     };

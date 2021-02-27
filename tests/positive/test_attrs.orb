@@ -1,3 +1,5 @@
+# TODO fix test errors on Windows
+
 import "util/io.orb";
 
 eval (fnc foo (x:i32) i32 {

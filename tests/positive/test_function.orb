@@ -96,6 +96,15 @@ fnc canEval::evaluable (x:i32) i32 {
     ret x;
 };
 
+# compilable here has no effect, but test that this works anyway
+fnc canComp::compilable (x:i32) i32 {
+    ret x;
+};
+
+fnc canEvalNotComp::((evaluable true) (compilable false)) (x:i32) i32 {
+    ret x;
+};
+
 fnc main () () {
     block {
         println_i32 (f0);
@@ -161,5 +170,10 @@ fnc main () () {
         = x 302;
         println_i32 (canEval x);
         println_i32 (eval (canEval 303));
+
+        = x 304;
+        println_i32 (canComp x);
+
+        println_i32 (canEvalNotComp 305);
     };
 };
