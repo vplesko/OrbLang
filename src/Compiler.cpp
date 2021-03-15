@@ -12,11 +12,6 @@
 #include "BlockControl.h"
 using namespace std;
 
-struct ComparisonSignal {
-    llvm::BasicBlock *llvmBlock = nullptr;
-    llvm::PHINode *llvmPhi = nullptr;
-};
-
 Compiler::Compiler(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs)
     : Processor(namePool, stringPool, typeTable, symbolTable, msgs), llvmBuilder(llvmContext), llvmBuilderAlloca(llvmContext), targetMachine(nullptr) {
     setCompiler(this);

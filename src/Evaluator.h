@@ -5,6 +5,10 @@
 class Evaluator : public Processor {
     friend class Processor;
 
+    struct ComparisonSignal {
+        bool result = true;
+    };
+
     // TODO put this into an exception?
     std::optional<NodeVal> retVal;
 

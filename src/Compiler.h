@@ -9,6 +9,11 @@
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
 class Compiler : public Processor {
+    struct ComparisonSignal {
+        llvm::BasicBlock *llvmBlock = nullptr;
+        llvm::PHINode *llvmPhi = nullptr;
+    };
+
     llvm::LLVMContext llvmContext;
     llvm::IRBuilder<> llvmBuilder, llvmBuilderAlloca;
     std::unique_ptr<llvm::Module> llvmModule;
