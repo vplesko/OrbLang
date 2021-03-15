@@ -81,6 +81,12 @@ mac foo11 (x::preprocess) {
     ret (typeOf x);
 };
 
+eval (fnc foo12 (f0:Foo f1:Foo) () {
+});
+
+eval (fnc foo13 (f0:Foo::noDrop f1:Foo) () {
+});
+
 eval (foo7 90);
 
 fnc main () () {
@@ -231,6 +237,16 @@ fnc main () () {
         sym (r \(,(foo7 2600)));
         . r 0;
         . r 0;
+    });
+
+    eval (block {
+        sym f0:Foo f1:Foo;
+        = (. f0 x) 2701;
+        = (. f1 x) 2700;
+        foo12 (>> f0) (>> f1);
+        = (. f0 x) 2703;
+        = (. f1 x) 2702;
+        foo13 (>> f0) (>> f1);
     });
 
     printDropVals;
