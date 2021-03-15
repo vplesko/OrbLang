@@ -8,6 +8,7 @@
 #include "CompilationMessages.h"
 #include "Compiler.h"
 #include "Evaluator.h"
+#include "ProgramArgs.h"
 
 class CompilationOrchestrator {
     std::unique_ptr<NamePool> namePool;
@@ -24,9 +25,9 @@ class CompilationOrchestrator {
 public:
     CompilationOrchestrator(std::ostream &out);
 
-    bool parse(const std::vector<std::string> &inputs);
+    bool process(const std::vector<std::string> &inputs);
     void printout() const;
-    bool compile(const std::string &output, bool exe);
+    bool compile(const ProgramArgs &args);
 
     bool isInternalError() const;
 };

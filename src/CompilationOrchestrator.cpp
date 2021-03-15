@@ -232,7 +232,7 @@ ImportTransRes followImport(
     }
 }
 
-bool CompilationOrchestrator::parse(const vector<string> &inputs) {
+bool CompilationOrchestrator::process(const vector<string> &inputs) {
     if (inputs.empty()) return false;
 
     Parser par(stringPool.get(), typeTable.get(), msgs.get());
@@ -306,9 +306,9 @@ void CompilationOrchestrator::printout() const {
     compiler->printout();
 }
 
-bool CompilationOrchestrator::compile(const std::string &output, bool exe) {
-    if (!exe) {
-        return compiler->binary(output);
+bool CompilationOrchestrator::compile(const ProgramArgs &args) {
+    if (args.obj) {
+        return compiler->binary(args.output);
     } else {
         if (!symbolTable->isFuncName(getMeaningfulNameId(Meaningful::MAIN))) {
             msgs->errorNoMain();
@@ -319,7 +319,7 @@ bool CompilationOrchestrator::compile(const std::string &output, bool exe) {
 
         if (!compiler->binary(tempObjName)) return false;
 
-        bool success = buildExecutable(tempObjName, output);
+        bool success = buildExecutable(tempObjName, args.output);
 
         remove(tempObjName.c_str());
         return success;

@@ -227,7 +227,7 @@ optional<bool> Compiler::performBlockBody(CodeLoc codeLoc, SymbolTable::Block bl
     return false;
 }
 
-// TODO if a compiled block has a jump not at the end, llvm will report it instead of this compiler
+// TODO if a compiled block has a jump not at the end, llvm will report it instead of this compiler (eg. two consecutive passes)
 NodeVal Compiler::performBlockTearDown(CodeLoc codeLoc, SymbolTable::Block block, bool success) {
     if (!success) return NodeVal();
 
