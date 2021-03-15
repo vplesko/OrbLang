@@ -359,13 +359,11 @@ NodeVal Evaluator::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper, T
     return nodeEvalVal;
 }
 
-void* Evaluator::performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt) {
-    return new ComparisonSignal;
+ComparisonSignal Evaluator::performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt) {
+    return ComparisonSignal();
 }
 
-optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) {
-    ComparisonSignal *result = (ComparisonSignal*) signal;
-
+optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, ComparisonSignal &signal) {
     if (!checkIsEvalVal(lhs, true) || !checkIsEvalVal(rhs, true)) return nullopt;
 
     TypeTable::Id ty = lhs.getType().value();
@@ -436,134 +434,134 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     switch (op) {
     case Oper::EQ:
         if (isTypeI) {
-            result->result = il.value()==ir.value();
-            return !result->result;
+            signal.result = il.value()==ir.value();
+            return !signal.result;
         } else if (isTypeU) {
-            result->result = ul.value()==ur.value();
-            return !result->result;
+            signal.result = ul.value()==ur.value();
+            return !signal.result;
         } else if (isTypeC) {
-            result->result = cl.value()==cr.value();
-            return !result->result;
+            signal.result = cl.value()==cr.value();
+            return !signal.result;
         } else if (isTypeF) {
-            result->result = fl.value()==fr.value();
-            return !result->result;
+            signal.result = fl.value()==fr.value();
+            return !signal.result;
         } else if (isTypeStr) {
-            result->result = strl.value()==strr.value();
-            return !result->result;
+            signal.result = strl.value()==strr.value();
+            return !signal.result;
         } else if (isTypeAnyP) {
-            result->result = pl==pr;
-            return !result->result;
+            signal.result = pl==pr;
+            return !signal.result;
         } else if (isTypeB) {
-            result->result = bl.value()==br.value();
-            return !result->result;
+            signal.result = bl.value()==br.value();
+            return !signal.result;
         } else if (isTypeId) {
-            result->result = idl.value()==idr.value();
-            return !result->result;
+            signal.result = idl.value()==idr.value();
+            return !signal.result;
         } else if (isTypeTy) {
-            result->result = tyl.value()==tyr.value();
-            return !result->result;
+            signal.result = tyl.value()==tyr.value();
+            return !signal.result;
         } else if (isTypeCallF) {
-            result->result = callfl.value()==callfr.value();
-            return !result->result;            
+            signal.result = callfl.value()==callfr.value();
+            return !signal.result;            
         } else if (isTypeCallM) {
-            result->result = callml.value()==callmr.value();
-            return !result->result;            
+            signal.result = callml.value()==callmr.value();
+            return !signal.result;            
         }
         break;
     case Oper::NE:
         if (isTypeI) {
-            result->result = il.value()!=ir.value();
-            return !result->result;
+            signal.result = il.value()!=ir.value();
+            return !signal.result;
         } else if (isTypeU) {
-            result->result = ul.value()!=ur.value();
-            return !result->result;
+            signal.result = ul.value()!=ur.value();
+            return !signal.result;
         } else if (isTypeC) {
-            result->result = cl.value()!=cr.value();
-            return !result->result;
+            signal.result = cl.value()!=cr.value();
+            return !signal.result;
         } else if (isTypeF) {
-            result->result = fl.value()!=fr.value();
-            return !result->result;
+            signal.result = fl.value()!=fr.value();
+            return !signal.result;
         } else if (isTypeStr) {
-            result->result = strl.value()!=strr.value();
-            return !result->result;
+            signal.result = strl.value()!=strr.value();
+            return !signal.result;
         } else if (isTypeAnyP) {
-            result->result = pl!=pr;
-            return !result->result;
+            signal.result = pl!=pr;
+            return !signal.result;
         } else if (isTypeB) {
-            result->result = bl.value()!=br.value();
-            return !result->result;
+            signal.result = bl.value()!=br.value();
+            return !signal.result;
         } else if (isTypeId) {
-            result->result = idl.value()!=idr.value();
-            return !result->result;
+            signal.result = idl.value()!=idr.value();
+            return !signal.result;
         } else if (isTypeTy) {
-            result->result = tyl.value()!=tyr.value();
-            return !result->result;
+            signal.result = tyl.value()!=tyr.value();
+            return !signal.result;
         } else if (isTypeCallF) {
-            result->result = callfl.value()!=callfr.value();
-            return !result->result;            
+            signal.result = callfl.value()!=callfr.value();
+            return !signal.result;            
         } else if (isTypeCallM) {
-            result->result = callml.value()!=callmr.value();
-            return !result->result;            
+            signal.result = callml.value()!=callmr.value();
+            return !signal.result;            
         }
         break;
     case Oper::LT:
         if (isTypeI) {
-            result->result = il.value()<ir.value();
-            return !result->result;
+            signal.result = il.value()<ir.value();
+            return !signal.result;
         } else if (isTypeU) {
-            result->result = ul.value()<ur.value();
-            return !result->result;
+            signal.result = ul.value()<ur.value();
+            return !signal.result;
         } else if (isTypeC) {
-            result->result = cl.value()<cr.value();
-            return !result->result;
+            signal.result = cl.value()<cr.value();
+            return !signal.result;
         } else if (isTypeF) {
-            result->result = fl.value()<fr.value();
-            return !result->result;
+            signal.result = fl.value()<fr.value();
+            return !signal.result;
         }
         break;
     case Oper::LE:
         if (isTypeI) {
-            result->result = il.value()<=ir.value();
-            return !result->result;
+            signal.result = il.value()<=ir.value();
+            return !signal.result;
         } else if (isTypeU) {
-            result->result = ul.value()<=ur.value();
-            return !result->result;
+            signal.result = ul.value()<=ur.value();
+            return !signal.result;
         } else if (isTypeC) {
-            result->result = cl.value()<=cr.value();
-            return !result->result;
+            signal.result = cl.value()<=cr.value();
+            return !signal.result;
         } else if (isTypeF) {
-            result->result = fl.value()<=fr.value();
-            return !result->result;
+            signal.result = fl.value()<=fr.value();
+            return !signal.result;
         }
         break;
     case Oper::GT:
         if (isTypeI) {
-            result->result = il.value()>ir.value();
-            return !result->result;
+            signal.result = il.value()>ir.value();
+            return !signal.result;
         } else if (isTypeU) {
-            result->result = ul.value()>ur.value();
-            return !result->result;
+            signal.result = ul.value()>ur.value();
+            return !signal.result;
         } else if (isTypeC) {
-            result->result = cl.value()>cr.value();
-            return !result->result;
+            signal.result = cl.value()>cr.value();
+            return !signal.result;
         } else if (isTypeF) {
-            result->result = fl.value()>fr.value();
-            return !result->result;
+            signal.result = fl.value()>fr.value();
+            return !signal.result;
         }
         break;
     case Oper::GE:
         if (isTypeI) {
-            result->result = il.value()>=ir.value();
-            return !result->result;
+            signal.result = il.value()>=ir.value();
+            return !signal.result;
         } else if (isTypeU) {
-            result->result = ul.value()>=ur.value();
-            return !result->result;
+            signal.result = ul.value()>=ur.value();
+            return !signal.result;
         } else if (isTypeC) {
-            result->result = cl.value()>=cr.value();
-            return !result->result;
+            signal.result = cl.value()>=cr.value();
+            return !signal.result;
         } else if (isTypeF) {
-            result->result = fl.value()>=fr.value();
-            return !result->result;
+            signal.result = fl.value()>=fr.value();
+            return !signal.result;
         }
         break;
     default:
@@ -575,11 +573,11 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
 }
 
 // TODO fix - if processing an operand threw ExceptionEvaluatorJump, teardown won't get called
-NodeVal Evaluator::performOperComparisonTearDown(CodeLoc codeLoc, bool success, void *signal) {
+NodeVal Evaluator::performOperComparisonTearDown(CodeLoc codeLoc, bool success, ComparisonSignal signal) {
     if (!success) return NodeVal();
 
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_BOOL), typeTable);
-    evalVal.b = ((ComparisonSignal*) signal)->result;
+    evalVal.b = signal.result;
     return NodeVal(codeLoc, move(evalVal));
 }
 

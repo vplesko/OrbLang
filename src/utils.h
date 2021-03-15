@@ -37,16 +37,4 @@ struct UnescapePayload {
 // and \xNN (where N is a hex digit in [0-9a-fA-F]).
 UnescapePayload unescape(const std::string &str, std::size_t indexStartingQuote, bool isSingleQuote);
 
-class DeferredCallback {
-    std::function<void(void)> func;
-
-public:
-    DeferredCallback(std::function<void(void)> func_) : func(func_) {}
-
-    DeferredCallback(const DeferredCallback&) = delete;
-    void operator=(const DeferredCallback&) = delete;
-
-    virtual ~DeferredCallback() { func(); }
-};
-
 std::size_t leNiceHasheFunctione(std::size_t x, std::size_t y);

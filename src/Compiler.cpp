@@ -486,23 +486,21 @@ NodeVal Compiler::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper, Ty
     return NodeVal(codeLoc, llvmVal);
 }
 
-void* Compiler::performOperComparisonSetUp(CodeLoc codeLoc, size_t opersCnt) {
-    ComparisonSignal *compSignal = new ComparisonSignal;
+ComparisonSignal Compiler::performOperComparisonSetUp(CodeLoc codeLoc, size_t opersCnt) {
+    ComparisonSignal compSignal;
 
     llvm::BasicBlock *llvmBlockCurr = llvmBuilder.GetInsertBlock();
 
-    compSignal->llvmBlock = llvm::BasicBlock::Create(llvmContext, "comparison");
-    llvmBuilder.SetInsertPoint(compSignal->llvmBlock);
-    compSignal->llvmPhi = llvmBuilder.CreatePHI(makeLlvmPrimType(TypeTable::P_BOOL), opersCnt);
+    compSignal.llvmBlock = llvm::BasicBlock::Create(llvmContext, "comparison");
+    llvmBuilder.SetInsertPoint(compSignal.llvmBlock);
+    compSignal.llvmPhi = llvmBuilder.CreatePHI(makeLlvmPrimType(TypeTable::P_BOOL), opersCnt);
 
     llvmBuilder.SetInsertPoint(llvmBlockCurr);
-    
+
     return compSignal;
 }
 
-optional<bool> Compiler::performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) {
-    ComparisonSignal *compSignal = (ComparisonSignal*) signal;
-
+optional<bool> Compiler::performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, ComparisonSignal &signal) {
     if (!checkInLocalScope(codeLoc, true)) return nullopt;
 
     NodeVal lhsPromo = promoteIfEvalValAndCheckIsLlvmVal(lhs, true);
@@ -591,34 +589,32 @@ optional<bool> Compiler::performOperComparison(CodeLoc codeLoc, const NodeVal &l
         return nullopt;
     }
 
-    compSignal->llvmPhi->addIncoming(getLlvmConstB(false), llvmBuilder.GetInsertBlock());
+    signal.llvmPhi->addIncoming(getLlvmConstB(false), llvmBuilder.GetInsertBlock());
 
     llvm::BasicBlock *llvmBlockNext = llvm::BasicBlock::Create(llvmContext, "next", getLlvmCurrFunction());
-    llvmBuilder.CreateCondBr(llvmValueRes, llvmBlockNext, compSignal->llvmBlock);
+    llvmBuilder.CreateCondBr(llvmValueRes, llvmBlockNext, signal.llvmBlock);
 
     llvmBuilder.SetInsertPoint(llvmBlockNext);
 
     return false;
 }
 
-NodeVal Compiler::performOperComparisonTearDown(CodeLoc codeLoc, bool success, void *signal) {
-    ComparisonSignal *compSignal = (ComparisonSignal*) signal;
-
+NodeVal Compiler::performOperComparisonTearDown(CodeLoc codeLoc, bool success, ComparisonSignal signal) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
     if (!success) {
-        compSignal->llvmPhi->eraseFromParent();
+        signal.llvmPhi->eraseFromParent();
         return NodeVal();
     }
 
-    compSignal->llvmPhi->addIncoming(getLlvmConstB(true), llvmBuilder.GetInsertBlock());
-    llvmBuilder.CreateBr(compSignal->llvmBlock);
+    signal.llvmPhi->addIncoming(getLlvmConstB(true), llvmBuilder.GetInsertBlock());
+    llvmBuilder.CreateBr(signal.llvmBlock);
 
-    getLlvmCurrFunction()->getBasicBlockList().push_back(compSignal->llvmBlock);
-    llvmBuilder.SetInsertPoint(compSignal->llvmBlock);
+    getLlvmCurrFunction()->getBasicBlockList().push_back(signal.llvmBlock);
+    llvmBuilder.SetInsertPoint(signal.llvmBlock);
 
     LlvmVal llvmVal(typeTable->getPrimTypeId(TypeTable::P_BOOL));
-    llvmVal.val = compSignal->llvmPhi;
+    llvmVal.val = signal.llvmPhi;
     return NodeVal(codeLoc, llvmVal);
 }
 

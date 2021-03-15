@@ -2274,47 +2274,40 @@ NodeVal Processor::processOperComparison(CodeLoc codeLoc, const std::vector<cons
 
     // redirecting to evaluator when all operands are EvalVals is more complicated in the case of comparisons
     // the reason is that LLVM's phi nodes need to be started up and closed appropriately
-    void *evalSignal = nullptr;
-    DeferredCallback evalSignalDeleteGuard([=] { delete (int*) evalSignal; });
-
-    void *signal = nullptr;
-    DeferredCallback signalDeleteGuard([=] { delete (int*) signal; });
+    ComparisonSignal signal;
 
     // do set up on the appropriate processor subclass, depending on whether first operand is EvalVal
     bool stillEval = checkIsEvalTime(lhs, false);
     if (stillEval) {
-        evalSignal = evaluator->performOperComparisonSetUp(codeLoc, opers.size());
-        if (evalSignal == nullptr) return NodeVal();
+        signal = evaluator->performOperComparisonSetUp(codeLoc, opers.size());
     } else {
         signal = performOperComparisonSetUp(codeLoc, opers.size());
-        if (signal == nullptr) return NodeVal();
     }
 
     for (size_t i = 1; i < opers.size(); ++i) {
         // note that if this is within evaluator, and it throws ExceptionEvaluatorJump, teardown will not get called
         NodeVal rhs = processAndCheckHasType(*opers[i]);
         if (rhs.isInvalid()) {
-            if (stillEval) return evaluator->performOperComparisonTearDown(codeLoc, false, evalSignal);
+            if (stillEval) return evaluator->performOperComparisonTearDown(codeLoc, false, signal);
             else return performOperComparisonTearDown(codeLoc, false, signal);
         }
 
         if (stillEval && !checkIsEvalTime(rhs, false)) {
             // no longer all EvalVals, so handoff from evaluator-> to this->
-            evaluator->performOperComparisonTearDown(codeLoc, true, evalSignal);
+            evaluator->performOperComparisonTearDown(codeLoc, true, signal);
             stillEval = false;
 
             signal = performOperComparisonSetUp(codeLoc, opers.size()-i);
-            if (signal == nullptr) return NodeVal();
         }
 
         if (!implicitCastOperands(lhs, rhs, false)) {
-            if (stillEval) return evaluator->performOperComparisonTearDown(codeLoc, false, evalSignal);
+            if (stillEval) return evaluator->performOperComparisonTearDown(codeLoc, false, signal);
             else return performOperComparisonTearDown(codeLoc, false, signal);
         }
 
         if (stillEval) {
-            optional<bool> compSuccess = evaluator->performOperComparison(codeLoc, lhs, rhs, op, evalSignal);
-            if (!compSuccess.has_value()) return evaluator->performOperComparisonTearDown(codeLoc, false, evalSignal);
+            optional<bool> compSuccess = evaluator->performOperComparison(codeLoc, lhs, rhs, op, signal);
+            if (!compSuccess.has_value()) return evaluator->performOperComparisonTearDown(codeLoc, false, signal);
             if (compSuccess.value()) break;
         } else {
             optional<bool> compSuccess = performOperComparison(codeLoc, lhs, rhs, op, signal);
@@ -2326,7 +2319,7 @@ NodeVal Processor::processOperComparison(CodeLoc codeLoc, const std::vector<cons
     }
 
     if (stillEval) {
-        return evaluator->performOperComparisonTearDown(codeLoc, true, evalSignal);
+        return evaluator->performOperComparisonTearDown(codeLoc, true, signal);
     } else {
         return performOperComparisonTearDown(codeLoc, true, signal);
     }

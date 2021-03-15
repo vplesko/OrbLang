@@ -5,10 +5,6 @@
 class Evaluator : public Processor {
     friend class Processor;
 
-    struct ComparisonSignal {
-        bool result = true;
-    };
-
     // TODO put this into an exception?
     std::optional<NodeVal> retVal;
 
@@ -55,9 +51,9 @@ public:
     bool performRet(CodeLoc codeLoc, const NodeVal &node) override;
     NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) override;
     NodeVal performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper, TypeTable::Id resTy) override;
-    void* performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt) override;
-    std::optional<bool> performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, void *signal) override;
-    NodeVal performOperComparisonTearDown(CodeLoc codeLoc, bool success, void *signal) override;
+    ComparisonSignal performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt) override;
+    std::optional<bool> performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, ComparisonSignal &signal) override;
+    NodeVal performOperComparisonTearDown(CodeLoc codeLoc, bool success, ComparisonSignal signal) override;
     NodeVal performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) override;
     NodeVal performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) override;
     NodeVal performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) override;
