@@ -13,6 +13,7 @@ class SymbolTable;
 struct FuncValue;
 struct MacroValue;
 
+// TODO eval array pointers (non-null)
 struct EvalVal {
     // type of this evaluation value
     TypeTable::Id type;

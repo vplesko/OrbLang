@@ -571,10 +571,12 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
             return !result->result;
         }
         break;
+    default:
+        break;
     }
 
     msgs->errorExprEvalBinBadOp(codeLoc);
-    return nullopt;    
+    return nullopt;
 }
 
 // TODO fix - if processing an operand threw ExceptionEvaluatorJump, teardown won't get called
@@ -787,6 +789,8 @@ NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const
         } else if (isTypeU) {
             if (assignBasedOnTypeU(evalVal, ul.value()^ur.value(), ty)) success = true;
         }
+        break;
+    default:
         break;
     }
 

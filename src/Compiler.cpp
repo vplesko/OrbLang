@@ -587,6 +587,8 @@ optional<bool> Compiler::performOperComparison(CodeLoc codeLoc, const NodeVal &l
             llvmValueRes = llvmBuilder.CreateFCmpOGE(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fcmp_ge_tmp");
         }
         break;
+    default:
+        break;
     }
 
     if (llvmValueRes == nullptr) {
@@ -781,6 +783,8 @@ NodeVal Compiler::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const 
         if (isTypeI || isTypeU) {
             llvmVal.val = llvmBuilder.CreateXor(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "xor_tmp");
         }
+        break;
+    default:
         break;
     }
     
@@ -1026,7 +1030,7 @@ llvm::Type* Compiler::makeLlvmType(TypeTable::Id typeId) {
         if (data.defined) {
             // set to dummy body to not be opaque, to avoid potential infinite recursion (llvm doesn't allow empty bodies)
             llvm::Type *dummy = makeLlvmType(typeTable->getPrimTypeId(TypeTable::P_BOOL));
-            ((llvm::StructType*) llvmType)->setBody({dummy});
+            ((llvm::StructType*) llvmType)->setBody(dummy);
 
             vector<llvm::Type*> memberTypes(data.members.size());
             for (size_t i = 0; i < data.members.size(); ++i) {
