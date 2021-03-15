@@ -723,7 +723,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
 
         callable = &BaseCallableValue::getCallable(*funcVal, typeTable);
         for (size_t i = 0; i < callable->getArgCnt(); ++i) {
-            args[i] = implicitCast(args[i], callable->getArgType(i), callable->getArgNoDrop(i));
+            args[i] = implicitCast(args[i], callable->getArgType(i), true);
             if (args[i].isInvalid()) return NodeVal();
 
             if (!checkTransferValueOk(args[i].getCodeLoc(), args[i], callable->getArgNoDrop(i), true)) return NodeVal();
@@ -748,7 +748,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
         }
 
         for (size_t i = 0; i < callable->getArgCnt(); ++i) {
-            args[i] = implicitCast(args[i], callable->getArgType(i), callable->getArgNoDrop(i));
+            args[i] = implicitCast(args[i], callable->getArgType(i), true);
             if (args[i].isInvalid()) return NodeVal();
 
             if (!checkTransferValueOk(args[i].getCodeLoc(), args[i], callable->getArgNoDrop(i), true)) return NodeVal();
@@ -762,7 +762,11 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
     for (size_t i = 0; i < args.size(); ++i) {
         size_t ind = args.size()-1-i;
 
-        if (callable->getArgNoDrop(i) && !callDropFuncsNonRef(move(args))) return NodeVal();
+        // variadic arguments cannot be marked noDrop
+        bool argNoDrop = ind < callable->getArgCnt() && callable->getArgNoDrop(ind);
+
+        // if argument was marked noDrop, it becomes the callers responsibility to drop it
+        if (argNoDrop && !callDropFuncNonRef(move(args[ind]))) return NodeVal();
     }
 
     return ret;
@@ -1536,7 +1540,7 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
             msgs->errorExprCannotPromote(node.getCodeLoc(), ty);
             return NodeVal();
         }
-        prom = evaluator->performCast(prom.getCodeLoc(), prom, ty, false);
+        prom = evaluator->performCast(prom.getCodeLoc(), prom, ty);
     }
 
     return prom;
@@ -1613,29 +1617,23 @@ NodeVal Processor::dispatchLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, opt
     }
 }
 
-NodeVal Processor::implicitCast(const NodeVal &node, TypeTable::Id ty, bool turnIntoNoDrop) {
+NodeVal Processor::implicitCast(const NodeVal &node, TypeTable::Id ty, bool skipCheckNeedsDrop) {
     if (!checkImplicitCastable(node, ty, true)) return NodeVal();
 
-    return castNode(node.getCodeLoc(), node, ty, turnIntoNoDrop);
+    return castNode(node.getCodeLoc(), node, ty, skipCheckNeedsDrop);
 }
 
-NodeVal Processor::castNode(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty, bool turnIntoNoDrop) {
+NodeVal Processor::castNode(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty, bool skipCheckNeedsDrop) {
     if (node.getType().value() == ty) {
-        if (turnIntoNoDrop) {
-            NodeVal ret = NodeVal::copyNoRef(node);
-            ret.setNoDrop(true);
-            return ret;
-        } else {
-            return node;
-        }
+        return node;
     }
 
-    if (!turnIntoNoDrop && node.hasRef() && !checkNotNeedsDrop(node.getCodeLoc(), node, true)) return NodeVal();
+    if (!skipCheckNeedsDrop && node.hasRef() && !checkNotNeedsDrop(node.getCodeLoc(), node, true)) return NodeVal();
 
     if (checkIsEvalTime(node, false) && !shouldNotDispatchCastToEval(node, ty)) {
-        return evaluator->performCast(node.getCodeLoc(), node, ty, turnIntoNoDrop);
+        return evaluator->performCast(node.getCodeLoc(), node, ty);
     } else {
-        return performCast(node.getCodeLoc(), node, ty, turnIntoNoDrop);
+        return performCast(node.getCodeLoc(), node, ty);
     }
 }
 
@@ -1898,7 +1896,7 @@ NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal &val) {
         return NodeVal();
     }
 
-    if (!val.hasRef()) return NodeVal::copyNoRef(val);
+    if (!val.hasRef()) return NodeVal::copyNoRef(codeLoc, val);
 
     TypeTable::Id valTy = val.getType().value();
 
@@ -1907,7 +1905,7 @@ NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal &val) {
         return NodeVal();
     }
 
-    NodeVal prev = NodeVal::copyNoRef(val);
+    NodeVal prev = NodeVal::copyNoRef(codeLoc, val);
 
     NodeVal zero;
     if (checkIsEvalTime(val, false)) zero = evaluator->performZero(codeLoc, valTy);
@@ -2033,15 +2031,6 @@ bool Processor::callDropFunc(CodeLoc codeLoc, NodeVal val) {
 bool Processor::callDropFuncNonRef(NodeVal val) {
     if (val.hasRef()) return true;
     return callDropFunc(val.getCodeLoc(), move(val));
-}
-
-bool Processor::callDropFuncsNonRef(vector<NodeVal> val) {
-    for (size_t i = 0; i < val.size(); ++i) {
-        size_t ind = val.size()-1-i;
-        if (!callDropFuncNonRef(val[ind])) return false;
-    }
-
-    return true;
 }
 
 bool Processor::callDropFuncs(CodeLoc codeLoc, vector<SymbolTable::VarEntry*> vars) {

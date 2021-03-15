@@ -169,7 +169,7 @@ NodeVal Compiler::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVa
     return NodeVal(codeLoc, llvmVal);
 }
 
-NodeVal Compiler::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty, bool turnIntoNoDrop) {
+NodeVal Compiler::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
     NodeVal promo = promoteIfEvalValAndCheckIsLlvmVal(node, true);
@@ -186,7 +186,7 @@ NodeVal Compiler::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::I
 
     LlvmVal llvmVal(ty);
     llvmVal.val = llvmValueCast;
-    llvmVal.lifetimeInfo.noDrop = promo.isNoDrop() || turnIntoNoDrop;
+    llvmVal.lifetimeInfo.noDrop = promo.isNoDrop() || node.hasRef();
     return NodeVal(codeLoc, llvmVal);
 }
 

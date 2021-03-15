@@ -1,6 +1,7 @@
 #include "TypeTable.h"
 #include <sstream>
 #include <algorithm>
+#include <cassert>
 using namespace std;
 
 void TypeTable::Tuple::addMember(TypeTable::Id m) {
@@ -49,11 +50,15 @@ optional<size_t> TypeTable::DataType::getMembInd(NamePool::Id name) const {
 }
 
 void TypeTable::Callable::setArgTypes(const vector<TypeTable::Id> &argTys) {
+    assert(args.size() == argTys.size());
+
     for (size_t i = 0; i < argTys.size(); ++i)
         args[i].ty = argTys[i];
 }
 
 void TypeTable::Callable::setArgNoDrops(const vector<bool> &argNoDrops) {
+    assert(args.size() == argNoDrops.size());
+
     for (size_t i = 0; i < argNoDrops.size(); ++i)
         args[i].noDrop = argNoDrops[i];
 }
