@@ -803,7 +803,10 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
 
     vector<NodeVal> args;
     for (size_t i = 0; i < providedArgCnt; ++i) {
-        NodeVal arg = processWithEscape(node.getChild(i+1), MacroValue::toEscapeScore(macroVal->argPreHandling[i]));
+        // all variadic arguments have the same pre-handling
+        EscapeScore escapeScore = MacroValue::toEscapeScore(macroVal->argPreHandling[min(i, callable.getArgCnt()-1)]);
+
+        NodeVal arg = processWithEscape(node.getChild(i+1), escapeScore);
         if (arg.isInvalid()) return NodeVal();
 
         args.push_back(move(arg));
