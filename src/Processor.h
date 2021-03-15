@@ -159,7 +159,7 @@ private:
     NodeVal processId(const NodeVal &node, const NodeVal &starting);
     NodeVal processSym(const NodeVal &node);
     NodeVal processCast(const NodeVal &node);
-    NodeVal processBlock(const NodeVal &node);
+    NodeVal processBlock(const NodeVal &node, const NodeVal &starting);
     NodeVal processExit(const NodeVal &node);
     NodeVal processLoop(const NodeVal &node);
     NodeVal processPass(const NodeVal &node);

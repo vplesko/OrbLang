@@ -1,14 +1,16 @@
 import "util/io.orb";
 
-eval (sym (glob1 -1) (glob2 -1));
+eval (block::bare {
+    sym (glob1 -1) (glob2 -1);
+});
 
 eval (fnc foo () () {
-    = glob1 900;
+    = glob1 901;
 });
 
 eval (block {
     foo;
-    = glob2 901;
+    = glob2 902;
     sym foo:i32;
 });
 
@@ -152,6 +154,20 @@ fnc main () () {
     });
     println_i32 p;
 
+    eval (block::bare {
+        sym (d 900);
+    });
+    println_i32 d;
+
     println_i32 glob1;
     println_i32 glob2;
+
+    eval (= p 903);
+    eval (block {
+        block::bare {
+            exit true;
+        };
+        = p -1;
+    });
+    println_i32 p;
 };

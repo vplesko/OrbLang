@@ -81,8 +81,7 @@ NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::
 
 optional<bool> Evaluator::performBlockBody(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &nodeBody) {
     try {
-        bool bodySuccess = processChildNodes(nodeBody);
-        if (!bodySuccess) return nullopt;
+        if (!processChildNodes(nodeBody)) return nullopt;
 
         if (!callDropFuncsCurrBlock(codeLoc)) return nullopt;
 

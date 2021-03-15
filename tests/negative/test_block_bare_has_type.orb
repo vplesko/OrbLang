@@ -1,0 +1,5 @@
+fnc main () () {
+    block::bare i32 {
+        pass 0;
+    };
+};

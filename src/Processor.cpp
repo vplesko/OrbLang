@@ -83,7 +83,7 @@ NodeVal Processor::processNonLeaf(const NodeVal &node, bool topmost) {
             case Keyword::CAST:
                 return processCast(node);
             case Keyword::BLOCK:
-                return processBlock(node);
+                return processBlock(node, starting);
             case Keyword::EXIT:
                 return processExit(node);
             case Keyword::LOOP:
@@ -339,11 +339,19 @@ NodeVal Processor::processCast(const NodeVal &node) {
 }
 
 // TODO figure out how to detect whether all code branches return or not
-NodeVal Processor::processBlock(const NodeVal &node) {
+NodeVal Processor::processBlock(const NodeVal &node, const NodeVal &starting) {
     if (!checkBetweenChildren(node, 2, 4, true)) return NodeVal();
+
+    optional<bool> attrBare = getAttributeForBool(starting, "bare");
+    if (!attrBare.has_value()) return NodeVal();
 
     bool hasName = node.getChildrenCnt() > 3;
     bool hasType = node.getChildrenCnt() > 2;
+
+    if (attrBare.value() && (hasName || hasType)) {
+        msgs->errorUnknown(node.getCodeLoc());
+        return NodeVal();
+    }
 
     size_t indName = 1;
     size_t indType = hasName ? 2 : 1;
@@ -372,26 +380,32 @@ NodeVal Processor::processBlock(const NodeVal &node) {
         }
     }
 
-    SymbolTable::Block block;
-    block.name = name;
-    block.type = type;
-    if (!performBlockSetUp(node.getCodeLoc(), block)) return NodeVal();
+    if (attrBare.value()) {
+        if (!processChildNodes(nodeBody)) return NodeVal();
 
-    do {
-        BlockControl blockCtrl(symbolTable, block);
+        return NodeVal(node.getCodeLoc());
+    } else {
+        SymbolTable::Block block;
+        block.name = name;
+        block.type = type;
+        if (!performBlockSetUp(node.getCodeLoc(), block)) return NodeVal();
 
-        optional<bool> blockSuccess = performBlockBody(node.getCodeLoc(), symbolTable->getLastBlock(), nodeBody);
-        if (!blockSuccess.has_value()) {
-            performBlockTearDown(node.getCodeLoc(), symbolTable->getLastBlock(), false);
-            return NodeVal();
-        }
+        do {
+            BlockControl blockCtrl(symbolTable, block);
 
-        if (blockSuccess.value()) continue;
+            optional<bool> blockSuccess = performBlockBody(node.getCodeLoc(), symbolTable->getLastBlock(), nodeBody);
+            if (!blockSuccess.has_value()) {
+                performBlockTearDown(node.getCodeLoc(), symbolTable->getLastBlock(), false);
+                return NodeVal();
+            }
 
-        NodeVal ret = performBlockTearDown(node.getCodeLoc(), symbolTable->getLastBlock(), true);
-        if (ret.isInvalid()) return NodeVal();
-        return ret;
-    } while (true);
+            if (blockSuccess.value()) continue;
+
+            NodeVal ret = performBlockTearDown(node.getCodeLoc(), symbolTable->getLastBlock(), true);
+            if (ret.isInvalid()) return NodeVal();
+            return ret;
+        } while (true);
+    }
 }
 
 NodeVal Processor::processExit(const NodeVal &node) {

@@ -1,5 +1,9 @@
 import "util/io.orb";
 
+block::bare {
+    sym (glob 901);
+};
+
 fnc main () () {
     sym (a null);
     block {
@@ -118,4 +122,18 @@ fnc main () () {
         });
     };
     println_i32 d;
+
+    block::bare {
+        sym (e 900);
+    };
+    println_i32 e;
+
+    println_i32 glob;
+
+    block {
+        block::bare {
+            exit true;
+        };
+        println_i32 -1;
+    };
 };
