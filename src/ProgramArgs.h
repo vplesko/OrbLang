@@ -4,8 +4,6 @@
 #include <vector>
 #include <optional>
 
-// TODO! update docs and examples
-// TODO! help text
 struct ProgramArgs {
     std::vector<std::string> inputsSrc, inputsOther;
     std::string outputBin;
@@ -14,4 +12,5 @@ struct ProgramArgs {
     std::optional<unsigned> optLvl;
 
     static std::optional<ProgramArgs> parseArgs(int argc,  char** argv, std::ostream &out);
+    static void printHelp(std::ostream &out);
 };

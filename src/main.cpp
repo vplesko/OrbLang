@@ -16,7 +16,10 @@ enum Error {
 
 int main(int argc,  char** argv) {
     optional<ProgramArgs> programArgs = ProgramArgs::parseArgs(argc, argv, cerr);
-    if (!programArgs.has_value()) return BAD_ARGS;
+    if (!programArgs.has_value()) {
+        ProgramArgs::printHelp(cout);
+        return BAD_ARGS;
+    }
 
     try {
         CompilationOrchestrator co(cerr);

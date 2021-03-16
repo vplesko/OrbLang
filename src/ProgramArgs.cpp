@@ -60,7 +60,7 @@ optional<ProgramArgs> ProgramArgs::parseArgs(int argc,  char** argv, std::ostrea
             failure = true;
         }
         if (!programArgs.link) {
-            out << "No source input files specified when linking not requested." << endl;
+            out << "No source input files specified when linking disabled." << endl;
             failure = true;
         }
         if (emitLlvm) {
@@ -69,6 +69,11 @@ optional<ProgramArgs> ProgramArgs::parseArgs(int argc,  char** argv, std::ostrea
         }
 
         if (failure) return nullopt;
+    }
+
+    if (!programArgs.link && !programArgs.inputsOther.empty()) {
+        out << "Only source input files may be specified when linking disabled." << endl;
+        return nullopt;
     }
 
     string firstInputStem;
@@ -85,4 +90,15 @@ optional<ProgramArgs> ProgramArgs::parseArgs(int argc,  char** argv, std::ostrea
     }
 
     return programArgs;
+}
+
+void ProgramArgs::printHelp(std::ostream &out) {
+    out << R"orbc_help(
+Usage: orbc [options] file...
+Options:
+  -c          Only process and compile, but do not link.
+  -emit-llvm  Print the LLVM representation into a .ll file.
+  -o <file>   Place the binary output into <file>.
+  -O<number>  Set the optimization level. Valid values are -O0, -O1, -O2, and -O3.
+)orbc_help";
 }
