@@ -5,24 +5,21 @@
 using namespace std;
 
 optional<ProgramArgs> ProgramArgs::parseArgs(int argc,  char** argv) {
-    if (argc < 2) {
-        cerr << "Not enough arguments when calling orbc." << endl;
-        return nullopt;
-    }
-
     ProgramArgs programArgs;
 
     for (int i = 1; i < argc; ++i) {
-        string in(argv[i]);
-        if (filesystem::path(in).extension().string() == ".orb") {
-            programArgs.inputs.push_back(in);
-        } else {
-            if (!programArgs.output.empty()) {
-                cerr << "Cannot have multiple outputs." << endl;
+        if (argv[i] == string("-o")) {
+            if (i+1 == argc) {
+                cerr << "Argument to -o must be specified." << endl;
                 return nullopt;
-            } else {
-                programArgs.output = in;
             }
+
+            ++i;
+            programArgs.output = argv[i];
+        } else if (argv[i] == string("-c")) {
+            programArgs.exe = false;
+        } else {
+            programArgs.inputs.push_back(argv[i]);
         }
     }
 
@@ -32,16 +29,10 @@ optional<ProgramArgs> ProgramArgs::parseArgs(int argc,  char** argv) {
     }
 
     if (programArgs.output.empty()) {
-        programArgs.output = isOsWindows ? "a.obj" : "a.o";
+        string firstInputStem = filesystem::path(programArgs.inputs.front()).stem().string();
+        if (programArgs.exe) programArgs.output = firstInputStem + (isOsWindows ? ".exe" : "");
+        else programArgs.output = firstInputStem + (isOsWindows ? ".obj" : ".o");
     }
-
-    string ext = filesystem::path(programArgs.output).extension().string();
-    programArgs.obj = ext == ".o" || ext == ".obj";
-
-    cout << "File(s):";
-    for (const std::string &f : programArgs.inputs)
-        cout << " " << f;
-    cout << endl;
 
     return programArgs;
 }

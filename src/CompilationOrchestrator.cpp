@@ -307,7 +307,7 @@ void CompilationOrchestrator::printout() const {
 }
 
 bool CompilationOrchestrator::compile(const ProgramArgs &args) {
-    if (args.obj) {
+    if (!args.exe) {
         return compiler->binary(args.output);
     } else {
         if (!symbolTable->isFuncName(getMeaningfulNameId(Meaningful::MAIN))) {
