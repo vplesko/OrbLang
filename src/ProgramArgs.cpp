@@ -7,6 +7,8 @@ using namespace std;
 optional<ProgramArgs> ProgramArgs::parseArgs(int argc,  char** argv, std::ostream &out) {
     ProgramArgs programArgs;
 
+    bool emitLlvm = false;
+
     for (int i = 1; i < argc; ++i) {
         string arg = argv[i];
 
@@ -31,9 +33,11 @@ optional<ProgramArgs> ProgramArgs::parseArgs(int argc,  char** argv, std::ostrea
                 return nullopt;
             }
 
-            programArgs.output = argv[++i];
+            programArgs.outputBin = argv[++i];
         } else if (arg == "-c") {
-            programArgs.exe = false;
+            programArgs.link = false;
+        } else if (arg == "-emit-llvm") {
+            emitLlvm = true;
         } else {
             if (filesystem::path(arg).extension().string() == ".orb") {
                 programArgs.inputsSrc.push_back(arg);
@@ -48,23 +52,36 @@ optional<ProgramArgs> ProgramArgs::parseArgs(int argc,  char** argv, std::ostrea
         }
     }
 
-    if (programArgs.inputsSrc.empty() && programArgs.inputsOther.empty()) {
-        out << "No input files specified." << endl;
-        return nullopt;
+    if (programArgs.inputsSrc.empty()) {
+        bool failure = false;
+
+        if (programArgs.inputsOther.empty()) {
+            out << "No input files specified." << endl;
+            failure = true;
+        }
+        if (!programArgs.link) {
+            out << "No source input files specified when linking not requested." << endl;
+            failure = true;
+        }
+        if (emitLlvm) {
+            out << "No source input files specified when emitting LLVM output requested." << endl;
+            failure = true;
+        }
+
+        if (failure) return nullopt;
     }
 
-    if (programArgs.inputsSrc.empty() && !programArgs.exe) {
-        out << "No source input files specified when linking not requested." << endl;
-        return nullopt;
+    string firstInputStem;
+    if (!programArgs.inputsSrc.empty()) firstInputStem = filesystem::path(programArgs.inputsSrc.front()).stem().string();
+    else firstInputStem = filesystem::path(programArgs.inputsOther.front()).stem().string();
+
+    if (programArgs.outputBin.empty()) {
+        if (programArgs.link) programArgs.outputBin = firstInputStem + (isOsWindows ? ".exe" : "");
+        else programArgs.outputBin = firstInputStem + (isOsWindows ? ".obj" : ".o");
     }
 
-    if (programArgs.output.empty()) {
-        string firstInputStem;
-        if (!programArgs.inputsSrc.empty()) firstInputStem = filesystem::path(programArgs.inputsSrc.front()).stem().string();
-        else firstInputStem = filesystem::path(programArgs.inputsOther.front()).stem().string();
-
-        if (programArgs.exe) programArgs.output = firstInputStem + (isOsWindows ? ".exe" : "");
-        else programArgs.output = firstInputStem + (isOsWindows ? ".obj" : ".o");
+    if (emitLlvm) {
+        programArgs.outputLlvm = firstInputStem + ".ll";
     }
 
     return programArgs;

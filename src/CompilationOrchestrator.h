@@ -26,7 +26,7 @@ public:
     CompilationOrchestrator(std::ostream &out);
 
     bool process(const ProgramArgs &args);
-    void printout() const;
+    void printout(const std::string &filename) const;
     bool compile(const ProgramArgs &args);
 
     bool isInternalError() const;

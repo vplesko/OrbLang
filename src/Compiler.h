@@ -89,6 +89,6 @@ public:
 
     void setOptLevel(unsigned lvl);
 
-    void printout() const;
+    void printout(const std::string &filename) const;
     bool binary(const std::string &filename);
 };

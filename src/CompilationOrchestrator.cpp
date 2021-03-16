@@ -296,13 +296,13 @@ bool CompilationOrchestrator::process(const ProgramArgs &args) {
     return true;
 }
 
-void CompilationOrchestrator::printout() const {
-    compiler->printout();
+void CompilationOrchestrator::printout(const std::string &filename) const {
+    compiler->printout(filename);
 }
 
 bool CompilationOrchestrator::compile(const ProgramArgs &args) {
-    if (!args.exe) {
-        return compiler->binary(args.output);
+    if (!args.link) {
+        return compiler->binary(args.outputBin);
     } else if (!args.inputsSrc.empty()) {
         if (!symbolTable->isFuncName(getMeaningfulNameId(Meaningful::MAIN))) {
             msgs->errorNoMain();

@@ -28,7 +28,7 @@ bool buildExecutable(const ProgramArgs &args, const std::string &objFile) {
     if (!objFile.empty()) clangArgs.push_back(objFile.c_str());
     for (const string &in : args.inputsOther) clangArgs.push_back(in.c_str());
     clangArgs.push_back("-o");
-    clangArgs.push_back(args.output.c_str());
+    clangArgs.push_back(args.outputBin.c_str());
 
     unique_ptr<clang::driver::Compilation> compilation(driver.BuildCompilation(clangArgs));
     if (compilation == nullptr) return false;

@@ -24,8 +24,15 @@ Compiler::Compiler(NamePool *namePool, StringPool *stringPool, TypeTable *typeTa
     llvmPmb->populateFunctionPassManager(*llvmFpm);
 }
 
-void Compiler::printout() const {
-    llvmModule->print(llvm::outs(), nullptr);
+void Compiler::printout(const std::string &filename) const {
+    std::error_code errorCode;
+    llvm::raw_fd_ostream dest(filename, errorCode, llvm::sys::fs::F_None);
+    if (errorCode) {
+        llvm::errs() << "Could not open file: " << errorCode.message();
+        return;
+    }
+
+    llvmModule->print(dest, nullptr);
 }
 
 bool Compiler::binary(const std::string &filename) {

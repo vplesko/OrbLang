@@ -25,12 +25,13 @@ int main(int argc,  char** argv) {
             return co.isInternalError() ? INTERNAL : PROCESS_FAIL;
         }
 
-        /*cout << "Code printout:" << endl;
-        co.printout();*/
-
         if (!co.compile(programArgs.value())) {
             cerr << "Compilation failed." << endl;
             return co.isInternalError() ? INTERNAL : COMPILE_FAIL;
+        }
+
+        if (programArgs.value().outputLlvm.has_value()) {
+            co.printout(programArgs.value().outputLlvm.value());
         }
     } catch (ExceptionEvaluatorJump ex) {
         cerr << "Something went wrong when compiling!" << endl;
