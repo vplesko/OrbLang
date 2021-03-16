@@ -20,7 +20,7 @@ int main(int argc,  char** argv) {
 
     try {
         CompilationOrchestrator co(cerr);
-        if (!co.process(programArgs.value().inputs)) {
+        if (!co.process(programArgs.value().inputsSrc)) {
             cerr << "Processing failed." << endl;
             return co.isInternalError() ? INTERNAL : PROCESS_FAIL;
         }

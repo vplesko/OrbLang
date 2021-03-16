@@ -13,7 +13,7 @@
 #include "utils.h"
 using namespace std;
 
-bool buildExecutable(const string &objFile, const string &exeName) {
+bool buildExecutable(const ProgramArgs &args, const std::string &objFile) {
     string clangPath = llvm::sys::findProgramByName("clang").get();
 
     clang::IntrusiveRefCntPtr<clang::DiagnosticOptions> diagOpt(new clang::DiagnosticOptions());
@@ -22,13 +22,14 @@ bool buildExecutable(const string &objFile, const string &exeName) {
 
     clang::driver::Driver driver(clangPath, llvm::sys::getDefaultTargetTriple(), diags);
 
-    vector<const char*> args;
-    args.push_back(clangPath.c_str());
-    args.push_back(objFile.c_str());
-    args.push_back("-o");
-    args.push_back(exeName.c_str());
+    vector<const char*> clangArgs;
+    clangArgs.push_back(clangPath.c_str());
+    if (!objFile.empty()) clangArgs.push_back(objFile.c_str());
+    for (const string &in : args.inputsOther) clangArgs.push_back(in.c_str());
+    clangArgs.push_back("-o");
+    clangArgs.push_back(args.output.c_str());
 
-    unique_ptr<clang::driver::Compilation> compilation(driver.BuildCompilation(args));
+    unique_ptr<clang::driver::Compilation> compilation(driver.BuildCompilation(clangArgs));
     if (compilation == nullptr) return false;
  
     clang::SmallVector<std::pair<int, const clang::driver::Command*>, 4> failingCommands;

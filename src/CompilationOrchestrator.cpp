@@ -194,20 +194,12 @@ enum ImportTransRes {
     ITR_FAIL
 };
 
-bool exists(const string &file) {
-    return filesystem::exists(file);
-}
-
-string canonical(const string &file) {
-    return filesystem::canonical(file).string();
-}
-
 optional<string> locateOrbFile(const string &file) {
-    if (exists(file)) return canonical(file);
+    if (filesystem::exists(file)) return filesystem::canonical(file).string();
 
     {
         filesystem::path libFile = filesystem::path(ORBC_LIBS_PATH) / file;
-        if (exists(libFile)) return canonical(libFile).string();
+        if (filesystem::exists(libFile)) return filesystem::canonical(libFile).string();
     }
 
     return nullopt;
@@ -233,7 +225,7 @@ ImportTransRes followImport(
 }
 
 bool CompilationOrchestrator::process(const vector<string> &inputs) {
-    if (inputs.empty()) return false;
+    if (inputs.empty()) return true;
 
     Parser par(stringPool.get(), typeTable.get(), msgs.get());
 
@@ -309,7 +301,7 @@ void CompilationOrchestrator::printout() const {
 bool CompilationOrchestrator::compile(const ProgramArgs &args) {
     if (!args.exe) {
         return compiler->binary(args.output);
-    } else {
+    } else if (!args.inputsSrc.empty()) {
         if (!symbolTable->isFuncName(getMeaningfulNameId(Meaningful::MAIN))) {
             msgs->errorNoMain();
             return false;
@@ -319,10 +311,12 @@ bool CompilationOrchestrator::compile(const ProgramArgs &args) {
 
         if (!compiler->binary(tempObjName)) return false;
 
-        bool success = buildExecutable(tempObjName, args.output);
+        bool success = buildExecutable(args, tempObjName);
 
         remove(tempObjName.c_str());
         return success;
+    } else {
+        return buildExecutable(args, "");
     }
 }
 

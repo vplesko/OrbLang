@@ -19,17 +19,34 @@ optional<ProgramArgs> ProgramArgs::parseArgs(int argc,  char** argv) {
         } else if (argv[i] == string("-c")) {
             programArgs.exe = false;
         } else {
-            programArgs.inputs.push_back(argv[i]);
+            if (filesystem::path(argv[i]).extension().string() == ".orb") {
+                programArgs.inputsSrc.push_back(argv[i]);
+            } else {
+                if (!filesystem::exists(argv[i])) {
+                    cerr << "Nonexistent file '" << argv[i] << "'." << endl;
+                    return nullopt;
+                }
+
+                programArgs.inputsOther.push_back(argv[i]);
+            }
         }
     }
 
-    if (programArgs.inputs.empty()) {
+    if (programArgs.inputsSrc.empty() && programArgs.inputsOther.empty()) {
         cerr << "No input files specified." << endl;
         return nullopt;
     }
 
+    if (programArgs.inputsSrc.empty() && !programArgs.exe) {
+        cerr << "No source input files specified when linking not requested." << endl;
+        return nullopt;
+    }
+
     if (programArgs.output.empty()) {
-        string firstInputStem = filesystem::path(programArgs.inputs.front()).stem().string();
+        string firstInputStem;
+        if (!programArgs.inputsSrc.empty()) firstInputStem = filesystem::path(programArgs.inputsSrc.front()).stem().string();
+        else firstInputStem = filesystem::path(programArgs.inputsOther.front()).stem().string();
+
         if (programArgs.exe) programArgs.output = firstInputStem + (isOsWindows ? ".exe" : "");
         else programArgs.output = firstInputStem + (isOsWindows ? ".obj" : ".o");
     }

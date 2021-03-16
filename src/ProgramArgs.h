@@ -7,7 +7,7 @@
 // TODO! update docs and examples
 // TODO! help text
 struct ProgramArgs {
-    std::vector<std::string> inputs;
+    std::vector<std::string> inputsSrc, inputsOther;
     std::string output;
     bool exe = true;
 
