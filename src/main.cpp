@@ -15,12 +15,12 @@ enum Error {
 };
 
 int main(int argc,  char** argv) {
-    optional<ProgramArgs> programArgs = ProgramArgs::parseArgs(argc, argv);
+    optional<ProgramArgs> programArgs = ProgramArgs::parseArgs(argc, argv, cerr);
     if (!programArgs.has_value()) return BAD_ARGS;
 
     try {
         CompilationOrchestrator co(cerr);
-        if (!co.process(programArgs.value().inputsSrc)) {
+        if (!co.process(programArgs.value())) {
             cerr << "Processing failed." << endl;
             return co.isInternalError() ? INTERNAL : PROCESS_FAIL;
         }

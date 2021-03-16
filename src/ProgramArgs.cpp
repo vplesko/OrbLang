@@ -4,41 +4,57 @@
 #include "utils.h"
 using namespace std;
 
-optional<ProgramArgs> ProgramArgs::parseArgs(int argc,  char** argv) {
+optional<ProgramArgs> ProgramArgs::parseArgs(int argc,  char** argv, std::ostream &out) {
     ProgramArgs programArgs;
 
     for (int i = 1; i < argc; ++i) {
-        if (argv[i] == string("-o")) {
-            if (i+1 == argc) {
-                cerr << "Argument to -o must be specified." << endl;
+        string arg = argv[i];
+
+        if (arg.rfind("-O", 0) == 0) {
+            char *end = nullptr;
+            optional<unsigned> num;
+            if (arg.size() > 2) num = strtoll(arg.c_str()+2, &end, 10);
+            if (!num.has_value() || num > 3 || end != &*arg.end() || errno == ERANGE) {
+                out << "Bad optimization level specified." << endl;
                 return nullopt;
             }
 
-            ++i;
-            programArgs.output = argv[i];
-        } else if (argv[i] == string("-c")) {
+            if (programArgs.optLvl.has_value()) {
+                out << "Multiple optimization levels specified." << endl;
+                return nullopt;
+            }
+
+            programArgs.optLvl = num;
+        } else if (arg == "-o") {
+            if (i+1 == argc) {
+                out << "Argument to -o must be specified." << endl;
+                return nullopt;
+            }
+
+            programArgs.output = argv[++i];
+        } else if (arg == "-c") {
             programArgs.exe = false;
         } else {
-            if (filesystem::path(argv[i]).extension().string() == ".orb") {
-                programArgs.inputsSrc.push_back(argv[i]);
+            if (filesystem::path(arg).extension().string() == ".orb") {
+                programArgs.inputsSrc.push_back(arg);
             } else {
-                if (!filesystem::exists(argv[i])) {
-                    cerr << "Nonexistent file '" << argv[i] << "'." << endl;
+                if (!filesystem::exists(arg)) {
+                    out << "Nonexistent file '" << arg << "'." << endl;
                     return nullopt;
                 }
 
-                programArgs.inputsOther.push_back(argv[i]);
+                programArgs.inputsOther.push_back(arg);
             }
         }
     }
 
     if (programArgs.inputsSrc.empty() && programArgs.inputsOther.empty()) {
-        cerr << "No input files specified." << endl;
+        out << "No input files specified." << endl;
         return nullopt;
     }
 
     if (programArgs.inputsSrc.empty() && !programArgs.exe) {
-        cerr << "No source input files specified when linking not requested." << endl;
+        out << "No source input files specified when linking not requested." << endl;
         return nullopt;
     }
 

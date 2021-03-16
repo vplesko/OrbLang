@@ -24,6 +24,7 @@ bool buildExecutable(const ProgramArgs &args, const std::string &objFile) {
 
     vector<const char*> clangArgs;
     clangArgs.push_back(clangPath.c_str());
+    if (args.optLvl.has_value()) clangArgs.push_back((string("-O")+to_string(args.optLvl.value())).c_str());
     if (!objFile.empty()) clangArgs.push_back(objFile.c_str());
     for (const string &in : args.inputsOther) clangArgs.push_back(in.c_str());
     clangArgs.push_back("-o");

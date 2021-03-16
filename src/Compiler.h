@@ -87,6 +87,8 @@ public:
     llvm::Type* genPrimTypeF64();
     llvm::Type* genPrimTypePtr();
 
+    void setOptLevel(unsigned lvl);
+
     void printout() const;
     bool binary(const std::string &filename);
 };

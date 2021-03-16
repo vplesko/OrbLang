@@ -25,7 +25,7 @@ class CompilationOrchestrator {
 public:
     CompilationOrchestrator(std::ostream &out);
 
-    bool process(const std::vector<std::string> &inputs);
+    bool process(const ProgramArgs &args);
     void printout() const;
     bool compile(const ProgramArgs &args);
 

@@ -19,7 +19,6 @@ Compiler::Compiler(NamePool *namePool, StringPool *stringPool, TypeTable *typeTa
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("module"), llvmContext);
 
     llvmPmb = make_unique<llvm::PassManagerBuilder>();
-    llvmPmb->OptLevel = 0;
 
     llvmFpm = make_unique<llvm::legacy::FunctionPassManager>(llvmModule.get());
     llvmPmb->populateFunctionPassManager(*llvmFpm);
@@ -56,6 +55,10 @@ bool Compiler::binary(const std::string &filename) {
     dest.flush();
 
     return true;
+}
+
+void Compiler::setOptLevel(unsigned lvl) {
+    llvmPmb->OptLevel = lvl;
 }
 
 llvm::Type* Compiler::genPrimTypeBool() {

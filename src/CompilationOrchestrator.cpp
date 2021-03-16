@@ -224,15 +224,17 @@ ImportTransRes followImport(
     }
 }
 
-bool CompilationOrchestrator::process(const vector<string> &inputs) {
-    if (inputs.empty()) return true;
+bool CompilationOrchestrator::process(const ProgramArgs &args) {
+    if (args.inputsSrc.empty()) return true;
+
+    if (args.optLvl.has_value()) compiler->setOptLevel(args.optLvl.value());
 
     Parser par(stringPool.get(), typeTable.get(), msgs.get());
 
     unordered_map<string, unique_ptr<Lexer>> lexers;
     stack<Lexer*> trace;
 
-    for (const string &in : inputs) {
+    for (const string &in : args.inputsSrc) {
         optional<string> pathOpt = locateOrbFile(in);
         if (!pathOpt.has_value()) {
             msgs->errorInputFileNotFound(in);
