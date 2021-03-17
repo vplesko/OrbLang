@@ -1,3 +1,3 @@
 fnc main () () {
-    import "util/io.orb";
+    import "util/print.orb";
 };

@@ -1,4 +1,4 @@
-import "util/io.orb";
+import "util/print.orb";
 
 fnc printf::noNameMangle (fmt:(c8 cn []))::variadic ();
 

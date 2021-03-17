@@ -1,6 +1,4 @@
-# TODO fix test errors on Windows
-
-import "util/io.orb";
+import "util/print.orb";
 
 eval (fnc foo (x:i32) i32 {
     ret (attrOf x foo);
