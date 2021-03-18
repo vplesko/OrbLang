@@ -396,11 +396,16 @@ bool Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, c
 
     llvmBuilderAlloca.CreateBr(llvmBlockBody);
 
-    if (!callable.hasRet() && !isLlvmBlockTerminated()) {
-        // if llvm block is terminated, these have been called already
-        if (!callDropFuncsCurrCallable(codeLoc)) return false;
+    if (!isLlvmBlockTerminated()) {
+        if (!callable.hasRet()) {
+            // if llvm block is terminated, these have been called already
+            if (!callDropFuncsCurrCallable(codeLoc)) return false;
 
-        llvmBuilder.CreateRetVoid();
+            llvmBuilder.CreateRetVoid();
+        } else {
+            msgs->errorUnknown(codeLoc);
+            return false;
+        }
     }
 
     if (llvm::verifyFunction(*func.llvmFunc, &llvm::errs())) cerr << endl;
