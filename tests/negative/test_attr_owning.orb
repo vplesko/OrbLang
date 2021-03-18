@@ -1,8 +1,12 @@
 data Foo {
     x:i32
-} (fnc dropFoo (val:Foo::noDrop) () {});
+} (eval (fnc dropFoo (val:Foo::noDrop) () {}));
+
+eval (fnc makeFoo () Foo {
+    sym f:Foo;
+    ret f;
+});
 
 fnc main () () {
-    eval (sym f:Foo);
-    sym (x 0::((abcd f)));
+    sym (x 0::((abcd (makeFoo))));
 };

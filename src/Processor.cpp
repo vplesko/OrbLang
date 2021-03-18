@@ -1258,6 +1258,9 @@ NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) 
     if (attrWarning.value()) status = CompilationMessages::S_WARNING;
     else if (attrError.value()) status = CompilationMessages::S_ERROR;
 
+    optional<NodeVal> attrLoc = getAttribute(starting, "loc");
+    CodeLoc codeLoc = attrLoc.has_value() ? attrLoc.value().getCodeLoc() : node.getCodeLoc();
+
     vector<NodeVal> opers;
     opers.reserve(node.getChildrenCnt()-1);
 
@@ -1269,7 +1272,7 @@ NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) 
         opers.push_back(move(nodeVal));
     }
 
-    if (!msgs->userMessageStart(node.getCodeLoc(), status)) {
+    if (!msgs->userMessageStart(codeLoc, status)) {
         msgs->errorInternal(node.getCodeLoc());
         return NodeVal();
     }
@@ -1278,23 +1281,23 @@ NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) 
         const EvalVal &evalVal = opers[i].getEvalVal();
 
         if (EvalVal::isI(evalVal, typeTable)) {
-            msgs->userMessage(node.getCodeLoc(), EvalVal::getValueI(evalVal, typeTable).value());
+            msgs->userMessage(EvalVal::getValueI(evalVal, typeTable).value());
         } else if (EvalVal::isU(evalVal, typeTable)) {
-            msgs->userMessage(node.getCodeLoc(), EvalVal::getValueU(evalVal, typeTable).value());
+            msgs->userMessage(EvalVal::getValueU(evalVal, typeTable).value());
         } else if (EvalVal::isF(evalVal, typeTable)) {
-            msgs->userMessage(node.getCodeLoc(), EvalVal::getValueF(evalVal, typeTable).value());
+            msgs->userMessage(EvalVal::getValueF(evalVal, typeTable).value());
         } else if (EvalVal::isC(evalVal, typeTable)) {
-            msgs->userMessage(node.getCodeLoc(), evalVal.c8);
+            msgs->userMessage(evalVal.c8);
         } else if (EvalVal::isB(evalVal, typeTable)) {
-            msgs->userMessage(node.getCodeLoc(), evalVal.b);
+            msgs->userMessage(evalVal.b);
         } else if (EvalVal::isId(evalVal, typeTable)) {
-            msgs->userMessage(node.getCodeLoc(), evalVal.id);
+            msgs->userMessage(evalVal.id);
         } else if (EvalVal::isType(evalVal, typeTable)) {
-            msgs->userMessage(node.getCodeLoc(), evalVal.ty);
+            msgs->userMessage(evalVal.ty);
         } else if (EvalVal::isNull(evalVal, typeTable)) {
-            msgs->userMessageNull(node.getCodeLoc());
+            msgs->userMessageNull();
         } else if (EvalVal::isNonNullStr(evalVal, typeTable)) {
-            msgs->userMessage(node.getCodeLoc(), evalVal.str.value());
+            msgs->userMessage(evalVal.str.value());
         } else {
             msgs->userMessageEnd();
             msgs->errorUnknown(opers[i].getCodeLoc());
@@ -1668,7 +1671,9 @@ NodeVal Processor::castNode(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id 
         return node;
     }
 
-    if (!skipCheckNeedsDrop && node.hasRef() && !checkNotNeedsDrop(node.getCodeLoc(), node, true)) return NodeVal();
+    if (!skipCheckNeedsDrop &&
+        (node.hasRef() || node.getLifetimeInfo().invokeArg) &&
+        !checkNotNeedsDrop(node.getCodeLoc(), node, true)) return NodeVal();
 
     if (checkIsEvalTime(node, false) && !shouldNotDispatchCastToEval(node, ty)) {
         return evaluator->performCast(node.getCodeLoc(), node, ty);
@@ -2155,7 +2160,8 @@ bool Processor::processAttributes(NodeVal &node) {
                     attrVal = processNode(*nodeAttrEntryVal);
                     if (attrVal.isInvalid()) return false;
                     if (!checkHasType(attrVal, true)) return false;
-                    if (!checkHasTrivialDrop(attrVal.getCodeLoc(), attrVal.getType().value(), true)) return false;
+                    if (!attrVal.hasRef() && !attrVal.getLifetimeInfo().invokeArg &&
+                        !checkNotNeedsDrop(attrVal.getCodeLoc(), attrVal, true)) return false;
                 }
 
                 attrMap.attrMap.insert({attrName, make_unique<NodeVal>(move(attrVal))});

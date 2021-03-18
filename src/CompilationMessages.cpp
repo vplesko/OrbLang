@@ -257,39 +257,39 @@ void CompilationMessages::userMessageEnd() {
     (*out) << endl;
 }
 
-void CompilationMessages::userMessage(CodeLoc loc, std::int64_t x) {
+void CompilationMessages::userMessage(std::int64_t x) {
     (*out) << x;
 }
 
-void CompilationMessages::userMessage(CodeLoc loc, std::uint64_t x) {
+void CompilationMessages::userMessage(std::uint64_t x) {
     (*out) << x;
 }
 
-void CompilationMessages::userMessage(CodeLoc loc, double x) {
+void CompilationMessages::userMessage(double x) {
     (*out) << x;
 }
 
-void CompilationMessages::userMessage(CodeLoc loc, char x) {
+void CompilationMessages::userMessage(char x) {
     (*out) << x;
 }
 
-void CompilationMessages::userMessage(CodeLoc loc, bool x) {
+void CompilationMessages::userMessage(bool x) {
     (*out) << (x ? "true" : "false");
 }
 
-void CompilationMessages::userMessage(CodeLoc loc, NamePool::Id x) {
+void CompilationMessages::userMessage(NamePool::Id x) {
     (*out) << namePool->get(x);
 }
 
-void CompilationMessages::userMessage(CodeLoc loc, TypeTable::Id x) {
+void CompilationMessages::userMessage(TypeTable::Id x) {
     (*out) << errorStringOfType(x);
 }
 
-void CompilationMessages::userMessageNull(CodeLoc loc) {
+void CompilationMessages::userMessageNull() {
     (*out) << "null";
 }
 
-void CompilationMessages::userMessage(CodeLoc loc, StringPool::Id str) {
+void CompilationMessages::userMessage(StringPool::Id str) {
     (*out) << stringPool->get(str);
 }
 

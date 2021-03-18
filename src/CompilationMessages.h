@@ -51,15 +51,15 @@ public:
 
     bool userMessageStart(CodeLoc loc, Status s);
     void userMessageEnd();
-    void userMessage(CodeLoc loc, std::int64_t x);
-    void userMessage(CodeLoc loc, std::uint64_t x);
-    void userMessage(CodeLoc loc, double x);
-    void userMessage(CodeLoc loc, char x);
-    void userMessage(CodeLoc loc, bool x);
-    void userMessage(CodeLoc loc, NamePool::Id x);
-    void userMessage(CodeLoc loc, TypeTable::Id x);
-    void userMessageNull(CodeLoc loc);
-    void userMessage(CodeLoc loc, StringPool::Id str);
+    void userMessage(std::int64_t x);
+    void userMessage(std::uint64_t x);
+    void userMessage(double x);
+    void userMessage(char x);
+    void userMessage(bool x);
+    void userMessage(NamePool::Id x);
+    void userMessage(TypeTable::Id x);
+    void userMessageNull();
+    void userMessage(StringPool::Id str);
 
     void errorInputFileNotFound(const std::string &path);
     void errorBadToken(CodeLoc loc);
