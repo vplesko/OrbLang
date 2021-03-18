@@ -2,9 +2,9 @@
 #include <cassert>
 using namespace std;
 
-std::unordered_map<NamePool::Id, Meaningful> meaningfuls;
-std::unordered_map<NamePool::Id, Keyword> keywords;
-std::unordered_map<NamePool::Id, Oper> opers;
+std::unordered_map<NamePool::Id, Meaningful, NamePool::Id::Hasher> meaningfuls;
+std::unordered_map<NamePool::Id, Keyword, NamePool::Id::Hasher> keywords;
+std::unordered_map<NamePool::Id, Oper, NamePool::Id::Hasher> opers;
 
 const unordered_map<Oper, OperInfo> operInfos = {
     {Oper::ASGN, {.binary=true}},

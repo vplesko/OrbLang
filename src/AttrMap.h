@@ -7,7 +7,7 @@
 class NodeVal;
 
 struct AttrMap {
-    std::unordered_map<NamePool::Id, std::unique_ptr<NodeVal>> attrMap;
+    std::unordered_map<NamePool::Id, std::unique_ptr<NodeVal>, NamePool::Id::Hasher> attrMap;
 
 private:
     void copyFrom(const AttrMap &other);

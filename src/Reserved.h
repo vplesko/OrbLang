@@ -68,9 +68,9 @@ struct OperInfo {
     bool comparison = false;
 };
 
-extern std::unordered_map<NamePool::Id, Meaningful> meaningfuls;
-extern std::unordered_map<NamePool::Id, Keyword> keywords;
-extern std::unordered_map<NamePool::Id, Oper> opers;
+extern std::unordered_map<NamePool::Id, Meaningful, NamePool::Id::Hasher> meaningfuls;
+extern std::unordered_map<NamePool::Id, Keyword, NamePool::Id::Hasher> keywords;
+extern std::unordered_map<NamePool::Id, Oper, NamePool::Id::Hasher> opers;
 extern const std::unordered_map<Oper, OperInfo> operInfos;
 
 bool isMeaningful(NamePool::Id name);

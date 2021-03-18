@@ -179,8 +179,8 @@ private:
     std::vector<std::pair<Custom, llvm::Type*>> customs;
     std::vector<std::pair<DataType, llvm::Type*>> dataTypes;
     std::vector<std::pair<Callable, llvm::Type*>> callables;
-    
-    std::unordered_map<NamePool::Id, Id> typeIds;
+
+    std::unordered_map<NamePool::Id, Id, NamePool::Id::Hasher> typeIds;
     std::unordered_map<Id, NamePool::Id, Id::Hasher> typeNames;
 
     template <typename T>

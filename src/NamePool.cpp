@@ -2,7 +2,7 @@
 using namespace std;
 
 NamePool::NamePool() {
-    next = 0;
+    next.id = 0;
 }
 
 NamePool::Id NamePool::add(const string &name) {
@@ -12,8 +12,11 @@ NamePool::Id NamePool::add(const string &name) {
 
     ids[name] = next;
     names[next] = name;
-    next += 1;
-    return next-1;
+
+    NamePool::Id ret = next;
+    next.id += 1;
+
+    return ret;
 }
 
 NamePool::Id NamePool::addMain(const std::string &name) {

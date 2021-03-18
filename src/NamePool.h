@@ -6,13 +6,29 @@
 
 class NamePool {
 public:
-    typedef unsigned Id;
+    struct Id {
+        typedef unsigned IdType;
+
+        IdType id;
+
+        friend bool operator==(const Id &l, const Id &r)
+        { return l.id == r.id; }
+
+        friend bool operator!=(const Id &l, const Id &r)
+        { return !(l == r); }
+
+        struct Hasher {
+            std::size_t operator()(const Id &id) const {
+                return std::hash<IdType>()(id.id);
+            }
+        };
+    };
 
 private:
     Id next;
     Id main;
 
-    std::unordered_map<Id, std::string> names;
+    std::unordered_map<Id, std::string, Id::Hasher> names;
     std::unordered_map<std::string, Id> ids;
 
 public:

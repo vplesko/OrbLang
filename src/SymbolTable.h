@@ -99,14 +99,14 @@ private:
     struct BlockInternal {
         Block block;
         // Guarantees pointer stability of values.
-        std::unordered_map<NamePool::Id, VarEntry> vars;
+        std::unordered_map<NamePool::Id, VarEntry, NamePool::Id::Hasher> vars;
         std::vector<NamePool::Id> varsInOrder;
     };
 
     // Guarantees pointer stability of values.
-    std::unordered_map<NamePool::Id, std::vector<std::unique_ptr<FuncValue>>> funcs;
+    std::unordered_map<NamePool::Id, std::vector<std::unique_ptr<FuncValue>>, NamePool::Id::Hasher> funcs;
     // Guarantees pointer stability of values.
-    std::unordered_map<NamePool::Id, std::vector<std::unique_ptr<MacroValue>>> macros;
+    std::unordered_map<NamePool::Id, std::vector<std::unique_ptr<MacroValue>>, NamePool::Id::Hasher> macros;
 
     // Do NOT guarantee pointer stability of blocks.
     std::vector<BlockInternal> globalBlockChain;
