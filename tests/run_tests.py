@@ -22,7 +22,7 @@ def run_positive_test(case):
         exe_file += '.exe'
     cmp_file = TEST_POS_DIR + '/' + case + '.txt'
 
-    result = subprocess.run([ORBC_EXE, src_file, '-o', exe_file])
+    result = subprocess.run([ORBC_EXE, src_file, '-o', exe_file], stderr=subprocess.DEVNULL)
     if result.returncode != 0:
         return False
 
@@ -72,7 +72,9 @@ def run_all_tests(dir, test_func):
 if __name__ == "__main__":
     if not os.path.exists(TEST_BIN_DIR):
         os.mkdir(TEST_BIN_DIR)
-    if not run_all_tests(TEST_POS_DIR, run_positive_test) or not run_all_tests(TEST_NEG_DIR, run_negative_test):
+
+    if not run_all_tests(TEST_POS_DIR, run_positive_test) \
+        or not run_all_tests(TEST_NEG_DIR, run_negative_test):
         print('Test failed!')
     else:
         print('Tests ran successfully.')
