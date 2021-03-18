@@ -22,7 +22,7 @@ def run_positive_test(case):
         exe_file += '.exe'
     cmp_file = TEST_POS_DIR + '/' + case + '.txt'
 
-    result = subprocess.run([ORBC_EXE, src_file, '-o', exe_file], stderr=subprocess.DEVNULL)
+    result = subprocess.run([ORBC_EXE, src_file, '-o', exe_file])
     if result.returncode != 0:
         return False
 

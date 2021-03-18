@@ -214,7 +214,7 @@ fnc main () () {
         (pat (x) { ret \(println_i32 ,x); }) 904;
     };
 
-    # TODO+ don't drop intermediary values (maybe block::noDrop, propagates to enclosed blocks, not to calls/invokes)
+    # TODO don't call drop on intermediary values
     block {
         make Bar (x 1000);
     };

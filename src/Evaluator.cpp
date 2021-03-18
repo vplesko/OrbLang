@@ -289,7 +289,6 @@ bool Evaluator::performRet(CodeLoc codeLoc) {
 }
 
 bool Evaluator::performRet(CodeLoc codeLoc, const NodeVal &node) {
-    // TODO+ don't reset invokeArg if returning to macro who was also passed this as arg
     retVal = NodeVal::copyNoRef(node, LifetimeInfo());
     performRet(codeLoc);
 
