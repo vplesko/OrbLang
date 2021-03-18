@@ -1049,10 +1049,15 @@ optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool, bool m
         ss << "$a" << sig.getArgCnt();
         if (sig.variadic) ss << "+";
         if (sig.isFunc) {
-            for (const auto &arg : sig.args) {
+            for (size_t i = 0; i < sig.args.size(); ++i) {
+                const auto &arg = sig.args[i];
+
                 optional<string> str = makeBinString(arg.ty, namePool, false);
                 if (!str.has_value()) return nullopt;
                 ss << str.value();
+
+                // noDrop is not part of sig, so fetch from original
+                if (callable.getArgNoDrop(i)) ss << "$!";
             }
         }
 

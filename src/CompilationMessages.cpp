@@ -34,8 +34,14 @@ string CompilationMessages::errorStringOfTokenType(Token::Type tokTy) const {
     case Token::T_COLON:
         ss << "\':\'";
         break;
+    case Token::T_DOUBLE_COLON:
+        ss << "\'::\'";
+        break;
     case Token::T_BACKSLASH:
         ss << "\'\\\'";
+        break;
+    case Token::T_COMMA:
+        ss << "\',\'";
         break;
     case Token::T_BRACE_L_REG:
         ss << "\'(\'";
@@ -52,6 +58,9 @@ string CompilationMessages::errorStringOfTokenType(Token::Type tokTy) const {
     case Token::T_ID:
         ss << "identifier";
         break;
+    case Token::T_END:
+        ss << "<file end>";
+        break;
     default:
         ss << fallback;
         break;
@@ -61,8 +70,6 @@ string CompilationMessages::errorStringOfTokenType(Token::Type tokTy) const {
 }
 
 string CompilationMessages::errorStringOfToken(Token tok) const {
-    string fallback("<unknown>");
-
     stringstream ss;
 
     switch (tok.type) {
@@ -81,35 +88,11 @@ string CompilationMessages::errorStringOfToken(Token tok) const {
     case Token::T_STRING:
         ss << '\"' << stringPool->get(tok.stringId) << '\"';
         break;
-    case Token::T_NULL:
-        ss << "null";
-        break;
-    case Token::T_SEMICOLON:
-        ss << "\';\'";
-        break;
-    case Token::T_COLON:
-        ss << "\':\'";
-        break;
-    case Token::T_BACKSLASH:
-        ss << "\'\\\'";
-        break;
-    case Token::T_BRACE_L_REG:
-        ss << "\'(\'";
-        break;
-    case Token::T_BRACE_R_REG:
-        ss << "\')\'";
-        break;
-    case Token::T_BRACE_L_CUR:
-        ss << "\'{\'";
-        break;
-    case Token::T_BRACE_R_CUR:
-        ss << "\'}\'";
-        break;
     case Token::T_ID:
         ss << "\'" << namePool->get(tok.nameId) << "\'";
         break;
     default:
-        ss << fallback;
+        ss << errorStringOfTokenType(tok.type);
         break;
     }
 
@@ -125,7 +108,6 @@ string CompilationMessages::errorStringOfType(TypeTable::Id ty) const {
 
     stringstream ss;
 
-    // TODO pretty print for funcs and macros
     if (typeTable->isTypeDescr(ty)) {
         ss << '(';
 
@@ -148,7 +130,7 @@ string CompilationMessages::errorStringOfType(TypeTable::Id ty) const {
             default:
                 return fallback;
             }
-            if (descr.cns[i]) ss << "cn";
+            if (descr.cns[i]) ss << " cn";
         }
 
         ss << ')';
@@ -167,6 +149,34 @@ string CompilationMessages::errorStringOfType(TypeTable::Id ty) const {
         ss << namePool->get(typeTable->getCustom(ty).name);
     } else if (typeTable->isDataType(ty)) {
         ss << namePool->get(typeTable->getDataType(ty).name);
+    } else if (typeTable->isCallable(ty)) {
+        ss << '(';
+
+        const TypeTable::Callable &callable = typeTable->getCallable(ty);
+
+        if (callable.isFunc) {
+            ss << "fnc";
+
+            ss << " (";
+            for (size_t i = 0; i < callable.getArgCnt(); ++i) {
+                if (i > 0) ss << ' ';
+                ss << errorStringOfType(callable.getArgType(i));
+                if (callable.getArgNoDrop(i)) ss << "::noDrop";
+            }
+            ss << ")";
+            if (callable.variadic) ss << "::variadic";
+
+            ss << ' ';
+            if (callable.hasRet()) ss << errorStringOfType(callable.retType.value());
+            else ss << "()";
+        } else {
+            ss << "mac";
+
+            ss << ' ' << callable.getArgCnt();
+            if (callable.variadic) ss << "::variadic";
+        }
+
+        ss << ')';
     } else {
         optional<NamePool::Id> name = typeTable->getTypeName(ty);
         if (name.has_value()) {

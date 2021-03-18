@@ -818,6 +818,7 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
     return ret;
 }
 
+// TODO! missing ret reported by llvm
 NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
     if (!checkBetweenChildren(node, 3, 5, true)) return NodeVal();
 
