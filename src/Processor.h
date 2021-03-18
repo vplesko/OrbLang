@@ -111,14 +111,10 @@ protected:
 
     std::optional<NodeVal> getAttribute(const NodeVal &node, NamePool::Id attrName);
     std::optional<NodeVal> getAttribute(const NodeVal &node, const std::string &attrStrName);
-    // nullopt on error or attr not eval bool, false if not present, otherwise attribute value
-    std::optional<bool> getAttributeForBool(const NodeVal &node, NamePool::Id attrName);
-    // nullopt on error or attr not eval bool, false if not present, otherwise attribute value
-    std::optional<bool> getAttributeForBool(const NodeVal &node, const std::string &attrStrName);
-    // outer optional is nullopt on error, inner is nullopt if not present, bool is attribute value
-    std::optional<std::optional<bool>> getAttributeForBoolOrNotPresent(const NodeVal &node, NamePool::Id attrName);
-    // outer optional is nullopt on error, inner is nullopt if not present, bool is attribute value
-    std::optional<std::optional<bool>> getAttributeForBoolOrNotPresent(const NodeVal &node, const std::string &attrStrName);
+    // nullopt on error, otherwise attribute value, or default value if not present
+    std::optional<bool> getAttributeForBool(const NodeVal &node, NamePool::Id attrName, bool default_ = false);
+    // nullopt on error, otherwise attribute value, or default value if not present
+    std::optional<bool> getAttributeForBool(const NodeVal &node, const std::string &attrStrName, bool default_ = false);
 private:
     NodeVal promoteBool(CodeLoc codeLoc, bool b) const;
     NodeVal promoteType(CodeLoc codeLoc, TypeTable::Id ty) const;
@@ -172,7 +168,7 @@ private:
     NodeVal processRet(const NodeVal &node);
     NodeVal processEval(const NodeVal &node);
     NodeVal processImport(const NodeVal &node, bool topmost);
-    NodeVal processMessage(const NodeVal &node);
+    NodeVal processMessage(const NodeVal &node, const NodeVal &starting);
     NodeVal processOper(const NodeVal &node, Oper op);
     NodeVal processTypeOf(const NodeVal &node);
     NodeVal processLenOf(const NodeVal &node);

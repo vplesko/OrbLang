@@ -15,7 +15,7 @@ public:
     enum Status {
         S_NONE,
         S_INFO,
-        S_WARN,
+        S_WARNING,
         S_ERROR,
         S_INTERNAL
     };
@@ -32,8 +32,8 @@ private:
     void heading(CodeLoc loc);
     void info(const std::string &str);
     void info(CodeLoc loc, const std::string &str);
-    void warn(const std::string &str);
-    void warn(CodeLoc loc, const std::string &str);
+    void warning(const std::string &str);
+    void warning(CodeLoc loc, const std::string &str);
     void error(const std::string &str);
     void error(CodeLoc loc, const std::string &str);
 
@@ -49,7 +49,7 @@ public:
     Status getStatus() const {return status; }
     bool isFail() const { return status >= S_ERROR; }
 
-    void userMessageStart(CodeLoc loc);
+    bool userMessageStart(CodeLoc loc, Status s);
     void userMessageEnd();
     void userMessage(CodeLoc loc, std::int64_t x);
     void userMessage(CodeLoc loc, std::uint64_t x);

@@ -216,14 +216,14 @@ void CompilationMessages::info(CodeLoc loc, const std::string &str) {
     info(str);
 }
 
-void CompilationMessages::warn(const std::string &str) {
-    raise(S_WARN);
-    (*out) << "warn: " << str << endl;
+void CompilationMessages::warning(const std::string &str) {
+    raise(S_WARNING);
+    (*out) << "warning: " << str << endl;
 }
 
-void CompilationMessages::warn(CodeLoc loc, const std::string &str) {
+void CompilationMessages::warning(CodeLoc loc, const std::string &str) {
     heading(loc);
-    warn(str);
+    warning(str);
 }
 
 void CompilationMessages::error(const string &str) {
@@ -236,9 +236,21 @@ void CompilationMessages::error(CodeLoc loc, const string &str) {
     error(str);
 }
 
-void CompilationMessages::userMessageStart(CodeLoc loc) {
+bool CompilationMessages::userMessageStart(CodeLoc loc, Status s) {
+    if (s != S_INFO && s != S_WARNING && s != S_ERROR) return false;
+
     heading(loc);
-    raise(S_INFO);
+    raise(s);
+
+    if (s == S_INFO) {
+        (*out) << "info: ";
+    } else if (s == S_WARNING) {
+        (*out) << "warning: ";
+    } else if (s == S_ERROR) {
+        (*out) << "error: ";
+    }
+
+    return true;
 }
 
 void CompilationMessages::userMessageEnd() {

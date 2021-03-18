@@ -788,41 +788,41 @@ bool TypeTable::fitsTypeI(int64_t x, Id t) const {
     
     int64_t lo, hi;
     switch (primId) {
-        case TypeTable::P_I8:
-            lo = (int64_t) numeric_limits<int8_t>::min();
-            hi = (int64_t) numeric_limits<int8_t>::max();
-            break;
-        case TypeTable::P_I16:
-            lo = (int64_t) numeric_limits<int16_t>::min();
-            hi = (int64_t) numeric_limits<int16_t>::max();
-            break;
-        case TypeTable::P_I32:
-            lo = (int64_t) numeric_limits<int32_t>::min();
-            hi = (int64_t) numeric_limits<int32_t>::max();
-            break;
-        case TypeTable::P_I64:
-            lo = (int64_t) numeric_limits<int64_t>::min();
-            hi = (int64_t) numeric_limits<int64_t>::max();
-            break;
-        case TypeTable::P_U8:
-            lo = (int64_t) numeric_limits<uint8_t>::min();
-            hi = (int64_t) numeric_limits<uint8_t>::max();
-            break;
-        case TypeTable::P_U16:
-            lo = (int64_t) numeric_limits<uint16_t>::min();
-            hi = (int64_t) numeric_limits<uint16_t>::max();
-            break;
-        case TypeTable::P_U32:
-            lo = (int64_t) numeric_limits<uint32_t>::min();
-            hi = (int64_t) numeric_limits<uint32_t>::max();
-            break;
-        case TypeTable::P_U64:
-            lo = (int64_t) numeric_limits<uint64_t>::min();
-            // int64_t's max used intentionally, uint64_t's max couldn't fit and literals cannot exceed this value anyway
-            hi = (int64_t) numeric_limits<int64_t>::max();
-            break;
-        default:
-            return false;
+    case TypeTable::P_I8:
+        lo = (int64_t) numeric_limits<int8_t>::min();
+        hi = (int64_t) numeric_limits<int8_t>::max();
+        break;
+    case TypeTable::P_I16:
+        lo = (int64_t) numeric_limits<int16_t>::min();
+        hi = (int64_t) numeric_limits<int16_t>::max();
+        break;
+    case TypeTable::P_I32:
+        lo = (int64_t) numeric_limits<int32_t>::min();
+        hi = (int64_t) numeric_limits<int32_t>::max();
+        break;
+    case TypeTable::P_I64:
+        lo = (int64_t) numeric_limits<int64_t>::min();
+        hi = (int64_t) numeric_limits<int64_t>::max();
+        break;
+    case TypeTable::P_U8:
+        lo = (int64_t) numeric_limits<uint8_t>::min();
+        hi = (int64_t) numeric_limits<uint8_t>::max();
+        break;
+    case TypeTable::P_U16:
+        lo = (int64_t) numeric_limits<uint16_t>::min();
+        hi = (int64_t) numeric_limits<uint16_t>::max();
+        break;
+    case TypeTable::P_U32:
+        lo = (int64_t) numeric_limits<uint32_t>::min();
+        hi = (int64_t) numeric_limits<uint32_t>::max();
+        break;
+    case TypeTable::P_U64:
+        lo = (int64_t) numeric_limits<uint64_t>::min();
+        // int64_t's max used intentionally, uint64_t's max couldn't fit and literals cannot exceed this value anyway
+        hi = (int64_t) numeric_limits<int64_t>::max();
+        break;
+    default:
+        return false;
     }
     return between(x, lo, hi);
 }
@@ -834,32 +834,32 @@ bool TypeTable::fitsTypeU(uint64_t x, Id t) const {
     
     uint64_t hi;
     switch (primId) {
-        case TypeTable::P_I8:
-            hi = numeric_limits<int8_t>::max();
-            break;
-        case TypeTable::P_I16:
-            hi = numeric_limits<int16_t>::max();
-            break;
-        case TypeTable::P_I32:
-            hi = numeric_limits<int32_t>::max();
-            break;
-        case TypeTable::P_I64:
-            hi = numeric_limits<int64_t>::max();
-            break;
-        case TypeTable::P_U8:
-            hi = numeric_limits<uint8_t>::max();
-            break;
-        case TypeTable::P_U16:
-            hi = numeric_limits<uint16_t>::max();
-            break;
-        case TypeTable::P_U32:
-            hi = numeric_limits<uint32_t>::max();
-            break;
-        case TypeTable::P_U64:
-            hi = numeric_limits<uint64_t>::max();
-            break;
-        default:
-            return false;
+    case TypeTable::P_I8:
+        hi = numeric_limits<int8_t>::max();
+        break;
+    case TypeTable::P_I16:
+        hi = numeric_limits<int16_t>::max();
+        break;
+    case TypeTable::P_I32:
+        hi = numeric_limits<int32_t>::max();
+        break;
+    case TypeTable::P_I64:
+        hi = numeric_limits<int64_t>::max();
+        break;
+    case TypeTable::P_U8:
+        hi = numeric_limits<uint8_t>::max();
+        break;
+    case TypeTable::P_U16:
+        hi = numeric_limits<uint16_t>::max();
+        break;
+    case TypeTable::P_U32:
+        hi = numeric_limits<uint32_t>::max();
+        break;
+    case TypeTable::P_U64:
+        hi = numeric_limits<uint64_t>::max();
+        break;
+    default:
+        return false;
     }
     return x <= hi;
 }

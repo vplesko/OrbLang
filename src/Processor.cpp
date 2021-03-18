@@ -117,7 +117,7 @@ NodeVal Processor::processNonLeaf(const NodeVal &node, bool topmost) {
             case Keyword::IMPORT:
                 return processImport(node, topmost);
             case Keyword::MESSAGE:
-                return processMessage(node);
+                return processMessage(node, starting);
             default:
                 msgs->errorUnexpectedKeyword(starting.getCodeLoc(), keyw.value());
                 return NodeVal();
@@ -865,15 +865,13 @@ NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
         isMain = isMeaningful(name, Meaningful::MAIN);
         noNameMangle = attrNoNameMangle.value();
 
-        optional<optional<bool>> attrEvaluableOpt = getAttributeForBoolOrNotPresent(nodeName, "evaluable");
+        optional<bool> attrEvaluableOpt = getAttributeForBool(nodeName, "evaluable", this == evaluator);
         if (!attrEvaluableOpt.has_value()) return NodeVal();
-        if (attrEvaluableOpt.value().has_value()) evaluable = attrEvaluableOpt.value().value();
-        else evaluable = this == evaluator;
+        evaluable = attrEvaluableOpt.value();
 
-        optional<optional<bool>> attrCompilableOpt = getAttributeForBoolOrNotPresent(nodeName, "compilable");
+        optional<bool> attrCompilableOpt = getAttributeForBool(nodeName, "compilable", this == compiler);
         if (!attrCompilableOpt.has_value()) return NodeVal();
-        if (attrCompilableOpt.value().has_value()) compilable = attrCompilableOpt.value().value();
-        else compilable = this == compiler;
+        compilable = attrCompilableOpt.value();
 
         if (!evaluable && !compilable) {
             msgs->errorUnknown(node.getCodeLoc());
@@ -1236,10 +1234,23 @@ NodeVal Processor::processImport(const NodeVal &node, bool topmost) {
     return NodeVal(node.getCodeLoc(), file.getEvalVal().str.value());
 }
 
-NodeVal Processor::processMessage(const NodeVal &node) {
+NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) {
     if (!checkAtLeastChildren(node, 2, true)) {
         return NodeVal();
     }
+
+    optional<bool> isWarning = getAttributeForBool(starting, "warning");
+    if (!isWarning.has_value()) return NodeVal();
+    optional<bool> isError = getAttributeForBool(starting, "error");
+    if (!isError.has_value()) return NodeVal();
+    if (isWarning.value() && isError.value()) {
+        msgs->errorUnknown(starting.getCodeLoc());
+        return NodeVal();
+    }
+
+    CompilationMessages::Status status = CompilationMessages::S_INFO;
+    if (isWarning.value()) status = CompilationMessages::S_WARNING;
+    else if (isError.value()) status = CompilationMessages::S_ERROR;
 
     vector<NodeVal> opers;
     opers.reserve(node.getChildrenCnt()-1);
@@ -1252,7 +1263,11 @@ NodeVal Processor::processMessage(const NodeVal &node) {
         opers.push_back(move(nodeVal));
     }
 
-    msgs->userMessageStart(node.getCodeLoc());
+    if (!msgs->userMessageStart(node.getCodeLoc(), status)) {
+        msgs->errorInternal(node.getCodeLoc());
+        return NodeVal();
+    }
+
     for (size_t i = 0; i < opers.size(); ++i) {
         const EvalVal &evalVal = opers[i].getEvalVal();
 
@@ -1271,6 +1286,7 @@ NodeVal Processor::processMessage(const NodeVal &node) {
         // TODO if errors, err msgs will start on same line that user message left off
         if (!callDropFuncNonRef(move(opers[i]))) return NodeVal();
     }
+
     msgs->userMessageEnd();
 
     return NodeVal(node.getCodeLoc());
@@ -1461,26 +1477,16 @@ optional<NodeVal> Processor::getAttribute(const NodeVal &node, const string &att
     return getAttribute(node, namePool->add(attrStrName));
 }
 
-optional<bool> Processor::getAttributeForBool(const NodeVal &node, NamePool::Id attrName) {
-    optional<optional<bool>> attr = getAttributeForBoolOrNotPresent(node, attrName);
-    if (!attr.has_value()) return nullopt;
-    return attr.value().has_value() && attr.value().value();
-}
-
-optional<bool> Processor::getAttributeForBool(const NodeVal &node, const std::string &attrStrName) {
-    return getAttributeForBool(node, namePool->add(attrStrName));
-}
-
-optional<optional<bool>> Processor::getAttributeForBoolOrNotPresent(const NodeVal &node, NamePool::Id attrName) {
+optional<bool> Processor::getAttributeForBool(const NodeVal &node, NamePool::Id attrName, bool default_) {
     optional<NodeVal> attr = getAttribute(node, attrName);
-    if (!attr.has_value()) return optional<bool>();
+    if (!attr.has_value()) return default_;
     if (!checkIsEvalVal(attr.value(), true)) return nullopt;
     if (!checkIsBool(attr.value(), true)) return nullopt;
     return attr.value().getEvalVal().b;
 }
 
-optional<optional<bool>> Processor::getAttributeForBoolOrNotPresent(const NodeVal &node, const std::string &attrStrName) {
-    return getAttributeForBoolOrNotPresent(node, namePool->add(attrStrName));
+optional<bool> Processor::getAttributeForBool(const NodeVal &node, const std::string &attrStrName, bool default_) {
+    return getAttributeForBool(node, namePool->add(attrStrName), default_);
 }
 
 NodeVal Processor::promoteBool(CodeLoc codeLoc, bool b) const {
