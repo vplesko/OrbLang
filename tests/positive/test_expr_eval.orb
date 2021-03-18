@@ -1,4 +1,4 @@
-import "util/io.orb";
+import "util/print.orb";
 
 eval (sym (glob0 (< 1 2 3)) (glob1 "abcd"));
 

@@ -1,4 +1,4 @@
-import "util/io.orb";
+import "util/print.orb";
 
 fnc pair (x:i32 y:i32) (i32 i32) {
     sym r:(i32 i32);

@@ -1,10 +1,10 @@
-import "util/io.orb";
+import "util/print.orb";
 import "../libs/clib.orb";
-import "util/io.orb";
+import "util/print.orb";
 import "util/empty.orb";
 
 fnc main () () {};
 
-import "util/../util/io.orb";
-import "util/io.orb";
+import "util/../util/print.orb";
+import "util/print.orb";
 import "util/empty.orb";

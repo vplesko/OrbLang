@@ -100,7 +100,7 @@ private:
         Block block;
         // Guarantees pointer stability of values.
         std::unordered_map<NamePool::Id, VarEntry> vars;
-        std::vector<VarEntry*> varsInOrder;
+        std::vector<NamePool::Id> varsInOrder;
     };
 
     // Guarantees pointer stability of values.
@@ -123,7 +123,7 @@ private:
     const BlockInternal* getGlobalBlockInternal() const;
     BlockInternal* getGlobalBlockInternal();
 
-    void collectVarsInRevOrder(const BlockInternal *block, std::vector<VarEntry*> &v) const;
+    static void collectVarsInRevOrder(BlockInternal *block, std::vector<VarEntry*> &v);
 
 public:
     SymbolTable();
@@ -152,9 +152,9 @@ public:
 
     std::optional<CalleeValueInfo> getCurrCallee() const;
 
-    std::vector<VarEntry*> getVarsInRevOrderCurrBlock() const;
-    std::vector<VarEntry*> getVarsInRevOrderFromBlockToCurrBlock(NamePool::Id name) const;
-    std::vector<VarEntry*> getVarsInRevOrderCurrCallable() const;
+    std::vector<VarEntry*> getVarsInRevOrderCurrBlock();
+    std::vector<VarEntry*> getVarsInRevOrderFromBlockToCurrBlock(NamePool::Id name);
+    std::vector<VarEntry*> getVarsInRevOrderCurrCallable();
 
     bool isVarName(NamePool::Id name) const { return getVar(name) != nullptr; }
 

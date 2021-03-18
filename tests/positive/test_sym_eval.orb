@@ -1,4 +1,4 @@
-import "util/io.orb";
+import "util/print.orb";
 
 eval (sym g0:i32);
 eval (sym (g1:i32 101));

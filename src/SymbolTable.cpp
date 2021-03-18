@@ -80,8 +80,8 @@ void SymbolTable::addVar(NamePool::Id name, NodeVal val, bool forGlobal) {
 void SymbolTable::addVar(NamePool::Id name, VarEntry var, bool forGlobal) {
     BlockInternal *block = forGlobal ? getGlobalBlockInternal() : getLastBlockInternal();
 
-    auto loc = block->vars.insert(make_pair(name, move(var)));
-    block->varsInOrder.push_back(&loc.first->second);
+    block->vars.insert(make_pair(name, move(var)));
+    block->varsInOrder.push_back(name);
 }
 
 const SymbolTable::VarEntry* SymbolTable::getVar(NamePool::Id name) const {
@@ -288,20 +288,20 @@ optional<SymbolTable::CalleeValueInfo> SymbolTable::getCurrCallee() const {
     return localBlockChains.back().first;
 }
 
-void SymbolTable::collectVarsInRevOrder(const BlockInternal *block, vector<VarEntry*> &v) const {
+void SymbolTable::collectVarsInRevOrder(BlockInternal *block, vector<VarEntry*> &v) {
     const auto &vars = block->varsInOrder;
-    for_each(vars.rbegin(), vars.rend(), [&](SymbolTable::VarEntry *var){
-        v.push_back(var);
+    for_each(vars.rbegin(), vars.rend(), [&](NamePool::Id name){
+        v.push_back(&block->vars.find(name)->second);
     });
 }
 
-vector<SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderCurrBlock() const {
+vector<SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderCurrBlock() {
     vector<SymbolTable::VarEntry*> ret;
     collectVarsInRevOrder(getLastBlockInternal(), ret);
     return ret;
 }
 
-vector<SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderFromBlockToCurrBlock(NamePool::Id name) const {
+vector<SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderFromBlockToCurrBlock(NamePool::Id name) {
     vector<SymbolTable::VarEntry*> ret;
 
     if (!localBlockChains.empty()) {
@@ -324,7 +324,7 @@ vector<SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderFromBlockToCurrBloc
     return ret;
 }
 
-vector<SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderCurrCallable() const {
+vector<SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderCurrCallable() {
     vector<SymbolTable::VarEntry*> ret;
 
     for (auto it = localBlockChains.back().second.rbegin();
