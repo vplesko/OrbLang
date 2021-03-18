@@ -277,6 +277,10 @@ void CompilationMessages::userMessage(CodeLoc loc, bool x) {
     (*out) << (x ? "true" : "false");
 }
 
+void CompilationMessages::userMessage(CodeLoc loc, NamePool::Id x) {
+    (*out) << namePool->get(x);
+}
+
 void CompilationMessages::userMessage(CodeLoc loc, TypeTable::Id x) {
     (*out) << errorStringOfType(x);
 }

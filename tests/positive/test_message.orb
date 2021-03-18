@@ -7,6 +7,7 @@ fnc main () () {
     message 'a';
     message true;
     message false;
+    message \identifier;
     message (i32 *);
     message null;
     message (cast (i32 []) null);

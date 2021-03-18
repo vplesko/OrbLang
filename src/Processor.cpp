@@ -1271,7 +1271,6 @@ NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) 
     for (size_t i = 0; i < opers.size(); ++i) {
         const EvalVal &evalVal = opers[i].getEvalVal();
 
-        // TODO support for NamePool::Id
         if (EvalVal::isI(evalVal, typeTable)) {
             msgs->userMessage(node.getCodeLoc(), EvalVal::getValueI(evalVal, typeTable).value());
         } else if (EvalVal::isU(evalVal, typeTable)) {
@@ -1282,6 +1281,8 @@ NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) 
             msgs->userMessage(node.getCodeLoc(), evalVal.c8);
         } else if (EvalVal::isB(evalVal, typeTable)) {
             msgs->userMessage(node.getCodeLoc(), evalVal.b);
+        } else if (EvalVal::isId(evalVal, typeTable)) {
+            msgs->userMessage(node.getCodeLoc(), evalVal.id);
         } else if (EvalVal::isType(evalVal, typeTable)) {
             msgs->userMessage(node.getCodeLoc(), evalVal.ty);
         } else if (EvalVal::isNull(evalVal, typeTable)) {

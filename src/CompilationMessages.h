@@ -56,6 +56,7 @@ public:
     void userMessage(CodeLoc loc, double x);
     void userMessage(CodeLoc loc, char x);
     void userMessage(CodeLoc loc, bool x);
+    void userMessage(CodeLoc loc, NamePool::Id x);
     void userMessage(CodeLoc loc, TypeTable::Id x);
     void userMessageNull(CodeLoc loc);
     void userMessage(CodeLoc loc, StringPool::Id str);
