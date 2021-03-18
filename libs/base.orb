@@ -1,4 +1,4 @@
-# TODO detect errors in invocations
+# TODO! recheck drop safety
 
 eval (sym (base.-genSymToken 0:u64));
 
@@ -240,6 +240,11 @@ mac make (ty::preprocess pair rest::variadic) {
     range i (lenOf pairs) {
         # ensure it's raw
         cast raw (. pairs i);
+
+        # TODO+ better code loc
+        if (! (== (lenOf (. pairs i)) 2)) {
+            message::error "Each entry must contain exactly two values - member name and initial value.";
+        };
 
         = innerCode (+ innerCode \{ (= (. ,inst ,(. pairs i 0)) ,(. pairs i 1)) });
     };

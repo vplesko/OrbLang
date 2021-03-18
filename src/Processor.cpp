@@ -1239,18 +1239,18 @@ NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) 
         return NodeVal();
     }
 
-    optional<bool> isWarning = getAttributeForBool(starting, "warning");
-    if (!isWarning.has_value()) return NodeVal();
-    optional<bool> isError = getAttributeForBool(starting, "error");
-    if (!isError.has_value()) return NodeVal();
-    if (isWarning.value() && isError.value()) {
+    optional<bool> attrWarning = getAttributeForBool(starting, "warning");
+    if (!attrWarning.has_value()) return NodeVal();
+    optional<bool> attrError = getAttributeForBool(starting, "error");
+    if (!attrError.has_value()) return NodeVal();
+    if (attrWarning.value() && attrError.value()) {
         msgs->errorUnknown(starting.getCodeLoc());
         return NodeVal();
     }
 
     CompilationMessages::Status status = CompilationMessages::S_INFO;
-    if (isWarning.value()) status = CompilationMessages::S_WARNING;
-    else if (isError.value()) status = CompilationMessages::S_ERROR;
+    if (attrWarning.value()) status = CompilationMessages::S_WARNING;
+    else if (attrError.value()) status = CompilationMessages::S_ERROR;
 
     vector<NodeVal> opers;
     opers.reserve(node.getChildrenCnt()-1);
@@ -1300,6 +1300,8 @@ NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) 
     }
 
     msgs->userMessageEnd();
+
+    if (attrError.value()) return NodeVal();
 
     return NodeVal(node.getCodeLoc());
 }
@@ -1956,8 +1958,8 @@ NodeVal Processor::invoke(CodeLoc codeLoc, const MacroValue &macroVal, vector<No
         // if it's variadic, it has to have at least 1 argument (the variadic one)
         size_t nonVarArgCnt = callable.getArgCnt()-1;
 
-        // TODO better code loc for this
-        NodeVal totalVarArg = NodeVal::makeEmpty(codeLoc, typeTable);
+        CodeLoc totalVarArgCodeLoc = args.size() == nonVarArgCnt ? codeLoc : args[nonVarArgCnt].getCodeLoc();
+        NodeVal totalVarArg = NodeVal::makeEmpty(totalVarArgCodeLoc, typeTable);
         NodeVal::addChildren(totalVarArg, args.begin()+nonVarArgCnt, args.end(), typeTable);
 
         args.resize(nonVarArgCnt);

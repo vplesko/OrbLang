@@ -817,7 +817,6 @@ NodeVal Evaluator::doBlockTearDown(CodeLoc codeLoc, SymbolTable::Block block, bo
     return NodeVal(codeLoc);
 }
 
-// TODO warn on lossy
 optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, TypeTable::Id srcTypeId, TypeTable::Id dstTypeId) {
     // TODO early catch case when just changing constness
     if (srcTypeId == dstTypeId) return NodeVal::copyNoRef(codeLoc, srcVal);
