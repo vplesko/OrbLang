@@ -1241,12 +1241,20 @@ NodeVal Processor::processMessage(const NodeVal &node) {
         return NodeVal();
     }
 
+    vector<NodeVal> opers;
+    opers.reserve(node.getChildrenCnt()-1);
+
     for (size_t i = 1; i < node.getChildrenCnt(); ++i) {
         NodeVal nodeVal = processNode(node.getChild(i));
         if (nodeVal.isInvalid()) return NodeVal();
         if (!checkIsEvalVal(nodeVal, true)) return NodeVal();
 
-        EvalVal evalVal = nodeVal.getEvalVal();
+        opers.push_back(move(nodeVal));
+    }
+
+    msgs->userMessageStart(node.getCodeLoc());
+    for (size_t i = 0; i < opers.size(); ++i) {
+        const EvalVal &evalVal = opers[i].getEvalVal();
 
         if (EvalVal::isI(evalVal, typeTable)) {
             msgs->userMessage(node.getCodeLoc(), EvalVal::getValueI(evalVal, typeTable).value());
@@ -1255,12 +1263,15 @@ NodeVal Processor::processMessage(const NodeVal &node) {
         } else if (EvalVal::isNonNullStr(evalVal, typeTable)) {
             msgs->userMessage(node.getCodeLoc(), evalVal.str.value());
         } else {
-            msgs->errorUnknown(node.getCodeLoc());
+            msgs->userMessageEnd();
+            msgs->errorUnknown(opers[i].getCodeLoc());
             return NodeVal();
         }
 
-        if (!callDropFuncNonRef(move(nodeVal))) return NodeVal();
+        // TODO if errors, err msgs will start on same line that user message left off
+        if (!callDropFuncNonRef(move(opers[i]))) return NodeVal();
     }
+    msgs->userMessageEnd();
 
     return NodeVal(node.getCodeLoc());
 }

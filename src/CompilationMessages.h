@@ -13,7 +13,8 @@ class NamePool;
 class CompilationMessages {
 public:
     enum Status {
-        S_OK,
+        S_NONE,
+        S_INFO,
         S_WARN,
         S_ERROR,
         S_INTERNAL
@@ -27,6 +28,8 @@ private:
     std::ostream *out;
     Status status;
 
+    void raise(Status s) { status = std::max(status, s); }
+    void heading(CodeLoc loc);
     void info(const std::string &str);
     void info(CodeLoc loc, const std::string &str);
     void warn(const std::string &str);
@@ -41,11 +44,13 @@ private:
 
 public:
     CompilationMessages(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, std::ostream &out)
-        : namePool(namePool), stringPool(stringPool), typeTable(typeTable), symbolTable(symbolTable), out(&out), status(S_OK) {}
+        : namePool(namePool), stringPool(stringPool), typeTable(typeTable), symbolTable(symbolTable), out(&out), status(S_NONE) {}
 
     Status getStatus() const {return status; }
     bool isFail() const { return status >= S_ERROR; }
 
+    void userMessageStart(CodeLoc loc);
+    void userMessageEnd();
     void userMessage(CodeLoc loc, std::int64_t x);
     void userMessage(CodeLoc loc, std::uint64_t x);
     void userMessage(CodeLoc loc, StringPool::Id str);

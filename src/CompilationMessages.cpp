@@ -194,7 +194,7 @@ string CompilationMessages::errorStringOfType(TypeTable::Id ty) const {
     return ss.str();
 }
 
-inline string toString(CodeLoc loc, const StringPool *stringPool) {
+string toString(CodeLoc loc, const StringPool *stringPool) {
     stringstream ss;
     const string &file = stringPool->get(loc.file);
     ss << filesystem::relative(file);
@@ -202,49 +202,59 @@ inline string toString(CodeLoc loc, const StringPool *stringPool) {
     return ss.str();
 }
 
-inline void CompilationMessages::info(const std::string &str) {
+void CompilationMessages::heading(CodeLoc loc) {
+    (*out) << toString(loc, stringPool) << ' ';
+}
+
+void CompilationMessages::info(const std::string &str) {
+    raise(S_INFO);
     (*out) << "info: " << str << endl;
 }
 
-inline void CompilationMessages::info(CodeLoc loc, const std::string &str) {
-    (*out) << toString(loc, stringPool) << ' ';
+void CompilationMessages::info(CodeLoc loc, const std::string &str) {
+    heading(loc);
     info(str);
 }
 
-inline void CompilationMessages::warn(const std::string &str) {
-    status = max(status, S_WARN);
+void CompilationMessages::warn(const std::string &str) {
+    raise(S_WARN);
     (*out) << "warn: " << str << endl;
 }
 
-inline void CompilationMessages::warn(CodeLoc loc, const std::string &str) {
-    (*out) << toString(loc, stringPool) << ' ';
+void CompilationMessages::warn(CodeLoc loc, const std::string &str) {
+    heading(loc);
     warn(str);
 }
 
-inline void CompilationMessages::error(const string &str) {
-    status = max(status, S_ERROR);
+void CompilationMessages::error(const string &str) {
+    raise(S_ERROR);
     (*out) << "error: " << str << endl;
 }
 
-inline void CompilationMessages::error(CodeLoc loc, const string &str) {
-    (*out) << toString(loc, stringPool) << ' ';
+void CompilationMessages::error(CodeLoc loc, const string &str) {
+    heading(loc);
     error(str);
 }
 
+void CompilationMessages::userMessageStart(CodeLoc loc) {
+    heading(loc);
+    raise(S_INFO);
+}
+
+void CompilationMessages::userMessageEnd() {
+    (*out) << endl;
+}
+
 void CompilationMessages::userMessage(CodeLoc loc, std::int64_t x) {
-    stringstream ss;
-    ss << x;
-    info(loc, ss.str());
+    (*out) << x;
 }
 
 void CompilationMessages::userMessage(CodeLoc loc, std::uint64_t x) {
-    stringstream ss;
-    ss << x;
-    info(loc, ss.str());
+    (*out) << x;
 }
 
 void CompilationMessages::userMessage(CodeLoc loc, StringPool::Id str) {
-    info(loc, stringPool->get(str));
+    (*out) << stringPool->get(str);
 }
 
 void CompilationMessages::errorInputFileNotFound(const string &path) {
