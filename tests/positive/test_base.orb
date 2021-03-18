@@ -6,6 +6,10 @@ data Foo {
     y:i32
 };
 
+data Bar {
+    x:i32
+} (lam (this:Bar::noDrop) () { println_i32 (. this x); });
+
 sym (globArr (eval (arr i32 603 -1)));
 sym (globTup (eval (tup 704 -1)));
 
@@ -208,5 +212,27 @@ fnc main () () {
 
         (pat { ret \(println_i32 903); });
         (pat (x) { ret \(println_i32 ,x); }) 904;
+    };
+
+    # TODO don't drop intermediary values (maybe block::noDrop, propagates to enclosed blocks, not to calls/invokes)
+    block {
+        make Bar (x 1000);
+    };
+
+    block {
+        passthrough (make Bar (x 1100));
+    };
+
+    block {
+        ?_ true Bar (make Bar (x 1200)) (make Bar (x -1));
+        ?_ false Bar (make Bar (x -1)) (make Bar (x 1201));
+    };
+
+    block {
+        arr Bar (make Bar (x 1300));
+    };
+
+    block {
+        tup (make Bar (x 1401)) (make Bar (x 1400));
     };
 };
