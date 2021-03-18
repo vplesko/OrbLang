@@ -1271,10 +1271,21 @@ NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) 
     for (size_t i = 0; i < opers.size(); ++i) {
         const EvalVal &evalVal = opers[i].getEvalVal();
 
+        // TODO support for NamePool::Id
         if (EvalVal::isI(evalVal, typeTable)) {
             msgs->userMessage(node.getCodeLoc(), EvalVal::getValueI(evalVal, typeTable).value());
         } else if (EvalVal::isU(evalVal, typeTable)) {
             msgs->userMessage(node.getCodeLoc(), EvalVal::getValueU(evalVal, typeTable).value());
+        } else if (EvalVal::isF(evalVal, typeTable)) {
+            msgs->userMessage(node.getCodeLoc(), EvalVal::getValueF(evalVal, typeTable).value());
+        } else if (EvalVal::isC(evalVal, typeTable)) {
+            msgs->userMessage(node.getCodeLoc(), evalVal.c8);
+        } else if (EvalVal::isB(evalVal, typeTable)) {
+            msgs->userMessage(node.getCodeLoc(), evalVal.b);
+        } else if (EvalVal::isType(evalVal, typeTable)) {
+            msgs->userMessage(node.getCodeLoc(), evalVal.ty);
+        } else if (EvalVal::isNull(evalVal, typeTable)) {
+            msgs->userMessageNull(node.getCodeLoc());
         } else if (EvalVal::isNonNullStr(evalVal, typeTable)) {
             msgs->userMessage(node.getCodeLoc(), evalVal.str.value());
         } else {

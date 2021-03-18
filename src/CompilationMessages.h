@@ -53,6 +53,11 @@ public:
     void userMessageEnd();
     void userMessage(CodeLoc loc, std::int64_t x);
     void userMessage(CodeLoc loc, std::uint64_t x);
+    void userMessage(CodeLoc loc, double x);
+    void userMessage(CodeLoc loc, char x);
+    void userMessage(CodeLoc loc, bool x);
+    void userMessage(CodeLoc loc, TypeTable::Id x);
+    void userMessageNull(CodeLoc loc);
     void userMessage(CodeLoc loc, StringPool::Id str);
 
     void errorInputFileNotFound(const std::string &path);

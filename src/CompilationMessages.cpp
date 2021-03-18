@@ -265,6 +265,26 @@ void CompilationMessages::userMessage(CodeLoc loc, std::uint64_t x) {
     (*out) << x;
 }
 
+void CompilationMessages::userMessage(CodeLoc loc, double x) {
+    (*out) << x;
+}
+
+void CompilationMessages::userMessage(CodeLoc loc, char x) {
+    (*out) << x;
+}
+
+void CompilationMessages::userMessage(CodeLoc loc, bool x) {
+    (*out) << (x ? "true" : "false");
+}
+
+void CompilationMessages::userMessage(CodeLoc loc, TypeTable::Id x) {
+    (*out) << errorStringOfType(x);
+}
+
+void CompilationMessages::userMessageNull(CodeLoc loc) {
+    (*out) << "null";
+}
+
 void CompilationMessages::userMessage(CodeLoc loc, StringPool::Id str) {
     (*out) << stringPool->get(str);
 }
