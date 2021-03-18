@@ -582,7 +582,7 @@ NodeVal Processor::processCustom(const NodeVal &node, const NodeVal &starting) {
 }
 
 NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
-    if (!checkBetweenChildren(node, 2, 3, true)) return NodeVal();
+    if (!checkBetweenChildren(node, 2, 4, true)) return NodeVal();
 
     optional<bool> attrGlobal = getAttributeForBool(starting, "global");
     if (!attrGlobal.has_value()) return NodeVal();
@@ -591,12 +591,17 @@ NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
         return NodeVal();
     }
 
-    bool definition = node.getChildrenCnt() == 3;
+    bool definition = node.getChildrenCnt() >= 3;
+    bool withDrop = node.getChildrenCnt() >= 4;
+
+    size_t indName = 1;
+    size_t indMembs = definition ? 2 : 0;
+    size_t indDrop = withDrop ? 3 : 0;
 
     TypeTable::DataType dataType;
     dataType.defined = false;
 
-    NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(1));
+    NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(indName));
     if (nodeName.isInvalid()) return NodeVal();
     dataType.name = nodeName.getEvalVal().id;
     if (!symbolTable->nameAvailable(dataType.name, namePool, typeTable, true)) {
@@ -615,7 +620,7 @@ NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
 
     dataType.defined = definition;
     if (dataType.defined) {
-        const NodeVal &nodeMembs = processWithEscape(node.getChild(2));
+        NodeVal nodeMembs = processWithEscape(node.getChild(indMembs));
         if (nodeMembs.isInvalid()) return NodeVal();
         if (!checkIsRaw(nodeMembs, true)) return NodeVal();
         if (!checkAtLeastChildren(nodeMembs, 1, true)) return NodeVal();
@@ -656,10 +661,11 @@ NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
             return NodeVal();
         }
 
-        optional<NodeVal> attrDrop = getAttribute(nodeMembs, "drop");
-        if (attrDrop.has_value()) {
-            if (!checkIsDropFuncType(attrDrop.value(), typeIdOpt.value(), true)) return NodeVal();
-            symbolTable->registerDropFunc(typeIdOpt.value(), attrDrop.value());
+        if (withDrop) {
+            NodeVal nodeDrop = processNode(node.getChild(indDrop));
+            if (nodeDrop.isInvalid()) return NodeVal();
+            if (!checkIsDropFuncType(nodeDrop, typeIdOpt.value(), true)) return NodeVal();
+            symbolTable->registerDropFunc(typeIdOpt.value(), nodeDrop);
         }
     }
 

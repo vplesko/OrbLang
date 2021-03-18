@@ -6,15 +6,11 @@ mac printDropVals () {
     ret \(block ,printDropValsInnerCode);
 };
 
-data Foo;
-
-eval (fnc dropFoo (val:Foo::noDrop) () {
-    = printDropValsInnerCode (+ printDropValsInnerCode \{ (println_i32 ,(. val x)) });
-});
-
 data Foo {
     x:i32
-}::((drop dropFoo));
+} (eval (fnc dropFoo (val:Foo::noDrop) () {
+    = printDropValsInnerCode (+ printDropValsInnerCode \{ (println_i32 ,(. val x)) });
+}));
 
 data Bar {
     f0:Foo

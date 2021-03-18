@@ -1,16 +1,10 @@
 import "util/print.orb";
 
-data Foo;
-
-fnc dropFoo (val:Foo::noDrop) ();
-
 data Foo {
     x:i32
-}::((drop dropFoo));
-
-fnc dropFoo (val:Foo::noDrop) () {
+} (fnc dropFoo (val:Foo::noDrop) () {
     println_i32 (. val x);
-};
+});
 
 data Bar {
     f0:Foo
