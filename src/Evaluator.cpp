@@ -11,7 +11,7 @@ Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *type
 
 NodeVal Evaluator::performLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, optional<NamePool::Id> id) {
     if (checkIsEvalVal(codeLoc, ref.var, false)) {
-        if (ref.var.getLifetimeInfo().invokeArg) {
+        if (ref.var.isInvokeArg()) {
             return ref.var;
         } else {
             NodeVal nodeVal = NodeVal::copyNoRef(ref.var);
@@ -19,7 +19,7 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, opti
             return nodeVal;
         }
     } else {
-        if (!ref.var.getLifetimeInfo().invokeArg) {
+        if (!ref.var.isInvokeArg()) {
             msgs->errorUnknown(codeLoc);
             return NodeVal();
         }
@@ -143,7 +143,6 @@ bool Evaluator::performPass(CodeLoc codeLoc, SymbolTable::Block block, const Nod
         return false;
     }
 
-    // TODO! what if invoke arg?
     retVal = NodeVal::copyNoRef(codeLoc, val, LifetimeInfo());
 
     ExceptionEvaluatorJump ex;
@@ -289,18 +288,22 @@ bool Evaluator::performRet(CodeLoc codeLoc) {
 }
 
 bool Evaluator::performRet(CodeLoc codeLoc, const NodeVal &node) {
-    retVal = NodeVal::copyNoRef(node);
-
     optional<SymbolTable::CalleeValueInfo> callee = symbolTable->getCurrCallee();
+    if (!callee.value().isEval) {
+        msgs->errorEvaluationNotSupported(codeLoc);
+        return false;
+    }
+
     if (callee.value().isFunc) {
-        retVal.value().setLifetimeInfo(LifetimeInfo());
+        retVal = NodeVal::copyNoRef(node, LifetimeInfo());
     } else {
+        retVal = node;
         NodeVal::clearInvokeArg(retVal.value(), typeTable);
     }
 
-    performRet(codeLoc);
-
-    return false; // unreachable
+    ExceptionEvaluatorJump ex;
+    ex.isRet = true;
+    throw ex;
 }
 
 NodeVal Evaluator::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) {
@@ -655,7 +658,7 @@ NodeVal Evaluator::performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t 
                 nodeVal.getEvalVal().ref = nullptr;
             }
         }
-        if (base.getLifetimeInfo().invokeArg) nodeVal.getLifetimeInfo().invokeArg = true;
+        if (base.isInvokeArg()) nodeVal.getLifetimeInfo().invokeArg = true;
         return nodeVal;
     } else {
         NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[ind], base.getLifetimeInfo());
@@ -983,7 +986,6 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
         }
     }
 
-    // TODO! what if invoke arg?
     dstEvalVal.lifetimeInfo = LifetimeInfo();
     dstEvalVal.lifetimeInfo.noDrop = srcEvalVal.lifetimeInfo.noDrop;
 

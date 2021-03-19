@@ -235,4 +235,9 @@ fnc main () () {
     };
 
     foo14 (foo7 2700);
+
+    block Foo {
+        sym (f (foo7 2800));
+        pass (foo9 ,f);
+    };
 };

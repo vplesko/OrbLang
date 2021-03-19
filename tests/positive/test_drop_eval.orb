@@ -251,5 +251,10 @@ fnc main () () {
 
     foo14 (foo7 2800);
 
+    eval (block Foo {
+        sym (f (foo7 2900));
+        pass (foo9 ,f);
+    });
+
     printDropVals;
 };

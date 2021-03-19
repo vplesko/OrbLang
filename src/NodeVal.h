@@ -47,6 +47,7 @@ public:
     bool hasRef() const;
     void removeRef();
     bool isNoDrop() const;
+    bool isInvokeArg() const;
     // returns whether set successfully
     bool setNoDrop(bool b);
     LifetimeInfo getLifetimeInfo() const;

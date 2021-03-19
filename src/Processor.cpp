@@ -1204,8 +1204,6 @@ NodeVal Processor::processRet(const NodeVal &node) {
         }
         if (moved.isInvalid()) return NodeVal();
 
-        if (!checkTransferValueOk(moved.getCodeLoc(), moved, false, true)) return NodeVal();
-
         if (!performRet(node.getCodeLoc(), moved)) return NodeVal();
 
         return NodeVal(node.getCodeLoc());
@@ -1671,9 +1669,7 @@ NodeVal Processor::castNode(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id 
         return node;
     }
 
-    if (!skipCheckNeedsDrop &&
-        (node.hasRef() || node.getLifetimeInfo().invokeArg) &&
-        !checkNotNeedsDrop(node.getCodeLoc(), node, true)) return NodeVal();
+    if (!skipCheckNeedsDrop && !checkTransferValueOk(codeLoc, node, node.isNoDrop(), true)) return NodeVal();
 
     if (checkIsEvalTime(node, false) && !shouldNotDispatchCastToEval(node, ty)) {
         return evaluator->performCast(node.getCodeLoc(), node, ty);
@@ -1936,13 +1932,12 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node, const NodeVal &val
 NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal &val) {
     if (!checkHasType(val, true)) return NodeVal();
 
-    if (val.isNoDrop()) {
+    if (val.isNoDrop() || val.isInvokeArg()) {
         msgs->errorUnknown(codeLoc);
         return NodeVal();
     }
 
-    // TODO! what if invoke arg?
-    if (!val.hasRef()) return NodeVal::copyNoRef(codeLoc, val);
+    if (!val.hasRef()) return NodeVal::copyNoRef(codeLoc, val, LifetimeInfo());
 
     TypeTable::Id valTy = val.getType().value();
 
@@ -2022,7 +2017,7 @@ bool Processor::callDropFunc(CodeLoc codeLoc, NodeVal val) {
     if (!checkHasType(val, false) || val.isNoDrop()) return true;
 
     // don't drop values propagated through macro args
-    if (val.getLifetimeInfo().invokeArg) return true;
+    if (val.isInvokeArg()) return true;
 
     TypeTable::Id valTy = val.getType().value();
 
@@ -2161,7 +2156,7 @@ bool Processor::processAttributes(NodeVal &node) {
                     attrVal = processNode(*nodeAttrEntryVal);
                     if (attrVal.isInvalid()) return false;
                     if (!checkHasType(attrVal, true)) return false;
-                    if (!attrVal.hasRef() && !attrVal.getLifetimeInfo().invokeArg &&
+                    if (!attrVal.hasRef() && !attrVal.isInvokeArg() &&
                         !checkNotNeedsDrop(attrVal.getCodeLoc(), attrVal, true)) return false;
                 }
 
@@ -2734,7 +2729,7 @@ bool Processor::checkHasTrivialDrop(CodeLoc codeLoc, TypeTable::Id ty, bool orEr
 
 bool Processor::checkTransferValueOk(CodeLoc codeLoc, const NodeVal &src, bool dstNoDrop, bool orError) {
     if (!hasTrivialDrop(src.getType().value()) && !dstNoDrop) {
-        if (src.hasRef()) {
+        if (src.hasRef() || src.isInvokeArg()) {
             if (orError) msgs->errorUnknown(codeLoc);
             return false;
         } else if (src.isNoDrop()) {

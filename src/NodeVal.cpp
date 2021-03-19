@@ -85,6 +85,12 @@ bool NodeVal::isNoDrop() const {
     else return false;
 }
 
+bool NodeVal::isInvokeArg() const {
+    if (isEvalVal()) return getEvalVal().lifetimeInfo.invokeArg;
+    else if (isLlvmVal()) return getLlvmVal().lifetimeInfo.invokeArg;
+    else return false;
+}
+
 bool NodeVal::setNoDrop(bool b) {
     if (isEvalVal()) {
         getEvalVal().lifetimeInfo.noDrop = b;
