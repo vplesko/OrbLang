@@ -11,5 +11,6 @@ struct CodeLocPoint {
 };
 
 struct CodeLoc {
-    CodeLocPoint start, end;
+    CodeLocPoint start;
+    CodeLocPoint end; // points to a position after code loc
 };

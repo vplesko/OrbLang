@@ -145,7 +145,7 @@ Token Lexer::next() {
 
                 if (over()) {
                     CodeLocPoint codeLocPointEnd = codeLocPoint;
-                    codeLocPointEnd.col += 1;
+                    codeLocPointEnd.col += 2;
 
                     tok.type = Token::T_UNKNOWN;
                     msgs->errorUnclosedMultilineComment({codeLocPoint, codeLocPointEnd});
@@ -189,8 +189,11 @@ Token Lexer::next() {
             UnescapePayload unesc = unescape(line, col-1, true);
 
             if (unesc.success == false || unesc.unescaped.size() != 1) {
+                CodeLocPoint codeLocPointEnd = codeLocPoint;
+                codeLocPointEnd.col += 1;
+
                 tok.type = Token::T_UNKNOWN;
-                msgs->errorUnknown({codeLocPoint, codeLocPoint});
+                msgs->errorUnknown({codeLocPoint, codeLocPointEnd});
                 return tok; // unclosed char literal error, so skip old token
             } else {
                 tok.type = Token::T_CHAR;
@@ -204,8 +207,11 @@ Token Lexer::next() {
             UnescapePayload unesc = unescape(line, col-1, false);
 
             if (unesc.success == false) {
+                CodeLocPoint codeLocPointEnd = codeLocPoint;
+                codeLocPointEnd.col += 1;
+
                 tok.type = Token::T_UNKNOWN;
-                msgs->errorUnknown({codeLocPoint, codeLocPoint});
+                msgs->errorUnknown({codeLocPoint, codeLocPointEnd});
                 return tok; // unclosed string literal error, so skip old token
             } else {
                 tok.type = Token::T_STRING;

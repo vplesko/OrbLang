@@ -159,11 +159,13 @@ NodeVal Parser::parseNode(bool ignoreAttrs) {
 
         while (peek().type != Token::T_BRACE_R_REG && peek().type != Token::T_BRACE_R_CUR) {
             if (peek().type == Token::T_SEMICOLON) {
-                CodeLocPoint codeLocSemicolon = loc();
+                CodeLoc codeLocSemicolon;
+                codeLocSemicolon.start = loc();
                 next();
+                codeLocSemicolon.end = loc();
 
                 if (children.empty()) {
-                    NodeVal::addChild(node, NodeVal::makeEmpty({codeLocSemicolon, codeLocSemicolon}, typeTable), typeTable);
+                    NodeVal::addChild(node, NodeVal::makeEmpty(codeLocSemicolon, typeTable), typeTable);
                 } else {
                     CodeLoc codeLoc;
                     codeLoc.start = children.front().getCodeLoc().start;
@@ -187,10 +189,10 @@ NodeVal Parser::parseNode(bool ignoreAttrs) {
             }
         }
 
-        codeLoc.end = loc(); // code loc point of close brace
-        node.setCodeLoc(codeLoc);
-
         if (!matchCloseBraceOrError(openBrace)) return NodeVal();
+
+        codeLoc.end = loc(); // code loc point after close brace
+        node.setCodeLoc(codeLoc);
 
         NodeVal::addChildren(node, move(children), typeTable);
     } else {
@@ -208,10 +210,10 @@ NodeVal Parser::parseNode(bool ignoreAttrs) {
             NodeVal::addChild(node, move(child), typeTable);
         }
 
-        codeLoc.end = loc(); // code loc point of semicolon
-        node.setCodeLoc(codeLoc);
-
         next();
+
+        codeLoc.end = loc(); // code loc point after semicolon
+        node.setCodeLoc(codeLoc);
     }
 
     NodeVal::escape(node, typeTable, escapeScore);
