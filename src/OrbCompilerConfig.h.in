@@ -4,3 +4,6 @@
 
 // the configured libs path for OrbCompiler
 #define ORBC_LIBS_PATH "@ORBC_LIBS_PATH@"
+
+#define PLATFORM_WINDOWS @PLATFORM_WINDOWS@
+#define PLATFORM_UNIX @PLATFORM_UNIX@

@@ -5,12 +5,6 @@
 
 // TODO error type (probably aliased to std::optional)
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
-constexpr bool isOsWindows = true;
-#else
-constexpr bool isOsWindows = false;
-#endif
-
 template<typename T>
 bool between(T x, T lo, T hi) {
     return x >= lo && x <= hi;

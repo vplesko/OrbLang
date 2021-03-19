@@ -309,7 +309,7 @@ bool CompilationOrchestrator::compile(const ProgramArgs &args) {
             return false;
         }
 
-        const static string tempObjName = isOsWindows ? "a.obj" : "a.o";
+        const static string tempObjName = PLATFORM_WINDOWS ? "a.obj" : "a.o";
 
         if (!compiler->binary(tempObjName)) return false;
 

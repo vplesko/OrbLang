@@ -1,7 +1,7 @@
 #include "ProgramArgs.h"
 #include <iostream>
 #include <filesystem>
-#include "utils.h"
+#include "OrbCompilerConfig.h"
 using namespace std;
 
 optional<ProgramArgs> ProgramArgs::parseArgs(int argc,  char** argv, std::ostream &out) {
@@ -81,8 +81,8 @@ optional<ProgramArgs> ProgramArgs::parseArgs(int argc,  char** argv, std::ostrea
     else firstInputStem = filesystem::path(programArgs.inputsOther.front()).stem().string();
 
     if (programArgs.outputBin.empty()) {
-        if (programArgs.link) programArgs.outputBin = firstInputStem + (isOsWindows ? ".exe" : "");
-        else programArgs.outputBin = firstInputStem + (isOsWindows ? ".obj" : ".o");
+        if (programArgs.link) programArgs.outputBin = firstInputStem + (PLATFORM_WINDOWS ? ".exe" : "");
+        else programArgs.outputBin = firstInputStem + (PLATFORM_WINDOWS ? ".obj" : ".o");
     }
 
     if (emitLlvm) {

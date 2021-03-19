@@ -8,6 +8,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(ORBC_LIBS_SUBDIR lib/Orb)
 set(ORBC_LIBS_PATH "${CMAKE_INSTALL_PREFIX}/${ORBC_LIBS_SUBDIR}" CACHE PATH "Path to Orb libraries directory.")
 
+if(WIN32)
+    set(PLATFORM_WINDOWS true)
+else()
+    set(PLATFORM_WINDOWS false)
+endif()
+
+if(UNIX)
+    set(PLATFORM_UNIX true)
+else()
+    set(PLATFORM_UNIX false)
+endif()
+
 configure_file("src/OrbCompilerConfig.h.in" OrbCompilerConfig.h @ONLY)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
