@@ -143,6 +143,7 @@ bool Evaluator::performPass(CodeLoc codeLoc, SymbolTable::Block block, const Nod
         return false;
     }
 
+    // TODO! what if invoke arg?
     retVal = NodeVal::copyNoRef(codeLoc, val, LifetimeInfo());
 
     ExceptionEvaluatorJump ex;
@@ -229,7 +230,6 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const
     for (size_t i = 0; i < args.size(); ++i) {
         LifetimeInfo lifetimeInfo = args[i].getLifetimeInfo();
         lifetimeInfo.invokeArg = true;
-        if (!lifetimeInfo.nestLevel.has_value()) lifetimeInfo.nestLevel = nestLevel;
 
         SymbolTable::VarEntry varEntry;
         varEntry.var = args[i];
@@ -278,7 +278,7 @@ bool Evaluator::performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, con
 
 bool Evaluator::performRet(CodeLoc codeLoc) {
     optional<SymbolTable::CalleeValueInfo> callee = symbolTable->getCurrCallee();
-    if (callee.has_value() && !callee.value().isEval) {
+    if (!callee.value().isEval) {
         msgs->errorEvaluationNotSupported(codeLoc);
         return false;
     }
@@ -289,7 +289,15 @@ bool Evaluator::performRet(CodeLoc codeLoc) {
 }
 
 bool Evaluator::performRet(CodeLoc codeLoc, const NodeVal &node) {
-    retVal = NodeVal::copyNoRef(node, LifetimeInfo());
+    retVal = NodeVal::copyNoRef(node);
+
+    optional<SymbolTable::CalleeValueInfo> callee = symbolTable->getCurrCallee();
+    if (callee.value().isFunc) {
+        retVal.value().setLifetimeInfo(LifetimeInfo());
+    } else {
+        NodeVal::clearInvokeArg(retVal.value(), typeTable);
+    }
+
     performRet(codeLoc);
 
     return false; // unreachable
@@ -975,6 +983,7 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
         }
     }
 
+    // TODO! what if invoke arg?
     dstEvalVal.lifetimeInfo = LifetimeInfo();
     dstEvalVal.lifetimeInfo.noDrop = srcEvalVal.lifetimeInfo.noDrop;
 

@@ -209,6 +209,15 @@ void NodeVal::unescape(NodeVal &node, const TypeTable *typeTable) {
     }
 }
 
+void NodeVal::clearInvokeArg(NodeVal &node, const TypeTable *typeTable) {
+    node.getLifetimeInfo().invokeArg = false;
+    if (isRawVal(node, typeTable)) {
+        for (auto it = node.getEvalVal().elems.begin(); it != node.getEvalVal().elems.end(); ++it) {
+            clearInvokeArg(*it, typeTable);
+        }
+    }
+}
+
 NodeVal NodeVal::makeEmpty(CodeLoc codeLoc, TypeTable *typeTable) {
     EvalVal emptyRaw = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_RAW), typeTable);
     return NodeVal(codeLoc, emptyRaw);

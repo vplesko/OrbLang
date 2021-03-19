@@ -77,6 +77,10 @@ fnc foo12 (f0:Foo f1:Foo) () {
 fnc foo13 (f0:Foo::noDrop f1:Foo) () {
 };
 
+mac foo14 (x::preprocess) {
+    ret \(foo2 ,x);
+};
+
 fnc main () () {
     block {
         sym f:Foo;
@@ -229,4 +233,6 @@ fnc main () () {
         = (. f1 x) 2602;
         foo13 (>> f0) (>> f1);
     };
+
+    foo14 (foo7 2700);
 };

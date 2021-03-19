@@ -1941,6 +1941,7 @@ NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal &val) {
         return NodeVal();
     }
 
+    // TODO! what if invoke arg?
     if (!val.hasRef()) return NodeVal::copyNoRef(codeLoc, val);
 
     TypeTable::Id valTy = val.getType().value();

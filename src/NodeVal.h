@@ -111,6 +111,7 @@ public:
 
     static void escape(NodeVal &node, const TypeTable *typeTable, EscapeScore amount = 1);
     static void unescape(NodeVal &node, const TypeTable *typeTable);
+    static void clearInvokeArg(NodeVal &node, const TypeTable *typeTable);
 
     static NodeVal makeEmpty(CodeLoc codeLoc, TypeTable *typeTable);
 
