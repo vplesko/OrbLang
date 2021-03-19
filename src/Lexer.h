@@ -17,7 +17,7 @@ class Lexer {
     CodeIndex ln, col;
     char ch;
     Token tok;
-    CodeLoc codeLoc;
+    CodeLocPoint codeLocPoint;
 
     bool over() const { return ch == EOF; }
 
@@ -37,5 +37,5 @@ public:
     bool match(Token::Type type);
 
     // Returns the location of the start of the token that would be returned by next().
-    CodeLoc loc() const { return codeLoc; }
+    CodeLocPoint loc() const { return codeLocPoint; }
 };

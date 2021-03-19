@@ -16,7 +16,7 @@ Token Parser::next() {
     return lex->next();
 }
 
-CodeLoc Parser::loc() const {
+CodeLocPoint Parser::loc() const {
     return lex->loc();
 }
 
@@ -32,15 +32,22 @@ bool Parser::match(Token::Type type) {
 // Otherwise, files an error and returns false.
 bool Parser::matchOrError(Token::Type type) {
     if (!match(type)) {
-        msgs->errorUnexpectedTokenType(loc(), type, peek());
+        CodeLoc codeLoc;
+        codeLoc.start = loc();
+        next();
+        codeLoc.end = loc();
+
+        msgs->errorUnexpectedTokenType(codeLoc, type, peek());
         return false;
     }
     return true;
 }
 
 bool Parser::matchCloseBraceOrError(Token openBrace) {
-    CodeLoc codeLocCloseBrace = loc();
+    CodeLoc codeLocCloseBrace;
+    codeLocCloseBrace.start = loc();
     Token closeBrace = next();
+    codeLocCloseBrace.end = loc();
 
     if (openBrace.type == Token::T_BRACE_L_REG && closeBrace.type != Token::T_BRACE_R_REG) {
         msgs->errorUnexpectedTokenType(codeLocCloseBrace, Token::T_BRACE_R_REG, closeBrace);
@@ -88,8 +95,10 @@ NodeVal Parser::parseBare() {
 }
 
 NodeVal Parser::parseTerm(bool ignoreAttrs) {
-    CodeLoc codeLocTok = loc();
+    CodeLoc codeLocTok;
+    codeLocTok.start = loc();
     Token tok = next();
+    codeLocTok.end = loc();
 
     LiteralVal val;
     switch (tok.type) {
@@ -136,7 +145,10 @@ NodeVal Parser::parseTerm(bool ignoreAttrs) {
 }
 
 NodeVal Parser::parseNode(bool ignoreAttrs) {
-    NodeVal node = NodeVal::makeEmpty(loc(), typeTable);
+    CodeLoc codeLoc;
+    codeLoc.start = loc();
+
+    NodeVal node = NodeVal::makeEmpty(CodeLoc(), typeTable);
 
     EscapeScore escapeScore = parseEscapeScore();
 
@@ -147,12 +159,17 @@ NodeVal Parser::parseNode(bool ignoreAttrs) {
 
         while (peek().type != Token::T_BRACE_R_REG && peek().type != Token::T_BRACE_R_CUR) {
             if (peek().type == Token::T_SEMICOLON) {
+                CodeLocPoint codeLocSemicolon = loc();
                 next();
 
                 if (children.empty()) {
-                    NodeVal::addChild(node, NodeVal::makeEmpty(loc(), typeTable), typeTable);
+                    NodeVal::addChild(node, NodeVal::makeEmpty({codeLocSemicolon, codeLocSemicolon}, typeTable), typeTable);
                 } else {
-                    NodeVal tuple = NodeVal::makeEmpty(children[0].getCodeLoc(), typeTable);
+                    CodeLoc codeLoc;
+                    codeLoc.start = children.front().getCodeLoc().start;
+                    codeLoc.end = children.back().getCodeLoc().end;
+
+                    NodeVal tuple = NodeVal::makeEmpty(codeLoc, typeTable);
                     NodeVal::addChildren(tuple, move(children), typeTable); // children is emptied here
                     NodeVal::addChild(node, move(tuple), typeTable);
                 }
@@ -169,7 +186,10 @@ NodeVal Parser::parseNode(bool ignoreAttrs) {
                 children.push_back(move(child));
             }
         }
-        
+
+        codeLoc.end = loc(); // code loc point of close brace
+        node.setCodeLoc(codeLoc);
+
         if (!matchCloseBraceOrError(openBrace)) return NodeVal();
 
         NodeVal::addChildren(node, move(children), typeTable);
@@ -187,6 +207,10 @@ NodeVal Parser::parseNode(bool ignoreAttrs) {
             escapeScore = 0;
             NodeVal::addChild(node, move(child), typeTable);
         }
+
+        codeLoc.end = loc(); // code loc point of semicolon
+        node.setCodeLoc(codeLoc);
+
         next();
     }
 

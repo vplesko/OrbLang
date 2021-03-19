@@ -17,7 +17,7 @@ Lexer::Lexer(NamePool *namePool, StringPool *stringPool, CompilationMessages *ms
     col = 0;
     ch = 0; // not EOF
     tok.type = Token::T_NUM; // not END
-    codeLoc.file = stringPool->add(file);
+    codeLocPoint.file = stringPool->add(file);
 }
 
 bool Lexer::start() {
@@ -124,8 +124,8 @@ Token Lexer::next() {
     while (true) {
         char ch;
         do {
-            codeLoc.ln = ln;
-            codeLoc.col = col+1; // text editors are 1-indexed
+            codeLocPoint.ln = ln;
+            codeLocPoint.col = col+1; // text editors are 1-indexed
             ch = nextCh();
         } while (isspace(ch));
         
@@ -144,8 +144,11 @@ Token Lexer::next() {
                 } while (peekCh() != '#' && !over());
 
                 if (over()) {
+                    CodeLocPoint codeLocPointEnd = codeLocPoint;
+                    codeLocPointEnd.col += 1;
+
                     tok.type = Token::T_UNKNOWN;
-                    msgs->errorUnclosedMultilineComment(codeLoc);
+                    msgs->errorUnclosedMultilineComment({codeLocPoint, codeLocPointEnd});
                     return tok; // unclosed comment error, so skip old token
                 }
 
@@ -187,6 +190,8 @@ Token Lexer::next() {
 
             if (unesc.success == false || unesc.unescaped.size() != 1) {
                 tok.type = Token::T_UNKNOWN;
+                msgs->errorUnknown({codeLocPoint, codeLocPoint});
+                return tok; // unclosed char literal error, so skip old token
             } else {
                 tok.type = Token::T_CHAR;
                 tok.ch = unesc.unescaped[0];
@@ -200,6 +205,8 @@ Token Lexer::next() {
 
             if (unesc.success == false) {
                 tok.type = Token::T_UNKNOWN;
+                msgs->errorUnknown({codeLocPoint, codeLocPoint});
+                return tok; // unclosed string literal error, so skip old token
             } else {
                 tok.type = Token::T_STRING;
                 tok.stringId = stringPool->add(unesc.unescaped);
@@ -234,7 +241,7 @@ Token Lexer::next() {
         }
 
         if (tok.type == Token::T_UNKNOWN) {
-            msgs->errorBadToken(codeLoc);
+            msgs->errorBadToken({codeLocPoint, loc()});
         }
 
         return old;

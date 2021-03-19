@@ -13,7 +13,7 @@ class Parser {
 
     const Token& peek() const;
     Token next();
-    CodeLoc loc() const;
+    CodeLocPoint loc() const;
     
     bool match(Token::Type type);
     bool matchOrError(Token::Type type);

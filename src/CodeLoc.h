@@ -5,7 +5,11 @@
 
 typedef std::size_t CodeIndex;
 
-struct CodeLoc {
+struct CodeLocPoint {
     StringPool::Id file;
     CodeIndex ln, col;
+};
+
+struct CodeLoc {
+    CodeLocPoint start, end;
 };

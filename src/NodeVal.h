@@ -41,6 +41,8 @@ public:
     NodeVal& operator=(NodeVal &&other) = default;
 
     CodeLoc getCodeLoc() const { return codeLoc; }
+    void setCodeLoc(CodeLoc loc) { codeLoc = loc; }
+
     bool isEscaped() const;
     EscapeScore getEscapeScore() const;
     std::optional<TypeTable::Id> getType() const;

@@ -197,9 +197,9 @@ string CompilationMessages::errorStringOfType(TypeTable::Id ty) const {
 
 string toString(CodeLoc loc, const StringPool *stringPool) {
     stringstream ss;
-    const string &file = stringPool->get(loc.file);
+    const string &file = stringPool->get(loc.start.file);
     ss << filesystem::relative(file).string();
-    ss << ':' << loc.ln << ':' << loc.col << ':';
+    ss << ':' << loc.start.ln << ':' << loc.start.col << ':';
     return ss.str();
 }
 
@@ -263,16 +263,16 @@ void CompilationMessages::error(CodeLoc loc, const string &str) {
 }
 
 void CompilationMessages::displayCodeSegment(CodeLoc loc) {
-    const std::string &filename = stringPool->get(loc.file);
+    const std::string &filename = stringPool->get(loc.start.file);
     ifstream file(filename);
     if (!file.is_open()) return;
 
     string line;
-    for (CodeIndex i = 0; i < loc.ln; ++i) getline(file, line);
+    for (CodeIndex i = 0; i < loc.start.ln; ++i) getline(file, line);
     (*out) << line << endl;
 
     (*out) << terminalSet(TerminalColor::C_GREEN, false);
-    for (CodeIndex i = 0; i+1 < loc.col; ++i) (*out) << ' ';
+    for (CodeIndex i = 0; i+1 < loc.start.col; ++i) (*out) << ' ';
     (*out) << '^';
     (*out) << terminalReset() << endl;
 }
