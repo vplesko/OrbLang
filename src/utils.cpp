@@ -1,5 +1,6 @@
 #include "utils.h"
 #include <optional>
+#include <sstream>
 #include "OrbCompilerConfig.h"
 using namespace std;
 
@@ -156,38 +157,40 @@ bool enableVirtualTerminalProcessing() {
 #endif
 }
 
-void terminalSet(ostream &out, TerminalColor col, bool bold) {
-    if (!enableVirtualTerminalProcessing()) return;
+string terminalSet(TerminalColor col, bool bold) {
+    if (!enableVirtualTerminalProcessing()) return "";
 
-    if (col == TerminalColor::C_NO_CHANGE && !bold) return;
+    if (col == TerminalColor::C_NO_CHANGE && !bold) return "";
 
-    out << "\033[";
+    stringstream ss;
+
+    ss << "\033[";
 
     bool colSet = true;
     switch (col) {
     case TerminalColor::C_BLACK:
-        out << "30";
+        ss << "30";
         break;
     case TerminalColor::C_RED:
-        out << "31";
+        ss << "31";
         break;
     case TerminalColor::C_GREEN:
-        out << "32";
+        ss << "32";
         break;
     case TerminalColor::C_YELLOW:
-        out << "33";
+        ss << "33";
         break;
     case TerminalColor::C_BLUE:
-        out << "34";
+        ss << "34";
         break;
     case TerminalColor::C_MAGENTA:
-        out << "35";
+        ss << "35";
         break;
     case TerminalColor::C_CYAN:
-        out << "36";
+        ss << "36";
         break;
     case TerminalColor::C_WHITE:
-        out << "37";
+        ss << "37";
         break;
     default:
         colSet = false;
@@ -195,13 +198,19 @@ void terminalSet(ostream &out, TerminalColor col, bool bold) {
     }
 
     if (bold) {
-        if (colSet) out << ";1";
-        else out << "1";
+        if (colSet) ss << ";1";
+        else ss << "1";
     }
 
-    out << "m";
+    ss << "m";
+
+    return ss.str();
 }
 
-void terminalReset(ostream &out) {
-    out << "\033[0m";
+string terminalSetBold() {
+    return "\033[1m";
+}
+
+string terminalReset() {
+    return "\033[0m";
 }

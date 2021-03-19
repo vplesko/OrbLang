@@ -203,21 +203,22 @@ string toString(CodeLoc loc, const StringPool *stringPool) {
 }
 
 void CompilationMessages::heading(CodeLoc loc) {
-    terminalSet(*out, TerminalColor::C_NO_CHANGE, true);
-    (*out) << toString(loc, stringPool) << ' ';
-    terminalReset(*out);
+    (*out) << terminalSetBold() << toString(loc, stringPool) << ' ' << terminalReset();
+}
+
+void CompilationMessages::bolded(const string &str) {
+    (*out) << terminalSetBold() << str << terminalReset();
 }
 
 void CompilationMessages::info() {
     raise(S_INFO);
-    terminalSet(*out, TerminalColor::C_BLACK, true);
-    (*out) << "info: ";
-    terminalReset(*out);
+    (*out) << terminalSet(TerminalColor::C_BLACK, true) << "info: " << terminalReset();
 }
 
 void CompilationMessages::info(const std::string &str) {
     info();
-    (*out) << str << endl;
+    bolded(str);
+    (*out) << endl;
 }
 
 void CompilationMessages::info(CodeLoc loc, const std::string &str) {
@@ -227,14 +228,13 @@ void CompilationMessages::info(CodeLoc loc, const std::string &str) {
 
 void CompilationMessages::warning() {
     raise(S_WARNING);
-    terminalSet(*out, TerminalColor::C_MAGENTA, true);
-    (*out) << "warning: ";
-    terminalReset(*out);
+    (*out) << terminalSet(TerminalColor::C_MAGENTA, true) << "warning: " << terminalReset();
 }
 
 void CompilationMessages::warning(const std::string &str) {
     warning();
-    (*out) << str << endl;
+    bolded(str);
+    (*out) << endl;
 }
 
 void CompilationMessages::warning(CodeLoc loc, const std::string &str) {
@@ -244,14 +244,13 @@ void CompilationMessages::warning(CodeLoc loc, const std::string &str) {
 
 void CompilationMessages::error() {
     raise(S_ERROR);
-    terminalSet(*out, TerminalColor::C_RED, true);
-    (*out) << "error: ";
-    terminalReset(*out);
+    (*out) << terminalSet(TerminalColor::C_RED, true) << "error: " << terminalReset();
 }
 
 void CompilationMessages::error(const string &str) {
     error();
-    (*out) << str << endl;
+    bolded(str);
+    (*out) << endl;
 }
 
 void CompilationMessages::error(CodeLoc loc, const string &str) {

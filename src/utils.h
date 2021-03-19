@@ -2,7 +2,6 @@
 
 #include <string>
 #include <functional>
-#include <iostream>
 
 // TODO error type (probably aliased to std::optional)
 
@@ -46,5 +45,6 @@ enum class TerminalColor {
     C_NO_CHANGE
 };
 
-void terminalSet(std::ostream &out, TerminalColor col, bool bold);
-void terminalReset(std::ostream &out);
+std::string terminalSet(TerminalColor col, bool bold);
+std::string terminalSetBold();
+std::string terminalReset();
