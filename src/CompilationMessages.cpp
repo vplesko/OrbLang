@@ -1,6 +1,7 @@
 #include "CompilationMessages.h"
 #include <sstream>
 #include <filesystem>
+#include <fstream>
 #include "NamePool.h"
 using namespace std;
 
@@ -224,6 +225,7 @@ void CompilationMessages::info(const std::string &str) {
 void CompilationMessages::info(CodeLoc loc, const std::string &str) {
     heading(loc);
     info(str);
+    displayCodeSegment(loc);
 }
 
 void CompilationMessages::warning() {
@@ -240,6 +242,7 @@ void CompilationMessages::warning(const std::string &str) {
 void CompilationMessages::warning(CodeLoc loc, const std::string &str) {
     heading(loc);
     warning(str);
+    displayCodeSegment(loc);
 }
 
 void CompilationMessages::error() {
@@ -256,6 +259,22 @@ void CompilationMessages::error(const string &str) {
 void CompilationMessages::error(CodeLoc loc, const string &str) {
     heading(loc);
     error(str);
+    displayCodeSegment(loc);
+}
+
+void CompilationMessages::displayCodeSegment(CodeLoc loc) {
+    const std::string &filename = stringPool->get(loc.file);
+    ifstream file(filename);
+    if (!file.is_open()) return;
+
+    string line;
+    for (CodeIndex i = 0; i < loc.ln; ++i) getline(file, line);
+    (*out) << line << endl;
+
+    (*out) << terminalSet(TerminalColor::C_GREEN, false);
+    for (CodeIndex i = 0; i+1 < loc.col; ++i) (*out) << ' ';
+    (*out) << '^';
+    (*out) << terminalReset() << endl;
 }
 
 bool CompilationMessages::userMessageStart(CodeLoc loc, Status s) {

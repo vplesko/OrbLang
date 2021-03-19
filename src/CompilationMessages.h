@@ -53,6 +53,8 @@ public:
     Status getStatus() const {return status; }
     bool isFail() const { return status >= S_ERROR; }
 
+    void displayCodeSegment(CodeLoc loc);
+
     bool userMessageStart(CodeLoc loc, Status s);
     void userMessageEnd();
     void userMessage(std::int64_t x);

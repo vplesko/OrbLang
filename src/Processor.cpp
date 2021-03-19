@@ -1308,8 +1308,9 @@ NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) 
 
     msgs->userMessageEnd();
 
-    if (attrError.value()) return NodeVal();
+    if (attrLoc.has_value()) msgs->displayCodeSegment(codeLoc);
 
+    if (attrError.value()) return NodeVal();
     return NodeVal(node.getCodeLoc());
 }
 
