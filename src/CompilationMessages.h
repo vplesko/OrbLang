@@ -30,10 +30,13 @@ private:
 
     void raise(Status s) { status = std::max(status, s); }
     void heading(CodeLoc loc);
+    void info();
     void info(const std::string &str);
     void info(CodeLoc loc, const std::string &str);
+    void warning();
     void warning(const std::string &str);
     void warning(CodeLoc loc, const std::string &str);
+    void error();
     void error(const std::string &str);
     void error(CodeLoc loc, const std::string &str);
 

@@ -197,18 +197,27 @@ string CompilationMessages::errorStringOfType(TypeTable::Id ty) const {
 string toString(CodeLoc loc, const StringPool *stringPool) {
     stringstream ss;
     const string &file = stringPool->get(loc.file);
-    ss << filesystem::relative(file);
+    ss << filesystem::relative(file).string();
     ss << ':' << loc.ln << ':' << loc.col << ':';
     return ss.str();
 }
 
 void CompilationMessages::heading(CodeLoc loc) {
+    terminalSet(*out, TerminalColor::C_NO_CHANGE, true);
     (*out) << toString(loc, stringPool) << ' ';
+    terminalReset(*out);
+}
+
+void CompilationMessages::info() {
+    raise(S_INFO);
+    terminalSet(*out, TerminalColor::C_BLACK, true);
+    (*out) << "info: ";
+    terminalReset(*out);
 }
 
 void CompilationMessages::info(const std::string &str) {
-    raise(S_INFO);
-    (*out) << "info: " << str << endl;
+    info();
+    (*out) << str << endl;
 }
 
 void CompilationMessages::info(CodeLoc loc, const std::string &str) {
@@ -216,9 +225,16 @@ void CompilationMessages::info(CodeLoc loc, const std::string &str) {
     info(str);
 }
 
-void CompilationMessages::warning(const std::string &str) {
+void CompilationMessages::warning() {
     raise(S_WARNING);
-    (*out) << "warning: " << str << endl;
+    terminalSet(*out, TerminalColor::C_MAGENTA, true);
+    (*out) << "warning: ";
+    terminalReset(*out);
+}
+
+void CompilationMessages::warning(const std::string &str) {
+    warning();
+    (*out) << str << endl;
 }
 
 void CompilationMessages::warning(CodeLoc loc, const std::string &str) {
@@ -226,9 +242,16 @@ void CompilationMessages::warning(CodeLoc loc, const std::string &str) {
     warning(str);
 }
 
-void CompilationMessages::error(const string &str) {
+void CompilationMessages::error() {
     raise(S_ERROR);
-    (*out) << "error: " << str << endl;
+    terminalSet(*out, TerminalColor::C_RED, true);
+    (*out) << "error: ";
+    terminalReset(*out);
+}
+
+void CompilationMessages::error(const string &str) {
+    error();
+    (*out) << str << endl;
 }
 
 void CompilationMessages::error(CodeLoc loc, const string &str) {
@@ -240,14 +263,13 @@ bool CompilationMessages::userMessageStart(CodeLoc loc, Status s) {
     if (s != S_INFO && s != S_WARNING && s != S_ERROR) return false;
 
     heading(loc);
-    raise(s);
 
     if (s == S_INFO) {
-        (*out) << "info: ";
+        info();
     } else if (s == S_WARNING) {
-        (*out) << "warning: ";
+        warning();
     } else if (s == S_ERROR) {
-        (*out) << "error: ";
+        error();
     }
 
     return true;

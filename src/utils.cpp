@@ -1,5 +1,11 @@
 #include "utils.h"
+#include <optional>
+#include "OrbCompilerConfig.h"
 using namespace std;
+
+#if PLATFORM_WINDOWS
+#include <windows.h>
+#endif
 
 pair<char, bool> nextCh(const string &str, size_t &index) {
     if (index >= str.size()) return {char(), false};
@@ -115,4 +121,87 @@ UnescapePayload unescape(const string &str, std::size_t indexStartingQuote, bool
 std::size_t leNiceHasheFunctione(std::size_t x, std::size_t y) {
     // with apologies to Donald Knuth
     return (17*31+x)*31+y;
+}
+
+// TODO test on Windows
+bool enableVirtualTerminalProcessing() {
+#if PLATFORM_WINDOWS && defined(ENABLE_VIRTUAL_TERMINAL_PROCESSING)
+    static optional<bool> oldResult;
+
+    if (!oldResult.has_value()) {
+        HANDLE Console = GetStdHandle(STD_OUTPUT_HANDLE);
+        if (hOut == INVALID_HANDLE_VALUE) {
+            oldResult = false;
+            return false;
+        }
+
+        DWORD Mode;
+        if (!GetConsoleMode(Console, &Mode)) {
+            oldResult = false;
+            return false;
+        }
+
+        Mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+        if (!SetConsoleMode(Console, Mode)) {
+            oldResult = false;
+            return false;
+        }
+
+        oldResult = true;
+    }
+
+    return oldResult.value();
+#else
+    return PLATFORM_UNIX;
+#endif
+}
+
+void terminalSet(ostream &out, TerminalColor col, bool bold) {
+    if (!enableVirtualTerminalProcessing()) return;
+
+    if (col == TerminalColor::C_NO_CHANGE && !bold) return;
+
+    out << "\033[";
+
+    bool colSet = true;
+    switch (col) {
+    case TerminalColor::C_BLACK:
+        out << "30";
+        break;
+    case TerminalColor::C_RED:
+        out << "31";
+        break;
+    case TerminalColor::C_GREEN:
+        out << "32";
+        break;
+    case TerminalColor::C_YELLOW:
+        out << "33";
+        break;
+    case TerminalColor::C_BLUE:
+        out << "34";
+        break;
+    case TerminalColor::C_MAGENTA:
+        out << "35";
+        break;
+    case TerminalColor::C_CYAN:
+        out << "36";
+        break;
+    case TerminalColor::C_WHITE:
+        out << "37";
+        break;
+    default:
+        colSet = false;
+        break;
+    }
+
+    if (bold) {
+        if (colSet) out << ";1";
+        else out << "1";
+    }
+
+    out << "m";
+}
+
+void terminalReset(ostream &out) {
+    out << "\033[0m";
 }

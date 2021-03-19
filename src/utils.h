@@ -2,6 +2,7 @@
 
 #include <string>
 #include <functional>
+#include <iostream>
 
 // TODO error type (probably aliased to std::optional)
 
@@ -32,3 +33,18 @@ struct UnescapePayload {
 UnescapePayload unescape(const std::string &str, std::size_t indexStartingQuote, bool isSingleQuote);
 
 std::size_t leNiceHasheFunctione(std::size_t x, std::size_t y);
+
+enum class TerminalColor {
+    C_BLACK,
+    C_RED,
+    C_GREEN,
+    C_YELLOW,
+    C_BLUE,
+    C_MAGENTA,
+    C_CYAN,
+    C_WHITE,
+    C_NO_CHANGE
+};
+
+void terminalSet(std::ostream &out, TerminalColor col, bool bold);
+void terminalReset(std::ostream &out);
