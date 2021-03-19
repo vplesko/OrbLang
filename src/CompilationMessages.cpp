@@ -271,9 +271,17 @@ void CompilationMessages::displayCodeSegment(CodeLoc loc) {
     for (CodeIndex i = 0; i < loc.start.ln; ++i) getline(file, line);
     (*out) << line << endl;
 
+    bool multiline = loc.start.ln < loc.end.ln;
+    CodeIndex start = loc.start.col-1;
+    CodeIndex end = multiline ? line.size() : loc.end.col-1;
+    if (end <= start) end = start+1;
+    while (end > start && isspace(line[end-1])) --end;
+
     (*out) << terminalSet(TerminalColor::C_GREEN, false);
-    for (CodeIndex i = 0; i+1 < loc.start.col; ++i) (*out) << ' ';
+    for (CodeIndex i = 0; i < start; ++i) (*out) << ' ';
     (*out) << '^';
+    for (CodeIndex i = start+1; i < end; ++i) (*out) << '~';
+    if (multiline) (*out) << " <continued>";
     (*out) << terminalReset() << endl;
 }
 
