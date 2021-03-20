@@ -130,20 +130,20 @@ bool enableVirtualTerminalProcessing() {
     static optional<bool> oldResult;
 
     if (!oldResult.has_value()) {
-        HANDLE Console = GetStdHandle(STD_OUTPUT_HANDLE);
+        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
         if (hOut == INVALID_HANDLE_VALUE) {
             oldResult = false;
             return false;
         }
 
-        DWORD Mode;
-        if (!GetConsoleMode(Console, &Mode)) {
+        DWORD dwMode;
+        if (!GetConsoleMode(hOut, &dwMode)) {
             oldResult = false;
             return false;
         }
 
-        Mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-        if (!SetConsoleMode(Console, Mode)) {
+        dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+        if (!SetConsoleMode(hOut, dwMode)) {
             oldResult = false;
             return false;
         }
