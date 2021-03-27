@@ -215,7 +215,7 @@ bool EvalVal::isImplicitCastable(const EvalVal &val, TypeTable::Id t, const Stri
     if (typeTable->isImplicitCastable(val.type, t))
         return true;
 
-    if (typeTable->worksAsCustom(val.type) || typeTable->worksAsCustom(t))
+    if (typeTable->worksAsFixedType(val.type) || typeTable->worksAsFixedType(t))
         return false;
 
     optional<int64_t> valI = getValueI(val, typeTable);

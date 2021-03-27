@@ -1,5 +1,0 @@
-custom Foo i32;
-
-fnc main () () {
-    custom::global Foo bool;
-};

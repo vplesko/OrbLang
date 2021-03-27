@@ -1,4 +1,4 @@
-custom t i32;
+fixed t i32;
 
 fnc main () () {
     sym (a:t 0:i32);

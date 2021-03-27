@@ -78,7 +78,7 @@ sym (glob (f10));
 
 sym globFnc:(fnc (i32) i32);
 
-custom MyFnc (fnc (i32) i32);
+fixed MyFnc (fnc (i32) i32);
 
 fnc callAndRet (x:i32 f:MyFnc) i32 {
     ret (f x);

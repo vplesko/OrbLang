@@ -20,7 +20,7 @@ enum class Keyword {
     EXIT,
     LOOP,
     PASS,
-    CUSTOM,
+    FIXED,
     DATA,
     FNC,
     RET,

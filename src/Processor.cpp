@@ -90,8 +90,8 @@ NodeVal Processor::processNonLeaf(const NodeVal &node, bool topmost) {
                 return processLoop(node);
             case Keyword::PASS:
                 return processPass(node);
-            case Keyword::CUSTOM:
-                return processCustom(node, starting);
+            case Keyword::FIXED:
+                return processFixed(node, starting);
             case Keyword::DATA:
                 return processData(node, starting);
             case Keyword::FNC:
@@ -547,7 +547,7 @@ NodeVal Processor::processPass(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
-NodeVal Processor::processCustom(const NodeVal &node, const NodeVal &starting) {
+NodeVal Processor::processFixed(const NodeVal &node, const NodeVal &starting) {
     if (!checkExactlyChildren(node, 3, true)) return NodeVal();
 
     optional<bool> attrGlobal = getAttributeForBool(starting, "global");
@@ -570,10 +570,10 @@ NodeVal Processor::processCustom(const NodeVal &node, const NodeVal &starting) {
     if (!checkIsType(nodeTy, true)) return NodeVal();
     TypeTable::Id ty = nodeTy.getEvalVal().ty;
 
-    TypeTable::Custom custom;
-    custom.name = name;
-    custom.type = ty;
-    optional<TypeTable::Id> typeId = typeTable->addCustom(custom);
+    TypeTable::FixedType fixed;
+    fixed.name = name;
+    fixed.type = ty;
+    optional<TypeTable::Id> typeId = typeTable->addFixedType(fixed);
     if (!typeId.has_value()) {
         msgs->errorUnknown(node.getCodeLoc());
         return NodeVal();
@@ -1704,7 +1704,7 @@ bool Processor::shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id d
 
     TypeTable::Id srcTypeId = val.type;
 
-    if (typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId)))
+    if (typeTable->isImplicitCastable(typeTable->extractFixedTypeBaseType(srcTypeId), typeTable->extractFixedTypeBaseType(dstTypeId)))
         return false;
 
     if (typeTable->worksAsTypeI(srcTypeId)) {
@@ -1994,7 +1994,7 @@ bool Processor::hasTrivialDrop(TypeTable::Id ty) {
 
         return true;
     } else if (typeTable->worksAsDataType(ty)) {
-        const NodeVal *dropFunc = symbolTable->getDropFunc(typeTable->extractCustomBaseType(ty));
+        const NodeVal *dropFunc = symbolTable->getDropFunc(typeTable->extractFixedTypeBaseType(ty));
         if (dropFunc != nullptr) return false;
 
         size_t len = typeTable->extractLenOfDataType(ty).value();
@@ -2045,11 +2045,11 @@ bool Processor::callDropFunc(CodeLoc codeLoc, NodeVal val) {
             if (!callDropFunc(codeLoc, move(memb))) return false;
         }
     } else if (typeTable->worksAsDataType(valTy)) {
-        const NodeVal *dropFunc = symbolTable->getDropFunc(typeTable->extractCustomBaseType(valTy));
+        const NodeVal *dropFunc = symbolTable->getDropFunc(typeTable->extractFixedTypeBaseType(valTy));
         if (dropFunc != nullptr) {
             const TypeTable::Callable &dropCallable = *typeTable->extractCallable(dropFunc->getType().value());
 
-            // explicit cast cuz could be a custom
+            // explicit cast cuz could be a fixed type
             NodeVal afterCast = castNode(codeLoc, val, dropCallable.getArgType(0), true);
             if (afterCast.isInvalid()) return false;
 
@@ -2770,7 +2770,7 @@ bool Processor::checkIsValue(const NodeVal &node, bool orError) {
     return true;
 }
 
-bool Processor::checkExactlyChildren(const NodeVal &node, std::size_t n, bool orError) {
+bool Processor::checkExactlyChildren(const NodeVal &node, size_t n, bool orError) {
     if (!checkIsRaw(node, orError)) return false;
 
     if (node.getChildrenCnt() != n) {
@@ -2780,7 +2780,7 @@ bool Processor::checkExactlyChildren(const NodeVal &node, std::size_t n, bool or
     return true;
 }
 
-bool Processor::checkAtLeastChildren(const NodeVal &node, std::size_t n, bool orError) {
+bool Processor::checkAtLeastChildren(const NodeVal &node, size_t n, bool orError) {
     if (!checkIsRaw(node, orError)) return false;
 
     if (node.getChildrenCnt() < n) {
@@ -2790,7 +2790,7 @@ bool Processor::checkAtLeastChildren(const NodeVal &node, std::size_t n, bool or
     return true;
 }
 
-bool Processor::checkAtMostChildren(const NodeVal &node, std::size_t n, bool orError) {
+bool Processor::checkAtMostChildren(const NodeVal &node, size_t n, bool orError) {
     if (!checkIsRaw(node, orError)) return false;
 
     if (node.getChildrenCnt() > n) {
@@ -2800,7 +2800,7 @@ bool Processor::checkAtMostChildren(const NodeVal &node, std::size_t n, bool orE
     return true;
 }
 
-bool Processor::checkBetweenChildren(const NodeVal &node, std::size_t nLo, std::size_t nHi, bool orError) {
+bool Processor::checkBetweenChildren(const NodeVal &node, size_t nLo, size_t nHi, bool orError) {
     if (!checkIsRaw(node, orError)) return false;
 
     if (!between(node.getChildrenCnt(), nLo, nHi)) {

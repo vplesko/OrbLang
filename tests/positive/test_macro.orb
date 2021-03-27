@@ -37,7 +37,7 @@ mac say (x) {
 
 eval (sym (glob:(mac 1) ++));
 
-custom MyMac (mac 1);
+fixed MyMac (mac 1);
 
 eval (fnc invokeAndRet (x:i32 m:MyMac) i32 {
     ret (m ,x);

@@ -931,7 +931,7 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
                 return nullopt;
             }
         } else {
-            if (typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId))) {
+            if (typeTable->isImplicitCastable(typeTable->extractFixedTypeBaseType(srcTypeId), typeTable->extractFixedTypeBaseType(dstTypeId))) {
                 if (!assignBasedOnTypeP(dstEvalVal, srcEvalVal.p, dstTypeId)) {
                     return nullopt;
                 }
@@ -974,7 +974,7 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
         } else if (typeTable->worksAsTypeB(dstTypeId)) {
             if (!assignBasedOnTypeB(dstEvalVal, !EvalVal::isCallableNoValue(srcEvalVal, typeTable), dstTypeId))
                 return nullopt;
-        } else if (typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId))) {
+        } else if (typeTable->isImplicitCastable(typeTable->extractFixedTypeBaseType(srcTypeId), typeTable->extractFixedTypeBaseType(dstTypeId))) {
             dstEvalVal = EvalVal::copyNoRef(srcEvalVal);
             dstEvalVal.type = dstTypeId;
         } else {
@@ -982,7 +982,7 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
         }
     } else {
         // other types are only castable when changing constness
-        if (typeTable->isImplicitCastable(typeTable->extractCustomBaseType(srcTypeId), typeTable->extractCustomBaseType(dstTypeId))) {
+        if (typeTable->isImplicitCastable(typeTable->extractFixedTypeBaseType(srcTypeId), typeTable->extractFixedTypeBaseType(dstTypeId))) {
             // no action is needed in case of a cast
             // except for raw when dropping cn
             dstEvalVal = EvalVal::copyNoRef(srcEvalVal);

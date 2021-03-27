@@ -121,9 +121,9 @@ pass
 	if name given, exits that block, otherwise innermost enclosing block
 	has to be retting block
 
-custom
-	custom name t
-	declares a custom type
+fixed
+	fixed name t
+	declares a fixed type
 	name is id, t is type
 	same type as t, but restricts impl cast
 	global only
@@ -269,5 +269,5 @@ mac int - macro that takes given number of args
 {type} [] - array pointer to a given type (can be indexed, but not dereferenced)
 ({...type}2+) - tuple of given types
 
-custom types restrict impl casts
+fixed types restrict impl casts
 data types have named members
