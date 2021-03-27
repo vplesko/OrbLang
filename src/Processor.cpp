@@ -779,6 +779,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
     return ret;
 }
 
+// TODO passing attributes on macro itself
 NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
     const MacroValue *macroVal = nullptr;
     if (starting.isUndecidedCallableVal()) {
@@ -1892,9 +1893,7 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node, const NodeVal &val
             funcVal = funcVals.front();
         } else {
             // still undecided
-            NodeVal ret(val);
-            ret.setCodeLoc(node.getCodeLoc());
-            return ret;
+            return NodeVal(node.getCodeLoc(), val.getUndecidedCallableVal());
         }
 
         if (checkIsEvalFunc(node.getCodeLoc(), *funcVal, false))
@@ -1926,9 +1925,7 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node, const NodeVal &val
             macroVal = macroVals.front();
         } else {
             // still undecided
-            NodeVal ret(val);
-            ret.setCodeLoc(node.getCodeLoc());
-            return ret;
+            return NodeVal(node.getCodeLoc(), val.getUndecidedCallableVal());
         }
 
         return evaluator->performLoad(node.getCodeLoc(), *macroVal);

@@ -215,10 +215,9 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
             return NodeVal();
         }
 
-        NodeVal ret = move(retVal.value());
+        NodeVal ret = NodeVal::copyNoRef(codeLoc, move(retVal.value()));
         retVal.reset();
-        ret.setCodeLoc(codeLoc);
-        return move(ret);
+        return ret;
     } else {
         return NodeVal(codeLoc);
     }
