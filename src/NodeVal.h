@@ -52,8 +52,7 @@ public:
     bool isInvokeArg() const;
     // returns whether set successfully
     bool setNoDrop(bool b);
-    LifetimeInfo getLifetimeInfo() const;
-    LifetimeInfo& getLifetimeInfo();
+    std::optional<LifetimeInfo> getLifetimeInfo() const;
     // returns whether set successfully
     bool setLifetimeInfo(LifetimeInfo lifetimeInfo);
 

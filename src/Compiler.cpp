@@ -103,10 +103,10 @@ NodeVal Compiler::performLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, optio
 
     LlvmVal loadLlvmVal(ref.var.getLlvmVal().type);
     loadLlvmVal.ref = ref.var.getLlvmVal().ref;
-    loadLlvmVal.lifetimeInfo = ref.var.getLifetimeInfo();
+    loadLlvmVal.lifetimeInfo = ref.var.getLlvmVal().lifetimeInfo;
     if (id.has_value()) loadLlvmVal.val = llvmBuilder.CreateLoad(ref.var.getLlvmVal().ref, getNameForLlvm(id.value()));
     else loadLlvmVal.val = llvmBuilder.CreateLoad(ref.var.getLlvmVal().ref);
-    return NodeVal(ref.var.getCodeLoc(), loadLlvmVal);
+    return NodeVal(codeLoc, loadLlvmVal);
 }
 
 NodeVal Compiler::performLoad(CodeLoc codeLoc, const FuncValue &func) {
@@ -115,7 +115,7 @@ NodeVal Compiler::performLoad(CodeLoc codeLoc, const FuncValue &func) {
     LlvmVal llvmVal;
     llvmVal.type = func.getType();
     llvmVal.val = func.llvmFunc;
-    return NodeVal(func.codeLoc, llvmVal);
+    return NodeVal(codeLoc, llvmVal);
 }
 
 NodeVal Compiler::performLoad(CodeLoc codeLoc, const MacroValue &macro) {
@@ -646,7 +646,7 @@ NodeVal Compiler::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const Nod
     LlvmVal llvmVal(lhs.getType().value());
     llvmVal.val = rhsPromo.getLlvmVal().val;
     llvmVal.ref = lhs.getLlvmVal().ref;
-    llvmVal.lifetimeInfo = lhs.getLifetimeInfo();
+    llvmVal.lifetimeInfo = lhs.getLlvmVal().lifetimeInfo;
     return NodeVal(lhs.getCodeLoc(), llvmVal);
 }
 
@@ -683,7 +683,7 @@ NodeVal Compiler::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal
             llvmVal.val = llvmBuilder.CreateLoad(tmp, "index_tmp");
         }
 
-        llvmVal.lifetimeInfo = basePromo.getLifetimeInfo();
+        llvmVal.lifetimeInfo = basePromo.getLlvmVal().lifetimeInfo;
     } else {
         msgs->errorInternal(codeLoc);
         return NodeVal();
@@ -704,7 +704,7 @@ NodeVal Compiler::performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t i
     } else {
         llvmVal.val = llvmBuilder.CreateExtractValue(basePromo.getLlvmVal().val, {(unsigned) ind}, "dot_tmp");
     }
-    llvmVal.lifetimeInfo = base.getLifetimeInfo();
+    llvmVal.lifetimeInfo = basePromo.getLlvmVal().lifetimeInfo;
     return NodeVal(basePromo.getCodeLoc(), llvmVal);
 }
 

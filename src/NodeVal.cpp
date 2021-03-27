@@ -103,14 +103,10 @@ bool NodeVal::setNoDrop(bool b) {
     }
 }
 
-LifetimeInfo NodeVal::getLifetimeInfo() const {
+optional<LifetimeInfo> NodeVal::getLifetimeInfo() const {
     if (isEvalVal()) return getEvalVal().lifetimeInfo;
-    else return getLlvmVal().lifetimeInfo;
-}
-
-LifetimeInfo& NodeVal::getLifetimeInfo() {
-    if (isEvalVal()) return getEvalVal().lifetimeInfo;
-    else return getLlvmVal().lifetimeInfo;
+    else if (isLlvmVal()) return getLlvmVal().lifetimeInfo;
+    else return nullopt;
 }
 
 bool NodeVal::setLifetimeInfo(LifetimeInfo lifetimeInfo) {
@@ -216,7 +212,11 @@ void NodeVal::unescape(NodeVal &node, const TypeTable *typeTable) {
 }
 
 void NodeVal::clearInvokeArg(NodeVal &node, const TypeTable *typeTable) {
-    node.getLifetimeInfo().invokeArg = false;
+    if (node.getLifetimeInfo().has_value()) {
+        LifetimeInfo lifetimeInfo = node.getLifetimeInfo().value();
+        lifetimeInfo.invokeArg = false;
+        node.setLifetimeInfo(lifetimeInfo);
+    }
     if (isRawVal(node, typeTable)) {
         for (auto it = node.getEvalVal().elems.begin(); it != node.getEvalVal().elems.end(); ++it) {
             clearInvokeArg(*it, typeTable);

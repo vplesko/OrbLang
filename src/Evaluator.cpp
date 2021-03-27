@@ -14,12 +14,14 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, opti
         if (ref.var.isInvokeArg()) {
             return ref.var;
         } else {
-            NodeVal nodeVal = NodeVal::copyNoRef(ref.var);
+            NodeVal nodeVal = NodeVal::copyNoRef(codeLoc, ref.var);
             nodeVal.getEvalVal().ref = &ref.var;
             return nodeVal;
         }
     } else {
-        if (!ref.var.isInvokeArg()) {
+        // compiled values may only be loaded if they are invoke arguments
+        // for generality, don't check specifically if it's LlvmVal
+        if (ref.var.getLifetimeInfo().has_value() && !ref.var.isInvokeArg()) {
             msgs->errorUnknown(codeLoc);
             return NodeVal();
         }
@@ -32,13 +34,13 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, const FuncValue &func) {
 
     EvalVal evalVal = EvalVal::makeVal(func.getType(), typeTable);
     evalVal.f = &func;
-    return NodeVal(func.codeLoc, evalVal);
+    return NodeVal(codeLoc, evalVal);
 }
 
 NodeVal Evaluator::performLoad(CodeLoc codeLoc, const MacroValue &macro) {
     EvalVal evalVal = EvalVal::makeVal(macro.getType(), typeTable);
     evalVal.m = &macro;
-    return NodeVal(macro.codeLoc, evalVal);
+    return NodeVal(codeLoc, evalVal);
 }
 
 // id and type vals must contain valid NamePool/TypeTable indexes
@@ -227,12 +229,15 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const
     BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(macro));
 
     for (size_t i = 0; i < args.size(); ++i) {
-        LifetimeInfo lifetimeInfo = args[i].getLifetimeInfo();
-        lifetimeInfo.invokeArg = true;
-
         SymbolTable::VarEntry varEntry;
         varEntry.var = args[i];
-        varEntry.var.setLifetimeInfo(lifetimeInfo);
+
+        if (args[i].getLifetimeInfo().has_value()) {
+            LifetimeInfo lifetimeInfo = args[i].getLifetimeInfo().value();
+            lifetimeInfo.invokeArg = true;
+            varEntry.var.setLifetimeInfo(lifetimeInfo);
+        }
+
         symbolTable->addVar(macro.argNames[i], move(varEntry));
     }
 
@@ -595,7 +600,7 @@ NodeVal Evaluator::performOperComparisonTearDown(CodeLoc codeLoc, bool success, 
 NodeVal Evaluator::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) {
     if (!checkIsEvalVal(lhs, true) || !checkIsEvalVal(rhs, true)) return NodeVal();
 
-    LifetimeInfo lhsLifetimeInfo = lhs.getLifetimeInfo();
+    LifetimeInfo lhsLifetimeInfo = lhs.getEvalVal().lifetimeInfo;
 
     *lhs.getEvalVal().ref = NodeVal::copyNoRef(lhs.getEvalVal().ref->getCodeLoc(), rhs, lhsLifetimeInfo);
 
@@ -614,7 +619,7 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVa
     }
 
     if (typeTable->worksAsTypeArr(base.getType().value())) {
-        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[index.value()], base.getLifetimeInfo());
+        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[index.value()], base.getEvalVal().lifetimeInfo);
         nodeVal.getEvalVal().type = resTy;
         if (base.hasRef()) {
             nodeVal.getEvalVal().ref = &base.getEvalVal().ref->getEvalVal().elems[index.value()];
@@ -658,10 +663,14 @@ NodeVal Evaluator::performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t 
                 nodeVal.getEvalVal().ref = nullptr;
             }
         }
-        if (base.isInvokeArg()) nodeVal.getLifetimeInfo().invokeArg = true;
+        if (base.isInvokeArg() && nodeVal.getLifetimeInfo().has_value()) {
+            LifetimeInfo lifetimeInfo = nodeVal.getLifetimeInfo().value();
+            lifetimeInfo.invokeArg = true;
+            nodeVal.setLifetimeInfo(lifetimeInfo);
+        }
         return nodeVal;
     } else {
-        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[ind], base.getLifetimeInfo());
+        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[ind], base.getEvalVal().lifetimeInfo);
         nodeVal.getEvalVal().type = resTy;
         if (base.hasRef()) {
             nodeVal.getEvalVal().ref = &base.getEvalVal().ref->getEvalVal().elems[ind];

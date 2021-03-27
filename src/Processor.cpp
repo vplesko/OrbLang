@@ -529,8 +529,9 @@ NodeVal Processor::processPass(const NodeVal &node) {
     if (processed.isInvalid()) return NodeVal();
 
     NodeVal moved;
-    if (processed.getLifetimeInfo().nestLevel.has_value() &&
-        !processed.getLifetimeInfo().nestLevel.value().greaterThan(symbolTable->currNestLevel())) {
+    if (processed.getLifetimeInfo().has_value() &&
+        processed.getLifetimeInfo().value().nestLevel.has_value() &&
+        !processed.getLifetimeInfo().value().nestLevel.value().greaterThan(symbolTable->currNestLevel())) {
         moved = moveNode(processed.getCodeLoc(), processed);
     } else {
         moved = move(processed);
@@ -1165,8 +1166,9 @@ NodeVal Processor::processRet(const NodeVal &node) {
             if (processed.isInvalid()) return NodeVal();
 
             NodeVal moved;
-            if (processed.getLifetimeInfo().nestLevel.has_value() &&
-                !processed.getLifetimeInfo().nestLevel.value().callableGreaterThan(symbolTable->currNestLevel())) {
+            if (processed.getLifetimeInfo().has_value() &&
+                processed.getLifetimeInfo().value().nestLevel.has_value() &&
+                !processed.getLifetimeInfo().value().nestLevel.value().callableGreaterThan(symbolTable->currNestLevel())) {
                 moved = moveNode(processed.getCodeLoc(), processed);
             } else {
                 moved = move(processed);
@@ -1196,8 +1198,9 @@ NodeVal Processor::processRet(const NodeVal &node) {
         if (processed.isInvalid()) return NodeVal();
 
         NodeVal moved;
-        if (processed.getLifetimeInfo().nestLevel.has_value() &&
-            !processed.getLifetimeInfo().nestLevel.value().callableGreaterThan(symbolTable->currNestLevel())) {
+        if (processed.getLifetimeInfo().has_value() &&
+            processed.getLifetimeInfo().value().nestLevel.has_value() &&
+            !processed.getLifetimeInfo().value().nestLevel.value().callableGreaterThan(symbolTable->currNestLevel())) {
             moved = moveNode(processed.getCodeLoc(), processed);
         } else {
             moved = move(processed);
