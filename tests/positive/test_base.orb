@@ -235,4 +235,11 @@ fnc main () () {
     block {
         tup (make Bar (x 1401)) (make Bar (x 1400));
     };
+
+    block {
+        alias MyI32 i32;
+        sym x:MyI32;
+        = x 1500;
+        println_i32 x;
+    };
 };

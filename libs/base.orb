@@ -192,6 +192,10 @@ mac || (a b rest::variadic) {
     ret \(block base.-blockLogAnd bool ,innerCode);
 };
 
+mac alias (name ty) {
+    ret \(eval (sym (,name:(type cn) ,ty)));
+};
+
 mac arr (ty::preprocess a::preprocess rest::(variadic preprocess)) {
     sym (elems (+ \(,a) rest));
     sym (arrTy (ty (lenOf elems)));
