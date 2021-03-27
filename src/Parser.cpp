@@ -154,7 +154,7 @@ NodeVal Parser::parseNode(bool ignoreAttrs) {
                 } else {
                     CodeLoc codeLoc;
                     codeLoc.start = children.front().getCodeLoc().start;
-                    codeLoc.end = children.back().getCodeLoc().end;
+                    codeLoc.end = codeLocSemicolon.end;
 
                     NodeVal tuple = NodeVal::makeEmpty(codeLoc, typeTable);
                     NodeVal::addChildren(tuple, move(children), typeTable); // children is emptied here

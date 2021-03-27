@@ -133,7 +133,7 @@ NodeVal Processor::processNonLeaf(const NodeVal &node, bool topmost) {
         return NodeVal();
     }
 
-    msgs->errorUnknown(node.getCodeLoc());
+    msgs->errorUnexpectedNonLeafStart(starting.getCodeLoc());
     return NodeVal();
 }
 
@@ -1892,7 +1892,9 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node, const NodeVal &val
             funcVal = funcVals.front();
         } else {
             // still undecided
-            return val;
+            NodeVal ret(val);
+            ret.setCodeLoc(node.getCodeLoc());
+            return ret;
         }
 
         if (checkIsEvalFunc(node.getCodeLoc(), *funcVal, false))
@@ -1924,7 +1926,9 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node, const NodeVal &val
             macroVal = macroVals.front();
         } else {
             // still undecided
-            return val;
+            NodeVal ret(val);
+            ret.setCodeLoc(node.getCodeLoc());
+            return ret;
         }
 
         return evaluator->performLoad(node.getCodeLoc(), *macroVal);
@@ -2177,6 +2181,10 @@ bool Processor::processChildNodes(const NodeVal &node) {
     for (size_t i = 0; i < node.getChildrenCnt(); ++i) {
         NodeVal tmp = processNode(node.getChild(i));
         if (tmp.isInvalid()) return false;
+
+        if (NodeVal::isFunc(tmp, typeTable)) msgs->warnUnusedFunc(tmp.getCodeLoc());
+        else if (NodeVal::isMacro(tmp, typeTable)) msgs->warnUnusedMacro(tmp.getCodeLoc());
+        else if (tmp.isSpecialVal()) msgs->warnUnusedSpecial(tmp.getCodeLoc(), tmp.getSpecialVal());
 
         if (!callDropFuncNonRef(move(tmp))) return false;
     }

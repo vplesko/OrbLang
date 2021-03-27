@@ -69,6 +69,10 @@ public:
 
     void hintForgotCloseNode();
 
+    void warnUnusedSpecial(CodeLoc loc, SpecialVal spec);
+    void warnUnusedFunc(CodeLoc loc);
+    void warnUnusedMacro(CodeLoc loc);
+
     void errorInputFileNotFound(const std::string &path);
     void errorBadToken(CodeLoc loc);
     void errorUnclosedMultilineComment(CodeLoc loc);
@@ -78,6 +82,7 @@ public:
     void errorUnexpectedTokenType(CodeLoc loc, Token see);
     void errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token see);
     void errorUnexpectedKeyword(CodeLoc loc, Keyword keyw);
+    void errorUnexpectedNonLeafStart(CodeLoc loc);
     void errorUnexpectedIsNotTerminal(CodeLoc loc);
     void errorUnexpectedIsTerminal(CodeLoc loc);
     void errorUnexpectedNotId(CodeLoc loc);

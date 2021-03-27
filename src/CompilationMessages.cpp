@@ -281,7 +281,7 @@ void CompilationMessages::displayCodeSegment(CodeLoc loc) {
     for (CodeIndex i = 0; i < start; ++i) (*out) << ' ';
     (*out) << '^';
     for (CodeIndex i = start+1; i < end; ++i) (*out) << '~';
-    if (multiline) (*out) << " <more lines>";
+    if (multiline) (*out) << " <more lines not shown>";
     (*out) << terminalReset() << endl;
 }
 
@@ -345,6 +345,30 @@ void CompilationMessages::hintForgotCloseNode() {
     info("Did you forget to terminate a node with ')', '}', or ';'?");
 }
 
+void CompilationMessages::warnUnusedSpecial(CodeLoc loc, SpecialVal spec) {
+    optional<Keyword> k = getKeyword(spec.id);
+
+    stringstream ss;
+    ss << "Unused special found in a block body";
+    if (k.has_value()) {
+        ss << ": " << errorStringOfKeyword(k.value());
+    }
+    ss << ".";
+    warning(loc, ss.str());
+
+    hintForgotCloseNode();
+}
+
+void CompilationMessages::warnUnusedFunc(CodeLoc loc) {
+    warning(loc, "Unused function value found in a block body.");
+    hintForgotCloseNode();
+}
+
+void CompilationMessages::warnUnusedMacro(CodeLoc loc) {
+    warning(loc, "Unused macro value found in a block body.");
+    hintForgotCloseNode();
+}
+
 void CompilationMessages::errorInputFileNotFound(const string &path) {
     stringstream ss;
     ss << "Input file " << path << " does not exists.";
@@ -398,6 +422,10 @@ void CompilationMessages::errorUnexpectedKeyword(CodeLoc loc, Keyword keyw) {
     stringstream ss;
     ss << "Unexpected keyword found: " << errorStringOfKeyword(keyw) << ".";
     error(loc, ss.str());
+}
+
+void CompilationMessages::errorUnexpectedNonLeafStart(CodeLoc loc) {
+    error(loc, "Unexpected starting node when processing a non-leaf node.");
 }
 
 void CompilationMessages::errorUnexpectedIsNotTerminal(CodeLoc loc) {
