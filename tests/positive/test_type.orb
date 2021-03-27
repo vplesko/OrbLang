@@ -186,4 +186,11 @@ fnc main () () {
         println_c8 ([] ola 0);
         println_str ola;
     };
+
+    block {
+        eval (sym (n 4));
+        sym x:(i32 n n);
+        = ([] x 2 2) 700;
+        println_i32 ([] x 2 2);
+    };
 };

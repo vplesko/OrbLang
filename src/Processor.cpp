@@ -170,7 +170,7 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
         TypeTable::TypeDescr descr(starting.getEvalVal().ty);
         if (!applyTypeDescrDecor(descr, second)) return NodeVal();
         for (size_t i = 2; i < node.getChildrenCnt(); ++i) {
-            NodeVal decor = processWithEscape(node.getChild(i));
+            NodeVal decor = processForTypeArg(node.getChild(i));
             if (decor.isInvalid()) return NodeVal();
             if (!applyTypeDescrDecor(descr, decor)) return NodeVal();
         }
