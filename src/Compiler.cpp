@@ -1062,7 +1062,7 @@ llvm::Type* Compiler::makeLlvmType(TypeTable::Id typeId) {
 llvm::Type* Compiler::makeLlvmTypeOrError(CodeLoc codeLoc, TypeTable::Id typeId) {
     llvm::Type *ret = makeLlvmType(typeId);
     if (ret == nullptr) {
-        msgs->errorUnknown(codeLoc);
+        msgs->errorTypeCannotCompile(codeLoc, typeId);
     }
     return ret;
 }

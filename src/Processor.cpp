@@ -1304,9 +1304,6 @@ NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) 
             msgs->errorUnknown(opers[i].getCodeLoc());
             return NodeVal();
         }
-
-        // TODO if errors, err msgs will start on same line that user message left off
-        if (!callDropFuncNonRef(move(opers[i]))) return NodeVal();
     }
 
     msgs->userMessageEnd();
@@ -1670,15 +1667,17 @@ NodeVal Processor::implicitCast(const NodeVal &node, TypeTable::Id ty, bool skip
 
 NodeVal Processor::castNode(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty, bool skipCheckNeedsDrop) {
     if (node.getType().value() == ty) {
-        return node;
+        NodeVal ret(node);
+        ret.setCodeLoc(codeLoc);
+        return ret;
     }
 
     if (!skipCheckNeedsDrop && !checkTransferValueOk(codeLoc, node, node.isNoDrop(), true)) return NodeVal();
 
     if (checkIsEvalTime(node, false) && !shouldNotDispatchCastToEval(node, ty)) {
-        return evaluator->performCast(node.getCodeLoc(), node, ty);
+        return evaluator->performCast(codeLoc, node, ty);
     } else {
-        return performCast(node.getCodeLoc(), node, ty);
+        return performCast(codeLoc, node, ty);
     }
 }
 
@@ -2633,7 +2632,7 @@ bool Processor::checkInGlobalScope(CodeLoc codeLoc, bool orError) {
 
 bool Processor::checkInLocalScope(CodeLoc codeLoc, bool orError) {
     if (symbolTable->inGlobalScope()) {
-        if (orError) msgs->errorUnknown(codeLoc);
+        if (orError) msgs->errorNotLocalScope(codeLoc);
         return false;
     }
     return true;
@@ -2641,7 +2640,7 @@ bool Processor::checkInLocalScope(CodeLoc codeLoc, bool orError) {
 
 bool Processor::checkHasType(const NodeVal &node, bool orError) {
     if (!node.getType().has_value()) {
-        if (orError) msgs->errorUnknown(node.getCodeLoc());
+        if (orError) msgs->errorMissingType(node.getCodeLoc());
         return false;
     }
     return true;
@@ -2649,14 +2648,6 @@ bool Processor::checkHasType(const NodeVal &node, bool orError) {
 
 bool Processor::checkIsEvalTime(CodeLoc codeLoc, const NodeVal &node, bool orError) {
     return checkIsEvalVal(codeLoc, node, true);
-}
-
-bool Processor::checkIsEvalFunc(CodeLoc codeLoc, const FuncValue &func, bool orError) {
-    if (!func.isEval()) {
-        if (orError) msgs->errorUnknown(codeLoc);
-        return false;
-    }
-    return true;
 }
 
 bool Processor::checkIsRaw(const NodeVal &node, bool orError) {
@@ -2677,7 +2668,15 @@ bool Processor::checkIsEmpty(const NodeVal &node, bool orError) {
 
 bool Processor::checkIsEvalVal(CodeLoc codeLoc, const NodeVal &node, bool orError) {
     if (!node.isEvalVal()) {
-        if (orError) msgs->errorUnknown(codeLoc);
+        if (orError) msgs->errorNotEvalVal(codeLoc);
+        return false;
+    }
+    return true;
+}
+
+bool Processor::checkIsEvalFunc(CodeLoc codeLoc, const FuncValue &func, bool orError) {
+    if (!func.isEval()) {
+        if (orError) msgs->errorNotEvalFunc(codeLoc);
         return false;
     }
     return true;
@@ -2685,7 +2684,7 @@ bool Processor::checkIsEvalVal(CodeLoc codeLoc, const NodeVal &node, bool orErro
 
 bool Processor::checkIsLlvmVal(CodeLoc codeLoc, const NodeVal &node, bool orError) {
     if (!node.isLlvmVal()) {
-        if (orError) msgs->errorUnknown(codeLoc);
+        if (orError) msgs->errorNotCompiledVal(codeLoc);
         return false;
     }
     return true;
@@ -2693,7 +2692,7 @@ bool Processor::checkIsLlvmVal(CodeLoc codeLoc, const NodeVal &node, bool orErro
 
 bool Processor::checkIsLlvmFunc(CodeLoc codeLoc, const FuncValue &func, bool orError) {
     if (!func.isLlvm()) {
-        if (orError) msgs->errorUnknown(codeLoc);
+        if (orError) msgs->errorNotCompiledFunc(codeLoc);
         return false;
     }
     return true;
@@ -2717,15 +2716,7 @@ bool Processor::checkIsType(const NodeVal &node, bool orError) {
 
 bool Processor::checkIsBool(const NodeVal &node, bool orError) {
     if (!node.getType().has_value() || !typeTable->worksAsTypeB(node.getType().value())) {
-        if (orError) msgs->errorUnknown(node.getCodeLoc());
-        return false;
-    }
-    return true;
-}
-
-bool Processor::checkHasTrivialDrop(CodeLoc codeLoc, TypeTable::Id ty, bool orError) {
-    if (!hasTrivialDrop(ty)) {
-        if (orError) msgs->errorUnknown(codeLoc);
+        if (orError) msgs->errorUnexpectedNotBool(node.getCodeLoc());
         return false;
     }
     return true;
@@ -2734,10 +2725,10 @@ bool Processor::checkHasTrivialDrop(CodeLoc codeLoc, TypeTable::Id ty, bool orEr
 bool Processor::checkTransferValueOk(CodeLoc codeLoc, const NodeVal &src, bool dstNoDrop, bool orError) {
     if (!hasTrivialDrop(src.getType().value()) && !dstNoDrop) {
         if (src.hasRef() || src.isInvokeArg()) {
-            if (orError) msgs->errorUnknown(codeLoc);
+            if (orError) msgs->errorBadTransfer(codeLoc);
             return false;
         } else if (src.isNoDrop()) {
-            if (orError) msgs->errorUnknown(codeLoc);
+            if (orError) msgs->errorTransferNoDrop(codeLoc);
             return false;
         }
     }
@@ -2765,7 +2756,7 @@ bool Processor::checkIsDropFuncType(const NodeVal &node, TypeTable::Id dropeeTy,
     }
 
     if (!check) {
-        if (orError) msgs->errorUnknown(node.getCodeLoc());
+        if (orError) msgs->errorDropFuncBadSig(node.getCodeLoc());
         return false;
     }
     return true;
@@ -2773,7 +2764,7 @@ bool Processor::checkIsDropFuncType(const NodeVal &node, TypeTable::Id dropeeTy,
 
 bool Processor::checkIsValue(const NodeVal &node, bool orError) {
     if (!node.isEvalVal() && !node.isLlvmVal()) {
-        if (orError) msgs->errorUnknown(node.getCodeLoc());
+        if (orError) msgs->errorMissingType(node.getCodeLoc());
         return false;
     }
     return true;

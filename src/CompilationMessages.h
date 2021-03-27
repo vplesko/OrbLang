@@ -82,6 +82,7 @@ public:
     void errorUnexpectedIsTerminal(CodeLoc loc);
     void errorUnexpectedNotId(CodeLoc loc);
     void errorUnexpectedNotType(CodeLoc loc);
+    void errorUnexpectedNotBool(CodeLoc loc);
     void errorChildrenNotEq(CodeLoc loc, std::size_t cnt);
     void errorChildrenLessThan(CodeLoc loc, std::size_t cnt);
     void errorChildrenMoreThan(CodeLoc loc, std::size_t cnt);
@@ -129,7 +130,17 @@ public:
     void errorMemberIndex(CodeLoc loc);
     void errorLenOfBadType(CodeLoc loc);
     void errorMissingTypeAttribute(CodeLoc loc);
+    void errorMissingType(CodeLoc loc);
+    void errorTypeCannotCompile(CodeLoc loc, TypeTable::Id ty);
+    void errorNotEvalVal(CodeLoc loc);
+    void errorNotEvalFunc(CodeLoc loc);
+    void errorNotCompiledVal(CodeLoc loc);
+    void errorNotCompiledFunc(CodeLoc loc);
+    void errorBadTransfer(CodeLoc loc);
+    void errorDropFuncBadSig(CodeLoc loc);
+    void errorTransferNoDrop(CodeLoc loc);
     void errorNotGlobalScope(CodeLoc loc);
+    void errorNotLocalScope(CodeLoc loc);
     void errorNotTopmost(CodeLoc loc);
     void errorNoMain();
     // placeholder error, should not stay in code

@@ -217,6 +217,7 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
 
         NodeVal ret = move(retVal.value());
         retVal.reset();
+        ret.setCodeLoc(codeLoc);
         return move(ret);
     } else {
         return NodeVal(codeLoc);
@@ -261,6 +262,7 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const
 
     NodeVal ret = move(retVal.value());
     retVal.reset();
+    ret.setCodeLoc(codeLoc);
     return move(ret);
 }
 
@@ -369,7 +371,7 @@ NodeVal Evaluator::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper, T
         return NodeVal();
     }
 
-    NodeVal nodeEvalVal = NodeVal::copyNoRef(*oper.getEvalVal().p);
+    NodeVal nodeEvalVal = NodeVal::copyNoRef(codeLoc, *oper.getEvalVal().p);
     nodeEvalVal.getEvalVal().type = resTy;
     nodeEvalVal.getEvalVal().ref = oper.getEvalVal().p;
     return nodeEvalVal;

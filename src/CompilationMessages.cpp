@@ -281,7 +281,7 @@ void CompilationMessages::displayCodeSegment(CodeLoc loc) {
     for (CodeIndex i = 0; i < start; ++i) (*out) << ' ';
     (*out) << '^';
     for (CodeIndex i = start+1; i < end; ++i) (*out) << '~';
-    if (multiline) (*out) << " <continued>";
+    if (multiline) (*out) << " <more lines>";
     (*out) << terminalReset() << endl;
 }
 
@@ -430,6 +430,10 @@ void CompilationMessages::errorUnexpectedNotId(CodeLoc loc) {
 
 void CompilationMessages::errorUnexpectedNotType(CodeLoc loc) {
     error(loc, "Result does not present a type.");
+}
+
+void CompilationMessages::errorUnexpectedNotBool(CodeLoc loc) {
+    error(loc, "Result does not present a boolean.");
 }
 
 void CompilationMessages::errorChildrenNotEq(CodeLoc loc, std::size_t cnt) {
@@ -666,8 +670,50 @@ void CompilationMessages::errorMissingTypeAttribute(CodeLoc loc) {
     error(loc, "Type attribute was expected on this node.");
 }
 
+void CompilationMessages::errorMissingType(CodeLoc loc) {
+    error(loc, "Value does not possess a type.");
+}
+
+void CompilationMessages::errorTypeCannotCompile(CodeLoc loc, TypeTable::Id ty) {
+    stringstream ss;
+    ss << "Type '" << errorStringOfType(ty) << "' cannot be compiled.";
+    error(loc, ss.str());
+}
+
+void CompilationMessages::errorNotEvalVal(CodeLoc loc) {
+    error(loc, "Expected an evaluated value.");
+}
+
+void CompilationMessages::errorNotEvalFunc(CodeLoc loc) {
+    error(loc, "Expected an evaluated function.");
+}
+
+void CompilationMessages::errorNotCompiledVal(CodeLoc loc) {
+    error(loc, "Expected a compiled value.");
+}
+
+void CompilationMessages::errorNotCompiledFunc(CodeLoc loc) {
+    error(loc, "Expected a compiled function.");
+}
+
+void CompilationMessages::errorBadTransfer(CodeLoc loc) {
+    error(loc, "Invalid transfer of non-trivially droppable value.");
+}
+
+void CompilationMessages::errorTransferNoDrop(CodeLoc loc) {
+    error(loc, "Attempted to transfer a value marked with noDrop.");
+}
+
+void CompilationMessages::errorDropFuncBadSig(CodeLoc loc) {
+    error(loc, "Bad signature for a drop function.");
+}
+
 void CompilationMessages::errorNotGlobalScope(CodeLoc loc) {
-    error(loc, "This is only allowed in global scope.");
+    error(loc, "Instruction only allowed in global scope.");
+}
+
+void CompilationMessages::errorNotLocalScope(CodeLoc loc) {
+    error(loc, "Instruction only allowed inside functions.");
 }
 
 void CompilationMessages::errorNotTopmost(CodeLoc loc) {

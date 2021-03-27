@@ -63,9 +63,9 @@ protected:
     bool checkHasType(const NodeVal &node, bool orError);
     bool checkIsEvalTime(CodeLoc codeLoc, const NodeVal &node, bool orError);
     bool checkIsEvalTime(const NodeVal &node, bool orError) { return checkIsEvalVal(node.getCodeLoc(), node, orError); }
-    bool checkIsEvalFunc(CodeLoc codeLoc, const FuncValue &func, bool orError);
     bool checkIsEvalVal(CodeLoc codeLoc, const NodeVal &node, bool orError);
     bool checkIsEvalVal(const NodeVal &node, bool orError) { return checkIsEvalVal(node.getCodeLoc(), node, orError); }
+    bool checkIsEvalFunc(CodeLoc codeLoc, const FuncValue &func, bool orError);
     bool checkIsLlvmVal(CodeLoc codeLoc, const NodeVal &node, bool orError);
     bool checkIsLlvmVal(const NodeVal &node, bool orError) { return checkIsLlvmVal(node.getCodeLoc(), node, orError); }
     bool checkIsLlvmFunc(CodeLoc codeLoc, const FuncValue &func, bool orError);
@@ -74,7 +74,6 @@ protected:
     bool checkIsId(const NodeVal &node, bool orError);
     bool checkIsType(const NodeVal &node, bool orError);
     bool checkIsBool(const NodeVal &node, bool orError);
-    bool checkHasTrivialDrop(CodeLoc codeLoc, TypeTable::Id ty, bool orError);
     bool checkTransferValueOk(CodeLoc codeLoc, const NodeVal &src, bool dstNoDrop, bool orError);
     bool checkNotNeedsDrop(CodeLoc codeLoc, const NodeVal &val, bool orError);
     bool checkIsDropFuncType(const NodeVal &node, TypeTable::Id dropeeTy, bool orError);

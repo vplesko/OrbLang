@@ -124,7 +124,6 @@ std::size_t leNiceHasheFunctione(std::size_t x, std::size_t y) {
     return (17*31+x)*31+y;
 }
 
-// TODO test on Windows
 bool enableVirtualTerminalProcessing() {
 #if PLATFORM_WINDOWS && defined(ENABLE_VIRTUAL_TERMINAL_PROCESSING)
     static optional<bool> oldResult;
