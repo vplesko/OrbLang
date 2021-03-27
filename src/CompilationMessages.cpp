@@ -341,6 +341,10 @@ void CompilationMessages::userMessage(StringPool::Id str) {
     (*out) << stringPool->get(str);
 }
 
+void CompilationMessages::hintForgotCloseNode() {
+    info("Did you forget to terminate a node with ')', '}', or ';'?");
+}
+
 void CompilationMessages::errorInputFileNotFound(const string &path) {
     stringstream ss;
     ss << "Input file " << path << " does not exists.";
@@ -371,42 +375,22 @@ void CompilationMessages::errorImportCyclical(CodeLoc loc, const string &path) {
     error(loc, ss.str());
 }
 
-void CompilationMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp) {
-    stringstream ss;
-    ss << "Unexpected symbol found." <<
-        " Expected " << errorStringOfTokenType(exp) << ".";
-    error(loc, ss.str());
-}
-
-void CompilationMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token::Type see) {
-    stringstream ss;
-    ss << "Unexpected symbol found." <<
-        " Expected " << errorStringOfTokenType(exp) <<
-        ", found " << errorStringOfTokenType(see) << ".";
-    error(loc, ss.str());
+void CompilationMessages::errorUnexpectedTokenType(CodeLoc loc, Token see) {
+    if (see.type == Token::T_END) {
+        error(loc, "Unexpected end of file found.");
+        hintForgotCloseNode();
+    } else {
+        stringstream ss;
+        ss << "Unexpected token found: " << errorStringOfToken(see) << ".";
+        error(loc, ss.str());
+    }
 }
 
 void CompilationMessages::errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token see) {
     stringstream ss;
-    ss << "Unexpected symbol found." <<
+    ss << "Unexpected token found." <<
         " Expected " << errorStringOfTokenType(exp) <<
         ", found " << errorStringOfToken(see) << ".";
-    error(loc, ss.str());
-}
-
-void CompilationMessages::errorUnexpectedTokenType(CodeLoc loc, vector<Token::Type> exp, Token see) {
-    stringstream ss;
-    ss << "Unexpected symbol found.";
-
-    ss << " Expected one of: [";
-    for (size_t i = 0; i < exp.size(); ++i) {
-        if (i > 0) ss << ", ";
-        ss << errorStringOfTokenType(exp[i]);
-    }
-    ss << "]";
-
-    ss << ", found " << errorStringOfToken(see) << ".";
-
     error(loc, ss.str());
 }
 
@@ -436,28 +420,34 @@ void CompilationMessages::errorUnexpectedNotBool(CodeLoc loc) {
     error(loc, "Result does not present a boolean.");
 }
 
-void CompilationMessages::errorChildrenNotEq(CodeLoc loc, std::size_t cnt) {
+void CompilationMessages::errorChildrenNotEq(CodeLoc loc, size_t cnt, size_t see) {
     stringstream ss;
     ss << "Number of children nodes must be exactly " << cnt << ".";
     error(loc, ss.str());
+
+    if (see > cnt) hintForgotCloseNode();
 }
 
-void CompilationMessages::errorChildrenLessThan(CodeLoc loc, std::size_t cnt) {
+void CompilationMessages::errorChildrenLessThan(CodeLoc loc, size_t cnt) {
     stringstream ss;
     ss << "Number of children nodes must be at least " << cnt << ".";
     error(loc, ss.str());
 }
 
-void CompilationMessages::errorChildrenMoreThan(CodeLoc loc, std::size_t cnt) {
+void CompilationMessages::errorChildrenMoreThan(CodeLoc loc, size_t cnt) {
     stringstream ss;
     ss << "Number of children nodes must be at most " << cnt << ".";
     error(loc, ss.str());
+
+    hintForgotCloseNode();
 }
 
-void CompilationMessages::errorChildrenNotBetween(CodeLoc loc, std::size_t lo, std::size_t hi) {
+void CompilationMessages::errorChildrenNotBetween(CodeLoc loc, size_t lo, size_t hi, size_t see) {
     stringstream ss;
     ss << "Number of children nodes must be between " << lo << " and " << hi << ".";
     error(loc, ss.str());
+
+    if (see > hi) hintForgotCloseNode();
 }
 
 void CompilationMessages::errorInvalidTypeDecorator(CodeLoc loc) {

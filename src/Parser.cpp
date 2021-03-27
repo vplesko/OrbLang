@@ -28,21 +28,6 @@ bool Parser::match(Token::Type type) {
     return true;
 }
 
-// If the next token matches the type, eats it and returns true.
-// Otherwise, files an error and returns false.
-bool Parser::matchOrError(Token::Type type) {
-    if (!match(type)) {
-        CodeLoc codeLoc;
-        codeLoc.start = loc();
-        next();
-        codeLoc.end = loc();
-
-        msgs->errorUnexpectedTokenType(codeLoc, type, peek());
-        return false;
-    }
-    return true;
-}
-
 bool Parser::matchCloseBraceOrError(Token openBrace) {
     CodeLoc codeLocCloseBrace;
     codeLocCloseBrace.start = loc();
@@ -130,7 +115,7 @@ NodeVal Parser::parseTerm(bool ignoreAttrs) {
         val.kind = LiteralVal::Kind::kNull;
         break;    
     default:
-        msgs->errorUnexpectedTokenType(codeLocTok, {Token::T_BRACE_L_REG, Token::T_BRACE_L_CUR}, tok);
+        msgs->errorUnexpectedTokenType(codeLocTok, tok);
         return NodeVal();
     }
 

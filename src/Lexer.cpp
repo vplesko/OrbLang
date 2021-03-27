@@ -119,7 +119,7 @@ void Lexer::lexNum(CodeIndex from) {
 Token Lexer::next() {
     if (tok.type == Token::T_END) return tok;
 
-    Token old = move(tok);
+    Token old = tok;
 
     while (true) {
         char ch;

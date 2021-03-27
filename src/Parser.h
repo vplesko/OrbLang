@@ -16,7 +16,6 @@ class Parser {
     CodeLocPoint loc() const;
     
     bool match(Token::Type type);
-    bool matchOrError(Token::Type type);
     bool matchCloseBraceOrError(Token openBrace);
 
     EscapeScore parseEscapeScore();

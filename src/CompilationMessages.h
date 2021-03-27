@@ -67,26 +67,26 @@ public:
     void userMessageNull();
     void userMessage(StringPool::Id str);
 
+    void hintForgotCloseNode();
+
     void errorInputFileNotFound(const std::string &path);
     void errorBadToken(CodeLoc loc);
     void errorUnclosedMultilineComment(CodeLoc loc);
     void errorImportNotString(CodeLoc loc);
     void errorImportNotFound(CodeLoc loc, const std::string &path);
     void errorImportCyclical(CodeLoc loc, const std::string &path);
-    void errorUnexpectedTokenType(CodeLoc loc, Token::Type exp);
-    void errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token::Type see);
+    void errorUnexpectedTokenType(CodeLoc loc, Token see);
     void errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token see);
-    void errorUnexpectedTokenType(CodeLoc loc, std::vector<Token::Type> exp, Token see);
     void errorUnexpectedKeyword(CodeLoc loc, Keyword keyw);
     void errorUnexpectedIsNotTerminal(CodeLoc loc);
     void errorUnexpectedIsTerminal(CodeLoc loc);
     void errorUnexpectedNotId(CodeLoc loc);
     void errorUnexpectedNotType(CodeLoc loc);
     void errorUnexpectedNotBool(CodeLoc loc);
-    void errorChildrenNotEq(CodeLoc loc, std::size_t cnt);
+    void errorChildrenNotEq(CodeLoc loc, std::size_t cnt, std::size_t see);
     void errorChildrenLessThan(CodeLoc loc, std::size_t cnt);
     void errorChildrenMoreThan(CodeLoc loc, std::size_t cnt);
-    void errorChildrenNotBetween(CodeLoc loc, std::size_t lo, std::size_t hi);
+    void errorChildrenNotBetween(CodeLoc loc, std::size_t lo, std::size_t hi, std::size_t see);
     void errorInvalidTypeDecorator(CodeLoc loc);
     void errorBadArraySize(CodeLoc loc, long int size);
     void errorNotLastParam(CodeLoc loc);

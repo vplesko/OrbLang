@@ -2771,15 +2771,19 @@ bool Processor::checkIsValue(const NodeVal &node, bool orError) {
 }
 
 bool Processor::checkExactlyChildren(const NodeVal &node, std::size_t n, bool orError) {
-    if (!NodeVal::isRawVal(node, typeTable) || node.getChildrenCnt() != n) {
-        if (orError) msgs->errorChildrenNotEq(node.getCodeLoc(), n);
+    if (!checkIsRaw(node, orError)) return false;
+
+    if (node.getChildrenCnt() != n) {
+        if (orError) msgs->errorChildrenNotEq(node.getCodeLoc(), n, node.getChildrenCnt());
         return false;
     }
     return true;
 }
 
 bool Processor::checkAtLeastChildren(const NodeVal &node, std::size_t n, bool orError) {
-    if (!NodeVal::isRawVal(node, typeTable) || node.getChildrenCnt() < n) {
+    if (!checkIsRaw(node, orError)) return false;
+
+    if (node.getChildrenCnt() < n) {
         if (orError) msgs->errorChildrenLessThan(node.getCodeLoc(), n);
         return false;
     }
@@ -2787,7 +2791,9 @@ bool Processor::checkAtLeastChildren(const NodeVal &node, std::size_t n, bool or
 }
 
 bool Processor::checkAtMostChildren(const NodeVal &node, std::size_t n, bool orError) {
-    if (!NodeVal::isRawVal(node, typeTable) || node.getChildrenCnt() > n) {
+    if (!checkIsRaw(node, orError)) return false;
+
+    if (node.getChildrenCnt() > n) {
         if (orError) msgs->errorChildrenMoreThan(node.getCodeLoc(), n);
         return false;
     }
@@ -2795,8 +2801,10 @@ bool Processor::checkAtMostChildren(const NodeVal &node, std::size_t n, bool orE
 }
 
 bool Processor::checkBetweenChildren(const NodeVal &node, std::size_t nLo, std::size_t nHi, bool orError) {
-    if (!NodeVal::isRawVal(node, typeTable) || !between(node.getChildrenCnt(), nLo, nHi)) {
-        if (orError) msgs->errorChildrenNotBetween(node.getCodeLoc(), nLo, nHi);
+    if (!checkIsRaw(node, orError)) return false;
+
+    if (!between(node.getChildrenCnt(), nLo, nHi)) {
+        if (orError) msgs->errorChildrenNotBetween(node.getCodeLoc(), nLo, nHi, node.getChildrenCnt());
         return false;
     }
     return true;
