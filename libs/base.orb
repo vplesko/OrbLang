@@ -282,7 +282,6 @@ mac make (ty::preprocess pair rest::variadic) {
 
     sym (innerCode \{ (sym ,inst:ty) });
     range i (lenOf pairs) {
-        # ensure it's raw
         cast raw (. pairs i);
 
         if (! (== (lenOf (. pairs i)) 2)) {
@@ -314,4 +313,38 @@ mac pat (body) {
 
 mac pat (args body) {
     ret \(mac::global ,(genSym) ,args ,body);
+};
+
+mac base.-enumTypeDecl (name) {
+    ret \(fixed ,name i32);
+};
+
+mac base.-enumValsDecl (name vals) {
+    sym (code \(sym));
+    range i (lenOf vals) {
+        cast id (. vals i);
+
+        sym (valueName (+::bare name \. (. vals i)));
+
+        = code (+ code
+            \( (,valueName (cast ,name ,i)) ));
+    };
+
+    ret code;
+};
+
+# TODO ::global, set type for enum, initialization of values
+mac enum (name vals) {
+    cast id name;
+    cast raw vals;
+
+    if (== (lenOf vals) 0) {
+        message::(error (loc vals)) "Must specify at least one enum value.";
+        ret ();
+    };
+
+    ret \(eval (block::bare {
+        (base.-enumTypeDecl ,name)
+        (base.-enumValsDecl ,name ,vals)
+    }));
 };

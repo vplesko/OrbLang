@@ -13,6 +13,12 @@ data Bar {
 sym (globArr (eval (arr i32 603 -1)));
 sym (globTup (eval (tup 704 -1)));
 
+enum Baz {
+    zero
+    one
+    two
+};
+
 fnc main () () {
     if true {
         println_i32 100;
@@ -284,5 +290,16 @@ fnc main () () {
         sym x:MyI32;
         = x 1500;
         println_i32 x;
+    };
+
+    block {
+        sym x:Baz (y Baz.one);
+        println_i32 (+ 1600 (cast i32 x));
+        println_i32 (+ 1600 (cast i32 y));
+        = x y;
+        println_i32 (+ 1600 (cast i32 (+ x y)));
+        if (== (+ x y) Baz.two) {
+            println_i32 1603;
+        };
     };
 };
