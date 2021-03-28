@@ -681,7 +681,7 @@ NodeVal Evaluator::performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t 
 }
 
 // TODO warn on over/underflow; are results correct in these cases?
-NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op) {
+NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, bool bare) {
     if (!checkIsEvalVal(lhs, true) || !checkIsEvalVal(rhs, true)) return NodeVal();
     
     TypeTable::Id ty = lhs.getType().value();
@@ -721,7 +721,7 @@ NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const
         } else if (isTypeF) {
             if (assignBasedOnTypeF(evalVal, fl.value()+fr.value(), ty)) success = true;
         } else if (isTypeId) {
-            evalVal.id = makeIdConcat(lhs.getEvalVal().id, rhs.getEvalVal().id);
+            evalVal.id = makeIdConcat(lhs.getEvalVal().id, rhs.getEvalVal().id, bare);
             success = true;
         } else if (isTypeRaw) {
             evalVal.elems = makeRawConcat(lhs.getEvalVal(), rhs.getEvalVal());
@@ -1021,9 +1021,9 @@ optional<NamePool::Id> Evaluator::makeIdFromTy(TypeTable::Id x) {
     return namePool->add(ss.str());
 }
 
-NamePool::Id Evaluator::makeIdConcat(NamePool::Id lhs, NamePool::Id rhs) {
+NamePool::Id Evaluator::makeIdConcat(NamePool::Id lhs, NamePool::Id rhs, bool bare) {
     stringstream ss;
-    ss << namePool->get(lhs) << "$+" << namePool->get(rhs);
+    ss << namePool->get(lhs) << (bare ? "" : "$+") << namePool->get(rhs);
     return namePool->add(ss.str());
 }
 

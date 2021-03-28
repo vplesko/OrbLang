@@ -54,7 +54,7 @@ protected:
     virtual NodeVal performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) =0;
     virtual NodeVal performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) =0;
     virtual NodeVal performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) =0;
-    virtual NodeVal performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op) =0;
+    virtual NodeVal performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, bool bare) =0;
     virtual std::optional<std::uint64_t> performSizeOf(CodeLoc codeLoc, TypeTable::Id ty) =0;
 
 protected:
@@ -102,7 +102,7 @@ private:
     NodeVal processOperAssignment(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers);
     NodeVal processOperIndex(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers);
     NodeVal processOperDot(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers);
-    NodeVal processOperRegular(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op);
+    NodeVal processOperRegular(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op, bool bare);
 
     bool processAttributes(NodeVal &node);
 protected:
@@ -168,7 +168,7 @@ private:
     NodeVal processEval(const NodeVal &node);
     NodeVal processImport(const NodeVal &node, bool topmost);
     NodeVal processMessage(const NodeVal &node, const NodeVal &starting);
-    NodeVal processOper(const NodeVal &node, Oper op);
+    NodeVal processOper(const NodeVal &node, const NodeVal &starting, Oper op);
     NodeVal processTypeOf(const NodeVal &node);
     NodeVal processLenOf(const NodeVal &node);
     NodeVal processSizeOf(const NodeVal &node);

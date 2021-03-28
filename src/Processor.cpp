@@ -126,7 +126,7 @@ NodeVal Processor::processNonLeaf(const NodeVal &node, bool topmost) {
 
         optional<Oper> op = getOper(starting.getSpecialVal().id);
         if (op.has_value()) {
-            return processOper(node, op.value());
+            return processOper(node, starting, op.value());
         }
 
         msgs->errorInternal(node.getCodeLoc());
@@ -1315,7 +1315,7 @@ NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) 
     return NodeVal(node.getCodeLoc());
 }
 
-NodeVal Processor::processOper(const NodeVal &node, Oper op) {
+NodeVal Processor::processOper(const NodeVal &node, const NodeVal &starting, Oper op) {
     if (!checkAtLeastChildren(node, 2, true)) return NodeVal();
 
     if (checkExactlyChildren(node, 2, false)) {
@@ -1323,6 +1323,9 @@ NodeVal Processor::processOper(const NodeVal &node, Oper op) {
     }
 
     OperInfo operInfo = operInfos.find(op)->second;
+
+    optional<bool> attrBare = getAttributeForBool(starting, "bare");
+    if (!attrBare.has_value()) return NodeVal();
 
     vector<const NodeVal*> operands;
     operands.reserve(node.getChildrenCnt()-1);
@@ -1339,7 +1342,7 @@ NodeVal Processor::processOper(const NodeVal &node, Oper op) {
     } else if (op == Oper::DOT) {
         return processOperDot(node.getCodeLoc(), operands);
     } else {
-        return processOperRegular(node.getCodeLoc(), operands, op);
+        return processOperRegular(node.getCodeLoc(), operands, op, attrBare.value());
     }
 }
 
@@ -2528,7 +2531,7 @@ NodeVal Processor::processOperDot(CodeLoc codeLoc, const std::vector<const NodeV
     return lhs;
 }
 
-NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op) {
+NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op, bool bare) {
     OperInfo operInfo = operInfos.find(op)->second;
     if (!operInfo.binary) {
         msgs->errorNonBinOp(codeLoc, op);
@@ -2546,9 +2549,9 @@ NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const N
 
         NodeVal nextLhs;
         if (checkIsEvalTime(lhs, false) && checkIsEvalTime(rhs, false)) {
-            nextLhs = evaluator->performOperRegular(codeLoc, lhs, rhs, op);
+            nextLhs = evaluator->performOperRegular(codeLoc, lhs, rhs, op, bare);
         } else {
-            nextLhs = performOperRegular(codeLoc, lhs, rhs, op);
+            nextLhs = performOperRegular(codeLoc, lhs, rhs, op, bare);
         }
         if (nextLhs.isInvalid()) return NodeVal();
 

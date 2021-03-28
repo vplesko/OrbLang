@@ -47,8 +47,8 @@ fnc main () () {
     });
     println_i32 p;
 
-    eval (= id0 (+ \a \b));
-    sym (,id0 300);
+    eval (= id0 (+::bare \a \b));
+    sym (ab 300);
     println_i32 (id0);
 
     eval (= id0 (cast id false));

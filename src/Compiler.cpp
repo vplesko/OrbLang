@@ -708,7 +708,7 @@ NodeVal Compiler::performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t i
     return NodeVal(basePromo.getCodeLoc(), llvmVal);
 }
 
-NodeVal Compiler::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op) {
+NodeVal Compiler::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, bool bare) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     
     NodeVal lhsPromo = promoteIfEvalValAndCheckIsLlvmVal(lhs, true);
