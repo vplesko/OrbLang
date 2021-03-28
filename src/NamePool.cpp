@@ -1,4 +1,7 @@
 #include "NamePool.h"
+#include <algorithm>
+#include <iostream>
+#include <vector>
 using namespace std;
 
 NamePool::NamePool() {
@@ -22,4 +25,16 @@ NamePool::Id NamePool::add(const string &name) {
 NamePool::Id NamePool::addMain(const std::string &name) {
     main = add(name);
     return main;
+}
+
+void NamePool::printAll() const {
+    vector<pair<NamePool::Id::IdType, string>> collected;
+    for (const auto &it : names) {
+        collected.push_back({it.first.id, it.second});
+    }
+    sort(collected.begin(), collected.end());
+
+    for (const auto &it : collected) {
+        cout << it.first << '\t' << it.second << endl;
+    }
 }

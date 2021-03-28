@@ -40,4 +40,7 @@ public:
     Id addMain(const std::string &name);
     Id getMainId() const { return main; }
     const std::string& getMain() const { return names.at(main); }
+
+    // for debugging
+    void printAll() const;
 };
