@@ -281,7 +281,6 @@ void CompilationMessages::displayCodeSegment(CodeLoc loc) {
     for (CodeIndex i = 0; i < start; ++i) (*out) << ' ';
     (*out) << '^';
     for (CodeIndex i = start+1; i < end; ++i) (*out) << '~';
-    if (multiline) (*out) << " <more lines not shown>";
     (*out) << terminalReset() << endl;
 }
 

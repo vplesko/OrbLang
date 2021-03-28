@@ -284,7 +284,7 @@ mac make (ty::preprocess pair rest::variadic) {
     range i (lenOf pairs) {
         cast raw (. pairs i);
 
-        if (! (== (lenOf (. pairs i)) 2)) {
+        if (!= (lenOf (. pairs i)) 2) {
             ret \(base.-makeErrorEntryLen ,(. pairs i));
         };
 
@@ -319,21 +319,49 @@ mac base.-enumTypeDecl (name ty) {
     ret \(fixed ,name ,ty);
 };
 
+eval (fnc base.-enumValName (enumName:id valName:id) id {
+    ret (+::bare enumName \. valName);
+});
+
+mac base.-enumErrorEntryLen (entry) {
+    ret \(message::(error (loc entry)) "Each entry must be either an id or have exactly two values - name and initial value.");
+};
+
 mac base.-enumValsDecl (name vals) {
     sym (code \(sym));
-    range i (lenOf vals) {
-        cast id (. vals i);
 
-        sym (valueName (+::bare name \. (. vals i)));
+    sym valName:id valNamePrev:id init:raw;
+    range i (lenOf vals) {
+        if (base.isRaw (. vals i)) {
+            if (!= (lenOf (. vals i)) 2) {
+                ret \(base.-enumErrorEntryLen ,(. vals i));
+            };
+
+            cast id (. vals i 0);
+            = valName (. vals i 0);
+
+            = init \(cast ,name ,(. vals i 1));
+        } {
+            cast id (. vals i);
+            = valName (. vals i);
+
+            if (== i 0) {
+                = init \(cast ,name 0);
+            } {
+                = init \(+ ,(base.-enumValName name valNamePrev) (cast ,name 1));
+            };
+        };
+
+        = valNamePrev valName;
 
         = code (+ code
-            \( (,valueName (cast ,name ,i)) ));
+            \( (,(base.-enumValName name valName) ,init) ));
     };
 
     ret code;
 };
 
-# TODO ::global, initialization of values
+# TODO ::global
 mac enum (name ty::preprocess vals) {
     cast id name;
     cast type ty;
