@@ -19,6 +19,10 @@ enum Baz {
     two
 };
 
+enum Zab u8 {
+    a
+};
+
 fnc main () () {
     if true {
         println_i32 100;
@@ -301,5 +305,7 @@ fnc main () () {
         if (== (+ x y) Baz.two) {
             println_i32 1603;
         };
+
+        sym z:Zab;
     };
 };

@@ -315,8 +315,8 @@ mac pat (args body) {
     ret \(mac::global ,(genSym) ,args ,body);
 };
 
-mac base.-enumTypeDecl (name) {
-    ret \(fixed ,name i32);
+mac base.-enumTypeDecl (name ty) {
+    ret \(fixed ,name ,ty);
 };
 
 mac base.-enumValsDecl (name vals) {
@@ -333,9 +333,10 @@ mac base.-enumValsDecl (name vals) {
     ret code;
 };
 
-# TODO ::global, set type for enum, initialization of values
-mac enum (name vals) {
+# TODO ::global, initialization of values
+mac enum (name ty::preprocess vals) {
     cast id name;
+    cast type ty;
     cast raw vals;
 
     if (== (lenOf vals) 0) {
@@ -344,7 +345,11 @@ mac enum (name vals) {
     };
 
     ret \(eval (block::bare {
-        (base.-enumTypeDecl ,name)
+        (base.-enumTypeDecl ,name ,ty)
         (base.-enumValsDecl ,name ,vals)
     }));
+};
+
+mac enum (name vals) {
+    ret \(enum ,name ,i32 ,vals);
 };
