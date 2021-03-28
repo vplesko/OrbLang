@@ -257,6 +257,14 @@ fnc main () () {
     block {
         passthrough (make Bar (x 1100));
     };
+    block {
+        println_i32 (+ 1100 (cast i32 (base.isRaw ())));
+        println_i32 (+ 1102 (cast i32 (base.isRaw (+ 999 9))));
+        eval (sym (r ()));
+        println_i32 (+ 1102 (cast i32 (base.isRaw r)));
+        sym (x 999);
+        println_i32 (+ 1104 (cast i32 (base.isRaw x)));
+    };
 
     block {
         ?_ true Bar (make Bar (x 1200)) (make Bar (x -1));

@@ -519,12 +519,12 @@ void CompilationMessages::errorCnNoInit(CodeLoc loc, NamePool::Id name) {
 }
 
 void CompilationMessages::errorExprCannotPromote(CodeLoc loc) {
-    error(loc, "Expression cannot be promoted.");
+    error(loc, "Expression cannot be promoted to a compiled value.");
 }
 
 void CompilationMessages::errorExprCannotPromote(CodeLoc loc, TypeTable::Id into) {
     stringstream ss;
-    ss << "Expression cannot be promoted to expected type '" << errorStringOfType(into) << "'.";
+    ss << "Expression cannot be promoted to a compiled value of type '" << errorStringOfType(into) << "'.";
     error(loc, ss.str());
 }
 

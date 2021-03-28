@@ -10,6 +10,18 @@ mac passthrough (x::preprocess) {
     ret x;
 };
 
+mac base.isRaw (x::preprocess) {
+    block {
+        exit (!= (typeOf x) raw);
+        ret true;
+    };
+    block {
+        exit (!= (typeOf x) (raw cn));
+        ret true;
+    };
+    ret false;
+};
+
 mac if (cond then) {
     ret \(block {
         (exit (! ,cond))
