@@ -77,11 +77,18 @@ fnc main () () {
         if (> i 0) { continue; };
         println_i32 218;
     };
+    range i 0 3 2 {
+        println_i32 (+ 219 (/ i 2));
+    };
+    rangeRev i 2 0 2 {
+        if (>= i 2) { continue; };
+        println_i32 (+ 221 i);
+    };
     repeat 2 {
-        println_i32 219;
+        println_i32 222;
     };
     repeat 1 {
-        println_i32 220;
+        println_i32 223;
     };
     repeat 0 {
         println_i32 -1;

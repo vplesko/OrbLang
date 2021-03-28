@@ -86,6 +86,19 @@ mac rangeRev (i hi::preprocess lo::preprocess body) {
     });
 };
 
+mac range (i lo::preprocess hi::preprocess delta::preprocess body) {
+    ret \(for (sym (,i ,lo)) (<= ,i ,hi) (= ,i (+ ,i ,delta)) ,body);
+};
+
+mac rangeRev (i hi::preprocess lo::preprocess delta::preprocess body) {
+    sym (s (genSym));
+
+    ret \(range ,s ,lo ,hi ,delta {
+        (sym (,i (+ ,lo (- ,hi ,s))))
+        (block ,body)
+    });
+};
+
 mac repeat (n::preprocess body) {
     sym (s (genSym));
     ret \(range ,s ,n ,body);
