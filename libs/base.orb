@@ -361,7 +361,7 @@ mac base.-enumValsDecl (name vals) {
     ret code;
 };
 
-# TODO ::global
+# TODO ::global, switch for enums, num of entries (care whether ::global)
 mac enum (name ty::preprocess vals) {
     cast id name;
     cast type ty;
