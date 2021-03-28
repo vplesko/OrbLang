@@ -30,6 +30,34 @@ fnc main () () {
     } {
         println_i32 102;
     };
+    if true {
+        println_i32 103;
+    } true {
+        println_i32 -1;
+    };
+    if false {
+        println_i32 -1;
+    } false {
+        println_i32 -1;
+    } {
+        println_i32 104;
+    };
+    if false {
+        println_i32 -1;
+    } true {
+        println_i32 105;
+    } false {
+        println_i32 -1;
+    };
+    if false {
+        println_i32 -1;
+    } true {
+        println_i32 106;
+    } false {
+        println_i32 -1;
+    } {
+        println_i32 -1;
+    };
 
     while true {
         println_i32 200;

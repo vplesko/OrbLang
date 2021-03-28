@@ -17,15 +17,28 @@ mac if (cond then) {
     });
 };
 
-mac if (cond then else) {
-    ret \(block base.-blockIf () {
-        (block {
-            (exit (! ,cond))
-            (block ,then)
-            (exit base.-blockIf true)
-        })
-        (block ,else)
-    });
+mac if (cond then restFirst rest::variadic) {
+    sym (args (+ \(,cond ,then ,restFirst) rest));
+
+    sym (innerCode {});
+    range i 0 (- (lenOf args) 2) 2 {
+        = innerCode (+ innerCode \{
+            (block {
+                (exit (! ,(. args i)))
+                (block ,(. args (+ i 1)))
+                (exit base.-blockIf true)
+            })
+        });
+    };
+
+    block {
+        exit (== (% (lenOf args) 2) 0);
+        = innerCode (+ innerCode \{
+            (block ,(. args (- (lenOf args) 1)))
+        });
+    };
+
+    ret \(block base.-blockIf () ,innerCode);
 };
 
 mac while (cond body) {
