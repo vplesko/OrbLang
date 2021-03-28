@@ -250,12 +250,3 @@ bool EvalVal::isImplicitCastable(const EvalVal &val, TypeTable::Id t, const Stri
 
     return false;
 }
-
-void EvalVal::equalizeAllRawElemTypes(EvalVal &val, const TypeTable *typeTable) {
-    for (auto &it : val.elems) {
-        if (NodeVal::isRawVal(it, typeTable)) {
-            it.getEvalVal().type = val.type;
-            equalizeAllRawElemTypes(it.getEvalVal(), typeTable);
-        }
-    }
-}

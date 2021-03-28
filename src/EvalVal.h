@@ -90,6 +90,4 @@ struct EvalVal {
     static std::optional<const FuncValue*> getValueFunc(const EvalVal &val, const TypeTable *typeTable);
 
     static bool isImplicitCastable(const EvalVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable);
-
-    static void equalizeAllRawElemTypes(EvalVal &val, const TypeTable *typeTable);
 };

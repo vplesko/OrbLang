@@ -72,9 +72,7 @@ fnc main () () {
     eval (sym (e:(raw cn) \(400)));
     println_i32 (. (bar e) 0);
     eval (sym (f (cast raw \(() ,e))));
-    = (. f 1) \(401);
-    println_i32 (. f 1 0);
-    = f \(402);
+    = f \(401);
     println_i32 (. f 0);
     = f e;
 };

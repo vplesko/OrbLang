@@ -983,14 +983,8 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
         // other types are only castable when changing constness
         if (typeTable->isImplicitCastable(typeTable->extractFixedTypeBaseType(srcTypeId), typeTable->extractFixedTypeBaseType(dstTypeId))) {
             // no action is needed in case of a cast
-            // except for raw when dropping cn
             dstEvalVal = EvalVal::copyNoRef(srcEvalVal);
             dstEvalVal.type = dstTypeId;
-
-            if (EvalVal::isRaw(dstEvalVal, typeTable) &&
-                !typeTable->worksAsTypeCn(dstTypeId) && typeTable->worksAsTypeCn(srcTypeId)) {
-                EvalVal::equalizeAllRawElemTypes(dstEvalVal, typeTable);
-            }
         } else {
             return nullopt;
         }
