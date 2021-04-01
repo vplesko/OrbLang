@@ -85,4 +85,8 @@ fnc main () () {
         = (. x v) 106;
         println_i32 (. x v);
     };
+    block {
+        eval (sym (p (makePoint2 -1 107)));
+        println_i32 (. p 1);
+    };
 };

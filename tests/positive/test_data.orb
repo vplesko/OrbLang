@@ -91,4 +91,8 @@ fnc main () () {
         = (. x v) 107;
         println_i32 (. x v);
     };
+    block {
+        sym (p (makePoint2 -1 108));
+        println_i32 (. p 1);
+    };
 };

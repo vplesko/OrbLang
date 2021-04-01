@@ -2499,7 +2499,7 @@ NodeVal Processor::processOperDot(CodeLoc codeLoc, const std::vector<const NodeV
             }
             baseLen = tuple->members.size();
         } else if (isBaseData) {
-            // base len not needed
+            baseLen = typeTable->extractLenOfDataType(baseType).value();
         } else {
             msgs->errorUnknown(lhs.getCodeLoc());
             return NodeVal();
@@ -2514,18 +2514,23 @@ NodeVal Processor::processOperDot(CodeLoc codeLoc, const std::vector<const NodeV
                 msgs->errorMemberIndex(index.getCodeLoc());
                 return NodeVal();
             }
-            if (!EvalVal::isId(index.getEvalVal(), typeTable)) {
-                msgs->errorUnknown(index.getCodeLoc());
-                return NodeVal();
-            }
 
-            NamePool::Id indexName = index.getEvalVal().id;
-            optional<uint64_t> indexValOpt = typeTable->extractDataType(baseType)->getMembInd(indexName);
-            if (!indexValOpt.has_value()) {
-                msgs->errorUnknown(index.getCodeLoc());
-                return NodeVal();
+            if (EvalVal::isId(index.getEvalVal(), typeTable)) {
+                NamePool::Id indexName = index.getEvalVal().id;
+                optional<uint64_t> indexValOpt = typeTable->extractDataType(baseType)->getMembInd(indexName);
+                if (!indexValOpt.has_value()) {
+                    msgs->errorUnknown(index.getCodeLoc());
+                    return NodeVal();
+                }
+                indexVal = indexValOpt.value();
+            } else {
+                optional<uint64_t> indexValOpt = EvalVal::getValueNonNeg(index.getEvalVal(), typeTable);
+                if (!indexValOpt.has_value() || indexValOpt.value() >= baseLen) {
+                    msgs->errorMemberIndex(index.getCodeLoc());
+                    return NodeVal();
+                }
+                indexVal = indexValOpt.value();
             }
-            indexVal = indexValOpt.value();
         } else {
             index = processNode(*opers[i]);
             if (index.isInvalid()) return NodeVal();
