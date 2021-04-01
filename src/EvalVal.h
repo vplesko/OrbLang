@@ -86,6 +86,7 @@ struct EvalVal {
     static bool isArr(const EvalVal &val, const TypeTable *typeTable);
     static bool isTuple(const EvalVal &val, const TypeTable *typeTable);
     static bool isDataType(const EvalVal &val, const TypeTable *typeTable);
+    static bool isZero(const EvalVal &val, const TypeTable *typeTable);
     static bool isNull(const EvalVal &val, const TypeTable *typeTable);
     static bool isCallableNoValue(const EvalVal &val, const TypeTable *typeTable);
 

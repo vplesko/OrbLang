@@ -156,6 +156,13 @@ bool EvalVal::isDataType(const EvalVal &val, const TypeTable *typeTable) {
     return type.has_value() && typeTable->worksAsDataType(type.value());
 }
 
+bool EvalVal::isZero(const EvalVal &val, const TypeTable *typeTable) {
+    if (isI(val, typeTable)) return getValueI(val, typeTable).value() == 0;
+    if (isU(val, typeTable)) return getValueU(val, typeTable).value() == 0;
+    if (isF(val, typeTable)) return getValueF(val, typeTable).value() == 0.0;
+    return false;
+}
+
 bool EvalVal::isNull(const EvalVal &val, const TypeTable *typeTable) {
     if (isP(val, typeTable)) return isNull(val.p);
     if (isStr(val, typeTable)) return !val.str.has_value();

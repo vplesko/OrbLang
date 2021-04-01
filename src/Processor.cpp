@@ -2572,6 +2572,11 @@ NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const N
 
         if (!implicitCastOperands(lhs, rhs, false)) return NodeVal();
 
+        if (op == Oper::DIV && rhs.isEvalVal() && EvalVal::isZero(rhs.getEvalVal(), typeTable)) {
+            msgs->errorUnknown(rhs.getCodeLoc());
+            return NodeVal();
+        }
+
         NodeVal nextLhs;
         if (checkIsEvalTime(lhs, false) && checkIsEvalTime(rhs, false)) {
             nextLhs = evaluator->performOperRegular(codeLoc, lhs, rhs, op, bare);
