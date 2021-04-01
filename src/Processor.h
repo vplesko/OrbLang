@@ -23,9 +23,9 @@ protected:
     Processor *compiler;
 
 protected:
-    virtual NodeVal performLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, std::optional<NamePool::Id> id = std::nullopt) =0;
-    virtual NodeVal performLoad(CodeLoc codeLoc, const FuncValue &func) =0;
-    virtual NodeVal performLoad(CodeLoc codeLoc, const MacroValue &macro) =0;
+    virtual NodeVal performLoad(CodeLoc codeLoc, VarId varId) =0;
+    virtual NodeVal performLoad(CodeLoc codeLoc, FuncId funcId) =0;
+    virtual NodeVal performLoad(CodeLoc codeLoc, MacroId macroId) =0;
     virtual NodeVal performZero(CodeLoc codeLoc, TypeTable::Id ty) =0;
     virtual NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) =0;
     virtual NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) =0;
@@ -38,8 +38,8 @@ protected:
     virtual bool performLoop(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) =0;
     virtual bool performPass(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &val) =0;
     virtual NodeVal performCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args) =0;
-    virtual NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) =0;
-    virtual NodeVal performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args) =0;
+    virtual NodeVal performCall(CodeLoc codeLoc, FuncId funcId, const std::vector<NodeVal> &args) =0;
+    virtual NodeVal performInvoke(CodeLoc codeLoc, MacroId macroId, const std::vector<NodeVal> &args) =0;
     virtual bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) =0;
     virtual bool performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) =0;
     virtual bool performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, MacroValue &macro) =0;
@@ -121,13 +121,13 @@ private:
     bool canBeTypeDescrDecor(const NodeVal &node);
     bool applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &node);
     bool applyTupleMemb(TypeTable::Tuple &tup, const NodeVal &node);
-    NodeVal dispatchLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, std::optional<NamePool::Id> id = std::nullopt);
+    NodeVal dispatchLoad(CodeLoc codeLoc, VarId varId, std::optional<NamePool::Id> id = std::nullopt);
     NodeVal implicitCast(const NodeVal &node, TypeTable::Id ty, bool skipCheckNeedsDrop = false);
     NodeVal castNode(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty, bool skipCheckNeedsDrop = false);
     bool implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly);
     bool shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id dstTypeId) const;
     NodeVal dispatchCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args, bool allArgsEval);
-    NodeVal dispatchCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args, bool allArgsEval);
+    NodeVal dispatchCall(CodeLoc codeLoc, FuncId funcId, const std::vector<NodeVal> &args, bool allArgsEval);
     NodeVal dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
     NodeVal dispatchAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs);
     NodeVal getElement(CodeLoc codeLoc, NodeVal &array, std::size_t index);
@@ -138,11 +138,11 @@ private:
     bool argsFitFuncCall(const std::vector<NodeVal> &args, const TypeTable::Callable &callable, bool allowImplicitCasts);
     NodeVal loadUndecidedCallable(const NodeVal &node, const NodeVal &val);
     NodeVal moveNode(CodeLoc codeLoc, NodeVal &val);
-    NodeVal invoke(CodeLoc codeLoc, const MacroValue &macroVal, std::vector<NodeVal> args);
+    NodeVal invoke(CodeLoc codeLoc, MacroId macroId, std::vector<NodeVal> args);
     bool hasTrivialDrop(TypeTable::Id ty);
     bool callDropFunc(CodeLoc codeLoc, NodeVal val);
     bool callDropFuncNonRef(NodeVal val);
-    bool callDropFuncs(CodeLoc codeLoc, std::vector<SymbolTable::VarEntry*> vars);
+    bool callDropFuncs(CodeLoc codeLoc, std::vector<VarId> vars);
 protected:
     bool callDropFuncsCurrBlock(CodeLoc codeLoc);
     bool callDropFuncsFromBlockToCurrBlock(CodeLoc codeLoc, NamePool::Id name);

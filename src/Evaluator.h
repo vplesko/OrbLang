@@ -13,7 +13,7 @@ class Evaluator : public Processor {
     bool assignBasedOnTypeF(EvalVal &val, double x, TypeTable::Id ty);
     bool assignBasedOnTypeC(EvalVal &val, char x, TypeTable::Id ty);
     bool assignBasedOnTypeB(EvalVal &val, bool x, TypeTable::Id ty);
-    bool assignBasedOnTypeP(EvalVal &val, NodeVal *x, TypeTable::Id ty);
+    bool assignBasedOnTypeP(EvalVal &val, EvalVal::Pointer x, TypeTable::Id ty);
     bool assignBasedOnTypeId(EvalVal &val, std::uint64_t x, TypeTable::Id ty);
     bool assignBasedOnTypeId(EvalVal &val, bool x, TypeTable::Id ty);
 
@@ -28,9 +28,9 @@ class Evaluator : public Processor {
     NodeVal doBlockTearDown(CodeLoc codeLoc, SymbolTable::Block block, bool success, bool jumpingOut);
 
 public:
-    NodeVal performLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, std::optional<NamePool::Id> id) override;
-    NodeVal performLoad(CodeLoc codeLoc, const FuncValue &func) override;
-    NodeVal performLoad(CodeLoc codeLoc, const MacroValue &macro) override;
+    NodeVal performLoad(CodeLoc codeLoc, VarId varId) override;
+    NodeVal performLoad(CodeLoc codeLoc, FuncId funcId) override;
+    NodeVal performLoad(CodeLoc codeLoc, MacroId macroId) override;
     NodeVal performZero(CodeLoc codeLoc, TypeTable::Id ty) override;
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) override;
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) override;
@@ -42,8 +42,8 @@ public:
     bool performLoop(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) override;
     bool performPass(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &val) override;
     NodeVal performCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args) override;
-    NodeVal performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) override;
-    NodeVal performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args) override;
+    NodeVal performCall(CodeLoc codeLoc, FuncId funcId, const std::vector<NodeVal> &args) override;
+    NodeVal performInvoke(CodeLoc codeLoc, MacroId macroId, const std::vector<NodeVal> &args) override;
     bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) override;
     bool performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) override;
     bool performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, MacroValue &macro) override;

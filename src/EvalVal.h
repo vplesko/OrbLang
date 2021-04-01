@@ -1,12 +1,14 @@
 #pragma once
 
 #include <optional>
+#include <variant>
 #include <vector>
 #include "EscapeScore.h"
+#include "LifetimeInfo.h"
 #include "NamePool.h"
 #include "StringPool.h"
+#include "SymbolTableIds.h"
 #include "TypeTable.h"
-#include "LifetimeInfo.h"
 
 class NodeVal;
 class SymbolTable;
@@ -15,6 +17,8 @@ struct MacroValue;
 
 // TODO eval array pointers (non-null)
 struct EvalVal {
+    typedef std::variant<NodeVal*, VarId> Pointer;
+
     // type of this evaluation value
     TypeTable::Id type;
     union {
@@ -34,14 +38,14 @@ struct EvalVal {
         NamePool::Id id;
         // contains type value in case this is type or type cn
         TypeTable::Id ty;
-        const FuncValue *f;
-        const MacroValue *m;
-        NodeVal *p;
     };
+    Pointer p;
     std::optional<StringPool::Id> str;
+    std::optional<FuncId> f;
+    std::optional<MacroId> m;
     std::vector<NodeVal> elems;
 
-    NodeVal *ref = nullptr;
+    Pointer ref;
     LifetimeInfo lifetimeInfo;
 
     EscapeScore escapeScore = 0;
@@ -49,6 +53,8 @@ struct EvalVal {
     EvalVal() {
         // because of union, this takes care of primitives other than id and type
         u64 = 0LL;
+        p = nullptr;
+        ref = nullptr;
     }
 
     bool isEscaped() const { return escapeScore > 0; }
@@ -83,11 +89,19 @@ struct EvalVal {
     static bool isNull(const EvalVal &val, const TypeTable *typeTable);
     static bool isCallableNoValue(const EvalVal &val, const TypeTable *typeTable);
 
+    static bool isNull(const Pointer &ptr);
+    static const NodeVal& deref(const Pointer &ptr, const SymbolTable *symbolTable);
+    static NodeVal& deref(Pointer &ptr, SymbolTable *symbolTable);
+    static const NodeVal& getPointee(const EvalVal &val, const SymbolTable *symbolTable);
+    static NodeVal& getPointee(EvalVal &val, SymbolTable *symbolTable);
+    static const NodeVal& getRefee(const EvalVal &val, const SymbolTable *symbolTable);
+    static NodeVal& getRefee(EvalVal &val, SymbolTable *symbolTable);
+
     static std::optional<std::int64_t> getValueI(const EvalVal &val, const TypeTable *typeTable);
     static std::optional<std::uint64_t> getValueU(const EvalVal &val, const TypeTable *typeTable);
     static std::optional<double> getValueF(const EvalVal &val, const TypeTable *typeTable);
     static std::optional<std::uint64_t> getValueNonNeg(const EvalVal &val, const TypeTable *typeTable);
-    static std::optional<const FuncValue*> getValueFunc(const EvalVal &val, const TypeTable *typeTable);
+    static std::optional<std::optional<FuncId>> getValueFunc(const EvalVal &val, const TypeTable *typeTable);
 
     static bool isImplicitCastable(const EvalVal &val, TypeTable::Id t, const StringPool *stringPool, const TypeTable *typeTable);
 };

@@ -1,15 +1,16 @@
 #pragma once
 
+// TODO sort the order of all includes
 #include <unordered_map>
 #include <vector>
-#include <string>
-#include <variant>
 #include "CodeLoc.h"
 #include "NamePool.h"
-#include "TypeTable.h"
 #include "NodeVal.h"
+#include "SymbolTableIds.h"
+#include "TypeTable.h"
 #include "llvm/IR/Instructions.h"
 
+// TODO put these in a separate header
 struct BaseCallableValue {
 protected:
     TypeTable::Id type, typeSig;
@@ -69,6 +70,7 @@ public:
     };
 
     struct VarEntry {
+        NamePool::Id name;
         NodeVal var;
     };
 
@@ -95,20 +97,15 @@ public:
 private:
     friend class BlockControl;
 
-    // TODO optimize by keeping all vals (including elems in EvalVals) in a single vector (this makes for fewer allocations)
+    // TODO optimize by keeping all vals (including elems in EvalVals) in a single long arena-like vector
     struct BlockInternal {
         Block block;
-        // Guarantees pointer stability of values.
-        std::unordered_map<NamePool::Id, VarEntry, NamePool::Id::Hasher> vars;
-        std::vector<NamePool::Id> varsInOrder;
+        std::vector<VarEntry> vars;
     };
 
-    // Guarantees pointer stability of values.
-    std::unordered_map<NamePool::Id, std::vector<std::unique_ptr<FuncValue>>, NamePool::Id::Hasher> funcs;
-    // Guarantees pointer stability of values.
-    std::unordered_map<NamePool::Id, std::vector<std::unique_ptr<MacroValue>>, NamePool::Id::Hasher> macros;
+    std::unordered_map<NamePool::Id, std::vector<FuncValue>, NamePool::Id::Hasher> funcs;
+    std::unordered_map<NamePool::Id, std::vector<MacroValue>, NamePool::Id::Hasher> macros;
 
-    // Do NOT guarantee pointer stability of blocks.
     std::vector<BlockInternal> globalBlockChain;
     std::vector<std::pair<CalleeValueInfo, std::vector<BlockInternal>>> localBlockChains;
 
@@ -118,29 +115,34 @@ private:
     void newBlock(const CalleeValueInfo &c);
     void endBlock();
 
-    const BlockInternal* getLastBlockInternal() const;
-    BlockInternal* getLastBlockInternal();
-    const BlockInternal* getGlobalBlockInternal() const;
-    BlockInternal* getGlobalBlockInternal();
+    const BlockInternal& getLastBlockInternal() const;
+    BlockInternal& getLastBlockInternal();
+    const BlockInternal& getGlobalBlockInternal() const;
+    BlockInternal& getGlobalBlockInternal();
 
-    static void collectVarsInRevOrder(BlockInternal *block, std::vector<VarEntry*> &v);
+    void collectVarsInRevOrder(std::optional<std::size_t> callable, std::size_t block, std::vector<VarId> &v);
 
 public:
     SymbolTable();
 
-    void addVar(NamePool::Id name, NodeVal val, bool forGlobal = false);
-    void addVar(NamePool::Id name, VarEntry var, bool forGlobal = false);
-    const VarEntry* getVar(NamePool::Id name) const;
-    VarEntry* getVar(NamePool::Id name);
+    VarId addVar(VarEntry var, bool forGlobal = false);
+    const VarEntry& getVar(VarId varId) const;
+    VarEntry& getVar(VarId varId);
+    bool isVarName(NamePool::Id name) const;
+    std::optional<VarId> getVarId(NamePool::Id name) const;
 
-    FuncValue* registerFunc(const FuncValue &val);
+    std::optional<FuncId> registerFunc(const FuncValue &val);
+    const FuncValue& getFunc(FuncId funcId) const;
+    FuncValue& getFunc(FuncId funcId);
     bool isFuncName(NamePool::Id name) const;
-    std::vector<const FuncValue*> getFuncs(NamePool::Id name) const;
+    std::vector<FuncId> getFuncIds(NamePool::Id name) const;
 
-    MacroValue* registerMacro(const MacroValue &val, const TypeTable *typeTable);
+    std::optional<MacroId> registerMacro(const MacroValue &val, const TypeTable *typeTable);
+    const MacroValue& getMacro(MacroId macroId) const;
+    MacroValue& getMacro(MacroId macroId);
     bool isMacroName(NamePool::Id name) const;
-    std::vector<const MacroValue*> getMacros(NamePool::Id name) const;
-    const MacroValue* getMacro(MacroCallSite callSite, const TypeTable *typeTable) const;
+    std::vector<MacroId> getMacros(NamePool::Id name) const;
+    std::optional<MacroId> getMacroId(MacroCallSite callSite, const TypeTable *typeTable) const;
 
     void registerDropFunc(TypeTable::Id ty, NodeVal func);
     const NodeVal* getDropFunc(TypeTable::Id ty);
@@ -152,11 +154,9 @@ public:
 
     std::optional<CalleeValueInfo> getCurrCallee() const;
 
-    std::vector<VarEntry*> getVarsInRevOrderCurrBlock();
-    std::vector<VarEntry*> getVarsInRevOrderFromBlockToCurrBlock(NamePool::Id name);
-    std::vector<VarEntry*> getVarsInRevOrderCurrCallable();
-
-    bool isVarName(NamePool::Id name) const { return getVar(name) != nullptr; }
+    std::vector<VarId> getVarsInRevOrderCurrBlock();
+    std::vector<VarId> getVarsInRevOrderFromBlockToCurrBlock(NamePool::Id name);
+    std::vector<VarId> getVarsInRevOrderCurrCallable();
 
     bool nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable, bool forGlobal = false) const;
 };

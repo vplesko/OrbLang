@@ -6,6 +6,7 @@
 
 class StringPool {
 public:
+    // TODO do the same thing as with NamePool::Id
     typedef unsigned Id;
 
 private:

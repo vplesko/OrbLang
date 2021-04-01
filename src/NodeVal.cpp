@@ -69,7 +69,7 @@ optional<TypeTable::Id> NodeVal::getType() const {
 }
 
 bool NodeVal::hasRef() const {
-    if (isEvalVal()) return getEvalVal().ref != nullptr;
+    if (isEvalVal()) return !EvalVal::isNull(getEvalVal().ref);
     if (isLlvmVal()) return getLlvmVal().ref != nullptr;
     return false;
 }

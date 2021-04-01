@@ -11,6 +11,9 @@
 class TypeTable {
 public:
     struct Id {
+    private:
+        friend class TypeTable;
+
         enum Kind {
             kPrim,
             kTuple,
@@ -22,6 +25,11 @@ public:
 
         Kind kind;
         std::size_t index;
+
+        Id(Kind k, std::size_t ind) : kind(k), index(ind) {}
+
+    public:
+        Id() {}
 
         friend bool operator==(const Id &l, const Id &r)
         { return l.kind == r.kind && l.index == r.index; }

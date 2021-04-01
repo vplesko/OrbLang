@@ -9,8 +9,12 @@ public:
     struct Id {
         typedef unsigned IdType;
 
-        IdType id;
+    private:
+        friend class NamePool;
 
+        IdType id;
+    
+    public:
         friend bool operator==(const Id &l, const Id &r)
         { return l.id == r.id; }
 

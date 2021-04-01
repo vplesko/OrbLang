@@ -1,8 +1,7 @@
 #include "SymbolTable.h"
 #include <cassert>
-#include <algorithm>
-#include "TypeTable.h"
 #include "Reserved.h"
+#include "TypeTable.h"
 #include "utils.h"
 using namespace std;
 
@@ -71,149 +70,218 @@ void SymbolTable::endBlock() {
     }
 }
 
-void SymbolTable::addVar(NamePool::Id name, NodeVal val, bool forGlobal) {
-    VarEntry varEntry;
-    varEntry.var = move(val);
-    addVar(name, move(varEntry), forGlobal);
+VarId SymbolTable::addVar(VarEntry var, bool forGlobal) {
+    BlockInternal &block = forGlobal ? getGlobalBlockInternal() : getLastBlockInternal();
+
+    block.vars.push_back(move(var));
+
+    VarId varId;
+    if (!forGlobal && !localBlockChains.empty()) {
+        varId.callable = localBlockChains.size()-1;
+        varId.block = localBlockChains.back().second.size()-1;
+        varId.index = localBlockChains.back().second.back().vars.size()-1;
+    } else {
+        varId.block = globalBlockChain.size()-1;
+        varId.index = globalBlockChain.back().vars.size()-1;
+    }
+    return varId;
 }
 
-void SymbolTable::addVar(NamePool::Id name, VarEntry var, bool forGlobal) {
-    BlockInternal *block = forGlobal ? getGlobalBlockInternal() : getLastBlockInternal();
-
-    block->vars.insert(make_pair(name, move(var)));
-    block->varsInOrder.push_back(name);
+const SymbolTable::VarEntry& SymbolTable::getVar(VarId varId) const {
+    if (varId.callable.has_value()) {
+        return localBlockChains[varId.callable.value()].second[varId.block].vars[varId.index];
+    } else {
+        return globalBlockChain[varId.block].vars[varId.index];
+    }
 }
 
-const SymbolTable::VarEntry* SymbolTable::getVar(NamePool::Id name) const {
+SymbolTable::VarEntry& SymbolTable::getVar(VarId varId) {
+    if (varId.callable.has_value()) {
+        return localBlockChains[varId.callable.value()].second[varId.block].vars[varId.index];
+    } else {
+        return globalBlockChain[varId.block].vars[varId.index];
+    }
+}
+
+bool SymbolTable::isVarName(NamePool::Id name) const {
+    return getVarId(name).has_value();
+}
+
+optional<VarId> SymbolTable::getVarId(NamePool::Id name) const {
     if (!localBlockChains.empty()) {
-        for (auto it = localBlockChains.back().second.rbegin();
-            it != localBlockChains.back().second.rend();
-            ++it) {
-            auto loc = it->vars.find(name);
-            if (loc != it->vars.end()) return &loc->second;
+        for (size_t ind = 0; ind < localBlockChains.back().second.size(); ++ind) {
+            size_t i = localBlockChains.back().second.size()-1-ind;
+            const BlockInternal &blockInternal = localBlockChains.back().second[i];
+
+            for (size_t ind = 0; ind < blockInternal.vars.size(); ++ind) {
+                size_t j = blockInternal.vars.size()-1-ind;
+
+                if (blockInternal.vars[j].name == name) {
+                    VarId varId;
+                    varId.callable = localBlockChains.size()-1;
+                    varId.block = i;
+                    varId.index = j;
+                    return varId;
+                }
+            }
         }
     }
-    for (auto it = globalBlockChain.rbegin();
-        it != globalBlockChain.rend();
-        ++it) {
-        auto loc = it->vars.find(name);
-        if (loc != it->vars.end()) return &loc->second;
+    for (size_t ind = 0; ind < globalBlockChain.size(); ++ind) {
+        size_t i = globalBlockChain.size()-1-ind;
+        const BlockInternal &blockInternal = globalBlockChain[i];
+
+        for (size_t ind = 0; ind < blockInternal.vars.size(); ++ind) {
+            size_t j = blockInternal.vars.size()-1-ind;
+
+            if (blockInternal.vars[j].name == name) {
+                VarId varId;
+                varId.block = i;
+                varId.index = j;
+                return varId;
+            }
+        }
     }
 
-    return nullptr;
+    return nullopt;
 }
 
-SymbolTable::VarEntry* SymbolTable::getVar(NamePool::Id name) {
-    return const_cast<SymbolTable::VarEntry*>(const_cast<const SymbolTable*>(this)->getVar(name));
-}
-
-FuncValue* SymbolTable::registerFunc(const FuncValue &val) {
+optional<FuncId> SymbolTable::registerFunc(const FuncValue &val) {
     // cannot combine funcs and macros in overloading
-    if (isMacroName(val.name)) return nullptr;
-
-    if (funcs.find(val.name) == funcs.end()) {
-        funcs[val.name] = vector<unique_ptr<FuncValue>>();
-    }
+    if (isMacroName(val.name)) return nullopt;
 
     // funcs with no name mangling cannot be overloaded (note: variadic funcs are always noNameMangle)
     for (const auto &it : funcs[val.name]) {
-        if ((val.noNameMangle || it->noNameMangle) && it->getTypeSig() != val.getTypeSig()) return nullptr;
+        if ((val.noNameMangle || it.noNameMangle) && it.getTypeSig() != val.getTypeSig()) return nullopt;
     }
 
     // find the other decl with the same sig, if exists
-    auto loc = funcs[val.name].end();
-    for (auto it = funcs[val.name].begin(); it != funcs[val.name].end(); ++it) {
-        if (val.getTypeSig() == (*it)->getTypeSig()) {
-            if (val.getType() != (*it)->getType() || val.noNameMangle != (*it)->noNameMangle || (val.defined && (*it)->defined)) {
-                return nullptr;
+    optional<size_t> existing;
+    for (size_t i = 0; i < funcs[val.name].size(); ++i) {
+        const FuncValue &it = funcs[val.name][i];
+
+        if (val.getTypeSig() == it.getTypeSig()) {
+            if (val.getType() != it.getType() || val.noNameMangle != it.noNameMangle || (val.defined && it.defined)) {
+                return nullopt;
             }
-            loc = it;
+            existing = i;
             break;
         }
     }
 
-    if (loc == funcs[val.name].end()) {
+    FuncId funcId;
+    funcId.name = val.name;
+    if (!existing.has_value()) {
         // if no decls with same sig, simply add
-        funcs[val.name].push_back(make_unique<FuncValue>(val));
-        return funcs[val.name].back().get();
+        funcs[val.name].push_back(FuncValue(val));
+        funcId.index = funcs[val.name].size()-1;
     } else {
         // otherwise, replace with new one only if definition
-        if (val.defined) *loc = make_unique<FuncValue>(val);
-        return (*loc).get();
+        if (val.defined) funcs[val.name][existing.value()] = FuncValue(val);
+        funcId.index = existing.value();
     }
+    return funcId;
+}
+
+const FuncValue& SymbolTable::getFunc(FuncId funcId) const {
+    return funcs.at(funcId.name)[funcId.index];
+}
+
+FuncValue& SymbolTable::getFunc(FuncId funcId) {
+    return funcs.at(funcId.name)[funcId.index];
 }
 
 bool SymbolTable::isFuncName(NamePool::Id name) const {
     return funcs.find(name) != funcs.end();
 }
 
-vector<const FuncValue*> SymbolTable::getFuncs(NamePool::Id name) const {
-    if (funcs.find(name) == funcs.end()) return vector<const FuncValue*>();
+vector<FuncId> SymbolTable::getFuncIds(NamePool::Id name) const {
+    if (funcs.find(name) == funcs.end()) return vector<FuncId>();
 
-    vector<const FuncValue*> ret;
-    ret.reserve(funcs.find(name)->second.size());
-    for (const auto &it : funcs.find(name)->second) {
-        ret.push_back(it.get());
+    vector<FuncId> ret;
+    ret.reserve(funcs.at(name).size());
+    FuncId funcId;
+    funcId.name = name;
+    for (size_t i = 0; i < funcs.at(name).size(); ++i) {
+        funcId.index = i;
+        ret.push_back(funcId);
     }
 
     return ret;
 }
 
-MacroValue* SymbolTable::registerMacro(const MacroValue &val, const TypeTable *typeTable) {
+optional<MacroId> SymbolTable::registerMacro(const MacroValue &val, const TypeTable *typeTable) {
     // cannot combine funcs and macros in overloading
-    if (isFuncName(val.name)) return nullptr;
-
-    if (macros.find(val.name) == macros.end()) {
-        macros[val.name] = vector<unique_ptr<MacroValue>>();
-    }
+    if (isFuncName(val.name)) return nullopt;
 
     // cannot have more than one macro with the same sig (macros cannot be declared)
     for (const auto &it : macros[val.name]) {
-        if (val.getTypeSig() == it->getTypeSig()) return nullptr;
+        if (val.getTypeSig() == it.getTypeSig()) return nullopt;
     }
 
     // don't allow ambiguity in variadic args
     const TypeTable::Callable &call = MacroValue::getCallable(val, typeTable);
-    for (const auto &it : macros[val.name]) {
-        const TypeTable::Callable &otherCall = MacroValue::getCallable(*it, typeTable);
+    for (const auto &it : macros.at(val.name)) {
+        const TypeTable::Callable &otherCall = MacroValue::getCallable(it, typeTable);
 
         if ((call.variadic && otherCall.variadic) ||
             (call.variadic && otherCall.getArgCnt() >= call.getArgCnt()-1) ||
             (otherCall.variadic && call.getArgCnt() >= otherCall.getArgCnt()-1)) {
-            return nullptr;
+            return nullopt;
         }
     }
 
-    macros[val.name].push_back(make_unique<MacroValue>(val));
-    return macros[val.name].back().get();
+    macros[val.name].push_back(MacroValue(val));
+
+    MacroId macroId;
+    macroId.name = val.name;
+    macroId.index = macros[val.name].size()-1;
+    return macroId;
+}
+
+const MacroValue& SymbolTable::getMacro(MacroId macroId) const {
+    return macros.at(macroId.name)[macroId.index];
+}
+
+MacroValue& SymbolTable::getMacro(MacroId macroId) {
+    return macros.at(macroId.name)[macroId.index];
 }
 
 bool SymbolTable::isMacroName(NamePool::Id name) const {
     return macros.find(name) != macros.end();
 }
 
-vector<const MacroValue*> SymbolTable::getMacros(NamePool::Id name) const {
-    if (macros.find(name) == macros.end()) return vector<const MacroValue*>();
+vector<MacroId> SymbolTable::getMacros(NamePool::Id name) const {
+    if (macros.find(name) == macros.end()) return vector<MacroId>();
 
-    vector<const MacroValue*> ret;
-    ret.reserve(macros.find(name)->second.size());
-    for (const auto &it : macros.find(name)->second) {
-        ret.push_back(it.get());
+    vector<MacroId> ret;
+    ret.reserve(macros.at(name).size());
+    MacroId macroId;
+    macroId.name = name;
+    for (size_t i = 0; i < macros.at(name).size(); ++i) {
+        macroId.index = i;
+        ret.push_back(macroId);
     }
 
     return ret;
 }
 
-const MacroValue* SymbolTable::getMacro(MacroCallSite callSite, const TypeTable *typeTable) const {
-    for (const auto &it : macros.find(callSite.name)->second) {
-        const TypeTable::Callable &callable = MacroValue::getCallable(*it, typeTable);
+optional<MacroId> SymbolTable::getMacroId(MacroCallSite callSite, const TypeTable *typeTable) const {
+    if (macros.find(callSite.name) == macros.end()) return nullopt;
 
-        if (it->getArgCnt() == callSite.argCnt || (callable.variadic && it->getArgCnt()-1 <= callSite.argCnt)) {
-            return it.get();
+    for (size_t i = 0; i < macros.at(callSite.name).size(); ++i) {
+        const MacroValue &it = macros.at(callSite.name)[i];
+
+        const TypeTable::Callable &callable = MacroValue::getCallable(it, typeTable);
+
+        if (it.getArgCnt() == callSite.argCnt || (callable.variadic && it.getArgCnt()-1 <= callSite.argCnt)) {
+            MacroId macroId;
+            macroId.name = callSite.name;
+            macroId.index = i;
+            return macroId;
         }
     }
 
-    return nullptr;
+    return nullopt;
 }
 
 void SymbolTable::registerDropFunc(TypeTable::Id ty, NodeVal func) {
@@ -221,9 +289,8 @@ void SymbolTable::registerDropFunc(TypeTable::Id ty, NodeVal func) {
 }
 
 const NodeVal* SymbolTable::getDropFunc(TypeTable::Id ty) {
-    auto loc = dropFuncs.find(ty);
-    if (loc == dropFuncs.end()) return nullptr;
-    return &loc->second;
+    if (dropFuncs.find(ty) == dropFuncs.end()) return nullptr;
+    return &dropFuncs.at(ty);
 }
 
 bool SymbolTable::inGlobalScope() const {
@@ -238,32 +305,8 @@ LifetimeInfo::NestLevel SymbolTable::currNestLevel() const {
     return nestLevel;
 }
 
-const SymbolTable::BlockInternal* SymbolTable::getLastBlockInternal() const {
-    if (localBlockChains.empty()) {
-        return &globalBlockChain.back();
-    } else {
-        return &localBlockChains.back().second.back();
-    }
-}
-
-SymbolTable::BlockInternal* SymbolTable::getLastBlockInternal() {
-    if (localBlockChains.empty()) {
-        return &globalBlockChain.back();
-    } else {
-        return &localBlockChains.back().second.back();
-    }
-}
-
-const SymbolTable::BlockInternal* SymbolTable::getGlobalBlockInternal() const {
-    return &globalBlockChain.front();
-}
-
-SymbolTable::BlockInternal* SymbolTable::getGlobalBlockInternal() {
-    return &globalBlockChain.front();
-}
-
 SymbolTable::Block SymbolTable::getLastBlock() const {
-    return getLastBlockInternal()->block;
+    return getLastBlockInternal().block;
 }
 
 optional<SymbolTable::Block> SymbolTable::getBlock(NamePool::Id name) const {
@@ -288,35 +331,38 @@ optional<SymbolTable::CalleeValueInfo> SymbolTable::getCurrCallee() const {
     return localBlockChains.back().first;
 }
 
-void SymbolTable::collectVarsInRevOrder(BlockInternal *block, vector<VarEntry*> &v) {
-    const auto &vars = block->varsInOrder;
-    for_each(vars.rbegin(), vars.rend(), [&](NamePool::Id name){
-        v.push_back(&block->vars.find(name)->second);
-    });
-}
+vector<VarId> SymbolTable::getVarsInRevOrderCurrBlock() {
+    vector<VarId> ret;
 
-vector<SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderCurrBlock() {
-    vector<SymbolTable::VarEntry*> ret;
-    collectVarsInRevOrder(getLastBlockInternal(), ret);
+    optional<size_t> callable;
+    size_t block;
+    if (localBlockChains.empty()) {
+        block = globalBlockChain.size()-1;
+    } else {
+        callable = localBlockChains.size()-1;
+        block = localBlockChains.back().second.size()-1;
+    }
+
+    collectVarsInRevOrder(callable, block, ret);
     return ret;
 }
 
-vector<SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderFromBlockToCurrBlock(NamePool::Id name) {
-    vector<SymbolTable::VarEntry*> ret;
+vector<VarId> SymbolTable::getVarsInRevOrderFromBlockToCurrBlock(NamePool::Id name) {
+    vector<VarId> ret;
 
     if (!localBlockChains.empty()) {
-        for (auto it = localBlockChains.back().second.rbegin();
-            it != localBlockChains.back().second.rend();
-            ++it) {
-            collectVarsInRevOrder(&(*it), ret);
-            if (it->block.name == name) return ret;
+        for (size_t ind = 0; ind < localBlockChains.back().second.size(); ++ind) {
+            size_t i = localBlockChains.back().second.size()-1-ind;
+
+            collectVarsInRevOrder(localBlockChains.size()-1, i, ret);
+            if (localBlockChains.back().second[i].block.name == name) return ret;
         }
     }
-    for (auto it = globalBlockChain.rbegin();
-        it != globalBlockChain.rend();
-        ++it) {
-        collectVarsInRevOrder(&(*it), ret);
-        if (it->block.name == name) return ret;
+    for (size_t ind = 0; ind < globalBlockChain.size(); ++ind) {
+        size_t i = globalBlockChain.size()-1-ind;
+
+        collectVarsInRevOrder(nullopt, i, ret);
+        if (globalBlockChain[i].block.name == name) return ret;
     }
 
     // assumed that block with given name exists
@@ -324,13 +370,15 @@ vector<SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderFromBlockToCurrBloc
     return ret;
 }
 
-vector<SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderCurrCallable() {
-    vector<SymbolTable::VarEntry*> ret;
+vector<VarId> SymbolTable::getVarsInRevOrderCurrCallable() {
+    assert(!localBlockChains.empty());
 
-    for (auto it = localBlockChains.back().second.rbegin();
-        it != localBlockChains.back().second.rend();
-        ++it) {
-        collectVarsInRevOrder(&(*it), ret);
+    vector<VarId> ret;
+
+    for (size_t ind = 0; ind < localBlockChains.back().second.size(); ++ind) {
+        size_t i = localBlockChains.back().second.size()-1-ind;
+
+        collectVarsInRevOrder(localBlockChains.size()-1, i, ret);
     }
 
     return ret;
@@ -339,6 +387,51 @@ vector<SymbolTable::VarEntry*> SymbolTable::getVarsInRevOrderCurrCallable() {
 bool SymbolTable::nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable, bool forGlobal) const {
     if (isReserved(name) || typeTable->isType(name)) return false;
 
-    const BlockInternal *block = forGlobal ? getGlobalBlockInternal() : getLastBlockInternal();
-    return block->vars.find(name) == block->vars.end();
+    const BlockInternal &block = forGlobal ? getGlobalBlockInternal() : getLastBlockInternal();
+
+    for (const auto &it : block.vars) {
+        if (it.name == name) return false;
+    }
+
+    return true;
+}
+
+const SymbolTable::BlockInternal& SymbolTable::getLastBlockInternal() const {
+    if (localBlockChains.empty()) {
+        return globalBlockChain.back();
+    } else {
+        return localBlockChains.back().second.back();
+    }
+}
+
+SymbolTable::BlockInternal& SymbolTable::getLastBlockInternal() {
+    if (localBlockChains.empty()) {
+        return globalBlockChain.back();
+    } else {
+        return localBlockChains.back().second.back();
+    }
+}
+
+const SymbolTable::BlockInternal& SymbolTable::getGlobalBlockInternal() const {
+    return globalBlockChain.front();
+}
+
+SymbolTable::BlockInternal& SymbolTable::getGlobalBlockInternal() {
+    return globalBlockChain.front();
+}
+
+// TODO this is all a bit roundabout, as it is passing a bunch of near-identical ids - find a way to optimize, but keep the API nice
+void SymbolTable::collectVarsInRevOrder(optional<std::size_t> callable, size_t block, vector<VarId> &v) {
+    const BlockInternal &blockInternal = callable.has_value() ? localBlockChains[callable.value()].second[block] : globalBlockChain[block];
+
+    v.reserve(v.size()+blockInternal.vars.size());
+    VarId varId;
+    varId.callable = callable;
+    varId.block = block;
+    for (size_t ind = 0; ind < blockInternal.vars.size(); ++ind) {
+        size_t i = blockInternal.vars.size()-1-ind;
+
+        varId.index = i;
+        v.push_back(varId);
+    }
 }

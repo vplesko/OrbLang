@@ -9,13 +9,15 @@ Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *type
     setEvaluator(this);
 }
 
-NodeVal Evaluator::performLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, optional<NamePool::Id> id) {
+NodeVal Evaluator::performLoad(CodeLoc codeLoc, VarId varId) {
+    SymbolTable::VarEntry &ref = symbolTable->getVar(varId);
+
     if (checkIsEvalVal(codeLoc, ref.var, false)) {
         if (ref.var.isInvokeArg()) {
             return ref.var;
         } else {
             NodeVal nodeVal = NodeVal::copyNoRef(codeLoc, ref.var);
-            nodeVal.getEvalVal().ref = &ref.var;
+            nodeVal.getEvalVal().ref = varId;
             return nodeVal;
         }
     } else {
@@ -29,17 +31,19 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, opti
     }
 }
 
-NodeVal Evaluator::performLoad(CodeLoc codeLoc, const FuncValue &func) {
+NodeVal Evaluator::performLoad(CodeLoc codeLoc, FuncId funcId) {
+    const FuncValue &func = symbolTable->getFunc(funcId);
+
     if (!checkIsEvalFunc(codeLoc, func, true)) return NodeVal();
 
     EvalVal evalVal = EvalVal::makeVal(func.getType(), typeTable);
-    evalVal.f = &func;
+    evalVal.f = funcId;
     return NodeVal(codeLoc, evalVal);
 }
 
-NodeVal Evaluator::performLoad(CodeLoc codeLoc, const MacroValue &macro) {
-    EvalVal evalVal = EvalVal::makeVal(macro.getType(), typeTable);
-    evalVal.m = &macro;
+NodeVal Evaluator::performLoad(CodeLoc codeLoc, MacroId macroId) {
+    EvalVal evalVal = EvalVal::makeVal(symbolTable->getMacro(macroId).getType(), typeTable);
+    evalVal.m = macroId;
     return NodeVal(codeLoc, evalVal);
 }
 
@@ -154,7 +158,7 @@ bool Evaluator::performPass(CodeLoc codeLoc, SymbolTable::Block block, const Nod
 
 NodeVal Evaluator::performCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args) {
     if (!checkIsEvalVal(func, true)) return NodeVal();
-    if (func.getEvalVal().f == nullptr) {
+    if (!func.getEvalVal().f.has_value()) {
         msgs->errorFuncNoValue(codeLoc);
         return NodeVal();
     }
@@ -162,7 +166,9 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const NodeVal &func, const std::
     return performCall(codeLoc, *func.getEvalVal().f, args);
 }
 
-NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) {
+NodeVal Evaluator::performCall(CodeLoc codeLoc, FuncId funcId, const std::vector<NodeVal> &args) {
+    const FuncValue &func = symbolTable->getFunc(funcId);
+
     if (!checkIsEvalFunc(codeLoc, func, true)) return NodeVal();
 
     for (const NodeVal &arg : args) {
@@ -192,8 +198,9 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
         lifetimeInfo.nestLevel = symbolTable->currNestLevel();
 
         SymbolTable::VarEntry varEntry;
+        varEntry.name = func.argNames[i];
         varEntry.var = NodeVal::copyNoRef(args[i], lifetimeInfo);
-        symbolTable->addVar(func.argNames[i], move(varEntry));
+        symbolTable->addVar(move(varEntry));
     }
 
     try {
@@ -223,13 +230,16 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, const FuncValue &func, const std
     }
 }
 
-NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args) {
+NodeVal Evaluator::performInvoke(CodeLoc codeLoc, MacroId macroId, const std::vector<NodeVal> &args) {
+    const MacroValue &macro = symbolTable->getMacro(macroId);
+
     LifetimeInfo::NestLevel nestLevel = symbolTable->currNestLevel();
 
     BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(macro));
 
     for (size_t i = 0; i < args.size(); ++i) {
         SymbolTable::VarEntry varEntry;
+        varEntry.name = macro.argNames[i];
         varEntry.var = args[i];
 
         if (args[i].getLifetimeInfo().has_value()) {
@@ -238,7 +248,7 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const
             varEntry.var.setLifetimeInfo(lifetimeInfo);
         }
 
-        symbolTable->addVar(macro.argNames[i], move(varEntry));
+        symbolTable->addVar(move(varEntry));
     }
 
     try {
@@ -370,7 +380,7 @@ NodeVal Evaluator::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper, T
         return NodeVal();
     }
 
-    NodeVal nodeEvalVal = NodeVal::copyNoRef(codeLoc, *oper.getEvalVal().p);
+    NodeVal nodeEvalVal = NodeVal::copyNoRef(codeLoc, EvalVal::getPointee(oper.getEvalVal(), symbolTable));
     nodeEvalVal.getEvalVal().type = resTy;
     nodeEvalVal.getEvalVal().ref = oper.getEvalVal().p;
     return nodeEvalVal;
@@ -403,12 +413,12 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     optional<char> cl, cr;
     optional<double> fl, fr;
     optional<StringPool::Id> strl, strr;
-    optional<const NodeVal*> pl, pr;
+    optional<EvalVal::Pointer> pl, pr;
     optional<bool> bl, br;
     optional<NamePool::Id> idl, idr;
     optional<TypeTable::Id> tyl, tyr;
-    optional<const FuncValue*> callfl, callfr;
-    optional<const MacroValue*> callml, callmr;
+    optional<optional<FuncId>> callfl, callfr;
+    optional<optional<MacroId>> callml, callmr;
     if (isTypeI) {
         il = EvalVal::getValueI(lhs.getEvalVal(), typeTable).value();
         ir = EvalVal::getValueI(rhs.getEvalVal(), typeTable).value();
@@ -603,7 +613,8 @@ NodeVal Evaluator::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const No
 
     LifetimeInfo lhsLifetimeInfo = lhs.getEvalVal().lifetimeInfo;
 
-    *lhs.getEvalVal().ref = NodeVal::copyNoRef(lhs.getEvalVal().ref->getCodeLoc(), rhs, lhsLifetimeInfo);
+    NodeVal &lhsRefee = EvalVal::getRefee(lhs.getEvalVal(), symbolTable);
+    lhsRefee = NodeVal::copyNoRef(lhsRefee.getCodeLoc(), rhs, lhsLifetimeInfo);
 
     NodeVal nodeVal = NodeVal::copyNoRef(lhs.getCodeLoc(), rhs, lhsLifetimeInfo);
     nodeVal.getEvalVal().ref = lhs.getEvalVal().ref;
@@ -623,7 +634,8 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVa
         NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[index.value()], base.getEvalVal().lifetimeInfo);
         nodeVal.getEvalVal().type = resTy;
         if (base.hasRef()) {
-            nodeVal.getEvalVal().ref = &base.getEvalVal().ref->getEvalVal().elems[index.value()];
+            NodeVal &baseRefee = EvalVal::getRefee(base.getEvalVal(), symbolTable);
+            nodeVal.getEvalVal().ref = &baseRefee.getEvalVal().elems[index.value()];
         }
         return nodeVal;
     } else if (typeTable->worksAsTypeStr(base.getType().value())) {
@@ -659,7 +671,8 @@ NodeVal Evaluator::performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t 
         if (NodeVal::isRawVal(nodeVal, typeTable)) {
             nodeVal.getEvalVal().type = resTy;
             if (base.hasRef()) {
-                nodeVal.getEvalVal().ref = &base.getEvalVal().ref->getEvalVal().elems[ind];
+                NodeVal &baseRefee = EvalVal::getRefee(base.getEvalVal(), symbolTable);
+                nodeVal.getEvalVal().ref = &baseRefee.getEvalVal().elems[ind];
             } else {
                 nodeVal.getEvalVal().ref = nullptr;
             }
@@ -674,7 +687,8 @@ NodeVal Evaluator::performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t 
         NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[ind], base.getEvalVal().lifetimeInfo);
         nodeVal.getEvalVal().type = resTy;
         if (base.hasRef()) {
-            nodeVal.getEvalVal().ref = &base.getEvalVal().ref->getEvalVal().elems[ind];
+            NodeVal &baseRefee = EvalVal::getRefee(base.getEvalVal(), symbolTable);
+            nodeVal.getEvalVal().ref = &baseRefee.getEvalVal().elems[ind];
         }
         return nodeVal;
     }
@@ -1105,7 +1119,7 @@ bool Evaluator::assignBasedOnTypeB(EvalVal &val, bool x, TypeTable::Id ty) {
     return true;
 }
 
-bool Evaluator::assignBasedOnTypeP(EvalVal &val, NodeVal *x, TypeTable::Id ty) {
+bool Evaluator::assignBasedOnTypeP(EvalVal &val, EvalVal::Pointer x, TypeTable::Id ty) {
     if (typeTable->worksAsTypeP(ty)) {
         val.p = x;
     } else {

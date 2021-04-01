@@ -157,7 +157,7 @@ bool EvalVal::isDataType(const EvalVal &val, const TypeTable *typeTable) {
 }
 
 bool EvalVal::isNull(const EvalVal &val, const TypeTable *typeTable) {
-    if (isP(val, typeTable)) return val.p == nullptr;
+    if (isP(val, typeTable)) return isNull(val.p);
     if (isStr(val, typeTable)) return !val.str.has_value();
     return isAnyP(val, typeTable);
 }
@@ -165,8 +165,44 @@ bool EvalVal::isNull(const EvalVal &val, const TypeTable *typeTable) {
 bool EvalVal::isCallableNoValue(const EvalVal &val, const TypeTable *typeTable) {
     optional<TypeTable::Id> type = val.type;
     return type.has_value() &&
-        ((typeTable->worksAsCallable(type.value(), true) && val.f == nullptr) ||
-        (typeTable->worksAsCallable(type.value(), false) && val.m == nullptr));
+        ((typeTable->worksAsCallable(type.value(), true) && !val.f.has_value()) ||
+        (typeTable->worksAsCallable(type.value(), false) && !val.m.has_value()));
+}
+
+bool EvalVal::isNull(const Pointer &ptr) {
+    return holds_alternative<NodeVal*>(ptr) && get<NodeVal*>(ptr) == nullptr;
+}
+
+const NodeVal& EvalVal::deref(const Pointer &ptr, const SymbolTable *symbolTable) {
+    if (holds_alternative<VarId>(ptr)) {
+        return symbolTable->getVar(get<VarId>(ptr)).var;
+    } else {
+        return *get<NodeVal*>(ptr);
+    }
+}
+
+NodeVal& EvalVal::deref(Pointer &ptr, SymbolTable *symbolTable) {
+    if (holds_alternative<VarId>(ptr)) {
+        return symbolTable->getVar(get<VarId>(ptr)).var;
+    } else {
+        return *get<NodeVal*>(ptr);
+    }
+}
+
+const NodeVal& EvalVal::getPointee(const EvalVal &val, const SymbolTable *symbolTable) {
+    return deref(val.p, symbolTable);
+}
+
+NodeVal& EvalVal::getPointee(EvalVal &val, SymbolTable *symbolTable) {
+    return deref(val.p, symbolTable);
+}
+
+const NodeVal& EvalVal::getRefee(const EvalVal &val, const SymbolTable *symbolTable) {
+    return deref(val.ref, symbolTable);
+}
+
+NodeVal& EvalVal::getRefee(EvalVal &val, SymbolTable *symbolTable) {
+    return deref(val.ref, symbolTable);
 }
 
 optional<int64_t> EvalVal::getValueI(const EvalVal &val, const TypeTable *typeTable) {
@@ -206,7 +242,7 @@ optional<uint64_t> EvalVal::getValueNonNeg(const EvalVal &val, const TypeTable *
     return nullopt;
 }
 
-optional<const FuncValue*> EvalVal::getValueFunc(const EvalVal &val, const TypeTable *typeTable) {
+optional<optional<FuncId>> EvalVal::getValueFunc(const EvalVal &val, const TypeTable *typeTable) {
     if (typeTable->worksAsCallable(val.type, true)) return val.f;
     return nullopt;
 }

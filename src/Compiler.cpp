@@ -97,19 +97,22 @@ llvm::Type* Compiler::genPrimTypePtr() {
     return llvm::Type::getInt8PtrTy(llvmContext);
 }
 
-NodeVal Compiler::performLoad(CodeLoc codeLoc, SymbolTable::VarEntry &ref, optional<NamePool::Id> id) {
+NodeVal Compiler::performLoad(CodeLoc codeLoc, VarId varId) {
+    const SymbolTable::VarEntry &ref = symbolTable->getVar(varId);
+
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     if (!checkIsLlvmVal(codeLoc, ref.var, true)) return NodeVal();
 
     LlvmVal loadLlvmVal(ref.var.getLlvmVal().type);
     loadLlvmVal.ref = ref.var.getLlvmVal().ref;
     loadLlvmVal.lifetimeInfo = ref.var.getLlvmVal().lifetimeInfo;
-    if (id.has_value()) loadLlvmVal.val = llvmBuilder.CreateLoad(ref.var.getLlvmVal().ref, getNameForLlvm(id.value()));
-    else loadLlvmVal.val = llvmBuilder.CreateLoad(ref.var.getLlvmVal().ref);
+    loadLlvmVal.val = llvmBuilder.CreateLoad(ref.var.getLlvmVal().ref, getNameForLlvm(ref.name));
     return NodeVal(codeLoc, loadLlvmVal);
 }
 
-NodeVal Compiler::performLoad(CodeLoc codeLoc, const FuncValue &func) {
+NodeVal Compiler::performLoad(CodeLoc codeLoc, FuncId funcId) {
+    const FuncValue &func = symbolTable->getFunc(funcId);
+
     if (!checkIsLlvmFunc(codeLoc, func, true)) return NodeVal();
 
     LlvmVal llvmVal;
@@ -118,7 +121,7 @@ NodeVal Compiler::performLoad(CodeLoc codeLoc, const FuncValue &func) {
     return NodeVal(codeLoc, llvmVal);
 }
 
-NodeVal Compiler::performLoad(CodeLoc codeLoc, const MacroValue &macro) {
+NodeVal Compiler::performLoad(CodeLoc codeLoc, MacroId macroId) {
     msgs->errorInternal(codeLoc);
     return NodeVal();
 }
@@ -322,14 +325,14 @@ NodeVal Compiler::performCall(CodeLoc codeLoc, const NodeVal &func, const std::v
     }
 }
 
-NodeVal Compiler::performCall(CodeLoc codeLoc, const FuncValue &func, const std::vector<NodeVal> &args) {
-    NodeVal nodeFunc = performLoad(codeLoc, func);
+NodeVal Compiler::performCall(CodeLoc codeLoc, FuncId funcId, const std::vector<NodeVal> &args) {
+    NodeVal nodeFunc = performLoad(codeLoc, funcId);
     if (nodeFunc.isInvalid()) return NodeVal();
 
     return performCall(codeLoc, nodeFunc, args);
 }
 
-NodeVal Compiler::performInvoke(CodeLoc codeLoc, const MacroValue &macro, const std::vector<NodeVal> &args) {
+NodeVal Compiler::performInvoke(CodeLoc codeLoc, MacroId macroId, const std::vector<NodeVal> &args) {
     msgs->errorInternal(codeLoc);
     return NodeVal();
 }
@@ -383,8 +386,9 @@ bool Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, c
         NodeVal varNodeVal(args.getChild(i).getCodeLoc(), varLlvmVal);
 
         SymbolTable::VarEntry varEntry;
+        varEntry.name = func.argNames[i];
         varEntry.var = move(varNodeVal);
-        symbolTable->addVar(func.argNames[i], move(varEntry));
+        symbolTable->addVar(move(varEntry));
 
         ++i;
     }
@@ -901,11 +905,12 @@ NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
 
         llvmConst = llvm::ConstantStruct::get(llvmStructType, llvmConsts);
     } else if (EvalVal::isFunc(eval, typeTable)) {
-        const FuncValue *funcVal = EvalVal::getValueFunc(eval, typeTable).value();
-        if (funcVal == nullptr) {
+        optional<FuncId> funcId = EvalVal::getValueFunc(eval, typeTable).value();
+        if (!funcId.has_value()) {
             llvmConst = llvm::ConstantPointerNull::get((llvm::PointerType*) makeLlvmType(ty));
         } else {
-            if (funcVal->isLlvm()) llvmConst = funcVal->llvmFunc;
+            const FuncValue &funcVal = symbolTable->getFunc(funcId.value());
+            if (funcVal.isLlvm()) llvmConst = funcVal.llvmFunc;
         }
     }
 

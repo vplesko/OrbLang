@@ -95,7 +95,7 @@ TypeTable::TypeTable() {
 }
 
 void TypeTable::addPrimType(NamePool::Id name, PrimIds primId, llvm::Type *type) {
-    Id id{Id::kPrim, primId};
+    Id id(Id::kPrim, primId);
 
     typeIds.insert(make_pair(name, id));
     typeNames.insert(make_pair(id, name));
@@ -353,7 +353,7 @@ TypeTable::Id TypeTable::addCallableSig(Id t) {
 }
 
 void TypeTable::addTypeStr() {
-    Id c8Id{Id::kPrim, P_C8};
+    Id c8Id(Id::kPrim, P_C8);
 
     TypeDescr typeDescr(c8Id, true);
     typeDescr.addDecor({.type=TypeDescr::Decor::D_ARR_PTR}, false);
@@ -389,7 +389,7 @@ llvm::Type* TypeTable::getPrimType(PrimIds id) const {
 }
 
 TypeTable::Id TypeTable::getPrimTypeId(PrimIds id) const {
-    return Id{Id::kPrim, (size_t) id};
+    return Id(Id::kPrim, (size_t) id);
 }
 
 const TypeTable::Tuple& TypeTable::getTuple(Id id) const {
@@ -417,7 +417,7 @@ const TypeTable::Callable& TypeTable::getCallable(Id id) const {
 }
 
 TypeTable::Id TypeTable::getTypeCharArrOfLenId(std::size_t len) {
-    Id c8Id{Id::kPrim, P_C8};
+    Id c8Id(Id::kPrim, P_C8);
     return addTypeArrOfLenIdOf(c8Id, len);
 }
 
