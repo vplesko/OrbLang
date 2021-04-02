@@ -1,4 +1,6 @@
-eval (sym (base.-genSymToken 0:u64));
+eval (sym (base.-widestU:(type cn) u64));
+
+eval (sym (base.-genSymToken 0:base.-widestU));
 
 eval (fnc genSym () id {
     sym (s (+ \base.-genSym (cast id base.-genSymToken)));
@@ -315,19 +317,19 @@ mac pat (args body) {
     ret \(mac::global ,(genSym) ,args ,body);
 };
 
-mac base.-enumTypeDecl (name ty) {
-    ret \(fixed ,name ,ty);
-};
-
 eval (fnc base.-enumValName (enumName:id valName:id) id {
     ret (+::bare enumName \. valName);
+});
+
+eval (fnc base.-enumSizeName (enumTy:type) id {
+    ret (+ \base.-enumSize (cast id enumTy));
 });
 
 mac base.-enumErrorEntryLen (entry) {
     ret \(message::(error (loc entry)) "Each entry must be either an id or have exactly two values - name and initial value.");
 };
 
-mac base.-enumValsDecl (name vals) {
+mac base.-enumValsDecl (name enumTy::preprocess vals) {
     sym (code \(sym));
 
     sym valName:id valNamePrev:id init:raw;
@@ -358,10 +360,12 @@ mac base.-enumValsDecl (name vals) {
             \( (,(base.-enumValName name valName) ,init) ));
     };
 
+    = code (+ code
+        \( (,(base.-enumSizeName enumTy):base.-widestU ,(lenOf vals))));
+
     ret code;
 };
 
-# TODO num of entries
 mac enum (name ty::preprocess vals) {
     cast id name;
     cast type ty;
@@ -372,12 +376,15 @@ mac enum (name ty::preprocess vals) {
         ret ();
     };
 
-    ret \(eval (block::bare {
-        (base.-enumTypeDecl ,name ,ty)
-        (base.-enumValsDecl ,name ,vals)
-    }));
+    sym (enumTy (fixed::global ,name ty));
+
+    ret \(eval (base.-enumValsDecl ,name ,enumTy ,vals));
 };
 
 mac enum (name vals) {
     ret \(enum ,name ,i32 ,vals);
 };
+
+eval (fnc base.enumSize (enumTy:type) base.-widestU {
+    ret ((base.-enumSizeName enumTy));
+});
