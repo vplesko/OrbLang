@@ -1,0 +1,5 @@
+data Foo;
+
+fnc main () () {
+    sym x:(i32 Foo);
+};

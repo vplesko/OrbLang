@@ -1,0 +1,7 @@
+data Foo;
+
+fixed Bar Foo;
+
+fnc main () () {
+    sizeOf Bar;
+};

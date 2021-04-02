@@ -10,6 +10,12 @@ fixed myI32Tup (i32 i32);
 fixed myMyI32P (myI32 *);
 fixed myRaw raw;
 
+data NoDef;
+
+fixed myNoDef NoDef;
+fnc (NoDef) NoDef;
+fnc dummyNoDef (x:NoDef) NoDef;
+
 eval (sym (hello:((c8 cn []) cn) "hello"));
 eval (sym (ola:((c8 cn) []) "ola"));
 

@@ -1,0 +1,6 @@
+data Foo;
+
+fnc main () () {
+    sym x:(Foo *);
+    * x;
+};

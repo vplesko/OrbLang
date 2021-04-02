@@ -1,7 +1,7 @@
 #include "TypeTable.h"
-#include <sstream>
 #include <algorithm>
 #include <cassert>
+#include <sstream>
 using namespace std;
 
 void TypeTable::Tuple::addMember(TypeTable::Id m) {
@@ -490,7 +490,7 @@ optional<NamePool::Id> TypeTable::getTypeName(Id t) const {
 }
 
 bool TypeTable::worksAsPrimitive(Id t) const {
-    if (!isValidType(t)) return false;
+    assert(isValidType(t));
 
     if (isPrimitive(t)) {
         return true;
@@ -506,7 +506,7 @@ bool TypeTable::worksAsPrimitive(Id t) const {
 }
 
 bool TypeTable::worksAsPrimitive(Id t, PrimIds p) const {
-    if (!isValidType(t)) return false;
+    assert(isValidType(t));
 
     if (isPrimitive(t)) {
         return t.index == p;
@@ -522,7 +522,7 @@ bool TypeTable::worksAsPrimitive(Id t, PrimIds p) const {
 }
 
 bool TypeTable::worksAsPrimitive(Id t, PrimIds lo, PrimIds hi) const {
-    if (!isValidType(t)) return false;
+    assert(isValidType(t));
 
     if (isPrimitive(t)) {
         return between((PrimIds) t.index, lo, hi);
@@ -538,7 +538,7 @@ bool TypeTable::worksAsPrimitive(Id t, PrimIds lo, PrimIds hi) const {
 }
 
 bool TypeTable::worksAsTuple(Id t) const {
-    if (!isValidType(t)) return false;
+    assert(isValidType(t));
 
     if (isTuple(t)) {
         return true;
@@ -554,7 +554,7 @@ bool TypeTable::worksAsTuple(Id t) const {
 }
 
 bool TypeTable::worksAsFixedType(Id t) const {
-    if (!isValidType(t)) return false;
+    assert(isValidType(t));
 
     if (isFixedType(t)) {
         return true;
@@ -568,7 +568,7 @@ bool TypeTable::worksAsFixedType(Id t) const {
 }
 
 bool TypeTable::worksAsDataType(Id t) const {
-    if (!isValidType(t)) return false;
+    assert(isValidType(t));
 
     if (isDataType(t)) {
         return true;
@@ -624,7 +624,7 @@ bool TypeTable::isCallable(Id t) const {
 }
 
 const TypeTable::Tuple* TypeTable::extractTuple(Id t) const {
-    if (!isValidType(t)) return nullptr;
+    assert(isValidType(t));
 
     if (isTuple(t)) return &(getTuple(t));
 
@@ -639,18 +639,18 @@ const TypeTable::Tuple* TypeTable::extractTuple(Id t) const {
 }
 
 optional<TypeTable::Id> TypeTable::extractTupleMemberType(Id t, size_t ind) {
-    optional<const Tuple*> tup = extractTuple(t);
-    if (!tup.has_value()) return nullopt;
+    const Tuple *tup = extractTuple(t);
+    if (tup == nullptr) return nullopt;
 
-    if (ind >= tup.value()->members.size()) return nullopt;
+    if (ind >= tup->members.size()) return nullopt;
 
-    Id id = tup.value()->members[ind];
+    Id id = tup->members[ind];
     // worksAsTypeCn would be incorrect, as that returns true if not direct cn but a different member is cn
     return isDirectCn(t) ? addTypeCnOf(id) : id;
 }
 
 const TypeTable::DataType* TypeTable::extractDataType(Id t) const {
-    if (!isValidType(t)) return nullptr;
+    assert(isValidType(t));
 
     if (isDataType(t)) return &(getDataType(t));
 
@@ -690,7 +690,7 @@ bool TypeTable::worksAsTypeAnyP(Id t) const {
 }
 
 bool TypeTable::worksAsTypeP(Id t) const {
-    if (!isValidType(t)) return false;
+    assert(isValidType(t));
 
     if (isFixedType(t)) {
         return worksAsTypeP(getFixedType(t).type);
@@ -889,6 +889,23 @@ bool TypeTable::isDirectCn(Id t) const {
         const TypeDescr &descr = getTypeDescr(t);
 
         return descr.cns.empty() ? descr.cn : descr.cns.back();
+    } else {
+        return false;
+    }
+}
+
+bool TypeTable::isUndef(Id t) {
+    if (worksAsTuple(t)) {
+        const Tuple *tup = extractTuple(t);
+        for (Id membTy : tup->members) {
+            if (isUndef(membTy)) return true;
+        }
+        return false;
+    } else if (worksAsTypeArr(t)) {
+        Id elemTy = addTypeIndexOf(t).value();
+        return isUndef(elemTy);
+    } else if (worksAsDataType(t)) {
+        return !extractDataType(t)->defined;
     } else {
         return false;
     }

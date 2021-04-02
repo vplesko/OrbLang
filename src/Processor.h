@@ -126,6 +126,7 @@ private:
     NodeVal castNode(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty, bool skipCheckNeedsDrop = false);
     bool implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly);
     bool shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id dstTypeId) const;
+    bool implicitCastArgsAndVerifyCallOk(CodeLoc codeLoc, std::vector<NodeVal> &args, const TypeTable::Callable &callable);
     NodeVal dispatchCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args, bool allArgsEval);
     NodeVal dispatchCall(CodeLoc codeLoc, FuncId funcId, const std::vector<NodeVal> &args, bool allArgsEval);
     NodeVal dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);

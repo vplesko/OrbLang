@@ -505,9 +505,9 @@ void CompilationMessages::errorSymNameTaken(CodeLoc loc, NamePool::Id name) {
     error(loc, ss.str());
 }
 
-void CompilationMessages::errorSymDataUndefined(CodeLoc loc, TypeTable::Id ty) {
+void CompilationMessages::errorSymUndef(CodeLoc loc, TypeTable::Id ty) {
     stringstream ss;
-    ss << "Attempted to define a symbol with an undefined data type '" << errorStringOfType(ty) << "'.";
+    ss << "Attempted to define a symbol with an undefined type '" << errorStringOfType(ty) << "'.";
     error(loc, ss.str());
 }
 

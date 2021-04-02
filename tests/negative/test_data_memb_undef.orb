@@ -1,0 +1,7 @@
+data Foo;
+
+data Bar {
+    x:Foo
+};
+
+fnc main () () {};
