@@ -32,7 +32,7 @@ public:
     NodeVal performLoad(CodeLoc codeLoc, FuncId funcId) override;
     NodeVal performLoad(CodeLoc codeLoc, MacroId macroId) override;
     NodeVal performZero(CodeLoc codeLoc, TypeTable::Id ty) override;
-    NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) override;
+    NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, CodeLoc codeLocTy, TypeTable::Id ty) override;
     NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) override;
     NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) override;
     bool performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) override { return true; }

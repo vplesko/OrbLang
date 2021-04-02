@@ -27,7 +27,7 @@ protected:
     virtual NodeVal performLoad(CodeLoc codeLoc, FuncId funcId) =0;
     virtual NodeVal performLoad(CodeLoc codeLoc, MacroId macroId) =0;
     virtual NodeVal performZero(CodeLoc codeLoc, TypeTable::Id ty) =0;
-    virtual NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) =0;
+    virtual NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, CodeLoc codeLocTy, TypeTable::Id ty) =0;
     virtual NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) =0;
     virtual NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) =0;
     virtual bool performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) =0;
@@ -74,6 +74,7 @@ protected:
     bool checkIsId(const NodeVal &node, bool orError);
     bool checkIsType(const NodeVal &node, bool orError);
     bool checkIsBool(const NodeVal &node, bool orError);
+    bool checkIsNotUndefType(CodeLoc codeLoc, TypeTable::Id ty, bool orError);
     bool checkTransferValueOk(CodeLoc codeLoc, const NodeVal &src, bool dstNoDrop, bool orError);
     bool checkNotNeedsDrop(CodeLoc codeLoc, const NodeVal &val, bool orError);
     bool checkIsDropFuncType(const NodeVal &node, TypeTable::Id dropeeTy, bool orError);

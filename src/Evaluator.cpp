@@ -24,7 +24,7 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, VarId varId) {
         // compiled values may only be loaded if they are invoke arguments
         // for generality, don't check specifically if it's LlvmVal
         if (ref.var.getLifetimeInfo().has_value() && !ref.var.isInvokeArg()) {
-            msgs->errorUnknown(codeLoc);
+            msgs->errorNotEvalVal(codeLoc);
             return NodeVal();
         }
         return ref.var;
@@ -53,7 +53,7 @@ NodeVal Evaluator::performZero(CodeLoc codeLoc, TypeTable::Id ty) {
     return NodeVal(codeLoc, EvalVal::makeZero(ty, namePool, typeTable));
 }
 
-NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) {
+NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, CodeLoc codeLocTy, TypeTable::Id ty) {
     EvalVal evalVal = EvalVal::makeZero(ty, namePool, typeTable);
     evalVal.lifetimeInfo.nestLevel = symbolTable->currNestLevel();
     return NodeVal(codeLoc, move(evalVal));

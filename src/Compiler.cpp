@@ -142,8 +142,8 @@ NodeVal Compiler::performZero(CodeLoc codeLoc, TypeTable::Id ty) {
     return NodeVal(codeLoc, llvmVal);
 }
 
-NodeVal Compiler::performRegister(CodeLoc codeLoc, NamePool::Id id, TypeTable::Id ty) {
-    llvm::Type *llvmType = makeLlvmTypeOrError(codeLoc, ty);
+NodeVal Compiler::performRegister(CodeLoc codeLoc, NamePool::Id id, CodeLoc codeLocTy, TypeTable::Id ty) {
+    llvm::Type *llvmType = makeLlvmTypeOrError(codeLocTy, ty);
     if (llvmType == nullptr) return NodeVal();
 
     LlvmVal llvmVal(ty);

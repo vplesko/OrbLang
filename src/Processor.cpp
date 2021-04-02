@@ -254,10 +254,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
         optional<TypeTable::Id> optType;
         if (pair.second.has_value()) {
             optType = pair.second.value().getEvalVal().ty;
-            if (typeTable->isUndef(optType.value())) {
-                msgs->errorSymUndef(pair.second.value().getCodeLoc(), optType.value());
-                return NodeVal();
-            }
+            if (!checkIsNotUndefType(pair.second.value().getCodeLoc(), optType.value(), true)) return NodeVal();
         }
 
         bool hasType = optType.has_value();
@@ -273,7 +270,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
             if (init.isInvalid()) return NodeVal();
             if (!checkHasType(init, true)) return NodeVal();
 
-            if (!checkTransferValueOk(pair.first.getCodeLoc(), init, false, true)) return NodeVal();
+            if (!checkTransferValueOk(init.getCodeLoc(), init, false, true)) return NodeVal();
 
             varType = init.getType().value();
 
@@ -298,10 +295,10 @@ NodeVal Processor::processSym(const NodeVal &node) {
 
             NodeVal nodeReg;
             if (attrNoZero.value()) {
-                nodeReg = performRegister(pair.first.getCodeLoc(), id, optType.value());
+                nodeReg = performRegister(pair.first.getCodeLoc(), id, pair.second.value().getCodeLoc(), optType.value());
                 if (nodeReg.isInvalid()) return NodeVal();
             } else {
-                NodeVal nodeZero = performZero(entry.getCodeLoc(), optType.value());
+                NodeVal nodeZero = performZero(pair.second.value().getCodeLoc(), optType.value());
                 if (nodeZero.isInvalid()) return NodeVal();
 
                 nodeReg = performRegister(pair.first.getCodeLoc(), id, nodeZero);
@@ -312,7 +309,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
         }
 
         if (checkInGlobalScope(pair.first.getCodeLoc(), false) && !hasTrivialDrop(varType)) {
-            msgs->errorUnknown(pair.first.getCodeLoc());
+            msgs->errorSymGlobalOwning(pair.first.getCodeLoc(), id, varType);
             return NodeVal();
         }
 
@@ -330,10 +327,7 @@ NodeVal Processor::processCast(const NodeVal &node) {
 
     NodeVal ty = processAndCheckIsType(node.getChild(1));
     if (ty.isInvalid()) return NodeVal();
-    if (typeTable->isUndef(ty.getEvalVal().ty)) {
-        msgs->errorUnknown(ty.getCodeLoc());
-        return NodeVal();
-    }
+    if (!checkIsNotUndefType(ty.getCodeLoc(), ty.getEvalVal().ty, true)) return NodeVal();
 
     NodeVal value = processNode(node.getChild(2));
     if (value.isInvalid()) return NodeVal();
@@ -384,10 +378,7 @@ NodeVal Processor::processBlock(const NodeVal &node, const NodeVal &starting) {
             if (!checkIsType(nodeType, true)) return NodeVal();
 
             type = nodeType.getEvalVal().ty;
-            if (typeTable->isUndef(type.value())) {
-                msgs->errorUnknown(nodeType.getCodeLoc());
-                return NodeVal();
-            }
+            if (!checkIsNotUndefType(nodeType.getCodeLoc(), type.value(), true)) return NodeVal();
         }
     }
 
@@ -655,10 +646,7 @@ NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
                 msgs->errorDataCnMember(memb.second.value().getCodeLoc());
                 return NodeVal();
             }
-            if (typeTable->isUndef(membType)) {
-                msgs->errorUnknown(memb.second.value().getCodeLoc());
-                return NodeVal();
-            }
+            if (!checkIsNotUndefType(memb.second.value().getCodeLoc(), membType, true)) return NodeVal();
 
             optional<bool> attrNoZero = getAttributeForBool(nodeMemb, "noZero");
             if (!attrNoZero.has_value()) return NodeVal();
@@ -921,10 +909,7 @@ NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
         }
 
         TypeTable::Id argTy = arg.second.value().getEvalVal().ty;
-        if (isDef && typeTable->isUndef(argTy)) {
-            msgs->errorUnknown(arg.second.value().getCodeLoc());
-            return NodeVal();
-        }
+        if (isDef && !checkIsNotUndefType(arg.second.value().getCodeLoc(), argTy, true)) return NodeVal();
 
         optional<bool> attrNoDrop = getAttributeForBool(arg.first, "noDrop");
         if (!attrNoDrop.has_value()) return NodeVal();
@@ -947,10 +932,7 @@ NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
             if (!checkIsType(ty, true)) return NodeVal();
 
             retType = ty.getEvalVal().ty;
-            if (isDef && typeTable->isUndef(retType.value())) {
-                msgs->errorUnknown(nodeRetType.getCodeLoc());
-                return NodeVal();
-            }
+            if (isDef && !checkIsNotUndefType(nodeRetType.getCodeLoc(), retType.value(), true)) return NodeVal();
         }
     }
 
@@ -1445,10 +1427,7 @@ NodeVal Processor::processSizeOf(const NodeVal &node) {
     TypeTable::Id ty;
     if (typeTable->worksAsPrimitive(operand.getType().value(), TypeTable::P_TYPE)) ty = operand.getEvalVal().ty;
     else ty = operand.getType().value();
-    if (typeTable->isUndef(ty)) {
-        msgs->errorUnknown(operand.getCodeLoc());
-        return NodeVal();
-    }
+    if (!checkIsNotUndefType(operand.getCodeLoc(), ty, true)) return NodeVal();
 
     optional<uint64_t> size = compiler->performSizeOf(node.getCodeLoc(), ty);
     if (!size.has_value()) return NodeVal();
@@ -1799,10 +1778,7 @@ bool Processor::shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id d
 }
 
 bool Processor::implicitCastArgsAndVerifyCallOk(CodeLoc codeLoc, vector<NodeVal> &args, const TypeTable::Callable &callable) {
-    if (callable.retType.has_value() && typeTable->isUndef(callable.retType.value())) {
-        msgs->errorUnknown(codeLoc);
-        return false;
-    }
+    if (callable.retType.has_value() && !checkIsNotUndefType(codeLoc, callable.retType.value(), true)) return false;
 
     for (size_t i = 0; i < callable.getArgCnt(); ++i) {
         args[i] = implicitCast(args[i], callable.getArgType(i), true);
@@ -1840,10 +1816,7 @@ NodeVal Processor::dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) 
         msgs->errorUnknown(codeLoc);
         return NodeVal();
     }
-    if (typeTable->isUndef(resTy.value())) {
-        msgs->errorUnknown(codeLoc);
-        return NodeVal();
-    }
+    if (!checkIsNotUndefType(codeLoc, resTy.value(), true)) return NodeVal();
 
     if (checkIsEvalTime(oper, false)) {
         return evaluator->performOperUnaryDeref(codeLoc, oper, resTy.value());
@@ -1874,10 +1847,7 @@ NodeVal Processor::getElement(CodeLoc codeLoc, NodeVal &array, const NodeVal &in
         msgs->errorExprIndexOnBadType(array.getCodeLoc(), arrayType);
         return NodeVal();
     }
-    if (typeTable->isUndef(elemType.value())) {
-        msgs->errorUnknown(codeLoc);
-        return NodeVal();
-    }
+    if (!checkIsNotUndefType(codeLoc, elemType.value(), true)) return NodeVal();
 
     TypeTable::Id resType = elemType.value();
     if (typeTable->worksAsTypeCn(arrayType)) resType = typeTable->addTypeCnOf(resType);
@@ -2811,6 +2781,14 @@ bool Processor::checkIsType(const NodeVal &node, bool orError) {
 bool Processor::checkIsBool(const NodeVal &node, bool orError) {
     if (!node.getType().has_value() || !typeTable->worksAsTypeB(node.getType().value())) {
         if (orError) msgs->errorUnexpectedNotBool(node.getCodeLoc());
+        return false;
+    }
+    return true;
+}
+
+bool Processor::checkIsNotUndefType(CodeLoc codeLoc, TypeTable::Id ty, bool orError) {
+    if (typeTable->isUndef(ty)) {
+        if (orError) msgs->errorUndefType(codeLoc, ty);
         return false;
     }
     return true;

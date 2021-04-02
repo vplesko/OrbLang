@@ -63,7 +63,19 @@ void Parser::parseTypeAttr(NodeVal &node) {
 }
 
 void Parser::parseNonTypeAttrs(NodeVal &node) {
-    if (match(Token::T_DOUBLE_COLON)) node.setNonTypeAttrs(parseBare());
+    if (match(Token::T_DOUBLE_COLON)) {
+        node.setNonTypeAttrs(parseBare());
+    } else {
+        if (peek().type == Token::T_COLON) {
+            CodeLoc codeLocColon;
+            codeLocColon.start = loc();
+            Token colon = next();
+            codeLocColon.end = loc();
+
+            msgs->errorUnexpectedTokenType(codeLocColon, colon);
+            msgs->hintAttrDoubleColon();
+        }
+    }
 }
 
 NodeVal Parser::parseBare() {

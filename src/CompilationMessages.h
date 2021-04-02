@@ -68,6 +68,8 @@ public:
     void userMessage(StringPool::Id str);
 
     void hintForgotCloseNode();
+    void hintAttrDoubleColon();
+    void hintTransferWithMove();
 
     void warnUnusedSpecial(CodeLoc loc, SpecialVal spec);
     void warnUnusedFunc(CodeLoc loc);
@@ -93,12 +95,13 @@ public:
     void errorChildrenMoreThan(CodeLoc loc, std::size_t cnt);
     void errorChildrenNotBetween(CodeLoc loc, std::size_t lo, std::size_t hi, std::size_t see);
     void errorInvalidTypeDecorator(CodeLoc loc);
+    void errorUndefType(CodeLoc loc, TypeTable::Id ty);
     void errorBadArraySize(CodeLoc loc, long int size);
     void errorNotLastParam(CodeLoc loc);
     void errorNonUnOp(CodeLoc loc, Oper op);
     void errorNonBinOp(CodeLoc loc, Oper op);
     void errorSymNameTaken(CodeLoc loc, NamePool::Id name);
-    void errorSymUndef(CodeLoc loc, TypeTable::Id ty);
+    void errorSymGlobalOwning(CodeLoc loc, NamePool::Id name, TypeTable::Id ty);
     void errorSymbolNotFound(CodeLoc loc, NamePool::Id name);
     void errorCnNoInit(CodeLoc loc, NamePool::Id name);
     void errorExprCannotPromote(CodeLoc loc);

@@ -344,6 +344,14 @@ void CompilationMessages::hintForgotCloseNode() {
     info("Did you forget to terminate a node with ')', '}', or ';'?");
 }
 
+void CompilationMessages::hintAttrDoubleColon() {
+    info("Node attributes are prepended with '::'.");
+}
+
+void CompilationMessages::hintTransferWithMove() {
+    info("You may transfer ownership by first using '>>' operator on the source value.");
+}
+
 void CompilationMessages::warnUnusedSpecial(CodeLoc loc, SpecialVal spec) {
     optional<Keyword> k = getKeyword(spec.id);
 
@@ -481,6 +489,12 @@ void CompilationMessages::errorInvalidTypeDecorator(CodeLoc loc) {
     error(loc, "Invalid type decorator.");
 }
 
+void CompilationMessages::errorUndefType(CodeLoc loc, TypeTable::Id ty) {
+    stringstream ss;
+    ss << "Type '" << errorStringOfType(ty) << "' is not fully defined.";
+    error(loc, ss.str());
+}
+
 void CompilationMessages::errorBadArraySize(CodeLoc loc, long int size) {
     stringstream ss;
     ss << "Array size must be a non-negative integer. Size " << size << " is invalid.";
@@ -505,9 +519,9 @@ void CompilationMessages::errorSymNameTaken(CodeLoc loc, NamePool::Id name) {
     error(loc, ss.str());
 }
 
-void CompilationMessages::errorSymUndef(CodeLoc loc, TypeTable::Id ty) {
+void CompilationMessages::errorSymGlobalOwning(CodeLoc loc, NamePool::Id name, TypeTable::Id ty) {
     stringstream ss;
-    ss << "Attempted to define a symbol with an undefined type '" << errorStringOfType(ty) << "'.";
+    ss << "Attempted to declare a global owning variable '" << namePool->get(name) << "', of type '" << errorStringOfType(ty) << "'.";
     error(loc, ss.str());
 }
 
@@ -524,12 +538,12 @@ void CompilationMessages::errorCnNoInit(CodeLoc loc, NamePool::Id name) {
 }
 
 void CompilationMessages::errorExprCannotPromote(CodeLoc loc) {
-    error(loc, "Expression cannot be promoted to a compiled value.");
+    error(loc, "Evaluated value cannot be compiled.");
 }
 
 void CompilationMessages::errorExprCannotPromote(CodeLoc loc, TypeTable::Id into) {
     stringstream ss;
-    ss << "Expression cannot be promoted to a compiled value of type '" << errorStringOfType(into) << "'.";
+    ss << "Evaluated value cannot be compiled and cast to type '" << errorStringOfType(into) << "'.";
     error(loc, ss.str());
 }
 
@@ -720,7 +734,8 @@ void CompilationMessages::errorNotCompiledFunc(CodeLoc loc) {
 }
 
 void CompilationMessages::errorBadTransfer(CodeLoc loc) {
-    error(loc, "Invalid transfer of non-trivially droppable value.");
+    error(loc, "Invalid transfer of owning value.");
+    hintTransferWithMove();
 }
 
 void CompilationMessages::errorTransferNoDrop(CodeLoc loc) {
