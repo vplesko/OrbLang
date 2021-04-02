@@ -98,7 +98,8 @@ public:
     void errorNonUnOp(CodeLoc loc, Oper op);
     void errorNonBinOp(CodeLoc loc, Oper op);
     void errorSymNameTaken(CodeLoc loc, NamePool::Id name);
-    void errorSymNotFound(CodeLoc loc, NamePool::Id name);
+    void errorSymDataUndefined(CodeLoc loc, TypeTable::Id ty);
+    void errorSymbolNotFound(CodeLoc loc, NamePool::Id name);
     void errorCnNoInit(CodeLoc loc, NamePool::Id name);
     void errorExprCannotPromote(CodeLoc loc);
     void errorExprCannotPromote(CodeLoc loc, TypeTable::Id into);

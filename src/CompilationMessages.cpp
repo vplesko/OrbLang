@@ -436,15 +436,15 @@ void CompilationMessages::errorUnexpectedIsTerminal(CodeLoc loc) {
 }
 
 void CompilationMessages::errorUnexpectedNotId(CodeLoc loc) {
-    error(loc, "Result does not present an id.");
+    error(loc, "Value does not represent an id.");
 }
 
 void CompilationMessages::errorUnexpectedNotType(CodeLoc loc) {
-    error(loc, "Result does not present a type.");
+    error(loc, "Value does not represent a type.");
 }
 
 void CompilationMessages::errorUnexpectedNotBool(CodeLoc loc) {
-    error(loc, "Result does not present a boolean.");
+    error(loc, "Value does not represent a boolean.");
 }
 
 void CompilationMessages::errorChildrenNotEq(CodeLoc loc, size_t cnt, size_t see) {
@@ -501,13 +501,19 @@ void CompilationMessages::errorNonBinOp(CodeLoc loc, Oper op) {
 
 void CompilationMessages::errorSymNameTaken(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
-    ss << "Symbol '" << namePool->get(name) << "' already exists in this scope.";
+    ss << "Symbol named '" << namePool->get(name) << "' already exists in this scope.";
     error(loc, ss.str());
 }
 
-void CompilationMessages::errorSymNotFound(CodeLoc loc, NamePool::Id name) {
+void CompilationMessages::errorSymDataUndefined(CodeLoc loc, TypeTable::Id ty) {
     stringstream ss;
-    ss << "Symbol '" << namePool->get(name) << "' not found.";
+    ss << "Attempted to define a symbol with an undefined data type '" << errorStringOfType(ty) << "'.";
+    error(loc, ss.str());
+}
+
+void CompilationMessages::errorSymbolNotFound(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Symbol with name '" << namePool->get(name) << "' not found.";
     error(loc, ss.str());
 }
 

@@ -221,7 +221,7 @@ NodeVal Processor::processId(const NodeVal &node) {
 
         return NodeVal(node.getCodeLoc(), move(eval));
     } else {
-        msgs->errorSymNotFound(node.getCodeLoc(), id);
+        msgs->errorSymbolNotFound(node.getCodeLoc(), id);
         return NodeVal();
     }
 }
@@ -256,7 +256,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
             optType = pair.second.value().getEvalVal().ty;
             if (typeTable->worksAsDataType(optType.value()) &&
                 !typeTable->extractDataType(optType.value())->defined) {
-                msgs->errorUnknown(nodePair.getCodeLoc());
+                msgs->errorSymDataUndefined(pair.second.value().getCodeLoc(), optType.value());
                 return NodeVal();
             }
         }
