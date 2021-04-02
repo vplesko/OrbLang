@@ -1405,7 +1405,6 @@ NodeVal Processor::processLenOf(const NodeVal &node) {
     if (typeTable->worksAsPrimitive(operand.getType().value(), TypeTable::P_TYPE)) ty = operand.getEvalVal().ty;
     else ty = operand.getType().value();
 
-    // TODO! add data types, but check not undef
     uint64_t len;
     if (typeTable->worksAsTypeArr(ty)){
         len = typeTable->extractLenOfArr(ty).value();
@@ -1413,6 +1412,14 @@ NodeVal Processor::processLenOf(const NodeVal &node) {
         len = typeTable->extractLenOfTuple(ty).value();
     } else if (typeTable->worksAsPrimitive(ty, TypeTable::P_RAW)) {
         len = operand.getChildrenCnt();
+    } else if (typeTable->worksAsDataType(ty)) {
+        const TypeTable::DataType &dataType = *typeTable->extractDataType(ty);
+        if (!dataType.defined) {
+            msgs->errorUnknown(operand.getCodeLoc());
+            return NodeVal();
+        }
+
+        len = dataType.members.size();
     } else if (checkIsEvalVal(operand, false) && EvalVal::isNonNullStr(operand.getEvalVal(), typeTable)) {
         len = LiteralVal::getStringLen(stringPool->get(operand.getEvalVal().str.value()));
     } else {

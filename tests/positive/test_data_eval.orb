@@ -89,4 +89,5 @@ fnc main () () {
         eval (sym (p (makePoint2 -1 107)));
         println_i32 (. p 1);
     };
+    println_i32 (+ 106 (lenOf Point2));
 };

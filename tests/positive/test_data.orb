@@ -95,4 +95,5 @@ fnc main () () {
         sym (p (makePoint2 -1 108));
         println_i32 (. p 1);
     };
+    println_i32 (+ 107 (lenOf Point2));
 };
