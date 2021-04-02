@@ -93,6 +93,7 @@ public:
     void errorUnexpectedKeyword(CodeLoc loc, Keyword keyw);
     void errorUnexpectedNonLeafStart(CodeLoc loc);
     void errorUnexpectedIsNotTerminal(CodeLoc loc);
+    void errorUnexpectedNotEmpty(CodeLoc loc);
     void errorUnexpectedIsTerminal(CodeLoc loc);
     void errorUnexpectedNotId(CodeLoc loc);
     void errorUnexpectedNotType(CodeLoc loc);
@@ -102,12 +103,14 @@ public:
     void errorChildrenMoreThan(CodeLoc loc, std::size_t cnt);
     void errorChildrenNotBetween(CodeLoc loc, std::size_t lo, std::size_t hi, std::size_t see);
     void errorInvalidTypeDecorator(CodeLoc loc);
+    void errorInvalidTypeArg(CodeLoc loc);
     void errorUndefType(CodeLoc loc, TypeTable::Id ty);
     void errorBadArraySize(CodeLoc loc, long int size);
     void errorNotLastParam(CodeLoc loc);
     void errorNonUnOp(CodeLoc loc, Oper op);
     void errorNonBinOp(CodeLoc loc, Oper op);
     void errorNameTaken(CodeLoc loc, NamePool::Id name);
+    void errorSymCnNoInit(CodeLoc loc, NamePool::Id name);
     void errorSymGlobalOwning(CodeLoc loc, NamePool::Id name, TypeTable::Id ty);
     void errorSymbolNotFound(CodeLoc loc, NamePool::Id name);
     void errorCnNoInit(CodeLoc loc, NamePool::Id name);
@@ -131,8 +134,10 @@ public:
     void errorExitNowhere(CodeLoc loc);
     void errorExitPassingBlock(CodeLoc loc);
     void errorPassNonPassingBlock(CodeLoc loc);
+    void errorNonEvalBlock(CodeLoc loc);
     void errorLoopNowhere(CodeLoc loc);
     void errorRetNoValue(CodeLoc loc, TypeTable::Id shouldRet);
+    void errorRetNonEval(CodeLoc loc);
     void errorFuncNameTaken(CodeLoc loc, NamePool::Id name);
     void errorMacroNameTaken(CodeLoc loc, NamePool::Id name);
     void errorArgNameDuplicate(CodeLoc loc, NamePool::Id name);
@@ -154,6 +159,7 @@ public:
     void errorNotCompiledVal(CodeLoc loc);
     void errorNotCompiledFunc(CodeLoc loc);
     void errorBadTransfer(CodeLoc loc);
+    void errorOwning(CodeLoc loc);
     void errorDropFuncBadSig(CodeLoc loc);
     void errorTransferNoDrop(CodeLoc loc);
     void errorNonTypeAttributeType(CodeLoc loc);

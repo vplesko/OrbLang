@@ -284,7 +284,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
                 return NodeVal();
             }
             if (typeTable->worksAsTypeCn(optType.value())) {
-                msgs->errorUnknown(entry.getCodeLoc());
+                msgs->errorSymCnNoInit(entry.getCodeLoc(), id);
                 return NodeVal();
             }
 
@@ -556,6 +556,7 @@ NodeVal Processor::processFixed(const NodeVal &node, const NodeVal &starting) {
     if (!attrGlobal.has_value()) return NodeVal();
 
     if (!attrGlobal.value() && !checkInGlobalScope(node.getCodeLoc(), true)) {
+        msgs->hintAttrGlobal();
         return NodeVal();
     }
 
@@ -563,7 +564,7 @@ NodeVal Processor::processFixed(const NodeVal &node, const NodeVal &starting) {
     if (nodeName.isInvalid()) return NodeVal();
     NamePool::Id name = nodeName.getEvalVal().id;
     if (!symbolTable->nameAvailable(name, namePool, typeTable, true)) {
-        msgs->errorUnknown(nodeName.getCodeLoc());
+        msgs->errorNameTaken(nodeName.getCodeLoc(), name);
         return NodeVal();
     }
 
@@ -577,7 +578,7 @@ NodeVal Processor::processFixed(const NodeVal &node, const NodeVal &starting) {
     fixed.type = ty;
     optional<TypeTable::Id> typeId = typeTable->addFixedType(fixed);
     if (!typeId.has_value()) {
-        msgs->errorUnknown(node.getCodeLoc());
+        msgs->errorInternal(node.getCodeLoc());
         return NodeVal();
     }
 
@@ -2062,7 +2063,7 @@ bool Processor::hasTrivialDrop(TypeTable::Id ty) {
 
 bool Processor::checkNotNeedsDrop(CodeLoc codeLoc, const NodeVal &val, bool orError) {
     if (!val.isNoDrop() && checkHasType(val, false) && !hasTrivialDrop(val.getType().value())) {
-        if (orError) msgs->errorUnknown(codeLoc);
+        if (orError) msgs->errorOwning(codeLoc);
         return false;
     }
     return true;
@@ -2670,7 +2671,7 @@ NodeVal Processor::processForTypeArg(const NodeVal &node) {
     NodeVal esc = processWithEscape(node);
     if (esc.isInvalid()) return NodeVal();
     if (!esc.isEvalVal()) {
-        msgs->errorEvaluationNotSupported(esc.getCodeLoc());
+        msgs->errorInvalidTypeArg(esc.getCodeLoc());
         return NodeVal();
     }
 
@@ -2741,7 +2742,7 @@ bool Processor::checkIsRaw(const NodeVal &node, bool orError) {
 
 bool Processor::checkIsEmpty(const NodeVal &node, bool orError) {
     if (!NodeVal::isEmpty(node, typeTable)) {
-        if (orError) msgs->errorUnknown(node.getCodeLoc());
+        if (orError) msgs->errorUnexpectedNotEmpty(node.getCodeLoc());
         return false;
     }
     return true;
@@ -2758,6 +2759,14 @@ bool Processor::checkIsEvalVal(CodeLoc codeLoc, const NodeVal &node, bool orErro
 bool Processor::checkIsEvalFunc(CodeLoc codeLoc, const FuncValue &func, bool orError) {
     if (!func.isEval()) {
         if (orError) msgs->errorNotEvalFunc(codeLoc);
+        return false;
+    }
+    return true;
+}
+
+bool Processor::checkIsEvalBlock(CodeLoc codeLoc, const SymbolTable::Block &block, bool orError) {
+    if (!block.isEval()) {
+        if (orError) msgs->errorNonEvalBlock(codeLoc);
         return false;
     }
     return true;

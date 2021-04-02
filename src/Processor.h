@@ -66,6 +66,7 @@ protected:
     bool checkIsEvalVal(CodeLoc codeLoc, const NodeVal &node, bool orError);
     bool checkIsEvalVal(const NodeVal &node, bool orError) { return checkIsEvalVal(node.getCodeLoc(), node, orError); }
     bool checkIsEvalFunc(CodeLoc codeLoc, const FuncValue &func, bool orError);
+    bool checkIsEvalBlock(CodeLoc codeLoc, const SymbolTable::Block &block, bool orError);
     bool checkIsLlvmVal(CodeLoc codeLoc, const NodeVal &node, bool orError);
     bool checkIsLlvmVal(const NodeVal &node, bool orError) { return checkIsLlvmVal(node.getCodeLoc(), node, orError); }
     bool checkIsLlvmFunc(CodeLoc codeLoc, const FuncValue &func, bool orError);

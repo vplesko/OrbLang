@@ -107,10 +107,7 @@ NodeVal Evaluator::performBlockTearDown(CodeLoc codeLoc, SymbolTable::Block bloc
 
 bool Evaluator::performExit(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) {
     if (!checkIsEvalVal(cond, true)) return false;
-    if (!block.isEval()) {
-        msgs->errorEvaluationNotSupported(codeLoc);
-        return false;
-    }
+    if (!checkIsEvalBlock(codeLoc, block, true)) return false;
 
     if (cond.getEvalVal().b) {
         ExceptionEvaluatorJump ex;
@@ -125,10 +122,7 @@ bool Evaluator::performExit(CodeLoc codeLoc, SymbolTable::Block block, const Nod
 
 bool Evaluator::performLoop(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) {
     if (!checkIsEvalVal(cond, true)) return false;
-    if (!block.isEval()) {
-        msgs->errorEvaluationNotSupported(codeLoc);
-        return false;
-    }
+    if (!checkIsEvalBlock(codeLoc, block, true)) return false;
 
     if (cond.getEvalVal().b) {
         ExceptionEvaluatorJump ex;
@@ -144,10 +138,7 @@ bool Evaluator::performLoop(CodeLoc codeLoc, SymbolTable::Block block, const Nod
 
 bool Evaluator::performPass(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &val) {
     if (!checkIsEvalVal(val, true)) return false;
-    if (!block.isEval()) {
-        msgs->errorEvaluationNotSupported(codeLoc);
-        return false;
-    }
+    if (!checkIsEvalBlock(codeLoc, block, true)) return false;
 
     retVal = NodeVal::copyNoRef(codeLoc, val, LifetimeInfo());
 
@@ -294,7 +285,7 @@ bool Evaluator::performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, con
 bool Evaluator::performRet(CodeLoc codeLoc) {
     optional<SymbolTable::CalleeValueInfo> callee = symbolTable->getCurrCallee();
     if (!callee.value().isEval) {
-        msgs->errorEvaluationNotSupported(codeLoc);
+        msgs->errorRetNonEval(codeLoc);
         return false;
     }
 
@@ -306,7 +297,7 @@ bool Evaluator::performRet(CodeLoc codeLoc) {
 bool Evaluator::performRet(CodeLoc codeLoc, const NodeVal &node) {
     optional<SymbolTable::CalleeValueInfo> callee = symbolTable->getCurrCallee();
     if (!callee.value().isEval) {
-        msgs->errorEvaluationNotSupported(codeLoc);
+        msgs->errorRetNonEval(codeLoc);
         return false;
     }
 

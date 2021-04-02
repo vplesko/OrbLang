@@ -473,6 +473,10 @@ void CompilationMessages::errorUnexpectedIsTerminal(CodeLoc loc) {
     error(loc, "Terminal was not expected at this location.");
 }
 
+void CompilationMessages::errorUnexpectedNotEmpty(CodeLoc loc) {
+    error(loc, "Expected an empty raw value.");
+}
+
 void CompilationMessages::errorUnexpectedNotId(CodeLoc loc) {
     error(loc, "Value does not represent an id.");
 }
@@ -519,6 +523,10 @@ void CompilationMessages::errorInvalidTypeDecorator(CodeLoc loc) {
     error(loc, "Invalid type decorator.");
 }
 
+void CompilationMessages::errorInvalidTypeArg(CodeLoc loc) {
+    error(loc, "Unexpected value found while processing a type.");
+}
+
 void CompilationMessages::errorUndefType(CodeLoc loc, TypeTable::Id ty) {
     stringstream ss;
     ss << "Type '" << errorStringOfType(ty) << "' is not fully defined.";
@@ -545,7 +553,13 @@ void CompilationMessages::errorNonBinOp(CodeLoc loc, Oper op) {
 
 void CompilationMessages::errorNameTaken(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
-    ss << "Symbol named '" << namePool->get(name) << "' already exists in this scope.";
+    ss << "Name '" << namePool->get(name) << "' is already taken.";
+    error(loc, ss.str());
+}
+
+void CompilationMessages::errorSymCnNoInit(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Attempted to declare a constant symbol '" << namePool->get(name) << "' without an initial value.";
     error(loc, ss.str());
 }
 
@@ -614,6 +628,10 @@ void CompilationMessages::errorPassNonPassingBlock(CodeLoc loc) {
     error(loc, "Attempting to pass a value from a non-passing block.");
 }
 
+void CompilationMessages::errorNonEvalBlock(CodeLoc loc) {
+    error(loc, "Cannot evaluate this instruction on compiled block.");
+}
+
 void CompilationMessages::errorLoopNowhere(CodeLoc loc) {
     error(loc, "Loop statement has no enclosing block to loop in.");
 }
@@ -623,6 +641,10 @@ void CompilationMessages::errorRetNoValue(CodeLoc loc, TypeTable::Id shouldRet) 
     ss << "Ret statement has no return value, but should return value of type '" <<
         errorStringOfType(shouldRet) << "'.";
     error(loc, ss.str());
+}
+
+void CompilationMessages::errorRetNonEval(CodeLoc loc) {
+    error(loc, "Cannot evaluate this instruction on unevaluable function.");
 }
 
 void CompilationMessages::errorFuncNameTaken(CodeLoc loc, NamePool::Id name) {
@@ -774,6 +796,10 @@ void CompilationMessages::errorNotCompiledFunc(CodeLoc loc) {
 void CompilationMessages::errorBadTransfer(CodeLoc loc) {
     error(loc, "Invalid transfer of owning value.");
     hintTransferWithMove();
+}
+
+void CompilationMessages::errorOwning(CodeLoc loc) {
+    error(loc, "Expected a non-owning value.");
 }
 
 void CompilationMessages::errorTransferNoDrop(CodeLoc loc) {
