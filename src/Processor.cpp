@@ -248,7 +248,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
         if (pair.first.isInvalid()) return NodeVal();
         NamePool::Id id = pair.first.getEvalVal().id;
         if (!symbolTable->nameAvailable(id, namePool, typeTable)) {
-            msgs->errorSymNameTaken(nodePair.getCodeLoc(), id);
+            msgs->errorNameTaken(nodePair.getCodeLoc(), id);
             return NodeVal();
         }
         optional<TypeTable::Id> optType;
@@ -591,6 +591,7 @@ NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
     if (!attrGlobal.has_value()) return NodeVal();
 
     if (!attrGlobal.value() && !checkInGlobalScope(node.getCodeLoc(), true)) {
+        msgs->hintAttrGlobal();
         return NodeVal();
     }
 
@@ -608,16 +609,19 @@ NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
     if (nodeName.isInvalid()) return NodeVal();
     dataType.name = nodeName.getEvalVal().id;
     if (!symbolTable->nameAvailable(dataType.name, namePool, typeTable, true)) {
-        if (optional<TypeTable::Id> oldTy = typeTable->getTypeId(dataType.name);
-            !(oldTy.has_value() && typeTable->isDataType(oldTy.value()))) {
-            msgs->errorUnknown(nodeName.getCodeLoc());
+        optional<TypeTable::Id> oldTy = typeTable->getTypeId(dataType.name);
+        if (!oldTy.has_value() || !typeTable->isDataType(oldTy.value())) {
+            msgs->errorNameTaken(nodeName.getCodeLoc(), dataType.name);
+            return NodeVal();
+        } else if (definition && typeTable->getDataType(oldTy.value()).defined) {
+            msgs->errorDataRedefinition(nodeName.getCodeLoc(), dataType.name);
             return NodeVal();
         }
     }
 
     optional<TypeTable::Id> typeIdOpt = typeTable->addDataType(dataType);
     if (!typeIdOpt.has_value()) {
-        msgs->errorUnknown(node.getCodeLoc());
+        msgs->errorInternal(node.getCodeLoc());
         return NodeVal();
     }
 
@@ -661,7 +665,7 @@ NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
 
         typeIdOpt = typeTable->addDataType(dataType);
         if (!typeIdOpt.has_value()) {
-            msgs->errorUnknown(node.getCodeLoc());
+            msgs->errorInternal(node.getCodeLoc());
             return NodeVal();
         }
 
@@ -2644,7 +2648,10 @@ NodeVal Processor::processWithEscape(const NodeVal &node, EscapeScore amount) {
 NodeVal Processor::processWithEscapeAndCheckIsId(const NodeVal &node) {
     NodeVal id = processWithEscape(node);
     if (id.isInvalid()) return NodeVal();
-    if (!checkIsId(id, true)) return NodeVal();
+    if (!checkIsId(id, true)) {
+        if (checkIsRaw(id, false)) msgs->hintUnescapeEscaped();
+        return NodeVal();
+    }
     return id;
 }
 
@@ -2666,9 +2673,8 @@ NodeVal Processor::processForTypeArg(const NodeVal &node) {
 pair<NodeVal, optional<NodeVal>> Processor::processForIdTypePair(const NodeVal &node) {
     pair<NodeVal, optional<NodeVal>> retInvalid = make_pair<NodeVal, optional<NodeVal>>(NodeVal(), nullopt);
 
-    NodeVal esc = processWithEscape(node);
+    NodeVal esc = processWithEscapeAndCheckIsId(node);
     if (esc.isInvalid()) return retInvalid;
-    if (!checkIsId(esc, true)) return retInvalid;
 
     NodeVal id = esc;
     id.clearTypeAttr();
@@ -2828,7 +2834,10 @@ bool Processor::checkIsDropFuncType(const NodeVal &node, TypeTable::Id dropeeTy,
     }
 
     if (!check) {
-        if (orError) msgs->errorDropFuncBadSig(node.getCodeLoc());
+        if (orError) {
+            msgs->errorDropFuncBadSig(node.getCodeLoc());
+            msgs->hintDropFuncSig();
+        }
         return false;
     }
     return true;

@@ -70,6 +70,9 @@ public:
     void hintForgotCloseNode();
     void hintAttrDoubleColon();
     void hintTransferWithMove();
+    void hintUnescapeEscaped();
+    void hintAttrGlobal();
+    void hintDropFuncSig();
 
     void warnUnusedSpecial(CodeLoc loc, SpecialVal spec);
     void warnUnusedFunc(CodeLoc loc);
@@ -100,7 +103,7 @@ public:
     void errorNotLastParam(CodeLoc loc);
     void errorNonUnOp(CodeLoc loc, Oper op);
     void errorNonBinOp(CodeLoc loc, Oper op);
-    void errorSymNameTaken(CodeLoc loc, NamePool::Id name);
+    void errorNameTaken(CodeLoc loc, NamePool::Id name);
     void errorSymGlobalOwning(CodeLoc loc, NamePool::Id name, TypeTable::Id ty);
     void errorSymbolNotFound(CodeLoc loc, NamePool::Id name);
     void errorCnNoInit(CodeLoc loc, NamePool::Id name);
@@ -134,6 +137,7 @@ public:
     void errorFuncNoValue(CodeLoc loc);
     void errorMacroNoValue(CodeLoc loc);
     void errorDataCnMember(CodeLoc loc);
+    void errorDataRedefinition(CodeLoc loc, NamePool::Id name);
     void errorBlockNotFound(CodeLoc loc, NamePool::Id name);
     void errorBlockNoPass(CodeLoc loc);
     void errorMemberIndex(CodeLoc loc);

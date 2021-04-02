@@ -352,6 +352,18 @@ void CompilationMessages::hintTransferWithMove() {
     info("You may transfer ownership by first using '>>' operator on the source value.");
 }
 
+void CompilationMessages::hintUnescapeEscaped() {
+    info("This code was escaped. To counteract that, unescape it by prepending ','.");
+}
+
+void CompilationMessages::hintAttrGlobal() {
+    info("You may use this instruction in local scopes by providing attribute 'global' on the special form name.");
+}
+
+void CompilationMessages::hintDropFuncSig() {
+    info("Drop functions must take a single argument of the type they are dropping, marked as 'noDrop'.");
+}
+
 void CompilationMessages::warnUnusedSpecial(CodeLoc loc, SpecialVal spec) {
     optional<Keyword> k = getKeyword(spec.id);
 
@@ -513,7 +525,7 @@ void CompilationMessages::errorNonBinOp(CodeLoc loc, Oper op) {
     error(loc, "Operation is not binary.");
 }
 
-void CompilationMessages::errorSymNameTaken(CodeLoc loc, NamePool::Id name) {
+void CompilationMessages::errorNameTaken(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Symbol named '" << namePool->get(name) << "' already exists in this scope.";
     error(loc, ss.str());
@@ -637,6 +649,12 @@ void CompilationMessages::errorDataCnMember(CodeLoc loc) {
     error(loc, "Data members may not be constant.");
 }
 
+void CompilationMessages::errorDataRedefinition(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Attempted to redefine data type '" << namePool->get(name) << "'.";
+    error(loc, ss.str());
+}
+
 void CompilationMessages::errorBlockNotFound(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "No enclosing blocks with name '" << namePool->get(name) << "' have been found.";
@@ -739,7 +757,7 @@ void CompilationMessages::errorBadTransfer(CodeLoc loc) {
 }
 
 void CompilationMessages::errorTransferNoDrop(CodeLoc loc) {
-    error(loc, "Attempted to transfer a value marked with noDrop.");
+    error(loc, "Attempted to transfer a value marked as 'noDrop'.");
 }
 
 void CompilationMessages::errorDropFuncBadSig(CodeLoc loc) {
