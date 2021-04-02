@@ -152,6 +152,10 @@ public:
     void errorBadTransfer(CodeLoc loc);
     void errorDropFuncBadSig(CodeLoc loc);
     void errorTransferNoDrop(CodeLoc loc);
+    void errorNonTypeAttributeType(CodeLoc loc);
+    void errorAttributeNotFound(CodeLoc loc, NamePool::Id name);
+    void errorAttributesSameName(CodeLoc loc, NamePool::Id name);
+    void errorAttributeOwning(CodeLoc loc, NamePool::Id name);
     void errorNotGlobalScope(CodeLoc loc);
     void errorNotLocalScope(CodeLoc loc);
     void errorNotTopmost(CodeLoc loc);

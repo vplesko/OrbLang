@@ -760,6 +760,28 @@ void CompilationMessages::errorTransferNoDrop(CodeLoc loc) {
     error(loc, "Attempted to transfer a value marked as 'noDrop'.");
 }
 
+void CompilationMessages::errorNonTypeAttributeType(CodeLoc loc) {
+    error(loc, "Non-type attributes cannot be named 'type'.");
+}
+
+void CompilationMessages::errorAttributeNotFound(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Attribute named '" << namePool->get(name) << "' not found.";
+    error(loc, ss.str());
+}
+
+void CompilationMessages::errorAttributesSameName(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "This node already has an attribute named '" << namePool->get(name) << "'.";
+    error(loc, ss.str());
+}
+
+void CompilationMessages::errorAttributeOwning(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Attempted to set an owning attribute '" << namePool->get(name) << "'.";
+    error(loc, ss.str());
+}
+
 void CompilationMessages::errorDropFuncBadSig(CodeLoc loc) {
     error(loc, "Bad signature for a drop function.");
 }

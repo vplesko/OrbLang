@@ -1401,7 +1401,7 @@ NodeVal Processor::processLenOf(const NodeVal &node) {
     } else if (typeTable->worksAsDataType(ty)) {
         const TypeTable::DataType &dataType = *typeTable->extractDataType(ty);
         if (!dataType.defined) {
-            msgs->errorUnknown(operand.getCodeLoc());
+            msgs->errorUndefType(operand.getCodeLoc(), ty);
             return NodeVal();
         }
 
@@ -1467,7 +1467,7 @@ NodeVal Processor::processAttrOf(const NodeVal &node) {
 
     optional<NodeVal> nodeAttr = getAttribute(operand, attrName);
     if (!nodeAttr.has_value()) {
-        msgs->errorUnknown(node.getCodeLoc());
+        msgs->errorAttributeNotFound(node.getCodeLoc(), attrName);
         return NodeVal();
     }
 
@@ -2176,8 +2176,12 @@ bool Processor::processAttributes(NodeVal &node) {
             if (!checkIsId(nodeAttrs, true)) return false;
 
             NamePool::Id attrName = nodeAttrs.getEvalVal().id;
-            if (attrName == typeId || attrMap.attrMap.find(attrName) != attrMap.attrMap.end()) {
-                msgs->errorUnknown(nodeAttrs.getCodeLoc());
+            if (attrName == typeId) {
+                msgs->errorNonTypeAttributeType(nodeAttrs.getCodeLoc());
+                return false;
+            }
+            if (attrMap.attrMap.find(attrName) != attrMap.attrMap.end()) {
+                msgs->errorAttributesSameName(nodeAttrs.getCodeLoc(), attrName);
                 return false;
             }
 
@@ -2201,8 +2205,12 @@ bool Processor::processAttributes(NodeVal &node) {
                 if (!checkIsId(*nodeAttrEntryName, true)) return false;
 
                 NamePool::Id attrName = nodeAttrEntryName->getEvalVal().id;
-                if (attrName == typeId || attrMap.attrMap.find(attrName) != attrMap.attrMap.end()) {
-                    msgs->errorUnknown(nodeAttrEntry.getCodeLoc());
+                if (attrName == typeId) {
+                    msgs->errorNonTypeAttributeType(nodeAttrEntryName->getCodeLoc());
+                    return false;
+                }
+                if (attrMap.attrMap.find(attrName) != attrMap.attrMap.end()) {
+                    msgs->errorAttributesSameName(nodeAttrEntryName->getCodeLoc(), attrName);
                     return false;
                 }
 
@@ -2214,7 +2222,10 @@ bool Processor::processAttributes(NodeVal &node) {
                     if (attrVal.isInvalid()) return false;
                     if (!checkHasType(attrVal, true)) return false;
                     if (!attrVal.hasRef() && !attrVal.isInvokeArg() &&
-                        !checkNotNeedsDrop(attrVal.getCodeLoc(), attrVal, true)) return false;
+                        !checkNotNeedsDrop(attrVal.getCodeLoc(), attrVal, false)) {
+                        msgs->errorAttributeOwning(nodeAttrEntry.getCodeLoc(), attrName);
+                        return false;
+                    }
                 }
 
                 attrMap.attrMap.insert({attrName, make_unique<NodeVal>(move(attrVal))});
