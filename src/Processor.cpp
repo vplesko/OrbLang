@@ -332,7 +332,7 @@ NodeVal Processor::processCast(const NodeVal &node) {
     NodeVal value = processNode(node.getChild(2));
     if (value.isInvalid()) return NodeVal();
 
-    NodeVal ret = castNode(node.getCodeLoc(), value, ty.getEvalVal().ty);
+    NodeVal ret = castNode(node.getCodeLoc(), value, ty.getCodeLoc(), ty.getEvalVal().ty);
     if (ret.isInvalid()) return NodeVal();
 
     return ret;
@@ -1611,7 +1611,7 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
             msgs->errorExprCannotPromote(node.getCodeLoc(), ty);
             return NodeVal();
         }
-        prom = evaluator->performCast(prom.getCodeLoc(), prom, ty);
+        prom = evaluator->performCast(prom.getCodeLoc(), prom, node.getTypeAttr().getCodeLoc(), ty);
     }
 
     return prom;
@@ -1691,22 +1691,22 @@ NodeVal Processor::dispatchLoad(CodeLoc codeLoc, VarId varId, optional<NamePool:
 NodeVal Processor::implicitCast(const NodeVal &node, TypeTable::Id ty, bool skipCheckNeedsDrop) {
     if (!checkImplicitCastable(node, ty, true)) return NodeVal();
 
-    return castNode(node.getCodeLoc(), node, ty, skipCheckNeedsDrop);
+    return castNode(node.getCodeLoc(), node, node.getCodeLoc(), ty, skipCheckNeedsDrop);
 }
 
-NodeVal Processor::castNode(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty, bool skipCheckNeedsDrop) {
+NodeVal Processor::castNode(CodeLoc codeLoc, const NodeVal &node, CodeLoc codeLocTy, TypeTable::Id ty, bool skipCheckNeedsDrop) {
     if (node.getType().value() == ty) {
         NodeVal ret(node);
         ret.setCodeLoc(codeLoc);
         return ret;
     }
 
-    if (!skipCheckNeedsDrop && !checkTransferValueOk(codeLoc, node, node.isNoDrop(), true)) return NodeVal();
+    if (!skipCheckNeedsDrop && !checkTransferValueOk(node.getCodeLoc(), node, node.isNoDrop(), true)) return NodeVal();
 
     if (checkIsEvalTime(node, false) && !shouldNotDispatchCastToEval(node, ty)) {
-        return evaluator->performCast(codeLoc, node, ty);
+        return evaluator->performCast(codeLoc, node, codeLocTy, ty);
     } else {
-        return performCast(codeLoc, node, ty);
+        return performCast(codeLoc, node, codeLocTy, ty);
     }
 }
 
@@ -1714,10 +1714,10 @@ bool Processor::implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly
     if (lhs.getType().value() == rhs.getType().value()) return true;
 
     if (checkImplicitCastable(rhs, lhs.getType().value(), false)) {
-        rhs = castNode(rhs.getCodeLoc(), rhs, lhs.getType().value());
+        rhs = castNode(rhs.getCodeLoc(), rhs, lhs.getCodeLoc(), lhs.getType().value());
         return !rhs.isInvalid();
     } else if (!oneWayOnly && checkImplicitCastable(lhs, rhs.getType().value(), false)) {
-        lhs = castNode(lhs.getCodeLoc(), lhs, rhs.getType().value());
+        lhs = castNode(lhs.getCodeLoc(), lhs, rhs.getCodeLoc(), rhs.getType().value());
         return !lhs.isInvalid();
     } else {
         if (oneWayOnly) msgs->errorExprCannotImplicitCast(rhs.getCodeLoc(), rhs.getType().value(), lhs.getType().value());
@@ -2098,7 +2098,7 @@ bool Processor::callDropFunc(CodeLoc codeLoc, NodeVal val) {
             const TypeTable::Callable &dropCallable = *typeTable->extractCallable(dropFunc->getType().value());
 
             // explicit cast cuz could be a fixed type
-            NodeVal afterCast = castNode(codeLoc, val, dropCallable.getArgType(0), true);
+            NodeVal afterCast = castNode(codeLoc, val, codeLoc, dropCallable.getArgType(0), true);
             if (afterCast.isInvalid()) return false;
 
             bool isEval = checkIsEvalVal(afterCast, false);

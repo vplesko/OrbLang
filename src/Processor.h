@@ -29,7 +29,7 @@ protected:
     virtual NodeVal performZero(CodeLoc codeLoc, TypeTable::Id ty) =0;
     virtual NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, CodeLoc codeLocTy, TypeTable::Id ty) =0;
     virtual NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) =0;
-    virtual NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) =0;
+    virtual NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, CodeLoc codeLocTy, TypeTable::Id ty) =0;
     virtual bool performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) =0;
     // Returns nullopt in case of fail. Otherwise, returns whether the body should be processed again.
     virtual std::optional<bool> performBlockBody(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &nodeBody) =0;
@@ -124,7 +124,7 @@ private:
     bool applyTupleMemb(TypeTable::Tuple &tup, const NodeVal &node);
     NodeVal dispatchLoad(CodeLoc codeLoc, VarId varId, std::optional<NamePool::Id> id = std::nullopt);
     NodeVal implicitCast(const NodeVal &node, TypeTable::Id ty, bool skipCheckNeedsDrop = false);
-    NodeVal castNode(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty, bool skipCheckNeedsDrop = false);
+    NodeVal castNode(CodeLoc codeLoc, const NodeVal &node, CodeLoc codeLocTy, TypeTable::Id ty, bool skipCheckNeedsDrop = false);
     bool implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly);
     bool shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id dstTypeId) const;
     bool implicitCastArgsAndVerifyCallOk(CodeLoc codeLoc, std::vector<NodeVal> &args, const TypeTable::Callable &callable);

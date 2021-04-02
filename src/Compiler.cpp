@@ -177,13 +177,13 @@ NodeVal Compiler::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVa
     return NodeVal(codeLoc, llvmVal);
 }
 
-NodeVal Compiler::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
+NodeVal Compiler::performCast(CodeLoc codeLoc, const NodeVal &node, CodeLoc codeLocTy, TypeTable::Id ty) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
     NodeVal promo = promoteIfEvalValAndCheckIsLlvmVal(node, true);
     if (promo.isInvalid()) return NodeVal();
 
-    llvm::Type *llvmType = makeLlvmTypeOrError(codeLoc, ty);
+    llvm::Type *llvmType = makeLlvmTypeOrError(codeLocTy, ty);
     if (llvmType == nullptr) return NodeVal();
 
     llvm::Value *llvmValueCast = makeLlvmCast(promo.getLlvmVal().val, promo.getLlvmVal().type, llvmType, ty);

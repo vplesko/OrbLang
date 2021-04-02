@@ -68,7 +68,7 @@ NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeV
     return NodeVal::copyNoRef(codeLoc, init, lifetimeInfo);
 }
 
-NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, TypeTable::Id ty) {
+NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, CodeLoc codeLocTy, TypeTable::Id ty) {
     if (!checkIsEvalVal(node, true)) return NodeVal();
 
     optional<NodeVal> evalValCast = makeCast(codeLoc, node, node.getEvalVal().type, ty);
