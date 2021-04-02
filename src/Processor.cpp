@@ -348,11 +348,6 @@ NodeVal Processor::processBlock(const NodeVal &node, const NodeVal &starting) {
     bool hasName = node.getChildrenCnt() > 3;
     bool hasType = node.getChildrenCnt() > 2;
 
-    if (attrBare.value() && (hasName || hasType)) {
-        msgs->errorUnknown(node.getCodeLoc());
-        return NodeVal();
-    }
-
     size_t indName = 1;
     size_t indType = hasName ? 2 : 1;
     size_t indBody = hasName ? 3 : (hasType ? 2 : 1);
@@ -365,20 +360,41 @@ NodeVal Processor::processBlock(const NodeVal &node, const NodeVal &starting) {
         NodeVal nodeName = processWithEscape(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
         if (!checkIsEmpty(nodeName, false)) {
-            if (!checkIsId(nodeName, true)) return NodeVal();
+            if (!checkIsId(nodeName, true)) {
+                msgs->hintBlockSyntax();
+                return NodeVal();
+            }
+
             name = nodeName.getEvalVal().id;
+            if (attrBare.value()) {
+                msgs->errorBlockBareNameType(nodeName.getCodeLoc());
+                return NodeVal();
+            }
+            if (typeTable->isType(name.value())) {
+                msgs->warnBlockNameIsType(nodeName.getCodeLoc(), name.value());
+            }
         }
     }
 
     optional<TypeTable::Id> type;
     if (hasType) {
         NodeVal nodeType = processNode(node.getChild(indType));
-        if (nodeType.isInvalid()) return NodeVal();
+        if (nodeType.isInvalid()) {
+            msgs->hintBlockSyntax();
+            return NodeVal();
+        }
         if (!checkIsEmpty(nodeType, false)) {
-            if (!checkIsType(nodeType, true)) return NodeVal();
+            if (!checkIsType(nodeType, true)) {
+                msgs->hintBlockSyntax();
+                return NodeVal();
+            }
 
             type = nodeType.getEvalVal().ty;
             if (!checkIsNotUndefType(nodeType.getCodeLoc(), type.value(), true)) return NodeVal();
+            if (attrBare.value()) {
+                msgs->errorBlockBareNameType(nodeType.getCodeLoc());
+                return NodeVal();
+            }
         }
     }
 

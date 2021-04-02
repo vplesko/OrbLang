@@ -74,10 +74,12 @@ public:
     void hintAttrGlobal();
     void hintDropFuncSig();
     void hintGlobalCompiledLoad();
+    void hintBlockSyntax();
 
     void warnUnusedSpecial(CodeLoc loc, SpecialVal spec);
     void warnUnusedFunc(CodeLoc loc);
     void warnUnusedMacro(CodeLoc loc);
+    void warnBlockNameIsType(CodeLoc loc, NamePool::Id name);
 
     void errorInputFileNotFound(const std::string &path);
     void errorBadToken(CodeLoc loc);
@@ -147,6 +149,7 @@ public:
     void errorMacroNoValue(CodeLoc loc);
     void errorDataCnMember(CodeLoc loc);
     void errorDataRedefinition(CodeLoc loc, NamePool::Id name);
+    void errorBlockBareNameType(CodeLoc loc);
     void errorBlockNotFound(CodeLoc loc, NamePool::Id name);
     void errorBlockNoPass(CodeLoc loc);
     void errorMemberIndex(CodeLoc loc);

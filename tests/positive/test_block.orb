@@ -1,6 +1,6 @@
 import "util/print.orb";
 
-block::bare {
+block::bare () () {
     sym (glob 901);
 };
 

@@ -1,6 +1,6 @@
 import "util/print.orb";
 
-eval (block::bare {
+eval (block::bare () () {
     sym (glob1 -1) (glob2 -1);
 });
 

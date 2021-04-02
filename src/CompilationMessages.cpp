@@ -368,6 +368,10 @@ void CompilationMessages::hintGlobalCompiledLoad() {
     info("Compiled values cannot be loaded outside of functions. Consider using evaluated variables for this purpose.");
 }
 
+void CompilationMessages::hintBlockSyntax() {
+    info("When defining a block provide either the passed type; or block name and passed type; or neither. Both can be replaced with an empty raw value.");
+}
+
 void CompilationMessages::warnUnusedSpecial(CodeLoc loc, SpecialVal spec) {
     optional<Keyword> k = getKeyword(spec.id);
 
@@ -390,6 +394,13 @@ void CompilationMessages::warnUnusedFunc(CodeLoc loc) {
 void CompilationMessages::warnUnusedMacro(CodeLoc loc) {
     warning(loc, "Unused macro value found in a block body.");
     hintForgotCloseNode();
+}
+
+void CompilationMessages::warnBlockNameIsType(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "Block defined with the name '" << namePool->get(name) << "', which is also the name of a type.";
+    warning(loc, ss.str());
+    hintBlockSyntax();
 }
 
 void CompilationMessages::errorInputFileNotFound(const string &path) {
@@ -693,6 +704,10 @@ void CompilationMessages::errorDataRedefinition(CodeLoc loc, NamePool::Id name) 
     stringstream ss;
     ss << "Attempted to redefine data type '" << namePool->get(name) << "'.";
     error(loc, ss.str());
+}
+
+void CompilationMessages::errorBlockBareNameType(CodeLoc loc) {
+    error(loc, "Bare blocks cannot have names nor pass types. They are simply unscoped sequences of instructions.");
 }
 
 void CompilationMessages::errorBlockNotFound(CodeLoc loc, NamePool::Id name) {
