@@ -398,7 +398,7 @@ void CompilationMessages::warnUnusedMacro(CodeLoc loc) {
 
 void CompilationMessages::warnBlockNameIsType(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
-    ss << "Block defined with the name '" << namePool->get(name) << "', which is also the name of a type.";
+    ss << "Block defined with the name '" << namePool->get(name) << "', which was also the name of a type.";
     warning(loc, ss.str());
     hintBlockSyntax();
 }
@@ -427,13 +427,13 @@ void CompilationMessages::errorImportNotString(CodeLoc loc) {
 
 void CompilationMessages::errorImportNotFound(CodeLoc loc, const string &path) {
     stringstream ss;
-    ss << "Importing nonexistent file '" << path << "'.";
+    ss << "Tried to import a nonexistent file '" << path << "'.";
     error(loc, ss.str());
 }
 
 void CompilationMessages::errorImportCyclical(CodeLoc loc, const string &path) {
     stringstream ss;
-    ss << "Importing the file '" << path << "' at this point introduced a cyclical dependency.";
+    ss << "To import the file '" << path << "' at this point would introduce a cyclical dependency.";
     error(loc, ss.str());
 }
 
@@ -540,7 +540,7 @@ void CompilationMessages::errorInvalidTypeArg(CodeLoc loc) {
 
 void CompilationMessages::errorUndefType(CodeLoc loc, TypeTable::Id ty) {
     stringstream ss;
-    ss << "Type '" << errorStringOfType(ty) << "' is not fully defined.";
+    ss << "Type '" << errorStringOfType(ty) << "' was not fully defined.";
     error(loc, ss.str());
 }
 
@@ -564,7 +564,7 @@ void CompilationMessages::errorNonBinOp(CodeLoc loc, Oper op) {
 
 void CompilationMessages::errorNameTaken(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
-    ss << "Name '" << namePool->get(name) << "' is already taken.";
+    ss << "Name '" << namePool->get(name) << "' was already taken.";
     error(loc, ss.str());
 }
 
@@ -588,7 +588,7 @@ void CompilationMessages::errorSymbolNotFound(CodeLoc loc, NamePool::Id name) {
 
 void CompilationMessages::errorCnNoInit(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
-    ss << "Constant with name '" << namePool->get(name) << "' is not initialized.";
+    ss << "Constant with name '" << namePool->get(name) << "' was not initialized.";
     error(loc, ss.str());
 }
 
@@ -628,15 +628,15 @@ void CompilationMessages::errorExprCannotImplicitCastEither(CodeLoc loc, TypeTab
 }
 
 void CompilationMessages::errorExitNowhere(CodeLoc loc) {
-    error(loc, "Exit statement has no enclosing block to exit from.");
+    error(loc, "Exit instruction had no enclosing block to exit from.");
 }
 
 void CompilationMessages::errorExitPassingBlock(CodeLoc loc) {
-    error(loc, "Attempting to exit a passing block.");
+    error(loc, "Attempted to exit a passing block.");
 }
 
 void CompilationMessages::errorPassNonPassingBlock(CodeLoc loc) {
-    error(loc, "Attempting to pass a value from a non-passing block.");
+    error(loc, "Attempted to pass a value from a non-passing block.");
 }
 
 void CompilationMessages::errorNonEvalBlock(CodeLoc loc) {
@@ -644,12 +644,16 @@ void CompilationMessages::errorNonEvalBlock(CodeLoc loc) {
 }
 
 void CompilationMessages::errorLoopNowhere(CodeLoc loc) {
-    error(loc, "Loop statement has no enclosing block to loop in.");
+    error(loc, "Loop instruction had no enclosing block to loop in.");
+}
+
+void CompilationMessages::errorRetValue(CodeLoc loc) {
+    error(loc, "Ret instruction had a return value in a non-returning function.");
 }
 
 void CompilationMessages::errorRetNoValue(CodeLoc loc, TypeTable::Id shouldRet) {
     stringstream ss;
-    ss << "Ret statement has no return value, but should return value of type '" <<
+    ss << "Ret instruction had no return value, but should return value of type '" <<
         errorStringOfType(shouldRet) << "'.";
     error(loc, ss.str());
 }
@@ -658,15 +662,19 @@ void CompilationMessages::errorRetNonEval(CodeLoc loc) {
     error(loc, "Cannot evaluate this instruction on unevaluable function.");
 }
 
+void CompilationMessages::errorRetNowhere(CodeLoc loc) {
+    error(loc, "Ret instruction used outside of functions and macros.");
+}
+
 void CompilationMessages::errorFuncNameTaken(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
-    ss << "Name '" << namePool->get(name) << "' is already taken and cannot be used for a function.";
+    ss << "Name '" << namePool->get(name) << "' was already taken and cannot be used for a function.";
     error(loc, ss.str());
 }
 
 void CompilationMessages::errorMacroNameTaken(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
-    ss << "Name '" << namePool->get(name) << "' is already taken and cannot be used for a macro.";
+    ss << "Name '" << namePool->get(name) << "' was already taken and cannot be used for a macro.";
     error(loc, ss.str());
 }
 
@@ -689,11 +697,11 @@ void CompilationMessages::errorMacroNotFound(CodeLoc loc, NamePool::Id name) {
 }
 
 void CompilationMessages::errorFuncNoValue(CodeLoc loc) {
-    error(loc, "Trying to call a function with no value.");
+    error(loc, "Tried to call a function with no value.");
 }
 
 void CompilationMessages::errorMacroNoValue(CodeLoc loc) {
-    error(loc, "Trying to invoke a macro with no value.");
+    error(loc, "Tried to invoke a macro with no value.");
 }
 
 void CompilationMessages::errorDataCnMember(CodeLoc loc) {
@@ -741,7 +749,7 @@ void CompilationMessages::errorExprIndexOnBadType(CodeLoc loc, TypeTable::Id ty)
 }
 
 void CompilationMessages::errorExprIndexOutOfBounds(CodeLoc loc) {
-    error(loc, "Attempting to index out of bounds of the array.");
+    error(loc, "Attempted to index out of bounds of the array.");
 }
 
 void CompilationMessages::errorExprDerefOnBadType(CodeLoc loc, TypeTable::Id ty) {
@@ -833,7 +841,7 @@ void CompilationMessages::errorAttributeNotFound(CodeLoc loc, NamePool::Id name)
 
 void CompilationMessages::errorAttributesSameName(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
-    ss << "This node already has an attribute named '" << namePool->get(name) << "'.";
+    ss << "Multiple attributes name '" << namePool->get(name) << "' found on the same node.";
     error(loc, ss.str());
 }
 

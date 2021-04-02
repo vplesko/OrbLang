@@ -358,7 +358,10 @@ NodeVal Processor::processBlock(const NodeVal &node, const NodeVal &starting) {
     optional<NamePool::Id> name;
     if (hasName) {
         NodeVal nodeName = processWithEscape(node.getChild(indName));
-        if (nodeName.isInvalid()) return NodeVal();
+        if (nodeName.isInvalid()) {
+            msgs->hintBlockSyntax();
+            return NodeVal();
+        }
         if (!checkIsEmpty(nodeName, false)) {
             if (!checkIsId(nodeName, true)) {
                 msgs->hintBlockSyntax();
@@ -441,10 +444,6 @@ NodeVal Processor::processExit(const NodeVal &node) {
         name = nodeName.getEvalVal().id;
     }
 
-    NodeVal nodeCond = processNode(node.getChild(indCond));
-    if (nodeCond.isInvalid()) return NodeVal();
-    if (!checkIsBool(nodeCond, true)) return NodeVal();
-
     SymbolTable::Block targetBlock;
     if (hasName) {
         optional<SymbolTable::Block> targetBlockOpt = symbolTable->getBlock(name.value());
@@ -465,6 +464,10 @@ NodeVal Processor::processExit(const NodeVal &node) {
         return NodeVal();
     }
 
+    NodeVal nodeCond = processNode(node.getChild(indCond));
+    if (nodeCond.isInvalid()) return NodeVal();
+    if (!checkIsBool(nodeCond, true)) return NodeVal();
+
     if (!performExit(node.getCodeLoc(), targetBlock, nodeCond)) return NodeVal();
     return NodeVal(node.getCodeLoc());
 }
@@ -484,10 +487,6 @@ NodeVal Processor::processLoop(const NodeVal &node) {
         name = nodeName.getEvalVal().id;
     }
 
-    NodeVal nodeCond = processNode(node.getChild(indCond));
-    if (nodeCond.isInvalid()) return NodeVal();
-    if (!checkIsBool(nodeCond, true)) return NodeVal();
-
     SymbolTable::Block targetBlock;
     if (hasName) {
         optional<SymbolTable::Block> targetBlockOpt = symbolTable->getBlock(name.value());
@@ -503,6 +502,10 @@ NodeVal Processor::processLoop(const NodeVal &node) {
             return NodeVal();
         }
     }
+
+    NodeVal nodeCond = processNode(node.getChild(indCond));
+    if (nodeCond.isInvalid()) return NodeVal();
+    if (!checkIsBool(nodeCond, true)) return NodeVal();
 
     if (!performLoop(node.getCodeLoc(), targetBlock, nodeCond)) return NodeVal();
     return NodeVal(node.getCodeLoc());
@@ -1188,7 +1191,7 @@ NodeVal Processor::processRet(const NodeVal &node) {
 
     optional<SymbolTable::CalleeValueInfo> optCallee = symbolTable->getCurrCallee();
     if (!optCallee.has_value()) {
-        msgs->errorUnknown(node.getCodeLoc());
+        msgs->errorRetNowhere(node.getCodeLoc());
         return NodeVal();
     }
 
@@ -1196,7 +1199,7 @@ NodeVal Processor::processRet(const NodeVal &node) {
         bool retsVal = node.getChildrenCnt() == 2;
         if (retsVal) {
             if (!optCallee.value().retType.has_value()) {
-                msgs->errorUnknown(node.getCodeLoc());
+                msgs->errorRetValue(node.getCodeLoc());
                 return NodeVal();
             }
 

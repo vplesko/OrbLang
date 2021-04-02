@@ -163,15 +163,15 @@ private:
     NodeVal processPass(const NodeVal &node);
     NodeVal processFixed(const NodeVal &node, const NodeVal &starting);
     NodeVal processData(const NodeVal &node, const NodeVal &starting);
-    NodeVal processCall(const NodeVal &node, const NodeVal &starting);
-    NodeVal processInvoke(const NodeVal &node, const NodeVal &starting);
-    NodeVal processFnc(const NodeVal &node, const NodeVal &starting);
-    NodeVal processMac(const NodeVal &node, const NodeVal &starting);
+    NodeVal processCall(const NodeVal &node, const NodeVal &starting); // TODO! improve error messages
+    NodeVal processInvoke(const NodeVal &node, const NodeVal &starting); // TODO! improve error messages
+    NodeVal processFnc(const NodeVal &node, const NodeVal &starting); // TODO! improve error messages
+    NodeVal processMac(const NodeVal &node, const NodeVal &starting); // TODO! improve error messages
     NodeVal processRet(const NodeVal &node);
     NodeVal processEval(const NodeVal &node);
     NodeVal processImport(const NodeVal &node, bool topmost);
     NodeVal processMessage(const NodeVal &node, const NodeVal &starting);
-    NodeVal processOper(const NodeVal &node, const NodeVal &starting, Oper op);
+    NodeVal processOper(const NodeVal &node, const NodeVal &starting, Oper op); // TODO! improve error messages
     NodeVal processTypeOf(const NodeVal &node);
     NodeVal processLenOf(const NodeVal &node);
     NodeVal processSizeOf(const NodeVal &node);
