@@ -100,7 +100,10 @@ llvm::Type* Compiler::genPrimTypePtr() {
 NodeVal Compiler::performLoad(CodeLoc codeLoc, VarId varId) {
     const SymbolTable::VarEntry &ref = symbolTable->getVar(varId);
 
-    if (!checkInLocalScope(codeLoc, true)) return NodeVal();
+    if (!checkInLocalScope(codeLoc, true)) {
+        msgs->hintGlobalCompiledLoad();
+        return NodeVal();
+    }
     if (!checkIsLlvmVal(codeLoc, ref.var, true)) return NodeVal();
 
     LlvmVal loadLlvmVal(ref.var.getLlvmVal().type);

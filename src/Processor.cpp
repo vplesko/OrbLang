@@ -1272,7 +1272,7 @@ NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) 
     optional<bool> attrError = getAttributeForBool(starting, "error");
     if (!attrError.has_value()) return NodeVal();
     if (attrWarning.value() && attrError.value()) {
-        msgs->errorUnknown(starting.getCodeLoc());
+        msgs->errorMessageMultiLevel(starting.getNonTypeAttrs().getCodeLoc());
         return NodeVal();
     }
 
@@ -1322,7 +1322,7 @@ NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) 
             msgs->userMessage(evalVal.str.value());
         } else {
             msgs->userMessageEnd();
-            msgs->errorUnknown(opers[i].getCodeLoc());
+            msgs->errorMessageBadType(opers[i].getCodeLoc(), evalVal.type);
             return NodeVal();
         }
     }
@@ -1409,7 +1409,7 @@ NodeVal Processor::processLenOf(const NodeVal &node) {
     } else if (checkIsEvalVal(operand, false) && EvalVal::isNonNullStr(operand.getEvalVal(), typeTable)) {
         len = LiteralVal::getStringLen(stringPool->get(operand.getEvalVal().str.value()));
     } else {
-        msgs->errorLenOfBadType(node.getCodeLoc());
+        msgs->errorLenOfBadType(node.getCodeLoc(), ty);
         return NodeVal();
     }
 

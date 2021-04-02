@@ -73,6 +73,7 @@ public:
     void hintUnescapeEscaped();
     void hintAttrGlobal();
     void hintDropFuncSig();
+    void hintGlobalCompiledLoad();
 
     void warnUnusedSpecial(CodeLoc loc, SpecialVal spec);
     void warnUnusedFunc(CodeLoc loc);
@@ -80,10 +81,13 @@ public:
 
     void errorInputFileNotFound(const std::string &path);
     void errorBadToken(CodeLoc loc);
+    void errorBadLiteral(CodeLoc loc);
     void errorUnclosedMultilineComment(CodeLoc loc);
     void errorImportNotString(CodeLoc loc);
     void errorImportNotFound(CodeLoc loc, const std::string &path);
     void errorImportCyclical(CodeLoc loc, const std::string &path);
+    void errorMessageMultiLevel(CodeLoc loc);
+    void errorMessageBadType(CodeLoc loc, TypeTable::Id ty);
     void errorUnexpectedTokenType(CodeLoc loc, Token see);
     void errorUnexpectedTokenType(CodeLoc loc, Token::Type exp, Token see);
     void errorUnexpectedKeyword(CodeLoc loc, Keyword keyw);
@@ -141,7 +145,7 @@ public:
     void errorBlockNotFound(CodeLoc loc, NamePool::Id name);
     void errorBlockNoPass(CodeLoc loc);
     void errorMemberIndex(CodeLoc loc);
-    void errorLenOfBadType(CodeLoc loc);
+    void errorLenOfBadType(CodeLoc loc, TypeTable::Id ty);
     void errorMissingTypeAttribute(CodeLoc loc);
     void errorMissingType(CodeLoc loc);
     void errorTypeCannotCompile(CodeLoc loc, TypeTable::Id ty);

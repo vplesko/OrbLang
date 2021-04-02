@@ -364,6 +364,10 @@ void CompilationMessages::hintDropFuncSig() {
     info("Drop functions must take a single argument of the type they are dropping, marked as 'noDrop'.");
 }
 
+void CompilationMessages::hintGlobalCompiledLoad() {
+    info("Compiled values cannot be loaded outside of functions. Consider using evaluated variables for this purpose.");
+}
+
 void CompilationMessages::warnUnusedSpecial(CodeLoc loc, SpecialVal spec) {
     optional<Keyword> k = getKeyword(spec.id);
 
@@ -395,7 +399,11 @@ void CompilationMessages::errorInputFileNotFound(const string &path) {
 }
 
 void CompilationMessages::errorBadToken(CodeLoc loc) {
-    error(loc, "Could not parse token at this location.");
+    error(loc, "Could not parse token.");
+}
+
+void CompilationMessages::errorBadLiteral(CodeLoc loc) {
+    error(loc, "Could not parse literal.");
 }
 
 void CompilationMessages::errorUnclosedMultilineComment(CodeLoc loc) {
@@ -415,6 +423,16 @@ void CompilationMessages::errorImportNotFound(CodeLoc loc, const string &path) {
 void CompilationMessages::errorImportCyclical(CodeLoc loc, const string &path) {
     stringstream ss;
     ss << "Importing the file '" << path << "' at this point introduced a cyclical dependency.";
+    error(loc, ss.str());
+}
+
+void CompilationMessages::errorMessageMultiLevel(CodeLoc loc) {
+    error(loc, "Attempted to set multiple message levels.");
+}
+
+void CompilationMessages::errorMessageBadType(CodeLoc loc, TypeTable::Id ty) {
+    stringstream ss;
+    ss << "Cannot print a message on values of type '" << errorStringOfType(ty) << "'.";
     error(loc, ss.str());
 }
 
@@ -669,8 +687,10 @@ void CompilationMessages::errorMemberIndex(CodeLoc loc) {
     error(loc, "Invalid member index.");
 }
 
-void CompilationMessages::errorLenOfBadType(CodeLoc loc) {
-    error(loc, "Cannot get length of this type. lenOf can operate on tuple, array, and raw types.");
+void CompilationMessages::errorLenOfBadType(CodeLoc loc, TypeTable::Id ty) {
+    stringstream ss;
+    ss << "Cannot get length of type '" << errorStringOfType(ty) << "'.";
+    error(loc, ss.str());
 }
 
 void CompilationMessages::errorExprIndexOnBadType(CodeLoc loc) {

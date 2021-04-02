@@ -193,7 +193,7 @@ Token Lexer::next() {
                 codeLocPointEnd.col += 1;
 
                 tok.type = Token::T_UNKNOWN;
-                msgs->errorUnknown({codeLocPoint, codeLocPointEnd});
+                msgs->errorBadLiteral({codeLocPoint, codeLocPointEnd});
                 return tok; // unclosed char literal error, so skip old token
             } else {
                 tok.type = Token::T_CHAR;
@@ -211,7 +211,7 @@ Token Lexer::next() {
                 codeLocPointEnd.col += 1;
 
                 tok.type = Token::T_UNKNOWN;
-                msgs->errorUnknown({codeLocPoint, codeLocPointEnd});
+                msgs->errorBadLiteral({codeLocPoint, codeLocPointEnd});
                 return tok; // unclosed string literal error, so skip old token
             } else {
                 tok.type = Token::T_STRING;
