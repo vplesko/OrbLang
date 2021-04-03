@@ -213,13 +213,12 @@ NodeVal Parser::parseNode(bool ignoreAttrs) {
         node.setCodeLoc(codeLoc);
     }
 
-    NodeVal::escape(node, typeTable, escapeScore);
-    escapeScore = 0;
-
     if (!ignoreAttrs) {
         parseTypeAttr(node);
         parseNonTypeAttrs(node);
     }
+
+    NodeVal::escape(node, typeTable, escapeScore);
 
     return node;
 }
