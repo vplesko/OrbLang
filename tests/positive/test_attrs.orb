@@ -41,14 +41,14 @@ fnc main () () {
 
     sym (p 15);
     block {
-        exit (== (attrOf \():i32 type) i32);
+        exit (== (attrOf \():,i32 type) i32);
         = p -1;
     };
     println_i32 p;
 
     = p 16;
     block {
-        exit (== (attrOf \():i32::foo type) i32);
+        exit (== (attrOf \():,i32::foo type) i32);
         = p -1;
     };
     println_i32 p;
@@ -79,4 +79,8 @@ fnc main () () {
     println_i32 (attrOf q foo);
 
     println_i32 (foo 0::((foo 23)));
+
+    attrOf ()::((a \badId)) a;
+    = p 24;
+    println_i32 (attrOf \()::((a ,p)) a);
 };

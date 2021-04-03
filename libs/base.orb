@@ -241,7 +241,7 @@ mac arr (ty::preprocess a::preprocess rest::(variadic preprocess)) {
     sym (arrTy (ty (lenOf elems)));
 
     # genSym not needed since only visible in inner code, and elements are preprocessed
-    sym (innerCode \{ (sym res:arrTy) });
+    sym (innerCode \{ (sym res:,arrTy) });
     range i (lenOf elems) {
         = innerCode (+ innerCode \{ (= ([] res ,i) ,(. elems i)) });
     };
@@ -265,17 +265,13 @@ mac tup (a::preprocess b::preprocess rest::(variadic preprocess)) {
     sym (tupTy (base.-tupType a b rest));
 
     # genSym not needed since only visible in inner code, and members are preprocessed
-    sym (innerCode \{ (sym res:tupTy) });
+    sym (innerCode \{ (sym res:,tupTy) });
     range i (lenOf membs) {
         = innerCode (+ innerCode \{ (= (. res ,i) ,(. membs i)) });
     };
     = innerCode (+ innerCode \{ (pass res) });
 
     ret \(block ,tupTy ,innerCode);
-};
-
-mac base.-makeErrorEntryLen (entry) {
-    ret \(message::(error (loc entry)) "Each entry must contain exactly two values - member name and initial value.");
 };
 
 mac make (ty::preprocess pair rest::variadic) {
@@ -287,7 +283,7 @@ mac make (ty::preprocess pair rest::variadic) {
         cast raw (. pairs i);
 
         if (!= (lenOf (. pairs i)) 2) {
-            ret \(base.-makeErrorEntryLen ,(. pairs i));
+            message::(error (loc (. pairs i))) "Each entry must contain exactly two values - member name and initial value.";
         };
 
         = innerCode (+ innerCode \{ (= (. ,inst ,(. pairs i 0)) ,(. pairs i 1)) });
@@ -325,10 +321,6 @@ eval (fnc base.-enumSizeName (enumTy:type) id {
     ret (+ \base.-enumSize (cast id enumTy));
 });
 
-mac base.-enumErrorEntryLen (entry) {
-    ret \(message::(error (loc entry)) "Each entry must be either an id or have exactly two values - name and initial value.");
-};
-
 mac base.-enumValsDecl (name enumTy::preprocess vals) {
     sym (code \(sym));
 
@@ -336,7 +328,7 @@ mac base.-enumValsDecl (name enumTy::preprocess vals) {
     range i (lenOf vals) {
         if (base.isRaw (. vals i)) {
             if (!= (lenOf (. vals i)) 2) {
-                ret \(base.-enumErrorEntryLen ,(. vals i));
+                message::(error (loc (. vals i))) "Each entry must be either an id or have exactly two values - name and initial value.";
             };
 
             cast id (. vals i 0);

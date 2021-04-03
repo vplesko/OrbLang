@@ -195,20 +195,36 @@ void NodeVal::escape(NodeVal &node, const TypeTable *typeTable, EscapeScore amou
                 escape(child, typeTable, amount);
             }
         }
+    } else if (node.isAttrMap()) {
+        for (auto &it : node.getAttrMap().attrMap) {
+            escape(*it.second, typeTable, amount);
+        }
     }
+
+    if (node.hasTypeAttr()) escape(node.getTypeAttr(), typeTable, amount);
+    if (node.hasNonTypeAttrs()) escape(node.getNonTypeAttrs(), typeTable, amount);
 }
 
-void NodeVal::unescape(NodeVal &node, const TypeTable *typeTable) {
+void NodeVal::unescape(NodeVal &node, const TypeTable *typeTable, bool total) {
     if (node.isLiteralVal()) {
-        node.getLiteralVal().escapeScore -= 1;
+        if (total) node.getLiteralVal().escapeScore = 0;
+        else node.getLiteralVal().escapeScore -= 1;
     } else if (node.isEvalVal()) {
         if (isRawVal(node, typeTable)) {
             for (auto it = node.getEvalVal().elems.rbegin(); it != node.getEvalVal().elems.rend(); ++it) {
-                unescape(*it, typeTable);
+                unescape(*it, typeTable, total);
             }
         }
-        node.getEvalVal().escapeScore -= 1;
+        if (total) node.getEvalVal().escapeScore = 0;
+        else node.getEvalVal().escapeScore -= 1;
+    } else if (node.isAttrMap()) {
+        for (auto &it : node.getAttrMap().attrMap) {
+            unescape(*it.second, typeTable, total);
+        }
     }
+
+    if (node.hasTypeAttr()) unescape(node.getTypeAttr(), typeTable, total);
+    if (node.hasNonTypeAttrs()) unescape(node.getNonTypeAttrs(), typeTable, total);
 }
 
 void NodeVal::clearInvokeArg(NodeVal &node, const TypeTable *typeTable) {

@@ -33,7 +33,8 @@ BOOL is true or false
 NULL is null
 
 \ increases escape score, , decreases it
-escaping of attrs is independent of escaping of node itself
+escaping of attrs follows escaping of node itself
+	non-type attrs are affected by escaping in values only
 if score is >0, considered to be escaped
 
 comments are # for single line, #$ ... $# for multiline
@@ -64,7 +65,7 @@ processing non-leaf:
 
 processing node:
 	if has attrs:
-		process attrs
+		process attrs, totally unescape if non-id literal
 	if empty or no children:
 		process as leaf
 	else:

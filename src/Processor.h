@@ -106,7 +106,7 @@ private:
     NodeVal processOperDot(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers);
     NodeVal processOperRegular(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op, bool bare);
 
-    bool processAttributes(NodeVal &node);
+    bool processAttributes(NodeVal &node, bool forceUnescape = false);
 protected:
     bool processChildNodes(const NodeVal &node);
 
