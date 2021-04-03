@@ -165,8 +165,8 @@ private:
     NodeVal processData(const NodeVal &node, const NodeVal &starting);
     NodeVal processCall(const NodeVal &node, const NodeVal &starting); // TODO! improve error messages
     NodeVal processInvoke(const NodeVal &node, const NodeVal &starting); // TODO! improve error messages
-    NodeVal processFnc(const NodeVal &node, const NodeVal &starting); // TODO! improve error messages
-    NodeVal processMac(const NodeVal &node, const NodeVal &starting); // TODO! improve error messages
+    NodeVal processFnc(const NodeVal &node, const NodeVal &starting);
+    NodeVal processMac(const NodeVal &node, const NodeVal &starting);
     NodeVal processRet(const NodeVal &node);
     NodeVal processEval(const NodeVal &node);
     NodeVal processImport(const NodeVal &node, bool topmost);

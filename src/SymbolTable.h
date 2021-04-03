@@ -94,11 +94,12 @@ public:
         }
     };
 
-    struct RegisterFuncPayload {
+    struct RegisterCallablePayload {
         enum class Kind {
             kSuccess,
-            kMacroSameName,
+            kOtherCallableTypeSameName,
             kNoNameMangleCollision,
+            kVariadicCollision,
             kCollision
         };
 
@@ -107,6 +108,7 @@ public:
         union {
             CodeLoc codeLocOther;
             FuncId funcId;
+            MacroId macroId;
         };
     };
 
@@ -147,13 +149,13 @@ public:
     bool isVarName(NamePool::Id name) const;
     std::optional<VarId> getVarId(NamePool::Id name) const;
 
-    RegisterFuncPayload registerFunc(const FuncValue &val);
+    RegisterCallablePayload registerFunc(const FuncValue &val);
     const FuncValue& getFunc(FuncId funcId) const;
     FuncValue& getFunc(FuncId funcId);
     bool isFuncName(NamePool::Id name) const;
     std::vector<FuncId> getFuncIds(NamePool::Id name) const;
 
-    std::optional<MacroId> registerMacro(const MacroValue &val, const TypeTable *typeTable);
+    RegisterCallablePayload registerMacro(const MacroValue &val, const TypeTable *typeTable);
     const MacroValue& getMacro(MacroId macroId) const;
     MacroValue& getMacro(MacroId macroId);
     bool isMacroName(NamePool::Id name) const;

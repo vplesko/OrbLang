@@ -403,6 +403,10 @@ void CompilationMessages::warnBlockNameIsType(CodeLoc loc, NamePool::Id name) {
     hintBlockSyntax();
 }
 
+void CompilationMessages::warnMacroArgTyped(CodeLoc loc) {
+    warning(loc, "Found a type attribute on a macro argument.");
+}
+
 void CompilationMessages::errorInputFileNotFound(const string &path) {
     stringstream ss;
     ss << "Input file " << path << " does not exists.";
@@ -550,10 +554,6 @@ void CompilationMessages::errorBadArraySize(CodeLoc loc, long int size) {
     error(loc, ss.str());
 }
 
-void CompilationMessages::errorNotLastParam(CodeLoc loc) {
-    error(loc, "No further parameters are allowed in this function signature.");
-}
-
 void CompilationMessages::errorNonUnOp(CodeLoc loc, Oper op) {
     error(loc, "Operation is not unary.");
 }
@@ -698,6 +698,32 @@ void CompilationMessages::errorMacroNameTaken(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Name '" << namePool->get(name) << "' was already taken and cannot be used for a macro.";
     error(loc, ss.str());
+}
+
+void CompilationMessages::errorMacroTypeBadArgNumber(CodeLoc loc) {
+    error(loc, "Argument number in a macro type was not a non-negative integer.");
+}
+
+void CompilationMessages::errorMacroArgAfterVariadic(CodeLoc loc) {
+    error(loc, "Found macro argument(s) after a variadic argument.");
+}
+
+void CompilationMessages::errorMacroArgPreprocessAndPlusEscape(CodeLoc loc) {
+    error(loc, "Macro argument set as both preprocess and plus-escape.");
+}
+
+void CompilationMessages::errorMacroCollision(CodeLoc loc, NamePool::Id name, CodeLoc codeLocOther) {
+    stringstream ss;
+    ss << "Collision with another macro of same name '" << namePool->get(name) << "'.";
+    error(loc, ss.str());
+    info(codeLocOther, "Other macro found here.");
+}
+
+void CompilationMessages::errorMacroCollisionVariadic(CodeLoc loc, NamePool::Id name, CodeLoc codeLocOther) {
+    stringstream ss;
+    ss << "Collision with another macro of same name '" << namePool->get(name) << "' due to ambiguity caused by variadic argument(s).";
+    error(loc, ss.str());
+    info(codeLocOther, "Other macro found here.");
 }
 
 void CompilationMessages::errorArgNameDuplicate(CodeLoc loc, NamePool::Id name) {

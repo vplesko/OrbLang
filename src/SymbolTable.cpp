@@ -145,11 +145,11 @@ optional<VarId> SymbolTable::getVarId(NamePool::Id name) const {
     return nullopt;
 }
 
-SymbolTable::RegisterFuncPayload SymbolTable::registerFunc(const FuncValue &val) {
+SymbolTable::RegisterCallablePayload SymbolTable::registerFunc(const FuncValue &val) {
     // cannot combine funcs and macros in overloading
     if (isMacroName(val.name)) {
-        RegisterFuncPayload ret;
-        ret.kind = RegisterFuncPayload::Kind::kMacroSameName;
+        RegisterCallablePayload ret;
+        ret.kind = RegisterCallablePayload::Kind::kOtherCallableTypeSameName;
         ret.codeLocOther = getMacro(getMacros(val.name).front()).codeLoc;
         return ret;
     }
@@ -157,9 +157,9 @@ SymbolTable::RegisterFuncPayload SymbolTable::registerFunc(const FuncValue &val)
     // funcs with no name mangling cannot be overloaded (note: variadic funcs are always noNameMangle)
     for (const auto &it : funcs[val.name]) {
         if ((val.noNameMangle || it.noNameMangle) && it.getTypeSig() != val.getTypeSig()) {
-            RegisterFuncPayload ret;
+            RegisterCallablePayload ret;
             ret.codeLocOther = it.codeLoc;
-            ret.kind = RegisterFuncPayload::Kind::kNoNameMangleCollision;
+            ret.kind = RegisterCallablePayload::Kind::kNoNameMangleCollision;
             return ret;
         }
     }
@@ -171,8 +171,8 @@ SymbolTable::RegisterFuncPayload SymbolTable::registerFunc(const FuncValue &val)
 
         if (val.getTypeSig() == it.getTypeSig()) {
             if (val.getType() != it.getType() || val.noNameMangle != it.noNameMangle || (val.defined && it.defined)) {
-                RegisterFuncPayload ret;
-                ret.kind = RegisterFuncPayload::Kind::kCollision;
+                RegisterCallablePayload ret;
+                ret.kind = RegisterCallablePayload::Kind::kCollision;
                 ret.codeLocOther = it.codeLoc;
                 return ret;
             }
@@ -193,8 +193,8 @@ SymbolTable::RegisterFuncPayload SymbolTable::registerFunc(const FuncValue &val)
         funcId.index = existing.value();
     }
 
-    RegisterFuncPayload ret;
-    ret.kind = RegisterFuncPayload::Kind::kSuccess;
+    RegisterCallablePayload ret;
+    ret.kind = RegisterCallablePayload::Kind::kSuccess;
     ret.funcId = funcId;
     return ret;
 }
@@ -226,13 +226,23 @@ vector<FuncId> SymbolTable::getFuncIds(NamePool::Id name) const {
     return ret;
 }
 
-optional<MacroId> SymbolTable::registerMacro(const MacroValue &val, const TypeTable *typeTable) {
+SymbolTable::RegisterCallablePayload SymbolTable::registerMacro(const MacroValue &val, const TypeTable *typeTable) {
     // cannot combine funcs and macros in overloading
-    if (isFuncName(val.name)) return nullopt;
+    if (isFuncName(val.name)) {
+        RegisterCallablePayload ret;
+        ret.kind = RegisterCallablePayload::Kind::kOtherCallableTypeSameName;
+        ret.codeLocOther = getFunc(getFuncIds(val.name).front()).codeLoc;
+        return ret;
+    }
 
     // cannot have more than one macro with the same sig (macros cannot be declared)
     for (const auto &it : macros[val.name]) {
-        if (val.getTypeSig() == it.getTypeSig()) return nullopt;
+        if (val.getTypeSig() == it.getTypeSig()) {
+            RegisterCallablePayload ret;
+            ret.kind = RegisterCallablePayload::Kind::kCollision;
+            ret.codeLocOther = it.codeLoc;
+            return ret;
+        }
     }
 
     // don't allow ambiguity in variadic args
@@ -243,7 +253,10 @@ optional<MacroId> SymbolTable::registerMacro(const MacroValue &val, const TypeTa
         if ((call.variadic && otherCall.variadic) ||
             (call.variadic && otherCall.getArgCnt() >= call.getArgCnt()-1) ||
             (otherCall.variadic && call.getArgCnt() >= otherCall.getArgCnt()-1)) {
-            return nullopt;
+            RegisterCallablePayload ret;
+            ret.kind = RegisterCallablePayload::Kind::kVariadicCollision;
+            ret.codeLocOther = it.codeLoc;
+            return ret;
         }
     }
 
@@ -252,7 +265,11 @@ optional<MacroId> SymbolTable::registerMacro(const MacroValue &val, const TypeTa
     MacroId macroId;
     macroId.name = val.name;
     macroId.index = macros[val.name].size()-1;
-    return macroId;
+
+    RegisterCallablePayload ret;
+    ret.kind = RegisterCallablePayload::Kind::kSuccess;
+    ret.macroId = macroId;
+    return ret;
 }
 
 const MacroValue& SymbolTable::getMacro(MacroId macroId) const {

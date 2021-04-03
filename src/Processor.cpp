@@ -1018,20 +1018,20 @@ NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
         if (!compiler->performFunctionDeclaration(node.getCodeLoc(), funcVal)) return NodeVal();
     }
 
-    SymbolTable::RegisterFuncPayload symbId = symbolTable->registerFunc(funcVal);
-    if (symbId.kind != SymbolTable::RegisterFuncPayload::Kind::kSuccess) {
+    SymbolTable::RegisterCallablePayload symbId = symbolTable->registerFunc(funcVal);
+    if (symbId.kind != SymbolTable::RegisterCallablePayload::Kind::kSuccess) {
         switch (symbId.kind) {
-        case SymbolTable::RegisterFuncPayload::Kind::kMacroSameName:
+        case SymbolTable::RegisterCallablePayload::Kind::kOtherCallableTypeSameName:
             msgs->errorFuncNameTaken(nameCodeLoc, name);
             break;
-        case SymbolTable::RegisterFuncPayload::Kind::kNoNameMangleCollision:
+        case SymbolTable::RegisterCallablePayload::Kind::kNoNameMangleCollision:
             msgs->errorFuncCollisionNoNameMangle(nameCodeLoc, name, symbId.codeLocOther);
             break;
-        case SymbolTable::RegisterFuncPayload::Kind::kCollision:
+        case SymbolTable::RegisterCallablePayload::Kind::kCollision:
             msgs->errorFuncCollision(nameCodeLoc, name, symbId.codeLocOther);
             break;
         default:
-            msgs->errorUnknown(nameCodeLoc);
+            msgs->errorInternal(nameCodeLoc);
             break;
         }
         return NodeVal();
@@ -1076,7 +1076,8 @@ NodeVal Processor::processMac(const NodeVal &node, const NodeVal &starting) {
         optional<bool> attrGlobal = getAttributeForBool(starting, "global");
         if (!attrGlobal.has_value()) return NodeVal();
 
-        if (!attrGlobal.value() && !checkInGlobalScope(node.getCodeLoc(), true)) {
+        if (!attrGlobal.value() && !checkInGlobalScope(starting.getCodeLoc(), true)) {
+            msgs->hintAttrGlobal();
             return NodeVal();
         }
     }
@@ -1109,12 +1110,13 @@ NodeVal Processor::processMac(const NodeVal &node, const NodeVal &starting) {
         const NodeVal &nodeArg = nodeArgs.getChild(i);
 
         if (variadic) {
-            msgs->errorNotLastParam(nodeArg.getCodeLoc());
+            msgs->errorMacroArgAfterVariadic(nodeArg.getCodeLoc());
             return NodeVal();
         }
 
         NodeVal arg = processWithEscapeAndCheckIsId(nodeArg);
         if (arg.isInvalid()) return NodeVal();
+        if (arg.hasTypeAttr()) msgs->warnMacroArgTyped(nodeArg.getCodeLoc());
 
         NamePool::Id argId = arg.getEvalVal().id;
         argNames.push_back(argId);
@@ -1124,7 +1126,7 @@ NodeVal Processor::processMac(const NodeVal &node, const NodeVal &starting) {
         optional<bool> isPlusEsc = getAttributeForBool(arg, "plusEscape");
         if (!isPlusEsc.has_value()) return NodeVal();
         if (isPreproc.value() && isPlusEsc.value()) {
-            msgs->errorUnknown(arg.getNonTypeAttrs().getCodeLoc());
+            msgs->errorMacroArgPreprocessAndPlusEscape(arg.getNonTypeAttrs().getCodeLoc());
             return NodeVal();
         }
         if (isPreproc.value()) argPreHandling.push_back(MacroValue::PREPROC);
@@ -1184,16 +1186,29 @@ NodeVal Processor::processMac(const NodeVal &node, const NodeVal &starting) {
             symbolTable->addVar(move(varEntry), true);
         }
 
-        optional<MacroId> symbId = symbolTable->registerMacro(macroVal, typeTable);
-        if (!symbId.has_value()) {
-            msgs->errorUnknown(node.getCodeLoc());
+        SymbolTable::RegisterCallablePayload symbId = symbolTable->registerMacro(macroVal, typeTable);
+        if (symbId.kind != SymbolTable::RegisterCallablePayload::Kind::kSuccess) {
+            switch (symbId.kind) {
+            case SymbolTable::RegisterCallablePayload::Kind::kOtherCallableTypeSameName:
+                msgs->errorMacroNameTaken(nameCodeLoc, name);
+                break;
+            case SymbolTable::RegisterCallablePayload::Kind::kCollision:
+                msgs->errorMacroCollision(nameCodeLoc, name, symbId.codeLocOther);
+                break;
+            case SymbolTable::RegisterCallablePayload::Kind::kVariadicCollision:
+                msgs->errorMacroCollisionVariadic(nameCodeLoc, name, symbId.codeLocOther);
+                break;
+            default:
+                msgs->errorInternal(nameCodeLoc);
+                break;
+            }
             return NodeVal();
         }
-        MacroValue &symbVal = symbolTable->getMacro(symbId.value());
+        MacroValue &symbVal = symbolTable->getMacro(symbId.macroId);
 
         if (!evaluator->performMacroDefinition(node.getCodeLoc(), nodeArgs, *nodeBodyPtr, symbVal)) return NodeVal();
 
-        return evaluator->performLoad(node.getCodeLoc(), symbId.value());
+        return evaluator->performLoad(node.getCodeLoc(), symbId.macroId);
     } else {
         return promoteType(node.getCodeLoc(), type);
     }
@@ -2356,13 +2371,11 @@ NodeVal Processor::processMacType(const NodeVal &node) {
     // argument number
     NodeVal nodeArgNum = processNode(node.getChild(indArgNum));
     if (nodeArgNum.isInvalid()) return NodeVal();
-    if (!nodeArgNum.isEvalVal()) {
-        msgs->errorUnknown(nodeArgNum.getCodeLoc());
-        return NodeVal();
-    }
+    if (!checkIsEvalVal(nodeArgNum, true)) return NodeVal();
+
     optional<uint64_t> argNum = EvalVal::getValueNonNeg(nodeArgNum.getEvalVal(), typeTable);
     if (!argNum.has_value()) {
-        msgs->errorUnknown(nodeArgNum.getCodeLoc());
+        msgs->errorMacroTypeBadArgNumber(nodeArgNum.getCodeLoc());
         return NodeVal();
     }
     optional<bool> variadic = getAttributeForBool(nodeArgNum, "variadic");

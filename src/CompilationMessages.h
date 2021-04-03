@@ -80,6 +80,7 @@ public:
     void warnUnusedFunc(CodeLoc loc);
     void warnUnusedMacro(CodeLoc loc);
     void warnBlockNameIsType(CodeLoc loc, NamePool::Id name);
+    void warnMacroArgTyped(CodeLoc loc);
 
     void errorInputFileNotFound(const std::string &path);
     void errorBadToken(CodeLoc loc);
@@ -108,7 +109,6 @@ public:
     void errorInvalidTypeArg(CodeLoc loc);
     void errorUndefType(CodeLoc loc, TypeTable::Id ty);
     void errorBadArraySize(CodeLoc loc, long int size);
-    void errorNotLastParam(CodeLoc loc);
     void errorNonUnOp(CodeLoc loc, Oper op);
     void errorNonBinOp(CodeLoc loc, Oper op);
     void errorNameTaken(CodeLoc loc, NamePool::Id name);
@@ -148,6 +148,11 @@ public:
     void errorFuncCollision(CodeLoc loc, NamePool::Id name, CodeLoc codeLocOther);
     void errorFuncNotEvalOrCompiled(CodeLoc loc);
     void errorMacroNameTaken(CodeLoc loc, NamePool::Id name);
+    void errorMacroTypeBadArgNumber(CodeLoc loc);
+    void errorMacroArgAfterVariadic(CodeLoc loc);
+    void errorMacroArgPreprocessAndPlusEscape(CodeLoc loc);
+    void errorMacroCollision(CodeLoc loc, NamePool::Id name, CodeLoc codeLocOther);
+    void errorMacroCollisionVariadic(CodeLoc loc, NamePool::Id name, CodeLoc codeLocOther);
     void errorArgNameDuplicate(CodeLoc loc, NamePool::Id name);
     void errorFuncNotFound(CodeLoc loc, NamePool::Id name);
     void errorMacroNotFound(CodeLoc loc, NamePool::Id name);
