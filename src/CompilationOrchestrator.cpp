@@ -227,7 +227,7 @@ ImportTransRes followImport(
 bool CompilationOrchestrator::process(const ProgramArgs &args) {
     if (args.inputsSrc.empty()) return true;
 
-    if (args.optLvl.has_value()) compiler->setOptLevel(args.optLvl.value());
+    compiler->setArgs(args);
 
     Parser par(stringPool.get(), typeTable.get(), msgs.get());
 

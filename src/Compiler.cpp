@@ -64,8 +64,9 @@ bool Compiler::binary(const std::string &filename) {
     return true;
 }
 
-void Compiler::setOptLevel(unsigned lvl) {
-    llvmPmb->OptLevel = lvl;
+void Compiler::setArgs(const ProgramArgs &args) {
+    if (args.optLvl.has_value()) llvmPmb->OptLevel = args.optLvl.value();
+    link = args.link;
 }
 
 llvm::Type* Compiler::genPrimTypeBool() {
@@ -355,13 +356,17 @@ bool Compiler::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
             return false;
         }
 
-        func.llvmFunc = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage, funcLlvmName.value(), llvmModule.get());
+        func.llvmFunc = llvm::Function::Create(llvmFuncType, llvm::Function::LinkageTypes::ExternalLinkage, funcLlvmName.value(), llvmModule.get());
     }
 
     return true;
 }
 
 bool Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) {
+    if (link && !isMeaningful(func.name, Meaningful::MAIN)) {
+        func.llvmFunc->setLinkage(llvm::Function::LinkageTypes::PrivateLinkage);
+    }
+
     BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(func, typeTable));
 
     const TypeTable::Callable &callable = FuncValue::getCallable(func, typeTable);

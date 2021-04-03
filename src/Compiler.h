@@ -2,6 +2,7 @@
 
 #include <string>
 #include "Processor.h"
+#include "ProgramArgs.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
@@ -15,6 +16,7 @@ class Compiler : public Processor {
     std::unique_ptr<llvm::PassManagerBuilder> llvmPmb;
     std::unique_ptr<llvm::legacy::FunctionPassManager> llvmFpm;
     llvm::TargetMachine *targetMachine;
+    bool link = false;
 
     bool initLlvmTargetMachine();
 
@@ -87,7 +89,7 @@ public:
     llvm::Type* genPrimTypeF64();
     llvm::Type* genPrimTypePtr();
 
-    void setOptLevel(unsigned lvl);
+    void setArgs(const ProgramArgs &args);
 
     void printout(const std::string &filename) const;
     bool binary(const std::string &filename);
