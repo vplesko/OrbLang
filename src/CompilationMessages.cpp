@@ -104,6 +104,10 @@ string CompilationMessages::errorStringOfKeyword(Keyword k) const {
     return namePool->get(getKeywordNameId(k));
 }
 
+string CompilationMessages::errorStringOfOper(Oper op) const {
+    return namePool->get(getOperNameId(op));
+}
+
 string CompilationMessages::errorStringOfType(TypeTable::Id ty) const {
     string fallback("<unknown>");
 
@@ -365,11 +369,19 @@ void CompilationMessages::hintDropFuncSig() {
 }
 
 void CompilationMessages::hintGlobalCompiledLoad() {
-    info("Compiled values cannot be loaded outside of functions. Consider using evaluated variables for this purpose.");
+    info("Compiled values cannot be loaded outside of functions. Consider using evaluated symbols for this purpose.");
 }
 
 void CompilationMessages::hintBlockSyntax() {
     info("When defining a block provide either the passed type; or block name and passed type; or neither. Both can be replaced with an empty raw value.");
+}
+
+void CompilationMessages::hintIndexTempOwning() {
+    info("Cannot get owning elements of an array that is about to be dropped. Consider storing this array in a symbol first.");
+}
+
+void CompilationMessages::hintDotTempOwning() {
+    info("Cannot get owning members of a tuple or data that is about to be dropped. Consider storing this value in a symbol first.");
 }
 
 void CompilationMessages::warnUnusedSpecial(CodeLoc loc, SpecialVal spec) {
@@ -555,11 +567,15 @@ void CompilationMessages::errorBadArraySize(CodeLoc loc, long int size) {
 }
 
 void CompilationMessages::errorNonUnOp(CodeLoc loc, Oper op) {
-    error(loc, "Operation is not unary.");
+    stringstream ss;
+    ss << "Operation '" << errorStringOfOper(op) << "' is not unary.";
+    error(loc, ss.str());
 }
 
 void CompilationMessages::errorNonBinOp(CodeLoc loc, Oper op) {
-    error(loc, "Operation is not binary.");
+    stringstream ss;
+    ss << "Operation '" << errorStringOfOper(op) << "' is not binary.";
+    error(loc, ss.str());
 }
 
 void CompilationMessages::errorNameTaken(CodeLoc loc, NamePool::Id name) {
@@ -576,7 +592,7 @@ void CompilationMessages::errorSymCnNoInit(CodeLoc loc, NamePool::Id name) {
 
 void CompilationMessages::errorSymGlobalOwning(CodeLoc loc, NamePool::Id name, TypeTable::Id ty) {
     stringstream ss;
-    ss << "Attempted to declare a global owning variable '" << namePool->get(name) << "', of type '" << errorStringOfType(ty) << "'.";
+    ss << "Attempted to declare a global owning symbol '" << namePool->get(name) << "', of type '" << errorStringOfType(ty) << "'.";
     error(loc, ss.str());
 }
 
@@ -602,8 +618,22 @@ void CompilationMessages::errorExprCannotPromote(CodeLoc loc, TypeTable::Id into
     error(loc, ss.str());
 }
 
-void CompilationMessages::errorExprEvalBinBadOp(CodeLoc loc) {
-    error(loc, "Binary operation is not defined for evaluation values of this type.");
+void CompilationMessages::errorExprBadOps(CodeLoc loc, Oper op, bool unary, TypeTable::Id ty, bool eval) {
+    stringstream ss;
+    ss << (unary ? "Unary" : "Binary") << " operation '" << errorStringOfOper(op) << "' is not defined for" << (eval ? " evaluated" : "") << " operands of type '" << errorStringOfType(ty) << "'.";
+    error(loc, ss.str());
+}
+
+void CompilationMessages::errorExprBinDivByZero(CodeLoc loc) {
+    error(loc, "Attempted division by zero.");
+}
+
+void CompilationMessages::errorExprCmpNeArgNum(CodeLoc loc) {
+    error(loc, "Attempted to use '!=' operator on more than two operands.");
+}
+
+void CompilationMessages::errorExprAddrOfNonRef(CodeLoc loc) {
+    error(loc, "Attempted to get a pointer to non-ref value.");
 }
 
 void CompilationMessages::errorExprCannotCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into) {
@@ -819,22 +849,28 @@ void CompilationMessages::errorExprIndexOutOfBounds(CodeLoc loc) {
     error(loc, "Attempted to index out of bounds of the array.");
 }
 
+void CompilationMessages::errorExprDotOnBadType(CodeLoc loc, TypeTable::Id ty) {
+    stringstream ss;
+    ss << "Cannot get members on type '" << errorStringOfType(ty) << "'.";
+    error(loc, ss.str());
+}
+
 void CompilationMessages::errorExprDerefOnBadType(CodeLoc loc, TypeTable::Id ty) {
     stringstream ss;
     ss << "Cannot dereference on type '" << errorStringOfType(ty) << "'.";
     error(loc, ss.str());
 }
 
-void CompilationMessages::errorExprAddressOfNoRef(CodeLoc loc) {
-    error(loc, "Cannot take address of non ref values.");
+void CompilationMessages::errorExprDerefNull(CodeLoc loc) {
+    error(loc, "Attempted to dereference a null pointer.");
 }
 
 void CompilationMessages::errorExprIndexNotIntegral(CodeLoc loc) {
     error(loc, "Index must be of integer or unsigned type.");
 }
 
-void CompilationMessages::errorExprUnBadType(CodeLoc loc) {
-    error(loc, "Unary operation is not allowed on this value.");
+void CompilationMessages::errorExprIndexNull(CodeLoc loc) {
+    error(loc, "Attempted to index a null array pointer.");
 }
 
 void CompilationMessages::errorExprUnOnNull(CodeLoc loc) {
@@ -851,6 +887,18 @@ void CompilationMessages::errorExprAsgnOnCn(CodeLoc loc) {
 
 void CompilationMessages::errorExprDotInvalidBase(CodeLoc loc) {
     error(loc, "Invalid expression on left side of dot operator.");
+}
+
+void CompilationMessages::errorExprMoveNoDrop(CodeLoc loc) {
+    error(loc, "Attempted to move a value marked as 'noDrop'.");
+}
+
+void CompilationMessages::errorExprMoveInvokeArg(CodeLoc loc) {
+    error(loc, "Attempted to move an invocation argument.");
+}
+
+void CompilationMessages::errorExprMoveCn(CodeLoc loc) {
+    error(loc, "Attempted to move a constant value.");
 }
 
 void CompilationMessages::errorMissingTypeAttribute(CodeLoc loc) {

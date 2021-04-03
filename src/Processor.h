@@ -37,8 +37,8 @@ protected:
     virtual bool performExit(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) =0;
     virtual bool performLoop(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) =0;
     virtual bool performPass(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &val) =0;
-    virtual NodeVal performCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args) =0;
-    virtual NodeVal performCall(CodeLoc codeLoc, FuncId funcId, const std::vector<NodeVal> &args) =0;
+    virtual NodeVal performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, const NodeVal &func, const std::vector<NodeVal> &args) =0;
+    virtual NodeVal performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId funcId, const std::vector<NodeVal> &args) =0;
     virtual NodeVal performInvoke(CodeLoc codeLoc, MacroId macroId, const std::vector<NodeVal> &args) =0;
     virtual bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) =0;
     virtual bool performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) =0;
@@ -129,8 +129,8 @@ private:
     bool implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly);
     bool shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id dstTypeId) const;
     bool implicitCastArgsAndVerifyCallOk(CodeLoc codeLoc, std::vector<NodeVal> &args, const TypeTable::Callable &callable);
-    NodeVal dispatchCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args, bool allArgsEval);
-    NodeVal dispatchCall(CodeLoc codeLoc, FuncId funcId, const std::vector<NodeVal> &args, bool allArgsEval);
+    NodeVal dispatchCall(CodeLoc codeLoc, CodeLoc codeLocFunc, const NodeVal &func, const std::vector<NodeVal> &args, bool allArgsEval);
+    NodeVal dispatchCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId funcId, const std::vector<NodeVal> &args, bool allArgsEval);
     NodeVal dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
     NodeVal dispatchAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs);
     NodeVal getElement(CodeLoc codeLoc, NodeVal &array, std::size_t index);
@@ -171,7 +171,7 @@ private:
     NodeVal processEval(const NodeVal &node);
     NodeVal processImport(const NodeVal &node, bool topmost);
     NodeVal processMessage(const NodeVal &node, const NodeVal &starting);
-    NodeVal processOper(const NodeVal &node, const NodeVal &starting, Oper op); // TODO! improve error messages
+    NodeVal processOper(const NodeVal &node, const NodeVal &starting, Oper op);
     NodeVal processTypeOf(const NodeVal &node);
     NodeVal processLenOf(const NodeVal &node);
     NodeVal processSizeOf(const NodeVal &node);

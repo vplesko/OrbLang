@@ -769,7 +769,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
 
         if (!implicitCastArgsAndVerifyCallOk(node.getCodeLoc(), args, *callable)) return NodeVal();
 
-        ret = dispatchCall(starting.getCodeLoc(), funcId.value(), args, allArgsEval);
+        ret = dispatchCall(node.getCodeLoc(), starting.getCodeLoc(), funcId.value(), args, allArgsEval);
     } else {
         if (!starting.getType().has_value()) {
             msgs->errorInternal(node.getCodeLoc());
@@ -789,7 +789,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
 
         if (!implicitCastArgsAndVerifyCallOk(node.getCodeLoc(), args, *callable)) return NodeVal();
 
-        ret = dispatchCall(starting.getCodeLoc(), starting, args, allArgsEval);
+        ret = dispatchCall(node.getCodeLoc(), starting.getCodeLoc(), starting, args, allArgsEval);
     }
 
     if (ret.isInvalid()) return NodeVal();
@@ -1414,15 +1414,15 @@ NodeVal Processor::processOper(const NodeVal &node, const NodeVal &starting, Ope
     }
     
     if (operInfo.comparison) {
-        return processOperComparison(node.getCodeLoc(), operands, op);
+        return processOperComparison(starting.getCodeLoc(), operands, op);
     } else if (op == Oper::ASGN) {
-        return processOperAssignment(node.getCodeLoc(), operands);
+        return processOperAssignment(starting.getCodeLoc(), operands);
     } else if (op == Oper::IND) {
-        return processOperIndex(node.getCodeLoc(), operands);
+        return processOperIndex(starting.getCodeLoc(), operands);
     } else if (op == Oper::DOT) {
-        return processOperDot(node.getCodeLoc(), operands);
+        return processOperDot(starting.getCodeLoc(), operands);
     } else {
-        return processOperRegular(node.getCodeLoc(), operands, op, attrBare.value());
+        return processOperRegular(starting.getCodeLoc(), operands, op, attrBare.value());
     }
 }
 
@@ -1854,21 +1854,21 @@ bool Processor::implicitCastArgsAndVerifyCallOk(CodeLoc codeLoc, vector<NodeVal>
     return true;
 }
 
-NodeVal Processor::dispatchCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args, bool allArgsEval) {
+NodeVal Processor::dispatchCall(CodeLoc codeLoc, CodeLoc codeLocFunc, const NodeVal &func, const std::vector<NodeVal> &args, bool allArgsEval) {
     if (func.isEvalVal() && allArgsEval) {
-        return evaluator->performCall(codeLoc, func, args);
+        return evaluator->performCall(codeLoc, codeLocFunc, func, args);
     } else {
-        return performCall(codeLoc, func, args);
+        return performCall(codeLoc, codeLocFunc, func, args);
     }
 }
 
-NodeVal Processor::dispatchCall(CodeLoc codeLoc, FuncId funcId, const std::vector<NodeVal> &args, bool allArgsEval) {
+NodeVal Processor::dispatchCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId funcId, const std::vector<NodeVal> &args, bool allArgsEval) {
     const FuncValue &func = symbolTable->getFunc(funcId);
 
     if (func.isEval() && allArgsEval) {
-        return evaluator->performCall(codeLoc, funcId, args);
+        return evaluator->performCall(codeLoc, codeLocFunc, funcId, args);
     } else {
-        return performCall(codeLoc, funcId, args);
+        return performCall(codeLoc, codeLocFunc, funcId, args);
     }
 }
 
@@ -1877,7 +1877,7 @@ NodeVal Processor::dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) 
 
     optional<TypeTable::Id> resTy = typeTable->addTypeDerefOf(oper.getType().value());
     if (!resTy.has_value()) {
-        msgs->errorUnknown(codeLoc);
+        msgs->errorExprDerefOnBadType(codeLoc, oper.getType().value());
         return NodeVal();
     }
     if (!checkIsNotUndefType(codeLoc, resTy.value(), true)) return NodeVal();
@@ -2045,8 +2045,12 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node, const NodeVal &val
 NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal &val) {
     if (!checkHasType(val, true)) return NodeVal();
 
-    if (val.isNoDrop() || val.isInvokeArg()) {
-        msgs->errorUnknown(codeLoc);
+    if (val.isNoDrop()) {
+        msgs->errorExprMoveNoDrop(codeLoc);
+        return NodeVal();
+    }
+    if (val.isInvokeArg()) {
+        msgs->errorExprMoveInvokeArg(codeLoc);
         return NodeVal();
     }
 
@@ -2055,7 +2059,7 @@ NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal &val) {
     TypeTable::Id valTy = val.getType().value();
 
     if (typeTable->worksAsTypeCn(valTy)) {
-        msgs->errorUnknown(codeLoc);
+        msgs->errorExprMoveCn(codeLoc);
         return NodeVal();
     }
 
@@ -2167,7 +2171,7 @@ bool Processor::callDropFunc(CodeLoc codeLoc, NodeVal val) {
 
             bool isEval = checkIsEvalVal(afterCast, false);
 
-            if (dispatchCall(codeLoc, *dropFunc, {move(afterCast)}, isEval).isInvalid()) return false;
+            if (dispatchCall(codeLoc, codeLoc, *dropFunc, {move(afterCast)}, isEval).isInvalid()) return false;
         }
 
         size_t len = typeTable->extractLenOfDataType(valTy).value();
@@ -2434,7 +2438,7 @@ NodeVal Processor::processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper o
 
 NodeVal Processor::processOperComparison(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op) {
     if (op == Oper::NE && opers.size() > 2) {
-        msgs->errorUnknown(codeLoc);
+        msgs->errorExprCmpNeArgNum(codeLoc);
         return NodeVal();
     }
 
@@ -2534,13 +2538,17 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
 
 NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
     // value kept so drop can be called
-    NodeVal base = processAndCheckHasType(*opers[0]);
+    NodeVal base = processNode(*opers[0]);
     if (base.isInvalid()) return NodeVal();
 
     NodeVal lhs = base;
 
     for (size_t i = 1; i < opers.size(); ++i) {
-        if (!lhs.hasRef() && !checkNotNeedsDrop(lhs.getCodeLoc(), lhs, true)) return NodeVal();
+        if (!checkHasType(lhs, true)) return NodeVal();
+        if (!lhs.hasRef() && !checkNotNeedsDrop(lhs.getCodeLoc(), lhs, true)) {
+            msgs->hintIndexTempOwning();
+            return NodeVal();
+        }
 
         TypeTable::Id baseType = lhs.getType().value();
 
@@ -2569,13 +2577,17 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
 
 NodeVal Processor::processOperDot(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
     // value kept so drop can be called
-    NodeVal base = processAndCheckHasType(*opers[0]);
+    NodeVal base = processNode(*opers[0]);
     if (base.isInvalid()) return NodeVal();
 
     NodeVal lhs = base;
 
     for (size_t i = 1; i < opers.size(); ++i) {
-        if (!lhs.hasRef() && !checkNotNeedsDrop(lhs.getCodeLoc(), lhs, true)) return NodeVal();
+        if (!checkHasType(lhs, true)) return NodeVal();
+        if (!lhs.hasRef() && !checkNotNeedsDrop(lhs.getCodeLoc(), lhs, true)) {
+            msgs->hintDotTempOwning();
+            return NodeVal();
+        }
 
         TypeTable::Id baseType = lhs.getType().value();
         bool isBaseRaw = NodeVal::isRawVal(lhs, typeTable);
@@ -2595,7 +2607,7 @@ NodeVal Processor::processOperDot(CodeLoc codeLoc, const std::vector<const NodeV
         } else if (isBaseData) {
             baseLen = typeTable->extractLenOfDataType(baseType).value();
         } else {
-            msgs->errorUnknown(lhs.getCodeLoc());
+            msgs->errorExprDotOnBadType(lhs.getCodeLoc(), lhs.getType().value());
             return NodeVal();
         }
 
@@ -2613,7 +2625,7 @@ NodeVal Processor::processOperDot(CodeLoc codeLoc, const std::vector<const NodeV
                 NamePool::Id indexName = index.getEvalVal().id;
                 optional<uint64_t> indexValOpt = typeTable->extractDataType(baseType)->getMembInd(indexName);
                 if (!indexValOpt.has_value()) {
-                    msgs->errorUnknown(index.getCodeLoc());
+                    msgs->errorMemberIndex(index.getCodeLoc());
                     return NodeVal();
                 }
                 indexVal = indexValOpt.value();
@@ -2672,7 +2684,7 @@ NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const N
         if (!implicitCastOperands(lhs, rhs, false)) return NodeVal();
 
         if (op == Oper::DIV && rhs.isEvalVal() && EvalVal::isZero(rhs.getEvalVal(), typeTable)) {
-            msgs->errorUnknown(rhs.getCodeLoc());
+            msgs->errorExprBinDivByZero(rhs.getCodeLoc());
             return NodeVal();
         }
 

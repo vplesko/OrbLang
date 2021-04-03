@@ -88,6 +88,15 @@ optional<Oper> getOper(NamePool::Id name) {
     return loc->second;
 }
 
+NamePool::Id getOperNameId(Oper o) {
+    for (const auto &it : opers) {
+        if (it.second == o) return it.first;
+    }
+
+    assert(false && "getOperNameId failed to find!");
+    return NamePool::Id();
+}
+
 bool isOper(NamePool::Id name, Oper o) {
     optional<Oper> opt = getOper(name);
     return opt.has_value() && opt.value() == o;

@@ -1,0 +1,5 @@
+fnc main () () {
+    eval (sym t:(i32 i32));
+    eval (sym (r \(,t)));
+    . r 0 0 0;
+};

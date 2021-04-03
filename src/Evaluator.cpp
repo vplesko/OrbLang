@@ -147,35 +147,35 @@ bool Evaluator::performPass(CodeLoc codeLoc, SymbolTable::Block block, const Nod
     throw ex;
 }
 
-NodeVal Evaluator::performCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args) {
+NodeVal Evaluator::performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, const NodeVal &func, const std::vector<NodeVal> &args) {
     if (!checkIsEvalVal(func, true)) return NodeVal();
     if (!func.getEvalVal().f.has_value()) {
-        msgs->errorFuncNoValue(codeLoc);
+        msgs->errorFuncNoValue(codeLocFunc);
         return NodeVal();
     }
 
-    return performCall(codeLoc, *func.getEvalVal().f, args);
+    return performCall(codeLoc, codeLocFunc, *func.getEvalVal().f, args);
 }
 
-NodeVal Evaluator::performCall(CodeLoc codeLoc, FuncId funcId, const std::vector<NodeVal> &args) {
+NodeVal Evaluator::performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId funcId, const std::vector<NodeVal> &args) {
     const FuncValue &func = symbolTable->getFunc(funcId);
 
-    if (!checkIsEvalFunc(codeLoc, func, true)) return NodeVal();
+    if (!checkIsEvalFunc(codeLocFunc, func, true)) return NodeVal();
 
     for (const NodeVal &arg : args) {
         if (!checkIsEvalVal(arg, true)) return NodeVal();
     }
 
     if (!func.defined) {
-        msgs->errorFuncNoDef(codeLoc);
+        msgs->errorFuncNoDef(codeLocFunc);
         return NodeVal();
     }
     if (!func.evalFunc.has_value()) {
-        msgs->errorInternal(codeLoc);
+        msgs->errorInternal(codeLocFunc);
         return NodeVal();
     }
     if (func.evalFunc.value().isInvalid()) {
-        msgs->errorInternal(codeLoc);
+        msgs->errorInternal(codeLocFunc);
         return NodeVal();
     }
 
@@ -352,11 +352,14 @@ NodeVal Evaluator::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper o
             evalVal = EvalVal::makeVal(typeTable->addTypeAddrOf(ty), typeTable);
             evalVal.p = oper.getEvalVal().ref;
             success = true;
+        } else {
+            msgs->errorExprAddrOfNonRef(codeLoc);
+            errorGiven = true;
         }
     }
 
     if (!success) {
-        if (!errorGiven) msgs->errorExprUnBadType(codeLoc);
+        if (!errorGiven) msgs->errorExprBadOps(codeLoc, op, true, oper.getType().value(), true);
         return NodeVal();
     }
 
@@ -367,7 +370,7 @@ NodeVal Evaluator::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper, T
     if (!checkIsEvalVal(oper, true)) return NodeVal();
 
     if (EvalVal::isNull(oper.getEvalVal(), typeTable)) {
-        msgs->errorUnknown(oper.getCodeLoc());
+        msgs->errorExprDerefNull(codeLoc);
         return NodeVal();
     }
 
@@ -586,7 +589,7 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
         break;
     }
 
-    msgs->errorExprEvalBinBadOp(codeLoc);
+    msgs->errorExprBadOps(rhs.getCodeLoc(), op, false, lhs.getType().value(), true);
     return nullopt;
 }
 
@@ -631,7 +634,7 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVa
         return nodeVal;
     } else if (typeTable->worksAsTypeStr(base.getType().value())) {
         if (!base.getEvalVal().str.has_value()) {
-            msgs->errorUnknown(codeLoc);
+            msgs->errorExprIndexNull(codeLoc);
             return NodeVal();
         }
         StringPool::Id strId = base.getEvalVal().str.value();
@@ -646,7 +649,7 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVa
         evalVal.c8 = str[index.value()];
         return NodeVal(base.getCodeLoc(), move(evalVal));
     } else if (typeTable->worksAsTypeArrP(base.getType().value())) {
-        msgs->errorUnknown(codeLoc);
+        msgs->errorExprIndexNull(codeLoc);
         return NodeVal();
     } else {
         msgs->errorInternal(codeLoc);
@@ -814,7 +817,7 @@ NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const
     }
 
     if (!success) {
-        if (!errorGiven) msgs->errorExprEvalBinBadOp(codeLoc);
+        if (!errorGiven) msgs->errorExprBadOps(rhs.getCodeLoc(), op, false, lhs.getType().value(), true);
         return NodeVal();
     }
 

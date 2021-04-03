@@ -44,6 +44,7 @@ private:
     std::string errorStringOfTokenType(Token::Type tokTy) const;
     std::string errorStringOfToken(Token tok) const;
     std::string errorStringOfKeyword(Keyword k) const;
+    std::string errorStringOfOper(Oper op) const;
     std::string errorStringOfType(TypeTable::Id ty) const;
 
 public:
@@ -75,6 +76,8 @@ public:
     void hintDropFuncSig();
     void hintGlobalCompiledLoad();
     void hintBlockSyntax();
+    void hintIndexTempOwning();
+    void hintDotTempOwning();
 
     void warnUnusedSpecial(CodeLoc loc, SpecialVal spec);
     void warnUnusedFunc(CodeLoc loc);
@@ -118,21 +121,28 @@ public:
     void errorCnNoInit(CodeLoc loc, NamePool::Id name);
     void errorExprCannotPromote(CodeLoc loc);
     void errorExprCannotPromote(CodeLoc loc, TypeTable::Id into);
-    void errorExprEvalBinBadOp(CodeLoc loc);
+    void errorExprBadOps(CodeLoc loc, Oper op, bool unary, TypeTable::Id ty, bool eval);
+    void errorExprBinDivByZero(CodeLoc loc);
+    void errorExprCmpNeArgNum(CodeLoc loc);
+    void errorExprAddrOfNonRef(CodeLoc loc);
     void errorExprCannotCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into);
     void errorExprCannotImplicitCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into);
     void errorExprCannotImplicitCastEither(CodeLoc loc, TypeTable::Id ty1, TypeTable::Id ty2);
     void errorExprIndexOnBadType(CodeLoc loc);
     void errorExprIndexOnBadType(CodeLoc loc, TypeTable::Id ty);
     void errorExprIndexOutOfBounds(CodeLoc loc);
+    void errorExprDotOnBadType(CodeLoc loc, TypeTable::Id ty);
     void errorExprDerefOnBadType(CodeLoc loc, TypeTable::Id ty);
-    void errorExprAddressOfNoRef(CodeLoc loc);
+    void errorExprDerefNull(CodeLoc loc);
     void errorExprIndexNotIntegral(CodeLoc loc);
-    void errorExprUnBadType(CodeLoc loc);
+    void errorExprIndexNull(CodeLoc loc);
     void errorExprUnOnNull(CodeLoc loc);
     void errorExprAsgnNonRef(CodeLoc loc);
     void errorExprAsgnOnCn(CodeLoc loc);
     void errorExprDotInvalidBase(CodeLoc loc);
+    void errorExprMoveNoDrop(CodeLoc loc);
+    void errorExprMoveInvokeArg(CodeLoc loc);
+    void errorExprMoveCn(CodeLoc loc);
     void errorExitNowhere(CodeLoc loc);
     void errorExitPassingBlock(CodeLoc loc);
     void errorPassNonPassingBlock(CodeLoc loc);

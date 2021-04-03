@@ -290,8 +290,8 @@ bool Compiler::performPass(CodeLoc codeLoc, SymbolTable::Block block, const Node
     return true;
 }
 
-NodeVal Compiler::performCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args) {
-    if (!checkInLocalScope(codeLoc, true)) return NodeVal();
+NodeVal Compiler::performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, const NodeVal &func, const std::vector<NodeVal> &args) {
+    if (!checkInLocalScope(codeLocFunc, true)) return NodeVal();
 
     NodeVal funcPromo = promoteIfEvalValAndCheckIsLlvmVal(func, true);
     if (funcPromo.isInvalid()) return NodeVal();
@@ -312,7 +312,7 @@ NodeVal Compiler::performCall(CodeLoc codeLoc, const NodeVal &func, const std::v
 
     const TypeTable::Callable *callable = typeTable->extractCallable(funcPromo.getLlvmVal().type);
     if (callable == nullptr) {
-        msgs->errorInternal(codeLoc);
+        msgs->errorInternal(codeLocFunc);
         return NodeVal();
     }
 
@@ -328,11 +328,11 @@ NodeVal Compiler::performCall(CodeLoc codeLoc, const NodeVal &func, const std::v
     }
 }
 
-NodeVal Compiler::performCall(CodeLoc codeLoc, FuncId funcId, const std::vector<NodeVal> &args) {
-    NodeVal nodeFunc = performLoad(codeLoc, funcId);
+NodeVal Compiler::performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId funcId, const std::vector<NodeVal> &args) {
+    NodeVal nodeFunc = performLoad(codeLocFunc, funcId);
     if (nodeFunc.isInvalid()) return NodeVal();
 
-    return performCall(codeLoc, nodeFunc, args);
+    return performCall(codeLoc, codeLocFunc, nodeFunc, args);
 }
 
 NodeVal Compiler::performInvoke(CodeLoc codeLoc, MacroId macroId, const std::vector<NodeVal> &args) {
@@ -460,6 +460,7 @@ NodeVal Compiler::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op
 
     llvm::Value *llvmIn = promo.getLlvmVal().val, *llvmInRef = promo.getLlvmVal().ref;
     LlvmVal llvmVal(operTy);
+    bool errorGiven = false;
     if (op == Oper::ADD) {
         if (typeTable->worksAsTypeI(operTy) ||
             typeTable->worksAsTypeU(operTy) ||
@@ -485,11 +486,14 @@ NodeVal Compiler::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op
         if (llvmInRef != nullptr) {
             llvmVal.type = typeTable->addTypeAddrOf(operTy);
             llvmVal.val = llvmInRef;
+        } else {
+            msgs->errorExprAddrOfNonRef(codeLoc);
+            errorGiven = true;
         }
     }
 
     if (llvmVal.val == nullptr) {
-        msgs->errorUnknown(codeLoc);
+        if (!errorGiven) msgs->errorExprBadOps(codeLoc, op, true, oper.getType().value(), false);
         return NodeVal();
     }
 
@@ -607,7 +611,7 @@ optional<bool> Compiler::performOperComparison(CodeLoc codeLoc, const NodeVal &l
     }
 
     if (llvmValueRes == nullptr) {
-        msgs->errorUnknown(rhs.getCodeLoc());
+        msgs->errorExprBadOps(rhs.getCodeLoc(), op, false, lhs.getType().value(), false);
         return nullopt;
     }
 
@@ -695,6 +699,7 @@ NodeVal Compiler::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal
         msgs->errorInternal(codeLoc);
         return NodeVal();
     }
+
     return NodeVal(basePromo.getCodeLoc(), llvmVal);
 }
 
@@ -802,7 +807,7 @@ NodeVal Compiler::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const 
     }
     
     if (llvmVal.val == nullptr) {
-        msgs->errorUnknown(rhs.getCodeLoc());
+        msgs->errorExprBadOps(rhs.getCodeLoc(), op, false, lhs.getType().value(), false);
         return NodeVal();
     }
 

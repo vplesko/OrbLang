@@ -83,6 +83,7 @@ NamePool::Id getKeywordNameId(Keyword k);
 bool isKeyword(NamePool::Id name, Keyword k);
 bool isOper(NamePool::Id name);
 std::optional<Oper> getOper(NamePool::Id name);
+NamePool::Id getOperNameId(Oper o);
 bool isOper(NamePool::Id name, Oper o);
 bool isReserved(NamePool::Id name);
 bool isTypeDescrDecor(Meaningful m);

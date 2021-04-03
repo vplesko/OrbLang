@@ -41,8 +41,8 @@ public:
     bool performExit(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) override;
     bool performLoop(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) override;
     bool performPass(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &val) override;
-    NodeVal performCall(CodeLoc codeLoc, const NodeVal &func, const std::vector<NodeVal> &args) override;
-    NodeVal performCall(CodeLoc codeLoc, FuncId funcId, const std::vector<NodeVal> &args) override;
+    NodeVal performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, const NodeVal &func, const std::vector<NodeVal> &args) override;
+    NodeVal performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId funcId, const std::vector<NodeVal> &args) override;
     NodeVal performInvoke(CodeLoc codeLoc, MacroId macroId, const std::vector<NodeVal> &args) override;
     bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) override;
     bool performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) override;
