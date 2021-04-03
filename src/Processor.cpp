@@ -229,7 +229,9 @@ NodeVal Processor::processId(const NodeVal &node) {
 NodeVal Processor::processId(const NodeVal &node, const NodeVal &starting) {
     if (!checkExactlyChildren(node, 1, true)) return NodeVal();
 
-    return processId(starting);
+    NodeVal ret = processId(starting);
+    ret.setCodeLoc(node.getCodeLoc());
+    return move(ret);
 }
 
 NodeVal Processor::processSym(const NodeVal &node) {
