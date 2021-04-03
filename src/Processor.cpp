@@ -1514,7 +1514,12 @@ NodeVal Processor::processIsDef(const NodeVal &node) {
 
     NamePool::Id id = name.getEvalVal().id;
 
-    return promoteBool(node.getCodeLoc(), symbolTable->isVarName(id));
+    bool isDef = symbolTable->isVarName(id) ||
+        symbolTable->isFuncName(id) ||
+        symbolTable->isMacroName(id) ||
+        typeTable->isType(id);
+
+    return promoteBool(node.getCodeLoc(), isDef);
 }
 
 NodeVal Processor::processAttrOf(const NodeVal &node) {

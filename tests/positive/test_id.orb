@@ -18,6 +18,10 @@ eval (sym (Call1:(type cn) (fnc ((i32 cn *)) ())));
 eval (sym (Call2:(type cn) (fnc ((i32 *)) i32)));
 eval (sym (Call3:(type cn) (fnc ((i32 *)) (i32 cn))));
 
+mac mac0 () {
+    ret ();
+};
+
 fnc main () () {
     sym p:i32;
 
@@ -107,6 +111,10 @@ fnc main () () {
         println_i32 (+ 313 (cast i32 (?? main)));
         = id0 \x;
         println_i32 (+ 314 (cast i32 (?? ,id0)));
+        println_i32 (+ 316 (cast i32 (?? sym)));
+        println_i32 (+ 316 (cast i32 (?? main)));
+        println_i32 (+ 317 (cast i32 (?? mac0)));
+        println_i32 (+ 318 (cast i32 (?? i32)));
     };
 
     block {

@@ -189,7 +189,7 @@ sizeOf
 
 ??
 	?? name
-	returns whether a symbol with name is defined
+	returns whether a symbol or type with name is defined
 
 attrOf
 	attrOf val name
