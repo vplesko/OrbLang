@@ -145,13 +145,23 @@ optional<VarId> SymbolTable::getVarId(NamePool::Id name) const {
     return nullopt;
 }
 
-optional<FuncId> SymbolTable::registerFunc(const FuncValue &val) {
+SymbolTable::RegisterFuncPayload SymbolTable::registerFunc(const FuncValue &val) {
     // cannot combine funcs and macros in overloading
-    if (isMacroName(val.name)) return nullopt;
+    if (isMacroName(val.name)) {
+        RegisterFuncPayload ret;
+        ret.kind = RegisterFuncPayload::Kind::kMacroSameName;
+        ret.codeLocOther = getMacro(getMacros(val.name).front()).codeLoc;
+        return ret;
+    }
 
     // funcs with no name mangling cannot be overloaded (note: variadic funcs are always noNameMangle)
     for (const auto &it : funcs[val.name]) {
-        if ((val.noNameMangle || it.noNameMangle) && it.getTypeSig() != val.getTypeSig()) return nullopt;
+        if ((val.noNameMangle || it.noNameMangle) && it.getTypeSig() != val.getTypeSig()) {
+            RegisterFuncPayload ret;
+            ret.codeLocOther = it.codeLoc;
+            ret.kind = RegisterFuncPayload::Kind::kNoNameMangleCollision;
+            return ret;
+        }
     }
 
     // find the other decl with the same sig, if exists
@@ -161,7 +171,10 @@ optional<FuncId> SymbolTable::registerFunc(const FuncValue &val) {
 
         if (val.getTypeSig() == it.getTypeSig()) {
             if (val.getType() != it.getType() || val.noNameMangle != it.noNameMangle || (val.defined && it.defined)) {
-                return nullopt;
+                RegisterFuncPayload ret;
+                ret.kind = RegisterFuncPayload::Kind::kCollision;
+                ret.codeLocOther = it.codeLoc;
+                return ret;
             }
             existing = i;
             break;
@@ -179,7 +192,11 @@ optional<FuncId> SymbolTable::registerFunc(const FuncValue &val) {
         if (val.defined) funcs[val.name][existing.value()] = FuncValue(val);
         funcId.index = existing.value();
     }
-    return funcId;
+
+    RegisterFuncPayload ret;
+    ret.kind = RegisterFuncPayload::Kind::kSuccess;
+    ret.funcId = funcId;
+    return ret;
 }
 
 const FuncValue& SymbolTable::getFunc(FuncId funcId) const {

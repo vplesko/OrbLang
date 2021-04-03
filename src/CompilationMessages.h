@@ -138,11 +138,15 @@ public:
     void errorPassNonPassingBlock(CodeLoc loc);
     void errorNonEvalBlock(CodeLoc loc);
     void errorLoopNowhere(CodeLoc loc);
+    void errorNoRet(CodeLoc loc);
     void errorRetValue(CodeLoc loc);
     void errorRetNoValue(CodeLoc loc, TypeTable::Id shouldRet);
     void errorRetNonEval(CodeLoc loc);
     void errorRetNowhere(CodeLoc loc);
     void errorFuncNameTaken(CodeLoc loc, NamePool::Id name);
+    void errorFuncCollisionNoNameMangle(CodeLoc loc, NamePool::Id name, CodeLoc codeLocOther);
+    void errorFuncCollision(CodeLoc loc, NamePool::Id name, CodeLoc codeLocOther);
+    void errorFuncNotEvalOrCompiled(CodeLoc loc);
     void errorMacroNameTaken(CodeLoc loc, NamePool::Id name);
     void errorArgNameDuplicate(CodeLoc loc, NamePool::Id name);
     void errorFuncNotFound(CodeLoc loc, NamePool::Id name);

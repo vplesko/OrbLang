@@ -94,6 +94,22 @@ public:
         }
     };
 
+    struct RegisterFuncPayload {
+        enum class Kind {
+            kSuccess,
+            kMacroSameName,
+            kNoNameMangleCollision,
+            kCollision
+        };
+
+        Kind kind;
+
+        union {
+            CodeLoc codeLocOther;
+            FuncId funcId;
+        };
+    };
+
 private:
     friend class BlockControl;
 
@@ -131,7 +147,7 @@ public:
     bool isVarName(NamePool::Id name) const;
     std::optional<VarId> getVarId(NamePool::Id name) const;
 
-    std::optional<FuncId> registerFunc(const FuncValue &val);
+    RegisterFuncPayload registerFunc(const FuncValue &val);
     const FuncValue& getFunc(FuncId funcId) const;
     FuncValue& getFunc(FuncId funcId);
     bool isFuncName(NamePool::Id name) const;

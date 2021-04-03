@@ -647,6 +647,10 @@ void CompilationMessages::errorLoopNowhere(CodeLoc loc) {
     error(loc, "Loop instruction had no enclosing block to loop in.");
 }
 
+void CompilationMessages::errorNoRet(CodeLoc loc) {
+    error(loc, "Function body not ended with a ret instruction.");
+}
+
 void CompilationMessages::errorRetValue(CodeLoc loc) {
     error(loc, "Ret instruction had a return value in a non-returning function.");
 }
@@ -670,6 +674,24 @@ void CompilationMessages::errorFuncNameTaken(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
     ss << "Name '" << namePool->get(name) << "' was already taken and cannot be used for a function.";
     error(loc, ss.str());
+}
+
+void CompilationMessages::errorFuncCollisionNoNameMangle(CodeLoc loc, NamePool::Id name, CodeLoc codeLocOther) {
+    stringstream ss;
+    ss << "Another function named '" << namePool->get(name) << "' already exists. Cannot have multiple functions of the same name if name mangling is disabled.";
+    error(loc, ss.str());
+    info(codeLocOther, "Other function found here.");
+}
+
+void CompilationMessages::errorFuncCollision(CodeLoc loc, NamePool::Id name, CodeLoc codeLocOther) {
+    stringstream ss;
+    ss << "Collision with another function of same name '" << namePool->get(name) << "'.";
+    error(loc, ss.str());
+    info(codeLocOther, "Other function found here.");
+}
+
+void CompilationMessages::errorFuncNotEvalOrCompiled(CodeLoc loc) {
+    error(loc, "Function set as neither evaluable nor compilable.");
 }
 
 void CompilationMessages::errorMacroNameTaken(CodeLoc loc, NamePool::Id name) {
@@ -841,7 +863,7 @@ void CompilationMessages::errorAttributeNotFound(CodeLoc loc, NamePool::Id name)
 
 void CompilationMessages::errorAttributesSameName(CodeLoc loc, NamePool::Id name) {
     stringstream ss;
-    ss << "Multiple attributes name '" << namePool->get(name) << "' found on the same node.";
+    ss << "Attribute name '" << namePool->get(name) << "' used more than once.";
     error(loc, ss.str());
 }
 

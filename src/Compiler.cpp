@@ -351,7 +351,7 @@ bool Compiler::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
     if (func.llvmFunc == nullptr) {
         llvm::FunctionType *llvmFuncType = makeLlvmFunctionType(func.getType());
         if (llvmFuncType == nullptr) {
-            msgs->errorUnknown(codeLoc);
+            msgs->errorTypeCannotCompile(codeLoc, func.getType());
             return false;
         }
 
@@ -410,7 +410,7 @@ bool Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, c
 
             llvmBuilder.CreateRetVoid();
         } else {
-            msgs->errorUnknown(codeLoc);
+            msgs->errorNoRet(codeLoc);
             return false;
         }
     }

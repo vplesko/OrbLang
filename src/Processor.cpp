@@ -574,7 +574,7 @@ NodeVal Processor::processFixed(const NodeVal &node, const NodeVal &starting) {
     optional<bool> attrGlobal = getAttributeForBool(starting, "global");
     if (!attrGlobal.has_value()) return NodeVal();
 
-    if (!attrGlobal.value() && !checkInGlobalScope(node.getCodeLoc(), true)) {
+    if (!attrGlobal.value() && !checkInGlobalScope(starting.getCodeLoc(), true)) {
         msgs->hintAttrGlobal();
         return NodeVal();
     }
@@ -610,7 +610,7 @@ NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
     optional<bool> attrGlobal = getAttributeForBool(starting, "global");
     if (!attrGlobal.has_value()) return NodeVal();
 
-    if (!attrGlobal.value() && !checkInGlobalScope(node.getCodeLoc(), true)) {
+    if (!attrGlobal.value() && !checkInGlobalScope(starting.getCodeLoc(), true)) {
         msgs->hintAttrGlobal();
         return NodeVal();
     }
@@ -866,7 +866,8 @@ NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
         optional<bool> attrGlobal = getAttributeForBool(starting, "global");
         if (!attrGlobal.has_value()) return NodeVal();
 
-        if (!attrGlobal.value() && !checkInGlobalScope(node.getCodeLoc(), true)) {
+        if (!attrGlobal.value() && !checkInGlobalScope(starting.getCodeLoc(), true)) {
+            msgs->hintAttrGlobal();
             return NodeVal();
         }
     }
@@ -902,7 +903,8 @@ NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
         compilable = attrCompilableOpt.value();
 
         if (!evaluable && !compilable) {
-            msgs->errorUnknown(node.getCodeLoc());
+            CodeLoc codeLoc = (nodeName.hasNonTypeAttrs() ? nodeName.getNonTypeAttrs() : nodeName).getCodeLoc();
+            msgs->errorFuncNotEvalOrCompiled(codeLoc);
             return NodeVal();
         }
     }
@@ -1016,12 +1018,25 @@ NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
         if (!compiler->performFunctionDeclaration(node.getCodeLoc(), funcVal)) return NodeVal();
     }
 
-    optional<FuncId> symbId = symbolTable->registerFunc(funcVal);
-    if (!symbId.has_value()) {
-        msgs->errorUnknown(node.getCodeLoc());
+    SymbolTable::RegisterFuncPayload symbId = symbolTable->registerFunc(funcVal);
+    if (symbId.kind != SymbolTable::RegisterFuncPayload::Kind::kSuccess) {
+        switch (symbId.kind) {
+        case SymbolTable::RegisterFuncPayload::Kind::kMacroSameName:
+            msgs->errorFuncNameTaken(nameCodeLoc, name);
+            break;
+        case SymbolTable::RegisterFuncPayload::Kind::kNoNameMangleCollision:
+            msgs->errorFuncCollisionNoNameMangle(nameCodeLoc, name, symbId.codeLocOther);
+            break;
+        case SymbolTable::RegisterFuncPayload::Kind::kCollision:
+            msgs->errorFuncCollision(nameCodeLoc, name, symbId.codeLocOther);
+            break;
+        default:
+            msgs->errorUnknown(nameCodeLoc);
+            break;
+        }
         return NodeVal();
     }
-    FuncValue &symbVal = symbolTable->getFunc(symbId.value());
+    FuncValue &symbVal = symbolTable->getFunc(symbId.funcId);
 
     if (isDef) {
         if (evaluable) {
@@ -1035,9 +1050,9 @@ NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
     }
 
     if (checkIsEvalFunc(node.getCodeLoc(), symbVal, false)) {
-        return evaluator->performLoad(node.getCodeLoc(), symbId.value());
+        return evaluator->performLoad(node.getCodeLoc(), symbId.funcId);
     } else {
-        return compiler->performLoad(node.getCodeLoc(), symbId.value());
+        return compiler->performLoad(node.getCodeLoc(), symbId.funcId);
     }
 }
 
