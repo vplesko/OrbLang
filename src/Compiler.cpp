@@ -410,7 +410,7 @@ bool Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, c
 
             llvmBuilder.CreateRetVoid();
         } else {
-            msgs->errorNoRet(codeLoc);
+            msgs->errorFuncNoRet(codeLoc);
             return false;
         }
     }

@@ -256,7 +256,7 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, MacroId macroId, const std::ve
     if (!callDropFuncsCurrCallable(codeLoc)) return NodeVal();
 
     if (!retVal.has_value()) {
-        msgs->errorUnknown(codeLoc);
+        msgs->errorMacroNoRet(codeLoc);
         return NodeVal();
     }
 

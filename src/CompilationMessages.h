@@ -138,7 +138,8 @@ public:
     void errorPassNonPassingBlock(CodeLoc loc);
     void errorNonEvalBlock(CodeLoc loc);
     void errorLoopNowhere(CodeLoc loc);
-    void errorNoRet(CodeLoc loc);
+    void errorFuncNoRet(CodeLoc loc);
+    void errorMacroNoRet(CodeLoc loc);
     void errorRetValue(CodeLoc loc);
     void errorRetNoValue(CodeLoc loc, TypeTable::Id shouldRet);
     void errorRetNonEval(CodeLoc loc);

@@ -825,7 +825,7 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
     size_t providedArgCnt = node.getChildrenCnt()-1;
     if ((callable.variadic && providedArgCnt+1 < callable.getArgCnt()) ||
         (!callable.variadic && providedArgCnt != callable.getArgCnt())) {
-        msgs->errorUnknown(node.getCodeLoc());
+        msgs->errorMacroNotFound(node.getCodeLoc(), macroVal.name);
         return NodeVal();    
     }
 

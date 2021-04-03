@@ -647,8 +647,12 @@ void CompilationMessages::errorLoopNowhere(CodeLoc loc) {
     error(loc, "Loop instruction had no enclosing block to loop in.");
 }
 
-void CompilationMessages::errorNoRet(CodeLoc loc) {
-    error(loc, "Function body not ended with a ret instruction.");
+void CompilationMessages::errorFuncNoRet(CodeLoc loc) {
+    error(loc, "Function body ended without a ret instruction.");
+}
+
+void CompilationMessages::errorMacroNoRet(CodeLoc loc) {
+    error(loc, "Macro execution ended without a ret instruction.");
 }
 
 void CompilationMessages::errorRetValue(CodeLoc loc) {
