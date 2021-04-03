@@ -165,8 +165,8 @@ public:
     void errorMacroCollision(CodeLoc loc, NamePool::Id name, CodeLoc codeLocOther);
     void errorMacroCollisionVariadic(CodeLoc loc, NamePool::Id name, CodeLoc codeLocOther);
     void errorArgNameDuplicate(CodeLoc loc, NamePool::Id name);
-    void errorFuncNotFound(CodeLoc loc, NamePool::Id name);
-    void errorFuncNotFound(CodeLoc loc);
+    void errorFuncNotFound(CodeLoc loc, std::vector<TypeTable::Id> argTys, std::optional<NamePool::Id> name = std::nullopt);
+    void errorFuncNotFound(CodeLoc loc, NamePool::Id name, TypeTable::Id ty);
     void errorFuncNoDef(CodeLoc loc);
     void errorFuncNoValue(CodeLoc loc);
     void errorFuncCallAmbigiuous(CodeLoc loc, std::vector<CodeLoc> codeLocsCand);

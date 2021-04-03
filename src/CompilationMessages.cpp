@@ -766,14 +766,25 @@ void CompilationMessages::errorArgNameDuplicate(CodeLoc loc, NamePool::Id name) 
     error(loc, ss.str());
 }
 
-void CompilationMessages::errorFuncNotFound(CodeLoc loc, NamePool::Id name) {
+void CompilationMessages::errorFuncNotFound(CodeLoc loc, vector<TypeTable::Id> argTys, optional<NamePool::Id> name) {
     stringstream ss;
-    ss << "No functions with name '" << namePool->get(name) << "' satisfying the call signature have been found.";
+    ss << "No functions";
+    if (name.has_value()) ss << " with name '" << namePool->get(name.value()) << "'";
+    ss << " satisfying the call signature have been found.";
     error(loc, ss.str());
+
+    ss = stringstream();
+    ss << "Provided argument types were:";
+    for (TypeTable::Id argTy : argTys) {
+        ss << endl << "\t" << errorStringOfType(argTy);
+    }
+    info(ss.str());
 }
 
-void CompilationMessages::errorFuncNotFound(CodeLoc loc) {
-    error(loc, "No functions satisfying the call signature have been found.");
+void CompilationMessages::errorFuncNotFound(CodeLoc loc, NamePool::Id name, TypeTable::Id ty) {
+    stringstream ss;
+    ss << "No functions with name '" << namePool->get(name) << "' of type '" << errorStringOfType(ty) << "' have been found.";
+    error(loc, ss.str());
 }
 
 void CompilationMessages::errorFuncNoDef(CodeLoc loc) {

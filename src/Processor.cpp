@@ -765,7 +765,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
         }
 
         if (!funcId.has_value()) {
-            msgs->errorFuncNotFound(starting.getCodeLoc(), starting.getUndecidedCallableVal().name);
+            msgs->errorFuncNotFound(starting.getCodeLoc(), move(argTypes), starting.getUndecidedCallableVal().name);
             return NodeVal();
         }
 
@@ -787,7 +787,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
         }
 
         if (!argsFitFuncCall(args, *callable, true)) {
-            msgs->errorFuncNotFound(starting.getCodeLoc());
+            msgs->errorFuncNotFound(starting.getCodeLoc(), move(argTypes));
             return NodeVal();
         }
 
@@ -2008,7 +2008,7 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node, const NodeVal &val
                 }
             }
             if (!funcId.has_value()) {
-                msgs->errorFuncNotFound(node.getCodeLoc(), val.getUndecidedCallableVal().name);
+                msgs->errorFuncNotFound(node.getCodeLoc(), val.getUndecidedCallableVal().name, ty);
                 return NodeVal();
             }
         } else if (funcIds.size() == 1) {
