@@ -738,15 +738,25 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
 
         // if not found, look through functions which do require implicit casts
         if (!funcId.has_value()) {
+            bool ambigiuous = false;
             for (FuncId it : funcIds) {
                 if (argsFitFuncCall(args, BaseCallableValue::getCallableSig(symbolTable->getFunc(it), typeTable), true)) {
                     if (funcId.has_value()) {
                         // error due to call ambiguity
-                        msgs->errorUnknown(node.getCodeLoc());
-                        return NodeVal();
+                        ambigiuous = true;
+                        break;
                     }
                     funcId = it;
                 }
+            }
+            if (ambigiuous) {
+                vector<CodeLoc> codeLocsCand;
+                for (FuncId it : funcIds) {
+                    if (argsFitFuncCall(args, BaseCallableValue::getCallableSig(symbolTable->getFunc(it), typeTable), true))
+                        codeLocsCand.push_back(symbolTable->getFunc(it).codeLoc);
+                }
+                msgs->errorFuncCallAmbigiuous(starting.getCodeLoc(), move(codeLocsCand));
+                return NodeVal();
             }
         }
 
@@ -759,7 +769,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
 
         if (!implicitCastArgsAndVerifyCallOk(node.getCodeLoc(), args, *callable)) return NodeVal();
 
-        ret = dispatchCall(node.getCodeLoc(), funcId.value(), args, allArgsEval);
+        ret = dispatchCall(starting.getCodeLoc(), funcId.value(), args, allArgsEval);
     } else {
         if (!starting.getType().has_value()) {
             msgs->errorInternal(node.getCodeLoc());
@@ -773,13 +783,13 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
         }
 
         if (!argsFitFuncCall(args, *callable, true)) {
-            msgs->errorUnknown(node.getCodeLoc());
+            msgs->errorFuncNotFound(starting.getCodeLoc());
             return NodeVal();
         }
 
         if (!implicitCastArgsAndVerifyCallOk(node.getCodeLoc(), args, *callable)) return NodeVal();
 
-        ret = dispatchCall(node.getCodeLoc(), starting, args, allArgsEval);
+        ret = dispatchCall(starting.getCodeLoc(), starting, args, allArgsEval);
     }
 
     if (ret.isInvalid()) return NodeVal();

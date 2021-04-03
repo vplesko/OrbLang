@@ -167,11 +167,11 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, FuncId funcId, const std::vector
     }
 
     if (!func.defined) {
-        msgs->errorUnknown(codeLoc);
+        msgs->errorFuncNoDef(codeLoc);
         return NodeVal();
     }
     if (!func.evalFunc.has_value()) {
-        msgs->errorUnknown(codeLoc);
+        msgs->errorInternal(codeLoc);
         return NodeVal();
     }
     if (func.evalFunc.value().isInvalid()) {

@@ -163,7 +163,7 @@ private:
     NodeVal processPass(const NodeVal &node);
     NodeVal processFixed(const NodeVal &node, const NodeVal &starting);
     NodeVal processData(const NodeVal &node, const NodeVal &starting);
-    NodeVal processCall(const NodeVal &node, const NodeVal &starting); // TODO! improve error messages
+    NodeVal processCall(const NodeVal &node, const NodeVal &starting);
     NodeVal processInvoke(const NodeVal &node, const NodeVal &starting);
     NodeVal processFnc(const NodeVal &node, const NodeVal &starting);
     NodeVal processMac(const NodeVal &node, const NodeVal &starting);

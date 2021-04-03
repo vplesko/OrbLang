@@ -742,14 +742,29 @@ void CompilationMessages::errorFuncNotFound(CodeLoc loc, NamePool::Id name) {
     error(loc, ss.str());
 }
 
-void CompilationMessages::errorMacroNotFound(CodeLoc loc, NamePool::Id name) {
-    stringstream ss;
-    ss << "No macros with name '" << namePool->get(name) << "' satisfying the invocation signature have been found.";
-    error(loc, ss.str());
+void CompilationMessages::errorFuncNotFound(CodeLoc loc) {
+    error(loc, "No functions satisfying the call signature have been found.");
+}
+
+void CompilationMessages::errorFuncNoDef(CodeLoc loc) {
+    error(loc, "Attempted to call a function with no definition.");
 }
 
 void CompilationMessages::errorFuncNoValue(CodeLoc loc) {
     error(loc, "Tried to call a function with no value.");
+}
+
+void CompilationMessages::errorFuncCallAmbigiuous(CodeLoc loc, vector<CodeLoc> codeLocsCand) {
+    error(loc, "Function call is ambigiuous, multiple potential candidates found.");
+    for (CodeLoc codeLocFunc : codeLocsCand) {
+        info(codeLocFunc, "Potential candidate found here.");
+    }
+}
+
+void CompilationMessages::errorMacroNotFound(CodeLoc loc, NamePool::Id name) {
+    stringstream ss;
+    ss << "No macros with name '" << namePool->get(name) << "' satisfying the invocation signature have been found.";
+    error(loc, ss.str());
 }
 
 void CompilationMessages::errorMacroNoValue(CodeLoc loc) {

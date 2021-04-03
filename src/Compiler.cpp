@@ -305,7 +305,7 @@ NodeVal Compiler::performCall(CodeLoc codeLoc, const NodeVal &func, const std::v
         } else if (args[i].isLlvmVal()) {
             llvmArgValues[i] = args[i].getLlvmVal().val;
         } else {
-            msgs->errorUnknown(args[i].getCodeLoc());
+            msgs->errorInternal(args[i].getCodeLoc());
             return NodeVal();
         }
     }

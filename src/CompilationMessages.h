@@ -156,8 +156,11 @@ public:
     void errorMacroCollisionVariadic(CodeLoc loc, NamePool::Id name, CodeLoc codeLocOther);
     void errorArgNameDuplicate(CodeLoc loc, NamePool::Id name);
     void errorFuncNotFound(CodeLoc loc, NamePool::Id name);
-    void errorMacroNotFound(CodeLoc loc, NamePool::Id name);
+    void errorFuncNotFound(CodeLoc loc);
+    void errorFuncNoDef(CodeLoc loc);
     void errorFuncNoValue(CodeLoc loc);
+    void errorFuncCallAmbigiuous(CodeLoc loc, std::vector<CodeLoc> codeLocsCand);
+    void errorMacroNotFound(CodeLoc loc, NamePool::Id name);
     void errorMacroNoValue(CodeLoc loc);
     void errorDataCnMember(CodeLoc loc);
     void errorDataRedefinition(CodeLoc loc, NamePool::Id name);
