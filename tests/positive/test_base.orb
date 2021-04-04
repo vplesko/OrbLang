@@ -268,18 +268,20 @@ fnc main () () {
     block {
         passthrough (make Bar (x 1100));
 
+        process \(println_i32 1101);
+
         typeOf (escape x);
 
-        sym (x 1101);
+        sym (x 1102);
         println_i32 ((escape x));
     };
     block {
-        println_i32 (+ 1101 (cast i32 (base.isRaw ())));
-        println_i32 (+ 1103 (cast i32 (base.isRaw (+ 999 9))));
+        println_i32 (+ 1102 (cast i32 (base.isRaw ())));
+        println_i32 (+ 1104 (cast i32 (base.isRaw (+ 999 9))));
         eval (sym (r ()));
-        println_i32 (+ 1103 (cast i32 (base.isRaw r)));
+        println_i32 (+ 1104 (cast i32 (base.isRaw r)));
         sym (x 999);
-        println_i32 (+ 1105 (cast i32 (base.isRaw x)));
+        println_i32 (+ 1106 (cast i32 (base.isRaw x)));
     };
 
     block {

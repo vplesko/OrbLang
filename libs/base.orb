@@ -8,7 +8,11 @@ eval (fnc genSym () id {
     ret s;
 });
 
-mac passthrough (x::preprocess) {
+mac passthrough (x) {
+    ret x;
+};
+
+mac process (x::preprocess) {
     ret x;
 };
 
