@@ -14,14 +14,19 @@ mac passthrough (x::preprocess) {
 
 mac base.isRaw (x::preprocess) {
     block {
-        exit (!= (typeOf x) raw);
-        ret true;
+        exit (== (typeOf x) raw);
+        exit (== (typeOf x) (raw cn));
+        ret false;
     };
-    block {
-        exit (!= (typeOf x) (raw cn));
-        ret true;
-    };
-    ret false;
+    ret true;
+};
+
+mac base.errorIfNotOfType (ty::preprocess x::preprocess) {
+    ret \(block {
+        exit (== ,(typeOf x) ,ty);
+        exit (== ,(typeOf x) ,(ty cn));
+        message::(error (loc ,x)) "Value expected to be of type " ,ty ".";
+    });
 };
 
 mac if (cond then) {
@@ -237,6 +242,8 @@ mac alias (name ty) {
 };
 
 mac arr (ty::preprocess a::preprocess rest::(variadic preprocess)) {
+    base.errorIfNotOfType type ty;
+
     sym (elems (+ \(,a) rest));
     sym (arrTy (ty (lenOf elems)));
 
@@ -275,13 +282,14 @@ mac tup (a::preprocess b::preprocess rest::(variadic preprocess)) {
 };
 
 mac make (ty::preprocess pair rest::variadic) {
+    base.errorIfNotOfType type ty;
+
     sym (pairs (+ \(,pair) rest));
     sym (inst (genSym));
 
     sym (innerCode \{ (sym ,inst:ty) });
     range i (lenOf pairs) {
-        cast raw (. pairs i);
-
+        base.errorIfNotOfType raw (. pairs i);
         if (!= (lenOf (. pairs i)) 2) {
             message::(error (loc (. pairs i))) "Each entry must contain exactly two values - member name and initial value.";
         };
@@ -331,12 +339,12 @@ mac base.-enumValsDecl (name enumTy::preprocess vals) {
                 message::(error (loc (. vals i))) "Each entry must be either an id or have exactly two values - name and initial value.";
             };
 
-            cast id (. vals i 0);
+            base.errorIfNotOfType id (. vals i 0);
             = valName (. vals i 0);
 
             = init \(cast ,name ,(. vals i 1));
         } {
-            cast id (. vals i);
+            base.errorIfNotOfType id (. vals i);
             = valName (. vals i);
 
             if (== i 0) {
@@ -359,9 +367,9 @@ mac base.-enumValsDecl (name enumTy::preprocess vals) {
 };
 
 mac enum (name ty::preprocess vals) {
-    cast id name;
-    cast type ty;
-    cast raw vals;
+    base.errorIfNotOfType id name;
+    base.errorIfNotOfType type ty;
+    base.errorIfNotOfType raw vals;
 
     if (== (lenOf vals) 0) {
         message::(error (loc vals)) "Must specify at least one enum value.";
