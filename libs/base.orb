@@ -12,6 +12,10 @@ mac passthrough (x::preprocess) {
     ret x;
 };
 
+mac escape (x::plusEscape) {
+    ret x;
+};
+
 mac base.isRaw (x::preprocess) {
     block {
         exit (== (typeOf x) raw);
