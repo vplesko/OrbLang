@@ -47,7 +47,7 @@ UnescapePayload unescape(const string &str, std::size_t indexStartingQuote, bool
                 afterLastSuccessful = ind;
                 return UnescapePayload(out, afterLastSuccessful);
             } else {
-                break;
+                out.push_back('\'');
             }
         } else if (ch.first == '\"') {
             if (!isSingleQuote) {

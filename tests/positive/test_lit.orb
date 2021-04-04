@@ -25,6 +25,7 @@ fnc main () () {
     println_str "hello";
     println_str hello;
     println_str "";
+    println_str "'";
     println_str "\n";
     println_str "\\n";
 

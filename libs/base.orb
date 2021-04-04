@@ -25,7 +25,7 @@ mac base.errorIfNotOfType (ty::preprocess x::preprocess) {
     ret \(block {
         exit (== ,(typeOf x) ,ty);
         exit (== ,(typeOf x) ,(ty cn));
-        message::(error (loc ,x)) "Value expected to be of type " ,ty ".";
+        message::(error (loc ,x)) "Value expected to be of type '" ,ty "'.";
     });
 };
 
