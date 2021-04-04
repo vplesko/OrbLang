@@ -696,8 +696,10 @@ NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
         if (withDrop) {
             NodeVal nodeDrop = processNode(node.getChild(indDrop));
             if (nodeDrop.isInvalid()) return NodeVal();
-            if (!checkIsDropFuncType(nodeDrop, typeIdOpt.value(), true)) return NodeVal();
-            symbolTable->registerDropFunc(typeIdOpt.value(), nodeDrop);
+            if (!checkIsEmpty(nodeDrop, false)) {
+                if (!checkIsDropFuncType(nodeDrop, typeIdOpt.value(), true)) return NodeVal();
+                symbolTable->registerDropFunc(typeIdOpt.value(), nodeDrop);
+            }
         }
     }
 

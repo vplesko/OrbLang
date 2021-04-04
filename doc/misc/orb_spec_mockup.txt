@@ -132,7 +132,7 @@ fixed
 data
 	data name OR data name membs OR data name membs drop
 	first declares, second and third define a data type
-	name is id, membs is list of a:t, drop is function
+	name is id, membs is list of a:t, drop is function or () for no drop function
 	must have at least one member
 	global only
 

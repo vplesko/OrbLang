@@ -25,7 +25,7 @@ data Point3 {
     x:i32
     y:i32
     z:i32
-};
+} ();
 
 data Point3;
 
