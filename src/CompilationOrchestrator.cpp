@@ -308,6 +308,10 @@ bool CompilationOrchestrator::compile(const ProgramArgs &args) {
             msgs->errorNoMain();
             return false;
         }
+        if (!symbolTable->getFunc(symbolTable->getFuncIds(getMeaningfulNameId(Meaningful::MAIN)).front()).defined) {
+            msgs->errorMainNoDef();
+            return false;
+        }
 
         const static string tempObjName = PLATFORM_WINDOWS ? "a.obj" : "a.o";
 

@@ -994,7 +994,11 @@ void CompilationMessages::errorNotTopmost(CodeLoc loc) {
 }
 
 void CompilationMessages::errorNoMain() {
-    error("No main function defined.");
+    error("No main function found.");
+}
+
+void CompilationMessages::errorMainNoDef() {
+    error("Main function was declared, but not defined.");
 }
 
 void CompilationMessages::errorEvaluationNotSupported(CodeLoc loc) {

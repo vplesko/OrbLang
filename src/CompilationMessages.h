@@ -198,6 +198,7 @@ public:
     void errorNotLocalScope(CodeLoc loc);
     void errorNotTopmost(CodeLoc loc);
     void errorNoMain();
+    void errorMainNoDef();
     // placeholder error, should not stay in code
     void errorEvaluationNotSupported(CodeLoc loc);
     // placeholder error, should not stay in code
