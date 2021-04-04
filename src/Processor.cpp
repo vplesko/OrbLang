@@ -742,24 +742,24 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
 
         // if not found, look through functions which do require implicit casts
         if (!funcId.has_value()) {
-            bool ambigiuous = false;
+            bool ambiguous = false;
             for (FuncId it : funcIds) {
                 if (argsFitFuncCall(args, BaseCallableValue::getCallableSig(symbolTable->getFunc(it), typeTable), true)) {
                     if (funcId.has_value()) {
                         // error due to call ambiguity
-                        ambigiuous = true;
+                        ambiguous = true;
                         break;
                     }
                     funcId = it;
                 }
             }
-            if (ambigiuous) {
+            if (ambiguous) {
                 vector<CodeLoc> codeLocsCand;
                 for (FuncId it : funcIds) {
                     if (argsFitFuncCall(args, BaseCallableValue::getCallableSig(symbolTable->getFunc(it), typeTable), true))
                         codeLocsCand.push_back(symbolTable->getFunc(it).codeLoc);
                 }
-                msgs->errorFuncCallAmbigiuous(starting.getCodeLoc(), move(codeLocsCand));
+                msgs->errorFuncCallAmbiguous(starting.getCodeLoc(), move(codeLocsCand));
                 return NodeVal();
             }
         }

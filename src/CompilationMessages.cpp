@@ -795,8 +795,8 @@ void CompilationMessages::errorFuncNoValue(CodeLoc loc) {
     error(loc, "Tried to call a function with no value.");
 }
 
-void CompilationMessages::errorFuncCallAmbigiuous(CodeLoc loc, vector<CodeLoc> codeLocsCand) {
-    error(loc, "Function call is ambigiuous, multiple potential candidates found.");
+void CompilationMessages::errorFuncCallAmbiguous(CodeLoc loc, vector<CodeLoc> codeLocsCand) {
+    error(loc, "Function call is ambiguous, multiple potential candidates found.");
     for (CodeLoc codeLocFunc : codeLocsCand) {
         info(codeLocFunc, "Potential candidate found here.");
     }
