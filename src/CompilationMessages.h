@@ -71,13 +71,13 @@ public:
     void hintForgotCloseNode();
     void hintAttrDoubleColon();
     void hintTransferWithMove();
-    void hintUnescapeEscaped();
     void hintAttrGlobal();
     void hintDropFuncSig();
     void hintGlobalCompiledLoad();
     void hintBlockSyntax();
     void hintIndexTempOwning();
     void hintDotTempOwning();
+    void hintUnescapeEscaped();
 
     void warnUnusedSpecial(CodeLoc loc, SpecialVal spec);
     void warnUnusedFunc(CodeLoc loc);

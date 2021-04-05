@@ -136,4 +136,16 @@ fnc main () () {
         };
         println_i32 -1;
     };
+
+    eval (sym (f \b0));
+    block (\f) () {};
+    block b0 () {
+        exit (\f) true;
+    };
+    block b0 () {
+        loop (\f) false;
+    };
+    block b0 i32 {
+        pass (\f) -1;
+    };
 };

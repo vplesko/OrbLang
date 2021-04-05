@@ -356,10 +356,6 @@ void CompilationMessages::hintTransferWithMove() {
     info("You may transfer ownership by first using '>>' operator on the source value.");
 }
 
-void CompilationMessages::hintUnescapeEscaped() {
-    info("This code was escaped. To counteract that, unescape it by prepending ','.");
-}
-
 void CompilationMessages::hintAttrGlobal() {
     info("You may use this instruction in local scopes by providing attribute 'global' on the special form name.");
 }
@@ -382,6 +378,10 @@ void CompilationMessages::hintIndexTempOwning() {
 
 void CompilationMessages::hintDotTempOwning() {
     info("Cannot get owning members of a tuple or data that is about to be dropped. Consider storing this value in a symbol first.");
+}
+
+void CompilationMessages::hintUnescapeEscaped() {
+    info("This code was escaped. To counteract that, unescape it by prepending ','.");
 }
 
 void CompilationMessages::warnUnusedSpecial(CodeLoc loc, SpecialVal spec) {

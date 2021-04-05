@@ -161,7 +161,7 @@ mac ?_ (cond::preprocess ty::preprocess onTrue onFalse) {
     });
 };
 
-# Not intended for use on raw.
+# Not intended for use on id or raw.
 mac += (x::preprocess y::preprocess) {
     ret \(= ,x (+ ,x ,y));
 };

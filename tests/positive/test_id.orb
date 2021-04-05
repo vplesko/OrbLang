@@ -60,7 +60,7 @@ fnc main () () {
     println_i32 (id0);
 
     eval (= id0 (cast id true));
-    sym (,id0 302);
+    sym ((\id0) 302);
     println_i32 (id0);
 
     eval (= id0 (cast id 0:u32));
@@ -115,6 +115,7 @@ fnc main () () {
         println_i32 (+ 316 (cast i32 (?? main)));
         println_i32 (+ 317 (cast i32 (?? mac0)));
         println_i32 (+ 318 (cast i32 (?? i32)));
+        println_i32 (+ 319 (cast i32 (?? (\id0))));
     };
 
     block {

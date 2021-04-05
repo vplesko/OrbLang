@@ -92,7 +92,8 @@ private:
     NodeVal processAndCheckIsType(const NodeVal &node);
     NodeVal processAndCheckHasType(const NodeVal &node);
     NodeVal processWithEscape(const NodeVal &node, EscapeScore amount = 1);
-    NodeVal processWithEscapeAndCheckIsId(const NodeVal &node);
+    NodeVal processForIdValue(const NodeVal &node);
+    NodeVal processForIdOrEmpty(const NodeVal &node);
     NodeVal processForTypeArg(const NodeVal &node);
     std::pair<NodeVal, std::optional<NodeVal>> processForIdTypePair(const NodeVal &node);
     NodeVal processAndImplicitCast(const NodeVal &node, TypeTable::Id ty);

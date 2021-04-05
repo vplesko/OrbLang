@@ -170,4 +170,16 @@ fnc main () () {
         = p -1;
     });
     println_i32 p;
+
+    eval (sym (e \b0));
+    block (\e) () {};
+    block b0 () {
+        exit (\e) true;
+    };
+    block b0 () {
+        loop (\e) false;
+    };
+    block b0 i32 {
+        pass (\e) -1;
+    };
 };

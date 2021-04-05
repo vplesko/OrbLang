@@ -361,17 +361,12 @@ NodeVal Processor::processBlock(const NodeVal &node, const NodeVal &starting) {
 
     optional<NamePool::Id> name;
     if (hasName) {
-        NodeVal nodeName = processWithEscape(node.getChild(indName));
+        NodeVal nodeName = processForIdOrEmpty(node.getChild(indName));
         if (nodeName.isInvalid()) {
             msgs->hintBlockSyntax();
             return NodeVal();
         }
         if (!checkIsEmpty(nodeName, false)) {
-            if (!checkIsId(nodeName, true)) {
-                msgs->hintBlockSyntax();
-                return NodeVal();
-            }
-
             name = nodeName.getEvalVal().id;
             if (attrBare.value()) {
                 msgs->errorBlockBareNameType(nodeName.getCodeLoc());
@@ -443,7 +438,7 @@ NodeVal Processor::processExit(const NodeVal &node) {
 
     optional<NamePool::Id> name;
     if (hasName) {
-        NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(indName));
+        NodeVal nodeName = processForIdValue(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
         name = nodeName.getEvalVal().id;
     }
@@ -486,7 +481,7 @@ NodeVal Processor::processLoop(const NodeVal &node) {
 
     optional<NamePool::Id> name;
     if (hasName) {
-        NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(indName));
+        NodeVal nodeName = processForIdValue(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
         name = nodeName.getEvalVal().id;
     }
@@ -525,7 +520,7 @@ NodeVal Processor::processPass(const NodeVal &node) {
 
     optional<NamePool::Id> name;
     if (hasName) {
-        NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(indName));
+        NodeVal nodeName = processForIdValue(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
         name = nodeName.getEvalVal().id;
     }
@@ -583,7 +578,7 @@ NodeVal Processor::processFixed(const NodeVal &node, const NodeVal &starting) {
         return NodeVal();
     }
 
-    NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(1));
+    NodeVal nodeName = processForIdValue(node.getChild(1));
     if (nodeName.isInvalid()) return NodeVal();
     NamePool::Id name = nodeName.getEvalVal().id;
     if (!symbolTable->nameAvailable(name, namePool, typeTable, true)) {
@@ -629,7 +624,7 @@ NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
     TypeTable::DataType dataType;
     dataType.defined = false;
 
-    NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(indName));
+    NodeVal nodeName = processForIdValue(node.getChild(indName));
     if (nodeName.isInvalid()) return NodeVal();
     dataType.name = nodeName.getEvalVal().id;
     if (!symbolTable->nameAvailable(dataType.name, namePool, typeTable, true)) {
@@ -895,7 +890,7 @@ NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
     bool isMain;
     bool evaluable, compilable;
     {
-        NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(indName));
+        NodeVal nodeName = processForIdValue(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
         nameCodeLoc = nodeName.getCodeLoc();
         name = nodeName.getEvalVal().id;
@@ -1102,7 +1097,7 @@ NodeVal Processor::processMac(const NodeVal &node, const NodeVal &starting) {
     CodeLoc nameCodeLoc;
     NamePool::Id name;
     if (isDef) {
-        NodeVal nodeName = processWithEscapeAndCheckIsId(node.getChild(indName));
+        NodeVal nodeName = processForIdValue(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
         nameCodeLoc = nodeName.getCodeLoc();
         name = nodeName.getEvalVal().id;
@@ -1130,7 +1125,7 @@ NodeVal Processor::processMac(const NodeVal &node, const NodeVal &starting) {
             return NodeVal();
         }
 
-        NodeVal arg = processWithEscapeAndCheckIsId(nodeArg);
+        NodeVal arg = processForIdValue(nodeArg);
         if (arg.isInvalid()) return NodeVal();
         if (arg.hasTypeAttr()) msgs->warnMacroArgTyped(nodeArg.getCodeLoc());
 
@@ -1513,7 +1508,7 @@ NodeVal Processor::processSizeOf(const NodeVal &node) {
 NodeVal Processor::processIsDef(const NodeVal &node) {
     if (!checkExactlyChildren(node, 2, true)) return NodeVal();
 
-    NodeVal name = processWithEscapeAndCheckIsId(node.getChild(1));
+    NodeVal name = processForIdValue(node.getChild(1));
     if (name.isInvalid()) return NodeVal();
 
     NamePool::Id id = name.getEvalVal().id;
@@ -1532,7 +1527,7 @@ NodeVal Processor::processAttrOf(const NodeVal &node) {
     NodeVal operand = processNode(node.getChild(1));
     if (operand.isInvalid()) return NodeVal();
 
-    NodeVal name = processWithEscapeAndCheckIsId(node.getChild(2));
+    NodeVal name = processForIdValue(node.getChild(2));
     if (name.isInvalid()) return NodeVal();
     NamePool::Id attrName = name.getEvalVal().id;
 
@@ -1553,7 +1548,7 @@ NodeVal Processor::processAttrIsDef(const NodeVal &node) {
     NodeVal operand = processNode(node.getChild(1));
     if (operand.isInvalid()) return NodeVal();
 
-    NodeVal name = processWithEscapeAndCheckIsId(node.getChild(2));
+    NodeVal name = processForIdValue(node.getChild(2));
     if (name.isInvalid()) return NodeVal();
     NamePool::Id attrName = name.getEvalVal().id;
 
@@ -2759,13 +2754,26 @@ NodeVal Processor::processWithEscape(const NodeVal &node, EscapeScore amount) {
     }
 }
 
-NodeVal Processor::processWithEscapeAndCheckIsId(const NodeVal &node) {
+NodeVal Processor::processForIdValue(const NodeVal &node) {
     NodeVal id = processWithEscape(node);
     if (id.isInvalid()) return NodeVal();
-    if (!checkIsId(id, true)) {
-        if (checkIsRaw(id, false)) msgs->hintUnescapeEscaped();
-        return NodeVal();
+    if (checkIsRaw(id, false)) {
+        id = processNode(move(id));
+        if (id.isInvalid()) return NodeVal();
     }
+    if (!checkIsId(id, true)) return NodeVal();
+    return id;
+}
+
+NodeVal Processor::processForIdOrEmpty(const NodeVal &node) {
+    NodeVal id = processWithEscape(node);
+    if (id.isInvalid()) return NodeVal();
+    if (checkIsRaw(id, false)) {
+        if (checkIsEmpty(id, false)) return id;
+        id = processNode(move(id));
+        if (id.isInvalid()) return NodeVal();
+    }
+    if (!checkIsId(id, true)) return NodeVal();
     return id;
 }
 
@@ -2787,7 +2795,7 @@ NodeVal Processor::processForTypeArg(const NodeVal &node) {
 pair<NodeVal, optional<NodeVal>> Processor::processForIdTypePair(const NodeVal &node) {
     pair<NodeVal, optional<NodeVal>> retInvalid = make_pair<NodeVal, optional<NodeVal>>(NodeVal(), nullopt);
 
-    NodeVal esc = processWithEscapeAndCheckIsId(node);
+    NodeVal esc = processForIdValue(node);
     if (esc.isInvalid()) return retInvalid;
 
     NodeVal id = esc;

@@ -41,6 +41,9 @@ comments are # for single line, #$ ... $# for multiline
 
 Char unescape sequences are: \', \", \?, \\, \a, \b, \f, \n, \r, \t, \v, \0, and \xNN (where N is a hex digit in [0-9a-fA-F]).
 
+When processing to get an id, escapes then processes. If result is raw, process again.
+Similar when processing for id:type pairs.
+
 ********************
 
 processing leaf:
