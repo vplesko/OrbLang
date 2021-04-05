@@ -70,6 +70,7 @@ void CompilationOrchestrator::genReserved() {
     addKeyword(namePool.get(), "??", Keyword::IS_DEF);
     addKeyword(namePool.get(), "attrOf", Keyword::ATTR_OF);
     addKeyword(namePool.get(), "attr??", Keyword::ATTR_IS_DEF);
+    addKeyword(namePool.get(), "isEval", Keyword::IS_EVAL);
     addKeyword(namePool.get(), "import", Keyword::IMPORT);
     addKeyword(namePool.get(), "message", Keyword::MESSAGE);
 

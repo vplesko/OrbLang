@@ -170,6 +170,7 @@ private:
     NodeVal processMac(const NodeVal &node, const NodeVal &starting);
     NodeVal processRet(const NodeVal &node);
     NodeVal processEval(const NodeVal &node);
+    NodeVal processIsEval(const NodeVal &node);
     NodeVal processImport(const NodeVal &node, bool topmost);
     NodeVal processMessage(const NodeVal &node, const NodeVal &starting);
     NodeVal processOper(const NodeVal &node, const NodeVal &starting, Oper op);

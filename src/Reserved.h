@@ -32,6 +32,7 @@ enum class Keyword {
     IS_DEF,
     ATTR_OF,
     ATTR_IS_DEF,
+    IS_EVAL,
     IMPORT,
     MESSAGE,
     UNKNOWN

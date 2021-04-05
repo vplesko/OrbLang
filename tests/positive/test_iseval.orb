@@ -1,0 +1,10 @@
+import "util/print.orb";
+
+fnc main () () {
+    println_i32 (cast i32 (isEval));
+    println_i32 (eval (cast i32 (isEval)));
+
+    sym (x 0);
+    println_i32 (+ 100 (cast i32 (isEval x)));
+    println_i32 (+ 100 (cast i32 (isEval 0)));
+};

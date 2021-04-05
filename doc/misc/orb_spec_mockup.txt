@@ -206,13 +206,6 @@ attr??
 	returns whether val has name attr
 	if name is type, returns whether it has type attr
 
-import
-	import a
-	a is evalVal string
-	orchestrator processes the file, then returns here
-	rules about no cyclical dependencies, etc.
-	// TODO import ...a
-
 =
 	= a ...b
 	r-assoc
@@ -247,6 +240,18 @@ import
 type
 	type ...a
 	if past first is type decor, pre-escape
+
+isEval
+	isEval OR isEval val
+	first returns whether processed in evaluator, second returns whether val is evalVal
+	second errors if val has no type
+
+import
+	import a
+	a is evalVal string
+	orchestrator processes the file, then returns here
+	rules about no cyclical dependencies, etc.
+	// TODO import ...a
 
 message
 	message ...a

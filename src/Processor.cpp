@@ -116,6 +116,8 @@ NodeVal Processor::processNonLeaf(const NodeVal &node, bool topmost) {
                 return processAttrOf(node);
             case Keyword::ATTR_IS_DEF:
                 return processAttrIsDef(node);
+            case Keyword::IS_EVAL:
+                return processIsEval(node);
             case Keyword::IMPORT:
                 return processImport(node, topmost);
             case Keyword::MESSAGE:
@@ -1303,6 +1305,25 @@ NodeVal Processor::processEval(const NodeVal &node) {
     return evaluator->processNode(node.getChild(1));
 }
 
+NodeVal Processor::processIsEval(const NodeVal &node) {
+    if (!checkBetweenChildren(node, 1, 2, true)) {
+        return NodeVal();
+    }
+
+    if (checkExactlyChildren(node, 2, false)) {
+        NodeVal operand = processAndCheckHasType(node.getChild(1));
+        if (operand.isInvalid()) return NodeVal();
+
+        bool wasEval = operand.isEvalVal();
+
+        if (!callDropFuncNonRef(move(operand))) return NodeVal();
+
+        return promoteBool(node.getCodeLoc(), operand.isEvalVal());
+    } else {
+        return promoteBool(node.getCodeLoc(), this == evaluator);
+    }
+}
+
 NodeVal Processor::processImport(const NodeVal &node, bool topmost) {
     if (!topmost) {
         msgs->errorNotTopmost(node.getCodeLoc());
@@ -1430,9 +1451,8 @@ NodeVal Processor::processOper(const NodeVal &node, const NodeVal &starting, Ope
 NodeVal Processor::processTypeOf(const NodeVal &node) {
     if (!checkExactlyChildren(node, 2, true)) return NodeVal();
 
-    NodeVal operand = processNode(node.getChild(1));
+    NodeVal operand = processAndCheckHasType(node.getChild(1));
     if (operand.isInvalid()) return NodeVal();
-    if (!checkHasType(operand, true)) return NodeVal();
 
     TypeTable::Id ty = operand.getType().value();
 
