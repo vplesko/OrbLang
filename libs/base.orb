@@ -1,5 +1,3 @@
-# TODO switch
-
 eval (sym (base.-widestU:(type cn) u64));
 
 eval (sym (base.-genSymToken 0:base.-widestU));
@@ -46,8 +44,8 @@ mac if (cond then) {
     });
 };
 
-mac if (cond then restFirst rest::variadic) {
-    sym (args (+ \(,cond ,then ,restFirst) rest));
+mac if (cond then rest0 rest::variadic) {
+    sym (args (+ \(,cond ,then ,rest0) rest));
 
     sym (innerCode {});
     range i 0 (- (lenOf args) 2) 2 {
@@ -146,15 +144,51 @@ mac repeat (n::preprocess body) {
     ret \(range ,s ,n ,body);
 };
 
+mac switch (x::preprocess rest0 rest1 rest::variadic) {
+    sym (entries (+ \(,rest0 ,rest1) rest));
+
+    sym (switchInnerCode {});
+    range i 0 (- (lenOf entries) 2) 2 {
+        base.errorIfNotOfType raw ([] entries i);
+
+        sym (switchEntryExitInnerCode {});
+        range j (lenOf ([] entries i)) {
+            = switchEntryExitInnerCode (+ switchEntryExitInnerCode \{
+                (exit (== ,x ,([] entries i j)))
+            });
+        };
+        = switchEntryExitInnerCode (+ switchEntryExitInnerCode \{
+            (exit base.-blockSwitchEntry true)
+        });
+
+        = switchInnerCode (+ switchInnerCode \{
+            (block base.-blockSwitchEntry () {
+                (block ,switchEntryExitInnerCode)
+                (block ,([] entries (+ i 1)))
+                (exit base.-blockSwitch true)
+            })
+        });
+    };
+
+    block {
+        exit (== (% (lenOf entries) 2) 0);
+        = switchInnerCode (+ switchInnerCode \{
+            (block ,([] entries (- (lenOf entries) 1)))
+        });
+    };
+
+    ret \(block base.-blockSwitch () ,switchInnerCode);
+};
+
 mac reduce (ty::preprocess collection::preprocess op::preprocess) {
     sym (calcId (genSym)) (iterId (genSym));
 
     ret \(block ,ty {
-        sym ,calcId:,ty;
-        range ,iterId ,(lenOf collection) {
-            = ,calcId (,op ,calcId ([] ,collection ,iterId));
-        };
-        pass ,calcId;
+        (sym ,calcId:,ty)
+        (range ,iterId ,(lenOf collection) {
+            (= ,calcId (,op ,calcId ([] ,collection ,iterId)))
+        })
+        (pass ,calcId)
     });
 };
 
@@ -162,11 +196,11 @@ mac reduce (ty::preprocess collection::preprocess init::preprocess op::preproces
     sym (calcId (genSym)) (iterId (genSym));
 
     ret \(block ,ty {
-        sym (,calcId ,init);
-        range ,iterId ,(lenOf collection) {
-            = ,calcId (,op ,calcId ([] ,collection ,iterId));
-        };
-        pass ,calcId;
+        (sym (,calcId ,init))
+        (range ,iterId ,(lenOf collection) {
+            (= ,calcId (,op ,calcId ([] ,collection ,iterId)))
+        })
+        (pass ,calcId)
     });
 };
 

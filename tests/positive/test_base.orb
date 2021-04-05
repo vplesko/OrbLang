@@ -338,4 +338,30 @@ fnc main () () {
             0 +);
         println_i32 z;
     };
+
+    block {
+        sym x:i32 y:i32;
+
+        = x y 1800;
+        switch x
+            (y) {
+                println_i32 x;
+            };
+        
+        = x 2;
+        switch x
+            (0 1) {
+                println_i32 -1;
+            } (1 2) {
+                println_i32 1801;
+            };
+        
+        = x 2;
+        switch x
+            (0 1) {
+                println_i32 -1;
+            } {
+                println_i32 1802;
+            };
+    };
 };
