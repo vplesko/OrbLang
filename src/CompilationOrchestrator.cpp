@@ -94,7 +94,6 @@ void CompilationOrchestrator::genReserved() {
     addOper(namePool.get(), "!", Oper::NOT);
     addOper(namePool.get(), "~", Oper::BIT_NOT);
     addOper(namePool.get(), "[]", Oper::IND);
-    addOper(namePool.get(), ".", Oper::DOT);
 }
 
 void CompilationOrchestrator::genPrimTypes() {

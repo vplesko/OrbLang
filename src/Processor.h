@@ -52,8 +52,10 @@ protected:
     virtual std::optional<bool> performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, ComparisonSignal &signal) =0;
     virtual NodeVal performOperComparisonTearDown(CodeLoc codeLoc, bool success, ComparisonSignal signal) =0;
     virtual NodeVal performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) =0;
-    virtual NodeVal performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) =0;
-    virtual NodeVal performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) =0;
+    // Called for arrays and array pointers.
+    virtual NodeVal performOperIndexArr(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) =0;
+    // Called for raws, tuples, and data types.
+    virtual NodeVal performOperIndex(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) =0;
     virtual NodeVal performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, bool bare) =0;
     virtual std::optional<std::uint64_t> performSizeOf(CodeLoc codeLoc, TypeTable::Id ty) =0;
 
@@ -104,7 +106,7 @@ private:
     NodeVal processOperComparison(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op);
     NodeVal processOperAssignment(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers);
     NodeVal processOperIndex(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers);
-    NodeVal processOperDot(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers);
+    NodeVal processOperIndexNonArr(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers);
     NodeVal processOperRegular(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op, bool bare);
 
     bool processAttributes(NodeVal &node, bool forceUnescape = false);
@@ -123,7 +125,7 @@ private:
     NodeVal promoteLiteralVal(const NodeVal &node);
     bool canBeTypeDescrDecor(const NodeVal &node);
     bool applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &node);
-    bool applyTupleMemb(TypeTable::Tuple &tup, const NodeVal &node);
+    bool applyTupleElem(TypeTable::Tuple &tup, const NodeVal &node);
     NodeVal dispatchLoad(CodeLoc codeLoc, VarId varId, std::optional<NamePool::Id> id = std::nullopt);
     NodeVal implicitCast(const NodeVal &node, TypeTable::Id ty, bool skipCheckNeedsDrop = false);
     NodeVal castNode(CodeLoc codeLoc, const NodeVal &node, CodeLoc codeLocTy, TypeTable::Id ty, bool skipCheckNeedsDrop = false);
@@ -135,10 +137,10 @@ private:
     NodeVal dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
     NodeVal dispatchAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs);
     NodeVal getElement(CodeLoc codeLoc, NodeVal &array, std::size_t index);
-    NodeVal getElement(CodeLoc codeLoc, NodeVal &array, const NodeVal &index);
-    NodeVal getRawMember(CodeLoc codeLoc, NodeVal &raw, std::size_t index);
-    NodeVal getTupleMember(CodeLoc codeLoc, NodeVal &tuple, std::size_t index);
-    NodeVal getDataMember(CodeLoc codeLoc, NodeVal &data, std::size_t index);
+    NodeVal getArrElement(CodeLoc codeLoc, NodeVal &array, const NodeVal &index);
+    NodeVal getRawElement(CodeLoc codeLoc, NodeVal &raw, std::size_t index);
+    NodeVal getTupleElement(CodeLoc codeLoc, NodeVal &tuple, std::size_t index);
+    NodeVal getDataElement(CodeLoc codeLoc, NodeVal &data, std::size_t index);
     bool argsFitFuncCall(const std::vector<NodeVal> &args, const TypeTable::Callable &callable, bool allowImplicitCasts);
     NodeVal loadUndecidedCallable(const NodeVal &node, const NodeVal &val);
     NodeVal moveNode(CodeLoc codeLoc, NodeVal &val);

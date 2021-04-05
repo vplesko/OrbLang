@@ -51,8 +51,8 @@ mac if (cond then restFirst rest::variadic) {
     range i 0 (- (lenOf args) 2) 2 {
         = innerCode (+ innerCode \{
             (block {
-                (exit (! ,(. args i)))
-                (block ,(. args (+ i 1)))
+                (exit (! ,([] args i)))
+                (block ,([] args (+ i 1)))
                 (exit base.-blockIf true)
             })
         });
@@ -61,7 +61,7 @@ mac if (cond then restFirst rest::variadic) {
     block {
         exit (== (% (lenOf args) 2) 0);
         = innerCode (+ innerCode \{
-            (block ,(. args (- (lenOf args) 1)))
+            (block ,([] args (- (lenOf args) 1)))
         });
     };
 
@@ -205,9 +205,9 @@ mac ^= (x::preprocess y::preprocess) {
 mac -> (x::preprocess m rest::variadic) {
     sym (ops (+ \(,x ,m) rest));
 
-    sym (code \(passthrough ,(. ops 0)));
+    sym (code \(passthrough ,([] ops 0)));
     range i 1 (- (lenOf ops) 1) {
-        = code \(. (* ,code) ,(. ops i));
+        = code \([] (* ,code) ,([] ops i));
     };
 
     ret code;
@@ -220,7 +220,7 @@ mac && (a b rest::variadic) {
     range i (lenOf ops) {
         = innerCode (+ innerCode \{
             (block {
-                (exit ,(. ops i))
+                (exit ,([] ops i))
                 (pass base.-blockLogAnd false)
             })});
     };
@@ -236,7 +236,7 @@ mac || (a b rest::variadic) {
     range i (lenOf ops) {
         = innerCode (+ innerCode \{
             (block {
-                (exit (! ,(. ops i)))
+                (exit (! ,([] ops i)))
                 (pass base.-blockLogAnd true)
             })});
     };
@@ -258,7 +258,7 @@ mac arr (ty::preprocess a::preprocess rest::(variadic preprocess)) {
     # genSym not needed since only visible in inner code, and elements are preprocessed
     sym (innerCode \{ (sym res:,arrTy) });
     range i (lenOf elems) {
-        = innerCode (+ innerCode \{ (= ([] res ,i) ,(. elems i)) });
+        = innerCode (+ innerCode \{ (= ([] res ,i) ,([] elems i)) });
     };
     = innerCode (+ innerCode \{ (pass res) });
 
@@ -269,20 +269,20 @@ mac base.-tupType (a::preprocess b::preprocess rest::preprocess) {
     sym (res \(,(typeOf a) ,(typeOf b)));
 
     range i (lenOf rest) {
-        = res (+ res \(,(typeOf (. rest i))));
+        = res (+ res \(,(typeOf ([] rest i))));
     };
 
     ret res;
 };
 
 mac tup (a::preprocess b::preprocess rest::(variadic preprocess)) {
-    sym (membs (+ \(,a ,b) rest));
+    sym (elems (+ \(,a ,b) rest));
     sym (tupTy (base.-tupType a b rest));
 
-    # genSym not needed since only visible in inner code, and members are preprocessed
+    # genSym not needed since only visible in inner code, and elements are preprocessed
     sym (innerCode \{ (sym res:,tupTy) });
-    range i (lenOf membs) {
-        = innerCode (+ innerCode \{ (= (. res ,i) ,(. membs i)) });
+    range i (lenOf elems) {
+        = innerCode (+ innerCode \{ (= ([] res ,i) ,([] elems i)) });
     };
     = innerCode (+ innerCode \{ (pass res) });
 
@@ -297,12 +297,12 @@ mac make (ty::preprocess pair rest::variadic) {
 
     sym (innerCode \{ (sym ,inst:ty) });
     range i (lenOf pairs) {
-        base.errorIfNotOfType raw (. pairs i);
-        if (!= (lenOf (. pairs i)) 2) {
-            message::(error (loc (. pairs i))) "Each entry must contain exactly two values - member name and initial value.";
+        base.errorIfNotOfType raw ([] pairs i);
+        if (!= (lenOf ([] pairs i)) 2) {
+            message::(error (loc ([] pairs i))) "Each entry must contain exactly two values - element name and initial value.";
         };
 
-        = innerCode (+ innerCode \{ (= (. ,inst ,(. pairs i 0)) ,(. pairs i 1)) });
+        = innerCode (+ innerCode \{ (= ([] ,inst ,([] pairs i 0)) ,([] pairs i 1)) });
     };
     = innerCode (+ innerCode \{ (pass ,inst) });
 
@@ -342,18 +342,18 @@ mac base.-enumValsDecl (name enumTy::preprocess vals) {
 
     sym valName:id valNamePrev:id init:raw;
     range i (lenOf vals) {
-        if (base.isRaw (. vals i)) {
-            if (!= (lenOf (. vals i)) 2) {
-                message::(error (loc (. vals i))) "Each entry must be either an id or have exactly two values - name and initial value.";
+        if (base.isRaw ([] vals i)) {
+            if (!= (lenOf ([] vals i)) 2) {
+                message::(error (loc ([] vals i))) "Each entry must be either an id or have exactly two values - name and initial value.";
             };
 
-            base.errorIfNotOfType id (. vals i 0);
-            = valName (. vals i 0);
+            base.errorIfNotOfType id ([] vals i 0);
+            = valName ([] vals i 0);
 
-            = init \(cast ,name ,(. vals i 1));
+            = init \(cast ,name ,([] vals i 1));
         } {
-            base.errorIfNotOfType id (. vals i);
-            = valName (. vals i);
+            base.errorIfNotOfType id ([] vals i);
+            = valName ([] vals i);
 
             if (== i 0) {
                 = init \(cast ,name 0);

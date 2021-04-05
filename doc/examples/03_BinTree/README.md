@@ -19,14 +19,14 @@ While we're at it, let's define a utility function for constructing a `Node`.
 ```
 fnc makeNode (val:i32 left:(Node *) right:(Node *)) Node {
     sym node:Node;
-    = (. node val) val;
-    = (. node left) left;
-    = (. node right) right;
+    = ([] node val) val;
+    = ([] node left) left;
+    = ([] node right) right;
     ret node;
 };
 ```
 
-Members of data types are accessed with `.` operator.
+Elements of data types are accessed with `[]` operator.
 
 Start writing `sumAndCnt`.
 
@@ -37,7 +37,7 @@ fnc sumAndCnt (node:(Node cn *)) (i32 i32) {
 
 `Node cn *` is a pointer to a constant `Node`. The value it points to cannot be modified. Note that the pointer itself is not constant, though we could have declared it as such with `Node cn * cn`.
 
-`(i32 i32)` is a tuple. In this case, it is a collection of two `i32` values. Tuple members are also accessed using `.`, but using numerical indexes instead of identifiers.
+`(i32 i32)` is a tuple. In this case, it is a collection of two `i32` values. Tuple elements are also accessed using `[]`, but using numerical indexes instead of identifiers.
 
 The first element of this tuple will be the sum, and second the count of all node values of the tree.
 
@@ -58,7 +58,7 @@ Make recursive calls on left and right subtrees.
         (rightRes (sumAndCnt (-> node right)));
 ```
 
-`->` is a macro. It is similar to `.`, but used for accessing members behind a pointer.
+`->` is a macro. It is similar to `[]`, but used for accessing elements behind a pointer.
 
 Finally, return the final value of the function.
 
@@ -95,7 +95,7 @@ Now, we can call `sumAndCnt` and print the result.
 ```
     sym (result (sumAndCnt (& root)));
 
-    printf "%d %d\n" (. result 0) (. result 1);
+    printf "%d %d\n" ([] result 0) ([] result 1);
 ```
 
 # Final code
@@ -112,9 +112,9 @@ data Node {
 
 fnc makeNode (val:i32 left:(Node *) right:(Node *)) Node {
     sym node:Node;
-    = (. node val) val;
-    = (. node left) left;
-    = (. node right) right;
+    = ([] node val) val;
+    = ([] node left) left;
+    = ([] node right) right;
     ret node;
 };
 
@@ -126,8 +126,8 @@ fnc sumAndCnt (node:(Node cn *)) (i32 i32) {
     sym (leftRes (sumAndCnt (-> node left)))
         (rightRes (sumAndCnt (-> node right)));
 
-    ret (tup (+ (. leftRes 0) (. rightRes 0) (-> node val))
-        (+ (. leftRes 1) (. rightRes 1) 1));
+    ret (tup (+ ([] leftRes 0) ([] rightRes 0) (-> node val))
+        (+ ([] leftRes 1) ([] rightRes 1) 1));
 };
 
 fnc main () () {
@@ -140,6 +140,6 @@ fnc main () () {
 
     sym (result (sumAndCnt (& root)));
 
-    printf "%d %d\n" (. result 0) (. result 1);
+    printf "%d %d\n" ([] result 0) ([] result 1);
 };
 ```

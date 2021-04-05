@@ -615,7 +615,7 @@ NodeVal Evaluator::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const No
     return nodeVal;
 }
 
-NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) {
+NodeVal Evaluator::performOperIndexArr(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) {
     if (!checkIsEvalVal(base, true) || !checkIsEvalVal(ind, true)) return NodeVal();
 
     optional<size_t> index = EvalVal::getValueNonNeg(ind.getEvalVal(), typeTable);
@@ -657,7 +657,7 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVa
     }
 }
 
-NodeVal Evaluator::performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
+NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
     if (!checkIsEvalVal(base, true)) return NodeVal();
 
     if (NodeVal::isRawVal(base, typeTable)) {
@@ -962,13 +962,13 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
             const TypeTable::Tuple &tupSrc = *typeTable->extractTuple(srcTypeId);
             const TypeTable::Tuple &tupDst = *typeTable->extractTuple(dstTypeId);
 
-            if (tupSrc.members.size() != tupDst.members.size()) return nullopt;
+            if (tupSrc.elements.size() != tupDst.elements.size()) return nullopt;
 
-            for (size_t i = 0; i < tupSrc.members.size(); ++i) {
-                optional<NodeVal> membCast = makeCast(codeLoc, srcEvalVal.elems[i], tupSrc.members[i], tupDst.members[i]);
-                if (!membCast.has_value()) return nullopt;
+            for (size_t i = 0; i < tupSrc.elements.size(); ++i) {
+                optional<NodeVal> elemCast = makeCast(codeLoc, srcEvalVal.elems[i], tupSrc.elements[i], tupDst.elements[i]);
+                if (!elemCast.has_value()) return nullopt;
 
-                dstEvalVal.elems[i] = move(membCast.value());
+                dstEvalVal.elems[i] = move(elemCast.value());
             }
         } else {
             return nullopt;

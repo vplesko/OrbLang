@@ -26,7 +26,7 @@ mac passthrough (a) {
 };
 
 mac getSecond (r) {
-    ret (. r 1);
+    ret ([] r 1);
 };
 
 mac say (x) {
@@ -60,7 +60,7 @@ mac pp1 (a b::(variadic preprocess)) {
         exit (!= (lenOf b) 0);
         ret ();
     };
-    ret \(block { ,(. b 0) ,(. b 0) });
+    ret \(block { ,([] b 0) ,([] b 0) });
 };
 
 mac pp++ (a::preprocess) {
@@ -163,7 +163,7 @@ fnc main () () {
         pp++ y;
         println_i32 y;
 
-        println_i32 (. (pe {foo bar 308}) 2);
+        println_i32 ([] (pe {foo bar 308}) 2);
     };
 
     block {

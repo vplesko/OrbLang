@@ -76,7 +76,6 @@ public:
     void hintGlobalCompiledLoad();
     void hintBlockSyntax();
     void hintIndexTempOwning();
-    void hintDotTempOwning();
     void hintUnescapeEscaped();
 
     void warnUnusedSpecial(CodeLoc loc, SpecialVal spec);
@@ -128,10 +127,8 @@ public:
     void errorExprCannotCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into);
     void errorExprCannotImplicitCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into);
     void errorExprCannotImplicitCastEither(CodeLoc loc, TypeTable::Id ty1, TypeTable::Id ty2);
-    void errorExprIndexOnBadType(CodeLoc loc);
     void errorExprIndexOnBadType(CodeLoc loc, TypeTable::Id ty);
     void errorExprIndexOutOfBounds(CodeLoc loc);
-    void errorExprDotOnBadType(CodeLoc loc, TypeTable::Id ty);
     void errorExprDerefOnBadType(CodeLoc loc, TypeTable::Id ty);
     void errorExprDerefNull(CodeLoc loc);
     void errorExprIndexNotIntegral(CodeLoc loc);
@@ -139,7 +136,7 @@ public:
     void errorExprUnOnNull(CodeLoc loc);
     void errorExprAsgnNonRef(CodeLoc loc);
     void errorExprAsgnOnCn(CodeLoc loc);
-    void errorExprDotInvalidBase(CodeLoc loc);
+    void errorExprIndexInvalidBase(CodeLoc loc);
     void errorExprMoveNoDrop(CodeLoc loc);
     void errorExprMoveInvokeArg(CodeLoc loc);
     void errorExprMoveCn(CodeLoc loc);
@@ -172,12 +169,12 @@ public:
     void errorFuncCallAmbiguous(CodeLoc loc, std::vector<CodeLoc> codeLocsCand);
     void errorMacroNotFound(CodeLoc loc, NamePool::Id name);
     void errorMacroNoValue(CodeLoc loc);
-    void errorDataCnMember(CodeLoc loc);
+    void errorDataCnElement(CodeLoc loc);
     void errorDataRedefinition(CodeLoc loc, NamePool::Id name);
     void errorBlockBareNameType(CodeLoc loc);
     void errorBlockNotFound(CodeLoc loc, NamePool::Id name);
     void errorBlockNoPass(CodeLoc loc);
-    void errorMemberIndex(CodeLoc loc);
+    void errorElementIndex(CodeLoc loc);
     void errorLenOfBadType(CodeLoc loc, TypeTable::Id ty);
     void errorMissingTypeAttribute(CodeLoc loc);
     void errorMissingType(CodeLoc loc);

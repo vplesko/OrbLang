@@ -4,15 +4,15 @@
 #include <sstream>
 using namespace std;
 
-void TypeTable::Tuple::addMember(TypeTable::Id m) {
-    members.push_back(m);
+void TypeTable::Tuple::addElement(TypeTable::Id m) {
+    elements.push_back(m);
 }
 
 bool TypeTable::Tuple::eq(const Tuple &other) const {
-    if (members.size() != other.members.size()) return false;
+    if (elements.size() != other.elements.size()) return false;
 
-    for (size_t i = 0; i < members.size(); ++i)
-        if (members[i] != other.members[i]) return false;
+    for (size_t i = 0; i < elements.size(); ++i)
+        if (elements[i] != other.elements[i]) return false;
     
     return true;
 }
@@ -41,9 +41,9 @@ void TypeTable::TypeDescr::setLastCn() {
     else cns[cns.size()-1] = true;
 }
 
-optional<size_t> TypeTable::DataType::getMembInd(NamePool::Id name) const {
-    for (size_t i = 0; i < members.size(); ++i) {
-        if (members[i].name == name) return i;
+optional<size_t> TypeTable::DataType::getElemInd(NamePool::Id name) const {
+    for (size_t i = 0; i < elements.size(); ++i) {
+        if (elements[i].name == name) return i;
     }
 
     return nullopt;
@@ -135,9 +135,9 @@ TypeTable::Id TypeTable::addTypeDescr(TypeDescr typeDescr) {
 }
 
 optional<TypeTable::Id> TypeTable::addTuple(Tuple tup) {
-    if (tup.members.empty()) return nullopt;
+    if (tup.elements.empty()) return nullopt;
 
-    if (tup.members.size() == 1) return tup.members[0];
+    if (tup.elements.size() == 1) return tup.elements[0];
 
     for (size_t i = 0; i < tuples.size(); ++i) {
         if (tup.eq(tuples[i].first)) {
@@ -430,13 +430,13 @@ optional<size_t> TypeTable::extractLenOfArr(Id arrTypeId) const {
 optional<size_t> TypeTable::extractLenOfTuple(Id tupleTypeId) const {
     TypeTable::Id baseTypeId = extractFixedTypeBaseType(tupleTypeId);
     if (!isTuple(baseTypeId)) return nullopt;
-    return getTuple(baseTypeId).members.size();
+    return getTuple(baseTypeId).elements.size();
 }
 
 optional<size_t> TypeTable::extractLenOfDataType(Id dataTypeId) const {
     TypeTable::Id baseTypeId = extractFixedTypeBaseType(dataTypeId);
     if (!isDataType(baseTypeId)) return nullopt;
-    return getDataType(baseTypeId).members.size();
+    return getDataType(baseTypeId).elements.size();
 }
 
 const TypeTable::Callable* TypeTable::extractCallable(Id callTypeId) const {
@@ -638,14 +638,14 @@ const TypeTable::Tuple* TypeTable::extractTuple(Id t) const {
     return nullptr;
 }
 
-optional<TypeTable::Id> TypeTable::extractTupleMemberType(Id t, size_t ind) {
+optional<TypeTable::Id> TypeTable::extractTupleElementType(Id t, size_t ind) {
     const Tuple *tup = extractTuple(t);
     if (tup == nullptr) return nullopt;
 
-    if (ind >= tup->members.size()) return nullopt;
+    if (ind >= tup->elements.size()) return nullopt;
 
-    Id id = tup->members[ind];
-    // worksAsTypeCn would be incorrect, as that returns true if not direct cn but a different member is cn
+    Id id = tup->elements[ind];
+    // worksAsTypeCn would be incorrect, as that returns true if not direct cn but a different element is cn
     return isDirectCn(t) ? addTypeCnOf(id) : id;
 }
 
@@ -664,24 +664,24 @@ const TypeTable::DataType* TypeTable::extractDataType(Id t) const {
     return nullptr;
 }
 
-optional<TypeTable::Id> TypeTable::extractDataTypeMemberType(Id t, NamePool::Id memb) {
+optional<TypeTable::Id> TypeTable::extractDataTypeElementType(Id t, NamePool::Id elem) {
     const DataType *data = extractDataType(t);
     if (data == nullptr) return nullopt;
 
-    optional<size_t> ind = data->getMembInd(memb);
+    optional<size_t> ind = data->getElemInd(elem);
     if (!ind.has_value()) return nullopt;
 
-    Id id = data->members[ind.value()].type;
-    // worksAsTypeCn would be incorrect, as that returns true if not direct cn but a different member is cn
+    Id id = data->elements[ind.value()].type;
+    // worksAsTypeCn would be incorrect, as that returns true if not direct cn but a different element is cn
     return isDirectCn(t) ? addTypeCnOf(id) : id;
 }
 
-optional<TypeTable::Id> TypeTable::extractDataTypeMemberType(Id t, size_t ind) {
+optional<TypeTable::Id> TypeTable::extractDataTypeElementType(Id t, size_t ind) {
     const DataType *data = extractDataType(t);
     if (data == nullptr) return nullopt;
 
-    Id id = data->members[ind].type;
-    // worksAsTypeCn would be incorrect, as that returns true if not direct cn but a different member is cn
+    Id id = data->elements[ind].type;
+    // worksAsTypeCn would be incorrect, as that returns true if not direct cn but a different element is cn
     return isDirectCn(t) ? addTypeCnOf(id) : id;
 }
 
@@ -769,7 +769,7 @@ bool TypeTable::worksAsTypeCn(Id t) const {
     } else if (isTuple(t)) {
         const Tuple &tup = getTuple(t);
 
-        for (auto it : tup.members) {
+        for (auto it : tup.elements) {
             if (worksAsTypeCn(it)) return true;
         }
 
@@ -897,8 +897,8 @@ bool TypeTable::isDirectCn(Id t) const {
 bool TypeTable::isUndef(Id t) {
     if (worksAsTuple(t)) {
         const Tuple *tup = extractTuple(t);
-        for (Id membTy : tup->members) {
-            if (isUndef(membTy)) return true;
+        for (Id elemTy : tup->elements) {
+            if (isUndef(elemTy)) return true;
         }
         return false;
     } else if (worksAsTypeArr(t)) {
@@ -955,9 +955,9 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
 
         const Tuple &s = getTuple(from), &d = getTuple(into);
 
-        if (s.members.size() != d.members.size()) return false;
-        for (size_t i = 0; i < s.members.size(); ++i) {
-            if (!isImplicitCastable(s.members[i], d.members[i])) return false;
+        if (s.elements.size() != d.elements.size()) return false;
+        for (size_t i = 0; i < s.elements.size(); ++i) {
+            if (!isImplicitCastable(s.elements[i], d.elements[i])) return false;
         }
 
         return true;
@@ -1029,10 +1029,10 @@ optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool, bool m
     } else if (isTuple(ty)) {
         ss << "$t";
         const Tuple &tup = getTuple(ty);
-        for (auto it : tup.members) {
-            optional<string> membStr = makeBinString(it, namePool, false);
-            if (!membStr.has_value()) return nullopt;
-            ss << membStr.value();
+        for (auto it : tup.elements) {
+            optional<string> elemStr = makeBinString(it, namePool, false);
+            if (!elemStr.has_value()) return nullopt;
+            ss << elemStr.value();
         }
     } else if (isFixedType(ty)) {
         ss << "$c" << "$" << namePool->get(getFixedType(ty).name);

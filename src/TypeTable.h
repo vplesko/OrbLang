@@ -45,12 +45,12 @@ public:
     };
 
     struct Tuple {
-        std::vector<Id> members;
+        std::vector<Id> elements;
 
         Tuple() {}
-        explicit Tuple(std::vector<Id> membs) : members(std::move(membs)) {}
+        explicit Tuple(std::vector<Id> elems) : elements(std::move(elems)) {}
 
-        void addMember(Id m);
+        void addElement(Id m);
 
         bool eq(const Tuple &other) const;
     };
@@ -97,7 +97,7 @@ public:
     };
 
     struct DataType {
-        struct MembEntry {
+        struct ElemEntry {
             NamePool::Id name;
             TypeTable::Id type;
             bool noZeroInit = false;
@@ -105,12 +105,12 @@ public:
 
         bool defined = false;
         NamePool::Id name;
-        std::vector<MembEntry> members;
+        std::vector<ElemEntry> elements;
 
         DataType() {}
-        DataType(NamePool::Id name, std::vector<MembEntry> membs) : name(name), members(std::move(membs)) {}
+        DataType(NamePool::Id name, std::vector<ElemEntry> elems) : name(name), elements(std::move(elems)) {}
 
-        std::optional<std::size_t> getMembInd(NamePool::Id name) const;
+        std::optional<std::size_t> getElemInd(NamePool::Id name) const;
     };
 
     struct Callable {
@@ -204,8 +204,8 @@ public:
     // if typeDescr is secretly a base type, that type's Id is returned instead
     // if the base is also typeDescr, its decors will be combined with this one's
     Id addTypeDescr(TypeDescr typeDescr);
-    // should have at least one member. if there is exactly one member,
-    // the created type will not be a tuple, but the type of that member.
+    // should have at least one element. if there is exactly one element,
+    // the created type will not be a tuple, but the type of that element.
     std::optional<Id> addTuple(Tuple tup);
     std::optional<Id> addFixedType(FixedType c);
     // if already exists, errors on redefinition, overrides otherwise
@@ -284,11 +284,11 @@ public:
     std::optional<std::size_t> extractLenOfDataType(Id dataTypeId) const;
 
     // handles constness of resulting type
-    std::optional<Id> extractTupleMemberType(Id t, std::size_t ind);
+    std::optional<Id> extractTupleElementType(Id t, std::size_t ind);
     // handles constness of resulting type
-    std::optional<Id> extractDataTypeMemberType(Id t, NamePool::Id memb);
+    std::optional<Id> extractDataTypeElementType(Id t, NamePool::Id elem);
     // handles constness of resulting type
-    std::optional<Id> extractDataTypeMemberType(Id t, std::size_t ind);
+    std::optional<Id> extractDataTypeElementType(Id t, std::size_t ind);
 
     // passes through decors and fixed types
     Id extractBaseType(Id t) const;

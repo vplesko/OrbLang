@@ -2,27 +2,27 @@ import "util/print.orb";
 
 fnc pair (x:i32 y:i32) (i32 i32) {
     sym r:(i32 i32);
-    = (. r 0) x;
-    = (. r 1) y;
+    = ([] r 0) x;
+    = ([] r 1) y;
     ret r;
 };
 
 fnc pair (x:(i32 i32) y:(i32 i32)) ((i32 i32) (i32 i32)) {
     sym r:((i32 i32) (i32 i32));
-    = (. r 0) x;
-    = (. r 1) y;
+    = ([] r 0) x;
+    = ([] r 1) y;
     ret r;
 };
 
-fnc dot (x:(i32 i32) y:i32) i32 {
+fnc ind (x:(i32 i32) y:i32) i32 {
     ret (block b0 i32 {
         block {
             exit (!= y 0);
-            pass b0 (. x 0);
+            pass b0 ([] x 0);
         };
         block {
             exit (!= y 1);
-            pass b0 (. x 1);
+            pass b0 ([] x 1);
         };
         pass -1;
     });
@@ -30,8 +30,8 @@ fnc dot (x:(i32 i32) y:i32) i32 {
 
 fnc copy (x:((i32 i32) *)) (i32 i32) {
     sym r:(i32 i32);
-    = (. r 0) (. (* x) 0);
-    = (. r 1) (. (* x) 1);
+    = ([] r 0) ([] (* x) 0);
+    = ([] r 1) ([] (* x) 1);
     ret r;
 };
 
@@ -44,48 +44,48 @@ sym glob1:(i32 i32);
 fnc main () () {
     block {
         sym x:(i32 bool);
-        = (. x 0) 100;
-        = (. x 1) true;
-        println_i32 (. x 0);
-        println_i32 (+ (. x 0) (cast i32 (. x 1)));
+        = ([] x 0) 100;
+        = ([] x 1) true;
+        println_i32 ([] x 0);
+        println_i32 (+ ([] x 0) (cast i32 ([] x 1)));
     };
     block {
         sym x:(i32 bool);
         sym y:(i32 bool);
-        = (. x 0) 200;
-        = (. y 0) (. x 0);
-        println_i32 (. y 0);
+        = ([] x 0) 200;
+        = ([] y 0) ([] x 0);
+        println_i32 ([] y 0);
     };
     block {
         sym x:((i32 f32) bool);
-        = (. (. x 0) 0) 300;
-        println_i32 (. (. x 0) 0);
+        = ([] ([] x 0) 0) 300;
+        println_i32 ([] ([] x 0) 0);
     };
     block {
         sym x:((i32 i32) 4);
-        = (. ([] x 0) 0) 400;
-        println_i32 (. ([] x 0) 0);
+        = ([] ([] x 0) 0) 400;
+        println_i32 ([] ([] x 0) 0);
     };
     block {
         sym x:(i32 i32);
         sym y:((i32 i32) *);
         = y (& x);
-        = (. x 0) 500;
-        println_i32 (. (* y) 0);
+        = ([] x 0) 500;
+        println_i32 ([] (* y) 0);
     };
     block {
         sym x:(i32 i32);
         sym y:(i32 []);
         = y (cast (i32 []) (& x));
-        = (. x 0) 600;
+        = ([] x 0) 600;
         println_i32 ([] y 0);
     };
     block {
         sym x:((i32 i32) 4);
         sym (y:(i32 []) (cast (i32 []) (& x)));
-        = (. ([] x 0) 0) 700;
-        = (. ([] x 0) 1) 701;
-        = (. ([] x 1) 0) 702;
+        = ([] ([] x 0) 0) 700;
+        = ([] ([] x 0) 1) 701;
+        = ([] ([] x 1) 0) 702;
         println_i32 ([] y 0);
         println_i32 ([] y 1);
         println_i32 ([] y 2);
@@ -93,33 +93,33 @@ fnc main () () {
     block {
         sym (x:i32 800) (y:i32 801);
         sym (z:(i32 i32) (pair x y));
-        println_i32 (. z 0);
-        println_i32 (. z 1);
+        println_i32 ([] z 0);
+        println_i32 ([] z 1);
     };
     block {
         sym (x:(i32 i32) (pair 900 901));
-        println_i32 (dot x 0);
-        println_i32 (dot x 1);
+        println_i32 (ind x 0);
+        println_i32 (ind x 1);
     };
     block {
         sym (x:(i32 i32) (pair 1000 1001));
         sym (y:((i32 i32) *) (& x));
         sym (z:(i32 i32) (copy y));
-        println_i32 (dot z 0);
-        println_i32 (dot z 1);
+        println_i32 (ind z 0);
+        println_i32 (ind z 1);
     };
     block {
-        = (. glob1 0) 1100;
-        println_i32 (. glob1 0);
+        = ([] glob1 0) 1100;
+        println_i32 ([] glob1 0);
     };
     block {
         sym (x:((i32 i32) cn) (pair 1200 1201));
-        println_i32 (. x 0);
+        println_i32 ([] x 0);
     };
     block {
         sym x:(i32 i32);
-        = (. x 0) 1300;
-        println_i32 (* (& (. x 0)));
+        = ([] x 0) 1300;
+        println_i32 (* (& ([] x 0)));
     };
     block {
         sym x:(i32 i32);
@@ -128,21 +128,21 @@ fnc main () () {
     };
     block {
         sym x:((i32 (i32 4)));
-        = ([] (. x 1) 0) 1400;
-        println_i32 ([] (. x 1) 0);
+        = ([] ([] x 1) 0) 1400;
+        println_i32 ([] ([] x 1) 0);
     };
     block {
         sym (x:((i32 cn) (i32 cn)) (addCn (pair 1500 1501)));
-        println_i32 (. x 0);
+        println_i32 ([] x 0);
     };
     block {
         sym (x:((i32 cn) (i32 cn)) (addCn (pair 1600 1601)));
         sym (y:((i32 cn) (i32 cn)) x);
-        println_i32 (. y 0);
+        println_i32 ([] y 0);
     };
     block {
         sym (x:((i32 cn) (i32 cn)) (addCn (pair 1700 1701)));
-        println_i32 (. x 0);
+        println_i32 ([] x 0);
     };
     block {
         sym x:(((i32 cn) bool) cn 4 cn *);
@@ -150,18 +150,18 @@ fnc main () () {
     block {
         sym (x:(i32 i32) (pair 0 0));
         sym (y:((i32 cn) i32) (* (cast (((i32 cn) (i32)) *) (& x))));
-        = (. y 1) 1800;
-        println_i32 (. y 1);
+        = ([] y 1) 1800;
+        println_i32 ([] y 1);
     };
     block {
         sym (y:(i32 i32) (pair 1900 1900));
         sym (x:((i32 i32) (i32 i32)) (pair y (pair 1901:i32 1901:i32)));
-        println_i32 (. (. x 0) 0);
-        println_i32 (. x 1 0);
+        println_i32 ([] ([] x 0) 0);
+        println_i32 ([] x 1 0);
     };
     block {
         sym x:((i32 i32) (i32 i32));
-        = (. x 0 0) 2000;
-        println_i32 (. x 0 0);
+        = ([] x 0 0) 2000;
+        println_i32 ([] x 0 0);
     };
 };

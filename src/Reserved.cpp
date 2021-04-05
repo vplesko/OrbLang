@@ -26,8 +26,7 @@ const unordered_map<Oper, OperInfo> operInfos = {
     {Oper::BIT_XOR, {.binary=true}},
     {Oper::SHL, {.binary=true}},
     {Oper::SHR, {.unary=true, .binary=true}},
-    {Oper::IND, {.binary=true}},
-    {Oper::DOT, {.binary=true}}
+    {Oper::IND, {.binary=true}}
 };
 
 bool isMeaningful(NamePool::Id name) {

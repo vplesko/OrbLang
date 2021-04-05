@@ -9,7 +9,7 @@ data Bar {
 
 fnc bar (b:Bar::noDrop) () {
     sym f0:Foo;
-    = f0 (. b f0);
+    = f0 ([] b f0);
 };
 
 fnc main () () {};

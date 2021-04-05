@@ -45,7 +45,7 @@ mac doPrint (a b c d::variadic) {
     sym (i 0);
     block {
         exit (>= i (lenOf d));
-        = r1 (+ r1 \{ print ,(. d i); });
+        = r1 (+ r1 \{ print ,([] d i); });
         = i (+ i 1);
         loop true;
     };

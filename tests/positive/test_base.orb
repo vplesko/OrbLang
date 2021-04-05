@@ -8,7 +8,7 @@ data Foo {
 
 data Bar {
     x:i32
-} (lam (this:Bar::noDrop) () { println_i32 (. this x); });
+} (lam (this:Bar::noDrop) () { println_i32 ([] this x); });
 
 sym (globArr (eval (arr i32 603 -1)));
 sym (globTup (eval (tup 704 -1)));
@@ -176,23 +176,23 @@ fnc main () () {
         sym a:(i32 i32 i32);
 
         sym b:(((i32 i32 i32) *) i32);
-        = (. b 0) (& a);
-        = (. a 0) 400;
-        println_i32 (-> (. b 0) 0);
+        = ([] b 0) (& a);
+        = ([] a 0) 400;
+        println_i32 (-> ([] b 0) 0);
 
         sym c:(((((i32 i32 i32) *) i32) *) i32);
-        = (. c 0) (& b);
-        = (. a 1) 401;
-        println_i32 (-> (. c 0) 0 1);
+        = ([] c 0) (& b);
+        = ([] a 1) 401;
+        println_i32 (-> ([] c 0) 0 1);
 
         sym (d (& c));
-        = (. a 2) 402;
+        = ([] a 2) 402;
         println_i32 (-> d 0 0 2);
 
         sym p:Foo;
 
         sym (q (& p));
-        = (. p x) 403;
+        = ([] p x) 403;
         println_i32 (-> q x);
     };
 
@@ -241,23 +241,23 @@ fnc main () () {
 
     block {
         sym (a (tup 700 701));
-        println_i32 (. a 0);
-        println_i32 (. a 1);
+        println_i32 ([] a 0);
+        println_i32 ([] a 1);
 
         sym (b (tup 702 703:i16));
-        println_i32 (. b 0);
-        println_i32 (. b 1);
+        println_i32 ([] b 0);
+        println_i32 ([] b 1);
 
-        println_i32 (. globTup 0);
+        println_i32 ([] globTup 0);
     };
 
     block {
         sym (a (make Foo (x 800) (y 801)));
-        println_i32 (. a x);
-        println_i32 (. a y);
+        println_i32 ([] a x);
+        println_i32 ([] a y);
 
         = a (make Foo (y 802));
-        println_i32 (. a y);
+        println_i32 ([] a y);
     };
 
     block {

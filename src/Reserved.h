@@ -59,7 +59,6 @@ enum class Oper {
     SHL,
     SHR,
     IND,
-    DOT,
     UNKNOWN
 };
 

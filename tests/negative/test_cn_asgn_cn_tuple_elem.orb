@@ -5,5 +5,5 @@ fnc makeFoo () (i32 i32) {
 
 fnc main () () {
     sym (f:((i32 i32) cn) (makeFoo));
-    = (. f 0) 1;
+    = ([] f 0) 1;
 };

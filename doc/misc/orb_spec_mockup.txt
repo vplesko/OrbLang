@@ -133,10 +133,10 @@ fixed
 	global only
 
 data
-	data name OR data name membs OR data name membs drop
+	data name OR data name elems OR data name elems drop
 	first declares, second and third define a data type
-	name is id, membs is list of a:t, drop is function or () for no drop function
-	must have at least one member
+	name is id, elems is list of a:t, drop is function or () for no drop function
+	must have at least one element
 	global only
 
 fnc
@@ -173,9 +173,7 @@ typeOf
 lenOf
 	lenOf val
 	if val is a type:
-		if val is a type arr, returns its length
-		if val is a type tuple, returns its num of membs
-		if val is a type raw, returns its num of children
+		if val is a type arr, tuple, data, or raw, returns its num of elems
 		if val is a non-null eval string, returns its len (including terminal char)
 		otherwise, error
 	else:
@@ -231,11 +229,10 @@ attr??
 ! ~
 	op a
 
-[] .
+[]
 	op a ...b
 	goes in pairs
-	. works on pointers also
-	for . if raw and member is not raw, non-ref returned
+	if raw and element is not raw, non-ref returned
 
 type
 	type ...a
@@ -279,4 +276,4 @@ mac int - macro that takes given number of args
 ({...type}2+) - tuple of given types
 
 fixed types restrict impl casts
-data types have named members
+data types have named elements

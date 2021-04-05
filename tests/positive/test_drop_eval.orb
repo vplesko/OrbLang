@@ -9,7 +9,7 @@ mac printDropVals () {
 data Foo {
     x:i32
 } (eval (fnc dropFoo (val:Foo::noDrop) () {
-    = printDropValsInnerCode (+ printDropValsInnerCode \{ (println_i32 ,(. val x)) });
+    = printDropValsInnerCode (+ printDropValsInnerCode \{ (println_i32 ,([] val x)) });
 }));
 
 data Bar {
@@ -19,13 +19,13 @@ data Bar {
 
 eval (fnc foo0 (x:i32) () {
     sym f:Foo;
-    = (. f x) x;
+    = ([] f x) x;
 });
 
 eval (fnc foo1 (x:i32) () {
     block {
         sym f:Foo;
-        = (. f x) x;
+        = ([] f x) x;
         ret;
     };
     sym f:Foo;
@@ -46,19 +46,19 @@ eval (fnc foo5 (f:(Foo cn)) () {
 
 eval (fnc foo6 (f:Foo x:i32) () {
     sym f0:Foo;
-    = (. f0 x) x;
+    = ([] f0 x) x;
 });
 
 eval (fnc foo7 (x:i32) Foo {
     sym f:Foo;
-    = (. f x) x;
+    = ([] f x) x;
     ret f;
 });
 
 eval (fnc foo8 (x:i32) Foo {
     ret (block Foo {
         sym f:Foo;
-        = (. f x) x;
+        = ([] f x) x;
         pass f;
     });
 });
@@ -92,28 +92,28 @@ eval (foo7 90);
 fnc main () () {
     eval (block {
         sym f:Foo;
-        = (. f x) 100;
+        = ([] f x) 100;
     });
 
     eval (block {
         sym f0:Foo f1:Foo;
-        = (. f0 x) 201;
-        = (. f1 x) 200;
+        = ([] f0 x) 201;
+        = ([] f1 x) 200;
     });
 
     eval (block {
         sym f0:Foo;
-        = (. f0 x) 300;
+        = ([] f0 x) 300;
         exit true;
         sym f1:Foo;
     });
 
     eval (block {
         sym f0:Foo;
-        = (. f0 x) 401;
+        = ([] f0 x) 401;
         exit false;
         sym f1:Foo;
-        = (. f1 x) 400;
+        = ([] f1 x) 400;
     });
 
     eval (sym i:i32);
@@ -122,16 +122,16 @@ fnc main () () {
     eval (block {
         = i (+ i 1);
         sym f0:Foo;
-        = (. f0 x) (+ 500 (* 2 i));
+        = ([] f0 x) (+ 500 (* 2 i));
         loop (== i 0);
         sym f1:Foo;
-        = (. f1 x) 501;
+        = ([] f1 x) 501;
     });
 
     eval (block b0 i32 {
         block {
             sym f0:Foo;
-            = (. f0 x) 600;
+            = ([] f0 x) 600;
             pass b0 0;
         };
         pass 0;
@@ -139,10 +139,10 @@ fnc main () () {
 
     eval (block b0 () {
         sym f0:Foo;
-        = (. f0 x) 701;
+        = ([] f0 x) 701;
         block {
             sym f0:Foo;
-            = (. f0 x) 700;
+            = ([] f0 x) 700;
             exit b0 true;
         };
         sym f1:Foo;
@@ -150,23 +150,23 @@ fnc main () () {
 
     eval (block {
         sym f:(Foo 2);
-        = (. ([] f 0) x) 801;
-        = (. ([] f 1) x) 800;
+        = ([] ([] f 0) x) 801;
+        = ([] ([] f 1) x) 800;
         [] f 0;
     });
 
     eval (block {
         sym f:(Foo Foo);
-        = (. f 0 x) 901;
-        = (. f 1 x) 900;
-        . f 0;
+        = ([] f 0 x) 901;
+        = ([] f 1 x) 900;
+        [] f 0;
     });
 
     eval (block {
         sym b:Bar;
-        = (. b f0 x) 1001;
-        = (. b f1 x) 1000;
-        . b f0;
+        = ([] b f0 x) 1001;
+        = ([] b f1 x) 1000;
+        [] b f0;
     });
 
     foo0 1100;
@@ -176,45 +176,45 @@ fnc main () () {
     eval (block {
         sym f:Foo;
         cast Foo f;
-        = (. f x) 1300;
+        = ([] f x) 1300;
     });
 
     eval (block {
         sym f:Foo;
-        = (. f x) 1400;
+        = ([] f x) 1400;
         foo2 f;
         foo3 f;
     });
 
     eval (block {
         sym f0:Foo f1:Foo;
-        = (. f0 x) 1500;
+        = ([] f0 x) 1500;
         = f1 (>> f0);
     });
 
     eval (block {
         sym f0:Foo;
-        = (. f0 x) 1600;
+        = ([] f0 x) 1600;
         sym (f1:(Foo cn) (>> f0));
     });
 
     eval (block {
         sym f:Foo;
-        = (. f x) 1700;
+        = ([] f x) 1700;
         foo4 (>> f);
-        = (. f x) 1701;
+        = ([] f x) 1701;
         foo5 (>> f);
     });
 
     eval (block {
         sym f:Foo;
-        = (. f x) 1801;
+        = ([] f x) 1801;
         foo6 (>> f) 1800;
     });
 
     eval (block Foo {
         sym f:Foo;
-        = (. f x) 1900;
+        = ([] f x) 1900;
         pass f;
     });
 
@@ -235,17 +235,17 @@ fnc main () () {
 
     eval (block {
         sym (r \(,(foo7 2600)));
-        . r 0;
-        . r 0;
+        [] r 0;
+        [] r 0;
     });
 
     eval (block {
         sym f0:Foo f1:Foo;
-        = (. f0 x) 2701;
-        = (. f1 x) 2700;
+        = ([] f0 x) 2701;
+        = ([] f1 x) 2700;
         foo12 (>> f0) (>> f1);
-        = (. f0 x) 2703;
-        = (. f1 x) 2702;
+        = ([] f0 x) 2703;
+        = ([] f1 x) 2702;
         foo13 (>> f0) (>> f1);
     });
 

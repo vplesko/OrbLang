@@ -50,29 +50,29 @@ fnc main () () {
     };
 
     = a \(200 -1);
-    println_i32 (. a 0);
-    println_i32 (. \(-1 201) 1);
+    println_i32 ([] a 0);
+    println_i32 ([] \(-1 201) 1);
     = x 202;
-    println_i32 (. \(abc ,x) 1);
+    println_i32 ([] \(abc ,x) 1);
     = x 203;
     = a \(abc ,x);
-    println_i32 (. a 1);
+    println_i32 ([] a 1);
     = x 204;
     = a \(\(abc ,,x));
-    println_i32 (. a 0 1);
-    = (. a 0) \(205);
-    println_i32 (. a 0 0);
+    println_i32 ([] a 0 1);
+    = ([] a 0) \(205);
+    println_i32 ([] a 0 0);
 
-    println_i32 (. (+ \(abc def) \(300 -1)) 2);
+    println_i32 ([] (+ \(abc def) \(300 -1)) 2);
     = a \(abc def);
-    println_i32 (. (+ a \(-1 301)) 3);
+    println_i32 ([] (+ a \(-1 301)) 3);
     = a (+ \(302) a);
-    println_i32 (. a 0);
+    println_i32 ([] a 0);
 
     eval (sym (e:(raw cn) \(400)));
-    println_i32 (. (bar e) 0);
+    println_i32 ([] (bar e) 0);
     eval (sym (f (cast raw \(() ,e))));
     = f \(401);
-    println_i32 (. f 0);
+    println_i32 ([] f 0);
     = f e;
 };

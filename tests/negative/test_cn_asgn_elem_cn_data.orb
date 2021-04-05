@@ -5,9 +5,9 @@ data Foo {
 
 fnc main () () {
     sym a:Foo;
-    = (. a x) 0;
-    = (. a y) 1;
+    = ([] a x) 0;
+    = ([] a y) 1;
 
     sym (b:(Foo cn) a);
-    = (. b x) 100;
+    = ([] b x) 100;
 };

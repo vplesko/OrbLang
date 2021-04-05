@@ -666,7 +666,7 @@ NodeVal Compiler::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const Nod
     return NodeVal(lhs.getCodeLoc(), llvmVal);
 }
 
-NodeVal Compiler::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) {
+NodeVal Compiler::performOperIndexArr(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     
     NodeVal basePromo = promoteIfEvalValAndCheckIsLlvmVal(base, true);
@@ -708,7 +708,7 @@ NodeVal Compiler::performOperIndex(CodeLoc codeLoc, NodeVal &base, const NodeVal
     return NodeVal(basePromo.getCodeLoc(), llvmVal);
 }
 
-NodeVal Compiler::performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
+NodeVal Compiler::performOperIndex(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     
     NodeVal basePromo = promoteIfEvalValAndCheckIsLlvmVal(base, true);
@@ -717,9 +717,9 @@ NodeVal Compiler::performOperDot(CodeLoc codeLoc, NodeVal &base, std::uint64_t i
     LlvmVal llvmVal(resTy);
     if (basePromo.hasRef()) {
         llvmVal.ref = llvmBuilder.CreateStructGEP(basePromo.getLlvmVal().ref, (unsigned) ind);
-        llvmVal.val = llvmBuilder.CreateLoad(llvmVal.ref, "dot_tmp");
+        llvmVal.val = llvmBuilder.CreateLoad(llvmVal.ref, "ind_tmp");
     } else {
-        llvmVal.val = llvmBuilder.CreateExtractValue(basePromo.getLlvmVal().val, {(unsigned) ind}, "dot_tmp");
+        llvmVal.val = llvmBuilder.CreateExtractValue(basePromo.getLlvmVal().val, {(unsigned) ind}, "ind_tmp");
     }
     llvmVal.lifetimeInfo = basePromo.getLlvmVal().lifetimeInfo;
     return NodeVal(basePromo.getCodeLoc(), llvmVal);
@@ -1031,14 +1031,14 @@ llvm::Type* Compiler::makeLlvmType(TypeTable::Id typeId) {
     } else if (typeTable->isTuple(typeId)) {
         const TypeTable::Tuple &tup = typeTable->getTuple(typeId);
 
-        vector<llvm::Type*> memberTypes(tup.members.size());
-        for (size_t i = 0; i < tup.members.size(); ++i) {
-            llvm::Type *memberType = makeLlvmType(tup.members[i]);
-            if (memberType == nullptr) return nullptr;
-            memberTypes[i] = memberType;
+        vector<llvm::Type*> elementTypes(tup.elements.size());
+        for (size_t i = 0; i < tup.elements.size(); ++i) {
+            llvm::Type *elementType = makeLlvmType(tup.elements[i]);
+            if (elementType == nullptr) return nullptr;
+            elementTypes[i] = elementType;
         }
 
-        llvmType = llvm::StructType::get(llvmContext, memberTypes);
+        llvmType = llvm::StructType::get(llvmContext, elementTypes);
     } else if (typeTable->isFixedType(typeId)) {
         llvmType = makeLlvmType(typeTable->getFixedType(typeId).type);
         if (llvmType == nullptr) return nullptr;
@@ -1056,13 +1056,13 @@ llvm::Type* Compiler::makeLlvmType(TypeTable::Id typeId) {
             llvm::Type *dummy = makeLlvmType(typeTable->getPrimTypeId(TypeTable::P_BOOL));
             ((llvm::StructType*) llvmType)->setBody(dummy);
 
-            vector<llvm::Type*> memberTypes(data.members.size());
-            for (size_t i = 0; i < data.members.size(); ++i) {
-                llvm::Type *memberType = makeLlvmType(data.members[i].type);
-                if (memberType == nullptr) return nullptr;
-                memberTypes[i] = memberType;
+            vector<llvm::Type*> elementTypes(data.elements.size());
+            for (size_t i = 0; i < data.elements.size(); ++i) {
+                llvm::Type *elementType = makeLlvmType(data.elements[i].type);
+                if (elementType == nullptr) return nullptr;
+                elementTypes[i] = elementType;
             }
-            ((llvm::StructType*) llvmType)->setBody(memberTypes);
+            ((llvm::StructType*) llvmType)->setBody(elementTypes);
         }
     } else if (typeTable->isCallable(typeId)) {
         llvmType = makeLlvmFunctionType(typeId);
@@ -1100,26 +1100,26 @@ llvm::Constant* Compiler::makeLlvmZero(llvm::Type *llvmType, TypeTable::Id typeI
     } else if (typeTable->worksAsTuple(typeId)) {
         const TypeTable::Tuple &tuple = *typeTable->extractTuple(typeId);
 
-        vector<llvm::Constant*> membVals;
-        membVals.reserve(tuple.members.size());
-        for (TypeTable::Id memb : tuple.members) {
-            llvm::Constant *membLlvmZero = makeLlvmZero(memb);
-            membVals.push_back(membLlvmZero);
+        vector<llvm::Constant*> elemVals;
+        elemVals.reserve(tuple.elements.size());
+        for (TypeTable::Id elem : tuple.elements) {
+            llvm::Constant *elemLlvmZero = makeLlvmZero(elem);
+            elemVals.push_back(elemLlvmZero);
         }
 
-        llvmZero = llvm::ConstantStruct::get((llvm::StructType*) llvmType, membVals);
+        llvmZero = llvm::ConstantStruct::get((llvm::StructType*) llvmType, elemVals);
     } else if (typeTable->worksAsDataType(typeId)) {
         const TypeTable::DataType &dataType = *typeTable->extractDataType(typeId);
 
-        vector<llvm::Constant*> membVals;
-        membVals.reserve(dataType.members.size());
-        for (const TypeTable::DataType::MembEntry &memb : dataType.members) {
-            llvm::Type *membLlvmType = makeLlvmType(memb.type);
-            llvm::Constant *membLlvmZero = memb.noZeroInit ? llvm::UndefValue::get(membLlvmType) : makeLlvmZero(membLlvmType, memb.type);
-            membVals.push_back(membLlvmZero);
+        vector<llvm::Constant*> elemVals;
+        elemVals.reserve(dataType.elements.size());
+        for (const TypeTable::DataType::ElemEntry &elem : dataType.elements) {
+            llvm::Type *elemLlvmType = makeLlvmType(elem.type);
+            llvm::Constant *elemLlvmZero = elem.noZeroInit ? llvm::UndefValue::get(elemLlvmType) : makeLlvmZero(elemLlvmType, elem.type);
+            elemVals.push_back(elemLlvmZero);
         }
 
-        llvmZero = llvm::ConstantStruct::get((llvm::StructType*) llvmType, membVals);
+        llvmZero = llvm::ConstantStruct::get((llvm::StructType*) llvmType, elemVals);
     } else {
         llvmZero = llvm::Constant::getNullValue(llvmType);
     }
@@ -1235,16 +1235,16 @@ llvm::Value* Compiler::makeLlvmCast(llvm::Value *srcLlvmVal, TypeTable::Id srcTy
             const TypeTable::Tuple &tupSrc = *typeTable->extractTuple(srcTypeId);
             const TypeTable::Tuple &tupDst = *typeTable->extractTuple(dstTypeId);
 
-            if (tupSrc.members.size() != tupDst.members.size()) return nullptr;
+            if (tupSrc.elements.size() != tupDst.elements.size()) return nullptr;
 
             dstLlvmVal = llvm::UndefValue::get(dstLlvmType);
-            for (size_t i = 0; i < tupSrc.members.size(); ++i) {
-                llvm::Value *srcLlvmMembVal = llvmBuilder.CreateExtractValue(srcLlvmVal, {(unsigned) i});
+            for (size_t i = 0; i < tupSrc.elements.size(); ++i) {
+                llvm::Value *srcLlvmElemVal = llvmBuilder.CreateExtractValue(srcLlvmVal, {(unsigned) i});
 
-                llvm::Value *dstLlvmMembVal = makeLlvmCast(srcLlvmMembVal, tupSrc.members[i], tupDst.members[i]);
-                if (dstLlvmMembVal == nullptr) return nullptr;
+                llvm::Value *dstLlvmElemVal = makeLlvmCast(srcLlvmElemVal, tupSrc.elements[i], tupDst.elements[i]);
+                if (dstLlvmElemVal == nullptr) return nullptr;
 
-                dstLlvmVal = llvmBuilder.CreateInsertValue(dstLlvmVal, dstLlvmMembVal, {(unsigned) i});
+                dstLlvmVal = llvmBuilder.CreateInsertValue(dstLlvmVal, dstLlvmElemVal, {(unsigned) i});
             }
         }
     } else if (typeTable->worksAsCallable(srcTypeId)) {

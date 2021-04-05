@@ -90,18 +90,18 @@ We also declare `makeNodeCall` as a raw containing code for calling `makeNode` w
 
 ```
     sym (childEntries ())
-        (makeNodeCall \(makeNode ,(. tree 0)));
+        (makeNodeCall \(makeNode ,([] tree 0)));
 ```
 
 `\` is used for escaping. When applied to a node in parenthesis, it states that the elements within (which also get escaped) are to be used in constructing a `raw` object.
 
 If you escape an identifier, it will denote a simple `id` value. Otherwise, the compiler would perform a lookup and fetch the value it points to.
 
-`,` is used for unescaping. This counteracts `\` and tells the compiler that this expression is actually supposed to be evaluated right now. We use it to fetch member 0 from `tree`.
+`,` is used for unescaping. This counteracts `\` and tells the compiler that this expression is actually supposed to be evaluated right now. We use it to fetch element 0 from `tree`.
 
 Take note that while `makeNodeCall` contains actual code, `childEntries` is used as an extensible list of values. Both are valid uses of `raw` variables.
 
-There are 2 subtrees, accessible with `. tree 1` and `. tree 2`. Both are handled the same way, so `range` with two bounds can be used.
+There are 2 subtrees, accessible with `[] tree 1` and `[] tree 2`. Both are handled the same way, so `range` with two bounds can be used.
 
 ```
     range i 1 2 {
@@ -111,7 +111,7 @@ There are 2 subtrees, accessible with `. tree 1` and `. tree 2`. Both are handle
 We need to know whether the subtree is described with `()`. First, let's ask if it is even a `raw` value.
 
 ```
-        sym (isRaw (|| (== (typeOf (. tree i)) raw) (== (typeOf (. tree i)) (raw cn))));
+        sym (isRaw (|| (== (typeOf ([] tree i)) raw) (== (typeOf ([] tree i)) (raw cn))));
 ```
 
 `||` is a macro for logical OR. `typeOf` returns the type of a value.
@@ -119,15 +119,15 @@ We need to know whether the subtree is described with `()`. First, let's ask if 
 Now, let's check if this raw is empty.
 
 ```
-        if (&& isRaw (== (lenOf (. tree i)) 0)) {
+        if (&& isRaw (== (lenOf ([] tree i)) 0)) {
 ```
 
-`&&` is a macro for logical AND. `lenOf` returns the number of values in a `raw`. It can also return the number of members in a tuple, or number of elements in an array.
+`&&` is a macro for logical AND. `lenOf` returns the number of elements in a `raw`. It can also return the number of elements in a tuple, or number of elements in an array.
 
 In the case of `()`, don't make a recursive call, and use `null` as argument to `makeNode`.
 
 ```
-        if (&& isRaw (== (lenOf (. tree i)) 0)) {
+        if (&& isRaw (== (lenOf ([] tree i)) 0)) {
             = makeNodeCall (+ makeNodeCall \( null ));
 ```
 
@@ -140,7 +140,7 @@ In the case when the subtree does exist, recursively generate its entries and ap
 ```
         } {
             sym (childName (genSym));
-            = childEntries (+ childEntries (symBinTreeEntries childName (. tree i)));
+            = childEntries (+ childEntries (symBinTreeEntries childName ([] tree i)));
             = makeNodeCall (+ makeNodeCall \( (& ,childName) ));
         };
 ```
@@ -211,9 +211,9 @@ data Node {
 
 fnc makeNode (val:i32 left:(Node *) right:(Node *)) Node {
     sym node:Node;
-    = (. node val) val;
-    = (. node left) left;
-    = (. node right) right;
+    = ([] node val) val;
+    = ([] node left) left;
+    = ([] node right) right;
     ret node;
 };
 
@@ -223,16 +223,16 @@ eval (fnc symBinTreeEntries (name:id val:i32) raw {
 
 eval (fnc symBinTreeEntries (name:id tree:raw) raw {
     sym (childEntries ())
-        (makeNodeCall \(makeNode ,(. tree 0)));
+        (makeNodeCall \(makeNode ,([] tree 0)));
 
     range i 1 2 {
-        sym (isRaw (|| (== (typeOf (. tree i)) raw) (== (typeOf (. tree i)) (raw cn))));
+        sym (isRaw (|| (== (typeOf ([] tree i)) raw) (== (typeOf ([] tree i)) (raw cn))));
 
-        if (&& isRaw (== (lenOf (. tree i)) 0)) {
+        if (&& isRaw (== (lenOf ([] tree i)) 0)) {
             = makeNodeCall (+ makeNodeCall \( null ));
         } {
             sym (childName (genSym));
-            = childEntries (+ childEntries (symBinTreeEntries childName (. tree i)));
+            = childEntries (+ childEntries (symBinTreeEntries childName ([] tree i)));
             = makeNodeCall (+ makeNodeCall \( (& ,childName) ));
         };
     };
@@ -253,8 +253,8 @@ fnc sumAndCnt (node:(Node cn *)) (i32 i32) {
     sym (leftRes (sumAndCnt (-> node left)))
         (rightRes (sumAndCnt (-> node right)));
 
-    ret (tup (+ (. leftRes 0) (. rightRes 0) (-> node val))
-        (+ (. leftRes 1) (. rightRes 1) 1));
+    ret (tup (+ ([] leftRes 0) ([] rightRes 0) (-> node val))
+        (+ ([] leftRes 1) ([] rightRes 1) 1));
 };
 
 fnc main () () {
@@ -274,7 +274,7 @@ fnc main () () {
                     ())));
 
     sym (result (sumAndCnt (& tree0)));
-    printf "%d %d\n" (. result 0) (. result 1);
+    printf "%d %d\n" ([] result 0) ([] result 1);
 
     symBinTree tree1
         (2
@@ -286,16 +286,16 @@ fnc main () () {
                 5));
 
     = result (sumAndCnt (& tree1));
-    printf "%d %d\n" (. result 0) (. result 1);
+    printf "%d %d\n" ([] result 0) ([] result 1);
 
     symBinTree tree2 (3 () ());
 
     = result (sumAndCnt (& tree2));
-    printf "%d %d\n" (. result 0) (. result 1);
+    printf "%d %d\n" ([] result 0) ([] result 1);
 
     symBinTree tree3 3;
 
     = result (sumAndCnt (& tree3));
-    printf "%d %d\n" (. result 0) (. result 1);
+    printf "%d %d\n" ([] result 0) ([] result 1);
 };
 ```

@@ -144,9 +144,9 @@ string CompilationMessages::errorStringOfType(TypeTable::Id ty) const {
 
         const TypeTable::Tuple &tuple = typeTable->getTuple(ty);
 
-        for (size_t i = 0; i < tuple.members.size(); ++i) {
+        for (size_t i = 0; i < tuple.elements.size(); ++i) {
             if (i > 0) ss << ' ';
-            ss << errorStringOfType(tuple.members[i]);
+            ss << errorStringOfType(tuple.elements[i]);
         }
 
         ss << ')';
@@ -374,10 +374,6 @@ void CompilationMessages::hintBlockSyntax() {
 
 void CompilationMessages::hintIndexTempOwning() {
     info("Cannot get owning elements of an array that is about to be dropped. Consider storing this array in a symbol first.");
-}
-
-void CompilationMessages::hintDotTempOwning() {
-    info("Cannot get owning members of a tuple or data that is about to be dropped. Consider storing this value in a symbol first.");
 }
 
 void CompilationMessages::hintUnescapeEscaped() {
@@ -812,8 +808,8 @@ void CompilationMessages::errorMacroNoValue(CodeLoc loc) {
     error(loc, "Tried to invoke a macro with no value.");
 }
 
-void CompilationMessages::errorDataCnMember(CodeLoc loc) {
-    error(loc, "Data members may not be constant.");
+void CompilationMessages::errorDataCnElement(CodeLoc loc) {
+    error(loc, "Data elements may not be constant.");
 }
 
 void CompilationMessages::errorDataRedefinition(CodeLoc loc, NamePool::Id name) {
@@ -836,8 +832,9 @@ void CompilationMessages::errorBlockNoPass(CodeLoc loc) {
     error(loc, "End of passing block reached without a value being passed.");
 }
 
-void CompilationMessages::errorMemberIndex(CodeLoc loc) {
-    error(loc, "Invalid member index.");
+// TODO! print index (it is id)
+void CompilationMessages::errorElementIndex(CodeLoc loc) {
+    error(loc, "Invalid element index.");
 }
 
 void CompilationMessages::errorLenOfBadType(CodeLoc loc, TypeTable::Id ty) {
@@ -846,24 +843,15 @@ void CompilationMessages::errorLenOfBadType(CodeLoc loc, TypeTable::Id ty) {
     error(loc, ss.str());
 }
 
-void CompilationMessages::errorExprIndexOnBadType(CodeLoc loc) {
-    error(loc, "Cannot index on this value.");
-}
-
 void CompilationMessages::errorExprIndexOnBadType(CodeLoc loc, TypeTable::Id ty) {
     stringstream ss;
     ss << "Cannot index on type '" << errorStringOfType(ty) << "'.";
     error(loc, ss.str());
 }
 
+// TODO! print found index value
 void CompilationMessages::errorExprIndexOutOfBounds(CodeLoc loc) {
     error(loc, "Attempted to index out of bounds of the array.");
-}
-
-void CompilationMessages::errorExprDotOnBadType(CodeLoc loc, TypeTable::Id ty) {
-    stringstream ss;
-    ss << "Cannot get members on type '" << errorStringOfType(ty) << "'.";
-    error(loc, ss.str());
 }
 
 void CompilationMessages::errorExprDerefOnBadType(CodeLoc loc, TypeTable::Id ty) {
@@ -896,8 +884,8 @@ void CompilationMessages::errorExprAsgnOnCn(CodeLoc loc) {
     error(loc, "Assignment cannot assign to constant types.");
 }
 
-void CompilationMessages::errorExprDotInvalidBase(CodeLoc loc) {
-    error(loc, "Invalid expression on left side of dot operator.");
+void CompilationMessages::errorExprIndexInvalidBase(CodeLoc loc) {
+    error(loc, "Invalid expression on left side of '[]' operator.");
 }
 
 void CompilationMessages::errorExprMoveNoDrop(CodeLoc loc) {

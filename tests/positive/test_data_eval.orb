@@ -11,8 +11,8 @@ data Point2 {
 
 eval (fnc makePoint2 (x:i32 y:i32) Point2 {
     sym p:Point2;
-    = (. p x) x;
-    = (. p y) y;
+    = ([] p x) x;
+    = ([] p y) y;
     ret p;
 });
 
@@ -31,9 +31,9 @@ data Point3;
 
 eval (fnc makePoint3(x:i32 y:i32 z:i32) Point3 {
     sym p:Point3;
-    = (. p x) x;
-    = (. p y) y;
-    = (. p z) z;
+    = ([] p x) x;
+    = ([] p y) y;
+    = ([] p z) z;
     ret p;
 });
 
@@ -51,43 +51,43 @@ data List {
 fnc main () () {
     block {
         eval (sym p:Point2);
-        = (. p x) 100;
-        println_i32 (. p x);
+        = ([] p x) 100;
+        println_i32 ([] p x);
     };
     block {
         eval (sym p:myPoint2);
-        = (. p x) 101;
-        println_i32 (. p x);
+        = ([] p x) 101;
+        println_i32 ([] p x);
     };
     block {
         eval (sym c0:Chain c1:Chain);
-        = (. c0 val) 102;
-        = (. c1 next) (& c0);
-        println_i32 (. (* (. c1 next)) val);
+        = ([] c0 val) 102;
+        = ([] c1 next) (& c0);
+        println_i32 ([] (* ([] c1 next)) val);
     };
     block {
         eval (sym l:List);
     };
     block {
         eval (sym z:Point3);
-        println_i32 (+ 103 (. z x) (. z y) (. z z));
+        println_i32 (+ 103 ([] z x) ([] z y) ([] z z));
     };
     block {
         eval (sym (p0:(Point3 cn) (makePoint3 -1 104 -1)) p1:Point3);
         = p1 p0;
-        println_i32 (. p1 y);
+        println_i32 ([] p1 y);
     };
     block {
-        println_i32 (eval (. (makePoint3 105 -1 -1) x));
+        println_i32 (eval ([] (makePoint3 105 -1 -1) x));
     };
     block {
         eval (sym x:(data::global GlobInLocal { v:i32 }));
-        = (. x v) 106;
-        println_i32 (. x v);
+        = ([] x v) 106;
+        println_i32 ([] x v);
     };
     block {
         eval (sym (p (makePoint2 -1 107)));
-        println_i32 (. p 1);
+        println_i32 ([] p 1);
     };
     println_i32 (+ 106 (lenOf Point2));
 };

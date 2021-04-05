@@ -36,19 +36,19 @@ fnc main () () {
     println_i32 (* e);
 
     sym f:(i32 i32);
-    = (. f 0) 600;
-    println_i32 (. f 0);
-    = (. f 0) 601;
-    println_i32 (. f 0);
-    = (. f 1) 602;
-    println_i32 (. f 1);
+    = ([] f 0) 600;
+    println_i32 ([] f 0);
+    = ([] f 0) 601;
+    println_i32 ([] f 0);
+    = ([] f 1) 602;
+    println_i32 ([] f 1);
 
     sym g:(i32 ((i32 i32) *));
-    = (. g 1) (& f);
-    = (. (* (. g 1)) 0) 700;
-    println_i32 (. (* (. g 1)) 0);
-    = (. f 0) 701;
-    println_i32 (. (* (. g 1)) 0);
+    = ([] g 1) (& f);
+    = ([] (* ([] g 1)) 0) 700;
+    println_i32 ([] (* ([] g 1)) 0);
+    = ([] f 0) 701;
+    println_i32 ([] (* ([] g 1)) 0);
 
     = glob 800;
     println_i32 glob;

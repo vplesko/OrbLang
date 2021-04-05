@@ -4,7 +4,7 @@ data Foo {
 
 fnc bar (f:(Foo Foo)::noDrop) () {
     sym f0:Foo;
-    = f0 (. f 0);
+    = f0 ([] f 0);
 };
 
 fnc main () () {};
