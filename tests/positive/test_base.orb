@@ -139,9 +139,9 @@ fnc main () () {
         = x 303;
         println_i32 (-- (-- x));
 
-        println_i32 (?_ true i32 (++ x) -1);
-        ?_ false i32 (++ x) -1;
-        println_i32 (?_ false i32 -1 (++ x));
+        println_i32 (?_ i32 true (++ x) -1);
+        ?_ i32 false (++ x) -1;
+        println_i32 (?_ i32 false -1 (++ x));
 
         println_i32 (+= x 1);
         println_i32 (-= x -1);
@@ -161,6 +161,15 @@ fnc main () () {
         println_i32 (+ 300 x);
         = x 0b1100; ^= x 0b1010; # 0b0110 = 6
         println_i32 (+ 307 x);
+
+        sym ((+ \abc \def) 314);
+        eval (sym (y \abc));
+        += \y \\def;
+        println_i32 (y);
+
+        eval (sym (z \(1 2)));
+        += \z \\(3 4 5);
+        println_i32 (+ 310 (lenOf z));        
     };
 
     block {
@@ -285,8 +294,8 @@ fnc main () () {
     };
 
     block {
-        ?_ true Bar (make Bar (x 1200)) (make Bar (x -1));
-        ?_ false Bar (make Bar (x -1)) (make Bar (x 1201));
+        ?_ Bar true (make Bar (x 1200)) (make Bar (x -1));
+        ?_ Bar false (make Bar (x -1)) (make Bar (x 1201));
     };
 
     block {

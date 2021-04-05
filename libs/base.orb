@@ -152,7 +152,7 @@ mac -- (x::preprocess) {
     ret \(= ,x (- ,x 1));
 };
 
-mac ?_ (cond::preprocess ty::preprocess onTrue onFalse) {
+mac ?_ (ty::preprocess cond::preprocess onTrue onFalse) {
     ret \(block base.-blockTernSel ,ty {
         (if ,cond {
             (pass base.-blockTernSel ,onTrue)
@@ -161,7 +161,7 @@ mac ?_ (cond::preprocess ty::preprocess onTrue onFalse) {
     });
 };
 
-# Not intended for use on id or raw.
+# For use on id or raw, escape arguments an additional time and make sure they don't induce side-effects.
 mac += (x::preprocess y::preprocess) {
     ret \(= ,x (+ ,x ,y));
 };
