@@ -161,15 +161,6 @@ fnc main () () {
         println_i32 (+ 300 x);
         = x 0b1100; ^= x 0b1010; # 0b0110 = 6
         println_i32 (+ 307 x);
-
-        sym ((+ \abc \def) 314);
-        eval (sym (y \abc));
-        += \y \\def;
-        println_i32 (y);
-
-        eval (sym (z \(1 2)));
-        += \z \\(3 4 5);
-        println_i32 (+ 310 (lenOf z));        
     };
 
     block {

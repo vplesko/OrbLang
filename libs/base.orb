@@ -1,3 +1,5 @@
+# TODO switch, append, reduce, genData, genFnc
+
 eval (sym (base.-widestU:(type cn) u64));
 
 eval (sym (base.-genSymToken 0:base.-widestU));
@@ -161,7 +163,7 @@ mac ?_ (ty::preprocess cond::preprocess onTrue onFalse) {
     });
 };
 
-# For use on id or raw, escape arguments an additional time and make sure they don't induce side-effects.
+# Not intended for use on id or raw.
 mac += (x::preprocess y::preprocess) {
     ret \(= ,x (+ ,x ,y));
 };
