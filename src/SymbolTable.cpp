@@ -418,13 +418,17 @@ vector<VarId> SymbolTable::getVarsInRevOrderCurrCallable() {
     return ret;
 }
 
-bool SymbolTable::nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable, bool forGlobal) const {
+bool SymbolTable::nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable, bool forGlobal, bool checkAllScopes) const {
     if (isReserved(name) || typeTable->isType(name)) return false;
 
-    const BlockInternal &block = forGlobal ? getGlobalBlockInternal() : getLastBlockInternal();
+    if (checkAllScopes) {
+        if (isVarName(name)) return false;
+    } else {
+        const BlockInternal &block = forGlobal ? getGlobalBlockInternal() : getLastBlockInternal();
 
-    for (const auto &it : block.vars) {
-        if (it.name == name) return false;
+        for (const auto &it : block.vars) {
+            if (it.name == name) return false;
+        }
     }
 
     return true;

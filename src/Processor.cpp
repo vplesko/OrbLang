@@ -581,7 +581,7 @@ NodeVal Processor::processFixed(const NodeVal &node, const NodeVal &starting) {
     NodeVal nodeName = processForIdValue(node.getChild(1));
     if (nodeName.isInvalid()) return NodeVal();
     NamePool::Id name = nodeName.getEvalVal().id;
-    if (!symbolTable->nameAvailable(name, namePool, typeTable, true)) {
+    if (!symbolTable->nameAvailable(name, namePool, typeTable, true, true)) {
         msgs->errorNameTaken(nodeName.getCodeLoc(), name);
         return NodeVal();
     }
@@ -627,7 +627,7 @@ NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
     NodeVal nodeName = processForIdValue(node.getChild(indName));
     if (nodeName.isInvalid()) return NodeVal();
     dataType.name = nodeName.getEvalVal().id;
-    if (!symbolTable->nameAvailable(dataType.name, namePool, typeTable, true)) {
+    if (!symbolTable->nameAvailable(dataType.name, namePool, typeTable, true, true)) {
         optional<TypeTable::Id> oldTy = typeTable->getTypeId(dataType.name);
         if (!oldTy.has_value() || !typeTable->isDataType(oldTy.value())) {
             msgs->errorNameTaken(nodeName.getCodeLoc(), dataType.name);

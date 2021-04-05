@@ -176,5 +176,5 @@ public:
     std::vector<VarId> getVarsInRevOrderFromBlockToCurrBlock(NamePool::Id name);
     std::vector<VarId> getVarsInRevOrderCurrCallable();
 
-    bool nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable, bool forGlobal = false) const;
+    bool nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable, bool forGlobal = false, bool checkAllScopes = false) const;
 };
