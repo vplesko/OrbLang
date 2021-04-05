@@ -42,4 +42,5 @@ fnc main() () {
     println_i32 (+ 499 (cast i32 glob0));
 
     println_c8 ([] glob1 1);
+    println_i32 (cast i32 ([] glob1 4));
 };
