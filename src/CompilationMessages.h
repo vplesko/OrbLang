@@ -128,7 +128,8 @@ public:
     void errorExprCannotImplicitCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into);
     void errorExprCannotImplicitCastEither(CodeLoc loc, TypeTable::Id ty1, TypeTable::Id ty2);
     void errorExprIndexOnBadType(CodeLoc loc, TypeTable::Id ty);
-    void errorExprIndexOutOfBounds(CodeLoc loc);
+    void errorExprIndexOutOfBounds(CodeLoc loc, std::int64_t ind, std::optional<std::uint64_t> len);
+    void errorExprIndexOutOfBounds(CodeLoc loc, std::uint64_t ind, std::optional<std::uint64_t> len);
     void errorExprDerefOnBadType(CodeLoc loc, TypeTable::Id ty);
     void errorExprDerefNull(CodeLoc loc);
     void errorExprIndexNotIntegral(CodeLoc loc);
@@ -174,7 +175,7 @@ public:
     void errorBlockBareNameType(CodeLoc loc);
     void errorBlockNotFound(CodeLoc loc, NamePool::Id name);
     void errorBlockNoPass(CodeLoc loc);
-    void errorElementIndex(CodeLoc loc);
+    void errorElementIndexData(CodeLoc loc, NamePool::Id name, TypeTable::Id ty);
     void errorLenOfBadType(CodeLoc loc, TypeTable::Id ty);
     void errorMissingTypeAttribute(CodeLoc loc);
     void errorMissingType(CodeLoc loc);

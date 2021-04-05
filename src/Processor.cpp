@@ -2634,7 +2634,7 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
             NamePool::Id indexName = index.getEvalVal().id;
             indexVal = typeTable->extractDataType(baseType)->getElemInd(indexName);
             if (!indexVal.has_value()) {
-                msgs->errorElementIndex(index.getCodeLoc());
+                msgs->errorElementIndexData(index.getCodeLoc(), indexName, baseType);
                 return NodeVal();
             }
         } else {
@@ -2645,12 +2645,14 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
 
             if (index.isEvalVal()) {
                 indexVal = EvalVal::getValueNonNeg(index.getEvalVal(), typeTable);
-                if (!indexVal.has_value()) {
-                    msgs->errorExprIndexOutOfBounds(index.getCodeLoc());
-                    return NodeVal();
-                }
-                if (baseLen.has_value() && indexVal.value() >= baseLen) {
-                    msgs->errorExprIndexOutOfBounds(index.getCodeLoc());
+                if ((!indexVal.has_value()) || (baseLen.has_value() && indexVal.value() >= baseLen)) {
+                    if (EvalVal::isI(index.getEvalVal(), typeTable)) {
+                        int64_t ind = EvalVal::getValueI(index.getEvalVal(), typeTable).value();
+                        msgs->errorExprIndexOutOfBounds(index.getCodeLoc(), ind, baseLen);
+                    } else {
+                        uint64_t ind = EvalVal::getValueU(index.getEvalVal(), typeTable).value();
+                        msgs->errorExprIndexOutOfBounds(index.getCodeLoc(), ind, baseLen);
+                    }
                     return NodeVal();
                 }
             }

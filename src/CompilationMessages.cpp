@@ -220,13 +220,13 @@ void CompilationMessages::info() {
     (*out) << terminalSet(TerminalColor::C_BLACK, true) << "info: " << terminalReset();
 }
 
-void CompilationMessages::info(const std::string &str) {
+void CompilationMessages::info(const string &str) {
     info();
     bolded(str);
     (*out) << endl;
 }
 
-void CompilationMessages::info(CodeLoc loc, const std::string &str) {
+void CompilationMessages::info(CodeLoc loc, const string &str) {
     heading(loc);
     info(str);
     displayCodeSegment(loc);
@@ -237,13 +237,13 @@ void CompilationMessages::warning() {
     (*out) << terminalSet(TerminalColor::C_MAGENTA, true) << "warning: " << terminalReset();
 }
 
-void CompilationMessages::warning(const std::string &str) {
+void CompilationMessages::warning(const string &str) {
     warning();
     bolded(str);
     (*out) << endl;
 }
 
-void CompilationMessages::warning(CodeLoc loc, const std::string &str) {
+void CompilationMessages::warning(CodeLoc loc, const string &str) {
     heading(loc);
     warning(str);
     displayCodeSegment(loc);
@@ -267,7 +267,7 @@ void CompilationMessages::error(CodeLoc loc, const string &str) {
 }
 
 void CompilationMessages::displayCodeSegment(CodeLoc loc) {
-    const std::string &filename = stringPool->get(loc.start.file);
+    const string &filename = stringPool->get(loc.start.file);
     ifstream file(filename);
     if (!file.is_open()) return;
 
@@ -308,11 +308,11 @@ void CompilationMessages::userMessageEnd() {
     (*out) << endl;
 }
 
-void CompilationMessages::userMessage(std::int64_t x) {
+void CompilationMessages::userMessage(int64_t x) {
     (*out) << x;
 }
 
-void CompilationMessages::userMessage(std::uint64_t x) {
+void CompilationMessages::userMessage(uint64_t x) {
     (*out) << x;
 }
 
@@ -373,7 +373,7 @@ void CompilationMessages::hintBlockSyntax() {
 }
 
 void CompilationMessages::hintIndexTempOwning() {
-    info("Cannot get owning elements of an array that is about to be dropped. Consider storing this array in a symbol first.");
+    info("Cannot get owning elements of a value that is about to be dropped. Consider storing this value in a symbol first.");
 }
 
 void CompilationMessages::hintUnescapeEscaped() {
@@ -832,9 +832,10 @@ void CompilationMessages::errorBlockNoPass(CodeLoc loc) {
     error(loc, "End of passing block reached without a value being passed.");
 }
 
-// TODO! print index (it is id)
-void CompilationMessages::errorElementIndex(CodeLoc loc) {
-    error(loc, "Invalid element index.");
+void CompilationMessages::errorElementIndexData(CodeLoc loc, NamePool::Id name, TypeTable::Id ty) {
+    stringstream ss;
+    ss << "Invalid element index '" << namePool->get(name) << "' on data type '" << errorStringOfType(ty) << "'.";
+    error(loc, ss.str());
 }
 
 void CompilationMessages::errorLenOfBadType(CodeLoc loc, TypeTable::Id ty) {
@@ -849,9 +850,20 @@ void CompilationMessages::errorExprIndexOnBadType(CodeLoc loc, TypeTable::Id ty)
     error(loc, ss.str());
 }
 
-// TODO! print found index value
-void CompilationMessages::errorExprIndexOutOfBounds(CodeLoc loc) {
-    error(loc, "Attempted to index out of bounds of the array.");
+void CompilationMessages::errorExprIndexOutOfBounds(CodeLoc loc, int64_t ind, optional<uint64_t> len) {
+    stringstream ss;
+    ss << "Attempted to index with the index of " << ind;
+    if (len.has_value()) ss << ", when length is " << len.value();
+    ss << ".";
+    error(loc, ss.str());
+}
+
+void CompilationMessages::errorExprIndexOutOfBounds(CodeLoc loc, uint64_t ind, optional<uint64_t> len) {
+    stringstream ss;
+    ss << "Attempted to index with the index of " << ind;
+    if (len.has_value()) ss << ", when length is " << len.value();
+    ss << ".";
+    error(loc, ss.str());
 }
 
 void CompilationMessages::errorExprDerefOnBadType(CodeLoc loc, TypeTable::Id ty) {

@@ -640,7 +640,7 @@ NodeVal Evaluator::performOperIndexArr(CodeLoc codeLoc, NodeVal &base, const Nod
         StringPool::Id strId = base.getEvalVal().str.value();
         const string &str = stringPool->get(strId);
         if (index.value() >= str.size()) {
-            msgs->errorExprIndexOutOfBounds(codeLoc);
+            msgs->errorExprIndexOutOfBounds(ind.getCodeLoc(), index.value(), str.size());
             return NodeVal();
         }
 
