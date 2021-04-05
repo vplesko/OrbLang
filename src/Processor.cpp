@@ -554,7 +554,7 @@ NodeVal Processor::processPass(const NodeVal &node) {
     if (processed.getLifetimeInfo().has_value() &&
         processed.getLifetimeInfo().value().nestLevel.has_value() &&
         !processed.getLifetimeInfo().value().nestLevel.value().greaterThan(symbolTable->currNestLevel())) {
-        moved = moveNode(processed.getCodeLoc(), processed);
+        moved = moveNode(processed.getCodeLoc(), move(processed));
     } else {
         moved = move(processed);
     }
@@ -1253,7 +1253,7 @@ NodeVal Processor::processRet(const NodeVal &node) {
             if (processed.getLifetimeInfo().has_value() &&
                 processed.getLifetimeInfo().value().nestLevel.has_value() &&
                 !processed.getLifetimeInfo().value().nestLevel.value().callableGreaterThan(symbolTable->currNestLevel())) {
-                moved = moveNode(processed.getCodeLoc(), processed);
+                moved = moveNode(processed.getCodeLoc(), move(processed));
             } else {
                 moved = move(processed);
             }
@@ -1285,7 +1285,7 @@ NodeVal Processor::processRet(const NodeVal &node) {
         if (processed.getLifetimeInfo().has_value() &&
             processed.getLifetimeInfo().value().nestLevel.has_value() &&
             !processed.getLifetimeInfo().value().nestLevel.value().callableGreaterThan(symbolTable->currNestLevel())) {
-            moved = moveNode(processed.getCodeLoc(), processed);
+            moved = moveNode(processed.getCodeLoc(), move(processed));
         } else {
             moved = move(processed);
         }
@@ -2072,7 +2072,7 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node, const NodeVal &val
 }
 
 // TODO optimize on raw - don't need to copy children, can just move instead
-NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal &val) {
+NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal val) {
     if (!checkHasType(val, true)) return NodeVal();
 
     if (val.isNoDrop()) {
@@ -2084,7 +2084,12 @@ NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal &val) {
         return NodeVal();
     }
 
-    if (!val.hasRef()) return NodeVal::copyNoRef(codeLoc, val, LifetimeInfo());
+    if (!val.hasRef()) {
+        val.setCodeLoc(codeLoc);
+        val.setLifetimeInfo(LifetimeInfo());
+        val.removeRef();
+        return val;
+    }
 
     TypeTable::Id valTy = val.getType().value();
 

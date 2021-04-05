@@ -144,6 +144,30 @@ mac repeat (n::preprocess body) {
     ret \(range ,s ,n ,body);
 };
 
+mac reduce (ty::preprocess collection::preprocess op::preprocess) {
+    sym (calcId (genSym)) (iterId (genSym));
+
+    ret \(block ,ty {
+        (sym ,calcId:,ty)
+        (range ,iterId (lenOf ,collection) {
+            (= ,calcId (,op ,calcId ([] ,collection ,iterId)))
+        })
+        (pass ,calcId)
+    });
+};
+
+mac reduce (ty::preprocess collection::preprocess init::preprocess op::preprocess) {
+    sym (calcId (genSym)) (iterId (genSym));
+
+    ret \(block ,ty {
+        (sym (,calcId ,init))
+        (range ,iterId (lenOf ,collection) {
+            (= ,calcId (,op ,calcId ([] ,collection ,iterId)))
+        })
+        (pass ,calcId)
+    });
+};
+
 mac switch (x::preprocess rest0 rest1 rest::variadic) {
     sym (entries (+ \(,rest0 ,rest1) rest));
 
@@ -178,30 +202,6 @@ mac switch (x::preprocess rest0 rest1 rest::variadic) {
     };
 
     ret \(block base.-blockSwitch () ,switchInnerCode);
-};
-
-mac reduce (ty::preprocess collection::preprocess op::preprocess) {
-    sym (calcId (genSym)) (iterId (genSym));
-
-    ret \(block ,ty {
-        (sym ,calcId:,ty)
-        (range ,iterId ,(lenOf collection) {
-            (= ,calcId (,op ,calcId ([] ,collection ,iterId)))
-        })
-        (pass ,calcId)
-    });
-};
-
-mac reduce (ty::preprocess collection::preprocess init::preprocess op::preprocess) {
-    sym (calcId (genSym)) (iterId (genSym));
-
-    ret \(block ,ty {
-        (sym (,calcId ,init))
-        (range ,iterId ,(lenOf collection) {
-            (= ,calcId (,op ,calcId ([] ,collection ,iterId)))
-        })
-        (pass ,calcId)
-    });
 };
 
 mac ++ (x::preprocess) {

@@ -143,7 +143,7 @@ private:
     NodeVal getDataElement(CodeLoc codeLoc, NodeVal &data, std::size_t index);
     bool argsFitFuncCall(const std::vector<NodeVal> &args, const TypeTable::Callable &callable, bool allowImplicitCasts);
     NodeVal loadUndecidedCallable(const NodeVal &node, const NodeVal &val);
-    NodeVal moveNode(CodeLoc codeLoc, NodeVal &val);
+    NodeVal moveNode(CodeLoc codeLoc, NodeVal val);
     NodeVal invoke(CodeLoc codeLoc, MacroId macroId, std::vector<NodeVal> args);
     bool hasTrivialDrop(TypeTable::Id ty);
     bool callDropFunc(CodeLoc codeLoc, NodeVal val);
