@@ -319,4 +319,23 @@ fnc main () () {
         println_c8 (cast c8 Zab.a);
         println_c8 (cast c8 Zab.b);
     };
+
+    block {
+        sym (x (arr i32 1000 500 200));
+        println_i32 (reduce i32 x +);
+        println_i32 (reduce i32 x 1 +);
+
+        println_i32 (reduce i32 (arr i32 1000 500 200 2) +);
+        println_i32 (reduce i32 (arr i32 1000 500 200 2) 1 +);
+
+        eval (sym (y \\(1000 500 200 4)));
+        println_i32 (eval (reduce i32 y +));
+        println_i32 (eval (reduce i32 y 1 +));
+
+        sym z:i32;
+        println_i32 (reduce i32
+            (block (i32 4) { ++ z; pass (arr i32 1000 500 200 6); })
+            0 +);
+        println_i32 z;
+    };
 };
