@@ -398,3 +398,54 @@ mac enum (name vals) {
 eval (fnc base.enumSize (enumTy:type) base.-widestU {
     ret ((base.-enumSizeName enumTy));
 });
+
+mac genData (args name body) {
+    ret \(base.-genData ,args ,name ,body () (isEval));
+};
+
+mac genData (args name body drop) {
+    ret \(base.-genData ,args ,name ,body ,drop (isEval));
+};
+
+mac base.-genData (args name body drop fromEval::preprocess) {
+    base.errorIfNotOfType raw args;
+    base.errorIfNotOfType id name;
+    base.errorIfNotOfType raw drop;
+    base.errorIfNotOfType bool fromEval;
+
+    sym (genFncSymDataId (genSym))
+        (genFncSymIter (genSym))
+        (dropFncEvaluable fromEval)
+        (dropFncCompilable (! fromEval))
+        (dropFnc \());
+
+    if (attr?? drop evaluable) {
+        = dropFncEvaluable (attrOf drop evaluable);
+    };
+    if (attr?? drop compilable) {
+        = dropFncCompilable (attrOf drop compilable);
+    };
+
+    # TODO make gen args visible in drop funcs
+    if (!= (lenOf drop) 0) {
+        = dropFnc \(fnc::global ,(genSym)::((compilable ,dropFncCompilable) (evaluable ,dropFncEvaluable)) (this:(process ,genFncSymDataId)::noDrop) () ,drop);
+    };
+
+    process \(
+        # typeOf silences a compiler warning
+        typeOf (eval (fnc::global ,name ,args type {
+            sym (,genFncSymDataId:id (escape ,name));
+            range ,genFncSymIter ,(lenOf args) {
+                = ,genFncSymDataId (+ ,genFncSymDataId (cast id (([] (escape ,args) ,genFncSymIter))));
+            };
+
+            if (! (?? (passthrough ,genFncSymDataId))) {
+                data::global (passthrough ,genFncSymDataId) ,body ,dropFnc;
+            };
+
+            ret (,genFncSymDataId);
+        }))
+    );
+
+    ret \();
+};

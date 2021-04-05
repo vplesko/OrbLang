@@ -24,6 +24,30 @@ enum Zab u8 {
     b
 };
 
+genData (t:type) Gen0 {
+    x:t
+};
+
+genData (n:u32) Gen0 {
+    x:(i32 n)
+};
+
+genData (t:type n:u32) Gen0 {
+    x:(t n)
+};
+
+genData (t:type) Gen1 {
+    x:t
+} {
+    println_i32 (cast i32 ([] this x));
+};
+
+eval (genData (t:type) Gen2 {
+    x:t
+} {
+    println_i32 (cast i32 ([] this x));
+}::compilable);
+
 fnc main () () {
     if true {
         println_i32 100;
@@ -318,5 +342,29 @@ fnc main () () {
 
         println_c8 (cast c8 Zab.a);
         println_c8 (cast c8 Zab.b);
+    };
+
+    block {
+        sym a:(Gen0 i32);
+        = ([] a x) 1700;
+        println_i32 ([] a x);
+
+        sym b:(Gen0 4);
+        = ([] b x 0) 1701;
+        println_i32 ([] b x 0);
+
+        sym c:(Gen0 f32 2);
+        = ([] c x 0) 1702.0;
+        println_f32 ([] c x 0);
+
+        block {
+            sym d:(Gen1 i32);
+            = ([] d x) 1703;
+        };
+
+        block {
+            sym e:(Gen2 i32);
+            = ([] e x) 1704;
+        };
     };
 };
