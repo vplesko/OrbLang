@@ -1,0 +1,41 @@
+import "std/One.orb";
+import "util/print.orb";
+
+data Foo {
+    x:i32
+} (lam (this:Foo::noDrop) () {
+    println_i32 ([] this x);
+});
+
+fnc main () () {
+    block {
+        sym x:(std.One i32);
+        if (std.isNull x) {
+            println_i32 100;
+        };
+    };
+
+    block {
+        sym (x (std.makeOne i32));
+        if (std.isNull x) {
+            println_i32 -1;
+        };
+        = (std.* x) 101;
+        println_i32 (std.* x);
+
+        = x (std.makeOne i32);
+        println_i32 (+ 102 (std.* x));
+    };
+
+    block {
+        sym (f (std.makeOne Foo));
+        = (std.-> f x) 103;
+    };
+
+    block {
+        sym x:(std.One u32);
+        if (!= (typeOf (std.* x)) u32) {
+            println_i32 -1;
+        };
+    };
+};

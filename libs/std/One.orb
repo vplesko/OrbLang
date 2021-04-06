@@ -1,0 +1,42 @@
+import "base.orb";
+import "clib.orb";
+
+eval (fnc std.One (t:type) type {
+    sym (name (+ \std.One (cast id t)));
+
+    if (! (?? ,name)) {
+        data::global ,name {
+            -p:(t *)
+        } (fnc::global std.-dropOne::(compilable (evaluable false)) (this:,name::noDrop) () {
+            if (!= ([] this -p) null) {
+                >> (* ([] this -p));
+            };
+            free (cast ptr ([] this -p));
+        });
+    };
+
+    ret (name);
+});
+
+mac std.makeOne (t::preprocess) {
+    sym (oneTy (std.One t));
+
+    ret \(block ,oneTy {
+        sym x:,oneTy y:,t;
+        = ([] x -p) (cast ,(t *) (malloc ,(sizeOf t)));
+        = (* ([] x -p)) (>> y);
+        pass x;
+    });
+};
+
+mac std.* (one) {
+    ret \(* ([] ,one -p));
+};
+
+mac std.-> (one memb) {
+    ret \([] (* ([] ,one -p)) ,memb);
+};
+
+mac std.isNull (one) {
+    ret \(== ([] ,one -p) null);
+};

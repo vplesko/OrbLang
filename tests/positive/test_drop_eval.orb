@@ -8,14 +8,16 @@ mac printDropVals () {
 
 data Foo {
     x:i32
-} (eval (fnc dropFoo (val:Foo::noDrop) () {
-    = printDropValsInnerCode (+ printDropValsInnerCode \{ (println_i32 ,([] val x)) });
+} (eval (fnc dropFoo (this:Foo::noDrop) () {
+    = printDropValsInnerCode (+ printDropValsInnerCode \{ (println_i32 ,([] this x)) });
 }));
 
 data Bar {
     f0:Foo
     f1:Foo
-};
+} (eval (fnc dropBar (this:Bar::noDrop) () {
+    = printDropValsInnerCode (+ printDropValsInnerCode \{ (println_str "Bar") });
+}));
 
 eval (fnc foo0 (x:i32) () {
     sym f:Foo;
