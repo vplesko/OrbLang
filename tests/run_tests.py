@@ -12,18 +12,20 @@ ORBC_EXE = sys.argv[1]
 TEST_POS_DIR = 'positive'
 TEST_NEG_DIR = 'negative'
 TEST_BIN_DIR = 'bin'
+TEST_LIB_DIR = '../libs/'
 
 
 def run_positive_test(case):
     print('Positive test: ' + case)
 
     src_file = TEST_POS_DIR + '/' + case + '.orb'
+    lib_path = '-I' + TEST_LIB_DIR
     exe_file = TEST_BIN_DIR + '/' + case
     if platform.system() == 'Windows':
         exe_file += '.exe'
     cmp_file = TEST_POS_DIR + '/' + case + '.txt'
 
-    result = subprocess.run([ORBC_EXE, src_file, '-o', exe_file])
+    result = subprocess.run([ORBC_EXE, src_file, lib_path, '-o', exe_file])
     if result.returncode != 0:
         return False
 
@@ -45,11 +47,12 @@ def run_negative_test(case):
     print('Negative test: ' + case)
 
     src_file = TEST_NEG_DIR + '/' + case + '.orb'
+    lib_path = '-I' + TEST_LIB_DIR
     exe_file = TEST_BIN_DIR + '/' + case
     if platform.system() == 'Windows':
         exe_file += '.exe'
 
-    result = subprocess.run([ORBC_EXE, src_file, '-o', exe_file], stderr=subprocess.DEVNULL)
+    result = subprocess.run([ORBC_EXE, src_file, lib_path, '-o', exe_file], stderr=subprocess.DEVNULL)
     return result.returncode > 0 and result.returncode < 100
 
 

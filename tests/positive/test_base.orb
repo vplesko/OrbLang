@@ -1,4 +1,4 @@
-import "../libs/base.orb";
+import "base.orb";
 import "util/print.orb";
 
 data Foo {

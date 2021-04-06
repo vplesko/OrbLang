@@ -12,7 +12,18 @@ optional<ProgramArgs> ProgramArgs::parseArgs(int argc,  char** argv, std::ostrea
     for (int i = 1; i < argc; ++i) {
         string arg = argv[i];
 
-        if (arg.rfind("-O", 0) == 0) {
+        if (arg == "-c") {
+            programArgs.link = false;
+        } else if (arg == "-emit-llvm") {
+            emitLlvm = true;
+        } else if (arg == "-o") {
+            if (i+1 == argc) {
+                out << "Argument to -o must be specified." << endl;
+                return nullopt;
+            }
+
+            programArgs.outputBin = argv[++i];
+        } else if (arg.rfind("-O", 0) == 0) {
             char *end = nullptr;
             optional<unsigned> num;
             if (arg.size() > 2) num = strtoll(arg.c_str()+2, &end, 10);
@@ -27,17 +38,13 @@ optional<ProgramArgs> ProgramArgs::parseArgs(int argc,  char** argv, std::ostrea
             }
 
             programArgs.optLvl = num;
-        } else if (arg == "-o") {
-            if (i+1 == argc) {
-                out << "Argument to -o must be specified." << endl;
+        } else if (arg.rfind("-I", 0) == 0) {
+            string importPath = arg.substr(2);
+            if (importPath.empty()) {
+                out << "Empty import path specified." << endl;
                 return nullopt;
             }
-
-            programArgs.outputBin = argv[++i];
-        } else if (arg == "-c") {
-            programArgs.link = false;
-        } else if (arg == "-emit-llvm") {
-            emitLlvm = true;
+            programArgs.importPaths.push_back(move(importPath));
         } else {
             if (filesystem::path(arg).extension().string() == ".orb") {
                 programArgs.inputsSrc.push_back(arg);
@@ -98,6 +105,7 @@ Usage: orbc [options] file...
 Options:
   -c          Only process and compile, but do not link.
   -emit-llvm  Print the LLVM representation into a .ll file.
+  -I<dir>     Add directory to import search paths.
   -o <file>   Place the binary output into <file>.
   -O<number>  Set the optimization level. Valid values are -O0, -O1, -O2, and -O3.
 )orbc_help";

@@ -5,7 +5,7 @@
 #include <optional>
 
 struct ProgramArgs {
-    std::vector<std::string> inputsSrc, inputsOther;
+    std::vector<std::string> inputsSrc, inputsOther, importPaths;
     std::string outputBin;
     std::optional<std::string> outputLlvm;
     bool link = true;

@@ -194,8 +194,13 @@ enum ImportTransRes {
     ITR_FAIL
 };
 
-optional<string> locateOrbFile(const string &file) {
+optional<string> locateOrbFile(const string &file, const vector<string> &additionalImportPaths) {
     if (filesystem::exists(file)) return filesystem::canonical(file).string();
+
+    for (const string &path : additionalImportPaths) {
+        filesystem::path importFile = filesystem::path(path) / file;
+        if (filesystem::exists(importFile)) return filesystem::canonical(importFile).string();
+    }
 
     {
         filesystem::path libFile = filesystem::path(ORBC_LIBS_PATH) / file;
@@ -235,7 +240,7 @@ bool CompilationOrchestrator::process(const ProgramArgs &args) {
     stack<Lexer*> trace;
 
     for (const string &in : args.inputsSrc) {
-        optional<string> pathOpt = locateOrbFile(in);
+        optional<string> pathOpt = locateOrbFile(in, args.importPaths);
         if (!pathOpt.has_value()) {
             msgs->errorInputFileNotFound(in);
             return false;
@@ -269,7 +274,7 @@ bool CompilationOrchestrator::process(const ProgramArgs &args) {
 
                 if (val.isImport()) {
                     const string &file = stringPool->get(val.getImportFile());
-                    optional<string> pathOpt = locateOrbFile(file);
+                    optional<string> pathOpt = locateOrbFile(file, args.importPaths);
                     if (!pathOpt.has_value()) {
                         msgs->errorImportNotFound(node.getCodeLoc(), file);
                         return false;
