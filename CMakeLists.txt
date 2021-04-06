@@ -136,12 +136,12 @@ llvm_map_components_to_libnames(LLVM_LIBS
 
 if(WIN32)
 	target_link_libraries(orbc ${LLVM_LIBS})
-	target_link_libraries(orbc clangTooling)
 else()
 	target_link_libraries(orbc stdc++fs)
 	target_link_libraries(orbc LLVM)
-	target_link_libraries(orbc clangTooling)
 endif()
+
+target_link_libraries(orbc clangTooling)
 
 # install targets
 install(TARGETS orbc DESTINATION bin)

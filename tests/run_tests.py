@@ -8,6 +8,7 @@ import sys
 
 ORBC_EXE = sys.argv[1]
 
+# TODO don't print stderr on test_message, fix compiler warnings in tests
 TEST_POS_DIR = 'positive'
 TEST_NEG_DIR = 'negative'
 TEST_BIN_DIR = 'bin'
