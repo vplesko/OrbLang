@@ -348,7 +348,6 @@ mac tup (a::preprocess b::preprocess rest::(variadic preprocess)) {
     ret \(block ,tupTy ,innerCode);
 };
 
-# TODO don't call drop on intermediary values (same for std library)
 mac make (ty::preprocess pair rest::variadic) {
     base.assertIsOfType type ty;
 
@@ -366,7 +365,7 @@ mac make (ty::preprocess pair rest::variadic) {
     };
     = innerCode (+ innerCode \{ (pass ,inst) });
 
-    ret \(block ,ty ,innerCode);
+    ret \(block::skipDropSymbols ,ty ,innerCode);
 };
 
 mac lam (body) {

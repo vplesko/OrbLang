@@ -52,9 +52,11 @@ eval (fnc foo6 (f:Foo x:i32) () {
 });
 
 eval (fnc foo7 (x:i32) Foo {
-    sym f:Foo;
-    = ([] f x) x;
-    ret f;
+    block::skipDropSymbols {
+        sym f:Foo;
+        = ([] f x) x;
+        ret f;
+    };
 });
 
 eval (fnc foo8 (x:i32) Foo {
@@ -256,6 +258,18 @@ fnc main () () {
     eval (block Foo {
         sym (f (foo7 2900));
         pass (foo9 ,f);
+    });
+
+    eval (block::skipDropSymbols {
+        sym (f (foo7 -1));
+    });
+
+    eval (block::skipDropSymbols b0 () {
+        sym (f (foo7 -1));
+        block {
+            sym (f (foo7 3000));
+            exit b0 true;
+        };
     });
 
     printDropVals;

@@ -350,6 +350,13 @@ NodeVal Processor::processBlock(const NodeVal &node, const NodeVal &starting) {
 
     optional<bool> attrBare = getAttributeForBool(starting, "bare");
     if (!attrBare.has_value()) return NodeVal();
+    optional<bool> attrSkipDropSymbols = getAttributeForBool(starting, "skipDropSymbols");
+    if (!attrSkipDropSymbols.has_value()) return NodeVal();
+
+    if (attrBare.value() && attrSkipDropSymbols.value()) {
+        msgs->errorBlockBareSkipDropSymbols(starting.getCodeLoc());
+        return NodeVal();
+    }
 
     bool hasName = node.getChildrenCnt() > 3;
     bool hasType = node.getChildrenCnt() > 2;
@@ -410,6 +417,7 @@ NodeVal Processor::processBlock(const NodeVal &node, const NodeVal &starting) {
         SymbolTable::Block block;
         block.name = name;
         block.type = type;
+        block.skipDropSymbols = attrSkipDropSymbols.value();
         if (!performBlockSetUp(node.getCodeLoc(), block)) return NodeVal();
 
         do {
@@ -2243,15 +2251,15 @@ bool Processor::callDropFuncs(CodeLoc codeLoc, vector<VarId> vars) {
 }
 
 bool Processor::callDropFuncsCurrBlock(CodeLoc codeLoc) {
-    return callDropFuncs(codeLoc, symbolTable->getVarsInRevOrderCurrBlock());
+    return callDropFuncs(codeLoc, symbolTable->getVarsForDroppingCurrBlock());
 }
 
 bool Processor::callDropFuncsFromBlockToCurrBlock(CodeLoc codeLoc, NamePool::Id name) {
-    return callDropFuncs(codeLoc, symbolTable->getVarsInRevOrderFromBlockToCurrBlock(name));
+    return callDropFuncs(codeLoc, symbolTable->getVarsForDroppingFromBlockToCurrBlock(name));
 }
 
 bool Processor::callDropFuncsCurrCallable(CodeLoc codeLoc) {
-    return callDropFuncs(codeLoc, symbolTable->getVarsInRevOrderCurrCallable());
+    return callDropFuncs(codeLoc, symbolTable->getVarsForDroppingCurrCallable());
 }
 
 bool Processor::processAttributes(NodeVal &node, bool forceUnescape) {

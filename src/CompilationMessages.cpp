@@ -818,6 +818,10 @@ void CompilationMessages::errorDataRedefinition(CodeLoc loc, NamePool::Id name) 
     error(loc, ss.str());
 }
 
+void CompilationMessages::errorBlockBareSkipDropSymbols(CodeLoc loc) {
+    error(loc, "Bare blocks cannot be marked 'skipDropSymbols'. They have no scope and never drop symbols.");
+}
+
 void CompilationMessages::errorBlockBareNameType(CodeLoc loc) {
     error(loc, "Bare blocks cannot have names nor pass types. They are simply unscoped sequences of instructions.");
 }
