@@ -81,8 +81,8 @@ fnc main () () {
     cast (i32 cn * cn) (cast ptr (cast (i32 []) (cast (i32 *) null)));
     cast (c8 cn []) 0;
 
-    cast (fnc (i32) ()) (cast (i32 *) null);
-    cast (mac 1) (cast (i32 *) null);
+    typeOf (cast (fnc (i32) ()) (cast (i32 *) null));
+    typeOf (cast (mac 1) (cast (i32 *) null));
 
     println_i32 (cast i32 (cast bool foo));
     println_i32 (cast i32 (cast bool (eval (block (fnc () ()) { sym f:(fnc () ()); pass f; }))));

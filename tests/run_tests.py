@@ -8,11 +8,12 @@ import sys
 
 ORBC_EXE = sys.argv[1]
 
-# TODO don't print stderr on test_message, fix compiler warnings in tests
 TEST_POS_DIR = 'positive'
 TEST_NEG_DIR = 'negative'
 TEST_BIN_DIR = 'bin'
 TEST_LIB_DIR = '../libs/'
+
+TESTS_POS_SILENT = ['test_message']
 
 
 def run_positive_test(case):
@@ -25,7 +26,10 @@ def run_positive_test(case):
         exe_file += '.exe'
     cmp_file = TEST_POS_DIR + '/' + case + '.txt'
 
-    result = subprocess.run([ORBC_EXE, src_file, lib_path, '-o', exe_file])
+    if case in TESTS_POS_SILENT:
+        result = subprocess.run([ORBC_EXE, src_file, lib_path, '-o', exe_file], stderr=subprocess.DEVNULL)
+    else:
+        result = subprocess.run([ORBC_EXE, src_file, lib_path, '-o', exe_file])
     if result.returncode != 0:
         return False
 

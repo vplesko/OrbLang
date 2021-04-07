@@ -170,5 +170,7 @@ fnc main () () {
         println_i32 ((mac::global globInLocal (x) { ret x; }) 400);
     };
 
-    passthrough ,sym;
+    block {
+        (passthrough ,sym) x:i32;
+    };
 };
