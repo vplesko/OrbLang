@@ -22,9 +22,8 @@ mac std.makeOne (t::preprocess) {
     sym (oneTy (std.One t));
 
     ret \(block ,oneTy {
-        sym x:,oneTy y:,t;
-        = ([] x -p) (cast ,(t *) (malloc ,(sizeOf t)));
-        = (* ([] x -p)) (>> y);
+        sym x:,oneTy;
+        = ([] x -p) (cast ,(t *) (calloc 1 ,(sizeOf t)));
         pass x;
     });
 };

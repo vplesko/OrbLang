@@ -4,5 +4,7 @@ fnc getchar::noNameMangle () c8;
 fnc printf::noNameMangle (fmt:(c8 cn []))::variadic ();
 fnc scanf::noNameMangle (fmt:(c8 cn []))::variadic ();
 
+# TODO don't use u64 directly
 fnc malloc::noNameMangle (size:u64) ptr;
+fnc calloc::noNameMangle (num:u64 size:u64) ptr;
 fnc free::noNameMangle (addr:ptr) ();
