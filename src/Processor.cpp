@@ -2328,7 +2328,7 @@ bool Processor::processChildNodes(const NodeVal &node) {
         NodeVal tmp = processNode(node.getChild(i));
         if (tmp.isInvalid()) return false;
 
-        if (!tmp.hasRef()) {
+        if (NodeVal::isLeaf(node.getChild(i), typeTable)) {
             if (NodeVal::isFunc(tmp, typeTable)) msgs->warnUnusedFunc(tmp.getCodeLoc());
             else if (NodeVal::isMacro(tmp, typeTable)) msgs->warnUnusedMacro(tmp.getCodeLoc());
             else if (tmp.isSpecialVal()) msgs->warnUnusedSpecial(tmp.getCodeLoc(), tmp.getSpecialVal());

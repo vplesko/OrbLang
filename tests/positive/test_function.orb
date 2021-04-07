@@ -181,7 +181,7 @@ fnc main () () {
 
     block {
         println_i32 ((fnc::global globInLocal (x:i32) i32) 400);
-        typeOf (fnc::global globInLocal (x:i32) i32 { ret x; });
+        fnc::global globInLocal (x:i32) i32 { ret x; };
 
         sym (x -1);
         canEvalDummy x;
