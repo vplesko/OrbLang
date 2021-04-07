@@ -172,7 +172,6 @@ public:
     void errorMacroNoValue(CodeLoc loc);
     void errorDataCnElement(CodeLoc loc);
     void errorDataRedefinition(CodeLoc loc, NamePool::Id name);
-    void errorBlockBareSkipDropSymbols(CodeLoc loc);
     void errorBlockBareNameType(CodeLoc loc);
     void errorBlockNotFound(CodeLoc loc, NamePool::Id name);
     void errorBlockNoPass(CodeLoc loc);

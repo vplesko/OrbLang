@@ -65,7 +65,6 @@ public:
         std::optional<TypeTable::Id> type;
         llvm::BasicBlock *blockExit = nullptr, *blockLoop = nullptr;
         llvm::PHINode *phi = nullptr;
-        bool skipDropSymbols = false;
 
         bool isEval() const { return blockExit == nullptr && blockLoop == nullptr && phi == nullptr; }
     };
@@ -139,7 +138,7 @@ private:
     const BlockInternal& getGlobalBlockInternal() const;
     BlockInternal& getGlobalBlockInternal();
 
-    void collectVarsForDropping(std::optional<std::size_t> callable, std::size_t block, std::vector<VarId> &v);
+    void collectVarsInRevOrder(std::optional<std::size_t> callable, std::size_t block, std::vector<VarId> &v);
 
 public:
     SymbolTable();
@@ -173,9 +172,9 @@ public:
 
     std::optional<CalleeValueInfo> getCurrCallee() const;
 
-    std::vector<VarId> getVarsForDroppingCurrBlock();
-    std::vector<VarId> getVarsForDroppingFromBlockToCurrBlock(NamePool::Id name);
-    std::vector<VarId> getVarsForDroppingCurrCallable();
+    std::vector<VarId> getVarsInRevOrderCurrBlock();
+    std::vector<VarId> getVarsInRevOrderFromBlockToCurrBlock(NamePool::Id name);
+    std::vector<VarId> getVarsInRevOrderCurrCallable();
 
     bool nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable, bool forGlobal = false, bool checkAllScopes = false) const;
 };

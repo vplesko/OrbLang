@@ -365,7 +365,7 @@ optional<SymbolTable::CalleeValueInfo> SymbolTable::getCurrCallee() const {
     return localBlockChains.back().first;
 }
 
-vector<VarId> SymbolTable::getVarsForDroppingCurrBlock() {
+vector<VarId> SymbolTable::getVarsInRevOrderCurrBlock() {
     vector<VarId> ret;
 
     optional<size_t> callable;
@@ -377,25 +377,25 @@ vector<VarId> SymbolTable::getVarsForDroppingCurrBlock() {
         block = localBlockChains.back().second.size()-1;
     }
 
-    collectVarsForDropping(callable, block, ret);
+    collectVarsInRevOrder(callable, block, ret);
     return ret;
 }
 
-vector<VarId> SymbolTable::getVarsForDroppingFromBlockToCurrBlock(NamePool::Id name) {
+vector<VarId> SymbolTable::getVarsInRevOrderFromBlockToCurrBlock(NamePool::Id name) {
     vector<VarId> ret;
 
     if (!localBlockChains.empty()) {
         for (size_t ind = 0; ind < localBlockChains.back().second.size(); ++ind) {
             size_t i = localBlockChains.back().second.size()-1-ind;
 
-            collectVarsForDropping(localBlockChains.size()-1, i, ret);
+            collectVarsInRevOrder(localBlockChains.size()-1, i, ret);
             if (localBlockChains.back().second[i].block.name == name) return ret;
         }
     }
     for (size_t ind = 0; ind < globalBlockChain.size(); ++ind) {
         size_t i = globalBlockChain.size()-1-ind;
 
-        collectVarsForDropping(nullopt, i, ret);
+        collectVarsInRevOrder(nullopt, i, ret);
         if (globalBlockChain[i].block.name == name) return ret;
     }
 
@@ -404,7 +404,7 @@ vector<VarId> SymbolTable::getVarsForDroppingFromBlockToCurrBlock(NamePool::Id n
     return ret;
 }
 
-vector<VarId> SymbolTable::getVarsForDroppingCurrCallable() {
+vector<VarId> SymbolTable::getVarsInRevOrderCurrCallable() {
     assert(!localBlockChains.empty());
 
     vector<VarId> ret;
@@ -412,7 +412,7 @@ vector<VarId> SymbolTable::getVarsForDroppingCurrCallable() {
     for (size_t ind = 0; ind < localBlockChains.back().second.size(); ++ind) {
         size_t i = localBlockChains.back().second.size()-1-ind;
 
-        collectVarsForDropping(localBlockChains.size()-1, i, ret);
+        collectVarsInRevOrder(localBlockChains.size()-1, i, ret);
     }
 
     return ret;
@@ -459,10 +459,8 @@ SymbolTable::BlockInternal& SymbolTable::getGlobalBlockInternal() {
 }
 
 // TODO this is all a bit roundabout, as it is passing a bunch of near-identical ids - find a way to optimize, but keep the API nice
-void SymbolTable::collectVarsForDropping(optional<std::size_t> callable, size_t block, vector<VarId> &v) {
+void SymbolTable::collectVarsInRevOrder(optional<std::size_t> callable, size_t block, vector<VarId> &v) {
     const BlockInternal &blockInternal = callable.has_value() ? localBlockChains[callable.value()].second[block] : globalBlockChain[block];
-
-    if (blockInternal.block.skipDropSymbols) return;
 
     v.reserve(v.size()+blockInternal.vars.size());
     VarId varId;

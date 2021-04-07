@@ -46,13 +46,8 @@ fnc foo6 (f:Foo x:i32) () {
 };
 
 fnc foo7 (x:i32) Foo {
-    block::skipDropSymbols {
-        sym f:Foo;
-        = ([] f x) x;
-        ret f;
-    };
-
     sym f:Foo;
+    = ([] f x) x;
     ret f;
 };
 
@@ -246,17 +241,5 @@ fnc main () () {
     block Foo {
         sym (f (foo7 2800));
         pass (foo9 ,f);
-    };
-
-    block::skipDropSymbols {
-        sym (f (foo7 -1));
-    };
-
-    block::skipDropSymbols b0 () {
-        sym (f (foo7 -1));
-        block {
-            sym (f (foo7 2900));
-            exit b0 true;
-        };
     };
 };

@@ -21,7 +21,7 @@ eval (fnc std.One (t:type) type {
 mac std.makeOne (t::preprocess) {
     sym (oneTy (std.One t));
 
-    ret \(block::skipDropSymbols ,oneTy {
+    ret \(block ,oneTy {
         sym x:,oneTy y:,t;
         = ([] x -p) (cast ,(t *) (malloc ,(sizeOf t)));
         = (* ([] x -p)) (>> y);
