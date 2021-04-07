@@ -547,17 +547,7 @@ NodeVal Processor::processPass(const NodeVal &node) {
         return NodeVal();
     }
 
-    NodeVal processed = processNode(node.getChild(indVal));
-    if (processed.isInvalid()) return NodeVal();
-
-    NodeVal moved;
-    if (processed.getLifetimeInfo().has_value() &&
-        processed.getLifetimeInfo().value().nestLevel.has_value() &&
-        !processed.getLifetimeInfo().value().nestLevel.value().greaterThan(symbolTable->currNestLevel())) {
-        moved = moveNode(processed.getCodeLoc(), move(processed));
-    } else {
-        moved = move(processed);
-    }
+    NodeVal moved = processForScopeResult(node.getChild(indVal), false);
     if (moved.isInvalid()) return NodeVal();
 
     NodeVal casted = implicitCast(moved, targetBlock.type.value());
@@ -1246,17 +1236,7 @@ NodeVal Processor::processRet(const NodeVal &node) {
                 return NodeVal();
             }
 
-            NodeVal processed = processNode(node.getChild(1));
-            if (processed.isInvalid()) return NodeVal();
-
-            NodeVal moved;
-            if (processed.getLifetimeInfo().has_value() &&
-                processed.getLifetimeInfo().value().nestLevel.has_value() &&
-                !processed.getLifetimeInfo().value().nestLevel.value().callableGreaterThan(symbolTable->currNestLevel())) {
-                moved = moveNode(processed.getCodeLoc(), move(processed));
-            } else {
-                moved = move(processed);
-            }
+            NodeVal moved = processForScopeResult(node.getChild(1), true);
             if (moved.isInvalid()) return NodeVal();
 
             NodeVal casted = implicitCast(moved, optCallee.value().retType.value());
@@ -1278,17 +1258,7 @@ NodeVal Processor::processRet(const NodeVal &node) {
     } else {
         if (!checkExactlyChildren(node, 2, true)) return NodeVal();
 
-        NodeVal processed = processNode(node.getChild(1));
-        if (processed.isInvalid()) return NodeVal();
-
-        NodeVal moved;
-        if (processed.getLifetimeInfo().has_value() &&
-            processed.getLifetimeInfo().value().nestLevel.has_value() &&
-            !processed.getLifetimeInfo().value().nestLevel.value().callableGreaterThan(symbolTable->currNestLevel())) {
-            moved = moveNode(processed.getCodeLoc(), move(processed));
-        } else {
-            moved = move(processed);
-        }
+        NodeVal moved = processForScopeResult(node.getChild(1), true);
         if (moved.isInvalid()) return NodeVal();
 
         if (!performRet(node.getCodeLoc(), moved)) return NodeVal();
@@ -2232,7 +2202,7 @@ bool Processor::callDropFuncs(CodeLoc codeLoc, vector<VarId> vars) {
     for (const VarId &it : vars) {
         SymbolTable::VarEntry &varEntry = symbolTable->getVar(it);
 
-        if (varEntry.var.isNoDrop()) continue;
+        if (varEntry.skipDrop || varEntry.var.isNoDrop()) continue;
 
         NodeVal loaded = dispatchLoad(codeLoc, it);
 
@@ -2797,6 +2767,30 @@ pair<NodeVal, optional<NodeVal>> Processor::processForIdTypePair(const NodeVal &
     }
 
     return make_pair<NodeVal, optional<NodeVal>>(move(id), move(ty));
+}
+
+NodeVal Processor::processForScopeResult(const NodeVal &node, bool callableClosing) {
+    NodeVal processed = processNode(node);
+    if (processed.isInvalid()) return NodeVal();
+
+    bool mayMoveNode = false;
+    if (processed.getLifetimeInfo().has_value() && processed.getLifetimeInfo().value().nestLevel.has_value()) {
+        if (callableClosing) {
+            mayMoveNode = !processed.getLifetimeInfo().value().nestLevel.value().callableGreaterThan(symbolTable->currNestLevel());
+        } else {
+            mayMoveNode = !processed.getLifetimeInfo().value().nestLevel.value().greaterThan(symbolTable->currNestLevel());
+        }
+    }
+
+    NodeVal moved;
+    if (mayMoveNode) {
+        optional<VarId> varId = processed.getVarId();
+        moved = moveNode(processed.getCodeLoc(), move(processed));
+        if (varId.has_value()) symbolTable->getVar(varId.value()).skipDrop = true;
+    } else {
+        moved = move(processed);
+    }
+    return moved;
 }
 
 NodeVal Processor::processAndImplicitCast(const NodeVal &node, TypeTable::Id ty) {

@@ -48,6 +48,7 @@ public:
     std::optional<TypeTable::Id> getType() const;
     bool hasRef() const;
     void removeRef();
+    std::optional<VarId> getVarId() const;
     bool isNoDrop() const;
     bool isInvokeArg() const;
     // returns whether set successfully

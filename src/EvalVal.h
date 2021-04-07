@@ -63,6 +63,7 @@ struct EvalVal {
     const std::uint64_t& getWidestU() const { return u64; }
 
     void removeRef();
+    std::optional<VarId> getVarId() const;
 
     static EvalVal makeVal(TypeTable::Id t, TypeTable *typeTable);
     static EvalVal makeZero(TypeTable::Id t, NamePool *namePool, TypeTable *typeTable);

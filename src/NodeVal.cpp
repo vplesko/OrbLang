@@ -79,6 +79,12 @@ void NodeVal::removeRef() {
     else if (isLlvmVal()) getLlvmVal().removeRef();
 }
 
+optional<VarId> NodeVal::getVarId() const {
+    if (isEvalVal()) return getEvalVal().getVarId();
+    else if (isLlvmVal()) return getLlvmVal().varId;
+    return nullopt;
+}
+
 bool NodeVal::isNoDrop() const {
     if (isEvalVal()) return getEvalVal().lifetimeInfo.noDrop;
     else if (isLlvmVal()) return getLlvmVal().lifetimeInfo.noDrop;

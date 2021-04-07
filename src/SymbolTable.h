@@ -72,6 +72,7 @@ public:
     struct VarEntry {
         NamePool::Id name;
         NodeVal var;
+        bool skipDrop = false;
     };
 
     struct MacroCallSite {

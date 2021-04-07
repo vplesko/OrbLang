@@ -109,6 +109,7 @@ NodeVal Compiler::performLoad(CodeLoc codeLoc, VarId varId) {
 
     LlvmVal loadLlvmVal(ref.var.getLlvmVal().type);
     loadLlvmVal.ref = ref.var.getLlvmVal().ref;
+    loadLlvmVal.varId = varId;
     loadLlvmVal.lifetimeInfo = ref.var.getLlvmVal().lifetimeInfo;
     loadLlvmVal.val = llvmBuilder.CreateLoad(ref.var.getLlvmVal().ref, getNameForLlvm(ref.name));
     return NodeVal(codeLoc, loadLlvmVal);

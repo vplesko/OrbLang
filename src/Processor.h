@@ -98,6 +98,7 @@ private:
     NodeVal processForIdOrEmpty(const NodeVal &node);
     NodeVal processForTypeArg(const NodeVal &node);
     std::pair<NodeVal, std::optional<NodeVal>> processForIdTypePair(const NodeVal &node);
+    NodeVal processForScopeResult(const NodeVal &node, bool callableClosing);
     NodeVal processAndImplicitCast(const NodeVal &node, TypeTable::Id ty);
 
     NodeVal processFncType(const NodeVal &node);

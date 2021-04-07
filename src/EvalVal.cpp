@@ -8,6 +8,11 @@ void EvalVal::removeRef() {
     ref = nullptr;
 }
 
+optional<VarId> EvalVal::getVarId() const {
+    if (holds_alternative<VarId>(ref)) return get<VarId>(ref);
+    return nullopt;
+}
+
 EvalVal EvalVal::makeVal(TypeTable::Id t, TypeTable *typeTable) {
     EvalVal evalVal;
     evalVal.type = t;
