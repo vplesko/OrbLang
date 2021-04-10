@@ -1,3 +1,12 @@
 import "base.orb";
+import "clib.orb";
 
 alias std.Size u64;
+
+mac std.malloc (num::preprocess ty::preprocess) {
+    ret \(cast ,(ty []) (malloc (* ,num ,(sizeOf ty))));
+};
+
+mac std.calloc (num::preprocess ty::preprocess) {
+    ret \(cast ,(ty []) (calloc ,num ,(sizeOf ty)));
+};
