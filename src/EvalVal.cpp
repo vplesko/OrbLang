@@ -185,7 +185,7 @@ bool EvalVal::isNull(const Pointer &ptr) {
     return holds_alternative<NodeVal*>(ptr) && get<NodeVal*>(ptr) == nullptr;
 }
 
-const NodeVal& EvalVal::deref(const Pointer &ptr, const SymbolTable *symbolTable) {
+NodeVal& EvalVal::deref(const Pointer &ptr, SymbolTable *symbolTable) {
     if (holds_alternative<VarId>(ptr)) {
         return symbolTable->getVar(get<VarId>(ptr)).var;
     } else {
@@ -193,27 +193,11 @@ const NodeVal& EvalVal::deref(const Pointer &ptr, const SymbolTable *symbolTable
     }
 }
 
-NodeVal& EvalVal::deref(Pointer &ptr, SymbolTable *symbolTable) {
-    if (holds_alternative<VarId>(ptr)) {
-        return symbolTable->getVar(get<VarId>(ptr)).var;
-    } else {
-        return *get<NodeVal*>(ptr);
-    }
-}
-
-const NodeVal& EvalVal::getPointee(const EvalVal &val, const SymbolTable *symbolTable) {
+NodeVal& EvalVal::getPointee(const EvalVal &val, SymbolTable *symbolTable) {
     return deref(val.p, symbolTable);
 }
 
-NodeVal& EvalVal::getPointee(EvalVal &val, SymbolTable *symbolTable) {
-    return deref(val.p, symbolTable);
-}
-
-const NodeVal& EvalVal::getRefee(const EvalVal &val, const SymbolTable *symbolTable) {
-    return deref(val.ref, symbolTable);
-}
-
-NodeVal& EvalVal::getRefee(EvalVal &val, SymbolTable *symbolTable) {
+NodeVal& EvalVal::getRefee(const EvalVal &val, SymbolTable *symbolTable) {
     return deref(val.ref, symbolTable);
 }
 

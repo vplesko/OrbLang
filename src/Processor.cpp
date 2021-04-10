@@ -1898,7 +1898,7 @@ NodeVal Processor::dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) 
     }
 }
 
-NodeVal Processor::dispatchAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) {
+NodeVal Processor::dispatchAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs) {
     if (checkIsEvalTime(lhs, false) && checkIsEvalTime(rhs, false)) {
         return evaluator->performOperAssignment(codeLoc, lhs, rhs);
     } else {
@@ -2054,7 +2054,6 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node, const NodeVal &val
     }
 }
 
-// TODO optimize on raw - don't need to copy children, can just move instead
 NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal val) {
     if (!checkHasType(val, true)) return NodeVal();
 
@@ -2081,8 +2080,6 @@ NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal val) {
         return NodeVal();
     }
 
-    NodeVal prev = NodeVal::copyNoRef(codeLoc, val);
-
     NodeVal zero;
     if (checkIsEvalTime(val, false)) zero = evaluator->performZero(codeLoc, valTy);
     else zero = performZero(codeLoc, valTy);
@@ -2090,7 +2087,10 @@ NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal val) {
 
     if (dispatchAssignment(codeLoc, val, zero).isInvalid()) return NodeVal();
 
-    return prev;
+    // val itself remained unchanged
+    val.setCodeLoc(codeLoc);
+    val.removeRef();
+    return move(val);
 }
 
 NodeVal Processor::invoke(CodeLoc codeLoc, MacroId macroId, vector<NodeVal> args) {

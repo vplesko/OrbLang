@@ -602,7 +602,7 @@ NodeVal Evaluator::performOperComparisonTearDown(CodeLoc codeLoc, bool success, 
     return NodeVal(codeLoc, move(evalVal));
 }
 
-NodeVal Evaluator::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) {
+NodeVal Evaluator::performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs) {
     if (!checkIsEvalVal(lhs, true) || !checkIsEvalVal(rhs, true)) return NodeVal();
 
     LifetimeInfo lhsLifetimeInfo = lhs.getEvalVal().lifetimeInfo;

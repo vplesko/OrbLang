@@ -92,12 +92,9 @@ struct EvalVal {
     static bool isCallableNoValue(const EvalVal &val, const TypeTable *typeTable);
 
     static bool isNull(const Pointer &ptr);
-    static const NodeVal& deref(const Pointer &ptr, const SymbolTable *symbolTable);
-    static NodeVal& deref(Pointer &ptr, SymbolTable *symbolTable);
-    static const NodeVal& getPointee(const EvalVal &val, const SymbolTable *symbolTable);
-    static NodeVal& getPointee(EvalVal &val, SymbolTable *symbolTable);
-    static const NodeVal& getRefee(const EvalVal &val, const SymbolTable *symbolTable);
-    static NodeVal& getRefee(EvalVal &val, SymbolTable *symbolTable);
+    static NodeVal& deref(const Pointer &ptr, SymbolTable *symbolTable);
+    static NodeVal& getPointee(const EvalVal &val, SymbolTable *symbolTable);
+    static NodeVal& getRefee(const EvalVal &val, SymbolTable *symbolTable);
 
     static std::optional<std::int64_t> getValueI(const EvalVal &val, const TypeTable *typeTable);
     static std::optional<std::uint64_t> getValueU(const EvalVal &val, const TypeTable *typeTable);

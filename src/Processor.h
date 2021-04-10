@@ -51,7 +51,7 @@ protected:
     // Returns nullopt in case of fail. Otherwise, returns whether the variadic comparison may exit early.
     virtual std::optional<bool> performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, ComparisonSignal &signal) =0;
     virtual NodeVal performOperComparisonTearDown(CodeLoc codeLoc, bool success, ComparisonSignal signal) =0;
-    virtual NodeVal performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) =0;
+    virtual NodeVal performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs) =0;
     // Called for arrays and array pointers.
     virtual NodeVal performOperIndexArr(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) =0;
     // Called for raws, tuples, and data types.
@@ -137,7 +137,7 @@ private:
     NodeVal dispatchCall(CodeLoc codeLoc, CodeLoc codeLocFunc, const NodeVal &func, const std::vector<NodeVal> &args, bool allArgsEval);
     NodeVal dispatchCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId funcId, const std::vector<NodeVal> &args, bool allArgsEval);
     NodeVal dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
-    NodeVal dispatchAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs);
+    NodeVal dispatchAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs);
     NodeVal getElement(CodeLoc codeLoc, NodeVal &array, std::size_t index);
     NodeVal getArrElement(CodeLoc codeLoc, NodeVal &array, const NodeVal &index);
     NodeVal getRawElement(CodeLoc codeLoc, NodeVal &raw, std::size_t index);

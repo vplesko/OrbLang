@@ -650,7 +650,7 @@ NodeVal Compiler::performOperComparisonTearDown(CodeLoc codeLoc, bool success, C
     return NodeVal(codeLoc, llvmVal);
 }
 
-NodeVal Compiler::performOperAssignment(CodeLoc codeLoc, NodeVal &lhs, const NodeVal &rhs) {
+NodeVal Compiler::performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
     if (!checkIsLlvmVal(lhs, true)) return NodeVal();
