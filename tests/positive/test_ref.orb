@@ -22,6 +22,9 @@ fnc main () () {
     println_i32 ([] b 0);
     = ([] c 0) 301;
     println_i32 ([] c 0);
+    = ([] c 0) 302;
+    = c (cast (i32 []) (& ([] c 1)));
+    println_i32 ([] c -1);
 
     sym (d (& b));
     = ([] (* d) 1) 400;

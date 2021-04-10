@@ -2622,6 +2622,7 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
         bool isBaseTup = typeTable->worksAsTuple(baseType);
         bool isBaseData = typeTable->worksAsDataType(baseType);
         bool isBaseArr = typeTable->worksAsTypeArr(baseType);
+        bool isBaseArrP = typeTable->worksAsTypeArrP(baseType);
 
         optional<size_t> baseLen;
         if (isBaseRaw) {
@@ -2663,7 +2664,7 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
                 return NodeVal();
             }
 
-            if (index.isEvalVal()) {
+            if (!isBaseArrP && index.isEvalVal()) {
                 indexVal = EvalVal::getValueNonNeg(index.getEvalVal(), typeTable);
                 if ((!indexVal.has_value()) || (baseLen.has_value() && indexVal.value() >= baseLen)) {
                     if (EvalVal::isI(index.getEvalVal(), typeTable)) {
