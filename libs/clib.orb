@@ -6,6 +6,7 @@ fnc scanf::noNameMangle (fmt:(c8 cn []))::variadic ();
 
 # TODO don't use u64 directly
 fnc memcpy::noNameMangle (dst:ptr src:ptr size:u64) ptr;
+fnc memset::noNameMangle (p:ptr val:u8 size:u64) ptr;
 fnc malloc::noNameMangle (size:u64) ptr;
 fnc calloc::noNameMangle (num:u64 size:u64) ptr;
 fnc realloc::noNameMangle (p:ptr size:u64) ptr;
