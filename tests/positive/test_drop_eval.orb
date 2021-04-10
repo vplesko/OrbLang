@@ -89,6 +89,15 @@ mac foo14 (x::preprocess) {
     ret \(foo2 ,x);
 };
 
+eval (fnc foo15 (f0:Foo f1:Foo) Foo {
+    sym x:Foo;
+    ret x;
+});
+
+mac foo16 (x::preprocess y::preprocess) {
+    ret (typeOf x);
+};
+
 eval (foo7 90);
 
 fnc main () () {
@@ -256,6 +265,23 @@ fnc main () () {
     eval (block Foo {
         sym (f (foo7 2900));
         pass (foo9 ,f);
+    });
+
+    eval (block b0 () {
+        foo12 (block Foo { pass (foo7 3000); }) (block Foo { exit b0 true; pass (foo7 -1); });
+    });
+    eval (block b0 () {
+        foo12 (block Foo { pass (foo7 3002); })
+            (foo15 (block Foo { pass (foo7 3001); }) (block Foo { exit b0 true; pass (foo7 -1); }));
+    });
+    eval (block b0 () {
+        foo16 (block Foo { pass (foo7 3003); }) (block Foo { exit b0 true; pass (foo7 -1); });
+    });
+    eval (block b0 () {
+        attrOf (foo7 3004) (block id { exit b0 true; pass \x; });
+    });
+    eval (block b0 () {
+        attr?? (foo7 3005) (block id { exit b0 true; pass \x; });
     });
 
     printDropVals;

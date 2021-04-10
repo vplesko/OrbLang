@@ -374,8 +374,8 @@ optional<SymbolTable::CalleeValueInfo> SymbolTable::getCurrCallee() const {
     return localBlockChains.back().first;
 }
 
-vector<VarId> SymbolTable::getVarsInRevOrderCurrBlock() {
-    vector<VarId> ret;
+vector<variant<VarId, NodeVal*>> SymbolTable::getValsForDropCurrBlock() {
+    vector<variant<VarId, NodeVal*>> ret;
 
     optional<size_t> callable;
     size_t block;
@@ -390,8 +390,8 @@ vector<VarId> SymbolTable::getVarsInRevOrderCurrBlock() {
     return ret;
 }
 
-vector<VarId> SymbolTable::getVarsInRevOrderFromBlockToCurrBlock(NamePool::Id name) {
-    vector<VarId> ret;
+vector<variant<VarId, NodeVal*>> SymbolTable::getValsForDropFromBlockToCurrBlock(NamePool::Id name) {
+    vector<variant<VarId, NodeVal*>> ret;
 
     if (!localBlockChains.empty()) {
         for (size_t ind = 0; ind < localBlockChains.back().second.size(); ++ind) {
@@ -413,10 +413,10 @@ vector<VarId> SymbolTable::getVarsInRevOrderFromBlockToCurrBlock(NamePool::Id na
     return ret;
 }
 
-vector<VarId> SymbolTable::getVarsInRevOrderCurrCallable() {
+vector<variant<VarId, NodeVal*>> SymbolTable::getValsForDropCurrCallable() {
     assert(!localBlockChains.empty());
 
-    vector<VarId> ret;
+    vector<variant<VarId, NodeVal*>> ret;
 
     for (size_t ind = 0; ind < localBlockChains.back().second.size(); ++ind) {
         size_t i = localBlockChains.back().second.size()-1-ind;
@@ -467,11 +467,18 @@ SymbolTable::BlockInternal& SymbolTable::getGlobalBlockInternal() {
     return globalBlockChain.front();
 }
 
-// TODO this is all a bit roundabout, as it is passing a bunch of near-identical ids - find a way to optimize, but keep the API nice
-void SymbolTable::collectVarsInRevOrder(optional<std::size_t> callable, size_t block, vector<VarId> &v) {
+// TODO this is all a bit roundabout - find a way to optimize, but keep the API nice
+void SymbolTable::collectVarsInRevOrder(optional<std::size_t> callable, size_t block, vector<variant<VarId, NodeVal*>> &v) {
     const BlockInternal &blockInternal = callable.has_value() ? localBlockChains[callable.value()].second[block] : globalBlockChain[block];
 
-    v.reserve(v.size()+blockInternal.vars.size());
+    v.reserve(v.size()+blockInternal.tmps.size()+blockInternal.vars.size());
+
+    for (size_t ind = 0; ind < blockInternal.tmps.size(); ++ind) {
+        size_t i = blockInternal.tmps.size()-1-ind;
+
+        v.push_back(blockInternal.tmps[i]);
+    }
+
     VarId varId;
     varId.callable = callable;
     varId.block = block;

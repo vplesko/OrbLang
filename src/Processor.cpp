@@ -29,7 +29,7 @@ NodeVal Processor::processNode(const NodeVal &node, bool topmost) {
     if (ret.isInvalid()) return NodeVal();
 
     if (topmost) {
-        if (!callDropFuncNonRef(ret)) return NodeVal();
+        if (!callDropFuncTmpVal(ret)) return NodeVal();
     }
 
     return ret;
@@ -704,6 +704,8 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
     args.reserve(providedArgCnt);
     vector<TypeTable::Id> argTypes;
     argTypes.reserve(providedArgCnt);
+    vector<BlockTmpValControl> argTmpCtrl;
+    argTmpCtrl.reserve(providedArgCnt);
     bool allArgsEval = true;
     for (size_t i = 0; i < providedArgCnt; ++i) {
         NodeVal arg = processNode(node.getChild(i+1));
@@ -713,8 +715,10 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
         if (!checkIsEvalVal(arg, false)) allArgsEval = false;
 
         args.push_back(move(arg));
-        argTypes.push_back(arg.getType().value());
+        argTypes.push_back(args.back().getType().value());
+        argTmpCtrl.push_back(createTmpValControl(args.back()));
     }
+    argTmpCtrl.clear(); // no longer possible to break out of arg processing
 
     NodeVal ret;
 
@@ -798,7 +802,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
         bool argNoDrop = ind < callable->getArgCnt() && callable->getArgNoDrop(ind);
 
         // if argument was marked noDrop, it becomes the callers responsibility to drop it
-        if (argNoDrop && !callDropFuncNonRef(move(args[ind]))) return NodeVal();
+        if (argNoDrop && !callDropFuncTmpVal(move(args[ind]))) return NodeVal();
     }
 
     return ret;
@@ -837,6 +841,9 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
     }
 
     vector<NodeVal> args;
+    args.reserve(providedArgCnt);
+    vector<BlockTmpValControl> argTmpCtrl;
+    argTmpCtrl.reserve(providedArgCnt);
     for (size_t i = 0; i < providedArgCnt; ++i) {
         // all variadic arguments have the same pre-handling
         EscapeScore escapeScore = MacroValue::toEscapeScore(macroVal.argPreHandling[min(i, callable.getArgCnt()-1)]);
@@ -845,7 +852,9 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
         if (arg.isInvalid()) return NodeVal();
 
         args.push_back(move(arg));
+        argTmpCtrl.push_back(createTmpValControl(args.back()));
     }
+    argTmpCtrl.clear(); // no longer possible to break out of arg processing
 
     NodeVal ret = invoke(node.getCodeLoc(), macroId.value(), move(args));
     if (ret.isInvalid()) return NodeVal();
@@ -1290,7 +1299,7 @@ NodeVal Processor::processIsEval(const NodeVal &node) {
 
         bool wasEval = operand.isEvalVal();
 
-        if (!callDropFuncNonRef(move(operand))) return NodeVal();
+        if (!callDropFuncTmpVal(move(operand))) return NodeVal();
 
         return promoteBool(node.getCodeLoc(), operand.isEvalVal());
     } else {
@@ -1428,7 +1437,7 @@ NodeVal Processor::processTypeOf(const NodeVal &node) {
 
     TypeTable::Id ty = operand.getType().value();
 
-    if (!callDropFuncNonRef(move(operand))) return NodeVal();
+    if (!callDropFuncTmpVal(move(operand))) return NodeVal();
 
     return promoteType(node.getCodeLoc(), ty);
 }
@@ -1469,7 +1478,7 @@ NodeVal Processor::processLenOf(const NodeVal &node) {
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::WIDEST_U), typeTable);
     evalVal.getWidestU() = len;
 
-    if (!callDropFuncNonRef(move(operand))) return NodeVal();
+    if (!callDropFuncTmpVal(move(operand))) return NodeVal();
 
     return NodeVal(node.getCodeLoc(), move(evalVal));
 }
@@ -1492,7 +1501,7 @@ NodeVal Processor::processSizeOf(const NodeVal &node) {
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::WIDEST_U), typeTable);
     evalVal.getWidestU() = size.value();
 
-    if (!callDropFuncNonRef(move(operand))) return NodeVal();
+    if (!callDropFuncTmpVal(move(operand))) return NodeVal();
 
     return NodeVal(node.getCodeLoc(), move(evalVal));
 }
@@ -1518,6 +1527,7 @@ NodeVal Processor::processAttrOf(const NodeVal &node) {
 
     NodeVal operand = processNode(node.getChild(1));
     if (operand.isInvalid()) return NodeVal();
+    BlockTmpValControl operandTmpCtrl = createTmpValControl(operand);
 
     NodeVal name = processForIdValue(node.getChild(2));
     if (name.isInvalid()) return NodeVal();
@@ -1536,7 +1546,7 @@ NodeVal Processor::processAttrOf(const NodeVal &node) {
         return NodeVal();
     }
 
-    if (!callDropFuncNonRef(move(operand))) return NodeVal();
+    if (!callDropFuncTmpVal(move(operand))) return NodeVal();
 
     return move(nodeAttr.value());
 }
@@ -1546,6 +1556,7 @@ NodeVal Processor::processAttrIsDef(const NodeVal &node) {
 
     NodeVal operand = processNode(node.getChild(1));
     if (operand.isInvalid()) return NodeVal();
+    BlockTmpValControl operandTmpCtrl = createTmpValControl(operand);
 
     NodeVal name = processForIdValue(node.getChild(2));
     if (name.isInvalid()) return NodeVal();
@@ -1566,7 +1577,7 @@ NodeVal Processor::processAttrIsDef(const NodeVal &node) {
         }
     }
 
-    if (!callDropFuncNonRef(move(operand))) return NodeVal();
+    if (!callDropFuncTmpVal(move(operand))) return NodeVal();
 
     return promoteBool(node.getCodeLoc(), attrIsDef);
 }
@@ -2150,6 +2161,12 @@ bool Processor::checkNotNeedsDrop(CodeLoc codeLoc, const NodeVal &val, bool orEr
     return true;
 }
 
+BlockTmpValControl Processor::createTmpValControl(NodeVal &val) {
+    if (!checkHasType(val, false) || val.hasRef() || val.isNoDrop() || val.isInvokeArg()) return BlockTmpValControl();
+
+    return BlockTmpValControl(symbolTable, val);
+}
+
 bool Processor::callDropFunc(CodeLoc codeLoc, NodeVal val) {
     if (!checkHasType(val, false) || val.isNoDrop()) return true;
 
@@ -2206,35 +2223,48 @@ bool Processor::callDropFunc(CodeLoc codeLoc, NodeVal val) {
     return true;
 }
 
-bool Processor::callDropFuncNonRef(NodeVal val) {
+bool Processor::callDropFuncTmpVal(NodeVal val) {
     if (val.hasRef()) return true;
     return callDropFunc(val.getCodeLoc(), move(val));
 }
 
-bool Processor::callDropFuncs(CodeLoc codeLoc, vector<VarId> vars) {
-    for (const VarId &it : vars) {
-        SymbolTable::VarEntry &varEntry = symbolTable->getVar(it);
+bool Processor::callDropFuncs(CodeLoc codeLoc, vector<variant<VarId, NodeVal*>> vals) {
+    for (const auto &it : vals) {
+        if (holds_alternative<VarId>(it)) {
+            VarId varId = get<VarId>(it);
 
-        if (varEntry.skipDrop || varEntry.var.isNoDrop()) continue;
+            SymbolTable::VarEntry &varEntry = symbolTable->getVar(varId);
+            if (varEntry.skipDrop || varEntry.var.isNoDrop()) continue;
 
-        NodeVal loaded = dispatchLoad(codeLoc, it);
-
-        if (!callDropFunc(codeLoc, move(loaded))) return false;
+            NodeVal loaded = dispatchLoad(codeLoc, varId);
+            if (!callDropFunc(codeLoc, move(loaded))) return false;
+        } else {
+            NodeVal nodeVal = *get<NodeVal*>(it);
+            if (!callDropFunc(codeLoc, move(nodeVal))) return false;
+        }
     }
 
     return true;
 }
 
 bool Processor::callDropFuncsCurrBlock(CodeLoc codeLoc) {
-    return callDropFuncs(codeLoc, symbolTable->getVarsInRevOrderCurrBlock());
+    return callDropFuncs(codeLoc, symbolTable->getValsForDropCurrBlock());
 }
 
 bool Processor::callDropFuncsFromBlockToCurrBlock(CodeLoc codeLoc, NamePool::Id name) {
-    return callDropFuncs(codeLoc, symbolTable->getVarsInRevOrderFromBlockToCurrBlock(name));
+    return callDropFuncs(codeLoc, symbolTable->getValsForDropFromBlockToCurrBlock(name));
+}
+
+bool Processor::callDropFuncsFromBlockToCurrBlock(CodeLoc codeLoc, optional<NamePool::Id> name) {
+    if (name.has_value()) {
+        return callDropFuncsFromBlockToCurrBlock(codeLoc, name.value());
+    } else {
+        return callDropFuncsCurrBlock(codeLoc);
+    }
 }
 
 bool Processor::callDropFuncsCurrCallable(CodeLoc codeLoc) {
-    return callDropFuncs(codeLoc, symbolTable->getVarsInRevOrderCurrCallable());
+    return callDropFuncs(codeLoc, symbolTable->getValsForDropCurrCallable());
 }
 
 bool Processor::processAttributes(NodeVal &node, bool forceUnescape) {
@@ -2347,7 +2377,7 @@ bool Processor::processChildNodes(const NodeVal &node) {
             else if (tmp.isSpecialVal()) msgs->warnUnusedSpecial(tmp.getCodeLoc(), tmp.getSpecialVal());
         }
 
-        if (!callDropFuncNonRef(move(tmp))) return false;
+        if (!callDropFuncTmpVal(move(tmp))) return false;
     }
 
     return true;

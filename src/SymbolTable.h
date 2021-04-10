@@ -2,6 +2,7 @@
 
 // TODO sort the order of all includes
 #include <unordered_map>
+#include <variant>
 #include <vector>
 #include "CodeLoc.h"
 #include "NamePool.h"
@@ -115,11 +116,13 @@ public:
 
 private:
     friend class BlockControl;
+    friend class BlockTmpValControl;
 
     // TODO optimize by keeping all vals (including elems in EvalVals) in a single long arena-like vector
     struct BlockInternal {
         Block block;
         std::vector<VarEntry> vars;
+        std::vector<NodeVal*> tmps;
     };
 
     std::unordered_map<NamePool::Id, std::vector<FuncValue>, NamePool::Id::Hasher> funcs;
@@ -140,7 +143,7 @@ private:
     const BlockInternal& getGlobalBlockInternal() const;
     BlockInternal& getGlobalBlockInternal();
 
-    void collectVarsInRevOrder(std::optional<std::size_t> callable, std::size_t block, std::vector<VarId> &v);
+    void collectVarsInRevOrder(std::optional<std::size_t> callable, std::size_t block, std::vector<std::variant<VarId, NodeVal*>> &v);
 
 public:
     SymbolTable();
@@ -177,9 +180,9 @@ public:
 
     std::optional<CalleeValueInfo> getCurrCallee() const;
 
-    std::vector<VarId> getVarsInRevOrderCurrBlock();
-    std::vector<VarId> getVarsInRevOrderFromBlockToCurrBlock(NamePool::Id name);
-    std::vector<VarId> getVarsInRevOrderCurrCallable();
+    std::vector<std::variant<VarId, NodeVal*>> getValsForDropCurrBlock();
+    std::vector<std::variant<VarId, NodeVal*>> getValsForDropFromBlockToCurrBlock(NamePool::Id name);
+    std::vector<std::variant<VarId, NodeVal*>> getValsForDropCurrCallable();
 
     bool nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable, bool forGlobal = false, bool checkAllScopes = false) const;
 };

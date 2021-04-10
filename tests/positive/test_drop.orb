@@ -83,6 +83,15 @@ mac foo14 (x::preprocess) {
     ret \(foo2 ,x);
 };
 
+fnc foo15 (f0:Foo f1:Foo) Foo {
+    sym x:Foo;
+    ret x;
+};
+
+mac foo16 (x::preprocess y::preprocess) {
+    ret (typeOf x);
+};
+
 fnc main () () {
     block {
         sym f:Foo;
@@ -241,5 +250,16 @@ fnc main () () {
     block Foo {
         sym (f (foo7 2800));
         pass (foo9 ,f);
+    };
+
+    block b0 () {
+        foo12 (block Foo { pass (foo7 2900); }) (block Foo { exit b0 true; pass (foo7 -1); });
+    };
+    block b0 () {
+        foo12 (block Foo { pass (foo7 2902); })
+            (foo15 (block Foo { pass (foo7 2901); }) (block Foo { exit b0 true; pass (foo7 -1); }));
+    };
+    block b0 () {
+        foo16 (block Foo { pass (foo7 2903); }) (block Foo { exit b0 true; pass (foo7 -1); });
     };
 };

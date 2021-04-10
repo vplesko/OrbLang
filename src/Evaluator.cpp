@@ -89,8 +89,6 @@ optional<bool> Evaluator::performBlockBody(CodeLoc codeLoc, SymbolTable::Block b
 
         return false;
     } catch (ExceptionEvaluatorJump ex) {
-        if (!callDropFuncsCurrBlock(codeLoc)) return nullopt;
-
         bool forCurrBlock = !ex.isRet && (!ex.blockName.has_value() || ex.blockName == block.name);
         if (!forCurrBlock) {
             doBlockTearDown(codeLoc, block, true, true);
@@ -110,6 +108,8 @@ bool Evaluator::performExit(CodeLoc codeLoc, SymbolTable::Block block, const Nod
     if (!checkIsEvalBlock(codeLoc, block, true)) return false;
 
     if (cond.getEvalVal().b) {
+        if (!callDropFuncsFromBlockToCurrBlock(codeLoc, block.name)) return false;
+
         ExceptionEvaluatorJump ex;
         // if name not given, skip until innermost block (instruction can't do otherwise)
         // if name given, skip until that block (which may even be innermost block)
@@ -125,6 +125,8 @@ bool Evaluator::performLoop(CodeLoc codeLoc, SymbolTable::Block block, const Nod
     if (!checkIsEvalBlock(codeLoc, block, true)) return false;
 
     if (cond.getEvalVal().b) {
+        if (!callDropFuncsFromBlockToCurrBlock(codeLoc, block.name)) return false;
+
         ExceptionEvaluatorJump ex;
         // if name not given, skip until innermost block (instruction can't do otherwise)
         // if name given, skip until that block (which may even be innermost block)
@@ -139,6 +141,8 @@ bool Evaluator::performLoop(CodeLoc codeLoc, SymbolTable::Block block, const Nod
 bool Evaluator::performPass(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &val) {
     if (!checkIsEvalVal(val, true)) return false;
     if (!checkIsEvalBlock(codeLoc, block, true)) return false;
+
+    if (!callDropFuncsFromBlockToCurrBlock(codeLoc, block.name)) return false;
 
     retVal = NodeVal::copyNoRef(codeLoc, val, LifetimeInfo());
 
@@ -194,6 +198,7 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId func
         symbolTable->addVar(move(varEntry));
     }
 
+    bool retIssued = false;
     try {
         if (!processChildNodes(func.evalFunc.value())) {
             return NodeVal();
@@ -203,9 +208,10 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId func
             msgs->errorInternal(codeLoc);
             return NodeVal();
         }
+        retIssued = true;
     }
 
-    if (!callDropFuncsCurrCallable(codeLoc)) return NodeVal();
+    if (!retIssued && !callDropFuncsCurrCallable(codeLoc)) return NodeVal();
 
     if (callable.hasRet()) {
         if (!retVal.has_value()) {
@@ -289,6 +295,8 @@ bool Evaluator::performRet(CodeLoc codeLoc) {
         return false;
     }
 
+    if (!callDropFuncsCurrCallable(codeLoc)) return false;
+
     ExceptionEvaluatorJump ex;
     ex.isRet = true;
     throw ex;
@@ -307,6 +315,8 @@ bool Evaluator::performRet(CodeLoc codeLoc, const NodeVal &node) {
         retVal = node;
         NodeVal::clearInvokeArg(retVal.value(), typeTable);
     }
+
+    if (!callDropFuncsCurrCallable(codeLoc)) return false;
 
     ExceptionEvaluatorJump ex;
     ex.isRet = true;

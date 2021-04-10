@@ -2,13 +2,14 @@
 
 #include <optional>
 #include <vector>
-#include "NodeVal.h"
-#include "NamePool.h"
-#include "StringPool.h"
-#include "TypeTable.h"
-#include "SymbolTable.h"
-#include "CompilationMessages.h"
+#include "BlockControl.h"
 #include "ComparisonSignal.h"
+#include "CompilationMessages.h"
+#include "NamePool.h"
+#include "NodeVal.h"
+#include "StringPool.h"
+#include "SymbolTable.h"
+#include "TypeTable.h"
 
 class Evaluator;
 
@@ -148,12 +149,14 @@ private:
     NodeVal moveNode(CodeLoc codeLoc, NodeVal val);
     NodeVal invoke(CodeLoc codeLoc, MacroId macroId, std::vector<NodeVal> args);
     bool hasTrivialDrop(TypeTable::Id ty);
+    BlockTmpValControl createTmpValControl(NodeVal &val);
     bool callDropFunc(CodeLoc codeLoc, NodeVal val);
-    bool callDropFuncNonRef(NodeVal val);
-    bool callDropFuncs(CodeLoc codeLoc, std::vector<VarId> vars);
+    bool callDropFuncTmpVal(NodeVal val);
+    bool callDropFuncs(CodeLoc codeLoc, std::vector<std::variant<VarId, NodeVal*>> vals);
 protected:
     bool callDropFuncsCurrBlock(CodeLoc codeLoc);
     bool callDropFuncsFromBlockToCurrBlock(CodeLoc codeLoc, NamePool::Id name);
+    bool callDropFuncsFromBlockToCurrBlock(CodeLoc codeLoc, std::optional<NamePool::Id> name);
     bool callDropFuncsCurrCallable(CodeLoc codeLoc);
 
 private:

@@ -1,3 +1,4 @@
+# TODO! test can't jump out of global blocks or get their syms
 import "util/print.orb";
 
 eval (block::bare () () {

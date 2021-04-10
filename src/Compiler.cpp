@@ -276,11 +276,7 @@ bool Compiler::performLoop(CodeLoc codeLoc, SymbolTable::Block block, const Node
 bool Compiler::performPass(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &val) {
     if (!checkInLocalScope(codeLoc, true)) return false;
 
-    if (block.name.has_value()) {
-        if (!callDropFuncsFromBlockToCurrBlock(codeLoc, block.name.value())) return false;
-    } else {
-        if (!callDropFuncsCurrBlock(codeLoc)) return false;
-    }
+    if (!callDropFuncsFromBlockToCurrBlock(codeLoc, block.name)) return false;
 
     NodeVal valPromo = promoteIfEvalValAndCheckIsLlvmVal(val, true);
     if (valPromo.isInvalid()) return false;
@@ -846,11 +842,7 @@ bool Compiler::doCondBlockJump(CodeLoc codeLoc, const NodeVal &cond, optional<Na
     getLlvmCurrFunction()->getBasicBlockList().push_back(llvmBlockDrops);
     llvmBuilder.SetInsertPoint(llvmBlockDrops);
 
-    if (blockName.has_value()) {
-        if (!callDropFuncsFromBlockToCurrBlock(codeLoc, blockName.value())) return false;
-    } else {
-        if (!callDropFuncsCurrBlock(codeLoc)) return false;
-    }
+    if (!callDropFuncsFromBlockToCurrBlock(codeLoc, blockName)) return false;
 
     llvmBuilder.CreateBr(llvmBlock);
 
