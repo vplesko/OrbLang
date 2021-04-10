@@ -1,0 +1,9 @@
+eval (fnc foo () () {
+    exit b0 true;
+});
+
+eval (block b0 () {
+    foo;
+});
+
+fnc main () () {};

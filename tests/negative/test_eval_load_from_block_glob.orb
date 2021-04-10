@@ -1,0 +1,10 @@
+eval (fnc foo () () {
+    = x 0;
+});
+
+eval (block b0 () {
+    sym x:i32;
+    foo;
+});
+
+fnc main () () {};

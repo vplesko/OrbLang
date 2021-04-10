@@ -125,19 +125,31 @@ optional<VarId> SymbolTable::getVarId(NamePool::Id name) const {
                 }
             }
         }
-    }
-    for (size_t ind = 0; ind < globalBlockChain.size(); ++ind) {
-        size_t i = globalBlockChain.size()-1-ind;
-        const BlockInternal &blockInternal = globalBlockChain[i];
 
-        for (size_t ind = 0; ind < blockInternal.vars.size(); ++ind) {
-            size_t j = blockInternal.vars.size()-1-ind;
+        for (size_t ind = 0; ind < globalBlockChain[0].vars.size(); ++ind) {
+            size_t i = globalBlockChain[0].vars.size()-1-ind;
 
-            if (blockInternal.vars[j].name == name) {
+            if (globalBlockChain[0].vars[i].name == name) {
                 VarId varId;
-                varId.block = i;
-                varId.index = j;
+                varId.block = 0;
+                varId.index = i;
                 return varId;
+            }
+        }
+    } else {
+        for (size_t ind = 0; ind < globalBlockChain.size(); ++ind) {
+            size_t i = globalBlockChain.size()-1-ind;
+            const BlockInternal &blockInternal = globalBlockChain[i];
+
+            for (size_t ind = 0; ind < blockInternal.vars.size(); ++ind) {
+                size_t j = blockInternal.vars.size()-1-ind;
+
+                if (blockInternal.vars[j].name == name) {
+                    VarId varId;
+                    varId.block = i;
+                    varId.index = j;
+                    return varId;
+                }
             }
         }
     }
@@ -359,11 +371,12 @@ optional<SymbolTable::Block> SymbolTable::getBlock(NamePool::Id name) const {
             ++it) {
             if (it->block.name == name) return it->block;
         }
-    }
-    for (auto it = globalBlockChain.rbegin();
-        it != globalBlockChain.rend();
-        ++it) {
-        if (it->block.name == name) return it->block;
+    } else {
+        for (auto it = globalBlockChain.rbegin();
+            it != globalBlockChain.rend();
+            ++it) {
+            if (it->block.name == name) return it->block;
+        }
     }
 
     return nullopt;
@@ -400,12 +413,13 @@ vector<variant<VarId, NodeVal*>> SymbolTable::getValsForDropFromBlockToCurrBlock
             collectVarsInRevOrder(localBlockChains.size()-1, i, ret);
             if (localBlockChains.back().second[i].block.name == name) return ret;
         }
-    }
-    for (size_t ind = 0; ind < globalBlockChain.size(); ++ind) {
-        size_t i = globalBlockChain.size()-1-ind;
+    } else {
+        for (size_t ind = 0; ind < globalBlockChain.size(); ++ind) {
+            size_t i = globalBlockChain.size()-1-ind;
 
-        collectVarsInRevOrder(nullopt, i, ret);
-        if (globalBlockChain[i].block.name == name) return ret;
+            collectVarsInRevOrder(nullopt, i, ret);
+            if (globalBlockChain[i].block.name == name) return ret;
+        }
     }
 
     // assumed that block with given name exists
