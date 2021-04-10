@@ -31,7 +31,7 @@ fnc main() () {
     println_i32 (+ 300 (% (block i32 { pass 10; }) 6));
     println_i32 (+ 301 (<< (block i32 { pass 1; }) 2));
     println_u32 (+ 300 (<< (block u32 { pass 3; }) 1:u32));
-    println_i32 (- 301 (<< (block i32 { pass -3; }) 1));
+    println_i32 (+ 308 (>> (block i32 { pass -2; }) 1));
     println_i32 (+ 300 (& 0b1010 (| (block i32 { pass 0b1100; }) 0b1001)));
     println_i32 (+ 300 (^ (block i32 { pass 0b1100; }) 0b0101));
     println_i32 (* (block i32 { pass 2; }) 5 31);

@@ -122,6 +122,8 @@ public:
     void errorExprCannotPromote(CodeLoc loc, TypeTable::Id into);
     void errorExprBadOps(CodeLoc loc, Oper op, bool unary, TypeTable::Id ty, bool eval);
     void errorExprBinDivByZero(CodeLoc loc);
+    void errorExprBinLeftShiftOfNeg(CodeLoc loc, std::int64_t shift);
+    void errorExprBinShiftByNeg(CodeLoc loc, std::int64_t shift);
     void errorExprCmpNeArgNum(CodeLoc loc);
     void errorExprAddrOfNonRef(CodeLoc loc);
     void errorExprCannotCast(CodeLoc loc, TypeTable::Id from, TypeTable::Id into);

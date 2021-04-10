@@ -185,7 +185,7 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId func
 
     BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(func, typeTable));
 
-    const TypeTable::Callable &callable = FuncValue::getCallable(func, typeTable);
+    TypeTable::Callable callable = FuncValue::getCallable(func, typeTable);
 
     for (size_t i = 0; i < args.size(); ++i) {
         LifetimeInfo lifetimeInfo;

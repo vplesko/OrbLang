@@ -366,7 +366,7 @@ bool Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, c
 
     BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(func, typeTable));
 
-    const TypeTable::Callable &callable = FuncValue::getCallable(func, typeTable);
+    TypeTable::Callable callable = FuncValue::getCallable(func, typeTable);
 
     llvm::BasicBlock *prevLlvmBuilderAllocaInsertPoint = llvmBuilderAlloca.GetInsertBlock();
     llvmBuilderAlloca.SetInsertPoint(llvm::BasicBlock::Create(llvmContext, "alloca", func.llvmFunc));
@@ -420,8 +420,8 @@ bool Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, c
     if (llvm::verifyFunction(*func.llvmFunc, &llvm::errs())) cerr << endl;
     llvmFpm->run(*func.llvmFunc);
 
-    llvmBuilder.SetInsertPoint(prevLlvmBuilderInsertPoint);
-    llvmBuilderAlloca.SetInsertPoint(prevLlvmBuilderAllocaInsertPoint);
+    if (prevLlvmBuilderInsertPoint != nullptr) llvmBuilder.SetInsertPoint(prevLlvmBuilderInsertPoint);
+    if (prevLlvmBuilderAllocaInsertPoint != nullptr) llvmBuilderAlloca.SetInsertPoint(prevLlvmBuilderAllocaInsertPoint);
 
     return true;
 }

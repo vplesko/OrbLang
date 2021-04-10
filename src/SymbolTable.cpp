@@ -10,13 +10,13 @@ void BaseCallableValue::setType(BaseCallableValue &callable, TypeTable::Id type,
     callable.typeSig = typeTable->addCallableSig(getCallable(callable, typeTable));
 }
 
-const TypeTable::Callable& BaseCallableValue::getCallable(const BaseCallableValue &callable, const TypeTable *typeTable) {
+TypeTable::Callable BaseCallableValue::getCallable(const BaseCallableValue &callable, const TypeTable *typeTable) {
     const TypeTable::Callable *call = typeTable->extractCallable(callable.type);
     assert(call != nullptr);
     return *call;
 }
 
-const TypeTable::Callable& BaseCallableValue::getCallableSig(const BaseCallableValue &callable, const TypeTable *typeTable) {
+TypeTable::Callable BaseCallableValue::getCallableSig(const BaseCallableValue &callable, const TypeTable *typeTable) {
     const TypeTable::Callable *call = typeTable->extractCallable(callable.typeSig);
     assert(call != nullptr);
     return *call;
@@ -258,9 +258,9 @@ SymbolTable::RegisterCallablePayload SymbolTable::registerMacro(const MacroValue
     }
 
     // don't allow ambiguity in variadic args
-    const TypeTable::Callable &call = MacroValue::getCallable(val, typeTable);
+    TypeTable::Callable call = MacroValue::getCallable(val, typeTable);
     for (const auto &it : macros.at(val.name)) {
-        const TypeTable::Callable &otherCall = MacroValue::getCallable(it, typeTable);
+        TypeTable::Callable otherCall = MacroValue::getCallable(it, typeTable);
 
         if ((call.variadic && otherCall.variadic) ||
             (call.variadic && otherCall.getArgCnt() >= call.getArgCnt()-1) ||
@@ -317,7 +317,7 @@ optional<MacroId> SymbolTable::getMacroId(MacroCallSite callSite, const TypeTabl
     for (size_t i = 0; i < macros.at(callSite.name).size(); ++i) {
         const MacroValue &it = macros.at(callSite.name)[i];
 
-        const TypeTable::Callable &callable = MacroValue::getCallable(it, typeTable);
+        TypeTable::Callable callable = MacroValue::getCallable(it, typeTable);
 
         if (it.getArgCnt() == callSite.argCnt || (callable.variadic && it.getArgCnt()-1 <= callSite.argCnt)) {
             MacroId macroId;
@@ -387,8 +387,8 @@ optional<SymbolTable::CalleeValueInfo> SymbolTable::getCurrCallee() const {
     return localBlockChains.back().first;
 }
 
-vector<variant<VarId, NodeVal*>> SymbolTable::getValsForDropCurrBlock() {
-    vector<variant<VarId, NodeVal*>> ret;
+vector<variant<VarId, NodeVal>> SymbolTable::getValsForDropCurrBlock() {
+    vector<variant<VarId, NodeVal>> ret;
 
     optional<size_t> callable;
     size_t block;
@@ -403,8 +403,8 @@ vector<variant<VarId, NodeVal*>> SymbolTable::getValsForDropCurrBlock() {
     return ret;
 }
 
-vector<variant<VarId, NodeVal*>> SymbolTable::getValsForDropFromBlockToCurrBlock(NamePool::Id name) {
-    vector<variant<VarId, NodeVal*>> ret;
+vector<variant<VarId, NodeVal>> SymbolTable::getValsForDropFromBlockToCurrBlock(NamePool::Id name) {
+    vector<variant<VarId, NodeVal>> ret;
 
     if (!localBlockChains.empty()) {
         for (size_t ind = 0; ind < localBlockChains.back().second.size(); ++ind) {
@@ -427,10 +427,10 @@ vector<variant<VarId, NodeVal*>> SymbolTable::getValsForDropFromBlockToCurrBlock
     return ret;
 }
 
-vector<variant<VarId, NodeVal*>> SymbolTable::getValsForDropCurrCallable() {
+vector<variant<VarId, NodeVal>> SymbolTable::getValsForDropCurrCallable() {
     assert(!localBlockChains.empty());
 
-    vector<variant<VarId, NodeVal*>> ret;
+    vector<variant<VarId, NodeVal>> ret;
 
     for (size_t ind = 0; ind < localBlockChains.back().second.size(); ++ind) {
         size_t i = localBlockChains.back().second.size()-1-ind;
@@ -482,7 +482,7 @@ SymbolTable::BlockInternal& SymbolTable::getGlobalBlockInternal() {
 }
 
 // TODO this is all a bit roundabout - find a way to optimize, but keep the API nice
-void SymbolTable::collectVarsInRevOrder(optional<std::size_t> callable, size_t block, vector<variant<VarId, NodeVal*>> &v) {
+void SymbolTable::collectVarsInRevOrder(optional<std::size_t> callable, size_t block, vector<variant<VarId, NodeVal>> &v) {
     const BlockInternal &blockInternal = callable.has_value() ? localBlockChains[callable.value()].second[block] : globalBlockChain[block];
 
     v.reserve(v.size()+blockInternal.tmps.size()+blockInternal.vars.size());

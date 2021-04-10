@@ -33,9 +33,8 @@ class BlockTmpValControl {
 
 public:
     BlockTmpValControl() {}
-    // ref cuz must not be null
-    explicit BlockTmpValControl(SymbolTable *symbolTable, NodeVal &val) : symbolTable(symbolTable) {
-        if (symbolTable != nullptr) symbolTable->getLastBlockInternal().tmps.push_back(&val);
+    explicit BlockTmpValControl(SymbolTable *symbolTable, NodeVal val) : symbolTable(symbolTable) {
+        if (symbolTable != nullptr) symbolTable->getLastBlockInternal().tmps.push_back(std::move(val));
     }
 
     BlockTmpValControl(const BlockTmpValControl&) = delete;

@@ -152,7 +152,7 @@ private:
     BlockTmpValControl createTmpValControl(NodeVal &val);
     bool callDropFunc(CodeLoc codeLoc, NodeVal val);
     bool callDropFuncTmpVal(NodeVal val);
-    bool callDropFuncs(CodeLoc codeLoc, std::vector<std::variant<VarId, NodeVal*>> vals);
+    bool callDropFuncs(CodeLoc codeLoc, std::vector<std::variant<VarId, NodeVal>> vals);
 protected:
     bool callDropFuncsCurrBlock(CodeLoc codeLoc);
     bool callDropFuncsFromBlockToCurrBlock(CodeLoc codeLoc, NamePool::Id name);

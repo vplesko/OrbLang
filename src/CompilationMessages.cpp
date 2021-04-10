@@ -624,6 +624,18 @@ void CompilationMessages::errorExprBinDivByZero(CodeLoc loc) {
     error(loc, "Attempted division by zero.");
 }
 
+void CompilationMessages::errorExprBinLeftShiftOfNeg(CodeLoc loc, int64_t shift) {
+    stringstream ss;
+    ss << "Attempted to left bit shift the negative value " << shift << ".";
+    error(loc, ss.str());
+}
+
+void CompilationMessages::errorExprBinShiftByNeg(CodeLoc loc, std::int64_t shift) {
+    stringstream ss;
+    ss << "Attempted to bit shift by the negative value " << shift << ".";
+    error(loc, ss.str());
+}
+
 void CompilationMessages::errorExprCmpNeArgNum(CodeLoc loc) {
     error(loc, "Attempted to use '!=' operator on more than two operands.");
 }

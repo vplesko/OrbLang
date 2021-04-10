@@ -29,8 +29,8 @@ public:
     virtual ~BaseCallableValue() {}
 
     static void setType(BaseCallableValue &callable, TypeTable::Id type, TypeTable *typeTable);
-    static const TypeTable::Callable& getCallable(const BaseCallableValue &callable, const TypeTable *typeTable);
-    static const TypeTable::Callable& getCallableSig(const BaseCallableValue &callable, const TypeTable *typeTable);
+    static TypeTable::Callable getCallable(const BaseCallableValue &callable, const TypeTable *typeTable);
+    static TypeTable::Callable getCallableSig(const BaseCallableValue &callable, const TypeTable *typeTable);
 };
 
 struct FuncValue : public BaseCallableValue {
@@ -122,7 +122,8 @@ private:
     struct BlockInternal {
         Block block;
         std::vector<VarEntry> vars;
-        std::vector<NodeVal*> tmps;
+        // TODO optimize the way these are passed around
+        std::vector<NodeVal> tmps;
     };
 
     std::unordered_map<NamePool::Id, std::vector<FuncValue>, NamePool::Id::Hasher> funcs;
@@ -143,7 +144,7 @@ private:
     const BlockInternal& getGlobalBlockInternal() const;
     BlockInternal& getGlobalBlockInternal();
 
-    void collectVarsInRevOrder(std::optional<std::size_t> callable, std::size_t block, std::vector<std::variant<VarId, NodeVal*>> &v);
+    void collectVarsInRevOrder(std::optional<std::size_t> callable, std::size_t block, std::vector<std::variant<VarId, NodeVal>> &v);
 
 public:
     SymbolTable();
@@ -180,9 +181,9 @@ public:
 
     std::optional<CalleeValueInfo> getCurrCallee() const;
 
-    std::vector<std::variant<VarId, NodeVal*>> getValsForDropCurrBlock();
-    std::vector<std::variant<VarId, NodeVal*>> getValsForDropFromBlockToCurrBlock(NamePool::Id name);
-    std::vector<std::variant<VarId, NodeVal*>> getValsForDropCurrCallable();
+    std::vector<std::variant<VarId, NodeVal>> getValsForDropCurrBlock();
+    std::vector<std::variant<VarId, NodeVal>> getValsForDropFromBlockToCurrBlock(NamePool::Id name);
+    std::vector<std::variant<VarId, NodeVal>> getValsForDropCurrCallable();
 
     bool nameAvailable(NamePool::Id name, const NamePool *namePool, const TypeTable *typeTable, bool forGlobal = false, bool checkAllScopes = false) const;
 };

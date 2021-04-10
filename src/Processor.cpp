@@ -722,7 +722,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
 
     NodeVal ret;
 
-    const TypeTable::Callable *callable = nullptr;
+    TypeTable::Callable callable;
 
     if (starting.isUndecidedCallableVal()) {
         optional<FuncId> funcId;
@@ -766,9 +766,9 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
             return NodeVal();
         }
 
-        callable = &BaseCallableValue::getCallable(symbolTable->getFunc(funcId.value()), typeTable);
+        callable = BaseCallableValue::getCallable(symbolTable->getFunc(funcId.value()), typeTable);
 
-        if (!implicitCastArgsAndVerifyCallOk(node.getCodeLoc(), args, *callable)) return NodeVal();
+        if (!implicitCastArgsAndVerifyCallOk(node.getCodeLoc(), args, callable)) return NodeVal();
 
         ret = dispatchCall(node.getCodeLoc(), starting.getCodeLoc(), funcId.value(), args, allArgsEval);
     } else {
@@ -777,18 +777,18 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
             return NodeVal();
         }
 
-        callable = typeTable->extractCallable(starting.getType().value());
-        if (callable == nullptr) {
+        if (!typeTable->worksAsCallable(starting.getType().value())) {
             msgs->errorInternal(node.getCodeLoc());
             return NodeVal();
         }
+        callable = *typeTable->extractCallable(starting.getType().value());
 
-        if (!argsFitFuncCall(args, *callable, true)) {
+        if (!argsFitFuncCall(args, callable, true)) {
             msgs->errorFuncNotFound(starting.getCodeLoc(), move(argTypes));
             return NodeVal();
         }
 
-        if (!implicitCastArgsAndVerifyCallOk(node.getCodeLoc(), args, *callable)) return NodeVal();
+        if (!implicitCastArgsAndVerifyCallOk(node.getCodeLoc(), args, callable)) return NodeVal();
 
         ret = dispatchCall(node.getCodeLoc(), starting.getCodeLoc(), starting, args, allArgsEval);
     }
@@ -799,7 +799,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
         size_t ind = args.size()-1-i;
 
         // variadic arguments cannot be marked noDrop
-        bool argNoDrop = ind < callable->getArgCnt() && callable->getArgNoDrop(ind);
+        bool argNoDrop = ind < callable.getArgCnt() && callable.getArgNoDrop(ind);
 
         // if argument was marked noDrop, it becomes the callers responsibility to drop it
         if (argNoDrop && !callDropFuncTmpVal(move(args[ind]))) return NodeVal();
@@ -831,7 +831,7 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
 
     const MacroValue &macroVal = symbolTable->getMacro(macroId.value());
 
-    const TypeTable::Callable &callable = BaseCallableValue::getCallable(macroVal, typeTable);
+    TypeTable::Callable callable = BaseCallableValue::getCallable(macroVal, typeTable);
 
     size_t providedArgCnt = node.getChildrenCnt()-1;
     if ((callable.variadic && providedArgCnt+1 < callable.getArgCnt()) ||
@@ -2107,7 +2107,7 @@ NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal val) {
 NodeVal Processor::invoke(CodeLoc codeLoc, MacroId macroId, vector<NodeVal> args) {
     const MacroValue &macroVal = symbolTable->getMacro(macroId);
 
-    const TypeTable::Callable &callable = BaseCallableValue::getCallable(macroVal, typeTable);
+    TypeTable::Callable callable = BaseCallableValue::getCallable(macroVal, typeTable);
 
     if (callable.variadic) {
         // if it's variadic, it has to have at least 1 argument (the variadic one)
@@ -2162,7 +2162,7 @@ bool Processor::checkNotNeedsDrop(CodeLoc codeLoc, const NodeVal &val, bool orEr
 }
 
 BlockTmpValControl Processor::createTmpValControl(NodeVal &val) {
-    if (!checkHasType(val, false) || val.hasRef() || val.isNoDrop() || val.isInvokeArg()) return BlockTmpValControl();
+    if (checkNotNeedsDrop(val.getCodeLoc(), val, false) || val.hasRef() || val.isInvokeArg()) return BlockTmpValControl();
 
     return BlockTmpValControl(symbolTable, val);
 }
@@ -2228,7 +2228,7 @@ bool Processor::callDropFuncTmpVal(NodeVal val) {
     return callDropFunc(val.getCodeLoc(), move(val));
 }
 
-bool Processor::callDropFuncs(CodeLoc codeLoc, vector<variant<VarId, NodeVal*>> vals) {
+bool Processor::callDropFuncs(CodeLoc codeLoc, vector<variant<VarId, NodeVal>> vals) {
     for (const auto &it : vals) {
         if (holds_alternative<VarId>(it)) {
             VarId varId = get<VarId>(it);
@@ -2239,8 +2239,7 @@ bool Processor::callDropFuncs(CodeLoc codeLoc, vector<variant<VarId, NodeVal*>> 
             NodeVal loaded = dispatchLoad(codeLoc, varId);
             if (!callDropFunc(codeLoc, move(loaded))) return false;
         } else {
-            NodeVal nodeVal = *get<NodeVal*>(it);
-            if (!callDropFunc(codeLoc, move(nodeVal))) return false;
+            if (!callDropFunc(codeLoc, move(get<NodeVal>(it)))) return false;
         }
     }
 
@@ -2718,6 +2717,22 @@ NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const N
         if (op == Oper::DIV && rhs.isEvalVal() && EvalVal::isZero(rhs.getEvalVal(), typeTable)) {
             msgs->errorExprBinDivByZero(rhs.getCodeLoc());
             return NodeVal();
+        } else if (op == Oper::SHL || op == Oper::SHR) {
+            if (op == Oper::SHL && lhs.isEvalVal()) {
+                optional<int64_t> lhsVal = EvalVal::getValueI(lhs.getEvalVal(), typeTable);
+                if (lhsVal.has_value() && lhsVal.value() < 0) {
+                    msgs->errorExprBinLeftShiftOfNeg(lhs.getCodeLoc(), lhsVal.value());
+                    return NodeVal();
+                }
+            }
+
+            if (rhs.isEvalVal()) {
+                optional<int64_t> rhsVal = EvalVal::getValueI(rhs.getEvalVal(), typeTable);
+                if (rhsVal.has_value() && rhsVal.value() < 0) {
+                    msgs->errorExprBinShiftByNeg(rhs.getCodeLoc(), rhsVal.value());
+                    return NodeVal();
+                }
+            }
         }
 
         NodeVal nextLhs;
