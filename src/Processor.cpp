@@ -680,6 +680,10 @@ NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
             return NodeVal();
         }
 
+        if (nodeElems.hasNonTypeAttrs() && !nodeElems.getNonTypeAttrs().getAttrMap().attrMap.empty()) {
+            symbolTable->registerDataAttrs(typeIdOpt.value(), move(nodeElems.getNonTypeAttrs().getAttrMap()));
+        }
+
         if (withDrop) {
             NodeVal nodeDrop = processNode(node.getChild(indDrop));
             if (nodeDrop.isInvalid()) return NodeVal();
@@ -1520,6 +1524,13 @@ NodeVal Processor::processAttrOf(const NodeVal &node) {
     NamePool::Id attrName = name.getEvalVal().id;
 
     optional<NodeVal> nodeAttr = getAttribute(operand, attrName);
+    if (!nodeAttr.has_value() && checkIsType(operand, false)) {
+        TypeTable::Id baseTy = typeTable->extractFixedTypeBaseType(operand.getEvalVal().ty);
+        const AttrMap *attrMap = symbolTable->getDataAttrs(baseTy);
+        if (attrMap != nullptr) {
+            nodeAttr = getAttribute(*attrMap, attrName);
+        }
+    }
     if (!nodeAttr.has_value()) {
         msgs->errorAttributeNotFound(node.getCodeLoc(), attrName);
         return NodeVal();
@@ -1563,6 +1574,13 @@ NodeVal Processor::processAttrIsDef(const NodeVal &node) {
 // returns nullopt if not found
 // not able to fail, only to not find
 // update callers if that changes
+optional<NodeVal> Processor::getAttribute(const AttrMap &attrs, NamePool::Id attrName) {
+    auto loc = attrs.attrMap.find(attrName);
+    if (loc == attrs.attrMap.end()) return nullopt;
+
+    return *loc->second;
+}
+
 optional<NodeVal> Processor::getAttribute(const NodeVal &node, NamePool::Id attrName) {
     NamePool::Id typeId = getMeaningfulNameId(Meaningful::TYPE);
 
@@ -1573,12 +1591,7 @@ optional<NodeVal> Processor::getAttribute(const NodeVal &node, NamePool::Id attr
     } else {
         if (!node.hasNonTypeAttrs()) return nullopt;
 
-        const NodeVal &nonTypeAttrs = node.getNonTypeAttrs();
-
-        auto loc = nonTypeAttrs.getAttrMap().attrMap.find(attrName);
-        if (loc == nonTypeAttrs.getAttrMap().attrMap.end()) return nullopt;
-
-        return *loc->second;
+        return getAttribute(node.getNonTypeAttrs().getAttrMap(), attrName);
     }
 }
 

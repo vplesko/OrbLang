@@ -137,6 +137,7 @@ data
 	first declares, second and third define a data type
 	name is id, elems is list of a:t, drop is function or () for no drop function
 	must have at least one element
+	can specify type's attrs on elems node
 	global only
 
 fnc
@@ -197,6 +198,7 @@ attrOf
 	attrOf val name
 	gets name attr of val
 	if name is type, gets type attr
+	if val doesn't have that attr and val is a type, gets the type's attr
 	errors if no such attr
 
 attr??

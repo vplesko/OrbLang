@@ -4,6 +4,10 @@ eval (fnc foo (x:i32) i32 {
     ret (attrOf x foo);
 });
 
+data Foo {
+    dummy:i32
+}::(attr0 (attr1 1) (attr2 x));
+
 fnc main () () {
     eval (sym (x \()));
     println_i32 (cast i32 (attr?? x foo));
@@ -83,4 +87,15 @@ fnc main () () {
     attrOf ()::((a \badId)) a;
     = p 24;
     println_i32 (attrOf \()::((a ,p)) a);
+
+    block {
+        println_i32 (+ 24 (cast i32 (attrOf Foo attr0)));
+
+        println_i32 (+ 25 (attrOf Foo attr1));
+
+        sym (x 27);
+        println_i32 ((attrOf Foo attr2));
+
+        println_i32 (attrOf Foo::((attr0 28)) attr0);
+    };
 };

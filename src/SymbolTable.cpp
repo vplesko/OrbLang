@@ -318,6 +318,15 @@ optional<MacroId> SymbolTable::getMacroId(MacroCallSite callSite, const TypeTabl
     return nullopt;
 }
 
+void SymbolTable::registerDataAttrs(TypeTable::Id ty, AttrMap attrs) {
+    dataAttrs.insert({ty, move(attrs)});
+}
+
+const AttrMap* SymbolTable::getDataAttrs(TypeTable::Id ty) {
+    if (dataAttrs.find(ty) == dataAttrs.end()) return nullptr;
+    return &dataAttrs.at(ty);
+}
+
 void SymbolTable::registerDropFunc(TypeTable::Id ty, NodeVal func) {
     dropFuncs.insert({ty, move(func)});
 }

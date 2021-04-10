@@ -114,6 +114,7 @@ private:
 protected:
     bool processChildNodes(const NodeVal &node);
 
+    std::optional<NodeVal> getAttribute(const AttrMap &attrs, NamePool::Id attrName);
     std::optional<NodeVal> getAttribute(const NodeVal &node, NamePool::Id attrName);
     std::optional<NodeVal> getAttribute(const NodeVal &node, const std::string &attrStrName);
     // nullopt on error, otherwise attribute value, or default value if not present
