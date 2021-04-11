@@ -32,8 +32,8 @@ fnc main () () {
     println_i32 g4;
     println_i32 g5;
     println_i32 g6;
-    println_i32 g7;
-    println_i32 g8;
+    println_i32 (eval g7);
+    println_i32 (eval g8);
 
     println_i32 a0;
     println_i32 a1;
@@ -43,6 +43,6 @@ fnc main () () {
     println_i32 a5;
     println_i64 a6;
     println_i64 a7;
-    println_i64 a8;
-    println_i64 a9;
+    println_i64 (eval a8);
+    println_i64 (eval a9);
 };
