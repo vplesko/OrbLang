@@ -3,10 +3,22 @@ import "clib.orb";
 
 alias std.Size u64;
 
-mac std.malloc (num::preprocess ty::preprocess) {
-    ret \(cast ,(ty []) (malloc (* ,num ,(sizeOf ty))));
+mac std.malloc (elemTy::preprocess len::preprocess) {
+    ret \(cast ,(elemTy []) (malloc (* ,len ,(sizeOf elemTy))));
 };
 
-mac std.calloc (num::preprocess ty::preprocess) {
-    ret \(cast ,(ty []) (calloc ,num ,(sizeOf ty)));
+mac std.calloc (elemTy::preprocess len::preprocess) {
+    ret \(cast ,(elemTy []) (calloc ,len ,(sizeOf elemTy)));
+};
+
+mac std.realloc (p::preprocess elemTy::preprocess len::preprocess) {
+    ret \(cast ,(elemTy []) (realloc (cast ptr ,p) (* ,len ,(sizeOf elemTy))));
+};
+
+mac std.getArrPtrDist (elemTy::preprocess arrPtrHi::preprocess arrPtrLo::preprocess) {
+    ret \(/ (- (cast std.Size ,arrPtrHi) (cast std.Size ,arrPtrLo)) ,(sizeOf elemTy));
+};
+
+mac std.getArrPtrToInd (elemTy::preprocess arrPtr::preprocess ind::preprocess) {
+    ret \(cast ,(elemTy []) (& ([] ,arrPtr ,ind)));
 };
