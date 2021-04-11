@@ -284,5 +284,10 @@ fnc main () () {
         attr?? (foo7 3005) (block id { exit b0 true; pass \x; });
     });
 
+    eval (block {
+        sym (f (foo7 3100));
+        >>::noZero f;
+    });
+
     printDropVals;
 };

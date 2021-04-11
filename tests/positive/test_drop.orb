@@ -262,4 +262,9 @@ fnc main () () {
     block b0 () {
         foo16 (block Foo { pass (foo7 2903); }) (block Foo { exit b0 true; pass (foo7 -1); });
     };
+
+    block {
+        sym (f (foo7 3000));
+        >>::noZero f;
+    };
 };

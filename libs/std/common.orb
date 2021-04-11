@@ -22,3 +22,7 @@ mac std.getArrPtrDist (elemTy::preprocess arrPtrHi::preprocess arrPtrLo::preproc
 mac std.getArrPtrToInd (elemTy::preprocess arrPtr::preprocess ind::preprocess) {
     ret \(cast ,(elemTy []) (& ([] ,arrPtr ,ind)));
 };
+
+mac std.setElemsToZero (elemTy::preprocess arrPtr::preprocess len::preprocess) {
+    ret \(memset (cast ptr ,arrPtr) 0 (* ,len ,(sizeOf elemTy)));
+};

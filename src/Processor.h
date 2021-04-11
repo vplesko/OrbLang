@@ -104,12 +104,12 @@ private:
 
     NodeVal processFncType(const NodeVal &node);
     NodeVal processMacType(const NodeVal &node);
-    NodeVal processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op);
+    NodeVal processOperUnary(CodeLoc codeLoc, const NodeVal &starting, const NodeVal &oper, Oper op);
     NodeVal processOperComparison(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op);
     NodeVal processOperAssignment(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers);
     NodeVal processOperIndex(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers);
     NodeVal processOperIndexNonArr(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers);
-    NodeVal processOperRegular(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op, bool bare);
+    NodeVal processOperRegular(CodeLoc codeLoc, const NodeVal &starting, const std::vector<const NodeVal*> &opers, Oper op);
 
     bool processAttributes(NodeVal &node, bool forceUnescape = false);
 protected:
@@ -146,7 +146,7 @@ private:
     NodeVal getDataElement(CodeLoc codeLoc, NodeVal &data, std::size_t index);
     bool argsFitFuncCall(const std::vector<NodeVal> &args, const TypeTable::Callable &callable, bool allowImplicitCasts);
     NodeVal loadUndecidedCallable(const NodeVal &node, const NodeVal &val);
-    NodeVal moveNode(CodeLoc codeLoc, NodeVal val);
+    NodeVal moveNode(CodeLoc codeLoc, NodeVal val, bool noZero);
     NodeVal invoke(CodeLoc codeLoc, MacroId macroId, std::vector<NodeVal> args);
     bool hasTrivialDrop(TypeTable::Id ty);
     BlockTmpValControl createTmpValControl(NodeVal &val);

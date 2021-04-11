@@ -9,7 +9,7 @@ eval (fnc std.One (t:type) type {
             -p:(t *)
         } (fnc::global std.-dropOne::(compilable (evaluable false)) (this:,name::noDrop) () {
             if (!= ([] this -p) null) {
-                >> (* ([] this -p));
+                >>::noZero (* ([] this -p));
             };
             free (cast ptr ([] this -p));
         });

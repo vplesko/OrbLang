@@ -1412,13 +1412,10 @@ NodeVal Processor::processOper(const NodeVal &node, const NodeVal &starting, Ope
     if (!checkAtLeastChildren(node, 2, true)) return NodeVal();
 
     if (checkExactlyChildren(node, 2, false)) {
-        return processOperUnary(node.getCodeLoc(), node.getChild(1), op);
+        return processOperUnary(node.getCodeLoc(), starting, node.getChild(1), op);
     }
 
     OperInfo operInfo = operInfos.find(op)->second;
-
-    optional<bool> attrBare = getAttributeForBool(starting, "bare");
-    if (!attrBare.has_value()) return NodeVal();
 
     vector<const NodeVal*> operands;
     operands.reserve(node.getChildrenCnt()-1);
@@ -1433,7 +1430,7 @@ NodeVal Processor::processOper(const NodeVal &node, const NodeVal &starting, Ope
     } else if (op == Oper::IND) {
         return processOperIndex(starting.getCodeLoc(), operands);
     } else {
-        return processOperRegular(starting.getCodeLoc(), operands, op, attrBare.value());
+        return processOperRegular(starting.getCodeLoc(), starting, operands, op);
     }
 }
 
@@ -2073,7 +2070,7 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node, const NodeVal &val
     }
 }
 
-NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal val) {
+NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal val, bool noZero) {
     if (!checkHasType(val, true)) return NodeVal();
 
     if (val.isNoDrop()) {
@@ -2092,19 +2089,20 @@ NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal val) {
         return val;
     }
 
-    TypeTable::Id valTy = val.getType().value();
+    if (!noZero) {
+        TypeTable::Id valTy = val.getType().value();
+        if (typeTable->worksAsTypeCn(valTy)) {
+            msgs->errorExprMoveCn(codeLoc);
+            return NodeVal();
+        }
 
-    if (typeTable->worksAsTypeCn(valTy)) {
-        msgs->errorExprMoveCn(codeLoc);
-        return NodeVal();
+        NodeVal zero;
+        if (checkIsEvalTime(val, false)) zero = evaluator->performZero(codeLoc, valTy);
+        else zero = performZero(codeLoc, valTy);
+        if (zero.isInvalid()) return NodeVal();
+
+        if (dispatchAssignment(codeLoc, val, zero).isInvalid()) return NodeVal();
     }
-
-    NodeVal zero;
-    if (checkIsEvalTime(val, false)) zero = evaluator->performZero(codeLoc, valTy);
-    else zero = performZero(codeLoc, valTy);
-    if (zero.isInvalid()) return NodeVal();
-
-    if (dispatchAssignment(codeLoc, val, zero).isInvalid()) return NodeVal();
 
     // val itself remained unchanged
     val.setCodeLoc(codeLoc);
@@ -2486,7 +2484,7 @@ NodeVal Processor::processMacType(const NodeVal &node) {
     return promoteType(node.getCodeLoc(), type);
 }
 
-NodeVal Processor::processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) {
+NodeVal Processor::processOperUnary(CodeLoc codeLoc, const NodeVal &starting, const NodeVal &oper, Oper op) {
     OperInfo operInfo = operInfos.find(op)->second;
     if (!operInfo.unary) {
         msgs->errorNonUnOp(codeLoc, op);
@@ -2499,7 +2497,10 @@ NodeVal Processor::processOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper o
     if (op == Oper::MUL) {
         return dispatchOperUnaryDeref(codeLoc, operProc);
     } else if (op == Oper::SHR) {
-        return moveNode(codeLoc, operProc);
+        optional<bool> attrNoZero = getAttributeForBool(starting, "noZero");
+        if (!attrNoZero.has_value()) return NodeVal();
+
+        return moveNode(codeLoc, operProc, attrNoZero.value());
     } else {
         if (checkIsEvalTime(operProc, false)) {
             return evaluator->performOperUnary(codeLoc, operProc, op);
@@ -2706,7 +2707,10 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
     return lhs;
 }
 
-NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers, Oper op, bool bare) {
+NodeVal Processor::processOperRegular(CodeLoc codeLoc, const NodeVal &starting, const std::vector<const NodeVal*> &opers, Oper op) {
+    optional<bool> attrBare = getAttributeForBool(starting, "bare");
+    if (!attrBare.has_value()) return NodeVal();
+
     OperInfo operInfo = operInfos.find(op)->second;
     if (!operInfo.binary) {
         msgs->errorNonBinOp(codeLoc, op);
@@ -2745,9 +2749,9 @@ NodeVal Processor::processOperRegular(CodeLoc codeLoc, const std::vector<const N
 
         NodeVal nextLhs;
         if (checkIsEvalTime(lhs, false) && checkIsEvalTime(rhs, false)) {
-            nextLhs = evaluator->performOperRegular(codeLoc, lhs, rhs, op, bare);
+            nextLhs = evaluator->performOperRegular(codeLoc, lhs, rhs, op, attrBare.value());
         } else {
-            nextLhs = performOperRegular(codeLoc, lhs, rhs, op, bare);
+            nextLhs = performOperRegular(codeLoc, lhs, rhs, op, attrBare.value());
         }
         if (nextLhs.isInvalid()) return NodeVal();
 
@@ -2854,7 +2858,7 @@ NodeVal Processor::processForScopeResult(const NodeVal &node, bool callableClosi
     NodeVal moved;
     if (mayMoveNode) {
         optional<VarId> varId = processed.getVarId();
-        moved = moveNode(processed.getCodeLoc(), move(processed));
+        moved = moveNode(processed.getCodeLoc(), move(processed), true);
         if (varId.has_value()) symbolTable->getVar(varId.value()).skipDrop = true;
     } else {
         moved = move(processed);
