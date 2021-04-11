@@ -29,6 +29,10 @@ mac base.isRaw (x::preprocess) {
     ret true;
 };
 
+mac base.makeRaw (vals::(variadic preprocess)) {
+    ret \(escape ,vals);
+};
+
 mac base.assertIsOfType (ty::preprocess x::preprocess) {
     ret \(block {
         exit (== ,(typeOf x) ,ty);

@@ -281,6 +281,10 @@ fnc main () () {
         println_i32 (+ 1104 (cast i32 (base.isRaw r)));
         sym (x 999);
         println_i32 (+ 1106 (cast i32 (base.isRaw x)));
+        = x 1107;
+        = r (base.makeRaw x 1108);
+        println_i32 ([] r 0);
+        println_i32 ([] r 1);
     };
 
     block {

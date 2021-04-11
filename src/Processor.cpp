@@ -1810,7 +1810,7 @@ bool Processor::implicitCastOperands(NodeVal &lhs, NodeVal &rhs, bool oneWayOnly
         return !lhs.isInvalid();
     } else {
         if (oneWayOnly) msgs->errorExprCannotImplicitCast(rhs.getCodeLoc(), rhs.getType().value(), lhs.getType().value());
-        else msgs->errorExprCannotImplicitCastEither(rhs.getCodeLoc(), rhs.getType().value(), lhs.getType().value());
+        else msgs->errorExprCannotImplicitCastEither(rhs.getCodeLoc(), lhs.getType().value(), rhs.getType().value());
         return false;
     }
 }
