@@ -262,6 +262,8 @@ NodeVal Processor::processSym(const NodeVal &node) {
             optType = pair.second.value().getEvalVal().ty;
             if (!checkIsNotUndefType(pair.second.value().getCodeLoc(), optType.value(), true)) return NodeVal();
         }
+        optional<bool> attrEvaluated = getAttributeForBool(pair.first, "evaluated");
+        if (!attrEvaluated.has_value()) return NodeVal();
 
         bool hasType = optType.has_value();
 
@@ -280,7 +282,9 @@ NodeVal Processor::processSym(const NodeVal &node) {
 
             varType = init.getType().value();
 
-            NodeVal reg = performRegister(pair.first.getCodeLoc(), id, init);
+            NodeVal reg;
+            if (attrEvaluated.value()) reg = evaluator->performRegister(pair.first.getCodeLoc(), id, init);
+            else reg = performRegister(pair.first.getCodeLoc(), id, init);
             if (reg.isInvalid()) return NodeVal();
 
             varEntry.var = move(reg);
@@ -301,13 +305,17 @@ NodeVal Processor::processSym(const NodeVal &node) {
 
             NodeVal nodeReg;
             if (attrNoZero.value()) {
-                nodeReg = performRegister(pair.first.getCodeLoc(), id, pair.second.value().getCodeLoc(), optType.value());
+                if (attrEvaluated.value()) nodeReg = evaluator->performRegister(pair.first.getCodeLoc(), id, pair.second.value().getCodeLoc(), optType.value());
+                else nodeReg = performRegister(pair.first.getCodeLoc(), id, pair.second.value().getCodeLoc(), optType.value());
                 if (nodeReg.isInvalid()) return NodeVal();
             } else {
-                NodeVal nodeZero = performZero(pair.second.value().getCodeLoc(), optType.value());
+                NodeVal nodeZero;
+                if (attrEvaluated.value()) nodeZero = evaluator->performZero(pair.second.value().getCodeLoc(), optType.value());
+                else nodeZero = performZero(pair.second.value().getCodeLoc(), optType.value());
                 if (nodeZero.isInvalid()) return NodeVal();
 
-                nodeReg = performRegister(pair.first.getCodeLoc(), id, nodeZero);
+                if (attrEvaluated.value()) nodeReg = evaluator->performRegister(pair.first.getCodeLoc(), id, nodeZero);
+                else nodeReg = performRegister(pair.first.getCodeLoc(), id, nodeZero);
                 if (nodeReg.isInvalid()) return NodeVal();
             }
 
