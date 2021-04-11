@@ -1,0 +1,220 @@
+import "std/common.orb";
+
+mac std.getElemTy (list::preprocess) {
+    ret (attrOf (typeOf list) std.elemTy);
+};
+
+mac std.getLen (list::preprocess) {
+    sym (elemTy (std.getElemTy list));
+    ret \(std.getArrPtrDist ,elemTy ([] ,list -end) ([] ,list -start));
+};
+
+mac std.getCap (list::preprocess) {
+    sym (elemTy (std.getElemTy list));
+    ret \(std.getArrPtrDist ,elemTy ([] ,list -bound) ([] ,list -start));
+};
+
+mac std.isEmpty (list::preprocess) {
+    ret \(== ([] ,list -start) ([] ,list -end));
+};
+
+mac std.[] (list::preprocess ind::preprocess) {
+    ret \([] ,list -start ,ind);
+};
+
+mac std.getFront (list::preprocess) {
+    ret \([] ,list -start 0);
+};
+
+mac std.getBack (list::preprocess) {
+    ret \([] ,list -end -1);
+};
+
+mac std.getArrPtr (list::preprocess) {
+    ret \([] ,list -start);
+};
+
+mac std.range (it list::preprocess body) {
+    base.assertIsOfType id it;
+
+    sym (i (genSym));
+
+    ret \(block {
+        eval (sym (,it (pat { ret (escape (std.[] ,list ,i)); })));
+        range ,i (std.getLen ,list) ,body;
+    });
+};
+
+mac std.range (it list::preprocess indLo::preprocess indHi::preprocess body) {
+    base.assertIsOfType id it;
+
+    sym (i (genSym));
+
+    ret \(block {
+        eval (sym (,it (pat { ret (escape (std.[] ,list ,i)); })));
+        range ,i ,indLo ,indHi ,body;
+    });
+};
+
+mac std.rangeRev (it list::preprocess body) {
+    base.assertIsOfType id it;
+
+    sym (i (genSym));
+
+    ret \(block {
+        eval (sym (,it (pat { ret (escape (std.[] ,list ,i)); })));
+        rangeRev ,i (std.getLen ,list) ,body;
+    });
+};
+
+mac std.rangeRev (it list::preprocess indHi::preprocess indLo::preprocess body) {
+    base.assertIsOfType id it;
+
+    sym (i (genSym));
+
+    ret \(block {
+        eval (sym (,it (pat { ret (escape (std.[] ,list ,i)); })));
+        rangeRev ,i ,indHi ,indLo ,body;
+    });
+};
+
+eval (fnc std.List (elemTy:type) type {
+    sym (name (+ \std.List (cast id elemTy)));
+
+    if (! (?? ,name)) {
+        data::global ,name {
+            -start:(elemTy [])
+            -end:(elemTy [])
+            -bound:(elemTy [])
+        }::((std.elemTy ,elemTy)) (fnc::global std.-dropList::(compilable (evaluable false)) (this:,name::noDrop) () {
+            std.rangeRev it this {
+                >>::noZero (it);
+            };
+            free (cast ptr ([] this -start));
+        });
+    };
+
+    ret (name);
+});
+
+mac std.makeList (elemTy::preprocess len::preprocess) {
+    sym (listTy (std.List elemTy));
+
+    ret \(block ,listTy {
+        sym x:,listTy;
+        = ([] x -start) ([] x -end) (std.calloc ,elemTy ,len);
+        = ([] x -bound) (std.getArrPtrToInd ,elemTy ([] x -start) ,len);
+        pass x;
+    });
+};
+
+mac std.makeListWith (elemTy::preprocess elem::preprocess rest::(variadic preprocess)) {
+    sym (elems (+ \(,elem) rest));
+
+    sym (listTy (std.List elemTy));
+
+    sym (innerCode \{
+        sym x:,listTy;
+        = ([] x -start) (std.malloc ,elemTy ,(lenOf elems));
+        = ([] x -end) ([] x -bound) (std.getArrPtrToInd ,elemTy ([] x -start) ,(lenOf elems));
+    });
+
+    range i (lenOf elems) {
+        = innerCode (+ innerCode \{
+            = ([] x -start ,i) ,([] elems i);
+        });
+    };
+
+    = innerCode (+ innerCode \{
+        pass x;
+    });
+
+    ret \(block ,listTy ,innerCode);
+};
+
+mac std.-genFncList (name args retTy body) {
+    sym (macArgsPastFirst \());
+    repeat (lenOf args) {
+        = macArgsPastFirst (+ macArgsPastFirst \(,(genSym)::preprocess));
+    };
+
+    sym (fncArgs (+ \(this:((typeOf list) *)) args))
+        (macArgs (+ \(list::preprocess) macArgsPastFirst));
+
+    ret \(mac ,name ,macArgs {
+        sym (elemTy (std.getElemTy list));
+        sym (genName (+ (escape ,name) (cast id elemTy)));
+
+        if (! (?? (passthrough genName))) {
+            fnc::global (passthrough genName)::(compilable (evaluable false)) ,fncArgs ,retTy ,body;
+        };
+
+        ret ,(+ \(makeRaw genName (makeRaw (escape &) list)) macArgsPastFirst);
+    });
+};
+
+std.-genFncList std.-reallocForCap (cap:std.Size) () {
+    sym (elemTy::evaluated (std.getElemTy (* this)));
+    sym (oldLen (std.getLen (* this)));
+
+    = (-> this -start) (std.realloc (-> this -start) elemTy cap);
+    = (-> this -end) (std.getArrPtrToInd elemTy (-> this -start) oldLen);
+    = (-> this -bound) (std.getArrPtrToInd elemTy (-> this -start) cap);
+};
+
+mac std.-reallocForCapOrOver (list::preprocess cap::preprocess) {
+    ret \(block {
+        sym (newCap (* 2 (std.getCap ,list)));
+        if (> ,cap newCap) { = newCap ,cap; };
+        std.-reallocForCap ,list newCap;
+    });
+};
+
+std.-genFncList std.reserve (cap:std.Size) () {
+    if (< (std.getCap (* this)) cap) {
+        std.-reallocForCap (* this) cap;
+    };
+};
+
+std.-genFncList std.resize (len:std.Size) () {
+    sym (elemTy::evaluated (std.getElemTy (* this)));
+    sym (oldLen (std.getLen (* this)));
+
+    if (> len oldLen) {
+        if (> len (std.getCap (* this))) {
+            std.-reallocForCapOrOver (* this) len;
+        };
+        sym (ptrPastOldLen (std.getArrPtrToInd elemTy (-> this -start) oldLen));
+        std.setElemsToZero elemTy ptrPastOldLen (- len oldLen);
+    } (< len oldLen) {
+        std.rangeRev it (* this) (- oldLen 1) len {
+            >>::noZero (it);
+        };
+    };
+    = (-> this -end) (std.getArrPtrToInd elemTy (-> this -start) len);
+};
+
+std.-genFncList std.push (val:elemTy) () {
+    sym (elemTy::evaluated (std.getElemTy (* this)));
+
+    if (== (-> this -end) (-> this -bound)) {
+        std.-reallocForCapOrOver (* this) (+ (std.getCap (* this)) 1);
+    };
+    = (* (cast (elemTy *) (-> this -end))) (>> val);
+    = (-> this -end) (std.getArrPtrToInd elemTy (-> this -end) 1);
+};
+
+std.-genFncList std.pop () () {
+    sym (elemTy::evaluated (std.getElemTy (* this)));
+
+    = (-> this -end) (std.getArrPtrToInd elemTy (-> this -end) -1);
+    >>::noZero ([] (-> this -end) 0);
+};
+
+std.-genFncList std.clear () () {
+    sym (oldLen (std.getLen (* this)));
+    = (-> this -end) (-> this -start);
+    rangeRev i oldLen {
+        >>::noZero ([] (-> this -start) i);
+    };
+};
