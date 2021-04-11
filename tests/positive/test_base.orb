@@ -275,14 +275,14 @@ fnc main () () {
         println_i32 ((escape x));
     };
     block {
-        println_i32 (+ 1102 (cast i32 (base.isRaw ())));
-        println_i32 (+ 1104 (cast i32 (base.isRaw (+ 999 9))));
+        println_i32 (+ 1102 (cast i32 (isRaw ())));
+        println_i32 (+ 1104 (cast i32 (isRaw (+ 999 9))));
         eval (sym (r ()));
-        println_i32 (+ 1104 (cast i32 (base.isRaw r)));
+        println_i32 (+ 1104 (cast i32 (isRaw r)));
         sym (x 999);
-        println_i32 (+ 1106 (cast i32 (base.isRaw x)));
+        println_i32 (+ 1106 (cast i32 (isRaw x)));
         = x 1107;
-        = r (base.makeRaw x 1108);
+        = r (makeRaw x 1108);
         println_i32 ([] r 0);
         println_i32 ([] r 1);
     };

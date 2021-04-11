@@ -20,7 +20,7 @@ mac escape (x::plusEscape) {
     ret x;
 };
 
-mac base.isRaw (x::preprocess) {
+mac isRaw (x::preprocess) {
     block {
         exit (== (typeOf x) raw);
         exit (== (typeOf x) (raw cn));
@@ -29,7 +29,7 @@ mac base.isRaw (x::preprocess) {
     ret true;
 };
 
-mac base.makeRaw (vals::(variadic preprocess)) {
+mac makeRaw (vals::(variadic preprocess)) {
     ret \(escape ,vals);
 };
 
@@ -405,7 +405,7 @@ mac base.-enumValsDecl (name enumTy::preprocess vals) {
 
     sym valName:id valNamePrev:id init:raw;
     range i (lenOf vals) {
-        if (base.isRaw ([] vals i)) {
+        if (isRaw ([] vals i)) {
             if (!= (lenOf ([] vals i)) 2) {
                 message::(error (loc ([] vals i))) "Each entry must be either an id or have exactly two values - name and initial value.";
             };
