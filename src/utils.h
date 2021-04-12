@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <functional>
 
 // TODO error type (probably aliased to std::optional)
 

@@ -115,7 +115,7 @@ void Lexer::lexNum(CodeIndex from) {
     }
 }
 
-// TODO check tokens separated (eg. by whitespace)
+// TODO check tokens separated (eg. by whitespace)?
 Token Lexer::next() {
     if (tok.type == Token::T_END) return tok;
 

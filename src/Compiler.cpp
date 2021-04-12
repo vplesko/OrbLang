@@ -1127,7 +1127,6 @@ llvm::GlobalValue* Compiler::makeLlvmGlobal(llvm::Type *type, llvm::Constant *in
         *llvmModule,
         type,
         isConstant,
-        // TODO are linkage values correct (this and other(s))
         llvm::GlobalValue::PrivateLinkage,
         init,
         name);

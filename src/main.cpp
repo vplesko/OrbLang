@@ -5,7 +5,7 @@
 #include "ProgramArgs.h"
 using namespace std;
 
-enum Error {
+enum ProgramError {
     BAD_ARGS = 1,
     PROCESS_FAIL,
     COMPILE_FAIL,

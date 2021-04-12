@@ -272,7 +272,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
         varEntry.name = id;
 
         if (hasInit) {
-            // TODO if noDrop gets allowed, ensure lifetimes on ownership transfers are ok
+            // TODO if noDrop on sym gets allowed, ensure all ownership transfers are ok
             const NodeVal &nodeInit = entry.getChild(1);
             NodeVal init = hasType ? processAndImplicitCast(nodeInit, optType.value()) : processNode(nodeInit);
             if (init.isInvalid()) return NodeVal();
@@ -2572,7 +2572,6 @@ NodeVal Processor::processOperComparison(CodeLoc codeLoc, const std::vector<cons
     }
 }
 
-// TODO if noDrop gets allowed, ensure lifetimes on ownership transfers are ok
 NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
     vector<NodeVal> procOpers;
     procOpers.reserve(opers.size());
