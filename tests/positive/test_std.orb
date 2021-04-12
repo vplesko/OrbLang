@@ -1,4 +1,5 @@
 import "std/One.orb";
+import "std/List.orb";
 import "util/print.orb";
 
 data Foo {
@@ -7,6 +8,12 @@ data Foo {
     println_i32 ([] this x);
 });
 
+fnc makeFoo (x:i32) Foo {
+    sym f:Foo;
+    = ([] f x) x;
+    ret f;
+};
+
 fnc main () () {
     block {
         sym x:(std.One i32);
@@ -14,7 +21,6 @@ fnc main () () {
             println_i32 100;
         };
     };
-
     block {
         sym (x (std.makeOne i32));
         if (std.isNull x) {
@@ -26,16 +32,153 @@ fnc main () () {
         = x (std.makeOne i32);
         println_i32 (+ 102 (std.* x));
     };
-
     block {
         sym (f (std.makeOne Foo));
         = (std.-> f x) 103;
     };
-
     block {
         sym x:(std.One u32);
         if (!= (typeOf (std.* x)) u32) {
             println_i32 -1;
         };
+    };
+
+    block {
+        sym x:(std.List i32);
+        if (std.isEmpty x) {
+            println_i32 200;
+        };
+        = x (std.makeList i32 1);
+        if (std.isEmpty x) {
+            println_i32 -1;
+        };
+        println_i32 (cast i32 (+ 200 (std.getLen x)));
+        = (std.[] x 0) 202;
+        println_i32 (std.[] x 0);
+        if (! (== (typeOf (std.[] x 0)) i32)) {
+            println_i32 -1;
+        };
+    };
+    block {
+        sym (x (std.makeListWith i32 -1 203 -1 -1));
+        println_i32 (std.[] x 1);
+        println_i32 (cast i32 (+ 200 (std.getLen x)));
+    };
+    block {
+        sym (x (std.makeList u32 1));
+        if (! (== (typeOf (std.[] x 0)) u32)) {
+            println_i32 -1;
+        };
+        if (! (== (std.getElemTy x) u32)) {
+            println_i32 -1;
+        };
+        if (> (std.getLen x) (std.getCap x)) {
+            println_i32 -1;
+        };
+    };
+    block {
+        sym (x (std.makeListWith i32 205 206 207));
+        println_i32 (std.getFront x);
+        println_i32 ([] (std.getArrPtr x) 1);
+        println_i32 (std.getBack x);
+    };
+    block {
+        sym (x (std.makeListWith i32 208 209));
+        std.range it x {
+            println_i32 (it);
+        };
+        = x (std.makeListWith i32 -1 210 211 -1);
+        std.range it x 1 2 {
+            println_i32 (it);
+        };
+        = x (std.makeListWith i32 212);
+        std.range it x 0 0 {
+            println_i32 (it);
+        };
+        = x (std.makeListWith i32 -1 -1);
+        std.range it x 1 0 {
+            println_i32 (it);
+        };
+    };
+    block {
+        sym (x (std.makeListWith i32 214 213));
+        std.rangeRev it x {
+            println_i32 (it);
+        };
+        = x (std.makeListWith i32 -1 216 215 -1);
+        std.rangeRev it x 2 1 {
+            println_i32 (it);
+        };
+        = x (std.makeListWith i32 217);
+        std.rangeRev it x 0 0 {
+            println_i32 (it);
+        };
+        = x (std.makeListWith i32 -1 -1);
+        std.rangeRev it x 0 1 {
+            println_i32 (it);
+        };
+    };
+    block {
+        sym x:(std.List i32);
+        std.resize x 8;
+        println_i32 (cast i32 (+ 210 (std.getLen x)));
+        std.resize x 8;
+        println_i32 (cast i32 (+ 211 (std.getLen x)));
+        std.resize x 1;
+        println_i32 (cast i32 (+ 219 (std.getLen x)));
+    };
+    block {
+        sym x:(std.List i32);
+        std.reserve x 8;
+        if (< (std.getCap x) 8) {
+            println_i32 -1;
+        };
+        std.reserve x 8;
+        if (< (std.getCap x) 8) {
+            println_i32 -1;
+        };
+        std.reserve x 2;
+        if (< (std.getCap x) 8) {
+            println_i32 -1;
+        };
+    };
+    block {
+        sym x:(std.List i32);
+        std.push x 221;
+        println_i32 (std.getBack x);
+        std.push x 222;
+        println_i32 (std.getBack x);
+        std.push x 223;
+        std.push x -1;
+        std.pop x;
+        println_i32 (std.getBack x);
+    };
+    block {
+        sym (x (std.makeList i32 4));
+        std.clear x;
+        if (!= (std.getLen x) 0) {
+            println_i32 -1;
+        };
+    };
+    block {
+        sym (x (std.makeList Foo 2));
+        = ([] (std.[] x 0) x) 225;
+        = ([] (std.[] x 1) x) 224;
+    };
+    block {
+        sym x:(std.List Foo);
+        std.resize x 3;
+        = ([] (std.[] x 0) x) 230;
+        = ([] (std.[] x 1) x) 229;
+        = ([] (std.[] x 2) x) 227;
+        std.push x (makeFoo 226);
+        std.pop x;
+        std.resize x 2;
+        std.push x (makeFoo 228);
+    };
+    block {
+        sym (x (std.makeListWith Foo (makeFoo 232) (makeFoo 231)));
+        std.clear x;
+        std.push x (makeFoo 233);
     };
 };

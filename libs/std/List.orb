@@ -102,8 +102,8 @@ mac std.makeList (elemTy::preprocess len::preprocess) {
 
     ret \(block ,listTy {
         sym x:,listTy;
-        = ([] x -start) ([] x -end) (std.calloc ,elemTy ,len);
-        = ([] x -bound) (std.getArrPtrToInd ,elemTy ([] x -start) ,len);
+        = ([] x -start) (std.calloc ,elemTy ,len);
+        = ([] x -end) ([] x -bound) (std.getArrPtrToInd ,elemTy ([] x -start) ,len);
         pass x;
     });
 };
@@ -170,12 +170,6 @@ mac std.-reallocForCapOrOver (list::preprocess cap::preprocess) {
     });
 };
 
-std.-genFncList std.reserve (cap:std.Size) () {
-    if (< (std.getCap (* this)) cap) {
-        std.-reallocForCap (* this) cap;
-    };
-};
-
 std.-genFncList std.resize (len:std.Size) () {
     sym (elemTy::evaluated (std.getElemTy (* this)));
     sym (oldLen (std.getLen (* this)));
@@ -192,6 +186,12 @@ std.-genFncList std.resize (len:std.Size) () {
         };
     };
     = (-> this -end) (std.getArrPtrToInd elemTy (-> this -start) len);
+};
+
+std.-genFncList std.reserve (cap:std.Size) () {
+    if (< (std.getCap (* this)) cap) {
+        std.-reallocForCap (* this) cap;
+    };
 };
 
 std.-genFncList std.push (val:elemTy) () {
