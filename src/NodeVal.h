@@ -13,6 +13,7 @@
 #include "UndecidedCallableVal.h"
 #include "LifetimeInfo.h"
 
+// TODO remove as many occurences of NodeVal copying as possible
 class NodeVal {
     CodeLoc codeLoc;
 
@@ -122,5 +123,7 @@ public:
     static NodeVal copyNoRef(const NodeVal &k, LifetimeInfo lifetimeInfo);
     static NodeVal copyNoRef(CodeLoc codeLoc, const NodeVal &k);
     static NodeVal copyNoRef(CodeLoc codeLoc, const NodeVal &k, LifetimeInfo lifetimeInfo);
+    static NodeVal moveNoRef(NodeVal &&k, LifetimeInfo lifetimeInfo);
+    static NodeVal moveNoRef(CodeLoc codeLoc, NodeVal &&k, LifetimeInfo lifetimeInfo);
     static void copyNonValFieldsLeaf(NodeVal &dst, const NodeVal &src, const TypeTable *typeTable);
 };

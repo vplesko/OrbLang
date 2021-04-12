@@ -162,7 +162,7 @@ NodeVal Compiler::performRegister(CodeLoc codeLoc, NamePool::Id id, CodeLoc code
     return NodeVal(codeLoc, llvmVal);
 }
 
-NodeVal Compiler::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) {
+NodeVal Compiler::performRegister(CodeLoc codeLoc, NamePool::Id id, NodeVal init) {
     NodeVal promo = promoteIfEvalValAndCheckIsLlvmVal(init, true);
     if (promo.isInvalid()) return NodeVal();
 
@@ -273,7 +273,7 @@ bool Compiler::performLoop(CodeLoc codeLoc, SymbolTable::Block block, const Node
     return doCondBlockJump(codeLoc, cond, block.name, block.blockLoop);
 }
 
-bool Compiler::performPass(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &val) {
+bool Compiler::performPass(CodeLoc codeLoc, SymbolTable::Block block, NodeVal val) {
     if (!checkInLocalScope(codeLoc, true)) return false;
 
     if (!callDropFuncsFromBlockToCurrBlock(codeLoc, block.name)) return false;
@@ -440,7 +440,7 @@ bool Compiler::performRet(CodeLoc codeLoc) {
     return true;
 }
 
-bool Compiler::performRet(CodeLoc codeLoc, const NodeVal &node) {
+bool Compiler::performRet(CodeLoc codeLoc, NodeVal node) {
     if (!callDropFuncsCurrCallable(codeLoc)) return false;
 
     NodeVal promo = promoteIfEvalValAndCheckIsLlvmVal(node, true);
@@ -452,7 +452,7 @@ bool Compiler::performRet(CodeLoc codeLoc, const NodeVal &node) {
     return true;
 }
 
-NodeVal Compiler::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) {
+NodeVal Compiler::performOperUnary(CodeLoc codeLoc, NodeVal oper, Oper op) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
     
     NodeVal promo = promoteIfEvalValAndCheckIsLlvmVal(oper, true);
@@ -646,7 +646,7 @@ NodeVal Compiler::performOperComparisonTearDown(CodeLoc codeLoc, bool success, C
     return NodeVal(codeLoc, llvmVal);
 }
 
-NodeVal Compiler::performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs) {
+NodeVal Compiler::performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, NodeVal rhs) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
     if (!checkIsLlvmVal(lhs, true)) return NodeVal();

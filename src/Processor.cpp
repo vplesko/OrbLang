@@ -163,7 +163,7 @@ NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
 
 NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
     if (checkExactlyChildren(node, 1, false))
-        return NodeVal::copyNoRef(node.getCodeLoc(), starting);
+        return NodeVal::copyNoRef(node.getCodeLoc(), starting, LifetimeInfo());
 
     NodeVal second = processForTypeArg(node.getChild(1));
     if (second.isInvalid()) return NodeVal();
@@ -283,8 +283,8 @@ NodeVal Processor::processSym(const NodeVal &node) {
             varType = init.getType().value();
 
             NodeVal reg;
-            if (attrEvaluated.value()) reg = evaluator->performRegister(pair.first.getCodeLoc(), id, init);
-            else reg = performRegister(pair.first.getCodeLoc(), id, init);
+            if (attrEvaluated.value()) reg = evaluator->performRegister(pair.first.getCodeLoc(), id, move(init));
+            else reg = performRegister(pair.first.getCodeLoc(), id, move(init));
             if (reg.isInvalid()) return NodeVal();
 
             varEntry.var = move(reg);
@@ -314,8 +314,8 @@ NodeVal Processor::processSym(const NodeVal &node) {
                 else nodeZero = performZero(pair.second.value().getCodeLoc(), optType.value());
                 if (nodeZero.isInvalid()) return NodeVal();
 
-                if (attrEvaluated.value()) nodeReg = evaluator->performRegister(pair.first.getCodeLoc(), id, nodeZero);
-                else nodeReg = performRegister(pair.first.getCodeLoc(), id, nodeZero);
+                if (attrEvaluated.value()) nodeReg = evaluator->performRegister(pair.first.getCodeLoc(), id, move(nodeZero));
+                else nodeReg = performRegister(pair.first.getCodeLoc(), id, move(nodeZero));
                 if (nodeReg.isInvalid()) return NodeVal();
             }
 
@@ -563,7 +563,7 @@ NodeVal Processor::processPass(const NodeVal &node) {
 
     if (!checkTransferValueOk(casted.getCodeLoc(), casted, false, true)) return NodeVal();
 
-    if (!performPass(node.getCodeLoc(), targetBlock, casted)) return NodeVal();
+    if (!performPass(node.getCodeLoc(), targetBlock, move(casted))) return NodeVal();
     return NodeVal(node.getCodeLoc());
 }
 
@@ -1265,7 +1265,7 @@ NodeVal Processor::processRet(const NodeVal &node) {
 
             if (!checkTransferValueOk(casted.getCodeLoc(), casted, false, true)) return NodeVal();
 
-            if (!performRet(node.getCodeLoc(), casted)) return NodeVal();
+            if (!performRet(node.getCodeLoc(), move(casted))) return NodeVal();
         } else {
             if (optCallee.value().retType.has_value()) {
                 msgs->errorRetNoValue(node.getCodeLoc(), optCallee.value().retType.value());
@@ -1282,7 +1282,7 @@ NodeVal Processor::processRet(const NodeVal &node) {
         NodeVal moved = processForScopeResult(node.getChild(1), true);
         if (moved.isInvalid()) return NodeVal();
 
-        if (!performRet(node.getCodeLoc(), moved)) return NodeVal();
+        if (!performRet(node.getCodeLoc(), move(moved))) return NodeVal();
 
         return NodeVal(node.getCodeLoc());
     }
@@ -1914,15 +1914,15 @@ NodeVal Processor::dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper) 
     }
 }
 
-NodeVal Processor::dispatchAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs) {
+NodeVal Processor::dispatchAssignment(CodeLoc codeLoc, const NodeVal &lhs, NodeVal rhs) {
     if (checkIsEvalTime(lhs, false) && checkIsEvalTime(rhs, false)) {
-        return evaluator->performOperAssignment(codeLoc, lhs, rhs);
+        return evaluator->performOperAssignment(codeLoc, lhs, move(rhs));
     } else {
-        return performOperAssignment(codeLoc, lhs, rhs);
+        return performOperAssignment(codeLoc, lhs, move(rhs));
     }
 }
 
-NodeVal Processor::getElement(CodeLoc codeLoc, NodeVal &array, size_t index) {
+NodeVal Processor::getArrElement(CodeLoc codeLoc, NodeVal &array, size_t index) {
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::WIDEST_U), typeTable);
     evalVal.getWidestU() = index;
     return getArrElement(codeLoc, array, NodeVal(codeLoc, move(evalVal)));
@@ -2085,7 +2085,6 @@ NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal val, bool noZero) {
     if (!val.hasRef()) {
         val.setCodeLoc(codeLoc);
         val.setLifetimeInfo(LifetimeInfo());
-        val.removeRef();
         return val;
     }
 
@@ -2101,13 +2100,11 @@ NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal val, bool noZero) {
         else zero = performZero(codeLoc, valTy);
         if (zero.isInvalid()) return NodeVal();
 
-        if (dispatchAssignment(codeLoc, val, zero).isInvalid()) return NodeVal();
+        if (dispatchAssignment(codeLoc, val, move(zero)).isInvalid()) return NodeVal();
     }
 
     // val itself remained unchanged
-    val.setCodeLoc(codeLoc);
-    val.removeRef();
-    return move(val);
+    return NodeVal::moveNoRef(codeLoc, move(val), LifetimeInfo());
 }
 
 NodeVal Processor::invoke(CodeLoc codeLoc, MacroId macroId, vector<NodeVal> args) {
@@ -2186,7 +2183,7 @@ bool Processor::callDropFunc(CodeLoc codeLoc, NodeVal val) {
         for (size_t i = 0; i < len; ++i) {
             size_t ind = len-1-i;
 
-            NodeVal elem = getElement(codeLoc, val, ind);
+            NodeVal elem = getArrElement(codeLoc, val, ind);
             if (elem.isInvalid()) return false;
 
             if (!callDropFunc(codeLoc, move(elem))) return false;
@@ -2500,12 +2497,12 @@ NodeVal Processor::processOperUnary(CodeLoc codeLoc, const NodeVal &starting, co
         optional<bool> attrNoZero = getAttributeForBool(starting, "noZero");
         if (!attrNoZero.has_value()) return NodeVal();
 
-        return moveNode(codeLoc, operProc, attrNoZero.value());
+        return moveNode(codeLoc, move(operProc), attrNoZero.value());
     } else {
         if (checkIsEvalTime(operProc, false)) {
-            return evaluator->performOperUnary(codeLoc, operProc, op);
+            return evaluator->performOperUnary(codeLoc, move(operProc), op);
         } else {
-            return performOperUnary(codeLoc, operProc, op);
+            return performOperUnary(codeLoc, move(operProc), op);
         }
     }
 }
@@ -2602,7 +2599,7 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
 
         if (!checkTransferValueOk(codeLoc, rhs, lhs.isNoDrop(), true)) return NodeVal();
 
-        rhs = dispatchAssignment(codeLoc, lhs, rhs);
+        rhs = dispatchAssignment(codeLoc, lhs, move(rhs));
         if (rhs.isInvalid()) return NodeVal();
     }
 

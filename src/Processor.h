@@ -29,7 +29,7 @@ protected:
     virtual NodeVal performLoad(CodeLoc codeLoc, MacroId macroId) =0;
     virtual NodeVal performZero(CodeLoc codeLoc, TypeTable::Id ty) =0;
     virtual NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, CodeLoc codeLocTy, TypeTable::Id ty) =0;
-    virtual NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) =0;
+    virtual NodeVal performRegister(CodeLoc codeLoc, NamePool::Id id, NodeVal init) =0;
     virtual NodeVal performCast(CodeLoc codeLoc, const NodeVal &node, CodeLoc codeLocTy, TypeTable::Id ty) =0;
     virtual bool performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) =0;
     // Returns nullopt in case of fail. Otherwise, returns whether the body should be processed again.
@@ -37,7 +37,7 @@ protected:
     virtual NodeVal performBlockTearDown(CodeLoc codeLoc, SymbolTable::Block block, bool success) =0;
     virtual bool performExit(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) =0;
     virtual bool performLoop(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) =0;
-    virtual bool performPass(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &val) =0;
+    virtual bool performPass(CodeLoc codeLoc, SymbolTable::Block block, NodeVal val) =0;
     virtual NodeVal performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, const NodeVal &func, const std::vector<NodeVal> &args) =0;
     virtual NodeVal performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId funcId, const std::vector<NodeVal> &args) =0;
     virtual NodeVal performInvoke(CodeLoc codeLoc, MacroId macroId, const std::vector<NodeVal> &args) =0;
@@ -45,14 +45,14 @@ protected:
     virtual bool performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) =0;
     virtual bool performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, MacroValue &macro) =0;
     virtual bool performRet(CodeLoc codeLoc) =0;
-    virtual bool performRet(CodeLoc codeLoc, const NodeVal &node) =0;
-    virtual NodeVal performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) =0;
+    virtual bool performRet(CodeLoc codeLoc, NodeVal node) =0;
+    virtual NodeVal performOperUnary(CodeLoc codeLoc, NodeVal oper, Oper op) =0;
     virtual NodeVal performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper, TypeTable::Id resTy) =0;
     virtual ComparisonSignal performOperComparisonSetUp(CodeLoc codeLoc, std::size_t opersCnt) =0;
     // Returns nullopt in case of fail. Otherwise, returns whether the variadic comparison may exit early.
     virtual std::optional<bool> performOperComparison(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, ComparisonSignal &signal) =0;
     virtual NodeVal performOperComparisonTearDown(CodeLoc codeLoc, bool success, ComparisonSignal signal) =0;
-    virtual NodeVal performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs) =0;
+    virtual NodeVal performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, NodeVal rhs) =0;
     // Called for arrays and array pointers.
     virtual NodeVal performOperIndexArr(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) =0;
     // Called for raws, tuples, and data types.
@@ -138,8 +138,8 @@ private:
     NodeVal dispatchCall(CodeLoc codeLoc, CodeLoc codeLocFunc, const NodeVal &func, const std::vector<NodeVal> &args, bool allArgsEval);
     NodeVal dispatchCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId funcId, const std::vector<NodeVal> &args, bool allArgsEval);
     NodeVal dispatchOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper);
-    NodeVal dispatchAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs);
-    NodeVal getElement(CodeLoc codeLoc, NodeVal &array, std::size_t index);
+    NodeVal dispatchAssignment(CodeLoc codeLoc, const NodeVal &lhs, NodeVal rhs);
+    NodeVal getArrElement(CodeLoc codeLoc, NodeVal &array, std::size_t index);
     NodeVal getArrElement(CodeLoc codeLoc, NodeVal &array, const NodeVal &index);
     NodeVal getRawElement(CodeLoc codeLoc, NodeVal &raw, std::size_t index);
     NodeVal getTupleElement(CodeLoc codeLoc, NodeVal &tuple, std::size_t index);

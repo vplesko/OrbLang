@@ -59,13 +59,13 @@ NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, CodeLoc cod
     return NodeVal(codeLoc, move(evalVal));
 }
 
-NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, const NodeVal &init) {
+NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, NodeVal init) {
     if (!checkIsEvalVal(init, true)) return NodeVal();
 
     LifetimeInfo lifetimeInfo;
     lifetimeInfo.nestLevel = symbolTable->currNestLevel();
 
-    return NodeVal::copyNoRef(codeLoc, init, lifetimeInfo);
+    return NodeVal::moveNoRef(codeLoc, move(init), lifetimeInfo);
 }
 
 NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, CodeLoc codeLocTy, TypeTable::Id ty) {
@@ -138,13 +138,13 @@ bool Evaluator::performLoop(CodeLoc codeLoc, SymbolTable::Block block, const Nod
     return true;
 }
 
-bool Evaluator::performPass(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &val) {
+bool Evaluator::performPass(CodeLoc codeLoc, SymbolTable::Block block, NodeVal val) {
     if (!checkIsEvalVal(val, true)) return false;
     if (!checkIsEvalBlock(codeLoc, block, true)) return false;
 
     if (!callDropFuncsFromBlockToCurrBlock(codeLoc, block.name)) return false;
 
-    retVal = NodeVal::copyNoRef(codeLoc, val, LifetimeInfo());
+    retVal = NodeVal::moveNoRef(codeLoc, move(val), LifetimeInfo());
 
     ExceptionEvaluatorJump ex;
     ex.blockName = block.name;
@@ -219,7 +219,7 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId func
             return NodeVal();
         }
 
-        NodeVal ret = NodeVal::copyNoRef(codeLoc, move(retVal.value()));
+        NodeVal ret = NodeVal::moveNoRef(codeLoc, move(retVal.value()), LifetimeInfo());
         retVal.reset();
         return ret;
     } else {
@@ -302,7 +302,7 @@ bool Evaluator::performRet(CodeLoc codeLoc) {
     throw ex;
 }
 
-bool Evaluator::performRet(CodeLoc codeLoc, const NodeVal &node) {
+bool Evaluator::performRet(CodeLoc codeLoc, NodeVal node) {
     optional<SymbolTable::CalleeValueInfo> callee = symbolTable->getCurrCallee();
     if (!callee.value().isEval) {
         msgs->errorRetNonEval(codeLoc);
@@ -310,9 +310,9 @@ bool Evaluator::performRet(CodeLoc codeLoc, const NodeVal &node) {
     }
 
     if (callee.value().isFunc) {
-        retVal = NodeVal::copyNoRef(node, LifetimeInfo());
+        retVal = NodeVal::moveNoRef(move(node), LifetimeInfo());
     } else {
-        retVal = node;
+        retVal = move(node);
         NodeVal::clearInvokeArg(retVal.value(), typeTable);
     }
 
@@ -323,10 +323,10 @@ bool Evaluator::performRet(CodeLoc codeLoc, const NodeVal &node) {
     throw ex;
 }
 
-NodeVal Evaluator::performOperUnary(CodeLoc codeLoc, const NodeVal &oper, Oper op) {
+NodeVal Evaluator::performOperUnary(CodeLoc codeLoc, NodeVal oper, Oper op) {
     if (!checkIsEvalVal(oper, true)) return NodeVal();
 
-    EvalVal evalVal = EvalVal::copyNoRef(oper.getEvalVal());
+    EvalVal evalVal = EvalVal::copyNoRef(oper.getEvalVal(), LifetimeInfo());
     TypeTable::Id ty = evalVal.type;
     bool success = false, errorGiven = false;
     if (op == Oper::ADD) {
@@ -612,7 +612,7 @@ NodeVal Evaluator::performOperComparisonTearDown(CodeLoc codeLoc, bool success, 
     return NodeVal(codeLoc, move(evalVal));
 }
 
-NodeVal Evaluator::performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs) {
+NodeVal Evaluator::performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, NodeVal rhs) {
     if (!checkIsEvalVal(lhs, true) || !checkIsEvalVal(rhs, true)) return NodeVal();
 
     LifetimeInfo lhsLifetimeInfo = lhs.getEvalVal().lifetimeInfo;
@@ -620,7 +620,7 @@ NodeVal Evaluator::performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, co
     NodeVal &lhsRefee = EvalVal::getRefee(lhs.getEvalVal(), symbolTable);
     lhsRefee = NodeVal::copyNoRef(lhsRefee.getCodeLoc(), rhs, lhsLifetimeInfo);
 
-    NodeVal nodeVal = NodeVal::copyNoRef(lhs.getCodeLoc(), rhs, lhsLifetimeInfo);
+    NodeVal nodeVal = NodeVal::moveNoRef(lhs.getCodeLoc(), move(rhs), lhsLifetimeInfo);
     nodeVal.getEvalVal().ref = lhs.getEvalVal().ref;
     return nodeVal;
 }
@@ -958,7 +958,7 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
         }
     } else if (typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE)) {
         if (typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_TYPE)) {
-            dstEvalVal = EvalVal::copyNoRef(srcEvalVal);
+            dstEvalVal = EvalVal::copyNoRef(srcEvalVal, LifetimeInfo());
             dstEvalVal.type = dstTypeId;
         } else if (typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_ID)) {
             optional<NamePool::Id> id = makeIdFromTy(srcEvalVal.ty);
@@ -992,7 +992,7 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
             if (!assignBasedOnTypeB(dstEvalVal, !EvalVal::isCallableNoValue(srcEvalVal, typeTable), dstTypeId))
                 return nullopt;
         } else if (typeTable->isImplicitCastable(typeTable->extractFixedTypeBaseType(srcTypeId), typeTable->extractFixedTypeBaseType(dstTypeId))) {
-            dstEvalVal = EvalVal::copyNoRef(srcEvalVal);
+            dstEvalVal = EvalVal::copyNoRef(srcEvalVal, LifetimeInfo());
             dstEvalVal.type = dstTypeId;
         } else {
             return nullopt;
@@ -1001,7 +1001,7 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
         // other types are only castable when changing constness
         if (typeTable->isImplicitCastable(typeTable->extractFixedTypeBaseType(srcTypeId), typeTable->extractFixedTypeBaseType(dstTypeId))) {
             // no action is needed in case of a cast
-            dstEvalVal = EvalVal::copyNoRef(srcEvalVal);
+            dstEvalVal = EvalVal::copyNoRef(srcEvalVal, LifetimeInfo());
             dstEvalVal.type = dstTypeId;
         } else {
             return nullopt;

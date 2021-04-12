@@ -71,10 +71,17 @@ EvalVal EvalVal::makeZero(TypeTable::Id t, NamePool *namePool, TypeTable *typeTa
     return evalVal;
 }
 
-EvalVal EvalVal::copyNoRef(const EvalVal &k) {
+EvalVal EvalVal::copyNoRef(const EvalVal &k, LifetimeInfo lifetimeInfo) {
     EvalVal evalVal(k);
     evalVal.removeRef();
+    evalVal.lifetimeInfo = lifetimeInfo;
     return evalVal;
+}
+
+EvalVal EvalVal::moveNoRef(EvalVal &&k, LifetimeInfo lifetimeInfo) {
+    k.removeRef();
+    k.lifetimeInfo = lifetimeInfo;
+    return std::move(k);
 }
 
 bool EvalVal::isId(const EvalVal &val, const TypeTable *typeTable) {

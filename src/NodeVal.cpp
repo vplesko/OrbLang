@@ -275,6 +275,19 @@ NodeVal NodeVal::copyNoRef(CodeLoc codeLoc, const NodeVal &k, LifetimeInfo lifet
     return ret;
 }
 
+NodeVal NodeVal::moveNoRef(NodeVal &&k, LifetimeInfo lifetimeInfo) {
+    k.setLifetimeInfo(lifetimeInfo);
+    k.removeRef();
+    return std::move(k);
+}
+
+NodeVal NodeVal::moveNoRef(CodeLoc codeLoc, NodeVal &&k, LifetimeInfo lifetimeInfo) {
+    k.setCodeLoc(codeLoc);
+    k.removeRef();
+    k.setLifetimeInfo(lifetimeInfo);
+    return std::move(k);
+}
+
 void NodeVal::copyNonValFieldsLeaf(NodeVal &dst, const NodeVal &src, const TypeTable *typeTable) {
     escape(dst, typeTable, src.getEscapeScore()-dst.getEscapeScore());
     if (src.hasTypeAttr()) {
