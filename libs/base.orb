@@ -8,6 +8,12 @@ eval (fnc genSym () id {
     ret s;
 });
 
+mac alias (name ty) {
+    ret \(eval (sym (,name:(type cn) ,ty)));
+};
+
+alias String (c8 cn []);
+
 mac passthrough (x) {
     ret x;
 };
@@ -306,10 +312,6 @@ mac || (a b rest::variadic) {
     = innerCode (+ innerCode \{ (pass false) });
 
     ret \(block base.-blockLogAnd bool ,innerCode);
-};
-
-mac alias (name ty) {
-    ret \(eval (sym (,name:(type cn) ,ty)));
 };
 
 mac arr (ty::preprocess a::preprocess rest::(variadic preprocess)) {

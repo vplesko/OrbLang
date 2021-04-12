@@ -10,6 +10,7 @@ data Bar {
     x:i32
 } (lam (this:Bar::noDrop) () { println_i32 ([] this x); });
 
+sym (globStr:String "Hello!");
 sym (globArr (eval (arr i32 603 -1)));
 sym (globTup (eval (tup 704 -1)));
 
@@ -25,6 +26,8 @@ enum Zab u8 {
 };
 
 fnc main () () {
+    println_str globStr;
+
     if true {
         println_i32 100;
     };
