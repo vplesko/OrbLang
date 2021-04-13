@@ -1,7 +1,7 @@
 #include "EvalVal.h"
 #include "LiteralVal.h"
-#include "SymbolTable.h"
 #include "NodeVal.h"
+#include "SymbolTable.h"
 using namespace std;
 
 void EvalVal::removeRef() {

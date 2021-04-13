@@ -21,6 +21,7 @@ struct EvalVal {
 
     // type of this evaluation value
     TypeTable::Id type;
+
     union {
         std::int8_t i8;
         std::int16_t i16;
@@ -39,13 +40,13 @@ struct EvalVal {
         // contains type value in case this is type or type cn
         TypeTable::Id ty;
     };
-    Pointer p;
+    Pointer p = nullptr;
     std::optional<StringPool::Id> str;
     std::optional<FuncId> f;
     std::optional<MacroId> m;
     std::vector<NodeVal> elems;
 
-    Pointer ref;
+    Pointer ref = nullptr;
     LifetimeInfo lifetimeInfo;
 
     EscapeScore escapeScore = 0;
@@ -53,8 +54,6 @@ struct EvalVal {
     EvalVal() {
         // because of union, this takes care of primitives other than id and type
         u64 = 0LL;
-        p = nullptr;
-        ref = nullptr;
     }
 
     bool isEscaped() const { return escapeScore > 0; }
