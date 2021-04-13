@@ -201,7 +201,7 @@ string CompilationMessages::errorStringOfType(TypeTable::Id ty) const {
 
 string toString(CodeLoc loc, const StringPool *stringPool) {
     stringstream ss;
-    const string &file = stringPool->get(loc.start.file);
+    const string &file = stringPool->get(loc.file);
     ss << filesystem::relative(file).string();
     ss << ':' << loc.start.ln << ':' << loc.start.col << ':';
     return ss.str();
@@ -267,7 +267,7 @@ void CompilationMessages::error(CodeLoc loc, const string &str) {
 }
 
 void CompilationMessages::displayCodeSegment(CodeLoc loc) {
-    const string &filename = stringPool->get(loc.start.file);
+    const string &filename = stringPool->get(loc.file);
     ifstream file(filename);
     if (!file.is_open()) return;
 

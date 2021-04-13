@@ -13,7 +13,7 @@
 #include "UndecidedCallableVal.h"
 #include "LifetimeInfo.h"
 
-// TODO remove as many occurences of NodeVal copying as possible
+// TODO reduce the size of this type
 class NodeVal {
     CodeLoc codeLoc;
 
@@ -35,6 +35,7 @@ public:
     NodeVal(CodeLoc codeLoc, LlvmVal val);
     NodeVal(CodeLoc codeLoc, UndecidedCallableVal val);
 
+    // TODO remove as many occurences of NodeVal copying as possible
     NodeVal(const NodeVal &other);
     void operator=(const NodeVal &other);
 
@@ -119,6 +120,7 @@ public:
 
     static NodeVal makeEmpty(CodeLoc codeLoc, TypeTable *typeTable);
 
+    // TODO remove as many calls to copyNoRef as possible
     static NodeVal copyNoRef(const NodeVal &k);
     static NodeVal copyNoRef(const NodeVal &k, LifetimeInfo lifetimeInfo);
     static NodeVal copyNoRef(CodeLoc codeLoc, const NodeVal &k);

@@ -12,8 +12,7 @@ class Parser {
     CompilationMessages *msgs;
 
     const Token& peek() const;
-    Token next();
-    CodeLocPoint loc() const;
+    std::pair<CodeLoc, Token> next();
     
     bool match(Token::Type type);
     bool matchCloseBraceOrError(Token openBrace);

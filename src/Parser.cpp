@@ -12,12 +12,14 @@ const Token& Parser::peek() const {
     return lex->peek();
 }
 
-Token Parser::next() {
-    return lex->next();
-}
+pair<CodeLoc, Token> Parser::next() {
+    CodeLoc codeLoc;
+    codeLoc.file = lex->file();
+    codeLoc.start = lex->loc();
+    Token tok = lex->next();
+    codeLoc.end = lex->loc();
 
-CodeLocPoint Parser::loc() const {
-    return lex->loc();
+    return {codeLoc, tok};
 }
 
 // If the next token matches the type, eats it and returns true.
@@ -29,16 +31,13 @@ bool Parser::match(Token::Type type) {
 }
 
 bool Parser::matchCloseBraceOrError(Token openBrace) {
-    CodeLoc codeLocCloseBrace;
-    codeLocCloseBrace.start = loc();
-    Token closeBrace = next();
-    codeLocCloseBrace.end = loc();
+    pair<CodeLoc, Token> closeBrace = next();
 
-    if (openBrace.type == Token::T_BRACE_L_REG && closeBrace.type != Token::T_BRACE_R_REG) {
-        msgs->errorUnexpectedTokenType(codeLocCloseBrace, Token::T_BRACE_R_REG, closeBrace);
+    if (openBrace.type == Token::T_BRACE_L_REG && closeBrace.second.type != Token::T_BRACE_R_REG) {
+        msgs->errorUnexpectedTokenType(closeBrace.first, Token::T_BRACE_R_REG, closeBrace.second);
         return false;
-    } else if (openBrace.type == Token::T_BRACE_L_CUR && closeBrace.type != Token::T_BRACE_R_CUR) {
-        msgs->errorUnexpectedTokenType(codeLocCloseBrace, Token::T_BRACE_R_CUR, closeBrace);
+    } else if (openBrace.type == Token::T_BRACE_L_CUR && closeBrace.second.type != Token::T_BRACE_R_CUR) {
+        msgs->errorUnexpectedTokenType(closeBrace.first, Token::T_BRACE_R_CUR, closeBrace.second);
         return false;
     }
 
@@ -67,12 +66,9 @@ void Parser::parseNonTypeAttrs(NodeVal &node) {
         node.setNonTypeAttrs(parseBare());
     } else {
         if (peek().type == Token::T_COLON) {
-            CodeLoc codeLocColon;
-            codeLocColon.start = loc();
-            Token colon = next();
-            codeLocColon.end = loc();
+            pair<CodeLoc, Token> colon = next();
 
-            msgs->errorUnexpectedTokenType(codeLocColon, colon);
+            msgs->errorUnexpectedTokenType(colon.first, colon.second);
             msgs->hintAttrDoubleColon();
         }
     }
@@ -92,46 +88,43 @@ NodeVal Parser::parseBare() {
 }
 
 NodeVal Parser::parseTerm(bool ignoreAttrs) {
-    CodeLoc codeLocTok;
-    codeLocTok.start = loc();
-    Token tok = next();
-    codeLocTok.end = loc();
+    pair<CodeLoc, Token> tok = next();
 
     LiteralVal val;
-    switch (tok.type) {
+    switch (tok.second.type) {
     case Token::T_ID:
         val.kind = LiteralVal::Kind::kId;
-        val.val_id = tok.nameId;
+        val.val_id = tok.second.nameId;
         break;
     case Token::T_NUM:
         val.kind = LiteralVal::Kind::kSint;
-        val.val_si = tok.num;
+        val.val_si = tok.second.num;
         break;
     case Token::T_FNUM:
         val.kind = LiteralVal::Kind::kFloat;
-        val.val_f = tok.fnum;
+        val.val_f = tok.second.fnum;
         break;
     case Token::T_CHAR:
         val.kind = LiteralVal::Kind::kChar;
-        val.val_c = tok.ch;
+        val.val_c = tok.second.ch;
         break;
     case Token::T_BVAL:
         val.kind = LiteralVal::Kind::kBool;
-        val.val_b = tok.bval;
+        val.val_b = tok.second.bval;
         break;
     case Token::T_STRING:
         val.kind = LiteralVal::Kind::kString;
-        val.val_str = tok.stringId;
+        val.val_str = tok.second.stringId;
         break;
     case Token::T_NULL:
         val.kind = LiteralVal::Kind::kNull;
         break;    
     default:
-        msgs->errorUnexpectedTokenType(codeLocTok, tok);
+        msgs->errorUnexpectedTokenType(tok.first, tok.second);
         return NodeVal();
     }
 
-    NodeVal ret(codeLocTok, val);
+    NodeVal ret(tok.first, val);
 
     if (!ignoreAttrs) {
         parseTypeAttr(ret);
@@ -143,30 +136,29 @@ NodeVal Parser::parseTerm(bool ignoreAttrs) {
 
 NodeVal Parser::parseNode(bool ignoreAttrs) {
     CodeLoc codeLoc;
-    codeLoc.start = loc();
+    codeLoc.file = lex->file();
+    codeLoc.start = lex->loc();
 
     NodeVal node = NodeVal::makeEmpty(CodeLoc(), typeTable);
 
     EscapeScore escapeScore = parseEscapeScore();
 
     if (peek().type == Token::T_BRACE_L_REG || peek().type == Token::T_BRACE_L_CUR) {
-        Token openBrace = next();
+        pair<CodeLoc, Token> openBrace = next();
 
         vector<NodeVal> children;
 
         while (peek().type != Token::T_BRACE_R_REG && peek().type != Token::T_BRACE_R_CUR) {
             if (peek().type == Token::T_SEMICOLON) {
-                CodeLoc codeLocSemicolon;
-                codeLocSemicolon.start = loc();
-                next();
-                codeLocSemicolon.end = loc();
+                pair<CodeLoc, Token> semicolon = next();
 
                 if (children.empty()) {
-                    NodeVal::addChild(node, NodeVal::makeEmpty(codeLocSemicolon, typeTable), typeTable);
+                    NodeVal::addChild(node, NodeVal::makeEmpty(semicolon.first, typeTable), typeTable);
                 } else {
                     CodeLoc codeLoc;
+                    codeLoc.file = lex->file();
                     codeLoc.start = children.front().getCodeLoc().start;
-                    codeLoc.end = codeLocSemicolon.end;
+                    codeLoc.end = semicolon.first.end;
 
                     NodeVal tuple = NodeVal::makeEmpty(codeLoc, typeTable);
                     NodeVal::addChildren(tuple, move(children), typeTable); // children is emptied here
@@ -186,9 +178,9 @@ NodeVal Parser::parseNode(bool ignoreAttrs) {
             }
         }
 
-        if (!matchCloseBraceOrError(openBrace)) return NodeVal();
+        if (!matchCloseBraceOrError(openBrace.second)) return NodeVal();
 
-        codeLoc.end = loc(); // code loc point after close brace
+        codeLoc.end = lex->loc(); // code loc point after close brace
         node.setCodeLoc(codeLoc);
 
         NodeVal::addChildren(node, move(children), typeTable);
@@ -209,7 +201,7 @@ NodeVal Parser::parseNode(bool ignoreAttrs) {
 
         next();
 
-        codeLoc.end = loc(); // code loc point after semicolon
+        codeLoc.end = lex->loc(); // code loc point after semicolon
         node.setCodeLoc(codeLoc);
     }
 

@@ -11,13 +11,13 @@ bool isValidIdStart(char ch) {
     return isalnum(ch) || idSpecialChars.find(ch) != idSpecialChars.npos;
 }
 
-Lexer::Lexer(NamePool *namePool, StringPool *stringPool, CompilationMessages *msgs, const std::string &file)
-    : namePool(namePool), stringPool(stringPool), msgs(msgs), in(file) {
+Lexer::Lexer(NamePool *namePool, StringPool *stringPool, CompilationMessages *msgs, const std::string &filename)
+    : namePool(namePool), stringPool(stringPool), msgs(msgs), in(filename) {
     ln = 0;
     col = 0;
     ch = 0; // not EOF
     tok.type = Token::T_NUM; // not END
-    codeLocPoint.file = stringPool->add(file);
+    fileId = stringPool->add(filename);
 }
 
 bool Lexer::start() {
@@ -148,7 +148,7 @@ Token Lexer::next() {
                     codeLocPointEnd.col += 2;
 
                     tok.type = Token::T_UNKNOWN;
-                    msgs->errorUnclosedMultilineComment({codeLocPoint, codeLocPointEnd});
+                    msgs->errorUnclosedMultilineComment({fileId, codeLocPoint, codeLocPointEnd});
                     return tok; // unclosed comment error, so skip old token
                 }
 
@@ -193,7 +193,7 @@ Token Lexer::next() {
                 codeLocPointEnd.col += 1;
 
                 tok.type = Token::T_UNKNOWN;
-                msgs->errorBadLiteral({codeLocPoint, codeLocPointEnd});
+                msgs->errorBadLiteral({fileId, codeLocPoint, codeLocPointEnd});
                 return tok; // unclosed char literal error, so skip old token
             } else {
                 tok.type = Token::T_CHAR;
@@ -211,7 +211,7 @@ Token Lexer::next() {
                 codeLocPointEnd.col += 1;
 
                 tok.type = Token::T_UNKNOWN;
-                msgs->errorBadLiteral({codeLocPoint, codeLocPointEnd});
+                msgs->errorBadLiteral({fileId, codeLocPoint, codeLocPointEnd});
                 return tok; // unclosed string literal error, so skip old token
             } else {
                 tok.type = Token::T_STRING;
@@ -247,7 +247,7 @@ Token Lexer::next() {
         }
 
         if (tok.type == Token::T_UNKNOWN) {
-            msgs->errorBadToken({codeLocPoint, loc()});
+            msgs->errorBadToken({fileId, codeLocPoint, loc()});
         }
 
         return old;

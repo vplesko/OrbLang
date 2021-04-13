@@ -17,6 +17,7 @@ class Lexer {
     CodeIndex ln, col;
     char ch;
     Token tok;
+    StringPool::Id fileId;
     CodeLocPoint codeLocPoint;
 
     bool over() const { return ch == EOF; }
@@ -28,7 +29,7 @@ class Lexer {
     void lexNum(CodeIndex from);
 
 public:
-    Lexer(NamePool *namePool, StringPool *stringPool, CompilationMessages *msgs, const std::string &file);
+    Lexer(NamePool *namePool, StringPool *stringPool, CompilationMessages *msgs, const std::string &filename);
 
     bool start();
 
@@ -36,6 +37,7 @@ public:
     Token next();
     bool match(Token::Type type);
 
+    StringPool::Id file() const { return fileId; }
     // Returns the location of the start of the token that would be returned by next().
     CodeLocPoint loc() const { return codeLocPoint; }
 };
