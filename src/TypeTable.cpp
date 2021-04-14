@@ -696,8 +696,7 @@ bool TypeTable::worksAsTypeP(Id t) const {
         return worksAsTypeP(getFixedType(t).type);
     } else if (isTypeDescr(t)) {
         const TypeDescr &ty = typeDescrs[t.index].first;
-        // TODO+ shouldn't this call worksAsTypeP()?
-        return (ty.decors.empty() && worksAsTypePtr(ty.base)) ||
+        return (ty.decors.empty() && worksAsTypeP(ty.base)) ||
             (!ty.decors.empty() && ty.decors.back().type == TypeDescr::Decor::D_PTR);
     }
 

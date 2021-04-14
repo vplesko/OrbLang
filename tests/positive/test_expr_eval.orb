@@ -20,10 +20,15 @@ fnc main() () {
     println_i32 (+ 206 (cast i32 (== true false)));
     println_i32 (+ 207 (cast i32 (!= true true)));
     println_i32 (+ 207 (cast i32 (!= true false)));
-    println_i32 (+ 209 (cast i32 (== "abc" "def")));
-    println_i32 (+ 209 (cast i32 (== "abc" "abc")));
-    println_i32 (+ 211 (cast i32 (!= "abc" "abc")));
-    println_i32 (+ 211 (cast i32 (!= "abc" "def")));
+    println_i32 (+ 209 (cast i32 (< 1 2 3 4 -1)));
+    println_i32 (+ 209 (cast i32 (< 1 2 3 4 5)));
+    println_i32 (+ 211 (cast i32 (< 1 2 -1 4 5)));
+    println_i32 (+ 212 (cast i32 (!= null null)));
+    println_i32 (+ 212 (cast i32 (== null null)));
+    println_i32 (+ 214 (cast i32 (== "abc" "def")));
+    println_i32 (+ 214 (cast i32 (== "abc" "abc")));
+    println_i32 (+ 216 (cast i32 (!= "abc" "abc")));
+    println_i32 (+ 216 (cast i32 (!= "abc" "def")));
 
     println_i32 (+ 200 100 0);
     println_i32 (/ 905 3);

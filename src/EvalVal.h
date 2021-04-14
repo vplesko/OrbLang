@@ -153,9 +153,11 @@ public:
     static bool isF(const EvalVal &val, const TypeTable *typeTable);
     static bool isB(const EvalVal &val, const TypeTable *typeTable);
     static bool isC(const EvalVal &val, const TypeTable *typeTable);
+    // specifically, pointer (with *)
     static bool isP(const EvalVal &val, const TypeTable *typeTable);
     static bool isStr(const EvalVal &val, const TypeTable *typeTable);
     static bool isNonNullStr(const EvalVal &val, const TypeTable *typeTable);
+    // P_PTR or pointer or array pointer
     static bool isAnyP(const EvalVal &val, const TypeTable *typeTable);
     static bool isArr(const EvalVal &val, const TypeTable *typeTable);
     static bool isTuple(const EvalVal &val, const TypeTable *typeTable);

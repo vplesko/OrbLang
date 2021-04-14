@@ -121,64 +121,51 @@ EvalVal EvalVal::moveNoRef(EvalVal &&k, LifetimeInfo lifetimeInfo) {
 }
 
 bool EvalVal::isId(const EvalVal &val, const TypeTable *typeTable) {
-    // TODO+ none of these need to be optional
-    optional<TypeTable::Id> type = val.type;
-    return type.has_value() && typeTable->worksAsPrimitive(type.value(), TypeTable::P_ID);
+    return typeTable->worksAsPrimitive(val.type, TypeTable::P_ID);
 }
 
 bool EvalVal::isType(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.type;
-    return type.has_value() && typeTable->worksAsPrimitive(type.value(), TypeTable::P_TYPE);
+    return typeTable->worksAsPrimitive(val.type, TypeTable::P_TYPE);
 }
 
 bool EvalVal::isRaw(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.type;
-    return type.has_value() && typeTable->worksAsPrimitive(type.value(), TypeTable::P_RAW);
+    return typeTable->worksAsPrimitive(val.type, TypeTable::P_RAW);
 }
 
 bool EvalVal::isFunc(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.type;
-    return type.has_value() && typeTable->worksAsCallable(type.value(), true);
+    return typeTable->worksAsCallable(val.type, true);
 }
 
 bool EvalVal::isMacro(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.type;
-    return type.has_value() && typeTable->worksAsCallable(type.value(), false);
+    return typeTable->worksAsCallable(val.type, false);
 }
 
 bool EvalVal::isI(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.type;
-    return type.has_value() && typeTable->worksAsTypeI(type.value());
+    return typeTable->worksAsTypeI(val.type);
 }
 
 bool EvalVal::isU(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.type;
-    return type.has_value() && typeTable->worksAsTypeU(type.value());
+    return typeTable->worksAsTypeU(val.type);
 }
 
 bool EvalVal::isF(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.type;
-    return type.has_value() && typeTable->worksAsTypeF(type.value());
+    return typeTable->worksAsTypeF(val.type);
 }
 
 bool EvalVal::isB(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.type;
-    return type.has_value() && typeTable->worksAsTypeB(type.value());
+    return typeTable->worksAsTypeB(val.type);
 }
 
 bool EvalVal::isC(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.type;
-    return type.has_value() && typeTable->worksAsTypeC(type.value());
+    return typeTable->worksAsTypeC(val.type);
 }
 
 bool EvalVal::isP(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.type;
-    return type.has_value() && typeTable->worksAsTypeP(type.value());
+    return typeTable->worksAsTypeP(val.type);
 }
 
 bool EvalVal::isStr(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.type;
-    return type.has_value() && typeTable->worksAsTypeStr(type.value());
+    return typeTable->worksAsTypeStr(val.type);
 }
 
 bool EvalVal::isNonNullStr(const EvalVal &val, const TypeTable *typeTable) {
@@ -186,23 +173,19 @@ bool EvalVal::isNonNullStr(const EvalVal &val, const TypeTable *typeTable) {
 }
 
 bool EvalVal::isAnyP(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.type;
-    return type.has_value() && typeTable->worksAsTypeAnyP(type.value());
+    return typeTable->worksAsTypeAnyP(val.type);
 }
 
 bool EvalVal::isArr(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.type;
-    return type.has_value() && typeTable->worksAsTypeArr(type.value());
+    return typeTable->worksAsTypeArr(val.type);
 }
 
 bool EvalVal::isTuple(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.type;
-    return type.has_value() && typeTable->worksAsTuple(type.value());
+    return typeTable->worksAsTuple(val.type);
 }
 
 bool EvalVal::isDataType(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.type;
-    return type.has_value() && typeTable->worksAsDataType(type.value());
+    return typeTable->worksAsDataType(val.type);
 }
 
 bool EvalVal::isZero(const EvalVal &val, const TypeTable *typeTable) {
@@ -219,10 +202,8 @@ bool EvalVal::isNull(const EvalVal &val, const TypeTable *typeTable) {
 }
 
 bool EvalVal::isCallableNoValue(const EvalVal &val, const TypeTable *typeTable) {
-    optional<TypeTable::Id> type = val.type;
-    return type.has_value() &&
-        ((typeTable->worksAsCallable(type.value(), true) && !val.f().has_value()) ||
-        (typeTable->worksAsCallable(type.value(), false) && !val.m().has_value()));
+    return ((typeTable->worksAsCallable(val.type, true) && !val.f().has_value()) ||
+        (typeTable->worksAsCallable(val.type, false) && !val.m().has_value()));
 }
 
 bool EvalVal::isNull(const Pointer &ptr) {

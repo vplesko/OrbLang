@@ -266,7 +266,9 @@ public:
     bool worksAsTypeB(Id t) const { return worksAsPrimitive(t, P_BOOL); }
     // specifically, P_PTR
     bool worksAsTypePtr(Id t) const;
+    // P_PTR or pointer or array pointer
     bool worksAsTypeAnyP(Id t) const;
+    // specifically, pointer (with *)
     bool worksAsTypeP(Id t) const;
     bool worksAsTypeArr(Id t) const;
     bool worksAsTypeArrOfLen(Id t, std::size_t len) const;

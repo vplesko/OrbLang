@@ -23,6 +23,9 @@ fnc main() () {
     println_i32 (+ 209 (cast i32 (< 1 2 3 (block i32 { pass 4; }) -1)));
     println_i32 (+ 209 (cast i32 (< 1 2 3 (block i32 { pass 4; }) 5)));
     println_i32 (+ 211 (cast i32 (< 1 2 -1 (block i32 { pass 4; }) 5)));
+    sym ptr0:ptr ptr1:ptr;
+    println_i32 (+ 212 (cast i32 (!= ptr0 ptr1)));
+    println_i32 (+ 212 (cast i32 (== ptr0 ptr1)));
 
     println_i32 (+ (block i32 { pass 200; }) 100 0);
     println_i32 (/ (block i32 { pass 905; }) 3);
