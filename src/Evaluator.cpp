@@ -17,7 +17,7 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, VarId varId) {
             return ref.var;
         } else {
             NodeVal nodeVal = NodeVal::copyNoRef(codeLoc, ref.var);
-            nodeVal.getEvalVal().ref = varId;
+            nodeVal.getEvalVal().getRef() = varId;
             return nodeVal;
         }
     } else {
@@ -37,13 +37,13 @@ NodeVal Evaluator::performLoad(CodeLoc codeLoc, FuncId funcId) {
     if (!checkIsEvalFunc(codeLoc, func, true)) return NodeVal();
 
     EvalVal evalVal = EvalVal::makeVal(func.getType(), typeTable);
-    evalVal.f = funcId;
+    evalVal.f() = funcId;
     return NodeVal(codeLoc, evalVal);
 }
 
 NodeVal Evaluator::performLoad(CodeLoc codeLoc, MacroId macroId) {
     EvalVal evalVal = EvalVal::makeVal(symbolTable->getMacro(macroId).getType(), typeTable);
-    evalVal.m = macroId;
+    evalVal.m() = macroId;
     return NodeVal(codeLoc, evalVal);
 }
 
@@ -55,7 +55,7 @@ NodeVal Evaluator::performZero(CodeLoc codeLoc, TypeTable::Id ty) {
 
 NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, CodeLoc codeLocTy, TypeTable::Id ty) {
     EvalVal evalVal = EvalVal::makeZero(ty, namePool, typeTable);
-    evalVal.lifetimeInfo.nestLevel = symbolTable->currNestLevel();
+    evalVal.getLifetimeInfo().nestLevel = symbolTable->currNestLevel();
     return NodeVal(codeLoc, move(evalVal));
 }
 
@@ -71,9 +71,9 @@ NodeVal Evaluator::performRegister(CodeLoc codeLoc, NamePool::Id id, NodeVal ini
 NodeVal Evaluator::performCast(CodeLoc codeLoc, const NodeVal &node, CodeLoc codeLocTy, TypeTable::Id ty) {
     if (!checkIsEvalVal(node, true)) return NodeVal();
 
-    optional<NodeVal> evalValCast = makeCast(codeLoc, node, node.getEvalVal().type, ty);
+    optional<NodeVal> evalValCast = makeCast(codeLoc, node, node.getEvalVal().getType(), ty);
     if (!evalValCast.has_value()) {
-        msgs->errorExprCannotCast(codeLoc, node.getEvalVal().type, ty);
+        msgs->errorExprCannotCast(codeLoc, node.getEvalVal().getType(), ty);
         return NodeVal();
     }
     if (node.hasRef()) evalValCast.value().setNoDrop(true);
@@ -107,7 +107,7 @@ bool Evaluator::performExit(CodeLoc codeLoc, SymbolTable::Block block, const Nod
     if (!checkIsEvalVal(cond, true)) return false;
     if (!checkIsEvalBlock(codeLoc, block, true)) return false;
 
-    if (cond.getEvalVal().b) {
+    if (cond.getEvalVal().b()) {
         if (!callDropFuncsFromBlockToCurrBlock(codeLoc, block.name)) return false;
 
         ExceptionEvaluatorJump ex;
@@ -124,7 +124,7 @@ bool Evaluator::performLoop(CodeLoc codeLoc, SymbolTable::Block block, const Nod
     if (!checkIsEvalVal(cond, true)) return false;
     if (!checkIsEvalBlock(codeLoc, block, true)) return false;
 
-    if (cond.getEvalVal().b) {
+    if (cond.getEvalVal().b()) {
         if (!callDropFuncsFromBlockToCurrBlock(codeLoc, block.name)) return false;
 
         ExceptionEvaluatorJump ex;
@@ -153,12 +153,12 @@ bool Evaluator::performPass(CodeLoc codeLoc, SymbolTable::Block block, NodeVal v
 
 NodeVal Evaluator::performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, const NodeVal &func, const std::vector<NodeVal> &args) {
     if (!checkIsEvalVal(func, true)) return NodeVal();
-    if (!func.getEvalVal().f.has_value()) {
+    if (!func.getEvalVal().f().has_value()) {
         msgs->errorFuncNoValue(codeLocFunc);
         return NodeVal();
     }
 
-    return performCall(codeLoc, codeLocFunc, *func.getEvalVal().f, args);
+    return performCall(codeLoc, codeLocFunc, *func.getEvalVal().f(), args);
 }
 
 NodeVal Evaluator::performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId funcId, const std::vector<NodeVal> &args) {
@@ -327,7 +327,7 @@ NodeVal Evaluator::performOperUnary(CodeLoc codeLoc, NodeVal oper, Oper op) {
     if (!checkIsEvalVal(oper, true)) return NodeVal();
 
     EvalVal evalVal = EvalVal::copyNoRef(oper.getEvalVal(), LifetimeInfo());
-    TypeTable::Id ty = evalVal.type;
+    TypeTable::Id ty = evalVal.getType();
     bool success = false, errorGiven = false;
     if (op == Oper::ADD) {
         if (EvalVal::isI(evalVal, typeTable) ||
@@ -354,13 +354,13 @@ NodeVal Evaluator::performOperUnary(CodeLoc codeLoc, NodeVal oper, Oper op) {
         }
     } else if (op == Oper::NOT) {
         if (EvalVal::isB(evalVal, typeTable)) {
-            evalVal.b = !evalVal.b;
+            evalVal.b() = !evalVal.b();
             success = true;
         }
     } else if (op == Oper::BIT_AND) {
         if (oper.hasRef()) {
             evalVal = EvalVal::makeVal(typeTable->addTypeAddrOf(ty), typeTable);
-            evalVal.p = oper.getEvalVal().ref;
+            evalVal.p() = oper.getEvalVal().getRef();
             success = true;
         } else {
             msgs->errorExprAddrOfNonRef(codeLoc);
@@ -385,8 +385,8 @@ NodeVal Evaluator::performOperUnaryDeref(CodeLoc codeLoc, const NodeVal &oper, T
     }
 
     NodeVal nodeEvalVal = NodeVal::copyNoRef(codeLoc, EvalVal::getPointee(oper.getEvalVal(), symbolTable));
-    nodeEvalVal.getEvalVal().type = resTy;
-    nodeEvalVal.getEvalVal().ref = oper.getEvalVal().p;
+    nodeEvalVal.getEvalVal().getType() = resTy;
+    nodeEvalVal.getEvalVal().getRef() = oper.getEvalVal().p();
     return nodeEvalVal;
 }
 
@@ -430,36 +430,36 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
         ul = EvalVal::getValueU(lhs.getEvalVal(), typeTable).value();
         ur = EvalVal::getValueU(rhs.getEvalVal(), typeTable).value();
     } else if (isTypeC) {
-        cl = lhs.getEvalVal().c8;
-        cr = rhs.getEvalVal().c8;
+        cl = lhs.getEvalVal().c8();
+        cr = rhs.getEvalVal().c8();
     } else if (isTypeF) {
         fl = EvalVal::getValueF(lhs.getEvalVal(), typeTable).value();
         fr = EvalVal::getValueF(rhs.getEvalVal(), typeTable).value();
     } else if (isTypeStr) {
-        strl = lhs.getEvalVal().str.value();
-        strr = rhs.getEvalVal().str.value();
+        strl = lhs.getEvalVal().str().value();
+        strr = rhs.getEvalVal().str().value();
     } else if (isTypeAnyP) {
         if (isTypeP) {
-            pl = lhs.getEvalVal().p;
-            pr = rhs.getEvalVal().p;
+            pl = lhs.getEvalVal().p();
+            pr = rhs.getEvalVal().p();
         } else {
             pl = pr = nullptr;
         }
     } else if (isTypeB) {
-        bl = lhs.getEvalVal().b;
-        br = rhs.getEvalVal().b;
+        bl = lhs.getEvalVal().b();
+        br = rhs.getEvalVal().b();
     } else if (isTypeId) {
-        idl = lhs.getEvalVal().id;
-        idr = rhs.getEvalVal().id;
+        idl = lhs.getEvalVal().id();
+        idr = rhs.getEvalVal().id();
     } else if (isTypeTy) {
-        tyl = lhs.getEvalVal().ty;
-        tyr = rhs.getEvalVal().ty;
+        tyl = lhs.getEvalVal().ty();
+        tyr = rhs.getEvalVal().ty();
     } else if (isTypeCallF) {
-        callfl = lhs.getEvalVal().f;
-        callfr = rhs.getEvalVal().f;
+        callfl = lhs.getEvalVal().f();
+        callfr = rhs.getEvalVal().f();
     } else if (isTypeCallM) {
-        callml = lhs.getEvalVal().m;
-        callmr = rhs.getEvalVal().m;
+        callml = lhs.getEvalVal().m();
+        callmr = rhs.getEvalVal().m();
     }
 
     switch (op) {
@@ -608,20 +608,20 @@ NodeVal Evaluator::performOperComparisonTearDown(CodeLoc codeLoc, bool success, 
     if (!success) return NodeVal();
 
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_BOOL), typeTable);
-    evalVal.b = signal.result;
+    evalVal.b() = signal.result;
     return NodeVal(codeLoc, move(evalVal));
 }
 
 NodeVal Evaluator::performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, NodeVal rhs) {
     if (!checkIsEvalVal(lhs, true) || !checkIsEvalVal(rhs, true)) return NodeVal();
 
-    LifetimeInfo lhsLifetimeInfo = lhs.getEvalVal().lifetimeInfo;
+    LifetimeInfo lhsLifetimeInfo = lhs.getEvalVal().getLifetimeInfo();
 
     NodeVal &lhsRefee = EvalVal::getRefee(lhs.getEvalVal(), symbolTable);
     lhsRefee = NodeVal::copyNoRef(lhsRefee.getCodeLoc(), rhs, lhsLifetimeInfo);
 
     NodeVal nodeVal = NodeVal::moveNoRef(lhs.getCodeLoc(), move(rhs), lhsLifetimeInfo);
-    nodeVal.getEvalVal().ref = lhs.getEvalVal().ref;
+    nodeVal.getEvalVal().getRef() = lhs.getEvalVal().getRef();
     return nodeVal;
 }
 
@@ -635,19 +635,19 @@ NodeVal Evaluator::performOperIndexArr(CodeLoc codeLoc, NodeVal &base, const Nod
     }
 
     if (typeTable->worksAsTypeArr(base.getType().value())) {
-        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[index.value()], base.getEvalVal().lifetimeInfo);
-        nodeVal.getEvalVal().type = resTy;
+        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems()[index.value()], base.getEvalVal().getLifetimeInfo());
+        nodeVal.getEvalVal().getType() = resTy;
         if (base.hasRef()) {
             NodeVal &baseRefee = EvalVal::getRefee(base.getEvalVal(), symbolTable);
-            nodeVal.getEvalVal().ref = &baseRefee.getEvalVal().elems[index.value()];
+            nodeVal.getEvalVal().getRef() = &baseRefee.getEvalVal().elems()[index.value()];
         }
         return nodeVal;
     } else if (typeTable->worksAsTypeStr(base.getType().value())) {
-        if (!base.getEvalVal().str.has_value()) {
+        if (!base.getEvalVal().str().has_value()) {
             msgs->errorExprIndexNull(codeLoc);
             return NodeVal();
         }
-        StringPool::Id strId = base.getEvalVal().str.value();
+        StringPool::Id strId = base.getEvalVal().str().value();
         const string &str = stringPool->get(strId);
         if (index.value() > str.size()) {
             msgs->errorExprIndexOutOfBounds(ind.getCodeLoc(), index.value(), str.size()+1);
@@ -656,7 +656,7 @@ NodeVal Evaluator::performOperIndexArr(CodeLoc codeLoc, NodeVal &base, const Nod
 
         // not a ref-val
         EvalVal evalVal = EvalVal::makeVal(resTy, typeTable);
-        evalVal.c8 = str[index.value()];
+        evalVal.c8() = str[index.value()];
         return NodeVal(base.getCodeLoc(), move(evalVal));
     } else if (typeTable->worksAsTypeArrP(base.getType().value())) {
         msgs->errorExprIndexNull(codeLoc);
@@ -673,12 +673,12 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, std::uint64_
     if (NodeVal::isRawVal(base, typeTable)) {
         NodeVal nodeVal = base.getChild(ind);
         if (NodeVal::isRawVal(nodeVal, typeTable)) {
-            nodeVal.getEvalVal().type = resTy;
+            nodeVal.getEvalVal().getType() = resTy;
             if (base.hasRef()) {
                 NodeVal &baseRefee = EvalVal::getRefee(base.getEvalVal(), symbolTable);
-                nodeVal.getEvalVal().ref = &baseRefee.getEvalVal().elems[ind];
+                nodeVal.getEvalVal().getRef() = &baseRefee.getEvalVal().elems()[ind];
             } else {
-                nodeVal.getEvalVal().ref = nullptr;
+                nodeVal.getEvalVal().getRef() = nullptr;
             }
         }
         if (base.isInvokeArg() && nodeVal.getLifetimeInfo().has_value()) {
@@ -688,11 +688,11 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, std::uint64_
         }
         return nodeVal;
     } else {
-        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems[ind], base.getEvalVal().lifetimeInfo);
-        nodeVal.getEvalVal().type = resTy;
+        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems()[ind], base.getEvalVal().getLifetimeInfo());
+        nodeVal.getEvalVal().getType() = resTy;
         if (base.hasRef()) {
             NodeVal &baseRefee = EvalVal::getRefee(base.getEvalVal(), symbolTable);
-            nodeVal.getEvalVal().ref = &baseRefee.getEvalVal().elems[ind];
+            nodeVal.getEvalVal().getRef() = &baseRefee.getEvalVal().elems()[ind];
         }
         return nodeVal;
     }
@@ -726,8 +726,8 @@ NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const
         fl = EvalVal::getValueF(lhs.getEvalVal(), typeTable).value();
         fr = EvalVal::getValueF(rhs.getEvalVal(), typeTable).value();
     } else if (isTypeId) {
-        idl = lhs.getEvalVal().id;
-        idr = rhs.getEvalVal().id;
+        idl = lhs.getEvalVal().id();
+        idr = rhs.getEvalVal().id();
     }
 
     switch (op) {
@@ -739,10 +739,10 @@ NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const
         } else if (isTypeF) {
             if (assignBasedOnTypeF(evalVal, fl.value()+fr.value(), ty)) success = true;
         } else if (isTypeId) {
-            evalVal.id = makeIdConcat(lhs.getEvalVal().id, rhs.getEvalVal().id, bare);
+            evalVal.id() = makeIdConcat(lhs.getEvalVal().id(), rhs.getEvalVal().id(), bare);
             success = true;
         } else if (isTypeRaw) {
-            evalVal.elems = makeRawConcat(lhs.getEvalVal(), rhs.getEvalVal());
+            evalVal.elems() = makeRawConcat(lhs.getEvalVal(), rhs.getEvalVal());
             success = true;
         }
         break;
@@ -780,9 +780,9 @@ NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const
             if (assignBasedOnTypeU(evalVal, ul.value()%ur.value(), ty)) success = true;
         } else if (isTypeF) {
             if (typeTable->worksAsPrimitive(ty, TypeTable::P_F32)) {
-                evalVal.f32 = fmod(lhs.getEvalVal().f32, rhs.getEvalVal().f32);
+                evalVal.f32() = fmod(lhs.getEvalVal().f32(), rhs.getEvalVal().f32());
             } else if (typeTable->worksAsPrimitive(ty, TypeTable::P_F64)) {
-                evalVal.f64 = fmod(lhs.getEvalVal().f64, rhs.getEvalVal().f64);
+                evalVal.f64() = fmod(lhs.getEvalVal().f64(), rhs.getEvalVal().f64());
             }
             success = true;
         }
@@ -894,26 +894,26 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
             return nullopt;
         }
     } else if (typeTable->worksAsTypeC(srcTypeId)) {
-        if (!assignBasedOnTypeI(dstEvalVal, (int64_t) srcEvalVal.c8, dstTypeId) &&
-            !assignBasedOnTypeU(dstEvalVal, (uint64_t) srcEvalVal.c8, dstTypeId) &&
-            !assignBasedOnTypeC(dstEvalVal, srcEvalVal.c8, dstTypeId) &&
-            !assignBasedOnTypeB(dstEvalVal, (bool) srcEvalVal.c8, dstTypeId)) {
+        if (!assignBasedOnTypeI(dstEvalVal, (int64_t) srcEvalVal.c8(), dstTypeId) &&
+            !assignBasedOnTypeU(dstEvalVal, (uint64_t) srcEvalVal.c8(), dstTypeId) &&
+            !assignBasedOnTypeC(dstEvalVal, srcEvalVal.c8(), dstTypeId) &&
+            !assignBasedOnTypeB(dstEvalVal, (bool) srcEvalVal.c8(), dstTypeId)) {
             return nullopt;
         }
     } else if (typeTable->worksAsTypeB(srcTypeId)) {
-        if (!assignBasedOnTypeI(dstEvalVal, srcEvalVal.b ? 1 : 0, dstTypeId) &&
-            !assignBasedOnTypeU(dstEvalVal, srcEvalVal.b ? 1 : 0, dstTypeId) &&
-            !assignBasedOnTypeB(dstEvalVal, srcEvalVal.b, dstTypeId) &&
-            !assignBasedOnTypeId(dstEvalVal, srcEvalVal.b, dstTypeId)) {
+        if (!assignBasedOnTypeI(dstEvalVal, srcEvalVal.b() ? 1 : 0, dstTypeId) &&
+            !assignBasedOnTypeU(dstEvalVal, srcEvalVal.b() ? 1 : 0, dstTypeId) &&
+            !assignBasedOnTypeB(dstEvalVal, srcEvalVal.b(), dstTypeId) &&
+            !assignBasedOnTypeId(dstEvalVal, srcEvalVal.b(), dstTypeId)) {
             return nullopt;
         }
     } else if (typeTable->worksAsTypeStr(srcTypeId)) {
-        if (srcEvalVal.str.has_value()) {
-            const string &str = stringPool->get(srcEvalVal.str.value());
+        if (srcEvalVal.str().has_value()) {
+            const string &str = stringPool->get(srcEvalVal.str().value());
             if (typeTable->worksAsTypeStr(dstTypeId)) {
-                dstEvalVal.str = srcEvalVal.str;
+                dstEvalVal.str() = srcEvalVal.str();
             } else if (typeTable->worksAsTypeB(dstTypeId)) {
-                dstEvalVal.b = true;
+                dstEvalVal.b() = true;
             } else if (typeTable->worksAsTypeCharArrOfLen(dstTypeId, LiteralVal::getStringLen(str))) {
                 optional<EvalVal> arrEvalVal = makeArray(dstTypeId);
                 if (!arrEvalVal.has_value()) { 
@@ -921,7 +921,7 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
                 } else {
                     dstEvalVal = arrEvalVal.value();
                     for (size_t i = 0; i < LiteralVal::getStringLen(str); ++i) {
-                        dstEvalVal.elems[i].getEvalVal().c8 = str[i];
+                        dstEvalVal.elems()[i].getEvalVal().c8() = str[i];
                     }
                 }
             } else {
@@ -949,7 +949,7 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
             }
         } else {
             if (typeTable->isImplicitCastable(typeTable->extractFixedTypeBaseType(srcTypeId), typeTable->extractFixedTypeBaseType(dstTypeId))) {
-                if (!assignBasedOnTypeP(dstEvalVal, srcEvalVal.p, dstTypeId)) {
+                if (!assignBasedOnTypeP(dstEvalVal, srcEvalVal.p(), dstTypeId)) {
                     return nullopt;
                 }
             } else {
@@ -959,10 +959,10 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
     } else if (typeTable->worksAsPrimitive(srcTypeId, TypeTable::P_TYPE)) {
         if (typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_TYPE)) {
             dstEvalVal = EvalVal::copyNoRef(srcEvalVal, LifetimeInfo());
-            dstEvalVal.type = dstTypeId;
+            dstEvalVal.getType() = dstTypeId;
         } else if (typeTable->worksAsPrimitive(dstTypeId, TypeTable::P_ID)) {
-            optional<NamePool::Id> id = makeIdFromTy(srcEvalVal.ty);
-            if (id.has_value()) dstEvalVal.id = id.value();
+            optional<NamePool::Id> id = makeIdFromTy(srcEvalVal.ty());
+            if (id.has_value()) dstEvalVal.id() = id.value();
             else return nullopt;
         } else {
             return nullopt;
@@ -975,10 +975,10 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
             if (tupSrc.elements.size() != tupDst.elements.size()) return nullopt;
 
             for (size_t i = 0; i < tupSrc.elements.size(); ++i) {
-                optional<NodeVal> elemCast = makeCast(codeLoc, srcEvalVal.elems[i], tupSrc.elements[i], tupDst.elements[i]);
+                optional<NodeVal> elemCast = makeCast(codeLoc, srcEvalVal.elems()[i], tupSrc.elements[i], tupDst.elements[i]);
                 if (!elemCast.has_value()) return nullopt;
 
-                dstEvalVal.elems[i] = move(elemCast.value());
+                dstEvalVal.elems()[i] = move(elemCast.value());
             }
         } else {
             return nullopt;
@@ -993,7 +993,7 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
                 return nullopt;
         } else if (typeTable->isImplicitCastable(typeTable->extractFixedTypeBaseType(srcTypeId), typeTable->extractFixedTypeBaseType(dstTypeId))) {
             dstEvalVal = EvalVal::copyNoRef(srcEvalVal, LifetimeInfo());
-            dstEvalVal.type = dstTypeId;
+            dstEvalVal.getType() = dstTypeId;
         } else {
             return nullopt;
         }
@@ -1002,14 +1002,14 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
         if (typeTable->isImplicitCastable(typeTable->extractFixedTypeBaseType(srcTypeId), typeTable->extractFixedTypeBaseType(dstTypeId))) {
             // no action is needed in case of a cast
             dstEvalVal = EvalVal::copyNoRef(srcEvalVal, LifetimeInfo());
-            dstEvalVal.type = dstTypeId;
+            dstEvalVal.getType() = dstTypeId;
         } else {
             return nullopt;
         }
     }
 
-    dstEvalVal.lifetimeInfo = LifetimeInfo();
-    dstEvalVal.lifetimeInfo.noDrop = srcEvalVal.lifetimeInfo.noDrop;
+    dstEvalVal.getLifetimeInfo() = LifetimeInfo();
+    dstEvalVal.getLifetimeInfo().noDrop = srcEvalVal.getLifetimeInfo().noDrop;
 
     return NodeVal(codeLoc, move(dstEvalVal));
 }
@@ -1047,12 +1047,12 @@ NamePool::Id Evaluator::makeIdConcat(NamePool::Id lhs, NamePool::Id rhs, bool ba
 
 vector<NodeVal> Evaluator::makeRawConcat(const EvalVal &lhs, const EvalVal &rhs) const {
     vector<NodeVal> elems;
-    elems.reserve(lhs.elems.size()+rhs.elems.size());
+    elems.reserve(lhs.elems().size()+rhs.elems().size());
 
-    for (const auto &it : lhs.elems) {
+    for (const auto &it : lhs.elems()) {
         elems.push_back(it);
     }
-    for (const auto &it : rhs.elems) {
+    for (const auto &it : rhs.elems()) {
         elems.push_back(it);
     }
 
@@ -1061,13 +1061,13 @@ vector<NodeVal> Evaluator::makeRawConcat(const EvalVal &lhs, const EvalVal &rhs)
 
 bool Evaluator::assignBasedOnTypeI(EvalVal &val, int64_t x, TypeTable::Id ty) {
     if (typeTable->worksAsPrimitive(ty, TypeTable::P_I8)) {
-        val.i8 = (int8_t) x;
+        val.i8() = (int8_t) x;
     } else if (typeTable->worksAsPrimitive(ty, TypeTable::P_I16)) {
-        val.i16 = (int16_t) x;
+        val.i16() = (int16_t) x;
     } else if (typeTable->worksAsPrimitive(ty, TypeTable::P_I32)) {
-        val.i32 = (int32_t) x;
+        val.i32() = (int32_t) x;
     } else if (typeTable->worksAsPrimitive(ty, TypeTable::P_I64)) {
-        val.i64 = (int64_t) x;
+        val.i64() = (int64_t) x;
     } else {
         return false;
     }
@@ -1077,13 +1077,13 @@ bool Evaluator::assignBasedOnTypeI(EvalVal &val, int64_t x, TypeTable::Id ty) {
 
 bool Evaluator::assignBasedOnTypeU(EvalVal &val, uint64_t x, TypeTable::Id ty) {
     if (typeTable->worksAsPrimitive(ty, TypeTable::P_U8)) {
-        val.u8 = (uint8_t) x;
+        val.u8() = (uint8_t) x;
     } else if (typeTable->worksAsPrimitive(ty, TypeTable::P_U16)) {
-        val.u16 = (uint16_t) x;
+        val.u16() = (uint16_t) x;
     } else if (typeTable->worksAsPrimitive(ty, TypeTable::P_U32)) {
-        val.u32 = (uint32_t) x;
+        val.u32() = (uint32_t) x;
     } else if (typeTable->worksAsPrimitive(ty, TypeTable::P_U64)) {
-        val.u64 = (uint64_t) x;
+        val.u64() = (uint64_t) x;
     } else {
         return false;
     }
@@ -1093,9 +1093,9 @@ bool Evaluator::assignBasedOnTypeU(EvalVal &val, uint64_t x, TypeTable::Id ty) {
 
 bool Evaluator::assignBasedOnTypeF(EvalVal &val, double x, TypeTable::Id ty) {
     if (typeTable->worksAsPrimitive(ty, TypeTable::P_F32)) {
-        val.f32 = (float) x;
+        val.f32() = (float) x;
     } else if (typeTable->worksAsPrimitive(ty, TypeTable::P_F64)) {
-        val.f64 = (double) x;
+        val.f64() = (double) x;
     } else {
         return false;
     }
@@ -1105,7 +1105,7 @@ bool Evaluator::assignBasedOnTypeF(EvalVal &val, double x, TypeTable::Id ty) {
 
 bool Evaluator::assignBasedOnTypeC(EvalVal &val, char x, TypeTable::Id ty) {
     if (typeTable->worksAsPrimitive(ty, TypeTable::P_C8)) {
-        val.c8 = x;
+        val.c8() = x;
     } else {
         return false;
     }
@@ -1115,7 +1115,7 @@ bool Evaluator::assignBasedOnTypeC(EvalVal &val, char x, TypeTable::Id ty) {
 
 bool Evaluator::assignBasedOnTypeB(EvalVal &val, bool x, TypeTable::Id ty) {
     if (typeTable->worksAsPrimitive(ty, TypeTable::P_BOOL)) {
-        val.b = x;
+        val.b() = x;
     } else {
         return false;
     }
@@ -1125,7 +1125,7 @@ bool Evaluator::assignBasedOnTypeB(EvalVal &val, bool x, TypeTable::Id ty) {
 
 bool Evaluator::assignBasedOnTypeP(EvalVal &val, EvalVal::Pointer x, TypeTable::Id ty) {
     if (typeTable->worksAsTypeP(ty)) {
-        val.p = x;
+        val.p() = x;
     } else {
         return false;
     }
@@ -1135,7 +1135,7 @@ bool Evaluator::assignBasedOnTypeP(EvalVal &val, EvalVal::Pointer x, TypeTable::
 
 bool Evaluator::assignBasedOnTypeId(EvalVal &val, std::uint64_t x, TypeTable::Id ty) {
     if (typeTable->worksAsPrimitive(ty, TypeTable::P_ID)) {
-        val.id = makeIdFromU(x);
+        val.id() = makeIdFromU(x);
     } else {
         return false;
     }
@@ -1145,7 +1145,7 @@ bool Evaluator::assignBasedOnTypeId(EvalVal &val, std::uint64_t x, TypeTable::Id
 
 bool Evaluator::assignBasedOnTypeId(EvalVal &val, bool x, TypeTable::Id ty) {
     if (typeTable->worksAsPrimitive(ty, TypeTable::P_ID)) {
-        val.id = makeIdFromB(x);
+        val.id() = makeIdFromB(x);
     } else {
         return false;
     }

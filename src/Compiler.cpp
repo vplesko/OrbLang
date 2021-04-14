@@ -853,7 +853,7 @@ bool Compiler::doCondBlockJump(CodeLoc codeLoc, const NodeVal &cond, optional<Na
 }
 
 NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
-    TypeTable::Id ty = eval.type;
+    TypeTable::Id ty = eval.getType();
 
     llvm::Constant *llvmConst = nullptr;
     if (EvalVal::isI(eval, typeTable)) {
@@ -863,24 +863,24 @@ NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
     } else if (EvalVal::isF(eval, typeTable)) {
         llvmConst = llvm::ConstantFP::get(makeLlvmType(ty), EvalVal::getValueF(eval, typeTable).value());
     } else if (EvalVal::isC(eval, typeTable)) {
-        llvmConst = llvm::ConstantInt::get(makeLlvmType(ty), (uint8_t) eval.c8, false);
+        llvmConst = llvm::ConstantInt::get(makeLlvmType(ty), (uint8_t) eval.c8(), false);
     } else if (EvalVal::isB(eval, typeTable)) {
-        llvmConst = getLlvmConstB(eval.b);
+        llvmConst = getLlvmConstB(eval.b());
     } else if (EvalVal::isNull(eval, typeTable)) {
         llvmConst = llvm::ConstantPointerNull::get((llvm::PointerType*) makeLlvmType(ty));
     } else if (EvalVal::isNonNullStr(eval, typeTable)) {
-        llvmConst = stringPool->getLlvm(eval.str.value());
+        llvmConst = stringPool->getLlvm(eval.str().value());
         if (llvmConst == nullptr) {
-            llvmConst = makeLlvmConstString(stringPool->get(eval.str.value()));
-            stringPool->setLlvm(eval.str.value(), llvmConst);
+            llvmConst = makeLlvmConstString(stringPool->get(eval.str().value()));
+            stringPool->setLlvm(eval.str().value(), llvmConst);
         }
     } else if (EvalVal::isArr(eval, typeTable)) {
-        llvm::ArrayType *llvmArrayType = (llvm::ArrayType*) makeLlvmTypeOrError(codeLoc, eval.type);
+        llvm::ArrayType *llvmArrayType = (llvm::ArrayType*) makeLlvmTypeOrError(codeLoc, eval.getType());
         if (llvmArrayType == nullptr) return NodeVal();
 
         vector<llvm::Constant*> llvmConsts;
-        llvmConsts.reserve(eval.elems.size());
-        for (const NodeVal &elem : eval.elems) {
+        llvmConsts.reserve(eval.elems().size());
+        for (const NodeVal &elem : eval.elems()) {
             NodeVal elemPromo = promoteEvalVal(codeLoc, elem.getEvalVal());
             if (elemPromo.isInvalid()) return NodeVal();
             llvmConsts.push_back((llvm::Constant*) elemPromo.getLlvmVal().val);
@@ -889,8 +889,8 @@ NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
         llvmConst = llvm::ConstantArray::get(llvmArrayType, llvmConsts);
     } else if (EvalVal::isTuple(eval, typeTable)) {
         vector<llvm::Constant*> llvmConsts;
-        llvmConsts.reserve(eval.elems.size());
-        for (const NodeVal &elem : eval.elems) {
+        llvmConsts.reserve(eval.elems().size());
+        for (const NodeVal &elem : eval.elems()) {
             NodeVal elemPromo = promoteEvalVal(codeLoc, elem.getEvalVal());
             if (elemPromo.isInvalid()) return NodeVal();
             llvmConsts.push_back((llvm::Constant*) elemPromo.getLlvmVal().val);
@@ -898,12 +898,12 @@ NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
 
         llvmConst = llvm::ConstantStruct::getAnon(llvmContext, llvmConsts);
     } else if (EvalVal::isDataType(eval, typeTable)) {
-        llvm::StructType *llvmStructType = (llvm::StructType*) makeLlvmTypeOrError(codeLoc, eval.type);
+        llvm::StructType *llvmStructType = (llvm::StructType*) makeLlvmTypeOrError(codeLoc, eval.getType());
         if (llvmStructType == nullptr) return NodeVal();
 
         vector<llvm::Constant*> llvmConsts;
-        llvmConsts.reserve(eval.elems.size());
-        for (const NodeVal &elem : eval.elems) {
+        llvmConsts.reserve(eval.elems().size());
+        for (const NodeVal &elem : eval.elems()) {
             NodeVal elemPromo = promoteEvalVal(codeLoc, elem.getEvalVal());
             if (elemPromo.isInvalid()) return NodeVal();
             llvmConsts.push_back((llvm::Constant*) elemPromo.getLlvmVal().val);
@@ -927,7 +927,7 @@ NodeVal Compiler::promoteEvalVal(CodeLoc codeLoc, const EvalVal &eval) {
 
     LlvmVal llvmVal(ty);
     llvmVal.val = llvmConst;
-    llvmVal.lifetimeInfo.noDrop = eval.lifetimeInfo.noDrop;
+    llvmVal.lifetimeInfo.noDrop = eval.getLifetimeInfo().noDrop;
 
     return NodeVal(codeLoc, llvmVal);
 }

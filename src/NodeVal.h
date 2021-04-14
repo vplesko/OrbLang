@@ -13,7 +13,6 @@
 #include "UndecidedCallableVal.h"
 #include "LifetimeInfo.h"
 
-// TODO reduce the size of this type
 class NodeVal {
     CodeLoc codeLoc;
 
@@ -84,9 +83,9 @@ public:
     bool isEvalVal() const { return std::holds_alternative<EvalVal>(value); }
     EvalVal& getEvalVal() { return std::get<EvalVal>(value); }
     const EvalVal& getEvalVal() const { return std::get<EvalVal>(value); }
-    std::size_t getChildrenCnt() const { return getEvalVal().elems.size(); }
-    NodeVal& getChild(std::size_t ind) { return getEvalVal().elems[ind]; }
-    const NodeVal& getChild(std::size_t ind) const { return getEvalVal().elems[ind]; }
+    std::size_t getChildrenCnt() const { return getEvalVal().elems().size(); }
+    NodeVal& getChild(std::size_t ind) { return getEvalVal().elems()[ind]; }
+    const NodeVal& getChild(std::size_t ind) const { return getEvalVal().elems()[ind]; }
     static void addChild(NodeVal &node, NodeVal c, TypeTable *typeTable);
     static void addChildren(NodeVal &node, std::vector<NodeVal> c, TypeTable *typeTable);
     static void addChildren(NodeVal &node, std::vector<NodeVal>::iterator start, std::vector<NodeVal>::iterator end, TypeTable *typeTable);

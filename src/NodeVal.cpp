@@ -58,18 +58,18 @@ bool NodeVal::isEscaped() const {
 
 EscapeScore NodeVal::getEscapeScore() const {
     if (isLiteralVal()) return getLiteralVal().escapeScore;
-    if (isEvalVal()) return getEvalVal().escapeScore;
+    if (isEvalVal()) return getEvalVal().getEscapeScore();
     return 0;
 }
 
 optional<TypeTable::Id> NodeVal::getType() const {
-    if (isEvalVal()) return getEvalVal().type;
+    if (isEvalVal()) return getEvalVal().getType();
     if (isLlvmVal()) return getLlvmVal().type;
     return nullopt;
 }
 
 bool NodeVal::hasRef() const {
-    if (isEvalVal()) return !EvalVal::isNull(getEvalVal().ref);
+    if (isEvalVal()) return getEvalVal().hasRef();
     if (isLlvmVal()) return getLlvmVal().ref != nullptr;
     return false;
 }
@@ -86,20 +86,20 @@ optional<VarId> NodeVal::getVarId() const {
 }
 
 bool NodeVal::isNoDrop() const {
-    if (isEvalVal()) return getEvalVal().lifetimeInfo.noDrop;
+    if (isEvalVal()) return getEvalVal().getLifetimeInfo().noDrop;
     else if (isLlvmVal()) return getLlvmVal().lifetimeInfo.noDrop;
     else return false;
 }
 
 bool NodeVal::isInvokeArg() const {
-    if (isEvalVal()) return getEvalVal().lifetimeInfo.invokeArg;
+    if (isEvalVal()) return getEvalVal().getLifetimeInfo().invokeArg;
     else if (isLlvmVal()) return getLlvmVal().lifetimeInfo.invokeArg;
     else return false;
 }
 
 bool NodeVal::setNoDrop(bool b) {
     if (isEvalVal()) {
-        getEvalVal().lifetimeInfo.noDrop = b;
+        getEvalVal().getLifetimeInfo().noDrop = b;
         return true;
     } else if (isLlvmVal()) {
         getLlvmVal().lifetimeInfo.noDrop = b;
@@ -110,14 +110,14 @@ bool NodeVal::setNoDrop(bool b) {
 }
 
 optional<LifetimeInfo> NodeVal::getLifetimeInfo() const {
-    if (isEvalVal()) return getEvalVal().lifetimeInfo;
+    if (isEvalVal()) return getEvalVal().getLifetimeInfo();
     else if (isLlvmVal()) return getLlvmVal().lifetimeInfo;
     else return nullopt;
 }
 
 bool NodeVal::setLifetimeInfo(LifetimeInfo lifetimeInfo) {
     if (isEvalVal()) {
-        getEvalVal().lifetimeInfo = lifetimeInfo;
+        getEvalVal().getLifetimeInfo() = lifetimeInfo;
         return true;
     } else if (isLlvmVal()) {
         getLlvmVal().lifetimeInfo = lifetimeInfo;
@@ -128,10 +128,10 @@ bool NodeVal::setLifetimeInfo(LifetimeInfo lifetimeInfo) {
 }
 
 void NodeVal::addChild(NodeVal &node, NodeVal c, TypeTable *typeTable) {
-    if (isRawVal(c, typeTable) && typeTable->worksAsTypeCn(c.getEvalVal().type))
-        node.getEvalVal().type = typeTable->addTypeCnOf(node.getEvalVal().type);
+    if (isRawVal(c, typeTable) && typeTable->worksAsTypeCn(c.getEvalVal().getType()))
+        node.getEvalVal().getType() = typeTable->addTypeCnOf(node.getEvalVal().getType());
 
-    node.getEvalVal().elems.push_back(move(c));
+    node.getEvalVal().elems().push_back(move(c));
 }
 
 void NodeVal::addChildren(NodeVal &node, vector<NodeVal> c, TypeTable *typeTable) {
@@ -139,16 +139,16 @@ void NodeVal::addChildren(NodeVal &node, vector<NodeVal> c, TypeTable *typeTable
 }
 
 void NodeVal::addChildren(NodeVal &node, vector<NodeVal>::iterator start, vector<NodeVal>::iterator end, TypeTable *typeTable) {
-    node.getEvalVal().elems.reserve(node.getChildrenCnt()+(end-start));
+    node.getEvalVal().elems().reserve(node.getChildrenCnt()+(end-start));
 
     bool setCn = false;
     for (auto it = start; it != end; ++it) {
-        if (isRawVal(*it, typeTable) && typeTable->worksAsTypeCn(it->getEvalVal().type)) setCn = true;
+        if (isRawVal(*it, typeTable) && typeTable->worksAsTypeCn(it->getEvalVal().getType())) setCn = true;
 
-        node.getEvalVal().elems.push_back(move(*it));
+        node.getEvalVal().elems().push_back(move(*it));
     }
 
-    if (setCn) node.getEvalVal().type = typeTable->addTypeCnOf(node.getEvalVal().type);
+    if (setCn) node.getEvalVal().getType() = typeTable->addTypeCnOf(node.getEvalVal().getType());
 }
 
 void NodeVal::setTypeAttr(NodeVal t) {
@@ -160,11 +160,11 @@ void NodeVal::setNonTypeAttrs(NodeVal a) {
 }
 
 bool NodeVal::isEmpty(const NodeVal &node, const TypeTable *typeTable) {
-    return isRawVal(node, typeTable) && node.getEvalVal().elems.empty();
+    return isRawVal(node, typeTable) && node.getEvalVal().elems().empty();
 }
 
 bool NodeVal::isLeaf(const NodeVal &node, const TypeTable *typeTable) {
-    return !isRawVal(node, typeTable) || node.getEvalVal().elems.empty();
+    return !isRawVal(node, typeTable) || node.getEvalVal().elems().empty();
 }
 
 bool NodeVal::isRawVal(const NodeVal &node, const TypeTable *typeTable) {
@@ -195,9 +195,9 @@ void NodeVal::escape(NodeVal &node, const TypeTable *typeTable, EscapeScore amou
     if (node.isLiteralVal()) {
         node.getLiteralVal().escapeScore += amount;
     } else if (node.isEvalVal()) {
-        node.getEvalVal().escapeScore += amount;
+        node.getEvalVal().getEscapeScore() += amount;
         if (isRawVal(node, typeTable)) {
-            for (auto &child : node.getEvalVal().elems) {
+            for (auto &child : node.getEvalVal().elems()) {
                 escape(child, typeTable, amount);
             }
         }
@@ -217,12 +217,12 @@ void NodeVal::unescape(NodeVal &node, const TypeTable *typeTable, bool total) {
         else node.getLiteralVal().escapeScore -= 1;
     } else if (node.isEvalVal()) {
         if (isRawVal(node, typeTable)) {
-            for (auto it = node.getEvalVal().elems.rbegin(); it != node.getEvalVal().elems.rend(); ++it) {
+            for (auto it = node.getEvalVal().elems().rbegin(); it != node.getEvalVal().elems().rend(); ++it) {
                 unescape(*it, typeTable, total);
             }
         }
-        if (total) node.getEvalVal().escapeScore = 0;
-        else node.getEvalVal().escapeScore -= 1;
+        if (total) node.getEvalVal().getEscapeScore() = 0;
+        else node.getEvalVal().getEscapeScore() -= 1;
     } else if (node.isAttrMap()) {
         for (auto &it : node.getAttrMap().attrMap) {
             unescape(*it.second, typeTable, total);
@@ -240,7 +240,7 @@ void NodeVal::clearInvokeArg(NodeVal &node, const TypeTable *typeTable) {
         node.setLifetimeInfo(lifetimeInfo);
     }
     if (isRawVal(node, typeTable)) {
-        for (auto it = node.getEvalVal().elems.begin(); it != node.getEvalVal().elems.end(); ++it) {
+        for (auto it = node.getEvalVal().elems().begin(); it != node.getEvalVal().elems().end(); ++it) {
             clearInvokeArg(*it, typeTable);
         }
     }

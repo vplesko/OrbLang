@@ -146,7 +146,7 @@ NodeVal Processor::processNonLeafEscaped(const NodeVal &node) {
     NodeVal::copyNonValFieldsLeaf(nodeValRaw, node, typeTable);
     NodeVal::unescape(nodeValRaw, typeTable);
 
-    for (const auto &it : node.getEvalVal().elems) {
+    for (const auto &it : node.getEvalVal().elems()) {
         NodeVal childProc = processNode(it);
         if (childProc.isInvalid()) return NodeVal();
 
@@ -171,7 +171,7 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
     EvalVal evalTy = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
 
     if (canBeTypeDescrDecor(second)) {
-        TypeTable::TypeDescr descr(starting.getEvalVal().ty);
+        TypeTable::TypeDescr descr(starting.getEvalVal().ty());
         if (!applyTypeDescrDecor(descr, second)) return NodeVal();
         for (size_t i = 2; i < node.getChildrenCnt(); ++i) {
             NodeVal decor = processForTypeArg(node.getChild(i));
@@ -179,7 +179,7 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
             if (!applyTypeDescrDecor(descr, decor)) return NodeVal();
         }
 
-        evalTy.ty = typeTable->addTypeDescr(move(descr));
+        evalTy.ty() = typeTable->addTypeDescr(move(descr));
     } else {
         TypeTable::Tuple tup;
         tup.elements.reserve(node.getChildrenCnt());
@@ -197,14 +197,14 @@ NodeVal Processor::processType(const NodeVal &node, const NodeVal &starting) {
             return NodeVal();
         }
 
-        evalTy.ty = tupTypeId.value();
+        evalTy.ty() = tupTypeId.value();
     }
 
     return NodeVal(node.getCodeLoc(), move(evalTy));
 }
 
 NodeVal Processor::processId(const NodeVal &node) {
-    NamePool::Id id = node.getEvalVal().id;
+    NamePool::Id id = node.getEvalVal().id();
 
     optional<VarId> varIdOpt = symbolTable->getVarId(id);
 
@@ -221,7 +221,7 @@ NodeVal Processor::processId(const NodeVal &node) {
         return NodeVal(node.getCodeLoc(), spec);
     } else if (typeTable->isType(id)) {
         EvalVal eval = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
-        eval.ty = typeTable->getTypeId(id).value();
+        eval.ty() = typeTable->getTypeId(id).value();
 
         return NodeVal(node.getCodeLoc(), move(eval));
     } else {
@@ -252,14 +252,14 @@ NodeVal Processor::processSym(const NodeVal &node) {
         const NodeVal &nodePair = NodeVal::isLeaf(entry, typeTable) ? entry : entry.getChild(0);
         pair<NodeVal, optional<NodeVal>> pair = processForIdTypePair(nodePair);
         if (pair.first.isInvalid()) return NodeVal();
-        NamePool::Id id = pair.first.getEvalVal().id;
+        NamePool::Id id = pair.first.getEvalVal().id();
         if (!symbolTable->nameAvailable(id, namePool, typeTable)) {
             msgs->errorNameTaken(nodePair.getCodeLoc(), id);
             return NodeVal();
         }
         optional<TypeTable::Id> optType;
         if (pair.second.has_value()) {
-            optType = pair.second.value().getEvalVal().ty;
+            optType = pair.second.value().getEvalVal().ty();
             if (!checkIsNotUndefType(pair.second.value().getCodeLoc(), optType.value(), true)) return NodeVal();
         }
         optional<bool> attrEvaluated = getAttributeForBool(pair.first, "evaluated");
@@ -341,12 +341,12 @@ NodeVal Processor::processCast(const NodeVal &node) {
 
     NodeVal ty = processAndCheckIsType(node.getChild(1));
     if (ty.isInvalid()) return NodeVal();
-    if (!checkIsNotUndefType(ty.getCodeLoc(), ty.getEvalVal().ty, true)) return NodeVal();
+    if (!checkIsNotUndefType(ty.getCodeLoc(), ty.getEvalVal().ty(), true)) return NodeVal();
 
     NodeVal value = processNode(node.getChild(2));
     if (value.isInvalid()) return NodeVal();
 
-    NodeVal ret = castNode(node.getCodeLoc(), value, ty.getCodeLoc(), ty.getEvalVal().ty);
+    NodeVal ret = castNode(node.getCodeLoc(), value, ty.getCodeLoc(), ty.getEvalVal().ty());
     if (ret.isInvalid()) return NodeVal();
 
     return ret;
@@ -377,7 +377,7 @@ NodeVal Processor::processBlock(const NodeVal &node, const NodeVal &starting) {
             return NodeVal();
         }
         if (!checkIsEmpty(nodeName, false)) {
-            name = nodeName.getEvalVal().id;
+            name = nodeName.getEvalVal().id();
             if (attrBare.value()) {
                 msgs->errorBlockBareNameType(nodeName.getCodeLoc());
                 return NodeVal();
@@ -401,7 +401,7 @@ NodeVal Processor::processBlock(const NodeVal &node, const NodeVal &starting) {
                 return NodeVal();
             }
 
-            type = nodeType.getEvalVal().ty;
+            type = nodeType.getEvalVal().ty();
             if (!checkIsNotUndefType(nodeType.getCodeLoc(), type.value(), true)) return NodeVal();
             if (attrBare.value()) {
                 msgs->errorBlockBareNameType(nodeType.getCodeLoc());
@@ -450,7 +450,7 @@ NodeVal Processor::processExit(const NodeVal &node) {
     if (hasName) {
         NodeVal nodeName = processForIdValue(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
-        name = nodeName.getEvalVal().id;
+        name = nodeName.getEvalVal().id();
     }
 
     SymbolTable::Block targetBlock;
@@ -493,7 +493,7 @@ NodeVal Processor::processLoop(const NodeVal &node) {
     if (hasName) {
         NodeVal nodeName = processForIdValue(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
-        name = nodeName.getEvalVal().id;
+        name = nodeName.getEvalVal().id();
     }
 
     SymbolTable::Block targetBlock;
@@ -532,7 +532,7 @@ NodeVal Processor::processPass(const NodeVal &node) {
     if (hasName) {
         NodeVal nodeName = processForIdValue(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
-        name = nodeName.getEvalVal().id;
+        name = nodeName.getEvalVal().id();
     }
 
     SymbolTable::Block targetBlock;
@@ -580,7 +580,7 @@ NodeVal Processor::processFixed(const NodeVal &node, const NodeVal &starting) {
 
     NodeVal nodeName = processForIdValue(node.getChild(1));
     if (nodeName.isInvalid()) return NodeVal();
-    NamePool::Id name = nodeName.getEvalVal().id;
+    NamePool::Id name = nodeName.getEvalVal().id();
     if (!symbolTable->nameAvailable(name, namePool, typeTable, true, true)) {
         msgs->errorNameTaken(nodeName.getCodeLoc(), name);
         return NodeVal();
@@ -589,7 +589,7 @@ NodeVal Processor::processFixed(const NodeVal &node, const NodeVal &starting) {
     NodeVal nodeTy = processNode(node.getChild(2));
     if (nodeTy.isInvalid()) return NodeVal();
     if (!checkIsType(nodeTy, true)) return NodeVal();
-    TypeTable::Id ty = nodeTy.getEvalVal().ty;
+    TypeTable::Id ty = nodeTy.getEvalVal().ty();
 
     TypeTable::FixedType fixed;
     fixed.name = name;
@@ -626,7 +626,7 @@ NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
 
     NodeVal nodeName = processForIdValue(node.getChild(indName));
     if (nodeName.isInvalid()) return NodeVal();
-    dataType.name = nodeName.getEvalVal().id;
+    dataType.name = nodeName.getEvalVal().id();
     if (!symbolTable->nameAvailable(dataType.name, namePool, typeTable, true, true)) {
         optional<TypeTable::Id> oldTy = typeTable->getTypeId(dataType.name);
         if (!oldTy.has_value() || !typeTable->isDataType(oldTy.value())) {
@@ -657,14 +657,14 @@ NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
             pair<NodeVal, optional<NodeVal>> elem = processForIdTypePair(nodeElem);
             if (elem.first.isInvalid()) return NodeVal();
 
-            NamePool::Id elemName = elem.first.getEvalVal().id;
+            NamePool::Id elemName = elem.first.getEvalVal().id();
 
             if (!elem.second.has_value()) {
                 msgs->errorMissingTypeAttribute(nodeElem.getCodeLoc());
                 return NodeVal();
             }
 
-            TypeTable::Id elemType = elem.second.value().getEvalVal().ty;
+            TypeTable::Id elemType = elem.second.value().getEvalVal().ty();
             if (typeTable->worksAsTypeCn(elemType)) {
                 msgs->errorDataCnElement(elem.second.value().getCodeLoc());
                 return NodeVal();
@@ -830,11 +830,11 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
             return NodeVal();
         }
     } else {
-        if (!starting.getEvalVal().m.has_value()) {
+        if (!starting.getEvalVal().m().has_value()) {
             msgs->errorMacroNoValue(starting.getCodeLoc());
             return NodeVal();
         }
-        macroId = starting.getEvalVal().m;
+        macroId = starting.getEvalVal().m();
     }
 
     const MacroValue &macroVal = symbolTable->getMacro(macroId.value());
@@ -906,7 +906,7 @@ NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
         NodeVal nodeName = processForIdValue(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
         nameCodeLoc = nodeName.getCodeLoc();
-        name = nodeName.getEvalVal().id;
+        name = nodeName.getEvalVal().id();
         if (!symbolTable->nameAvailable(name, namePool, typeTable, true) &&
             !symbolTable->isFuncName(name)) {
             msgs->errorFuncNameTaken(nameCodeLoc, name);
@@ -951,14 +951,14 @@ NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
         pair<NodeVal, optional<NodeVal>> arg = processForIdTypePair(nodeArg);
         if (arg.first.isInvalid()) return NodeVal();
 
-        NamePool::Id argId = arg.first.getEvalVal().id;
+        NamePool::Id argId = arg.first.getEvalVal().id();
 
         if (!arg.second.has_value()) {
             msgs->errorMissingTypeAttribute(nodeArg.getCodeLoc());
             return NodeVal();
         }
 
-        TypeTable::Id argTy = arg.second.value().getEvalVal().ty;
+        TypeTable::Id argTy = arg.second.value().getEvalVal().ty();
         if (isDef && !checkIsNotUndefType(arg.second.value().getCodeLoc(), argTy, true)) return NodeVal();
 
         optional<bool> attrNoDrop = getAttributeForBool(arg.first, "noDrop");
@@ -981,7 +981,7 @@ NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
         if (!checkIsEmpty(ty, false)) {
             if (!checkIsType(ty, true)) return NodeVal();
 
-            retType = ty.getEvalVal().ty;
+            retType = ty.getEvalVal().ty();
             if (isDef && !checkIsNotUndefType(nodeRetType.getCodeLoc(), retType.value(), true)) return NodeVal();
         }
     }
@@ -1113,7 +1113,7 @@ NodeVal Processor::processMac(const NodeVal &node, const NodeVal &starting) {
         NodeVal nodeName = processForIdValue(node.getChild(indName));
         if (nodeName.isInvalid()) return NodeVal();
         nameCodeLoc = nodeName.getCodeLoc();
-        name = nodeName.getEvalVal().id;
+        name = nodeName.getEvalVal().id();
         if (!symbolTable->nameAvailable(name, namePool, typeTable, true) &&
             !symbolTable->isMacroName(name)) {
             msgs->errorMacroNameTaken(nameCodeLoc, name);
@@ -1142,7 +1142,7 @@ NodeVal Processor::processMac(const NodeVal &node, const NodeVal &starting) {
         if (arg.isInvalid()) return NodeVal();
         if (arg.hasTypeAttr()) msgs->warnMacroArgTyped(nodeArg.getCodeLoc());
 
-        NamePool::Id argId = arg.getEvalVal().id;
+        NamePool::Id argId = arg.getEvalVal().id();
         argNames.push_back(argId);
 
         optional<bool> isPreproc = getAttributeForBool(arg, "preprocess");
@@ -1332,7 +1332,7 @@ NodeVal Processor::processImport(const NodeVal &node, bool topmost) {
         return NodeVal();
     }
 
-    return NodeVal(node.getCodeLoc(), file.getEvalVal().str.value());
+    return NodeVal(node.getCodeLoc(), file.getEvalVal().str().value());
 }
 
 NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) {
@@ -1382,20 +1382,20 @@ NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) 
         } else if (EvalVal::isF(evalVal, typeTable)) {
             msgs->userMessage(EvalVal::getValueF(evalVal, typeTable).value());
         } else if (EvalVal::isC(evalVal, typeTable)) {
-            msgs->userMessage(evalVal.c8);
+            msgs->userMessage(evalVal.c8());
         } else if (EvalVal::isB(evalVal, typeTable)) {
-            msgs->userMessage(evalVal.b);
+            msgs->userMessage(evalVal.b());
         } else if (EvalVal::isId(evalVal, typeTable)) {
-            msgs->userMessage(evalVal.id);
+            msgs->userMessage(evalVal.id());
         } else if (EvalVal::isType(evalVal, typeTable)) {
-            msgs->userMessage(evalVal.ty);
+            msgs->userMessage(evalVal.ty());
         } else if (EvalVal::isNull(evalVal, typeTable)) {
             msgs->userMessageNull();
         } else if (EvalVal::isNonNullStr(evalVal, typeTable)) {
-            msgs->userMessage(evalVal.str.value());
+            msgs->userMessage(evalVal.str().value());
         } else {
             msgs->userMessageEnd();
-            msgs->errorMessageBadType(opers[i].getCodeLoc(), evalVal.type);
+            msgs->errorMessageBadType(opers[i].getCodeLoc(), evalVal.getType());
             return NodeVal();
         }
     }
@@ -1455,7 +1455,7 @@ NodeVal Processor::processLenOf(const NodeVal &node) {
     if (!checkHasType(operand, true)) return NodeVal();
 
     TypeTable::Id ty;
-    if (typeTable->worksAsPrimitive(operand.getType().value(), TypeTable::P_TYPE)) ty = operand.getEvalVal().ty;
+    if (typeTable->worksAsPrimitive(operand.getType().value(), TypeTable::P_TYPE)) ty = operand.getEvalVal().ty();
     else ty = operand.getType().value();
 
     uint64_t len;
@@ -1474,7 +1474,7 @@ NodeVal Processor::processLenOf(const NodeVal &node) {
 
         len = dataType.elements.size();
     } else if (checkIsEvalVal(operand, false) && EvalVal::isNonNullStr(operand.getEvalVal(), typeTable)) {
-        len = LiteralVal::getStringLen(stringPool->get(operand.getEvalVal().str.value()));
+        len = LiteralVal::getStringLen(stringPool->get(operand.getEvalVal().str().value()));
     } else {
         msgs->errorLenOfBadType(node.getCodeLoc(), ty);
         return NodeVal();
@@ -1496,7 +1496,7 @@ NodeVal Processor::processSizeOf(const NodeVal &node) {
     if (!checkHasType(operand, true)) return NodeVal();
 
     TypeTable::Id ty;
-    if (typeTable->worksAsPrimitive(operand.getType().value(), TypeTable::P_TYPE)) ty = operand.getEvalVal().ty;
+    if (typeTable->worksAsPrimitive(operand.getType().value(), TypeTable::P_TYPE)) ty = operand.getEvalVal().ty();
     else ty = operand.getType().value();
     if (!checkIsNotUndefType(operand.getCodeLoc(), ty, true)) return NodeVal();
 
@@ -1517,7 +1517,7 @@ NodeVal Processor::processIsDef(const NodeVal &node) {
     NodeVal name = processForIdValue(node.getChild(1));
     if (name.isInvalid()) return NodeVal();
 
-    NamePool::Id id = name.getEvalVal().id;
+    NamePool::Id id = name.getEvalVal().id();
 
     bool isDef = symbolTable->isVarName(id) ||
         symbolTable->isFuncName(id) ||
@@ -1536,11 +1536,11 @@ NodeVal Processor::processAttrOf(const NodeVal &node) {
 
     NodeVal name = processForIdValue(node.getChild(2));
     if (name.isInvalid()) return NodeVal();
-    NamePool::Id attrName = name.getEvalVal().id;
+    NamePool::Id attrName = name.getEvalVal().id();
 
     optional<NodeVal> nodeAttr = getAttribute(operand, attrName);
     if (!nodeAttr.has_value() && checkIsType(operand, false)) {
-        TypeTable::Id baseTy = typeTable->extractFixedTypeBaseType(operand.getEvalVal().ty);
+        TypeTable::Id baseTy = typeTable->extractFixedTypeBaseType(operand.getEvalVal().ty());
         const AttrMap *attrMap = symbolTable->getDataAttrs(baseTy);
         if (attrMap != nullptr) {
             nodeAttr = getAttribute(*attrMap, attrName);
@@ -1565,7 +1565,7 @@ NodeVal Processor::processAttrIsDef(const NodeVal &node) {
 
     NodeVal name = processForIdValue(node.getChild(2));
     if (name.isInvalid()) return NodeVal();
-    NamePool::Id attrName = name.getEvalVal().id;
+    NamePool::Id attrName = name.getEvalVal().id();
 
     NamePool::Id typeId = getMeaningfulNameId(Meaningful::TYPE);
 
@@ -1620,7 +1620,7 @@ optional<bool> Processor::getAttributeForBool(const NodeVal &node, NamePool::Id 
     if (!attr.has_value()) return default_;
     if (!checkIsEvalVal(attr.value(), true)) return nullopt;
     if (!checkIsBool(attr.value(), true)) return nullopt;
-    return attr.value().getEvalVal().b;
+    return attr.value().getEvalVal().b();
 }
 
 optional<bool> Processor::getAttributeForBool(const NodeVal &node, const std::string &attrStrName, bool default_) {
@@ -1629,13 +1629,13 @@ optional<bool> Processor::getAttributeForBool(const NodeVal &node, const std::st
 
 NodeVal Processor::promoteBool(CodeLoc codeLoc, bool b) const {
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_BOOL), typeTable);
-    evalVal.b = b;
+    evalVal.b() = b;
     return NodeVal(codeLoc, evalVal);
 }
 
 NodeVal Processor::promoteType(CodeLoc codeLoc, TypeTable::Id ty) const {
     EvalVal evalVal = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_TYPE), typeTable);
-    evalVal.ty = ty;
+    evalVal.ty() = ty;
     return NodeVal(codeLoc, move(evalVal));
 }
 
@@ -1646,42 +1646,42 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
     LiteralVal lit = node.getLiteralVal();
     switch (lit.kind) {
     case LiteralVal::Kind::kId:
-        eval.type = typeTable->getPrimTypeId(TypeTable::P_ID);
-        eval.id = lit.val_id;
+        eval = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_ID), typeTable);
+        eval.id() = lit.val_id;
         isId = true;
         break;
     case LiteralVal::Kind::kSint:
         {
             TypeTable::PrimIds fitting = typeTable->shortestFittingPrimTypeI(lit.val_si);
             TypeTable::PrimIds chosen = max(TypeTable::P_I32, fitting);
-            eval.type = typeTable->getPrimTypeId(chosen);
-            if (chosen == TypeTable::P_I32) eval.i32 = lit.val_si;
-            else eval.i64 = lit.val_si;
+            eval = EvalVal::makeVal(typeTable->getPrimTypeId(chosen), typeTable);
+            if (chosen == TypeTable::P_I32) eval.i32() = lit.val_si;
+            else eval.i64() = lit.val_si;
             break;
         }
     case LiteralVal::Kind::kFloat:
         {
             TypeTable::PrimIds fitting = typeTable->shortestFittingPrimTypeF(lit.val_f);
             TypeTable::PrimIds chosen = max(TypeTable::P_F32, fitting);
-            eval.type = typeTable->getPrimTypeId(chosen);
-            if (chosen == TypeTable::P_F32) eval.f32 = lit.val_f;
-            else eval.f64 = lit.val_f;
+            eval = EvalVal::makeVal(typeTable->getPrimTypeId(chosen), typeTable);
+            if (chosen == TypeTable::P_F32) eval.f32() = lit.val_f;
+            else eval.f64() = lit.val_f;
             break;
         }
     case LiteralVal::Kind::kChar:
-        eval.type = typeTable->getPrimTypeId(TypeTable::P_C8);
-        eval.c8 = lit.val_c;
+        eval = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_C8), typeTable);
+        eval.c8() = lit.val_c;
         break;
     case LiteralVal::Kind::kBool:
-        eval.type = typeTable->getPrimTypeId(TypeTable::P_BOOL);
-        eval.b = lit.val_b;
+        eval = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_BOOL), typeTable);
+        eval.b() = lit.val_b;
         break;
     case LiteralVal::Kind::kString:
-        eval.type = typeTable->getTypeIdStr();
-        eval.str = lit.val_str;
+        eval = EvalVal::makeVal(typeTable->getTypeIdStr(), typeTable);
+        eval.str() = lit.val_str;
         break;
     case LiteralVal::Kind::kNull:
-        eval.type = typeTable->getPrimTypeId(TypeTable::P_PTR);
+        eval = EvalVal::makeVal(typeTable->getPrimTypeId(TypeTable::P_PTR), typeTable);
         break;
     default:
         msgs->errorInternal(node.getCodeLoc());
@@ -1694,7 +1694,7 @@ NodeVal Processor::promoteLiteralVal(const NodeVal &node) {
     if (node.hasTypeAttr() && !isId) {
         if (!checkIsType(node.getTypeAttr(), true)) return NodeVal();
 
-        TypeTable::Id ty = node.getTypeAttr().getEvalVal().ty;
+        TypeTable::Id ty = node.getTypeAttr().getEvalVal().ty();
 
         if (!EvalVal::isImplicitCastable(prom.getEvalVal(), ty, stringPool, typeTable)) {
             msgs->errorExprCannotPromote(node.getCodeLoc(), ty);
@@ -1710,7 +1710,7 @@ bool Processor::canBeTypeDescrDecor(const NodeVal &node) {
     if (!node.isEvalVal()) return false;
 
     if (EvalVal::isId(node.getEvalVal(), typeTable)) {
-        return isTypeDescrDecor(node.getEvalVal().id);
+        return isTypeDescrDecor(node.getEvalVal().id());
     }
 
     return EvalVal::isI(node.getEvalVal(), typeTable) || EvalVal::isU(node.getEvalVal(), typeTable);
@@ -1723,7 +1723,7 @@ bool Processor::applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &
     }
 
     if (EvalVal::isId(node.getEvalVal(), typeTable)) {
-        optional<Meaningful> mean = getMeaningful(node.getEvalVal().id);
+        optional<Meaningful> mean = getMeaningful(node.getEvalVal().id());
         if (!mean.has_value() || !isTypeDescrDecor(mean.value())) {
             msgs->errorInvalidTypeDecorator(node.getCodeLoc());
             return false;
@@ -1764,7 +1764,7 @@ bool Processor::applyTypeDescrDecor(TypeTable::TypeDescr &descr, const NodeVal &
 bool Processor::applyTupleElem(TypeTable::Tuple &tup, const NodeVal &node) {
     if (!checkIsEvalVal(node, true) || !checkIsType(node, true)) return false;
 
-    tup.addElement(node.getEvalVal().ty);
+    tup.addElement(node.getEvalVal().ty());
 
     return true;
 }
@@ -1820,7 +1820,7 @@ bool Processor::shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id d
 
     const EvalVal &val = node.getEvalVal();
 
-    TypeTable::Id srcTypeId = val.type;
+    TypeTable::Id srcTypeId = val.getType();
 
     if (typeTable->isImplicitCastable(typeTable->extractFixedTypeBaseType(srcTypeId), typeTable->extractFixedTypeBaseType(dstTypeId)))
         return false;
@@ -1834,7 +1834,7 @@ bool Processor::shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id d
             return typeTable->worksAsTypeAnyP(dstTypeId);
         }
     } else if (typeTable->worksAsTypeStr(srcTypeId)) {
-        if (val.str.has_value()) {
+        if (val.str().has_value()) {
             return typeTable->worksAsTypeI(dstTypeId) ||
                 typeTable->worksAsTypeU(dstTypeId) ||
                 typeTable->worksAsTypeAnyP(dstTypeId);
@@ -1858,7 +1858,7 @@ bool Processor::shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id d
             if (tupSrc.elements.size() != tupDst.elements.size()) return false;
 
             for (size_t i = 0; i < tupSrc.elements.size(); ++i) {
-                if (shouldNotDispatchCastToEval(val.elems[i], tupDst.elements[i])) return true;
+                if (shouldNotDispatchCastToEval(val.elems()[i], tupDst.elements[i])) return true;
             }
         }
     }
@@ -2014,7 +2014,7 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node, const NodeVal &val
         if (node.hasTypeAttr()) {
             if (!checkIsType(node.getTypeAttr(), true)) return NodeVal();
 
-            TypeTable::Id ty = node.getTypeAttr().getEvalVal().ty;
+            TypeTable::Id ty = node.getTypeAttr().getEvalVal().ty();
             for (FuncId it : funcIds) {
                 if (symbolTable->getFunc(it).getType() == ty) {
                     funcId = it;
@@ -2048,7 +2048,7 @@ NodeVal Processor::loadUndecidedCallable(const NodeVal &node, const NodeVal &val
         if (node.hasTypeAttr()) {
             if (!checkIsType(node.getTypeAttr(), true)) return NodeVal();
 
-            TypeTable::Id ty = node.getTypeAttr().getEvalVal().ty;
+            TypeTable::Id ty = node.getTypeAttr().getEvalVal().ty();
             for (MacroId it : macroIds) {
                 if (symbolTable->getMacro(it).getType() == ty) {
                     macroId = it;
@@ -2278,6 +2278,8 @@ bool Processor::processAttributes(NodeVal &node, bool forceUnescape) {
         NodeVal procType = processNode(node.getTypeAttr());
         if (procType.isInvalid()) return false;
 
+        procType = NodeVal::moveNoRef(move(procType), LifetimeInfo());
+
         node.setTypeAttr(move(procType));
     }
 
@@ -2302,7 +2304,7 @@ bool Processor::processAttributes(NodeVal &node, bool forceUnescape) {
             if (!NodeVal::isRawVal(nodeAttrs, typeTable)) {
                 if (!checkIsId(nodeAttrs, true)) return false;
 
-                NamePool::Id attrName = nodeAttrs.getEvalVal().id;
+                NamePool::Id attrName = nodeAttrs.getEvalVal().id();
                 if (attrName == typeId) {
                     msgs->errorNonTypeAttributeType(nodeAttrs.getCodeLoc());
                     return false;
@@ -2331,7 +2333,7 @@ bool Processor::processAttributes(NodeVal &node, bool forceUnescape) {
 
                     if (!checkIsId(*nodeAttrEntryName, true)) return false;
 
-                    NamePool::Id attrName = nodeAttrEntryName->getEvalVal().id;
+                    NamePool::Id attrName = nodeAttrEntryName->getEvalVal().id();
                     if (attrName == typeId) {
                         msgs->errorNonTypeAttributeType(nodeAttrEntryName->getCodeLoc());
                         return false;
@@ -2355,6 +2357,8 @@ bool Processor::processAttributes(NodeVal &node, bool forceUnescape) {
                             msgs->errorAttributeOwning(nodeAttrEntry.getCodeLoc(), attrName);
                             return false;
                         }
+
+                        attrVal = NodeVal::moveNoRef(move(attrVal), LifetimeInfo());
                     }
 
                     attrMap.attrMap.insert({attrName, make_unique<NodeVal>(move(attrVal))});
@@ -2409,7 +2413,7 @@ NodeVal Processor::processFncType(const NodeVal &node) {
         optional<bool> attrNoDrop = getAttributeForBool(argTy, "noDrop");
         if (!attrNoDrop.has_value()) return NodeVal();
 
-        argTypes.push_back(argTy.getEvalVal().ty);
+        argTypes.push_back(argTy.getEvalVal().ty());
         argNoDrops.push_back(attrNoDrop.value());
     }
 
@@ -2421,7 +2425,7 @@ NodeVal Processor::processFncType(const NodeVal &node) {
         if (ty.isInvalid()) return NodeVal();
         if (!checkIsEmpty(ty, false)) {
             if (!checkIsType(ty, true)) return NodeVal();
-            retType = ty.getEvalVal().ty;
+            retType = ty.getEvalVal().ty();
         }
     }
 
@@ -2656,7 +2660,7 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
         if (!checkHasType(index, true)) return NodeVal();
 
         if (isBaseData && index.isEvalVal() && EvalVal::isId(index.getEvalVal(), typeTable)) {
-            NamePool::Id indexName = index.getEvalVal().id;
+            NamePool::Id indexName = index.getEvalVal().id();
             indexVal = typeTable->extractDataType(baseType)->getElemInd(indexName);
             if (!indexVal.has_value()) {
                 msgs->errorElementIndexData(index.getCodeLoc(), indexName, baseType);

@@ -19,53 +19,125 @@ struct MacroValue;
 struct EvalVal {
     typedef std::variant<NodeVal*, VarId> Pointer;
 
-    // type of this evaluation value
+private:
+    struct EasyZeroVals {
+        union {
+            std::int8_t i8;
+            std::int16_t i16;
+            std::int32_t i32;
+            std::int64_t i64;
+            std::uint8_t u8;
+            std::uint16_t u16;
+            std::uint32_t u32;
+            std::uint64_t u64;
+            float f32;
+            double f64;
+            char c8;
+            bool b;
+        };
+
+        EasyZeroVals() {
+            // because of union, this takes care of all primitives
+            u64 = 0LL;
+        }
+    };
+
     TypeTable::Id type;
 
-    union {
-        std::int8_t i8;
-        std::int16_t i16;
-        std::int32_t i32;
-        std::int64_t i64;
-        std::uint8_t u8;
-        std::uint16_t u16;
-        std::uint32_t u32;
-        std::uint64_t u64;
-        float f32;
-        double f64;
-        char c8;
-        bool b;
-        // contains id value
-        NamePool::Id id;
-        // contains type value in case this is type or type cn
-        TypeTable::Id ty;
-    };
-    Pointer p = nullptr;
-    std::optional<StringPool::Id> str;
-    std::optional<FuncId> f;
-    std::optional<MacroId> m;
-    std::vector<NodeVal> elems;
+    std::variant<
+        EasyZeroVals,
+        NamePool::Id,
+        TypeTable::Id,
+        Pointer,
+        std::optional<StringPool::Id>,
+        std::optional<FuncId>,
+        std::optional<MacroId>,
+        std::vector<NodeVal>> value;
 
     Pointer ref = nullptr;
     LifetimeInfo lifetimeInfo;
 
     EscapeScore escapeScore = 0;
 
-    EvalVal() {
-        // because of union, this takes care of primitives other than id and type
-        u64 = 0LL;
-    }
+public:
+    // type of this evaluation value
+    // if modifying, make sure to init value; consider using makeVal or makeZero
+    TypeTable::Id& getType() { return type; }
+    // type of this evaluation value
+    const TypeTable::Id& getType() const { return type; }
+
+    std::int8_t& i8() { return std::get<EasyZeroVals>(value).i8; }
+    std::int8_t i8() const { return std::get<EasyZeroVals>(value).i8; }
+    std::int16_t& i16() { return std::get<EasyZeroVals>(value).i16; }
+    std::int16_t i16() const { return std::get<EasyZeroVals>(value).i16; }
+    std::int32_t& i32() { return std::get<EasyZeroVals>(value).i32; }
+    std::int32_t i32() const { return std::get<EasyZeroVals>(value).i32; }
+    std::int64_t& i64() { return std::get<EasyZeroVals>(value).i64; }
+    std::int64_t i64() const { return std::get<EasyZeroVals>(value).i64; }
+
+    std::uint8_t& u8() { return std::get<EasyZeroVals>(value).u8; }
+    std::uint8_t u8() const { return std::get<EasyZeroVals>(value).u8; }
+    std::uint16_t& u16() { return std::get<EasyZeroVals>(value).u16; }
+    std::uint16_t u16() const { return std::get<EasyZeroVals>(value).u16; }
+    std::uint32_t& u32() { return std::get<EasyZeroVals>(value).u32; }
+    std::uint32_t u32() const { return std::get<EasyZeroVals>(value).u32; }
+    std::uint64_t& u64() { return std::get<EasyZeroVals>(value).u64; }
+    std::uint64_t u64() const { return std::get<EasyZeroVals>(value).u64; }
+
+    std::uint64_t& getWidestU() { return u64(); }
+    std::uint64_t getWidestU() const { return u64(); }
+
+    float& f32() { return std::get<EasyZeroVals>(value).f32; }
+    float f32() const { return std::get<EasyZeroVals>(value).f32; }
+    double& f64() { return std::get<EasyZeroVals>(value).f64; }
+    double f64() const { return std::get<EasyZeroVals>(value).f64; }
+
+    char& c8() { return std::get<EasyZeroVals>(value).c8; }
+    char c8() const { return std::get<EasyZeroVals>(value).c8; }
+
+    bool& b() { return std::get<EasyZeroVals>(value).b; }
+    bool b() const { return std::get<EasyZeroVals>(value).b; }
+
+    NamePool::Id& id() { return std::get<NamePool::Id>(value); }
+    const NamePool::Id& id() const { return std::get<NamePool::Id>(value); }
+
+    // value of type 'type', contained within this evaluated value
+    TypeTable::Id& ty() { return std::get<TypeTable::Id>(value); }
+    // value of type 'type', contained within this evaluated value
+    const TypeTable::Id& ty() const { return std::get<TypeTable::Id>(value); }
+
+    Pointer& p() { return std::get<Pointer>(value); }
+    const Pointer& p() const { return std::get<Pointer>(value); }
+
+    std::optional<StringPool::Id>& str() { return std::get<std::optional<StringPool::Id>>(value); }
+    const std::optional<StringPool::Id>& str() const { return std::get<std::optional<StringPool::Id>>(value); }
+
+    std::optional<FuncId>& f() { return std::get<std::optional<FuncId>>(value); }
+    const std::optional<FuncId>& f() const { return std::get<std::optional<FuncId>>(value); }
+
+    std::optional<MacroId>& m() { return std::get<std::optional<MacroId>>(value); }
+    const std::optional<MacroId>& m() const { return std::get<std::optional<MacroId>>(value); }
+
+    std::vector<NodeVal>& elems() { return std::get<std::vector<NodeVal>>(value); }
+    const std::vector<NodeVal>& elems() const { return std::get<std::vector<NodeVal>>(value); }
+
+    bool hasRef() const { return !isNull(ref); }
+    Pointer& getRef() { return ref; }
+    const Pointer& getRef() const { return ref; }
+    void removeRef();
+
+    LifetimeInfo& getLifetimeInfo() { return lifetimeInfo; }
+    const LifetimeInfo& getLifetimeInfo() const { return lifetimeInfo; }
 
     bool isEscaped() const { return escapeScore > 0; }
+    EscapeScore getEscapeScore() const { return escapeScore; }
+    EscapeScore& getEscapeScore() { return escapeScore; }
 
-    std::uint64_t& getWidestU() { return u64; }
-    const std::uint64_t& getWidestU() const { return u64; }
-
-    void removeRef();
     std::optional<VarId> getVarId() const;
 
     static EvalVal makeVal(TypeTable::Id t, TypeTable *typeTable);
     static EvalVal makeZero(TypeTable::Id t, NamePool *namePool, TypeTable *typeTable);
+
     // use NodeVal::copyNoRef unless sure attrs aren't needed
     static EvalVal copyNoRef(const EvalVal &k, LifetimeInfo lifetimeInfo);
     // use NodeVal::moveNoRef unless sure attrs aren't needed

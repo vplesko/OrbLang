@@ -17,22 +17,44 @@ EvalVal EvalVal::makeVal(TypeTable::Id t, TypeTable *typeTable) {
     EvalVal evalVal;
     evalVal.type = t;
 
-    if (typeTable->worksAsTuple(t)) {
+    if (typeTable->worksAsPrimitive(t, TypeTable::P_ID)) {
+        evalVal.value = NamePool::Id();
+    } else if (typeTable->worksAsPrimitive(t, TypeTable::P_TYPE)) {
+        evalVal.value = TypeTable::Id();
+    } else if (typeTable->worksAsTypeP(t)) {
+        evalVal.value = Pointer(nullptr);
+    } else if (typeTable->worksAsTypeStr(t)) {
+        evalVal.value = optional<StringPool::Id>();
+    } else if (typeTable->worksAsCallable(t, true)) {
+        evalVal.value = optional<FuncId>();
+    } else if (typeTable->worksAsCallable(t, false)) {
+        evalVal.value = optional<MacroId>();
+    } else if (typeTable->worksAsPrimitive(t, TypeTable::P_RAW)) {
+        evalVal.value = vector<NodeVal>();
+    } else if (typeTable->worksAsTuple(t)) {
         const TypeTable::Tuple *tup = typeTable->extractTuple(t);
-        evalVal.elems.reserve(tup->elements.size());
+
+        evalVal.value = vector<NodeVal>();
+        evalVal.elems().reserve(tup->elements.size());
         for (TypeTable::Id elem : tup->elements) {
-            evalVal.elems.push_back(NodeVal(CodeLoc(), makeVal(elem, typeTable)));
+            evalVal.elems().push_back(NodeVal(CodeLoc(), makeVal(elem, typeTable)));
         }
     } else if (typeTable->worksAsDataType(t)) {
         const TypeTable::DataType *data = typeTable->extractDataType(t);
-        evalVal.elems.reserve(data->elements.size());
+
+        evalVal.value = vector<NodeVal>();
+        evalVal.elems().reserve(data->elements.size());
         for (const auto &elem : data->elements) {
-            evalVal.elems.push_back(NodeVal(CodeLoc(), makeVal(elem.type, typeTable)));
+            evalVal.elems().push_back(NodeVal(CodeLoc(), makeVal(elem.type, typeTable)));
         }
     } else if (typeTable->worksAsTypeArr(t)) {
         size_t len = typeTable->extractLenOfArr(t).value();
         TypeTable::Id elemType = typeTable->addTypeIndexOf(t).value();
-        evalVal.elems = vector<NodeVal>(len, NodeVal(CodeLoc(), makeVal(elemType, typeTable)));
+
+        evalVal.value = vector<NodeVal>();
+        evalVal.elems() = vector<NodeVal>(len, NodeVal(CodeLoc(), makeVal(elemType, typeTable)));
+    } else {
+        evalVal.value = EasyZeroVals();
     }
 
     return evalVal;
@@ -42,30 +64,44 @@ EvalVal EvalVal::makeZero(TypeTable::Id t, NamePool *namePool, TypeTable *typeTa
     EvalVal evalVal;
     evalVal.type = t;
 
-    if (typeTable->worksAsTuple(t)) {
+    if (typeTable->worksAsPrimitive(t, TypeTable::P_ID)) {
+        evalVal.value = namePool->getMainId();
+    } else if (typeTable->worksAsPrimitive(t, TypeTable::P_TYPE)) {
+        evalVal.value = typeTable->getPrimTypeId(TypeTable::P_ID);
+    } else if (typeTable->worksAsTypeP(t)) {
+        evalVal.value = Pointer(nullptr);
+    } else if (typeTable->worksAsTypeStr(t)) {
+        evalVal.value = optional<StringPool::Id>();
+    } else if (typeTable->worksAsCallable(t, true)) {
+        evalVal.value = optional<FuncId>();
+    } else if (typeTable->worksAsCallable(t, false)) {
+        evalVal.value = optional<MacroId>();
+    } else if (typeTable->worksAsPrimitive(t, TypeTable::P_RAW)) {
+        evalVal.value = vector<NodeVal>();
+    } else if (typeTable->worksAsTuple(t)) {
         const TypeTable::Tuple *tup = typeTable->extractTuple(t);
-        evalVal.elems.reserve(tup->elements.size());
+
+        evalVal.value = vector<NodeVal>();
+        evalVal.elems().reserve(tup->elements.size());
         for (TypeTable::Id elem : tup->elements) {
-            evalVal.elems.push_back(NodeVal(CodeLoc(), makeZero(elem, namePool, typeTable)));
+            evalVal.elems().push_back(NodeVal(CodeLoc(), makeZero(elem, namePool, typeTable)));
         }
-    } if (typeTable->worksAsDataType(t)) {
+    } else if (typeTable->worksAsDataType(t)) {
         const TypeTable::DataType *data = typeTable->extractDataType(t);
-        evalVal.elems.reserve(data->elements.size());
+
+        evalVal.value = vector<NodeVal>();
+        evalVal.elems().reserve(data->elements.size());
         for (const auto &elem : data->elements) {
-            evalVal.elems.push_back(NodeVal(CodeLoc(), makeZero(elem.type, namePool, typeTable)));
+            evalVal.elems().push_back(NodeVal(CodeLoc(), makeZero(elem.type, namePool, typeTable)));
         }
     } else if (typeTable->worksAsTypeArr(t)) {
         size_t len = typeTable->extractLenOfArr(t).value();
         TypeTable::Id elemType = typeTable->addTypeIndexOf(t).value();
-        evalVal.elems = vector<NodeVal>(len, NodeVal(CodeLoc(), makeZero(elemType, namePool, typeTable)));
-    } else if (typeTable->worksAsTypeStr(t)) {
-        // do nothing, std::optional is already nullopt
-    } else if (typeTable->worksAsPrimitive(t, TypeTable::P_ID)) {
-        evalVal.id = namePool->getMainId();
-    } else if (typeTable->worksAsPrimitive(t, TypeTable::P_TYPE)) {
-        evalVal.ty = typeTable->getPrimTypeId(TypeTable::P_ID);
+
+        evalVal.value = vector<NodeVal>();
+        evalVal.elems() = vector<NodeVal>(len, NodeVal(CodeLoc(), makeZero(elemType, namePool, typeTable)));
     } else {
-        // do nothing, zeroing of primitives taken care of in the default ctor
+        evalVal.value = EasyZeroVals();
     }
 
     return evalVal;
@@ -85,6 +121,7 @@ EvalVal EvalVal::moveNoRef(EvalVal &&k, LifetimeInfo lifetimeInfo) {
 }
 
 bool EvalVal::isId(const EvalVal &val, const TypeTable *typeTable) {
+    // TODO+ none of these need to be optional
     optional<TypeTable::Id> type = val.type;
     return type.has_value() && typeTable->worksAsPrimitive(type.value(), TypeTable::P_ID);
 }
@@ -145,7 +182,7 @@ bool EvalVal::isStr(const EvalVal &val, const TypeTable *typeTable) {
 }
 
 bool EvalVal::isNonNullStr(const EvalVal &val, const TypeTable *typeTable) {
-    return isStr(val, typeTable) && val.str.has_value();
+    return isStr(val, typeTable) && val.str().has_value();
 }
 
 bool EvalVal::isAnyP(const EvalVal &val, const TypeTable *typeTable) {
@@ -176,16 +213,16 @@ bool EvalVal::isZero(const EvalVal &val, const TypeTable *typeTable) {
 }
 
 bool EvalVal::isNull(const EvalVal &val, const TypeTable *typeTable) {
-    if (isP(val, typeTable)) return isNull(val.p);
-    if (isStr(val, typeTable)) return !val.str.has_value();
+    if (isP(val, typeTable)) return isNull(val.p());
+    if (isStr(val, typeTable)) return !val.str().has_value();
     return isAnyP(val, typeTable);
 }
 
 bool EvalVal::isCallableNoValue(const EvalVal &val, const TypeTable *typeTable) {
     optional<TypeTable::Id> type = val.type;
     return type.has_value() &&
-        ((typeTable->worksAsCallable(type.value(), true) && !val.f.has_value()) ||
-        (typeTable->worksAsCallable(type.value(), false) && !val.m.has_value()));
+        ((typeTable->worksAsCallable(type.value(), true) && !val.f().has_value()) ||
+        (typeTable->worksAsCallable(type.value(), false) && !val.m().has_value()));
 }
 
 bool EvalVal::isNull(const Pointer &ptr) {
@@ -201,7 +238,7 @@ NodeVal& EvalVal::deref(const Pointer &ptr, SymbolTable *symbolTable) {
 }
 
 NodeVal& EvalVal::getPointee(const EvalVal &val, SymbolTable *symbolTable) {
-    return deref(val.p, symbolTable);
+    return deref(val.p(), symbolTable);
 }
 
 NodeVal& EvalVal::getRefee(const EvalVal &val, SymbolTable *symbolTable) {
@@ -209,24 +246,24 @@ NodeVal& EvalVal::getRefee(const EvalVal &val, SymbolTable *symbolTable) {
 }
 
 optional<int64_t> EvalVal::getValueI(const EvalVal &val, const TypeTable *typeTable) {
-    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_I8)) return val.i8;
-    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_I16)) return val.i16;
-    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_I32)) return val.i32;
-    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_I64)) return val.i64;
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_I8)) return val.i8();
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_I16)) return val.i16();
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_I32)) return val.i32();
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_I64)) return val.i64();
     return nullopt;
 }
 
 optional<uint64_t> EvalVal::getValueU(const EvalVal &val, const TypeTable *typeTable) {
-    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_U8)) return val.u8;
-    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_U16)) return val.u16;
-    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_U32)) return val.u32;
-    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_U64)) return val.u64;
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_U8)) return val.u8();
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_U16)) return val.u16();
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_U32)) return val.u32();
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_U64)) return val.u64();
     return nullopt;
 }
 
 optional<double> EvalVal::getValueF(const EvalVal &val, const TypeTable *typeTable) {
-    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_F32)) return val.f32;
-    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_F64)) return val.f64;
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_F32)) return val.f32();
+    if (typeTable->worksAsPrimitive(val.type, TypeTable::P_F64)) return val.f64();
     return nullopt;
 }
 
@@ -246,7 +283,7 @@ optional<uint64_t> EvalVal::getValueNonNeg(const EvalVal &val, const TypeTable *
 }
 
 optional<optional<FuncId>> EvalVal::getValueFunc(const EvalVal &val, const TypeTable *typeTable) {
-    if (typeTable->worksAsCallable(val.type, true)) return val.f;
+    if (typeTable->worksAsCallable(val.type, true)) return val.f();
     return nullopt;
 }
 
@@ -272,7 +309,7 @@ bool EvalVal::isImplicitCastable(const EvalVal &val, TypeTable::Id t, const Stri
     
     if (isNonNullStr(val, typeTable))
         return typeTable->worksAsTypeStr(t) ||
-            typeTable->worksAsTypeCharArrOfLen(t, LiteralVal::getStringLen(stringPool->get(val.str.value())));
+            typeTable->worksAsTypeCharArrOfLen(t, LiteralVal::getStringLen(stringPool->get(val.str().value())));
 
     if (typeTable->worksAsTuple(val.type) && typeTable->worksAsTuple(t)) {
         const TypeTable::Tuple &tupSrc = *typeTable->extractTuple(val.type);
@@ -281,7 +318,7 @@ bool EvalVal::isImplicitCastable(const EvalVal &val, TypeTable::Id t, const Stri
         if (tupSrc.elements.size() != tupDst.elements.size()) return false;
 
         for (size_t i = 0; i < tupSrc.elements.size(); ++i) {
-            if (!isImplicitCastable(val.elems[i].getEvalVal(), tupDst.elements[i], stringPool, typeTable)) return false;
+            if (!isImplicitCastable(val.elems()[i].getEvalVal(), tupDst.elements[i], stringPool, typeTable)) return false;
         }
 
         return true;
