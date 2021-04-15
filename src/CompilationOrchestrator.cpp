@@ -58,7 +58,7 @@ void CompilationOrchestrator::genReserved() {
     addKeyword(namePool.get(), "exit", Keyword::EXIT);
     addKeyword(namePool.get(), "loop", Keyword::LOOP);
     addKeyword(namePool.get(), "pass", Keyword::PASS);
-    addKeyword(namePool.get(), "fixed", Keyword::FIXED);
+    addKeyword(namePool.get(), "explicit", Keyword::EXPLICIT);
     addKeyword(namePool.get(), "data", Keyword::DATA);
     addKeyword(namePool.get(), "fnc", Keyword::FNC);
     addKeyword(namePool.get(), "ret", Keyword::RET);

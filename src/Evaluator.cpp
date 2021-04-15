@@ -948,7 +948,7 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
                 return nullopt;
             }
         } else {
-            if (typeTable->isImplicitCastable(typeTable->extractFixedTypeBaseType(srcTypeId), typeTable->extractFixedTypeBaseType(dstTypeId))) {
+            if (typeTable->isImplicitCastable(typeTable->extractExplicitTypeBaseType(srcTypeId), typeTable->extractExplicitTypeBaseType(dstTypeId))) {
                 if (!assignBasedOnTypeP(dstEvalVal, srcEvalVal.p(), dstTypeId)) {
                     return nullopt;
                 }
@@ -991,7 +991,7 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
         } else if (typeTable->worksAsTypeB(dstTypeId)) {
             if (!assignBasedOnTypeB(dstEvalVal, !EvalVal::isCallableNoValue(srcEvalVal, typeTable), dstTypeId))
                 return nullopt;
-        } else if (typeTable->isImplicitCastable(typeTable->extractFixedTypeBaseType(srcTypeId), typeTable->extractFixedTypeBaseType(dstTypeId))) {
+        } else if (typeTable->isImplicitCastable(typeTable->extractExplicitTypeBaseType(srcTypeId), typeTable->extractExplicitTypeBaseType(dstTypeId))) {
             dstEvalVal = EvalVal::copyNoRef(srcEvalVal, LifetimeInfo());
             dstEvalVal.getType() = dstTypeId;
         } else {
@@ -999,7 +999,7 @@ optional<NodeVal> Evaluator::makeCast(CodeLoc codeLoc, const NodeVal &srcVal, Ty
         }
     } else {
         // other types are only castable when changing constness
-        if (typeTable->isImplicitCastable(typeTable->extractFixedTypeBaseType(srcTypeId), typeTable->extractFixedTypeBaseType(dstTypeId))) {
+        if (typeTable->isImplicitCastable(typeTable->extractExplicitTypeBaseType(srcTypeId), typeTable->extractExplicitTypeBaseType(dstTypeId))) {
             // no action is needed in case of a cast
             dstEvalVal = EvalVal::copyNoRef(srcEvalVal, LifetimeInfo());
             dstEvalVal.getType() = dstTypeId;

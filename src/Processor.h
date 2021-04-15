@@ -169,7 +169,7 @@ private:
     NodeVal processExit(const NodeVal &node);
     NodeVal processLoop(const NodeVal &node);
     NodeVal processPass(const NodeVal &node);
-    NodeVal processFixed(const NodeVal &node, const NodeVal &starting);
+    NodeVal processExplicit(const NodeVal &node, const NodeVal &starting);
     NodeVal processData(const NodeVal &node, const NodeVal &starting);
     NodeVal processCall(const NodeVal &node, const NodeVal &starting);
     NodeVal processInvoke(const NodeVal &node, const NodeVal &starting);

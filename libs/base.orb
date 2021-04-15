@@ -449,7 +449,7 @@ mac enum (name ty::preprocess vals) {
         ret ();
     };
 
-    sym (enumTy (fixed::global ,name ty));
+    sym (enumTy (explicit::global ,name ty));
 
     ret \(eval (base.-enumValsDecl ,name ,enumTy ,vals));
 };

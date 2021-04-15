@@ -1,4 +1,4 @@
-fixed t (i32 cn);
+explicit t (i32 cn);
 
 fnc main () () {
     sym (a:t (cast t 0));

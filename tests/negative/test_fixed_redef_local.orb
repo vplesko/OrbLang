@@ -1,5 +1,0 @@
-fixed Foo i32;
-
-fnc main () () {
-    fixed::global Foo bool;
-};

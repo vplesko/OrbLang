@@ -16,7 +16,7 @@ eval (fnc makePoint2 (x:i32 y:i32) Point2 {
     ret p;
 });
 
-fixed myPoint2 Point2;
+explicit myPoint2 Point2;
 
 data Point3;
 data Point3;

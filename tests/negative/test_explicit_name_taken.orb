@@ -1,4 +1,4 @@
 fnc main () () {
     sym (x 0);
-    fixed::global x i32;
+    explicit::global x i32;
 };

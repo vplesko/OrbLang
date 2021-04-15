@@ -150,8 +150,8 @@ string CompilationMessages::errorStringOfType(TypeTable::Id ty) const {
         }
 
         ss << ')';
-    } else if (typeTable->isFixedType(ty)) {
-        ss << namePool->get(typeTable->getFixedType(ty).name);
+    } else if (typeTable->isExplicitType(ty)) {
+        ss << namePool->get(typeTable->getExplicitType(ty).name);
     } else if (typeTable->isDataType(ty)) {
         ss << namePool->get(typeTable->getDataType(ty).name);
     } else if (typeTable->isCallable(ty)) {

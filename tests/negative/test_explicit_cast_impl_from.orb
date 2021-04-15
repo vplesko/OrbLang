@@ -1,4 +1,4 @@
-fixed t i32;
+explicit t i32;
 
 fnc main () () {
     sym a:t;

@@ -1032,8 +1032,8 @@ llvm::Type* Compiler::makeLlvmType(TypeTable::Id typeId) {
         }
 
         llvmType = llvm::StructType::get(llvmContext, elementTypes);
-    } else if (typeTable->isFixedType(typeId)) {
-        llvmType = makeLlvmType(typeTable->getFixedType(typeId).type);
+    } else if (typeTable->isExplicitType(typeId)) {
+        llvmType = makeLlvmType(typeTable->getExplicitType(typeId).type);
         if (llvmType == nullptr) return nullptr;
     } else if (typeTable->isDataType(typeId)) {
         const TypeTable::DataType &data = typeTable->getDataType(typeId);

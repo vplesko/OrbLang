@@ -92,8 +92,8 @@ NodeVal Processor::processNonLeaf(const NodeVal &node, bool topmost) {
                 return processLoop(node);
             case Keyword::PASS:
                 return processPass(node);
-            case Keyword::FIXED:
-                return processFixed(node, starting);
+            case Keyword::EXPLICIT:
+                return processExplicit(node, starting);
             case Keyword::DATA:
                 return processData(node, starting);
             case Keyword::FNC:
@@ -567,7 +567,7 @@ NodeVal Processor::processPass(const NodeVal &node) {
     return NodeVal(node.getCodeLoc());
 }
 
-NodeVal Processor::processFixed(const NodeVal &node, const NodeVal &starting) {
+NodeVal Processor::processExplicit(const NodeVal &node, const NodeVal &starting) {
     if (!checkExactlyChildren(node, 3, true)) return NodeVal();
 
     optional<bool> attrGlobal = getAttributeForBool(starting, "global");
@@ -591,10 +591,10 @@ NodeVal Processor::processFixed(const NodeVal &node, const NodeVal &starting) {
     if (!checkIsType(nodeTy, true)) return NodeVal();
     TypeTable::Id ty = nodeTy.getEvalVal().ty();
 
-    TypeTable::FixedType fixed;
-    fixed.name = name;
-    fixed.type = ty;
-    optional<TypeTable::Id> typeId = typeTable->addFixedType(fixed);
+    TypeTable::ExplicitType explicit_;
+    explicit_.name = name;
+    explicit_.type = ty;
+    optional<TypeTable::Id> typeId = typeTable->addExplicitType(explicit_);
     if (!typeId.has_value()) {
         msgs->errorInternal(node.getCodeLoc());
         return NodeVal();
@@ -1554,7 +1554,7 @@ NodeVal Processor::processAttrOf(const NodeVal &node) {
 
     optional<NodeVal> nodeAttr = getAttribute(operand, attrName);
     if (!nodeAttr.has_value() && checkIsType(operand, false)) {
-        TypeTable::Id baseTy = typeTable->extractFixedTypeBaseType(operand.getEvalVal().ty());
+        TypeTable::Id baseTy = typeTable->extractExplicitTypeBaseType(operand.getEvalVal().ty());
         const AttrMap *attrMap = symbolTable->getDataAttrs(baseTy);
         if (attrMap != nullptr) {
             nodeAttr = getAttribute(*attrMap, attrName);
@@ -1836,7 +1836,7 @@ bool Processor::shouldNotDispatchCastToEval(const NodeVal &node, TypeTable::Id d
 
     TypeTable::Id srcTypeId = val.getType();
 
-    if (typeTable->isImplicitCastable(typeTable->extractFixedTypeBaseType(srcTypeId), typeTable->extractFixedTypeBaseType(dstTypeId)))
+    if (typeTable->isImplicitCastable(typeTable->extractExplicitTypeBaseType(srcTypeId), typeTable->extractExplicitTypeBaseType(dstTypeId)))
         return false;
 
     if (typeTable->worksAsTypeI(srcTypeId)) {
@@ -2156,7 +2156,7 @@ bool Processor::hasTrivialDrop(TypeTable::Id ty) {
 
         return true;
     } else if (typeTable->worksAsDataType(ty)) {
-        const NodeVal *dropFunc = symbolTable->getDropFunc(typeTable->extractFixedTypeBaseType(ty));
+        const NodeVal *dropFunc = symbolTable->getDropFunc(typeTable->extractExplicitTypeBaseType(ty));
         if (dropFunc != nullptr) return false;
 
         size_t len = typeTable->extractLenOfDataType(ty).value();
@@ -2213,11 +2213,11 @@ bool Processor::callDropFunc(CodeLoc codeLoc, NodeVal val) {
             if (!callDropFunc(codeLoc, move(elem))) return false;
         }
     } else if (typeTable->worksAsDataType(valTy)) {
-        const NodeVal *dropFunc = symbolTable->getDropFunc(typeTable->extractFixedTypeBaseType(valTy));
+        const NodeVal *dropFunc = symbolTable->getDropFunc(typeTable->extractExplicitTypeBaseType(valTy));
         if (dropFunc != nullptr) {
             const TypeTable::Callable &dropCallable = *typeTable->extractCallable(dropFunc->getType().value());
 
-            // explicit cast cuz could be a fixed type
+            // explicit cast cuz could be an explicit type
             NodeVal afterCast = castNode(codeLoc, val, codeLoc, dropCallable.getArgType(0), true);
             if (afterCast.isInvalid()) return false;
 

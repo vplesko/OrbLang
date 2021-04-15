@@ -1,18 +1,18 @@
 import "util/print.orb";
 
-fixed myI32 i32;
-fixed myI32Cn (i32 cn);
-fixed myI64Cn (i64 cn);
-fixed myI32Arr (i32 4);
-fixed myI32P (i32 *);
-fixed myI32ArrP (i32 []);
-fixed myI32Tup (i32 i32);
-fixed myMyI32P (myI32 *);
-fixed myRaw raw;
+explicit myI32 i32;
+explicit myI32Cn (i32 cn);
+explicit myI64Cn (i64 cn);
+explicit myI32Arr (i32 4);
+explicit myI32P (i32 *);
+explicit myI32ArrP (i32 []);
+explicit myI32Tup (i32 i32);
+explicit myMyI32P (myI32 *);
+explicit myRaw raw;
 
 data NoDef;
 
-fixed myNoDef NoDef;
+explicit myNoDef NoDef;
 fnc (NoDef) NoDef;
 fnc dummyNoDef (x:NoDef) NoDef;
 
@@ -168,7 +168,7 @@ fnc main () () {
         eval (sym (m:myI64Cn (cast myI64Cn l)));
         println_i32 (cast i32 m);
 
-        sym n:(fixed::global GlobalInLocal i32);
+        sym n:(explicit::global GlobalInLocal i32);
         = n (cast (typeOf n) 515);
         println_i32 (cast i32 n);
     };

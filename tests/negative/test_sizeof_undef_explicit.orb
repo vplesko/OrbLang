@@ -1,6 +1,6 @@
 data Foo;
 
-fixed Bar Foo;
+explicit Bar Foo;
 
 fnc main () () {
     sizeOf Bar;

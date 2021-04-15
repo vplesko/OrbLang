@@ -1,7 +1,7 @@
 import "util/print.orb";
 
-fixed Ty0 i32;
-fixed Ty1 (i32 cn);
+explicit Ty0 i32;
+explicit Ty1 (i32 cn);
 
 data Data0 {
     x:i32

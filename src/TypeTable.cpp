@@ -157,17 +157,17 @@ optional<TypeTable::Id> TypeTable::addTuple(Tuple tup) {
     return id;
 }
 
-optional<TypeTable::Id> TypeTable::addFixedType(FixedType c) {
+optional<TypeTable::Id> TypeTable::addExplicitType(ExplicitType c) {
     if (typeIds.find(c.name) != typeIds.end()) return nullopt;
 
     Id id;
-    id.kind = Id::kFixed;
-    id.index = fixedTypes.size();
+    id.kind = Id::kExplicit;
+    id.index = explicitTypes.size();
 
     typeIds.insert(make_pair(c.name, id));
     typeNames.insert(make_pair(id, c.name));
 
-    fixedTypes.push_back(make_pair(c, nullptr));
+    explicitTypes.push_back(make_pair(c, nullptr));
 
     return id;
 }
@@ -229,8 +229,8 @@ optional<TypeTable::Id> TypeTable::addTypeDerefOf(Id typeId) {
         typeDerefDescr.cns = vector<bool>(typeDescr.cns.begin(), typeDescr.cns.end()-1);
 
         return addTypeDescr(move(typeDerefDescr));
-    } else if (isFixedType(typeId)) {
-        return addTypeDerefOf(getFixedType(typeId).type);
+    } else if (isExplicitType(typeId)) {
+        return addTypeDerefOf(getExplicitType(typeId).type);
     } else {
         return nullopt;
     }
@@ -247,8 +247,8 @@ optional<TypeTable::Id> TypeTable::addTypeIndexOf(Id typeId) {
         typeIndexDescr.cns = vector<bool>(typeDescr.cns.begin(), typeDescr.cns.end()-1);
 
         return addTypeDescr(move(typeIndexDescr));
-    } else if (isFixedType(typeId)) {
-        return addTypeIndexOf(getFixedType(typeId).type);
+    } else if (isExplicitType(typeId)) {
+        return addTypeIndexOf(getExplicitType(typeId).type);
     } else {
         return nullopt;
     }
@@ -366,7 +366,7 @@ llvm::Type* TypeTable::getType(Id id) {
     case Id::kPrim: return primTypes[id.index];
     case Id::kTuple: return tuples[id.index].second;
     case Id::kDescr: return typeDescrs[id.index].second;
-    case Id::kFixed: return fixedTypes[id.index].second;
+    case Id::kExplicit: return explicitTypes[id.index].second;
     case Id::kData: return dataTypes[id.index].second;
     case Id::kCallable: return callables[id.index].second;
     default: return nullptr;
@@ -378,7 +378,7 @@ void TypeTable::setType(Id id, llvm::Type *type) {
     case Id::kPrim: primTypes[id.index] = type; break;
     case Id::kTuple: tuples[id.index].second = type; break;
     case Id::kDescr: typeDescrs[id.index].second = type; break;
-    case Id::kFixed: fixedTypes[id.index].second = type; break;
+    case Id::kExplicit: explicitTypes[id.index].second = type; break;
     case Id::kData: dataTypes[id.index].second = type; break;
     case Id::kCallable: callables[id.index].second = type; break;
     }
@@ -400,8 +400,8 @@ const TypeTable::TypeDescr& TypeTable::getTypeDescr(Id id) const {
     return typeDescrs[id.index].first;
 }
 
-const TypeTable::FixedType& TypeTable::getFixedType(Id id) const {
-    return fixedTypes[id.index].first;
+const TypeTable::ExplicitType& TypeTable::getExplicitType(Id id) const {
+    return explicitTypes[id.index].first;
 }
 
 const TypeTable::DataType& TypeTable::getDataType(Id id) const {
@@ -422,41 +422,41 @@ TypeTable::Id TypeTable::getTypeCharArrOfLenId(std::size_t len) {
 }
 
 optional<size_t> TypeTable::extractLenOfArr(Id arrTypeId) const {
-    TypeTable::Id baseTypeId = extractFixedTypeBaseType(arrTypeId);
+    TypeTable::Id baseTypeId = extractExplicitTypeBaseType(arrTypeId);
     if (!worksAsTypeArr(baseTypeId)) return nullopt;
     return getTypeDescr(baseTypeId).decors.back().len;
 }
 
 optional<size_t> TypeTable::extractLenOfTuple(Id tupleTypeId) const {
-    TypeTable::Id baseTypeId = extractFixedTypeBaseType(tupleTypeId);
+    TypeTable::Id baseTypeId = extractExplicitTypeBaseType(tupleTypeId);
     if (!isTuple(baseTypeId)) return nullopt;
     return getTuple(baseTypeId).elements.size();
 }
 
 optional<size_t> TypeTable::extractLenOfDataType(Id dataTypeId) const {
-    TypeTable::Id baseTypeId = extractFixedTypeBaseType(dataTypeId);
+    TypeTable::Id baseTypeId = extractExplicitTypeBaseType(dataTypeId);
     if (!isDataType(baseTypeId)) return nullopt;
     return getDataType(baseTypeId).elements.size();
 }
 
 const TypeTable::Callable* TypeTable::extractCallable(Id callTypeId) const {
-    TypeTable::Id baseTypeId = extractFixedTypeBaseType(callTypeId);
+    TypeTable::Id baseTypeId = extractExplicitTypeBaseType(callTypeId);
     if (!isCallable(baseTypeId)) return nullptr;
     return &getCallable(baseTypeId);
 }
 
 TypeTable::Id TypeTable::extractBaseType(Id t) const {
-    if (isFixedType(t)) return extractBaseType(getFixedType(t).type);
+    if (isExplicitType(t)) return extractBaseType(getExplicitType(t).type);
     if (isTypeDescr(t)) return extractBaseType(getTypeDescr(t).base);
     return t;
 }
 
-TypeTable::Id TypeTable::extractFixedTypeBaseType(Id t) const {
-    if (isFixedType(t)) return extractFixedTypeBaseType(getFixedType(t).type);
+TypeTable::Id TypeTable::extractExplicitTypeBaseType(Id t) const {
+    if (isExplicitType(t)) return extractExplicitTypeBaseType(getExplicitType(t).type);
     if (isTypeDescr(t)) {
         const TypeDescr &descr = typeDescrs[t.index].first;
         if (!descr.decors.empty()) return t;
-        return extractFixedTypeBaseType(descr.base);
+        return extractExplicitTypeBaseType(descr.base);
     }
     return t;
 }
@@ -466,7 +466,7 @@ bool TypeTable::isValidType(Id t) const {
     case Id::kPrim: return t.index < primTypes.size();
     case Id::kTuple: return t.index < tuples.size();
     case Id::kDescr: return t.index < typeDescrs.size();
-    case Id::kFixed: return t.index < fixedTypes.size();
+    case Id::kExplicit: return t.index < explicitTypes.size();
     case Id::kData: return t.index < dataTypes.size();
     case Id::kCallable: return t.index < callables.size();
     default: return false;
@@ -494,8 +494,8 @@ bool TypeTable::worksAsPrimitive(Id t) const {
 
     if (isPrimitive(t)) {
         return true;
-    } else if (isFixedType(t)) {
-        return worksAsPrimitive(getFixedType(t).type);
+    } else if (isExplicitType(t)) {
+        return worksAsPrimitive(getExplicitType(t).type);
     } else if (isTypeDescr(t)) {
         const TypeDescr &descr = typeDescrs[t.index].first;
         if (!descr.decors.empty()) return false;
@@ -510,8 +510,8 @@ bool TypeTable::worksAsPrimitive(Id t, PrimIds p) const {
 
     if (isPrimitive(t)) {
         return t.index == p;
-    } else if (isFixedType(t)) {
-        return worksAsPrimitive(getFixedType(t).type, p);
+    } else if (isExplicitType(t)) {
+        return worksAsPrimitive(getExplicitType(t).type, p);
     } else if (isTypeDescr(t)) {
         const TypeDescr &descr = typeDescrs[t.index].first;
         if (!descr.decors.empty()) return false;
@@ -526,8 +526,8 @@ bool TypeTable::worksAsPrimitive(Id t, PrimIds lo, PrimIds hi) const {
 
     if (isPrimitive(t)) {
         return between((PrimIds) t.index, lo, hi);
-    } else if (isFixedType(t)) {
-        return worksAsPrimitive(getFixedType(t).type, lo, hi);
+    } else if (isExplicitType(t)) {
+        return worksAsPrimitive(getExplicitType(t).type, lo, hi);
     } else if (isTypeDescr(t)) {
         const TypeDescr &descr = typeDescrs[t.index].first;
         if (!descr.decors.empty()) return false;
@@ -542,8 +542,8 @@ bool TypeTable::worksAsTuple(Id t) const {
 
     if (isTuple(t)) {
         return true;
-    } else if (isFixedType(t)) {
-        return worksAsTuple(getFixedType(t).type);
+    } else if (isExplicitType(t)) {
+        return worksAsTuple(getExplicitType(t).type);
     } else if (isTypeDescr(t)) {
         const TypeDescr &descr = typeDescrs[t.index].first;
         if (!descr.decors.empty()) return false;
@@ -553,15 +553,15 @@ bool TypeTable::worksAsTuple(Id t) const {
     }
 }
 
-bool TypeTable::worksAsFixedType(Id t) const {
+bool TypeTable::worksAsExplicitType(Id t) const {
     assert(isValidType(t));
 
-    if (isFixedType(t)) {
+    if (isExplicitType(t)) {
         return true;
     } else if (isTypeDescr(t)) {
         const TypeDescr &descr = typeDescrs[t.index].first;
         if (!descr.decors.empty()) return false;
-        return worksAsFixedType(descr.base);
+        return worksAsExplicitType(descr.base);
     } else {
         return false;
     }
@@ -572,8 +572,8 @@ bool TypeTable::worksAsDataType(Id t) const {
 
     if (isDataType(t)) {
         return true;
-    } else if (isFixedType(t)) {
-        return worksAsDataType(getFixedType(t).type);
+    } else if (isExplicitType(t)) {
+        return worksAsDataType(getExplicitType(t).type);
     } else if (isTypeDescr(t)) {
         const TypeDescr &descr = typeDescrs[t.index].first;
         if (!descr.decors.empty()) return false;
@@ -611,8 +611,8 @@ bool TypeTable::isTypeDescr(Id t) const {
     return t.kind == Id::kDescr && t.index < typeDescrs.size();
 }
 
-bool TypeTable::isFixedType(Id t) const {
-    return t.kind == Id::kFixed && t.index < fixedTypes.size();
+bool TypeTable::isExplicitType(Id t) const {
+    return t.kind == Id::kExplicit && t.index < explicitTypes.size();
 }
 
 bool TypeTable::isDataType(Id t) const {
@@ -628,7 +628,7 @@ const TypeTable::Tuple* TypeTable::extractTuple(Id t) const {
 
     if (isTuple(t)) return &(getTuple(t));
 
-    if (isFixedType(t)) return extractTuple(getFixedType(t).type);
+    if (isExplicitType(t)) return extractTuple(getExplicitType(t).type);
 
     if (isTypeDescr(t)) {
         const TypeDescr &descr = getTypeDescr(t);
@@ -654,7 +654,7 @@ const TypeTable::DataType* TypeTable::extractDataType(Id t) const {
 
     if (isDataType(t)) return &(getDataType(t));
 
-    if (isFixedType(t)) return extractDataType(getFixedType(t).type);
+    if (isExplicitType(t)) return extractDataType(getExplicitType(t).type);
 
     if (isTypeDescr(t)) {
         const TypeDescr &descr = getTypeDescr(t);
@@ -692,8 +692,8 @@ bool TypeTable::worksAsTypeAnyP(Id t) const {
 bool TypeTable::worksAsTypeP(Id t) const {
     assert(isValidType(t));
 
-    if (isFixedType(t)) {
-        return worksAsTypeP(getFixedType(t).type);
+    if (isExplicitType(t)) {
+        return worksAsTypeP(getExplicitType(t).type);
     } else if (isTypeDescr(t)) {
         const TypeDescr &ty = typeDescrs[t.index].first;
         return (ty.decors.empty() && worksAsTypeP(ty.base)) ||
@@ -706,8 +706,8 @@ bool TypeTable::worksAsTypeP(Id t) const {
 bool TypeTable::worksAsTypePtr(Id t) const {
     if (isPrimitive(t)) {
         return t.index == P_PTR;
-    } else if (isFixedType(t)) {
-        return worksAsTypePtr(getFixedType(t).type);
+    } else if (isExplicitType(t)) {
+        return worksAsTypePtr(getExplicitType(t).type);
     } else if (isTypeDescr(t)) {
         const TypeDescr &descr = getTypeDescr(t);
         return descr.decors.empty() && worksAsTypePtr(descr.base);
@@ -774,8 +774,8 @@ bool TypeTable::worksAsTypeCn(Id t) const {
         }
 
         return false;
-    } else if (isFixedType(t)) {
-        return worksAsTypeCn(getFixedType(t).type);
+    } else if (isExplicitType(t)) {
+        return worksAsTypeCn(getExplicitType(t).type);
     } else {
         return false;
     }
@@ -883,8 +883,8 @@ TypeTable::Id TypeTable::shortestFittingTypeIId(int64_t x) const {
 }
 
 bool TypeTable::isDirectCn(Id t) const {
-    if (isFixedType(t)) {
-        return isDirectCn(getFixedType(t).type);
+    if (isExplicitType(t)) {
+        return isDirectCn(getExplicitType(t).type);
     } else if (isTypeDescr(t)) {
         const TypeDescr &descr = getTypeDescr(t);
 
@@ -1034,8 +1034,8 @@ optional<string> TypeTable::makeBinString(Id t, const NamePool *namePool, bool m
             if (!elemStr.has_value()) return nullopt;
             ss << elemStr.value();
         }
-    } else if (isFixedType(ty)) {
-        ss << "$c" << "$" << namePool->get(getFixedType(ty).name);
+    } else if (isExplicitType(ty)) {
+        ss << "$c" << "$" << namePool->get(getExplicitType(ty).name);
     } else if (isDataType(ty)) {
         ss << "$s" << "$" << namePool->get(getDataType(ty).name);
     } else if (isTypeDescr(ty)) {

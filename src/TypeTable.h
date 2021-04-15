@@ -18,7 +18,7 @@ public:
             kPrim,
             kTuple,
             kDescr,
-            kFixed,
+            kExplicit,
             kData,
             kCallable
         };
@@ -88,12 +88,12 @@ public:
         bool eq(const TypeDescr &other) const;
     };
 
-    struct FixedType {
+    struct ExplicitType {
         Id type;
         NamePool::Id name;
 
-        FixedType() {}
-        FixedType(Id type, NamePool::Id name) : type(type), name(name) {}
+        ExplicitType() {}
+        ExplicitType(Id type, NamePool::Id name) : type(type), name(name) {}
     };
 
     struct DataType {
@@ -184,7 +184,7 @@ private:
     std::array<llvm::Type*, P_ENUM_END> primTypes;
     std::vector<std::pair<Tuple, llvm::Type*>> tuples;
     std::vector<std::pair<TypeDescr, llvm::Type*>> typeDescrs;
-    std::vector<std::pair<FixedType, llvm::Type*>> fixedTypes;
+    std::vector<std::pair<ExplicitType, llvm::Type*>> explicitTypes;
     std::vector<std::pair<DataType, llvm::Type*>> dataTypes;
     std::vector<std::pair<Callable, llvm::Type*>> callables;
 
@@ -207,7 +207,7 @@ public:
     // should have at least one element. if there is exactly one element,
     // the created type will not be a tuple, but the type of that element.
     std::optional<Id> addTuple(Tuple tup);
-    std::optional<Id> addFixedType(FixedType c);
+    std::optional<Id> addExplicitType(ExplicitType c);
     // if already exists, errors on redefinition, overrides otherwise
     std::optional<Id> addDataType(DataType data);
     Id addCallable(Callable call);
@@ -230,7 +230,7 @@ public:
     Id getPrimTypeId(PrimIds id) const;
     const Tuple& getTuple(Id id) const;
     const TypeDescr& getTypeDescr(Id id) const;
-    const FixedType& getFixedType(Id id) const;
+    const ExplicitType& getExplicitType(Id id) const;
     const DataType& getDataType(Id id) const;
     DataType& getDataType(Id id);
     const Callable& getCallable(Id id) const;
@@ -246,7 +246,7 @@ public:
     bool isPrimitive(Id t) const;
     bool isTuple(Id t) const;
     bool isTypeDescr(Id t) const;
-    bool isFixedType(Id t) const;
+    bool isExplicitType(Id t) const;
     bool isDataType(Id t) const;
     bool isCallable(Id t) const;
     
@@ -254,7 +254,7 @@ public:
     bool worksAsPrimitive(Id t, PrimIds p) const;
     bool worksAsPrimitive(Id t, PrimIds lo, PrimIds hi) const;
     bool worksAsTuple(Id t) const;
-    bool worksAsFixedType(Id t) const;
+    bool worksAsExplicitType(Id t) const;
     bool worksAsDataType(Id t) const;
     bool worksAsCallable(Id t) const;
     bool worksAsCallable(Id t, bool isFunc) const;
@@ -292,10 +292,10 @@ public:
     // handles constness of resulting type
     std::optional<Id> extractDataTypeElementType(Id t, std::size_t ind);
 
-    // passes through decors and fixed types
+    // passes through decors and explicit types
     Id extractBaseType(Id t) const;
-    // only passes through fixed types and cn
-    Id extractFixedTypeBaseType(Id t) const;
+    // only passes through explicit types and cn
+    Id extractExplicitTypeBaseType(Id t) const;
 
     bool fitsTypeI(int64_t x, Id t) const;
     bool fitsTypeU(uint64_t x, Id t) const;
@@ -311,7 +311,7 @@ public:
 
 template <typename T>
 bool TypeTable::worksAsTypeDescrSatisfyingCondition(Id t, T cond) const {
-    if (isFixedType(t)) return worksAsTypeDescrSatisfyingCondition(getFixedType(t).type, cond);
+    if (isExplicitType(t)) return worksAsTypeDescrSatisfyingCondition(getExplicitType(t).type, cond);
 
     if (isTypeDescr(t)) {
         const TypeDescr &ty = typeDescrs[t.index].first;
