@@ -22,6 +22,6 @@ fnc main () () {
 
     message::warning 400;
 
-    message::((loc "abcd")) 500;
-    message::(warning (loc "abcd")) 600;
+    message "abcd"::loc 500;
+    message::warning "abcd"::loc 600;
 };

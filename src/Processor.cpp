@@ -1353,9 +1353,6 @@ NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) 
     if (attrWarning.value()) status = CompilationMessages::S_WARNING;
     else if (attrError.value()) status = CompilationMessages::S_ERROR;
 
-    optional<NodeVal> attrLoc = getAttribute(starting, "loc");
-    CodeLoc codeLoc = attrLoc.has_value() ? attrLoc.value().getCodeLoc() : node.getCodeLoc();
-
     vector<NodeVal> opers;
     opers.reserve(node.getChildrenCnt()-1);
 
@@ -1367,12 +1364,23 @@ NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) 
         opers.push_back(move(nodeVal));
     }
 
+    CodeLoc codeLoc = node.getCodeLoc();
+    size_t indPrintStart = 0;
+
+    optional<NodeVal> attrLoc = getAttribute(opers.front(), "loc");
+    if (attrLoc.has_value()) {
+        if (!checkAtLeastChildren(node, 3, true)) return NodeVal();
+
+        codeLoc = opers.front().getCodeLoc();
+        indPrintStart = 1;
+    }
+
     if (!msgs->userMessageStart(codeLoc, status)) {
         msgs->errorInternal(node.getCodeLoc());
         return NodeVal();
     }
 
-    for (size_t i = 0; i < opers.size(); ++i) {
+    for (size_t i = indPrintStart; i < opers.size(); ++i) {
         const EvalVal &evalVal = opers[i].getEvalVal();
 
         if (EvalVal::isI(evalVal, typeTable)) {
@@ -1402,7 +1410,13 @@ NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) 
 
     msgs->userMessageEnd();
 
-    if (attrLoc.has_value()) msgs->displayCodeSegment(codeLoc);
+    if (attrLoc.has_value()) {
+        msgs->displayCodeSegment(codeLoc);
+
+        // none of printable types can have a drop function
+        // loc may be any value
+        if (!callDropFuncTmpVal(move(opers.front()))) return NodeVal();
+    }
 
     if (attrError.value()) return NodeVal();
     return NodeVal(node.getCodeLoc());

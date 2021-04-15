@@ -1,0 +1,3 @@
+fnc main () () {
+    message 1::loc;
+};

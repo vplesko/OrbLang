@@ -43,7 +43,7 @@ mac base.assertIsOfType (ty::preprocess x::preprocess) {
     ret \(block {
         exit (== ,(typeOf x) ,ty);
         exit (== ,(typeOf x) ,(ty cn));
-        message::(error (loc ,x)) "Value expected to be of type '" ,ty "'.";
+        message::error ,x::loc "Value expected to be of type '" ,ty "'.";
     });
 };
 
@@ -364,7 +364,7 @@ mac make (ty::preprocess pair rest::variadic) {
     range i (lenOf pairs) {
         base.assertIsOfType raw ([] pairs i);
         if (!= (lenOf ([] pairs i)) 2) {
-            message::(error (loc ([] pairs i))) "Each entry must contain exactly two values - element name and initial value.";
+            message::error ([] pairs i)::loc "Each entry must contain exactly two values - element name and initial value.";
         };
 
         = innerCode (+ innerCode \{ (= ([] ,inst ,([] pairs i 0)) ,([] pairs i 1)) });
@@ -409,7 +409,7 @@ mac base.-enumValsDecl (name enumTy::preprocess vals) {
     range i (lenOf vals) {
         if (isRaw ([] vals i)) {
             if (!= (lenOf ([] vals i)) 2) {
-                message::(error (loc ([] vals i))) "Each entry must be either an id or have exactly two values - name and initial value.";
+                message::error ([] vals i)::loc "Each entry must be either an id or have exactly two values - name and initial value.";
             };
 
             base.assertIsOfType id ([] vals i 0);
@@ -445,7 +445,7 @@ mac enum (name ty::preprocess vals) {
     base.assertIsOfType raw vals;
 
     if (== (lenOf vals) 0) {
-        message::(error (loc vals)) "Must specify at least one enum value.";
+        message::error vals::loc "Must specify at least one enum value.";
         ret ();
     };
 
