@@ -333,7 +333,7 @@ NodeVal Compiler::performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId funcI
     return performCall(codeLoc, codeLocFunc, nodeFunc, args);
 }
 
-NodeVal Compiler::performInvoke(CodeLoc codeLoc, MacroId macroId, const std::vector<NodeVal> &args) {
+NodeVal Compiler::performInvoke(CodeLoc codeLoc, MacroId macroId, std::vector<NodeVal> args) {
     msgs->errorInternal(codeLoc);
     return NodeVal();
 }

@@ -36,12 +36,13 @@ public:
 struct FuncValue : public BaseCallableValue {
     bool noNameMangle = false;
     bool defined = false;
+    bool isEvalFunc = false;
 
     llvm::Function *llvmFunc = nullptr;
-    std::optional<NodeVal> evalFunc;
+    std::unique_ptr<NodeVal> evalFunc;
 
     bool isLlvm() const { return llvmFunc != nullptr; }
-    bool isEval() const { return evalFunc.has_value(); }
+    bool isEval() const { return isEvalFunc; }
 
     static std::optional<TypeTable::Id> getRetType(const FuncValue &func, const TypeTable *typeTable);
 };
@@ -54,7 +55,7 @@ struct MacroValue : public BaseCallableValue {
     };
 
     std::vector<PreHandling> argPreHandling;
-    NodeVal body;
+    std::unique_ptr<NodeVal> body;
     
     static EscapeScore toEscapeScore(PreHandling h);
 };
@@ -126,7 +127,9 @@ private:
         std::vector<NodeVal> tmps;
     };
 
+    // guaranteed pointer stability of eval func body
     std::unordered_map<NamePool::Id, std::vector<FuncValue>, NamePool::Id::Hasher> funcs;
+    // guaranteed pointer stability of eval macro body
     std::unordered_map<NamePool::Id, std::vector<MacroValue>, NamePool::Id::Hasher> macros;
 
     std::vector<BlockInternal> globalBlockChain;
@@ -155,13 +158,13 @@ public:
     bool isVarName(NamePool::Id name) const;
     std::optional<VarId> getVarId(NamePool::Id name) const;
 
-    RegisterCallablePayload registerFunc(const FuncValue &val);
+    RegisterCallablePayload registerFunc(FuncValue val);
     const FuncValue& getFunc(FuncId funcId) const;
     FuncValue& getFunc(FuncId funcId);
     bool isFuncName(NamePool::Id name) const;
     std::vector<FuncId> getFuncIds(NamePool::Id name) const;
 
-    RegisterCallablePayload registerMacro(const MacroValue &val, const TypeTable *typeTable);
+    RegisterCallablePayload registerMacro(MacroValue val, const TypeTable *typeTable);
     const MacroValue& getMacro(MacroId macroId) const;
     MacroValue& getMacro(MacroId macroId);
     bool isMacroName(NamePool::Id name) const;

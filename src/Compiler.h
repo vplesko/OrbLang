@@ -61,7 +61,7 @@ class Compiler : public Processor {
     bool performPass(CodeLoc codeLoc, SymbolTable::Block block, NodeVal val) override;
     NodeVal performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, const NodeVal &func, const std::vector<NodeVal> &args) override;
     NodeVal performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId funcId, const std::vector<NodeVal> &args) override;
-    NodeVal performInvoke(CodeLoc codeLoc, MacroId macroId, const std::vector<NodeVal> &args) override;
+    NodeVal performInvoke(CodeLoc codeLoc, MacroId macroId, std::vector<NodeVal> args) override;
     bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) override;
     bool performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) override;
     bool performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, MacroValue &macro) override;

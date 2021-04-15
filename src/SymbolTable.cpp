@@ -157,7 +157,7 @@ optional<VarId> SymbolTable::getVarId(NamePool::Id name) const {
     return nullopt;
 }
 
-SymbolTable::RegisterCallablePayload SymbolTable::registerFunc(const FuncValue &val) {
+SymbolTable::RegisterCallablePayload SymbolTable::registerFunc(FuncValue val) {
     // cannot combine funcs and macros in overloading
     if (isMacroName(val.name)) {
         RegisterCallablePayload ret;
@@ -197,12 +197,12 @@ SymbolTable::RegisterCallablePayload SymbolTable::registerFunc(const FuncValue &
     funcId.name = val.name;
     if (!existing.has_value()) {
         // if no decls with same sig, simply add
-        funcs[val.name].push_back(FuncValue(val));
-        funcId.index = funcs[val.name].size()-1;
+        funcId.index = funcs[val.name].size();
+        funcs[val.name].push_back(move(val));
     } else {
         // otherwise, replace with new one only if definition
-        if (val.defined) funcs[val.name][existing.value()] = FuncValue(val);
         funcId.index = existing.value();
+        if (val.defined) funcs[val.name][existing.value()] = move(val);
     }
 
     RegisterCallablePayload ret;
@@ -238,7 +238,7 @@ vector<FuncId> SymbolTable::getFuncIds(NamePool::Id name) const {
     return ret;
 }
 
-SymbolTable::RegisterCallablePayload SymbolTable::registerMacro(const MacroValue &val, const TypeTable *typeTable) {
+SymbolTable::RegisterCallablePayload SymbolTable::registerMacro(MacroValue val, const TypeTable *typeTable) {
     // cannot combine funcs and macros in overloading
     if (isFuncName(val.name)) {
         RegisterCallablePayload ret;
@@ -272,11 +272,11 @@ SymbolTable::RegisterCallablePayload SymbolTable::registerMacro(const MacroValue
         }
     }
 
-    macros[val.name].push_back(MacroValue(val));
-
     MacroId macroId;
     macroId.name = val.name;
-    macroId.index = macros[val.name].size()-1;
+    macroId.index = macros[val.name].size();
+
+    macros[val.name].push_back(move(val));
 
     RegisterCallablePayload ret;
     ret.kind = RegisterCallablePayload::Kind::kSuccess;

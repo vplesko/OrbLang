@@ -697,7 +697,7 @@ NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
             if (nodeDrop.isInvalid()) return NodeVal();
             if (!checkIsEmpty(nodeDrop, false)) {
                 if (!checkIsDropFuncType(nodeDrop, typeIdOpt.value(), true)) return NodeVal();
-                symbolTable->registerDropFunc(typeIdOpt.value(), nodeDrop);
+                symbolTable->registerDropFunc(typeIdOpt.value(), move(nodeDrop));
             }
         }
     }
@@ -1042,7 +1042,7 @@ NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
         if (!compiler->performFunctionDeclaration(node.getCodeLoc(), funcVal)) return NodeVal();
     }
 
-    SymbolTable::RegisterCallablePayload symbId = symbolTable->registerFunc(funcVal);
+    SymbolTable::RegisterCallablePayload symbId = symbolTable->registerFunc(move(funcVal));
     if (symbId.kind != SymbolTable::RegisterCallablePayload::Kind::kSuccess) {
         switch (symbId.kind) {
         case SymbolTable::RegisterCallablePayload::Kind::kOtherCallableTypeSameName:
@@ -1210,7 +1210,7 @@ NodeVal Processor::processMac(const NodeVal &node, const NodeVal &starting) {
             symbolTable->addVar(move(varEntry), true);
         }
 
-        SymbolTable::RegisterCallablePayload symbId = symbolTable->registerMacro(macroVal, typeTable);
+        SymbolTable::RegisterCallablePayload symbId = symbolTable->registerMacro(move(macroVal), typeTable);
         if (symbId.kind != SymbolTable::RegisterCallablePayload::Kind::kSuccess) {
             switch (symbId.kind) {
             case SymbolTable::RegisterCallablePayload::Kind::kOtherCallableTypeSameName:
@@ -2138,7 +2138,7 @@ NodeVal Processor::invoke(CodeLoc codeLoc, MacroId macroId, vector<NodeVal> args
         args.push_back(move(totalVarArg));
     }
 
-    NodeVal ret = evaluator->performInvoke(codeLoc, macroId, args);
+    NodeVal ret = evaluator->performInvoke(codeLoc, macroId, move(args));
     if (ret.isInvalid()) return NodeVal();
 
     return ret;
@@ -2625,10 +2625,8 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
 
 NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
     // value kept so drop can be called
-    NodeVal base = processNode(*opers[0]);
-    if (base.isInvalid()) return NodeVal();
-
-    NodeVal lhs = base;
+    NodeVal lhs = processNode(*opers[0]);
+    if (lhs.isInvalid()) return NodeVal();
 
     for (size_t i = 1; i < opers.size(); ++i) {
         if (!checkHasType(lhs, true)) return NodeVal();

@@ -40,7 +40,7 @@ protected:
     virtual bool performPass(CodeLoc codeLoc, SymbolTable::Block block, NodeVal val) =0;
     virtual NodeVal performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, const NodeVal &func, const std::vector<NodeVal> &args) =0;
     virtual NodeVal performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId funcId, const std::vector<NodeVal> &args) =0;
-    virtual NodeVal performInvoke(CodeLoc codeLoc, MacroId macroId, const std::vector<NodeVal> &args) =0;
+    virtual NodeVal performInvoke(CodeLoc codeLoc, MacroId macroId, std::vector<NodeVal> args) =0;
     virtual bool performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) =0;
     virtual bool performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) =0;
     virtual bool performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, MacroValue &macro) =0;

@@ -174,11 +174,7 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId func
         msgs->errorFuncNoDef(codeLocFunc);
         return NodeVal();
     }
-    if (!func.evalFunc.has_value()) {
-        msgs->errorInternal(codeLocFunc);
-        return NodeVal();
-    }
-    if (func.evalFunc.value().isInvalid()) {
+    if (!func.isEvalFunc || func.evalFunc == nullptr || func.evalFunc->isInvalid()) {
         msgs->errorInternal(codeLocFunc);
         return NodeVal();
     }
@@ -200,7 +196,7 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId func
 
     bool retIssued = false;
     try {
-        if (!processChildNodes(func.evalFunc.value())) {
+        if (!processChildNodes(*func.evalFunc)) {
             return NodeVal();
         }
     } catch (ExceptionEvaluatorJump ex) {
@@ -227,7 +223,7 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId func
     }
 }
 
-NodeVal Evaluator::performInvoke(CodeLoc codeLoc, MacroId macroId, const std::vector<NodeVal> &args) {
+NodeVal Evaluator::performInvoke(CodeLoc codeLoc, MacroId macroId, std::vector<NodeVal> args) {
     const MacroValue &macro = symbolTable->getMacro(macroId);
 
     LifetimeInfo::NestLevel nestLevel = symbolTable->currNestLevel();
@@ -237,10 +233,10 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, MacroId macroId, const std::ve
     for (size_t i = 0; i < args.size(); ++i) {
         SymbolTable::VarEntry varEntry;
         varEntry.name = macro.argNames[i];
-        varEntry.var = args[i];
+        varEntry.var = move(args[i]);
 
-        if (args[i].getLifetimeInfo().has_value()) {
-            LifetimeInfo lifetimeInfo = args[i].getLifetimeInfo().value();
+        if (varEntry.var.getLifetimeInfo().has_value()) {
+            LifetimeInfo lifetimeInfo = varEntry.var.getLifetimeInfo().value();
             lifetimeInfo.invokeArg = true;
             varEntry.var.setLifetimeInfo(lifetimeInfo);
         }
@@ -249,7 +245,7 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, MacroId macroId, const std::ve
     }
 
     try {
-        if (!processChildNodes(macro.body)) {
+        if (!processChildNodes(*macro.body)) {
             return NodeVal();
         }
     } catch (ExceptionEvaluatorJump ex) {
@@ -274,17 +270,17 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, MacroId macroId, const std::ve
 
 bool Evaluator::performFunctionDeclaration(CodeLoc codeLoc, FuncValue &func) {
     // mark the func as eval, but it cannot be called
-    func.evalFunc = NodeVal();
+    func.isEvalFunc = true;
     return true;
 }
 
 bool Evaluator::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, FuncValue &func) {
-    func.evalFunc = body;
+    func.evalFunc = std::make_unique<NodeVal>(body);
     return true;
 }
 
 bool Evaluator::performMacroDefinition(CodeLoc codeLoc, const NodeVal &args, const NodeVal &body, MacroValue &macro) {
-    macro.body = body;
+    macro.body = std::make_unique<NodeVal>(body);
     return true;
 }
 
