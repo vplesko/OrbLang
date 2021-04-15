@@ -2366,8 +2366,7 @@ bool Processor::processAttributes(NodeVal &node, bool forceUnescape) {
                         attrVal = processNode(*nodeAttrEntryVal);
                         if (attrVal.isInvalid()) return false;
                         if (!checkHasType(attrVal, true)) return false;
-                        if (!attrVal.hasRef() && !attrVal.isInvokeArg() &&
-                            !checkNotNeedsDrop(attrVal.getCodeLoc(), attrVal, false)) {
+                        if (!hasTrivialDrop(attrVal.getType().value())) {
                             msgs->errorAttributeOwning(nodeAttrEntry.getCodeLoc(), attrName);
                             return false;
                         }
