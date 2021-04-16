@@ -289,6 +289,14 @@ fnc main () () {
         println_i32 ([] r 0);
         println_i32 ([] r 1);
     };
+    block {
+        cond false 
+            (something that would not compile !!!)
+            (println_i32 1109);
+        cond true
+            (println_i32 1110)
+            (this also would not compile !!!);
+    };
 
     block {
         ?_ Bar true (make Bar (x 1200)) (make Bar (x -1));
