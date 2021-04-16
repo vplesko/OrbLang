@@ -285,7 +285,7 @@ fnc main () () {
         sym (x 999);
         println_i32 (+ 1106 (cast i32 (isRaw x)));
         = x 1107;
-        = r (makeRaw x 1108);
+        = r (makeRawWith x 1108);
         println_i32 ([] r 0);
         println_i32 ([] r 1);
     };

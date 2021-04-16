@@ -149,7 +149,7 @@ mac std.-genFncList (name args retTy body) {
             fnc::global (passthrough genName)::(compilable (evaluable false)) ,fncArgs ,retTy ,body;
         };
 
-        ret ,(+ \(makeRaw genName (makeRaw (escape &) list)) macArgsPastFirst);
+        ret ,(+ \(makeRawWith genName (makeRawWith (escape &) list)) macArgsPastFirst);
     });
 };
 

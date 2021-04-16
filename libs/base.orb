@@ -35,7 +35,7 @@ mac isRaw (x::preprocess) {
     ret true;
 };
 
-mac makeRaw (vals::(variadic preprocess)) {
+mac makeRawWith (vals::(variadic preprocess)) {
     ret \(escape ,vals);
 };
 
