@@ -41,6 +41,9 @@ fnc main () () {
         if (!= (typeOf (std.* x)) u32) {
             println_i32 -1;
         };
+        if (!= (std.getValTy x) u32) {
+            println_i32 -1;
+        };
     };
 
     block {
@@ -55,7 +58,7 @@ fnc main () () {
         println_i32 (cast i32 (+ 200 (std.getLen x)));
         = (std.[] x 0) 202;
         println_i32 (std.[] x 0);
-        if (! (== (typeOf (std.[] x 0)) i32)) {
+        if (!= (typeOf (std.[] x 0)) i32) {
             println_i32 -1;
         };
     };
@@ -66,10 +69,10 @@ fnc main () () {
     };
     block {
         sym (x (std.makeList u32 1));
-        if (! (== (typeOf (std.[] x 0)) u32)) {
+        if (!= (typeOf (std.[] x 0)) u32) {
             println_i32 -1;
         };
-        if (! (== (std.getElemTy x) u32)) {
+        if (!= (std.getElemTy x) u32) {
             println_i32 -1;
         };
         if (> (std.getLen x) (std.getCap x)) {

@@ -9,13 +9,8 @@ data Foo {
 }::(attr0 (attr1 1) (attr2 x));
 
 data Bar {
-    x:i32
-} (fnc dropBar (this:Bar::noDrop) () {
-    block {
-        exit (== ([] this x) 0);
-        println_i32 ([] this x);
-    };
-});
+    dummy:i32
+} (fnc dropBar (this:Bar::noDrop) () {});
 
 fnc main () () {
     eval (sym (x \()));
@@ -129,10 +124,5 @@ fnc main () () {
             = p -1;
         };
         println_i32 p;
-
-        sym bar:Bar;
-        = ([] bar x) 32;
-        (attrOf Bar drop) bar;
-        = ([] bar x) 0;
     };
 };

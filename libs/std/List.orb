@@ -87,9 +87,15 @@ eval (fnc std.List (elemTy:type) type {
             -end:(elemTy [])
             -bound:(elemTy [])
         }::((std.elemTy ,elemTy)) (fnc::global std.-dropList::(compilable (evaluable false)) (this:,name::noDrop) () {
-            std.rangeRev it this {
-                >>::noZero (it);
-            };
+            sym (elemTy::evaluated (std.getElemTy this));
+            cond (attr?? elemTy drop)
+                (block {
+                    sym (dropFunc (attrOf elemTy drop));
+                    std.rangeRev it this {
+                        dropFunc (it);
+                    };
+                });
+
             free (cast ptr ([] this -start));
         });
     };
@@ -181,9 +187,13 @@ std.-genFncList std.resize (len:std.Size) () {
         sym (ptrPastOldLen (std.getArrPtrToInd elemTy (-> this -start) oldLen));
         std.setElemsToZero elemTy ptrPastOldLen (- len oldLen);
     } (< len oldLen) {
-        std.rangeRev it (* this) (- oldLen 1) len {
-            >>::noZero (it);
-        };
+        cond (attr?? elemTy drop)
+            (block {
+                sym (dropFunc (attrOf elemTy drop));
+                std.rangeRev it (* this) (- oldLen 1) len {
+                    dropFunc (it);
+                };
+            });
     };
     = (-> this -end) (std.getArrPtrToInd elemTy (-> this -start) len);
 };
@@ -208,13 +218,20 @@ std.-genFncList std.pop () () {
     sym (elemTy::evaluated (std.getElemTy (* this)));
 
     = (-> this -end) (std.getArrPtrToInd elemTy (-> this -end) -1);
-    >>::noZero ([] (-> this -end) 0);
+    cond (attr?? elemTy drop)
+        ((attrOf elemTy drop) ([] (-> this -end) 0));
 };
 
 std.-genFncList std.clear () () {
+    sym (elemTy::evaluated (std.getElemTy (* this)));
+
     sym (oldLen (std.getLen (* this)));
     = (-> this -end) (-> this -start);
-    rangeRev i oldLen {
-        >>::noZero ([] (-> this -start) i);
-    };
+    cond (attr?? elemTy drop)
+        (block {
+            sym (dropFunc (attrOf elemTy drop));
+            rangeRev i oldLen {
+                dropFunc ([] (-> this -start) i);
+            };
+        });
 };

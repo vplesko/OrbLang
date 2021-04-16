@@ -1,16 +1,22 @@
 import "base.orb";
 import "clib.orb";
 
-eval (fnc std.One (t:type) type {
-    sym (name (+ \std.One (cast id t)));
+mac std.getValTy (one::preprocess) {
+    ret (attrOf (typeOf one) std.valTy);
+};
+
+eval (fnc std.One (valTy:type) type {
+    sym (name (+ \std.One (cast id valTy)));
 
     if (! (?? ,name)) {
         data::global ,name {
-            -p:(t *)
-        } (fnc::global std.-dropOne::(compilable (evaluable false)) (this:,name::noDrop) () {
-            if (!= ([] this -p) null) {
-                >>::noZero (* ([] this -p));
-            };
+            -p:(valTy *)
+        }::((std.valTy ,valTy)) (fnc::global std.-dropOne::(compilable (evaluable false)) (this:,name::noDrop) () {
+            sym (valTy::evaluated (std.getValTy this));
+            cond (attr?? valTy drop)
+                (if (!= ([] this -p) null) {
+                    (attrOf valTy drop) (* ([] this -p));
+                });
             free (cast ptr ([] this -p));
         });
     };
@@ -18,12 +24,12 @@ eval (fnc std.One (t:type) type {
     ret (name);
 });
 
-mac std.makeOne (t::preprocess) {
-    sym (oneTy (std.One t));
+mac std.makeOne (valTy::preprocess) {
+    sym (oneTy (std.One valTy));
 
     ret \(block ,oneTy {
         sym x:,oneTy;
-        = ([] x -p) (cast ,(t *) (calloc 1 ,(sizeOf t)));
+        = ([] x -p) (cast ,(valTy *) (calloc 1 ,(sizeOf valTy)));
         pass x;
     });
 };

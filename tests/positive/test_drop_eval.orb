@@ -286,7 +286,7 @@ fnc main () () {
 
     eval (block {
         sym (f (foo7 3100));
-        >>::noZero f;
+        (attrOf (typeOf f) drop) f;
     });
 
     printDropVals;
