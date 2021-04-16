@@ -51,6 +51,7 @@ void CompilationOrchestrator::genReserved() {
     addMeaningful(namePool.get(), "*", Meaningful::ASTERISK);
     addMeaningful(namePool.get(), "[]", Meaningful::SQUARE);
     addMeaningful(namePool.get(), "type", Meaningful::TYPE);
+    addMeaningful(namePool.get(), "drop", Meaningful::DROP);
 
     addKeyword(namePool.get(), "sym", Keyword::SYM);
     addKeyword(namePool.get(), "cast", Keyword::CAST);

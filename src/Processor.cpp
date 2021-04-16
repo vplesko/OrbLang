@@ -1629,9 +1629,16 @@ optional<NodeVal> Processor::getAttributeFull(const NodeVal &node, NamePool::Id 
 
     if (checkIsType(node, false)) {
         TypeTable::Id baseTy = typeTable->extractExplicitTypeBaseType(node.getEvalVal().ty());
+
         const AttrMap *attrMap = symbolTable->getDataAttrs(baseTy);
         if (attrMap != nullptr) {
-            return getAttribute(*attrMap, attrName);
+            optional<NodeVal> attr = getAttribute(*attrMap, attrName);
+            if (attr.has_value()) return attr;
+        }
+
+        if (attrName == getMeaningfulNameId(Meaningful::DROP)) {
+            const NodeVal *dropFunc = symbolTable->getDropFunc(baseTy);
+            if (dropFunc != nullptr) return *dropFunc;
         }
     }
 
