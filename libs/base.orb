@@ -47,12 +47,16 @@ mac base.assertIsOfType (ty::preprocess x::preprocess) {
     });
 };
 
-mac cond (cond::preprocess onTrue onFalse) {
+mac cond (cond_::preprocess onTrue onFalse) {
     block {
-        exit (! cond);
+        exit (! cond_);
         ret onTrue;
     };
     ret onFalse;
+};
+
+mac cond (cond_::preprocess onTrue) {
+    ret \(cond ,cond_ ,onTrue ());
 };
 
 mac if (cond then) {

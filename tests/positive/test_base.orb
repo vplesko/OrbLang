@@ -296,6 +296,10 @@ fnc main () () {
         cond true
             (println_i32 1110)
             (this also would not compile !!!);
+        cond false
+            (i am error !!!);
+        cond true
+            (println_i32 1111);
     };
 
     block {
