@@ -97,5 +97,19 @@ fnc main () () {
         println_i32 ((attrOf Foo attr2));
 
         println_i32 (attrOf Foo::((attr0 28)) attr0);
+
+        = p 29;
+        block {
+            exit (attr?? Foo attr0);
+            = p -1;
+        };
+        println_i32 p;
+
+        = p 30;
+        block {
+            exit (! (attr?? Foo badId));
+            = p -1;
+        };
+        println_i32 p;
     };
 };

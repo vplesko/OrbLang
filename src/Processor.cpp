@@ -1552,14 +1552,7 @@ NodeVal Processor::processAttrOf(const NodeVal &node) {
     if (name.isInvalid()) return NodeVal();
     NamePool::Id attrName = name.getEvalVal().id();
 
-    optional<NodeVal> nodeAttr = getAttribute(operand, attrName);
-    if (!nodeAttr.has_value() && checkIsType(operand, false)) {
-        TypeTable::Id baseTy = typeTable->extractExplicitTypeBaseType(operand.getEvalVal().ty());
-        const AttrMap *attrMap = symbolTable->getDataAttrs(baseTy);
-        if (attrMap != nullptr) {
-            nodeAttr = getAttribute(*attrMap, attrName);
-        }
-    }
+    optional<NodeVal> nodeAttr = getAttributeFull(operand, attrName);
     if (!nodeAttr.has_value()) {
         msgs->errorAttributeNotFound(node.getCodeLoc(), attrName);
         return NodeVal();
@@ -1583,18 +1576,7 @@ NodeVal Processor::processAttrIsDef(const NodeVal &node) {
 
     NamePool::Id typeId = getMeaningfulNameId(Meaningful::TYPE);
 
-    bool attrIsDef;
-    if (attrName == typeId) {
-        attrIsDef = operand.hasTypeAttr();
-    } else {
-        if (!operand.hasNonTypeAttrs()) {
-            attrIsDef = false;
-        } else {
-            const NodeVal &nonTypeAttrs = operand.getNonTypeAttrs();
-
-            attrIsDef = nonTypeAttrs.getAttrMap().attrMap.find(attrName) != nonTypeAttrs.getAttrMap().attrMap.end();
-        }
-    }
+    bool attrIsDef = getAttributeFull(operand, attrName).has_value();
 
     if (!callDropFuncTmpVal(move(operand))) return NodeVal();
 
@@ -1639,6 +1621,21 @@ optional<bool> Processor::getAttributeForBool(const NodeVal &node, NamePool::Id 
 
 optional<bool> Processor::getAttributeForBool(const NodeVal &node, const std::string &attrStrName, bool default_) {
     return getAttributeForBool(node, namePool->add(attrStrName), default_);
+}
+
+optional<NodeVal> Processor::getAttributeFull(const NodeVal &node, NamePool::Id attrName) {
+    optional<NodeVal> attr = getAttribute(node, attrName);
+    if (attr.has_value()) return attr;
+
+    if (checkIsType(node, false)) {
+        TypeTable::Id baseTy = typeTable->extractExplicitTypeBaseType(node.getEvalVal().ty());
+        const AttrMap *attrMap = symbolTable->getDataAttrs(baseTy);
+        if (attrMap != nullptr) {
+            return getAttribute(*attrMap, attrName);
+        }
+    }
+
+    return nullopt;
 }
 
 NodeVal Processor::promoteBool(CodeLoc codeLoc, bool b) const {
