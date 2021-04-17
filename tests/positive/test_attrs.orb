@@ -8,10 +8,6 @@ data Foo {
     dummy:i32
 }::(attr0 (attr1 1) (attr2 x));
 
-data Bar {
-    dummy:i32
-} (fnc dropBar (this:Bar::noDrop) () {});
-
 fnc main () () {
     eval (sym (x \()));
     println_i32 (cast i32 (attr?? x foo));
@@ -112,15 +108,6 @@ fnc main () () {
         = p 30;
         block {
             exit (! (attr?? Foo badId));
-            = p -1;
-        };
-        println_i32 p;
-    };
-
-    block {
-        = p 31;
-        block {
-            exit (attr?? Bar drop);
             = p -1;
         };
         println_i32 p;

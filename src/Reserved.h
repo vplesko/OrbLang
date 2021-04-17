@@ -10,7 +10,6 @@ enum class Meaningful {
     ASTERISK,
     SQUARE,
     TYPE,
-    DROP,
     UNKNOWN
 };
 

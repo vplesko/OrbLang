@@ -265,6 +265,6 @@ fnc main () () {
 
     block {
         sym (f (foo7 3000));
-        (attrOf (typeOf f) drop) f;
+        >>::noZero f;
     };
 };

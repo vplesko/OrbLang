@@ -1635,11 +1635,6 @@ optional<NodeVal> Processor::getAttributeFull(const NodeVal &node, NamePool::Id 
             optional<NodeVal> attr = getAttribute(*attrMap, attrName);
             if (attr.has_value()) return attr;
         }
-
-        if (attrName == getMeaningfulNameId(Meaningful::DROP)) {
-            const NodeVal *dropFunc = symbolTable->getDropFunc(baseTy);
-            if (dropFunc != nullptr) return *dropFunc;
-        }
     }
 
     return nullopt;
@@ -2106,18 +2101,20 @@ NodeVal Processor::moveNode(CodeLoc codeLoc, NodeVal val, bool noZero) {
         return val;
     }
 
-    TypeTable::Id valTy = val.getType().value();
-    if (typeTable->worksAsTypeCn(valTy)) {
-        msgs->errorExprMoveCn(codeLoc);
-        return NodeVal();
+    if (!noZero) {
+        TypeTable::Id valTy = val.getType().value();
+        if (typeTable->worksAsTypeCn(valTy)) {
+            msgs->errorExprMoveCn(codeLoc);
+            return NodeVal();
+        }
+
+        NodeVal zero;
+        if (checkIsEvalTime(val, false)) zero = evaluator->performZero(codeLoc, valTy);
+        else zero = performZero(codeLoc, valTy);
+        if (zero.isInvalid()) return NodeVal();
+
+        if (dispatchAssignment(codeLoc, val, move(zero)).isInvalid()) return NodeVal();
     }
-
-    NodeVal zero;
-    if (checkIsEvalTime(val, false)) zero = evaluator->performZero(codeLoc, valTy);
-    else zero = performZero(codeLoc, valTy);
-    if (zero.isInvalid()) return NodeVal();
-
-    if (dispatchAssignment(codeLoc, val, move(zero)).isInvalid()) return NodeVal();
 
     // val itself remained unchanged
     return NodeVal::moveNoRef(codeLoc, move(val), LifetimeInfo());
@@ -2513,7 +2510,10 @@ NodeVal Processor::processOperUnary(CodeLoc codeLoc, const NodeVal &starting, co
     if (op == Oper::MUL) {
         return dispatchOperUnaryDeref(codeLoc, operProc);
     } else if (op == Oper::SHR) {
-        return moveNode(codeLoc, move(operProc), false);
+        optional<bool> attrNoZero = getAttributeForBool(starting, "noZero");
+        if (!attrNoZero.has_value()) return NodeVal();
+
+        return moveNode(codeLoc, move(operProc), attrNoZero.value());
     } else {
         if (checkIsEvalTime(operProc, false)) {
             return evaluator->performOperUnary(codeLoc, move(operProc), op);

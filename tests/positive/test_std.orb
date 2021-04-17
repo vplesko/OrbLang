@@ -45,6 +45,11 @@ fnc main () () {
             println_i32 -1;
         };
     };
+    block {
+        sym (f (std.makeOne (Foo 2)));
+        = ([] (std.* f) 0 x) 105;
+        = ([] (std.* f) 1 x) 104;
+    };
 
     block {
         sym x:(std.List i32);
@@ -183,5 +188,9 @@ fnc main () () {
         sym (x (std.makeListWith Foo (makeFoo 232) (makeFoo 231)));
         std.clear x;
         std.push x (makeFoo 233);
+    };
+    block {
+        sym x:(std.List (Foo 2));
+        std.push x (arr Foo (makeFoo 235) (makeFoo 234));
     };
 };

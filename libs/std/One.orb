@@ -12,11 +12,9 @@ eval (fnc std.One (valTy:type) type {
         data::global ,name {
             -p:(valTy *)
         }::((std.valTy ,valTy)) (fnc::global std.-dropOne::(compilable (evaluable false)) (this:,name::noDrop) () {
-            sym (valTy::evaluated (std.getValTy this));
-            cond (attr?? valTy drop)
-                (if (!= ([] this -p) null) {
-                    (attrOf valTy drop) (* ([] this -p));
-                });
+            if (!= ([] this -p) null) {
+                >>::noZero (* ([] this -p));
+            };
             free (cast ptr ([] this -p));
         });
     };
