@@ -1436,13 +1436,13 @@ NodeVal Processor::processOper(const NodeVal &node, const NodeVal &starting, Ope
     for (size_t i = 1; i < node.getChildrenCnt(); ++i) {
         operands.push_back(&node.getChild(i));
     }
-    
+
     if (operInfo.comparison) {
         return processOperComparison(starting.getCodeLoc(), operands, op);
     } else if (op == Oper::ASGN) {
         return processOperAssignment(starting.getCodeLoc(), operands);
     } else if (op == Oper::IND) {
-        return processOperIndex(starting.getCodeLoc(), operands);
+        return processOperIndex(node.getCodeLoc(), operands);
     } else {
         return processOperRegular(starting.getCodeLoc(), starting, operands, op);
     }
@@ -2701,21 +2701,19 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
             return NodeVal();
         }
 
-        CodeLoc codeLocRes = codeLoc;
-        codeLocRes.end = index.getCodeLoc().end;
-
         if (isBaseRaw) {
-            lhs = getRawElement(codeLocRes, lhs, (size_t) indexVal.value());
+            lhs = getRawElement(lhs.getCodeLoc(), lhs, (size_t) indexVal.value());
         } else if (isBaseTup) {
-            lhs = getTupleElement(codeLocRes, lhs, (size_t) indexVal.value());
+            lhs = getTupleElement(lhs.getCodeLoc(), lhs, (size_t) indexVal.value());
         } else if (isBaseData) {
-            lhs = getDataElement(codeLocRes, lhs, (size_t) indexVal.value());
+            lhs = getDataElement(lhs.getCodeLoc(), lhs, (size_t) indexVal.value());
         } else {
-            lhs = getArrElement(codeLocRes, lhs, index);
+            lhs = getArrElement(lhs.getCodeLoc(), lhs, index);
             if (lhs.isInvalid()) return NodeVal();
         }
     }
 
+    lhs.setCodeLoc(codeLoc);
     return lhs;
 }
 
