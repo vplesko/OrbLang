@@ -8,7 +8,7 @@ It offers a powerful macro system - procedures which return Orb code to be compi
 
 ## Examples
 
-**If you are interested in what Orb code looks like, look inside `doc/examples/` for some examples with explanations.**
+**If you are interested in what Orb code looks like, look inside `misc/examples/` for some examples with explanations.**
 
 `libs/` contains source files for standard use in Orb projects. Reading these will give you more ideas on what is possible with Orb.
 
