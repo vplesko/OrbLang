@@ -11,7 +11,7 @@ eval (fnc std.One (valTy:type) type {
     if (! (?? ,name)) {
         data::global ,name {
             -p:(valTy *)
-        }::((std.valTy ,valTy)) (fnc::global std.-dropOne::(compilable (evaluable false)) (this:,name::noDrop) () {
+        }::((std.class std.One) (std.valTy ,valTy)) (fnc::global std.-dropOne::(compilable (evaluable false)) (this:,name::noDrop) () {
             if (!= ([] this -p) null) {
                 >>::noZero (* ([] this -p));
             };

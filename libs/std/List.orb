@@ -86,7 +86,7 @@ eval (fnc std.List (elemTy:type) type {
             -start:(elemTy [])
             -end:(elemTy [])
             -bound:(elemTy [])
-        }::((std.elemTy ,elemTy)) (fnc::global std.-dropList::(compilable (evaluable false)) (this:,name::noDrop) () {
+        }::((std.class std.List) (std.elemTy ,elemTy)) (fnc::global std.-dropList::(compilable (evaluable false)) (this:,name::noDrop) () {
             std.rangeRev it this {
                 >>::noZero (it);
             };
