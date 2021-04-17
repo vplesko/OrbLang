@@ -1,5 +1,7 @@
+---
+layout: default
+title: Home
+---
 # Hello
 
-## Hello
-
-Hello
+Hello, world!
