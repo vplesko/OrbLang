@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <string>
 #include "StringPool.h"
 
@@ -14,3 +15,7 @@ struct CodeLoc {
     CodeLocPoint start;
     CodeLocPoint end; // points to a position after code loc
 };
+
+// for debugging
+std::ostream& operator<<(std::ostream &out, CodeLocPoint locPnt);
+std::ostream& operator<<(std::ostream &out, CodeLoc loc);

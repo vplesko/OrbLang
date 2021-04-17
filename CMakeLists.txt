@@ -68,6 +68,7 @@ set(SOURCE_FILES
     "src/AttrMap.cpp"
     "src/BlockControl.cpp"
     "src/ClangAdapter.cpp"
+    "src/CodeLoc.cpp"
     "src/CompilationOrchestrator.cpp"
     "src/CompilationMessages.cpp"
     "src/Compiler.cpp"

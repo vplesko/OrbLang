@@ -631,7 +631,7 @@ NodeVal Evaluator::performOperIndexArr(CodeLoc codeLoc, NodeVal &base, const Nod
     }
 
     if (typeTable->worksAsTypeArr(base.getType().value())) {
-        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems()[index.value()], base.getEvalVal().getLifetimeInfo());
+        NodeVal nodeVal = NodeVal::copyNoRef(codeLoc, base.getEvalVal().elems()[index.value()], base.getEvalVal().getLifetimeInfo());
         nodeVal.getEvalVal().getType() = resTy;
         if (base.hasRef()) {
             NodeVal &baseRefee = EvalVal::getRefee(base.getEvalVal(), symbolTable);
@@ -653,7 +653,7 @@ NodeVal Evaluator::performOperIndexArr(CodeLoc codeLoc, NodeVal &base, const Nod
         // not a ref-val
         EvalVal evalVal = EvalVal::makeVal(resTy, typeTable);
         evalVal.c8() = str[index.value()];
-        return NodeVal(base.getCodeLoc(), move(evalVal));
+        return NodeVal(codeLoc, move(evalVal));
     } else if (typeTable->worksAsTypeArrP(base.getType().value())) {
         msgs->errorExprIndexNull(codeLoc);
         return NodeVal();
@@ -684,7 +684,7 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, std::uint64_
         }
         return nodeVal;
     } else {
-        NodeVal nodeVal = NodeVal::copyNoRef(base.getCodeLoc(), base.getEvalVal().elems()[ind], base.getEvalVal().getLifetimeInfo());
+        NodeVal nodeVal = NodeVal::copyNoRef(codeLoc, base.getEvalVal().elems()[ind], base.getEvalVal().getLifetimeInfo());
         nodeVal.getEvalVal().getType() = resTy;
         if (base.hasRef()) {
             NodeVal &baseRefee = EvalVal::getRefee(base.getEvalVal(), symbolTable);

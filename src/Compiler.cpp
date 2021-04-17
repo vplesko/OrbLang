@@ -702,7 +702,7 @@ NodeVal Compiler::performOperIndexArr(CodeLoc codeLoc, NodeVal &base, const Node
         return NodeVal();
     }
 
-    return NodeVal(basePromo.getCodeLoc(), llvmVal);
+    return NodeVal(codeLoc, llvmVal);
 }
 
 NodeVal Compiler::performOperIndex(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
@@ -719,7 +719,7 @@ NodeVal Compiler::performOperIndex(CodeLoc codeLoc, NodeVal &base, std::uint64_t
         llvmVal.val = llvmBuilder.CreateExtractValue(basePromo.getLlvmVal().val, {(unsigned) ind}, "ind_tmp");
     }
     llvmVal.lifetimeInfo = basePromo.getLlvmVal().lifetimeInfo;
-    return NodeVal(basePromo.getCodeLoc(), llvmVal);
+    return NodeVal(codeLoc, llvmVal);
 }
 
 NodeVal Compiler::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, bool bare) {

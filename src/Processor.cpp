@@ -1957,7 +1957,7 @@ NodeVal Processor::getArrElement(CodeLoc codeLoc, NodeVal &array, const NodeVal 
     if (checkIsEvalTime(array, false) && checkIsEvalTime(index, false)) {
         return evaluator->performOperIndexArr(codeLoc, array, index, resType);
     } else {
-        return performOperIndexArr(array.getCodeLoc(), array, index, resType);
+        return performOperIndexArr(codeLoc, array, index, resType);
     }
 }
 
@@ -2623,7 +2623,6 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
 }
 
 NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
-    // value kept so drop can be called
     NodeVal lhs = processNode(*opers[0]);
     if (lhs.isInvalid()) return NodeVal();
 
@@ -2702,14 +2701,17 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
             return NodeVal();
         }
 
+        CodeLoc codeLocRes = codeLoc;
+        codeLocRes.end = index.getCodeLoc().end;
+
         if (isBaseRaw) {
-            lhs = getRawElement(index.getCodeLoc(), lhs, (size_t) indexVal.value());
+            lhs = getRawElement(codeLocRes, lhs, (size_t) indexVal.value());
         } else if (isBaseTup) {
-            lhs = getTupleElement(index.getCodeLoc(), lhs, (size_t) indexVal.value());
+            lhs = getTupleElement(codeLocRes, lhs, (size_t) indexVal.value());
         } else if (isBaseData) {
-            lhs = getDataElement(index.getCodeLoc(), lhs, (size_t) indexVal.value());
+            lhs = getDataElement(codeLocRes, lhs, (size_t) indexVal.value());
         } else {
-            lhs = getArrElement(lhs.getCodeLoc(), lhs, index);
+            lhs = getArrElement(codeLocRes, lhs, index);
             if (lhs.isInvalid()) return NodeVal();
         }
     }
