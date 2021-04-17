@@ -30,7 +30,7 @@ fnc main () () {
         println_i32 (std.* x);
 
         = x (std.makeOne i32);
-        println_i32 (+ 102 (std.* x));
+        println_i32 (+ 102 (* (std.getPtr x)));
     };
     block {
         sym (f (std.makeOne Foo));

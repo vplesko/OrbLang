@@ -32,14 +32,18 @@ mac std.makeOne (valTy::preprocess) {
     });
 };
 
-mac std.* (one) {
+mac std.* (one::preprocess) {
     ret \(* ([] ,one -p));
 };
 
-mac std.-> (one memb) {
+mac std.-> (one::preprocess memb) {
     ret \([] (* ([] ,one -p)) ,memb);
 };
 
-mac std.isNull (one) {
+mac std.isNull (one::preprocess) {
     ret \(== ([] ,one -p) null);
+};
+
+mac std.getPtr (one::preprocess) {
+    ret \([] ,one -p);
 };
