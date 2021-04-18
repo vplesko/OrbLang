@@ -1,0 +1,29 @@
+:root {
+    --sidebar-width: 300px;
+    --page-wrap-max-width: 750px;
+}
+
+html {
+    font-family: Helvetica, Arial, sans-serif;
+}
+
+code {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 14px;
+}
+
+/* TODO scrolling */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--sidebar-width);
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.page-wrap {
+    margin-left: var(--sidebar-width);
+    max-width: var(--page-wrap-max-width);
+    box-sizing: border-box;
+}

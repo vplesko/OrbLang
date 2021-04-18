@@ -6,9 +6,11 @@
         <link rel="stylesheet" href="{{ 'assets/css/styles.css' | relative_url }}">
     </head>
     <body>
-        {% include navigation.html %}
-        {% include prevNext.html %}
-        {{ content }}
-        {% include prevNext.html %}
+        {% include sidebar.html %}
+        <div class="page-wrap">
+            {% include prevNext.html %}
+            {{ content }}
+            {% include prevNext.html %}
+        </div>
     </body>
 </html>
