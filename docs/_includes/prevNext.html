@@ -1,23 +1,30 @@
 <nav>
+    {% assign navPages = "" | split: "" %}
     {% for item in site.data.navigation %}
-        {% if page.url == item.link %}
-            {% if prev %}
-                <a href="{{ prev | relative_url }}">Prev<a>
-            {% endif %}
-            {% break %}
-        {% else %}
-            {% assign prev = item.link %}
+        {% assign navPages = navPages | push: item %}
+        {% if item.subpages %}
+            {% for subitem in item.subpages %}
+                {% assign navPages = navPages | push: subitem %}
+            {% endfor %}
         {% endif %}
     {% endfor %}
 
-    {% for item in site.data.navigation reversed %}
+    {% for item in navPages %}
         {% if page.url == item.link %}
-            {% if next %}
-                <a href="{{ next | relative_url }}">Next<a>
-            {% endif %}
+            {% unless forloop.first %}
+                {% assign prevIndex = forloop.index0 | minus: 1 %}
+            {% endunless %}
+            {% unless forloop.last %}
+                {% assign nextIndex = forloop.index0 | plus: 1 %}
+            {% endunless %}
             {% break %}
-        {% else %}
-            {% assign next = item.link %}
         {% endif %}
     {% endfor %}
+
+    {% if prevIndex %}
+        <a href="{{ navPages[prevIndex].link | relative_url }}">Prev</a>
+    {% endif %}
+    {% if nextIndex %}
+        <a href="{{ navPages[nextIndex].link | relative_url }}">Next</a>
+    {% endif %}
 </nav>

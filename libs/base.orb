@@ -137,6 +137,7 @@ mac rangeRev (i up::preprocess body) {
     });
 };
 
+# TODO have bounds put in a raw
 mac range (i lo::preprocess hi::preprocess body) {
     ret \(for (sym (,i ,lo)) (<= ,i ,hi) (= ,i (+ ,i 1)) ,body);
 };
@@ -453,6 +454,7 @@ mac base.-enumValsDecl (name enumTy::preprocess vals) {
     ret code;
 };
 
+# TODO make enum vals cn
 mac enum (name ty::preprocess vals) {
     base.assertIsOfType id name;
     base.assertIsOfType type ty;

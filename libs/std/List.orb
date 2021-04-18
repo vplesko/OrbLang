@@ -34,6 +34,7 @@ mac std.getArrPtr (list::preprocess) {
     ret \([] ,list -start);
 };
 
+# TODO capturing curr ind in addition to val
 mac std.range (it list::preprocess body) {
     base.assertIsOfType id it;
 
@@ -45,17 +46,6 @@ mac std.range (it list::preprocess body) {
     });
 };
 
-mac std.range (it list::preprocess indLo::preprocess indHi::preprocess body) {
-    base.assertIsOfType id it;
-
-    sym (i (genSym));
-
-    ret \(block {
-        eval (sym (,it (pat { ret (escape (std.[] ,list ,i)); })));
-        range ,i ,indLo ,indHi ,body;
-    });
-};
-
 mac std.rangeRev (it list::preprocess body) {
     base.assertIsOfType id it;
 
@@ -64,6 +54,18 @@ mac std.rangeRev (it list::preprocess body) {
     ret \(block {
         eval (sym (,it (pat { ret (escape (std.[] ,list ,i)); })));
         rangeRev ,i (std.getLen ,list) ,body;
+    });
+};
+
+# TODO have bounds put in a raw
+mac std.range (it list::preprocess indLo::preprocess indHi::preprocess body) {
+    base.assertIsOfType id it;
+
+    sym (i (genSym));
+
+    ret \(block {
+        eval (sym (,it (pat { ret (escape (std.[] ,list ,i)); })));
+        range ,i ,indLo ,indHi ,body;
     });
 };
 

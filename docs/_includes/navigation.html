@@ -1,5 +1,14 @@
 <nav>
-    {% for item in site.data.navigation %}
-        <a href="{{ item.link | relative_url }}">{{ item.name }}<a>
-    {% endfor %}
+    <ol>
+        {% for item in site.data.navigation %}
+            <li><a href="{{ item.link | relative_url }}">{{ item.name }}</a></li>
+            {% if item.subpages %}
+                <li><ol>
+                    {% for subitem in item.subpages %}
+                        <li><a href="{{ subitem.link | relative_url }}">{{ subitem.name }}</a></li>
+                    {% endfor %}
+                </ol></li>
+            {% endif %}
+        {% endfor %}
+    </ol>
 </nav>

@@ -2,5 +2,10 @@
   link: /
 - name: Page One
   link: /page1.html
+  subpages:
+    - name: Page One One
+      link: /page1_1.html
+    - name: Page One Two
+      link: /page1_2.html
 - name: Page Two
   link: /page2.html
