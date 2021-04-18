@@ -1,4 +1,4 @@
-<nav>
+<nav class="prev-next-wrap">
     {% assign navPages = "" | split: "" %}
     {% for item in site.data.navigation %}
         {% assign navPages = navPages | push: item %}
@@ -22,9 +22,9 @@
     {% endfor %}
 
     {% if prevIndex %}
-        <a href="{{ navPages[prevIndex].link | relative_url }}">Prev</a>
+        <a href="{{ navPages[prevIndex].link | relative_url }}" class="prev-next-a prev-a">Prev</a>
     {% endif %}
     {% if nextIndex %}
-        <a href="{{ navPages[nextIndex].link | relative_url }}">Next</a>
+        <a href="{{ navPages[nextIndex].link | relative_url }}" class="prev-next-a next-a">Next</a>
     {% endif %}
 </nav>

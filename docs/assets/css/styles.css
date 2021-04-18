@@ -1,5 +1,5 @@
 :root {
-    --sidebar-width: 300px;
+    --sidebar-width: 150px;
     --page-wrap-max-width: 750px;
 }
 
@@ -43,6 +43,6 @@ code {
 
 .page-wrap {
     margin-left: var(--sidebar-width);
-    /*max-width: var(--page-wrap-max-width);*/
+    max-width: var(--page-wrap-max-width);
     box-sizing: border-box;
 }
