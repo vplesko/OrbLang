@@ -430,15 +430,15 @@ mac base.-enumValsDecl (name enumTy::preprocess vals) {
             base.assertIsOfType id ([] vals i 0);
             = valName ([] vals i 0);
 
-            = init \(cast ,name ,([] vals i 1));
+            = init \(cast ,((name) cn) ,([] vals i 1));
         } {
             base.assertIsOfType id ([] vals i);
             = valName ([] vals i);
 
             if (== i 0) {
-                = init \(cast ,name 0);
+                = init \(cast ,((name) cn) 0);
             } {
-                = init \(+ ,(base.-enumValName name valNamePrev) (cast ,name 1));
+                = init \(+ ,(base.-enumValName name valNamePrev) (cast ,((name) cn) 1));
             };
         };
 
@@ -449,12 +449,11 @@ mac base.-enumValsDecl (name enumTy::preprocess vals) {
     };
 
     = code (+ code
-        \( (,(base.-enumSizeName enumTy):base.-widestU ,(lenOf vals))));
+        \( (,(base.-enumSizeName enumTy):(base.-widestU cn) ,(lenOf vals))));
 
     ret code;
 };
 
-# TODO make enum vals cn
 mac enum (name ty::preprocess vals) {
     base.assertIsOfType id name;
     base.assertIsOfType type ty;
