@@ -6,13 +6,28 @@
 
 class StringPool {
 public:
-    // TODO do the same thing as with NamePool::Id
-    typedef unsigned Id;
+    struct Id {
+        typedef unsigned IdType;
+
+        IdType id;
+
+        friend bool operator==(const Id &l, const Id &r)
+        { return l.id == r.id; }
+
+        friend bool operator!=(const Id &l, const Id &r)
+        { return !(l == r); }
+
+        struct Hasher {
+            std::size_t operator()(const Id &id) const {
+                return std::hash<IdType>()(id.id);
+            }
+        };
+    };
 
 private:
     Id next;
 
-    std::unordered_map<Id, std::pair<std::string, llvm::Constant*>> strings;
+    std::unordered_map<Id, std::pair<std::string, llvm::Constant*>, Id::Hasher> strings;
     std::unordered_map<std::string, Id> ids;
 
 public:
@@ -23,4 +38,7 @@ public:
 
     llvm::Constant* getLlvm(Id id) const { return strings.at(id).second; }
     void setLlvm(Id id, llvm::Constant *c) { strings[id].second = c; }
+
+    // for debugging
+    void printAll() const;
 };

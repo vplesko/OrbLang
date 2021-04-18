@@ -16,7 +16,7 @@ NamePool::Id NamePool::add(const string &name) {
     ids[name] = next;
     names[next] = name;
 
-    NamePool::Id ret = next;
+    Id ret = next;
     next.id += 1;
 
     return ret;
@@ -28,7 +28,7 @@ NamePool::Id NamePool::addMain(const std::string &name) {
 }
 
 void NamePool::printAll() const {
-    vector<pair<NamePool::Id::IdType, string>> collected;
+    vector<pair<Id::IdType, string>> collected;
     for (const auto &it : names) {
         collected.push_back({it.first.id, it.second});
     }

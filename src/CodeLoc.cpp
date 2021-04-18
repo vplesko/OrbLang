@@ -7,6 +7,6 @@ ostream& operator<<(std::ostream &out, CodeLocPoint locPnt) {
 }
 
 ostream& operator<<(std::ostream &out, CodeLoc loc) {
-    out << "CodeLoc(file=" << loc.file << ", start=" << loc.start << ", end=" << loc.end << ")";
+    out << "CodeLoc(file=" << loc.file.id << ", start=" << loc.start << ", end=" << loc.end << ")";
     return out;
 }
