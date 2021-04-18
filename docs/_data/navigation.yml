@@ -1,2 +1,6 @@
 - name: Home
   link: /
+- name: Page One
+  link: /page1.html
+- name: Page Two
+  link: /page2.html
