@@ -4,7 +4,7 @@
 }
 
 html {
-    font-family: Helvetica, Arial, sans-serif;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 code {
@@ -19,11 +19,30 @@ code {
     left: 0;
     width: var(--sidebar-width);
     font-size: 14px;
+    padding: 10px;
     box-sizing: border-box;
+}
+
+.sidebar-ol {
+    list-style-type: none;
+    list-style-position: outside;
+}
+
+.sidebar-page-ol {
+    padding-left: 0;
+}
+
+.sidebar-subpage-ol {
+    padding-left: 20px;
+}
+
+.sidebar-li {
+    margin: 10px 0;
+    list-style-type: none;
 }
 
 .page-wrap {
     margin-left: var(--sidebar-width);
-    max-width: var(--page-wrap-max-width);
+    /*max-width: var(--page-wrap-max-width);*/
     box-sizing: border-box;
 }

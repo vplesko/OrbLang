@@ -1,11 +1,11 @@
 <nav class="sidebar">
-    <ol>
+    <ol class="sidebar-ol sidebar-page-ol">
         {% for item in site.data.navigation %}
-            <li><a href="{{ item.link | relative_url }}">{{ item.name }}</a></li>
+            <li class="sidebar-li"><a href="{{ item.link | relative_url }}">{{ item.name }}</a></li>
             {% if item.subpages %}
-                <li><ol>
+                <li class="sidebar-li"><ol class="sidebar-ol sidebar-subpage-ol">
                     {% for subitem in item.subpages %}
-                        <li><a href="{{ subitem.link | relative_url }}">{{ subitem.name }}</a></li>
+                        <li class="sidebar-li"><a href="{{ subitem.link | relative_url }}">{{ subitem.name }}</a></li>
                     {% endfor %}
                 </ol></li>
             {% endif %}
