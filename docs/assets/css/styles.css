@@ -3,8 +3,13 @@
     --page-wrap-max-width: 750px;
 }
 
+:root {
+    --color-code: #f1f1f1;
+}
+
 html {
     font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px;
 }
 
 code {
@@ -19,8 +24,12 @@ code {
     left: 0;
     width: var(--sidebar-width);
     font-size: 14px;
-    padding: 10px;
     box-sizing: border-box;
+    overscroll-behavior-y: contain;
+}
+
+.sidebar-scrollbox {
+    padding: 10px;
 }
 
 .sidebar-ol {
@@ -41,8 +50,69 @@ code {
     list-style-type: none;
 }
 
+/* TODO remove padding from above */
+.topbar {
+    position: sticky;
+    top: 0;
+    height: 32px;
+    background-color: white;
+    z-index: 10;
+}
+
+/* TODO change color on hover */
+.topbar-image {
+    margin-left: 5px;
+    margin-right: 5px;
+    max-width: 24px;
+    max-height: 24px;
+}
+
+.topbar-title {
+    display: inline-block;
+    margin: 0;
+    font-size: 24px;
+}
+
 .page-wrap {
     margin-left: var(--sidebar-width);
+    box-sizing: border-box;
+}
+
+.page {
+    margin-left: auto;
+    margin-right: auto;
+    padding-top: 48px;
     max-width: var(--page-wrap-max-width);
     box-sizing: border-box;
+    overflow: auto;
+}
+
+.content {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 15px;
+}
+
+code.highlighter-rouge {
+    background-color: var(--color-code);
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+pre.highlight {
+    background-color: var(--color-code);
+    padding: 12px;
+    border-radius: 6px;
+}
+
+.prev-next-wrap {
+    font-size: 24px;
+    display: block;
+}
+
+.prev-a {
+    float: left;
+}
+
+.next-a {
+    float: right;
 }

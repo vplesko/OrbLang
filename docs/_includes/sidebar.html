@@ -1,14 +1,16 @@
 <nav class="sidebar">
-    <ol class="sidebar-ol sidebar-page-ol">
-        {% for item in site.data.navigation %}
-            <li class="sidebar-li"><a href="{{ item.link | relative_url }}">{{ item.name }}</a></li>
-            {% if item.subpages %}
-                <li class="sidebar-li"><ol class="sidebar-ol sidebar-subpage-ol">
-                    {% for subitem in item.subpages %}
-                        <li class="sidebar-li"><a href="{{ subitem.link | relative_url }}">{{ subitem.name }}</a></li>
-                    {% endfor %}
-                </ol></li>
-            {% endif %}
-        {% endfor %}
-    </ol>
+    <div class="sidebar-scrollbox">
+        <ol class="sidebar-ol sidebar-page-ol">
+            {% for item in site.data.navigation %}
+                <li class="sidebar-li"><a href="{{ item.link | relative_url }}">{{ item.name }}</a></li>
+                {% if item.subpages %}
+                    <li class="sidebar-li"><ol class="sidebar-ol sidebar-subpage-ol">
+                        {% for subitem in item.subpages %}
+                            <li class="sidebar-li"><a href="{{ subitem.link | relative_url }}">{{ subitem.name }}</a></li>
+                        {% endfor %}
+                    </ol></li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </div>
 </nav>

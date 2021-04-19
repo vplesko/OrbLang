@@ -9,9 +9,16 @@
     <body>
         {% include sidebar.html %}
         <div class="page-wrap">
-            {% include prevNext.html %}
-            {{ content }}
-            {% include prevNext.html %}
+            {% include topbar.html %}
+            <div class="page">
+                {% include prevNext.html %}
+                <div class="content">
+                    <main>
+                        {{ content }}
+                    </main>
+                </div>
+                {% include prevNext.html %}
+            </div>
         </div>
     </body>
 </html>
