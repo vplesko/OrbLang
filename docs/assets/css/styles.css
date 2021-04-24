@@ -4,6 +4,9 @@
 }
 
 :root {
+    --color-sidebar-bg: #f7f7f7;
+    --color-topbar-bg: white;
+    --color-topbar-border: #f1f1f1;
     --color-code: #f1f1f1;
 }
 
@@ -41,6 +44,7 @@ a.link-img {
     width: var(--sidebar-width);
     font-size: 14px;
     box-sizing: border-box;
+    background-color: var(--color-sidebar-bg);
     overscroll-behavior-y: contain;
 }
 
@@ -76,7 +80,8 @@ a.link-img {
     position: sticky;
     top: 0;
     padding: 5px 0;
-    background-color: white;
+    background-color: var(--color-topbar-bg);
+    border-bottom: 0.5px var(--color-topbar-border) solid;
     z-index: 10;
 }
 
