@@ -22,10 +22,14 @@
     {% endfor %}
 
     {% if prevIndex %}
-        <a href="{{ navPages[prevIndex].link | relative_url }}" class="prev-next-a prev-a">Prev</a>
+        <a href="{{ navPages[prevIndex].link | relative_url }}" class="link-img prev-next-a prev-a">
+            <img src="{{ 'assets/images/chevron-left.png' | relative_url }}" class="img-hover">
+        </a>
     {% endif %}
     {% if nextIndex %}
-        <a href="{{ navPages[nextIndex].link | relative_url }}" class="prev-next-a next-a">Next</a>
+        <a href="{{ navPages[nextIndex].link | relative_url }}" class="link-img prev-next-a next-a">
+            <img src="{{ 'assets/images/chevron-right.png' | relative_url }}" class="img-hover">
+        </a>
     {% endif %}
 </nav>
 <div style="clear: both"></div>

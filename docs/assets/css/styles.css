@@ -21,6 +21,18 @@ code {
     font-size: 14px;
 }
 
+a.link-img {
+    text-decoration: none;
+}
+
+.img-hover {
+    opacity: 0.5;
+}
+
+.img-hover:hover {
+    opacity: 1;
+}
+
 /* TODO scrolling */
 .sidebar {
     position: fixed;
@@ -70,12 +82,6 @@ code {
 .topbar-button {
     max-width: 24px;
     max-height: 24px;
-    opacity: 0.5;
-    transition: color 0.5s;
-}
-
-.topbar-button:hover {
-    opacity: 1;
 }
 
 .topbar-title {
