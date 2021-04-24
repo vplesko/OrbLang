@@ -1,5 +1,5 @@
 :root {
-    --sidebar-width: 150px;
+    --sidebar-width: 300px;
     --page-wrap-max-width: 750px;
 }
 
@@ -46,9 +46,15 @@ a.link-img {
     bottom: 0;
     width: var(--sidebar-width);
     font-size: 14px;
+    display: block;
     box-sizing: border-box;
     background-color: var(--color-sidebar-bg);
     overscroll-behavior-y: contain;
+}
+
+.sidebar-hidden .sidebar {
+    width: 0;
+    display: none;
 }
 
 .sidebar-scrollbox {
@@ -111,6 +117,10 @@ a.link-img {
 .page-wrap {
     margin-left: var(--sidebar-width);
     box-sizing: border-box;
+}
+
+.sidebar-hidden .page-wrap {
+    margin-left: 0;
 }
 
 .page {
