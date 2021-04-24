@@ -12,6 +12,10 @@ html {
     font-size: 16px;
 }
 
+body {
+    margin: 0;
+}
+
 code {
     font-family: "Courier New", Courier, monospace;
     font-size: 14px;
@@ -50,26 +54,31 @@ code {
     list-style-type: none;
 }
 
-/* TODO remove padding from above */
 .topbar {
     position: sticky;
     top: 0;
-    height: 32px;
+    padding: 5px 0;
     background-color: white;
     z-index: 10;
 }
 
-/* TODO change color on hover */
-.topbar-image {
-    margin-left: 5px;
-    margin-right: 5px;
+.topbar-item {
+    margin: auto 5px;
+    display: inline-block;
+}
+
+.topbar-button {
     max-width: 24px;
     max-height: 24px;
+    opacity: 0.5;
+    transition: color 0.5s;
+}
+
+.topbar-button:hover {
+    opacity: 1;
 }
 
 .topbar-title {
-    display: inline-block;
-    margin: 0;
     font-size: 24px;
 }
 
@@ -81,7 +90,7 @@ code {
 .page {
     margin-left: auto;
     margin-right: auto;
-    padding-top: 48px;
+    padding: 48px 5px 10px;
     max-width: var(--page-wrap-max-width);
     box-sizing: border-box;
     overflow: auto;
