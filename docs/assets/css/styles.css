@@ -4,8 +4,10 @@
 }
 
 :root {
-    --color-sidebar-bg: #f7f7f7;
-    --color-topbar-bg: white;
+    --color-body-bg: white;
+    --color-sidebar-bg: #1f4566;
+    --color-sidebar-link: #f7f7f7;
+    --color-topbar-bg: #f7f7f7;
     --color-topbar-border: #f1f1f1;
     --color-code: #f1f1f1;
 }
@@ -17,6 +19,7 @@ html {
 
 body {
     margin: 0;
+    background-color: var(--color-body-bg);
 }
 
 code {
@@ -76,6 +79,11 @@ a.link-img {
     list-style-type: none;
 }
 
+.sidebar-link, .sidebar-link:visited, .sidebar-link:active {
+    color: var(--color-sidebar-link);
+    text-decoration: none;
+}
+
 .topbar {
     position: sticky;
     top: 0;
@@ -97,6 +105,7 @@ a.link-img {
 
 .topbar-title {
     font-size: 24px;
+    font-weight: normal;
 }
 
 .page-wrap {
