@@ -11,7 +11,6 @@ function toggleSidebar() {
 
 // hide sidebar before it is displayed to prevent flashing
 function toggleSidebarOnLoad() {
-    // TODO preserve page-wrap width on show
     var sidebarHidden = localStorage.getItem("sidebar-hidden-stored");
     if (sidebarHidden || document.body.clientWidth < 1080) {
         toggleSidebar();
