@@ -1,13 +1,14 @@
 #include "Lexer.h"
-#include <cstdlib>
 #include <algorithm>
+#include <cstdlib>
 #include <sstream>
+#include "unescape.h"
 using namespace std;
 
-const string numLitChars = "0123456789abcdefABCDEF.xXpP_";
-const string idSpecialChars = "=+-*/%<>&|^!~[]._?";
+static const string numLitChars = "0123456789abcdefABCDEF.xXpP_";
+static const string idSpecialChars = "=+-*/%<>&|^!~[]._?";
 
-bool isValidIdStart(char ch) {
+static bool isValidIdStart(char ch) {
     return isalnum(ch) || idSpecialChars.find(ch) != idSpecialChars.npos;
 }
 

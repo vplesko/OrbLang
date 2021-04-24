@@ -58,9 +58,11 @@ set(HEADER_FILES
     "src/StringPool.h"
     "src/SymbolTable.h"
     "src/SymbolTableIds.h"
+    "src/terminalSequences.h"
     "src/Token.h"
     "src/TypeTable.h"
     "src/UndecidedCallableVal.h"
+    "src/unescape.h"
     "src/utils.h"
     )
 
@@ -89,9 +91,11 @@ set(SOURCE_FILES
     "src/StringPool.cpp"
     "src/SymbolTable.cpp"
     "src/SymbolTableIds.cpp"
+    "src/terminalSequences.cpp"
     "src/Token.cpp"
     "src/TypeTable.cpp"
     "src/UndecidedCallableVal.cpp"
+    "src/unescape.cpp"
     "src/utils.cpp"
     )
 

@@ -25,22 +25,22 @@ CompilationOrchestrator::CompilationOrchestrator(ostream &out) {
     genPrimTypes();
 }
 
-void addMain(NamePool *namePool) {
+static void addMain(NamePool *namePool) {
     NamePool::Id name = namePool->addMain("main");
     meaningfuls.insert(make_pair(name, Meaningful::MAIN));
 }
 
-void addMeaningful(NamePool *namePool, const std::string &str, Meaningful m) {
+static void addMeaningful(NamePool *namePool, const std::string &str, Meaningful m) {
     NamePool::Id name = namePool->add(str);
     meaningfuls.insert(make_pair(name, m));
 }
 
-void addKeyword(NamePool *namePool, const std::string &str, Keyword k) {
+static void addKeyword(NamePool *namePool, const std::string &str, Keyword k) {
     NamePool::Id name = namePool->add(str);
     keywords.insert(make_pair(name, k));
 }
 
-void addOper(NamePool *namePool, const std::string &str, Oper o) {
+static void addOper(NamePool *namePool, const std::string &str, Oper o) {
     NamePool::Id name = namePool->add(str);
     opers.insert(make_pair(name, o));
 }
@@ -194,7 +194,7 @@ enum ImportTransRes {
     ITR_FAIL
 };
 
-optional<string> locateOrbFile(const string &file, const vector<string> &additionalImportPaths) {
+static optional<string> locateOrbFile(const string &file, const vector<string> &additionalImportPaths) {
     if (filesystem::exists(file)) return filesystem::canonical(file).string();
 
     for (const string &path : additionalImportPaths) {
@@ -210,7 +210,7 @@ optional<string> locateOrbFile(const string &file, const vector<string> &additio
     return nullopt;
 }
 
-ImportTransRes followImport(
+static ImportTransRes followImport(
     const string &path, Parser &par, NamePool *names, StringPool *strings, CompilationMessages *msgs,
     unordered_map<string, unique_ptr<Lexer>> &lexers) {
     auto loc = lexers.find(path);

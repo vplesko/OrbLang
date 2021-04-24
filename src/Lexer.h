@@ -1,12 +1,12 @@
 #pragma once
 
+#include <fstream>
 #include <iostream>
 #include <string>
-#include <fstream>
 #include "CodeLoc.h"
+#include "CompilationMessages.h"
 #include "NamePool.h"
 #include "Token.h"
-#include "CompilationMessages.h"
 
 class Lexer {
     NamePool *namePool;

@@ -1,8 +1,9 @@
 #include "CompilationMessages.h"
-#include <sstream>
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 #include "NamePool.h"
+#include "terminalSequences.h"
 using namespace std;
 
 string CompilationMessages::errorStringOfTokenType(Token::Type tokTy) const {
