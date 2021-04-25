@@ -4,7 +4,7 @@ title: Introduction
 ---
 # Introduction
 
-If you are here, you are likely interested in learning more about the Orb programming language. This document is written as a guide to writing code in Orb, and tries to explain all the possibilities you have when using this language. It will first go through the basics - concepts shared with many other languages (though they may work differently in Orb), before moving on to more advanced and exciting techniques.
+If you are here, you are likely interested in learning more about the Orb programming language. This document is written as a guide to writing code in Orb, and tries to explain all the possibilities you have when using this language. It will first go through the basics - concepts shared with many other languages (though they may work slightly differently in Orb), before moving on to more advanced and exciting techniques.
 
 But first, a few words on Orb from a very high level.
 

@@ -18,7 +18,7 @@ Let's dissect all that's happening here. First, we import **std/io.orb** from th
 
 Then we define a main function, using the `fnc` special form. This function is the entry point to our program. There are a few different signatures it may have, but here it simply takes no arguments and returns no values.
 
-In its body, main uses `std.println` to output a string, followed by a newline character.
+Inside its body, we use `std.println` to output a string, followed by a newline character.
 
 To compile and execute this program, run these commands from the same directory that contains **main.orb** (it is assumed you have **orbc** installed on your system):
 

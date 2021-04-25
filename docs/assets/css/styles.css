@@ -10,6 +10,7 @@
     --color-topbar-bg: #f7f7f7;
     --color-topbar-border: #f1f1f1;
     --color-code: #f1f1f1;
+    --color-table-border: black;
 }
 
 html {
@@ -147,6 +148,15 @@ pre.highlight {
     background-color: var(--color-code);
     padding: 12px;
     border-radius: 6px;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid var(--color-table-border);
+    padding: 5px;
 }
 
 .prev-next-wrap {
