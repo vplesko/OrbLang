@@ -11,7 +11,7 @@ function toggleSidebar() {
 
 // hide sidebar before it is displayed to prevent flashing
 function toggleSidebarOnLoad() {
-    var sidebarHidden = localStorage.getItem("sidebar-hidden-stored");
+    let sidebarHidden = localStorage.getItem("sidebar-hidden-stored");
     if (sidebarHidden || document.body.clientWidth < 1080) {
         toggleSidebar();
     }

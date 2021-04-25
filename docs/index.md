@@ -8,7 +8,7 @@ If you are here, you are likely interested in learning more about the Orb progra
 
 But first, a few words on Orb from a very high level.
 
-On a more technical side, Orb can be thought of as a compiled, statically-typed, non-memory-managed language, with an intentionally limited core feature set.
+From a technical standpoint, Orb can be thought of as a compiled, statically-typed, non-memory-managed language, with an intentionally limited core feature set.
 
 There are actually two different, though similiar, languages working together that comprise Orb. One is the language of compilations - code written in this language is what will be compiled into binary form. The other is the language of evaluations - code written in this language is executed by the Orb compiler, and controls what and how the first one compiles. What this means is that every run of the Orb compiler is, in a way, an execution of your own code, whose output is the final executable file.
 
