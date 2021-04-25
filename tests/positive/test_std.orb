@@ -1,3 +1,4 @@
+import "std/io.orb";
 import "std/One.orb";
 import "std/List.orb";
 import "util/print.orb";
@@ -15,6 +16,29 @@ fnc makeFoo (x:i32) Foo {
 };
 
 fnc main () () {
+    block {
+        std.println -1:i8;
+        std.println -2:i16;
+        std.println -3:i32;
+        std.println -4:i64;
+
+        std.println 1:u8;
+        std.println 2:u16;
+        std.println 3:u32;
+        std.println 4:u64;
+
+        std.println 10.0:f32;
+        std.println 20.0:f64;
+
+        std.println 'a';
+
+        std.println "hello";
+
+        std.print 1 2 3;
+        std.println 4 5 6;
+        std.println;
+    };
+
     block {
         sym x:(std.One i32);
         if (std.isNull x) {
