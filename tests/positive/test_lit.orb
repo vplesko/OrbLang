@@ -1,4 +1,4 @@
-sym (glob 111:i8);
+sym (glob 112:i8);
 sym (hello "HELLO");
 
 import "util/print.orb";
@@ -14,7 +14,8 @@ fnc main () () {
     println_f32 -107.0;
     println_i32 10_8_;
     println_f32 (+ 1.0e2 9.0);
-    println_i32 110:(i32 cn);
+    println_f32 (* 1.1E-1 1000.0);
+    println_i32 111:(i32 cn);
     println_i32 glob;
 
     println_c8 'a';

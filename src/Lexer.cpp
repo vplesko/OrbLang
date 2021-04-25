@@ -5,7 +5,7 @@
 #include "unescape.h"
 using namespace std;
 
-static const string numLitChars = "0123456789abcdefABCDEF.xXpP_";
+static const string numLitChars = "0123456789abcdefABCDEF.xXpP_-";
 static const string idSpecialChars = "=+-*/%<>&|^!~[]._?";
 
 static bool isValidIdStart(char ch) {
