@@ -54,4 +54,4 @@ This document briefly lists different parts of this repository and how they inte
 
 `CompilationOrchestrator` initializes all necessary classes, performs dependency injection, and makes sure initial types and keywords are defined. It coordinates the compilation process by calling into other classes and takes care of file switching when a new file is being imported.
 
-`main()` function parser compiler arguments and calls into the compilation process. It returns the proper exit code on error. It should not allow any exceptions defined in the project to fall through.
+`main()` function initializes `ProgramArgs` from compiler arguments and calls into the compilation process. It returns the proper exit code on error. It should not allow any exceptions defined in the project to fall through. These must be defined in **exceptions.h**.

@@ -1,4 +1,8 @@
 - name: Introduction
   link: /
 - name: HelloWorld
-  link: /pages/hello_world.html
+  link: /pages/01_hello_world.html
+- name: Literals
+  link: /pages/02_literals.html
+- name: Comments
+  link: /pages/03_comments.html
