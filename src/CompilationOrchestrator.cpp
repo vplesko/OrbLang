@@ -1,13 +1,13 @@
 #include "CompilationOrchestrator.h"
-#include <unordered_map>
-#include <stack>
 #include <filesystem>
-#include "OrbCompilerConfig.h"
-#include "Reserved.h"
-#include "SymbolTable.h"
-#include "Lexer.h"
-#include "Parser.h"
+#include <stack>
+#include <unordered_map>
 #include "ClangAdapter.h"
+#include "Lexer.h"
+#include "OrbCompilerConfig.h"
+#include "Parser.h"
+#include "reserved.h"
+#include "SymbolTable.h"
 using namespace std;
 
 CompilationOrchestrator::CompilationOrchestrator(ostream &out) {

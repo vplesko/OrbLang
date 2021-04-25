@@ -1,7 +1,7 @@
 #include "Processor.h"
-#include "Reserved.h"
+#include "BlockRaii.h"
 #include "Evaluator.h"
-#include "BlockControl.h"
+#include "reserved.h"
 using namespace std;
 
 Processor::Processor(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs)
@@ -421,7 +421,7 @@ NodeVal Processor::processBlock(const NodeVal &node, const NodeVal &starting) {
         if (!performBlockSetUp(node.getCodeLoc(), block)) return NodeVal();
 
         do {
-            BlockControl blockCtrl(symbolTable, block);
+            BlockRaii blockRaii(symbolTable, block);
 
             optional<bool> blockSuccess = performBlockBody(node.getCodeLoc(), symbolTable->getLastBlock(), nodeBody);
             if (!blockSuccess.has_value()) {
@@ -712,8 +712,8 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
     args.reserve(providedArgCnt);
     vector<TypeTable::Id> argTypes;
     argTypes.reserve(providedArgCnt);
-    vector<BlockTmpValControl> argTmpCtrl;
-    argTmpCtrl.reserve(providedArgCnt);
+    vector<BlockTmpValRaii> argTmpRaii;
+    argTmpRaii.reserve(providedArgCnt);
     bool allArgsEval = true;
     for (size_t i = 0; i < providedArgCnt; ++i) {
         NodeVal arg = processNode(node.getChild(i+1));
@@ -724,9 +724,9 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
 
         args.push_back(move(arg));
         argTypes.push_back(args.back().getType().value());
-        argTmpCtrl.push_back(createTmpValControl(args.back()));
+        argTmpRaii.push_back(createTmpValRaii(args.back()));
     }
-    argTmpCtrl.clear(); // no longer possible to break out of arg processing
+    argTmpRaii.clear(); // no longer possible to break out of arg processing
 
     NodeVal ret;
 
@@ -850,8 +850,8 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
 
     vector<NodeVal> args;
     args.reserve(providedArgCnt);
-    vector<BlockTmpValControl> argTmpCtrl;
-    argTmpCtrl.reserve(providedArgCnt);
+    vector<BlockTmpValRaii> argTmpRaii;
+    argTmpRaii.reserve(providedArgCnt);
     for (size_t i = 0; i < providedArgCnt; ++i) {
         // all variadic arguments have the same pre-handling
         EscapeScore escapeScore = MacroValue::toEscapeScore(macroVal.argPreHandling[min(i, callable.getArgCnt()-1)]);
@@ -860,9 +860,9 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
         if (arg.isInvalid()) return NodeVal();
 
         args.push_back(move(arg));
-        argTmpCtrl.push_back(createTmpValControl(args.back()));
+        argTmpRaii.push_back(createTmpValRaii(args.back()));
     }
-    argTmpCtrl.clear(); // no longer possible to break out of arg processing
+    argTmpRaii.clear(); // no longer possible to break out of arg processing
 
     NodeVal ret = invoke(node.getCodeLoc(), macroId.value(), move(args));
     if (ret.isInvalid()) return NodeVal();
@@ -1546,7 +1546,7 @@ NodeVal Processor::processAttrOf(const NodeVal &node) {
 
     NodeVal operand = processNode(node.getChild(1));
     if (operand.isInvalid()) return NodeVal();
-    BlockTmpValControl operandTmpCtrl = createTmpValControl(operand);
+    BlockTmpValRaii operandTmpRaii = createTmpValRaii(operand);
 
     NodeVal name = processForIdValue(node.getChild(2));
     if (name.isInvalid()) return NodeVal();
@@ -1568,7 +1568,7 @@ NodeVal Processor::processAttrIsDef(const NodeVal &node) {
 
     NodeVal operand = processNode(node.getChild(1));
     if (operand.isInvalid()) return NodeVal();
-    BlockTmpValControl operandTmpCtrl = createTmpValControl(operand);
+    BlockTmpValRaii operandTmpRaii = createTmpValRaii(operand);
 
     NodeVal name = processForIdValue(node.getChild(2));
     if (name.isInvalid()) return NodeVal();
@@ -2177,10 +2177,10 @@ bool Processor::checkNotNeedsDrop(CodeLoc codeLoc, const NodeVal &val, bool orEr
     return true;
 }
 
-BlockTmpValControl Processor::createTmpValControl(NodeVal &val) {
-    if (checkNotNeedsDrop(val.getCodeLoc(), val, false) || val.hasRef() || val.isInvokeArg()) return BlockTmpValControl();
+BlockTmpValRaii Processor::createTmpValRaii(NodeVal &val) {
+    if (checkNotNeedsDrop(val.getCodeLoc(), val, false) || val.hasRef() || val.isInvokeArg()) return BlockTmpValRaii();
 
-    return BlockTmpValControl(symbolTable, val);
+    return BlockTmpValRaii(symbolTable, val);
 }
 
 bool Processor::callDropFunc(CodeLoc codeLoc, NodeVal val) {

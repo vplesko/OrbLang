@@ -1,13 +1,13 @@
 #pragma once
 
 #include <string>
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "Processor.h"
 #include "ProgramArgs.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/LegacyPassManager.h"
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
 class Compiler : public Processor {
     llvm::LLVMContext llvmContext;

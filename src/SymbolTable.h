@@ -116,8 +116,8 @@ public:
     };
 
 private:
-    friend class BlockControl;
-    friend class BlockTmpValControl;
+    friend class BlockRaii;
+    friend class BlockTmpValRaii;
 
     // TODO optimize by keeping all vals (including elems in EvalVals) in a single long arena-like vector
     struct BlockInternal {

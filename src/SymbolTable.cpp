@@ -1,6 +1,6 @@
 #include "SymbolTable.h"
 #include <cassert>
-#include "Reserved.h"
+#include "reserved.h"
 #include "TypeTable.h"
 #include "utils.h"
 using namespace std;

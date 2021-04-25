@@ -2,7 +2,7 @@
 
 #include <optional>
 #include <vector>
-#include "BlockControl.h"
+#include "BlockRaii.h"
 #include "ComparisonSignal.h"
 #include "CompilationMessages.h"
 #include "NamePool.h"
@@ -151,7 +151,7 @@ private:
     NodeVal moveNode(CodeLoc codeLoc, NodeVal val, bool noZero);
     NodeVal invoke(CodeLoc codeLoc, MacroId macroId, std::vector<NodeVal> args);
     bool hasTrivialDrop(TypeTable::Id ty);
-    BlockTmpValControl createTmpValControl(NodeVal &val);
+    BlockTmpValRaii createTmpValRaii(NodeVal &val);
     bool callDropFunc(CodeLoc codeLoc, NodeVal val);
     bool callDropFuncTmpVal(NodeVal val);
     bool callDropFuncs(CodeLoc codeLoc, std::vector<std::variant<VarId, NodeVal>> vals);

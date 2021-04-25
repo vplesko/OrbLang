@@ -1,8 +1,8 @@
 #pragma once
 
 /*
-This file should contain all exceptions used in the project.
-They should be catchable from main, which should exit with a proper return code.
+This file should contain all exceptions defined in the project.
+main should not allow any of them to fall through and should exit with the proper return code.
 */
 
 #include <optional>

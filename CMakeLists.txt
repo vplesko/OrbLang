@@ -34,7 +34,7 @@ add_definitions(${CLANG_DEFINITIONS})
 
 set(HEADER_FILES
     "src/AttrMap.h"
-    "src/BlockControl.h"
+    "src/BlockRaii.h"
     "src/ClangAdapter.h"
     "src/CodeLoc.h"
     "src/CompilationOrchestrator.h"
@@ -53,7 +53,7 @@ set(HEADER_FILES
     "src/Parser.h"
     "src/Processor.h"
     "src/ProgramArgs.h"
-    "src/Reserved.h"
+    "src/reserved.h"
     "src/SpecialVal.h"
     "src/StringPool.h"
     "src/SymbolTable.h"
@@ -68,7 +68,7 @@ set(HEADER_FILES
 
 set(SOURCE_FILES
     "src/AttrMap.cpp"
-    "src/BlockControl.cpp"
+    "src/BlockRaii.cpp"
     "src/ClangAdapter.cpp"
     "src/CodeLoc.cpp"
     "src/CompilationOrchestrator.cpp"
@@ -86,7 +86,7 @@ set(SOURCE_FILES
     "src/Parser.cpp"
     "src/Processor.cpp"
     "src/ProgramArgs.cpp"
-    "src/Reserved.cpp"
+    "src/reserved.cpp"
     "src/SpecialVal.cpp"
     "src/StringPool.cpp"
     "src/SymbolTable.cpp"

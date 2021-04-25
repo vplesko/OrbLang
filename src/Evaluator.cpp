@@ -1,7 +1,7 @@
 #include "Evaluator.h"
 #include <sstream>
+#include "BlockRaii.h"
 #include "exceptions.h"
-#include "BlockControl.h"
 using namespace std;
 
 Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs)
@@ -179,7 +179,7 @@ NodeVal Evaluator::performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId func
         return NodeVal();
     }
 
-    BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(func, typeTable));
+    BlockRaii blockRaii(symbolTable, SymbolTable::CalleeValueInfo::make(func, typeTable));
 
     TypeTable::Callable callable = FuncValue::getCallable(func, typeTable);
 
@@ -228,7 +228,7 @@ NodeVal Evaluator::performInvoke(CodeLoc codeLoc, MacroId macroId, std::vector<N
 
     LifetimeInfo::NestLevel nestLevel = symbolTable->currNestLevel();
 
-    BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(macro));
+    BlockRaii blockRaii(symbolTable, SymbolTable::CalleeValueInfo::make(macro));
 
     for (size_t i = 0; i < args.size(); ++i) {
         SymbolTable::VarEntry varEntry;

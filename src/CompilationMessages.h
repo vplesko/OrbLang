@@ -3,10 +3,10 @@
 #include <vector>
 #include <string>
 #include "CodeLoc.h"
-#include "Token.h"
-#include "Reserved.h"
-#include "TypeTable.h"
+#include "reserved.h"
 #include "SymbolTable.h"
+#include "Token.h"
+#include "TypeTable.h"
 
 class NamePool;
 

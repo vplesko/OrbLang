@@ -9,7 +9,7 @@
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
-#include "BlockControl.h"
+#include "BlockRaii.h"
 using namespace std;
 
 Compiler::Compiler(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs)
@@ -364,7 +364,7 @@ bool Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, c
         func.llvmFunc->setLinkage(llvm::Function::LinkageTypes::PrivateLinkage);
     }
 
-    BlockControl blockCtrl(symbolTable, SymbolTable::CalleeValueInfo::make(func, typeTable));
+    BlockRaii blockRaii(symbolTable, SymbolTable::CalleeValueInfo::make(func, typeTable));
 
     TypeTable::Callable callable = FuncValue::getCallable(func, typeTable);
 
