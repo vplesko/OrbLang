@@ -7,9 +7,9 @@ title: Literals
 Literals are values of primitive types declared through Orb syntax. Here are some examples:
 
 ```
-signed integers: 0 127 -9
+signed integers: 0 127 -9 +11
 
-floating point values: 123.45 0.01 1.
+floating point values: 123.45 +0.01 1. -0.5
 
 characters: 'A' '0'
 
@@ -23,9 +23,9 @@ null pointer: null
 Numeric literals (signed integers and floating point values) are written in decimal form by default, but can be written in other bases:
 
 ```
-binary form prefixed with 0b: 0b0110
+binary form prefixed with 0b: 0b0110 -0b10
 
-octal form prefixed with 0: 0755
+octal form prefixed with 0: 0755 +0111
 
 hexadecimal form prefixed with 0x or 0X: 0x7fff 0XBadF00d
 ```

@@ -11,8 +11,8 @@ fnc std.-print (x:u16) () { printf "%hu" x; };
 fnc std.-print (x:u32) () { printf "%u" x; };
 fnc std.-print (x:u64) () { printf "%lu" x; };
 
-fnc std.-print (x:f32) () { printf "%.4f" (cast f64 x); };
-fnc std.-print (x:f64) () { printf "%.4lf" x; };
+fnc std.-print (x:f32) () { printf "%f" (cast f64 x); };
+fnc std.-print (x:f64) () { printf "%lf" x; };
 
 fnc std.-print (x:c8) () { putchar x; };
 

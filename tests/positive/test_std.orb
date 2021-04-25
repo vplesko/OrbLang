@@ -27,9 +27,6 @@ fnc main () () {
         std.println 3:u32;
         std.println 4:u64;
 
-        std.println 10.0:f32;
-        std.println 20.0:f64;
-
         std.println 'a';
 
         std.println "hello";
