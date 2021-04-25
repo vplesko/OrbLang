@@ -1,0 +1,15 @@
+import "base.orb";
+import "clib.orb";
+
+fnc std.scanI8 () i8 { sym x:i8; scanf "%hhd" (& x); ret x; };
+fnc std.scanI16 () i16 { sym x:i16; scanf "%hd" (& x); ret x; };
+fnc std.scanI32 () i32 { sym x:i32; scanf "%d" (& x); ret x; };
+fnc std.scanI64 () i64 { sym x:i64; scanf "%ld" (& x); ret x; };
+
+fnc std.scanU8 () u8 { sym x:u8; scanf "%hhu" (& x); ret x; };
+fnc std.scanU16 () u16 { sym x:u16; scanf "%hu" (& x); ret x; };
+fnc std.scanU32 () u32 { sym x:u32; scanf "%u" (& x); ret x; };
+fnc std.scanU64 () u64 { sym x:u64; scanf "%lu" (& x); ret x; };
+
+fnc std.scanF32 () f32 { sym x:f32; scanf "%f" (& x); ret x; };
+fnc std.scanF64 () f64 { sym x:f64; scanf "%lf" (& x); ret x; };

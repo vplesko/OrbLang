@@ -1,4 +1,4 @@
-import "std/io.orb";
+import "std/print.orb";
 import "std/One.orb";
 import "std/List.orb";
 import "util/print.orb";
