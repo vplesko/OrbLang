@@ -16,7 +16,7 @@ fnc main () () {
 
 Let's dissect all that's happening here. First, we import **std/io.orb** from the standard library. This file contains various definitions for reading from the standard input and writing to the standard output.
 
-Then we define a main function, using `fnc` special form. This function is the entry point to Orb programs. There are a few signatures it may have, but here it simply takes no arguments and returns no values.
+Then we define a main function, using the `fnc` special form. This function is the entry point to our program. There are a few different signatures it may have, but here it simply takes no arguments and returns no values.
 
 In its body, main uses `std.println` to output a string, followed by a newline character.
 
