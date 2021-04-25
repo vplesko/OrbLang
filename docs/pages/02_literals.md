@@ -40,7 +40,7 @@ decimal scientific notation: 1e2 1E-4
 hexadecimal scientific notation (power to base 2): 0x.123p1 0x0.456P10
 ```
 
-You can control the type of your literals by specifying a type attribute on them. What different types there are will be explained soon.
+You can control the type of your literals by specifying a type attribute on them. (Orb's type system will be explained later.)
 
 ```
 8-bit unsigned integer: 1:u8
