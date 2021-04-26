@@ -6,7 +6,7 @@
 :root {
     --color-body-bg: white;
     --color-sidebar-bg: #1f4566;
-    --color-sidebar-link: #f7f7f7;
+    --color-sidebar-item: #f7f7f7;
     --color-topbar-bg: #f7f7f7;
     --color-topbar-border: #f1f1f1;
     --color-code: #f1f1f1;
@@ -86,8 +86,14 @@ a.link-img {
     list-style-type: none;
 }
 
+.sidebar-curr {
+    color: var(--color-sidebar-item);
+    font-weight: bold;
+    text-decoration: underline;
+}
+
 .sidebar-link, .sidebar-link:visited, .sidebar-link:active {
-    color: var(--color-sidebar-link);
+    color: var(--color-sidebar-item);
     text-decoration: none;
 }
 
