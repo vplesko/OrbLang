@@ -6,3 +6,14 @@
   link: /pages/02_literals.html
 - name: Comments
   link: /pages/03_comments.html
+- name: Operators
+  link: /pages/04_operators.html
+  subpages:
+    - name: Arithmetic operators
+      link: /pages/04_01_arithmetic_operators.html
+    - name: Bitwise operators
+      link: /pages/04_02_bitwise_operators.html
+    - name: Comparison operators
+      link: /pages/04_03_comparison_operators.html
+    - name: Logical operators
+      link: /pages/04_04_logical_operators.html

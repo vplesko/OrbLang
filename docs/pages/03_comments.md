@@ -26,8 +26,7 @@ import "std/io.orb";
 
 fnc main () () {
     #$
-    This is a multi-line comment.
-    This entire section will not be processed by the compiler.
+    this is a multi-line comment
 
     std.println "inside the comment";
     $#

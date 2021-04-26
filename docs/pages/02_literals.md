@@ -24,7 +24,7 @@ fnc main () () {
     # hexadecimal form
     std.println 0x7fff;
 
-    # underscores can be used inside literals
+    # underscores can be used in literals
     std.println 10_000_000;
 };
 ```
@@ -62,7 +62,7 @@ fnc main () () {
 };
 ```
 
-Character literals are placed between single quotes, examples being: `'A'`, `'0'`, and `' '`. Some characters are denoted using special escape sequences, such as: `'\n'` (newline), `'\t'` (tab), `'\\'` (backslash), `'\''` (single quote), `'\"'` (double quote), and `'\0'` (terminal).
+Character literals are placed between single quotes, examples being: `'A'`, `'0'`, `'.'`, and `' '`. Some characters are denoted using special escape sequences, such as: `'\n'` (newline), `'\t'` (tab), `'\\'` (backslash), `'\''` (single quote), `'\"'` (double quote), and `'\0'` (terminal).
 
 In our hello-world program, we've seen an example of a string literal. These are placed between double quotes, eg. `"Hello!"` and `""` (empty string). Strings use the same escape sequences as character literals.
 
@@ -70,4 +70,4 @@ In our hello-world program, we've seen an example of a string literal. These are
 
 `null` is the null pointer literal.
 
-There is one other type of literals - identifiers. These can contain alphanumeric and any of the following characters: `=+-*/%<>&|^!~[]._?`. This means that all of the following are valid identifiers: `x`, `_foo`, `myId`, `val01`, `snake_case`, `kebab-case`, `*shiny*`, `?=`, `<<<`, `-||-`.
+There is one other type of literals - identifiers. These can contain alphanumerics and any of the following characters: `=+-*/%<>&|^!~[]._?`. Therefore, all of the following are valid identifiers: `x`, `_foo`, `myId`, `val01`, `snake_case`, `kebab-case`, `*shiny*`, `?=`, `<<<`, `-||-`.
