@@ -4,97 +4,70 @@ title: Literals
 ---
 # Literals
 
-Literals are values of primitive types declared through Orb syntax. Here are some examples:
+Literals are values of primitive types declared through Orb syntax. One group of literals are integer literals, shown in the example below.
 
 ```
-signed integers:
-    0, 127, -9, +11
+import "std/io.orb";
 
-floating point values:
-    123.45, +0.01, 1., -0.5
+fnc main () () {
+    std.println 1;
+    std.println +5;
+    std.println -201;
+    std.println 0;
 
-characters:
-    'A', '0'
+    # binary form
+    std.println 0b0110;
 
-booleans:
-    true, false
+    # octal form
+    std.println 0755;
 
-strings:
-    "a string", ""
+    # hexadecimal form
+    std.println 0x7fff;
 
-null pointer:
-    null
+    # underscores can be used inside literals
+    std.println 10_000_000;
+};
 ```
 
-Numeric literals (signed integers and floating point values) are written in decimal form by default, but can be written in other bases.
+Then, there are floating point literals.
 
 ```
-binary form prefixed with 0b:
-    0b0110, -0b10
+import "std/io.orb";
 
-octal form prefixed with 0:
-    0755, +0111
+fnc main () () {
+    std.println 123.45;
+    std.println 1.;
+    std.println -0.5;
 
-hexadecimal form prefixed with 0x or 0X:
-    0x7fff, 0XBadF00d
+    # scientific notation
+    std.println 0.1e2;
+    std.println 1.0E-4;
+};
 ```
 
-You can use underscores in numeric literals and scientific notation in floating point literals.
+You can specify the type of your literals. (Orb's type system will be explained in more detail later.)
 
 ```
-underscores:
-    10_000, .0000_0001
+import "std/io.orb";
 
-decimal scientific notation:
-    1e2, 1E-4
+fnc main () () {
+    # 8-bit unsigned integer
+    std.println 1:u8;
 
-hexadecimal scientific notation (power to base 2):
-    0x.123p1, 0x0.456P10
+    # 64-bit signed integer
+    std.println -100:i64;
+
+    # 32-bit floating point value
+    std.println 0.0:f32;
+};
 ```
 
-You can control the type of your literals by specifying a type attribute on them. (Orb's type system will be explained later.)
+Character literals are placed between single quotes, examples being: `'A'`, `'0'`, and `' '`. Some characters are denoted using special escape sequences, such as: `'\n'` (newline), `'\t'` (tab), `'\\'` (backslash), `'\''` (single quote), `'\"'` (double quote), and `'\0'` (terminal).
 
-```
-8-bit unsigned integer:
-    1:u8
+In our hello-world program, we've seen an example of a string literal. These are placed between double quotes, eg. `"Hello!"` and `""` (empty string). Strings use the same escape sequences as character literals.
 
-64-bit signed integer:
-    100:i64
+`true` and `false` are boolean literals, representing logical true and false values, respectively.
 
-32-bit floating point value:
-    0.:f32
-```
+`null` is the null pointer literal.
 
-To use some special characters in your character and string literals, you need to use character escaping. Same rules apply to both literal types.
-
-| Escape sequence | Character |
-| --- | --- |
-| \a | alert (beep, bell) |
-| \b | backspace |
-| \f | formfeed page break |
-| \n | newline |
-| \r | carriage return |
-| \t | horizontal tab |
-| \v | vertical tab |
-| \\\ | backslash |
-| \' | single quote |
-| \" | double quote |
-| \? | question mark |
-| \0 | terminal |
-| \x`HH` | byte of hexadecimal value `HH` |
-
-There is one other type of literal - identifiers. Here some examples of valid identifiers:
-
-```
-x
-y
-val01
-myId
-snake_case
-kebab-case
-?=
-<<<
-..
-!!!
-a=+-*/%<>&|^!~[]._?0123456789
-```
+There is one other type of literals - identifiers. These can contain alphanumeric and any of the following characters: `=+-*/%<>&|^!~[]._?`. This means that all of the following are valid identifiers: `x`, `_foo`, `myId`, `val01`, `snake_case`, `kebab-case`, `*shiny*`, `?=`, `<<<`, `-||-`.
