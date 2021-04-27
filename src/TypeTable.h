@@ -1,12 +1,12 @@
 #pragma once
 
 #include <array>
-#include <vector>
-#include <unordered_map>
 #include <optional>
-#include "utils.h"
-#include "NamePool.h"
+#include <unordered_map>
+#include <vector>
 #include "llvm/IR/Instructions.h"
+#include "NamePool.h"
+#include "utils.h"
 
 class TypeTable {
 public:

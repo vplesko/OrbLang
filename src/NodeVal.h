@@ -1,17 +1,17 @@
 #pragma once
 
-#include <vector>
 #include <memory>
 #include <unordered_map>
 #include <variant>
-#include "CodeLoc.h"
+#include <vector>
 #include "AttrMap.h"
-#include "LiteralVal.h"
-#include "SpecialVal.h"
+#include "CodeLoc.h"
 #include "EvalVal.h"
-#include "LlvmVal.h"
-#include "UndecidedCallableVal.h"
 #include "LifetimeInfo.h"
+#include "LiteralVal.h"
+#include "LlvmVal.h"
+#include "SpecialVal.h"
+#include "UndecidedCallableVal.h"
 
 class NodeVal {
     CodeLoc codeLoc;

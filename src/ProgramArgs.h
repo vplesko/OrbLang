@@ -1,8 +1,8 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
-#include <optional>
 
 struct ProgramArgs {
     std::vector<std::string> inputsSrc, inputsOther, importPaths;

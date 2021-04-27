@@ -1,7 +1,7 @@
 #include "Parser.h"
+#include <cstdint>
 #include <iostream>
 #include <sstream>
-#include <cstdint>
 using namespace std;
 
 Parser::Parser(StringPool *stringPool, TypeTable *typeTable, CompilationMessages *msgs) 

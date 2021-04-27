@@ -4,12 +4,12 @@
 #include <unordered_map>
 #include <variant>
 #include <vector>
+#include "llvm/IR/Instructions.h"
 #include "CodeLoc.h"
 #include "NamePool.h"
 #include "NodeVal.h"
 #include "SymbolTableIds.h"
 #include "TypeTable.h"
-#include "llvm/IR/Instructions.h"
 
 // TODO put these in a separate header
 struct BaseCallableValue {

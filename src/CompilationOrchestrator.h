@@ -1,14 +1,14 @@
 #pragma once
 
-#include <string>
-#include <memory>
-#include <vector>
 #include <iostream>
-#include "SymbolTable.h"
+#include <memory>
+#include <string>
+#include <vector>
 #include "CompilationMessages.h"
 #include "Compiler.h"
 #include "Evaluator.h"
 #include "ProgramArgs.h"
+#include "SymbolTable.h"
 
 class CompilationOrchestrator {
     std::unique_ptr<NamePool> namePool;
