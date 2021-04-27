@@ -76,7 +76,7 @@ void Lexer::lexNum(CodeIndex from) {
             tok.type = Token::T_UNKNOWN;
         } else {
             lit.erase(remove(lit.begin(), lit.end(), '_'), lit.end());
-            
+
             char *end;
             tok.fnum = strtod(lit.c_str(), &end);
             if (end != &*lit.end() || errno == ERANGE) tok.type = Token::T_UNKNOWN;
@@ -129,7 +129,7 @@ Token Lexer::next() {
             codeLocPoint.col = col+1; // text editors are 1-indexed
             ch = nextCh();
         } while (isspace(ch));
-        
+
         if (over()) {
             tok.type = Token::T_END;
             return old;
@@ -160,7 +160,7 @@ Token Lexer::next() {
                 continue;
             }
         }
-        
+
         if (isdigit(ch)) {
             lexNum(col-1);
         } else if (ch == '+' && isdigit(peekCh())) {

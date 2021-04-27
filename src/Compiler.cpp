@@ -205,7 +205,7 @@ NodeVal Compiler::performCast(CodeLoc codeLoc, const NodeVal &node, CodeLoc code
 
 bool Compiler::performBlockSetUp(CodeLoc codeLoc, SymbolTable::Block &block) {
     if (!checkInLocalScope(codeLoc, true)) return false;
-    
+
     llvm::BasicBlock *llvmBlockBody = llvm::BasicBlock::Create(llvmContext, "body", getLlvmCurrFunction());
     llvm::BasicBlock *llvmBlockAfter = llvm::BasicBlock::Create(llvmContext, "after");
 
@@ -379,7 +379,7 @@ bool Compiler::performFunctionDefinition(CodeLoc codeLoc, const NodeVal &args, c
     for (auto &llvmFuncArg : func.llvmFunc->args()) {
         llvm::Type *llvmArgType = makeLlvmTypeOrError(args.getChild(i).getCodeLoc(), callable.getArgType(i));
         if (llvmArgType == nullptr) return false;
-        
+
         llvm::AllocaInst *llvmAlloca = makeLlvmAlloca(llvmArgType, getNameForLlvm(func.argNames[i]));
         llvmBuilder.CreateStore(&llvmFuncArg, llvmAlloca);
 
@@ -454,7 +454,7 @@ bool Compiler::performRet(CodeLoc codeLoc, NodeVal node) {
 
 NodeVal Compiler::performOperUnary(CodeLoc codeLoc, NodeVal oper, Oper op) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
-    
+
     NodeVal promo = promoteIfEvalValAndCheckIsLlvmVal(oper, true);
     if (promo.isInvalid()) return NodeVal();
 
@@ -650,7 +650,7 @@ NodeVal Compiler::performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, Nod
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
 
     if (!checkIsLlvmVal(lhs, true)) return NodeVal();
-    
+
     NodeVal rhsPromo = promoteIfEvalValAndCheckIsLlvmVal(rhs, true);
     if (rhsPromo.isInvalid()) return NodeVal();
 
@@ -665,10 +665,10 @@ NodeVal Compiler::performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, Nod
 
 NodeVal Compiler::performOperIndexArr(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
-    
+
     NodeVal basePromo = promoteIfEvalValAndCheckIsLlvmVal(base, true);
     if (basePromo.isInvalid()) return NodeVal();
-    
+
     NodeVal indPromo = promoteIfEvalValAndCheckIsLlvmVal(ind, true);
     if (ind.isInvalid()) return NodeVal();
 
@@ -707,7 +707,7 @@ NodeVal Compiler::performOperIndexArr(CodeLoc codeLoc, NodeVal &base, const Node
 
 NodeVal Compiler::performOperIndex(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
-    
+
     NodeVal basePromo = promoteIfEvalValAndCheckIsLlvmVal(base, true);
     if (basePromo.isInvalid()) return NodeVal();
 
@@ -724,19 +724,19 @@ NodeVal Compiler::performOperIndex(CodeLoc codeLoc, NodeVal &base, std::uint64_t
 
 NodeVal Compiler::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, bool bare) {
     if (!checkInLocalScope(codeLoc, true)) return NodeVal();
-    
+
     NodeVal lhsPromo = promoteIfEvalValAndCheckIsLlvmVal(lhs, true);
     if (lhs.isInvalid()) return NodeVal();
-    
+
     NodeVal rhsPromo = promoteIfEvalValAndCheckIsLlvmVal(rhs, true);
     if (rhs.isInvalid()) return NodeVal();
 
     LlvmVal llvmVal(lhs.getType().value());
-    
+
     bool isTypeI = typeTable->worksAsTypeI(llvmVal.type);
     bool isTypeU = typeTable->worksAsTypeU(llvmVal.type);
     bool isTypeF = typeTable->worksAsTypeF(llvmVal.type);
-    
+
     switch (op) {
     case Oper::ADD:
         if (isTypeI || isTypeU) {
@@ -807,7 +807,7 @@ NodeVal Compiler::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const 
     default:
         break;
     }
-    
+
     if (llvmVal.val == nullptr) {
         msgs->errorExprBadOps(rhs.getCodeLoc(), op, false, lhs.getType().value(), false);
         return NodeVal();
@@ -983,7 +983,7 @@ llvm::FunctionType* Compiler::makeLlvmFunctionType(TypeTable::Id typeId) {
         llvmArgTypes[i] = makeLlvmType(callable->getArgType(i));
         if (llvmArgTypes[i] == nullptr) return nullptr;
     }
-    
+
     llvm::Type *llvmRetType = callable->retType.has_value() ? makeLlvmType(callable->retType.value()) : llvm::Type::getVoidTy(llvmContext);
     if (llvmRetType == nullptr) return nullptr;
 
@@ -1065,7 +1065,7 @@ llvm::Type* Compiler::makeLlvmType(TypeTable::Id typeId) {
     }
 
     // supported primitive type are compiled at the start of compilation
-    // in case of id or type, nullptr is returned    
+    // in case of id or type, nullptr is returned
     typeTable->setType(typeId, llvmType);
     return llvmType;
 }

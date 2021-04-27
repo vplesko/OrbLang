@@ -394,7 +394,7 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
     if (!checkIsEvalVal(lhs, true) || !checkIsEvalVal(rhs, true)) return nullopt;
 
     TypeTable::Id ty = lhs.getType().value();
-    
+
     bool isTypeI = typeTable->worksAsTypeI(ty);
     bool isTypeU = typeTable->worksAsTypeU(ty);
     bool isTypeC = typeTable->worksAsTypeC(ty);
@@ -489,10 +489,10 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
             return !signal.result;
         } else if (isTypeCallF) {
             signal.result = callfl.value()==callfr.value();
-            return !signal.result;            
+            return !signal.result;
         } else if (isTypeCallM) {
             signal.result = callml.value()==callmr.value();
-            return !signal.result;            
+            return !signal.result;
         }
         break;
     case Oper::NE:
@@ -525,10 +525,10 @@ optional<bool> Evaluator::performOperComparison(CodeLoc codeLoc, const NodeVal &
             return !signal.result;
         } else if (isTypeCallF) {
             signal.result = callfl.value()!=callfr.value();
-            return !signal.result;            
+            return !signal.result;
         } else if (isTypeCallM) {
             signal.result = callml.value()!=callmr.value();
-            return !signal.result;            
+            return !signal.result;
         }
         break;
     case Oper::LT:
@@ -697,7 +697,7 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, std::uint64_
 // TODO warn on over/underflow; are results correct in these cases?
 NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, bool bare) {
     if (!checkIsEvalVal(lhs, true) || !checkIsEvalVal(rhs, true)) return NodeVal();
-    
+
     TypeTable::Id ty = lhs.getType().value();
     EvalVal evalVal = EvalVal::makeVal(ty, typeTable);
     bool success = false, errorGiven = false;

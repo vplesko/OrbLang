@@ -56,7 +56,7 @@ struct MacroValue : public BaseCallableValue {
 
     std::vector<PreHandling> argPreHandling;
     std::unique_ptr<NodeVal> body;
-    
+
     static EscapeScore toEscapeScore(PreHandling h);
 };
 

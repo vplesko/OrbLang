@@ -288,7 +288,7 @@ bool CompilationOrchestrator::process(const ProgramArgs &args) {
                         msgs->errorImportCyclical(node.getCodeLoc(), path);
                         return false;
                     }
-                        
+
                     if (imres == ITR_STARTED) {
                         trace.push(par.getLexer());
                     }

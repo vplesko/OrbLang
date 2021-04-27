@@ -118,7 +118,7 @@ NodeVal Parser::parseTerm(bool ignoreAttrs) {
         break;
     case Token::T_NULL:
         val.kind = LiteralVal::Kind::kNull;
-        break;    
+        break;
     default:
         msgs->errorUnexpectedTokenType(tok.first, tok.second);
         return NodeVal();

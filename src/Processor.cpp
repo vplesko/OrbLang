@@ -823,7 +823,7 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
         SymbolTable::MacroCallSite callSite;
         callSite.name = starting.getUndecidedCallableVal().name;
         callSite.argCnt = node.getChildrenCnt()-1;
-    
+
         macroId = symbolTable->getMacroId(callSite, typeTable);
         if (!macroId.has_value()) {
             msgs->errorMacroNotFound(node.getCodeLoc(), starting.getUndecidedCallableVal().name);
@@ -845,7 +845,7 @@ NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
     if ((callable.variadic && providedArgCnt+1 < callable.getArgCnt()) ||
         (!callable.variadic && providedArgCnt != callable.getArgCnt())) {
         msgs->errorMacroNotFound(node.getCodeLoc(), macroVal.name);
-        return NodeVal();    
+        return NodeVal();
     }
 
     vector<NodeVal> args;

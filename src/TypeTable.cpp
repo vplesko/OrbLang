@@ -13,7 +13,7 @@ bool TypeTable::Tuple::eq(const Tuple &other) const {
 
     for (size_t i = 0; i < elements.size(); ++i)
         if (elements[i] != other.elements[i]) return false;
-    
+
     return true;
 }
 
@@ -273,21 +273,21 @@ TypeTable::Id TypeTable::addTypeAddrOf(Id typeId) {
 TypeTable::Id TypeTable::addTypeArrOfLenIdOf(Id typeId, std::size_t len) {
     if (isTypeDescr(typeId)) {
         const TypeDescr &typeDescr = typeDescrs[typeId.index].first;
-        
+
         TypeDescr typeArrDescr(typeDescr.base, typeDescr.cn);
         typeArrDescr.decors = vector<TypeDescr::Decor>(typeDescr.decors.begin(), typeDescr.decors.end());
         typeArrDescr.cns = vector<bool>(typeDescr.cns.begin(), typeDescr.cns.end());
 
         typeArrDescr.addDecor({TypeDescr::Decor::D_ARR, len}, false);
         typeArrDescr.setLastCn();
-        
+
         return addTypeDescr(move(typeArrDescr));
     } else {
         TypeDescr typeArrDescr(typeId);
 
         typeArrDescr.addDecor({TypeDescr::Decor::D_ARR, len}, false);
         typeArrDescr.setLastCn();
-        
+
         return addTypeDescr(move(typeArrDescr));
     }
 }
@@ -297,19 +297,19 @@ TypeTable::Id TypeTable::addTypeCnOf(Id typeId) {
 
     if (isTypeDescr(typeId)) {
         const TypeDescr &typeDescr = typeDescrs[typeId.index].first;
-        
+
         TypeDescr typeCnDescr(typeDescr.base, typeDescr.cn);
         typeCnDescr.decors = vector<TypeDescr::Decor>(typeDescr.decors.begin(), typeDescr.decors.end());
         typeCnDescr.cns = vector<bool>(typeDescr.cns.begin(), typeDescr.cns.end());
 
         typeCnDescr.setLastCn();
-        
+
         return addTypeDescr(move(typeCnDescr));
     } else {
         TypeDescr typeCnDescr(typeId);
 
         typeCnDescr.setLastCn();
-        
+
         return addTypeDescr(move(typeCnDescr));
     }
 }
@@ -712,7 +712,7 @@ bool TypeTable::worksAsTypePtr(Id t) const {
         const TypeDescr &descr = getTypeDescr(t);
         return descr.decors.empty() && worksAsTypePtr(descr.base);
     }
-    
+
     return false;
 }
 
@@ -758,7 +758,7 @@ bool TypeTable::worksAsTypeCn(Id t) const {
                 if (descr.cns[i]) return true;
 
                 if (descr.decors[i].type != TypeDescr::Decor::D_ARR) return false;
-                
+
                 if (i == 0) break;
             }
         }
@@ -785,7 +785,7 @@ bool TypeTable::fitsTypeI(int64_t x, Id t) const {
     if (!worksAsPrimitive(t)) return false;
 
     PrimIds primId = (PrimIds) extractBaseType(t).index;
-    
+
     int64_t lo, hi;
     switch (primId) {
     case TypeTable::P_I8:
@@ -831,7 +831,7 @@ bool TypeTable::fitsTypeU(uint64_t x, Id t) const {
     if (!worksAsPrimitive(t)) return false;
 
     PrimIds primId = (PrimIds) extractBaseType(t).index;
-    
+
     uint64_t hi;
     switch (primId) {
     case TypeTable::P_I8:
@@ -943,7 +943,7 @@ bool TypeTable::isImplicitCastable(Id from, Id into) const {
             if (pastRef && s.cns[i] && !d.cns[i]) return false;
             if (d.decors[i].type == TypeDescr::Decor::D_PTR ||
                 d.decors[i].type == TypeDescr::Decor::D_ARR_PTR) pastRef = true;
-            
+
             if (i == 0) break;
         }
         if (s.base != d.base) return false;

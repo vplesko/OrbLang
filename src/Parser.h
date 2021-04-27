@@ -13,7 +13,7 @@ class Parser {
 
     const Token& peek() const;
     std::pair<CodeLoc, Token> next();
-    
+
     bool match(Token::Type type);
     bool matchCloseBraceOrError(Token openBrace);
 

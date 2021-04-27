@@ -66,7 +66,7 @@ public:
 
             Type type = D_INVALID;
             std::size_t len;
-            
+
             bool eq(const Decor &other) const {
                 return type == other.type && len == other.len;
             }
@@ -145,7 +145,7 @@ public:
         void setArgNoDrop(std::size_t ind, bool b) { args[ind].noDrop = b; }
         // assumed to have the same arg size
         void setArgNoDrops(const std::vector<bool> &argNoDrops);
-    
+
         bool hasRet() const { return retType.has_value(); }
 
         bool eq(const Callable &other) const;
@@ -225,7 +225,7 @@ public:
 
     llvm::Type* getType(Id id);
     void setType(Id id, llvm::Type *type);
-    
+
     llvm::Type* getPrimType(PrimIds id) const;
     Id getPrimTypeId(PrimIds id) const;
     const Tuple& getTuple(Id id) const;
@@ -249,7 +249,7 @@ public:
     bool isExplicitType(Id t) const;
     bool isDataType(Id t) const;
     bool isCallable(Id t) const;
-    
+
     bool worksAsPrimitive(Id t) const;
     bool worksAsPrimitive(Id t, PrimIds p) const;
     bool worksAsPrimitive(Id t, PrimIds lo, PrimIds hi) const;

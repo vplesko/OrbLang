@@ -280,14 +280,14 @@ bool EvalVal::isImplicitCastable(const EvalVal &val, TypeTable::Id t, const Stri
 
     optional<uint64_t> valU = getValueU(val, typeTable);
     if (valU.has_value()) return typeTable->fitsTypeU(valU.value(), t);
-    
+
     optional<double> valF = getValueF(val, typeTable);
     if (valF.has_value()) return typeTable->fitsTypeF(valF.value(), t);
 
     // if an eval val is ptr, it has to be null
     if (typeTable->worksAsTypePtr(val.type) &&
         (typeTable->worksAsTypeAnyP(t) || typeTable->worksAsCallable(t))) return true;
-    
+
     if (isNonNullStr(val, typeTable))
         return typeTable->worksAsTypeStr(t) ||
             typeTable->worksAsTypeCharArrOfLen(t, LiteralVal::getStringLen(stringPool->get(val.str().value())));
