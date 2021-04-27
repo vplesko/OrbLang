@@ -62,9 +62,9 @@ fnc main () () {
 };
 ```
 
-Character literals are placed between single quotes, examples being: `'A'`, `'0'`, `'.'`, and `' '`. Some characters are denoted using special escape sequences, such as: `'\n'` (newline), `'\t'` (tab), `'\\'` (backslash), `'\''` (single quote), `'\"'` (double quote), and `'\0'` (terminal).
+Character literals are placed between single quotes, examples being: `'A'`, `'0'`, `'.'`, and `' '`. Some characters are denoted using special escape sequences, such as: `'\n'` (newline), `'\t'` (tab), `'\\'` (backslash), `'\''` (single quote), `'\"'` (double quote), and `'\0'` (null character).
 
-In our hello-world program, we've seen an example of a string literal. These are placed between double quotes, eg. `"Hello!"` and `""` (empty string). Strings use the same escape sequences as character literals.
+In our HelloWorld program, we've seen an example of a string literal. These are placed between double quotes, eg. `"Hello!"` and `""` (empty string). Strings use the same escape sequences as character literals.
 
 `true` and `false` are boolean literals, representing logical true and false values, respectively.
 

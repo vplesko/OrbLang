@@ -137,7 +137,6 @@ mac rangeRev (i up::preprocess body) {
     });
 };
 
-# TODO have bounds put in a raw
 mac range (i lo::preprocess hi::preprocess body) {
     ret \(for (sym (,i ,lo)) (<= ,i ,hi) (= ,i (+ ,i 1)) ,body);
 };

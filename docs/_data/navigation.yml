@@ -8,12 +8,16 @@
   link: /pages/03_comments.html
 - name: Operators
   link: /pages/04_operators.html
+- name: Primitive types
+  link: /pages/05_primitive_types.html
+- name: Symbols
+  link: /pages/06_symbols.html
+- name: Assignment
+  link: /pages/07_assignment.html
+- name: Casting
+  link: /pages/08_casting.html
+- name: Control flow
+  link: /pages/09_control_flow.html
   subpages:
-    - name: Arithmetic operators
-      link: /pages/04_01_arithmetic_operators.html
-    - name: Bitwise operators
-      link: /pages/04_02_bitwise_operators.html
-    - name: Comparison operators
-      link: /pages/04_03_comparison_operators.html
-    - name: Logical operators
-      link: /pages/04_04_logical_operators.html
+   - name: If
+     link: /pages/09a_if.html

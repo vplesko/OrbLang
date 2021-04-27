@@ -4,7 +4,7 @@ title: HelloWorld
 ---
 # HelloWorld
 
-As tradition dictates, we will start by writing a simple hello-world program. Here is the **main.orb** file containing the code:
+As tradition dictates, we will start by writing a simple HelloWorld program. Here is the **main.orb** file containing the code:
 
 ```
 import "std/io.orb";
