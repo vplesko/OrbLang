@@ -6,7 +6,7 @@ title: Operators
 
 Operators allow us to perform calculations on values. There's quite a few of them, most of which will be shown in this section.
 
-As you will quickly see, all of them are written in prefix notation - operators before the arguments. In fact, the entire language uses prefix notation. This fundamentally relates to how Orb is defined, but this will be explored at a later point in the guide.
+As you will quickly see, all of them are written in prefix notation - operators before the arguments. In fact, the entire language uses prefix notation. This fundamentally relates to how Orb is defined, but that will be explored at a later point in the guide.
 
 For now, try to get accustomed to this syntax. It has a benefit, however - a lot of the operators are variadic. This means they can handle more than two arguments, which can at times allow for shorter code.
 
@@ -63,7 +63,7 @@ fnc main () () {
 };
 ```
 
-Comparison operators compare conscecutive arguments and return a boolean value.
+Comparison operators compare consecutive arguments and return a boolean value.
 
 ```
 fnc main () () {
@@ -81,7 +81,7 @@ fnc main () () {
 };
 ```
 
-It is worth remembering that `!=` is not variadic - it always takes exactly two arguments.
+It should be noted that `!=` is not variadic - it always takes exactly two arguments.
 
 Another useful property of comparison operators is short-circuiting. This means that if the final boolean result is already determined, the remaining arguments will not be executed.
 
@@ -112,6 +112,6 @@ fnc main () () {
 };
 ```
 
-Unlike all the other operators we've seen here, `&&` and `||` are not special forms - they are macros. They are defined in **base.orb**, which is why we needed to import it.
+Unlike all the other operators we've seen here, `&&` and `||` are not special forms - they are macros. They are defined in **base.orb**, which is why we needed to import this file.
 
 Just like comparison operators, `&&` ands `||` perform short-circuiting.

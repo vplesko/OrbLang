@@ -25,11 +25,12 @@ We can control the type of our symbol by specifying it. The initalizer value wil
     sym (x:i64 (std.scanI32));
 ```
 
-Alternatively, we can omit the initialization, in which case we must specify the type and our symbol will be zero-initialized.
+Alternatively, we can omit the initialization, in which case we must specify the type. Doing so will zero-initialize our symbol.
 
 ```
 fnc main () () {
     sym i:i32 # i is 0
+        u:u32 # u is 0
         f:f32 # f is 0.0
         b:bool # b is false
         c:c8 # c is '\0'
@@ -37,7 +38,7 @@ fnc main () () {
 };
 ```
 
-Also, notice that a single `sym` can be used to declare multiple symbols.
+Also, notice that a single `sym` instruction can be used to declare multiple symbols.
 
 Using `sym` outside of functions, in global scope, would declare a global symbol (or global variable). These exist in global scope, so they can be referenced for the remainder of the program.
 
