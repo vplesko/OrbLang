@@ -81,3 +81,7 @@
   link: /pages/15_evaluation.html
 - name: Node-based syntax
   link: /pages/16_node_based_syntax.html
+- name: Escaping
+  link: /pages/17_escaping.html
+- name: Id, type, and raw
+  link: /pages/18_id_type_and_raw.html
