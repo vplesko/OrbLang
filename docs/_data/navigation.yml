@@ -66,3 +66,18 @@
       link: /pages/12m_function_types.html
 - name: Lambdas
   link: /pages/13_lambdas.html
+- name: Control flow - revisited
+  link: /pages/14_control_flow_revisited.html
+  subpages:
+    - name: Block
+      link: /pages/14a_block.html
+    - name: Exit
+      link: /pages/14b_exit.html
+    - name: Loop
+      link: /pages/14c_loop.html
+    - name: Pass
+      link: /pages/14d_pass.html
+- name: Evaluation
+  link: /pages/15_evaluation.html
+- name: Node-based syntax
+  link: /pages/16_node_based_syntax.html

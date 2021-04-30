@@ -68,7 +68,7 @@ a.link-img {
     right: 0;
     bottom: 0;
     padding: 10px;
-    overflow-y: auto;
+    overflow-y: scroll;
 }
 
 .sidebar-ol {
