@@ -4,13 +4,11 @@ title: Operators
 ---
 # Operators
 
-Operators allow us to perform calculations on values. There's quite a few of them, most of which will be shown in this section.
-
-As you will quickly see, all of them are written in prefix notation - operators before the arguments. In fact, the entire language uses prefix notation. This fundamentally relates to how Orb is defined, but that will be explored at a later point in the guide.
+Operators perform calculations on values. As you will see, they are written in prefix notation - operators before the arguments. In fact, the entire language uses prefix notation. This fundamentally relates to how Orb is defined, but that will be explored at a later point in the guide.
 
 For now, try to get accustomed to this syntax. It has a benefit, however - a lot of the operators are variadic. This means they can handle more than two arguments, which can at times allow for shorter code.
 
-The best way to explain operators is through examples. Let's look at the arithmetic operators first.
+Let's look at the arithmetic operators first.
 
 ```
 import "std/io.orb";
@@ -37,7 +35,7 @@ fnc main () () {
 };
 ```
 
-Bitwise operators perform operatons on individual bits. The examples below use integer literals in binary form for better demonstration, but these operators aren't restricted to this representation.
+Bitwise operators perform operatons on individual bits. (Binary form is not a requirement.)
 
 ```
 import "std/io.orb";
@@ -83,7 +81,7 @@ fnc main () () {
 
 It should be noted that `!=` is not variadic - it always takes exactly two arguments.
 
-Another useful property of comparison operators is short-circuiting. This means that if the final boolean result is already determined, the remaining arguments will not be executed.
+A useful property of comparison operators is short-circuiting. This means that if the final boolean result is already determined, the remaining arguments will not be executed.
 
 ```
 import "std/io.orb";
@@ -93,7 +91,7 @@ fnc main () () {
 };
 ```
 
-`std.scanI32` is a function that attempts to read a 32-bit integer value from the standard input. Normally, it would pause the execution of our program until this value is read. Here, however, that call will never be executed, since it is already clear that the comparison result is `false`.
+`std.scanI32` is a function that attempts to read a 32-bit integer value from the standard input. Normally, it would pause the execution of our program until this value is read. Here, that call will never be executed, since it is already clear that the comparison result is `false`.
 
 Finally, we have the logical operators.
 
@@ -112,6 +110,6 @@ fnc main () () {
 };
 ```
 
-Unlike all the other operators we've seen here, `&&` and `||` are not special forms - they are macros. They are defined in **base.orb**, which is why we needed to import this file.
+Unlike all the other operators we've seen so far, `&&` and `||` are not special forms - they are macros. They are defined in **base.orb**, which is why we needed to import this file.
 
 Just like comparison operators, `&&` ands `||` perform short-circuiting.

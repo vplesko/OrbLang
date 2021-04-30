@@ -4,7 +4,7 @@ title: Literals
 ---
 # Literals
 
-Literals are values of primitive types declared through Orb syntax. One group of literals are integer literals, shown in the example below.
+Literals are values of primitive types declared through Orb syntax. One group of literals are signed integer literals.
 
 ```
 import "std/io.orb";
@@ -62,11 +62,11 @@ fnc main () () {
 };
 ```
 
-Character literals are placed between single quotes, examples being: `'A'`, `'0'`, `'.'`, and `' '`. Some characters are denoted using special escape sequences, such as: `'\n'` (newline), `'\t'` (tab), `'\\'` (backslash), `'\''` (single quote), `'\"'` (double quote), and `'\0'` (null character).
+Character literals are placed between single quotes, for example: `'A'`, `'0'`, `'.'`, and `' '`. Some characters require special escape sequences: `'\n'` (newline), `'\t'` (tab), `'\\'` (backslash), `'\''` (single quote), `'\"'` (double quote), and `'\0'` (null character).
 
-In our HelloWorld program, we've seen an example of a string literal. These are placed between double quotes, eg. `"Hello!"` and `""` (empty string). Strings use the same escape sequences as character literals.
+String literals are placed between double quotes, eg. `"Hello!"` and `""` (empty string). Strings use the same escape sequences as character literals.
 
-`true` and `false` are boolean literals, representing logical true and false values, respectively.
+`true` and `false` are boolean literals.
 
 `null` is the null pointer literal.
 

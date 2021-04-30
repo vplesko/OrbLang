@@ -42,7 +42,7 @@ fnc main () () {
 
 There are some exceptions to these rules, when the value is known at the time of compilation and guaranteed to not result in information loss. Even then, some of the strictness still holds.
 
-In the cases where implicit casting is forbidden, we must resort to explicit casts, by using the `cast` special form.
+In the cases where implicit casting is forbidden, we can cast explicitly by using the `cast` special form.
 
 ```
 import "std/io.orb";

@@ -21,3 +21,13 @@
   subpages:
    - name: If
      link: /pages/09a_if.html
+   - name: While
+     link: /pages/09c_while.html
+   - name: For
+     link: /pages/09d_for.html
+   - name: Range
+     link: /pages/09e_range.html
+   - name: Repeat
+     link: /pages/09f_repeat.html
+   - name: Break and continue
+     link: /pages/09g_break_and_continue.html

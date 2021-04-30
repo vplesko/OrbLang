@@ -4,7 +4,7 @@ title: Assignment
 ---
 # Assignment
 
-The real power of symbols comes from the fact we can assign them new values after initialization.
+The real power of symbols comes from being able to assign them new values after initialization.
 
 ```
 fnc main () () {

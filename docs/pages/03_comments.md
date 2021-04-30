@@ -4,9 +4,7 @@ title: Comments
 ---
 # Comments
 
-It is possible to comment out parts of Orb code and the compiler will just skip over them. There are two types of comments: single-line and multi-line.
-
-Single-line comments start with a `#` character.
+There are two types of comments: single-line and multi-line. Single-line comments start with a `#` character.
 
 ```
 import "std/io.orb";
