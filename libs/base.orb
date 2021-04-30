@@ -39,14 +39,31 @@ mac makeRawWith (vals::(variadic preprocess)) {
     ret \(escape ,vals);
 };
 
-mac base.assertIsOfType (ty::preprocess x::preprocess) {
+mac base.assertIsOfType (x::preprocess ty::preprocess) {
     block {
         exit (== (typeOf x) ty);
         exit (== (typeOf x) (ty cn));
-        message::error x::loc "Value expected to be of type '" ty "'.";
+        message::error x::loc "Value is not of type '" ty "'.";
     };
 
     ret ();
+};
+
+mac base.assertIsRawOfLen (x::preprocess len::preprocess) {
+    sym (isRaw true);
+    block {
+        exit (== (typeOf x) raw);
+        exit (== (typeOf x) (raw cn));
+        = isRaw false;
+    };
+
+    block {
+        exit (! isRaw);
+        exit (!= (lenOf x) len);
+        ret ();
+    };
+
+    message::error x::loc "Number of children nodes must be exactly " len ".";
 };
 
 mac cond (cond_::preprocess onTrue onFalse) {
@@ -71,8 +88,10 @@ mac if (cond then) {
 mac if (cond then rest0 rest::variadic) {
     sym (args (+ \(,cond ,then ,rest0) rest));
 
-    sym (innerCode {});
-    range i 0 (- (lenOf args) 2) 2 {
+    sym (innerCode {}) (i 0:base.-widestU);
+    block {
+        exit (> i (- (lenOf args) 2));
+
         = innerCode (+ innerCode \{
             (block {
                 (exit (! ,([] args i)))
@@ -80,6 +99,9 @@ mac if (cond then rest0 rest::variadic) {
                 (exit base.-blockIf true)
             })
         });
+
+        = i (+ i 2);
+        loop true;
     };
 
     block {
@@ -173,7 +195,7 @@ mac switch (x::preprocess rest0 rest1 rest::variadic) {
 
     sym (switchInnerCode {});
     range i 0 (- (lenOf entries) 2) 2 {
-        base.assertIsOfType raw ([] entries i);
+        base.assertIsOfType ([] entries i) raw;
 
         sym (switchEntryExitInnerCode {});
         range j (lenOf ([] entries i)) {
@@ -296,7 +318,7 @@ mac || (a b rest::variadic) {
 };
 
 mac arr (ty::preprocess a::preprocess rest::(variadic preprocess)) {
-    base.assertIsOfType type ty;
+    base.assertIsOfType ty type;
 
     sym (elems (+ \(,a) rest));
     sym (arrTy (ty (lenOf elems)));
@@ -336,14 +358,14 @@ mac tup (a::preprocess b::preprocess rest::(variadic preprocess)) {
 };
 
 mac make (ty::preprocess pair rest::variadic) {
-    base.assertIsOfType type ty;
+    base.assertIsOfType ty type;
 
     sym (pairs (+ \(,pair) rest));
     sym (inst (genSym));
 
     sym (innerCode \{ (sym ,inst:ty) });
     range i (lenOf pairs) {
-        base.assertIsOfType raw ([] pairs i);
+        base.assertIsOfType ([] pairs i) raw;
         if (!= (lenOf ([] pairs i)) 2) {
             message::error ([] pairs i)::loc "Each entry must contain exactly two values - element name and initial value.";
         };
@@ -393,12 +415,12 @@ mac base.-enumValsDecl (name enumTy::preprocess vals) {
                 message::error ([] vals i)::loc "Each entry must be either an id or have exactly two values - name and initial value.";
             };
 
-            base.assertIsOfType id ([] vals i 0);
+            base.assertIsOfType ([] vals i 0) id;
             = valName ([] vals i 0);
 
             = init \(cast ,((name) cn) ,([] vals i 1));
         } {
-            base.assertIsOfType id ([] vals i);
+            base.assertIsOfType ([] vals i) id;
             = valName ([] vals i);
 
             if (== i 0) {
@@ -421,9 +443,9 @@ mac base.-enumValsDecl (name enumTy::preprocess vals) {
 };
 
 mac enum (name ty::preprocess vals) {
-    base.assertIsOfType id name;
-    base.assertIsOfType type ty;
-    base.assertIsOfType raw vals;
+    base.assertIsOfType name id;
+    base.assertIsOfType ty type;
+    base.assertIsOfType vals raw;
 
     if (== (lenOf vals) 0) {
         message::error vals::loc "Must specify at least one enum value.";

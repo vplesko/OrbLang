@@ -36,7 +36,7 @@ mac std.getArrPtr (list::preprocess) {
 
 # TODO capturing curr ind in addition to val
 mac std.range (it list::preprocess body) {
-    base.assertIsOfType id it;
+    base.assertIsOfType it id;
 
     sym (i (genSym));
 
@@ -47,7 +47,7 @@ mac std.range (it list::preprocess body) {
 };
 
 mac std.rangeRev (it list::preprocess body) {
-    base.assertIsOfType id it;
+    base.assertIsOfType it id;
 
     sym (i (genSym));
 
