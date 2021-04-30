@@ -112,38 +112,14 @@ fnc main () () {
         println_i32 (std.getBack x);
     };
     block {
-        sym (x (std.makeListWith i32 208 209));
+        sym (x (std.makeListWith i32 208 209 210 211 212));
         std.range it x {
-            println_i32 (it);
-        };
-        = x (std.makeListWith i32 -1 210 211 -1);
-        std.range it x 1 2 {
-            println_i32 (it);
-        };
-        = x (std.makeListWith i32 212);
-        std.range it x 0 0 {
-            println_i32 (it);
-        };
-        = x (std.makeListWith i32 -1 -1);
-        std.range it x 1 0 {
             println_i32 (it);
         };
     };
     block {
-        sym (x (std.makeListWith i32 214 213));
+        sym (x (std.makeListWith i32 217 216 215 214 213));
         std.rangeRev it x {
-            println_i32 (it);
-        };
-        = x (std.makeListWith i32 -1 216 215 -1);
-        std.rangeRev it x 2 1 {
-            println_i32 (it);
-        };
-        = x (std.makeListWith i32 217);
-        std.rangeRev it x 0 0 {
-            println_i32 (it);
-        };
-        = x (std.makeListWith i32 -1 -1);
-        std.rangeRev it x 0 1 {
             println_i32 (it);
         };
     };

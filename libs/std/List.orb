@@ -57,28 +57,6 @@ mac std.rangeRev (it list::preprocess body) {
     });
 };
 
-mac std.range (it list::preprocess indLo::preprocess indHi::preprocess body) {
-    base.assertIsOfType id it;
-
-    sym (i (genSym));
-
-    ret \(block {
-        eval (sym (,it (pat { ret (escape (std.[] ,list ,i)); })));
-        range ,i ,indLo ,indHi ,body;
-    });
-};
-
-mac std.rangeRev (it list::preprocess indHi::preprocess indLo::preprocess body) {
-    base.assertIsOfType id it;
-
-    sym (i (genSym));
-
-    ret \(block {
-        eval (sym (,it (pat { ret (escape (std.[] ,list ,i)); })));
-        rangeRev ,i ,indHi ,indLo ,body;
-    });
-};
-
 eval (fnc std.List (elemTy:type) type {
     sym (name (+ \std.List (cast id elemTy)));
 
@@ -182,8 +160,8 @@ std.-genFncList std.resize (len:std.Size) () {
         sym (ptrPastOldLen (std.getArrPtrToInd elemTy (-> this -start) oldLen));
         std.setElemsToZero elemTy ptrPastOldLen (- len oldLen);
     } (< len oldLen) {
-        std.rangeRev it (* this) (- oldLen 1) len {
-            >>::noZero (it);
+        rangeRev i (- oldLen 1) len {
+            >>::noZero (std.[] (* this) i);
         };
     };
     = (-> this -end) (std.getArrPtrToInd elemTy (-> this -start) len);
