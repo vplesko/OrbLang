@@ -2,7 +2,7 @@
 layout: default
 title: Comments
 ---
-# Comments
+# {{ page.title }}
 
 There are two types of comments: single-line and multi-line. Single-line comments start with a `#` character.
 

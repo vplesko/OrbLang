@@ -2,7 +2,7 @@
 layout: default
 title: Primitive types
 ---
-# Primitive types
+# {{ page.title }}
 
 Primitive types are types which are built into the language itself. One group of these are signed integers: `i8`, `i16`, `i32`, and `i64`. The number in their name denotes how many bits are used in their storage, which affects the range of values they can contain.
 

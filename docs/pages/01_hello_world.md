@@ -2,7 +2,7 @@
 layout: default
 title: HelloWorld
 ---
-# HelloWorld
+# {{ page.title }}
 
 As tradition dictates, we will start by writing a simple HelloWorld program. Here is the **main.orb** file containing the code:
 

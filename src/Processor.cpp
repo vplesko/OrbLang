@@ -976,8 +976,13 @@ NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
     optional<TypeTable::Id> retType;
     {
         const NodeVal &nodeRetType = node.getChild(indRet);
+
         NodeVal ty = processNode(nodeRetType);
-        if (ty.isInvalid()) return NodeVal();
+        if (ty.isInvalid()) {
+            msgs->hintWhileProcessingRetType(nodeRetType.getCodeLoc());
+            return NodeVal();
+        }
+
         if (!checkIsEmpty(ty, false)) {
             if (!checkIsType(ty, true)) return NodeVal();
 
@@ -2433,8 +2438,13 @@ NodeVal Processor::processFncType(const NodeVal &node) {
     optional<TypeTable::Id> retType;
     {
         const NodeVal &nodeRetType = node.getChild(indRet);
+
         NodeVal ty = processNode(nodeRetType);
-        if (ty.isInvalid()) return NodeVal();
+        if (ty.isInvalid()) {
+            msgs->hintWhileProcessingRetType(nodeRetType.getCodeLoc());
+            return NodeVal();
+        }
+
         if (!checkIsEmpty(ty, false)) {
             if (!checkIsType(ty, true)) return NodeVal();
             retType = ty.getEvalVal().ty();

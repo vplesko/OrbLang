@@ -13,6 +13,7 @@
     --color-code-error: #f1b1b1;
     --color-code-error-border: #ff0000;
     --color-table-border: black;
+    --color-blockquote: #e0f0ff;
 }
 
 html {
@@ -150,6 +151,7 @@ code.highlighter-rouge {
     background-color: var(--color-code);
     padding: 2px 4px;
     border-radius: 3px;
+    white-space: nowrap;
 }
 
 pre.highlight {
@@ -171,6 +173,12 @@ table {
 th, td {
     border: 1px solid var(--color-table-border);
     padding: 5px;
+}
+
+blockquote {
+    background-color: var(--color-blockquote);
+    padding: 0px 12px;
+    overflow-x: auto;
 }
 
 .prev-next-wrap {

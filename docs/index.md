@@ -2,7 +2,7 @@
 layout: default
 title: Introduction
 ---
-# Introduction
+# {{ page.title }}
 
 If you are here, you are likely interested in learning more about the Orb programming language. This document is written as a guide to writing code in Orb, and tries to explain all the possibilities you have when using this language. It will first go through the basics - concepts shared with many other languages (though they may work slightly differently in Orb), before moving on to more advanced and exciting techniques.
 
@@ -16,4 +16,4 @@ There are two goals for which Orb strives. On one side, it strives for simplicit
 
 Ultimately, Orb is about control. You are in control of your code, its writing, compilation, and execution. Orb offers you a powerful set of tools for the job, but leaves all the decision-making to you.
 
-When you are ready, click on the right-arrow to start learning Orb.
+When you are ready, click on the right arrow to start learning Orb.

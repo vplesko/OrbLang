@@ -31,3 +31,38 @@
      link: /pages/09f_repeat.html
    - name: Break and continue
      link: /pages/09g_break_and_continue.html
+- name: Functions
+  link: /pages/10_functions.html
+- name: Scopes
+  link: /pages/11_scopes.html
+- name: Type system - extended
+  link: /pages/12_type_system_extended.html
+  subpages:
+    - name: Arrays
+      link: /pages/12a_arrays.html
+    - name: Tuples
+      link: /pages/12b_tuples.html
+    - name: Ref values
+      link: /pages/12c_ref_values.html
+    - name: Pointers
+      link: /pages/12d_pointers.html
+    - name: Array pointers
+      link: /pages/12e_array_pointers.html
+    - name: Constant types
+      link: /pages/12f_constant_types.html
+    - name: Combining
+      link: /pages/12g_combining.html
+    - name: Alias
+      link: /pages/12h_alias.html
+    - name: String
+      link: /pages/12i_string.html
+    - name: Explicit types
+      link: /pages/12j_explicit_types.html
+    - name: Data types
+      link: /pages/12k_data_types.html
+    - name: Enums
+      link: /pages/12l_enums.html
+    - name: Function types
+      link: /pages/12m_function_types.html
+- name: Lambdas
+  link: /pages/13_lambdas.html

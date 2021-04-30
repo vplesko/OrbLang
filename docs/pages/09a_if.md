@@ -2,7 +2,7 @@
 layout: default
 title: If
 ---
-# If
+# {{ page.title }}
 
 `if` will execute a block of intructions if a condition resolves to `true`.
 

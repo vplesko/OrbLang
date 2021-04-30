@@ -381,6 +381,10 @@ void CompilationMessages::hintUnescapeEscaped() {
     info("This code was escaped. To counteract that, unescape it by prepending ','.");
 }
 
+void CompilationMessages::hintWhileProcessingRetType(CodeLoc loc) {
+    info(loc, "Error was encountered while trying to process a function return type.");
+}
+
 void CompilationMessages::warnUnusedSpecial(CodeLoc loc, SpecialVal spec) {
     optional<Keyword> k = getKeyword(spec.id);
 

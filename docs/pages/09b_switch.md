@@ -2,7 +2,7 @@
 layout: default
 title: Switch
 ---
-# Switch
+# {{ page.title }}
 
 `switch` compares a given value with sets of other values. Depending on which set it is found in, the corresponding block of instructions will be executed.
 

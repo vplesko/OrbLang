@@ -2,7 +2,7 @@
 layout: default
 title: For
 ---
-# For
+# {{ page.title }}
 
 For takes four arguments:
  - initial instruction,

@@ -2,7 +2,7 @@
 layout: default
 title: Operators
 ---
-# Operators
+# {{ page.title }}
 
 Operators perform calculations on values. As you will see, they are written in prefix notation - operators before the arguments. In fact, the entire language uses prefix notation. This fundamentally relates to how Orb is defined, but that will be explored at a later point in the guide.
 

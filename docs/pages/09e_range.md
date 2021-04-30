@@ -2,7 +2,7 @@
 layout: default
 title: Range
 ---
-# Range
+# {{ page.title }}
 
 `range` instructions iterate a value on a given range. They can be used with a single, or both range bounds.
 

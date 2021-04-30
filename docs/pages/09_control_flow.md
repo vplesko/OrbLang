@@ -2,7 +2,7 @@
 layout: default
 title: Control flow
 ---
-# Control flow
+# {{ page.title }}
 
 To write anything more than simple calculations, we need a way to control the execution of our instructions. This is where control flow instructions come into play.
 

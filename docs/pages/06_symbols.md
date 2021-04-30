@@ -2,7 +2,7 @@
 layout: default
 title: Symbols
 ---
-# Symbols
+# {{ page.title }}
 
 Symbols (also known as variables) are used to store values. To declare a symbol, use the `sym` special form.
 

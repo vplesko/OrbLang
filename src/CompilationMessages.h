@@ -77,6 +77,7 @@ public:
     void hintBlockSyntax();
     void hintIndexTempOwning();
     void hintUnescapeEscaped();
+    void hintWhileProcessingRetType(CodeLoc loc);
 
     void warnUnusedSpecial(CodeLoc loc, SpecialVal spec);
     void warnUnusedFunc(CodeLoc loc);

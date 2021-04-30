@@ -2,7 +2,7 @@
 layout: default
 title: While
 ---
-# While
+# {{ page.title }}
 
 `while` will repeatedly execute a block of instructions as long as its condition is met.
 

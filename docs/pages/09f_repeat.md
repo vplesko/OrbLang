@@ -2,7 +2,7 @@
 layout: default
 title: Repeat
 ---
-# Repeat
+# {{ page.title }}
 
 `repeat` executes a given block of instructions a given number of times.
 

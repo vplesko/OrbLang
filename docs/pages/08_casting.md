@@ -2,7 +2,7 @@
 layout: default
 title: Casting
 ---
-# Casting
+# {{ page.title }}
 
 In situations where we have a value of one type, but require a value of a different type, we need to cast it. Sometimes, Orb will do this automatically. This is referred to as implicit casting.
 

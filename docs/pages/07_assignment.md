@@ -2,7 +2,7 @@
 layout: default
 title: Assignment
 ---
-# Assignment
+# {{ page.title }}
 
 The real power of symbols comes from being able to assign them new values after initialization.
 

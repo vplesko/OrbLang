@@ -2,7 +2,7 @@
 layout: default
 title: Break and continue
 ---
-# Break and continue
+# {{ page.title }}
 
 `break` can be used to prematurely end a `while`, `for`, `range`, `rangeRev`, or `repeat` instruction.
 

@@ -2,7 +2,7 @@
 layout: default
 title: Literals
 ---
-# Literals
+# {{ page.title }}
 
 Literals are values of primitive types declared through Orb syntax. One group of literals are signed integer literals.
 
