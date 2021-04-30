@@ -49,23 +49,6 @@ mac base.assertIsOfType (x::preprocess ty::preprocess) {
     ret ();
 };
 
-mac base.assertIsRawOfLen (x::preprocess len::preprocess) {
-    sym (isRaw true);
-    block {
-        exit (== (typeOf x) raw);
-        exit (== (typeOf x) (raw cn));
-        = isRaw false;
-    };
-
-    block {
-        exit (! isRaw);
-        exit (!= (lenOf x) len);
-        ret ();
-    };
-
-    message::error x::loc "Number of children nodes must be exactly " len ".";
-};
-
 mac cond (cond_::preprocess onTrue onFalse) {
     block {
         exit (! cond_);

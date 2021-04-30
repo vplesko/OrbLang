@@ -34,7 +34,6 @@ mac std.getArrPtr (list::preprocess) {
     ret \([] ,list -start);
 };
 
-# TODO capturing curr ind in addition to val
 mac std.range (it list::preprocess body) {
     base.assertIsOfType it id;
 
