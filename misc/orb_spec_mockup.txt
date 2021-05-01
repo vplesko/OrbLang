@@ -205,6 +205,7 @@ attr??
 	attr?? val name
 	returns whether val has name attr
 	if name is type, returns whether it has type attr
+	if val is a type, also checks for the type's attr
 
 =
 	= a ...b

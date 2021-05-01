@@ -364,11 +364,11 @@ mac lam (body) {
     ret \(fnc::global ,(genId) () () ,body);
 };
 
-mac lam (retTy::preprocess body) {
+mac lam (retTy body) {
     ret \(fnc::global ,(genId) () ,retTy ,body);
 };
 
-mac lam (args retTy::preprocess body) {
+mac lam (args retTy body) {
     ret \(fnc::global ,(genId) ,args ,retTy ,body);
 };
 

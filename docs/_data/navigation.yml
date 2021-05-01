@@ -98,10 +98,6 @@
    - name: Macro drop unsafety
      link: /pages/17k_macro_drop_unsafety.html
    - name: Attributes
-     link: /
+     link: /pages/17l_attributes.html
    - name: Fractal syntax
-     link: /
-   - name: Return as escaped
-     link: /
-- name: Conclusion
-  link: /
+     link: /pages/17m_fractal_syntax.html
