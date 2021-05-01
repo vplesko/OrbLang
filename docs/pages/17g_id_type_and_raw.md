@@ -63,7 +63,7 @@ fnc main () () {
 
 `()` (or `{}`) represents an empty `raw` value, ie. a `raw` with no elements. Escaping it is not required.
 
-Values inside `raw` retain their ref properties.
+Values inside `raw` retain their previous properties: being ref or non-ref, whether they were marked `::noDrop`, which attributes they had, etc.
 
 It is very important to remember that, regardless of their elements, **`raw` values are considered non-owning and their elements will not be dropped**! Bad usage of `raw` values can result in automatic cleanup not happening, which may manifest as memory leaks or worse.
 
@@ -87,3 +87,5 @@ fnc main () () {
 {: .code-error}
 
 Great caution must be exercised when using `raw` values! Really, their main intended usage is to write macros.
+
+> std.One is a set of smart pointer types - pointers that automatically allocate and deallocate memory. Read the `std` reference to find out more on this and other useful definitions.

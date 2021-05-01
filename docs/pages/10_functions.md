@@ -4,7 +4,7 @@ title: Functions
 ---
 # {{ page.title }}
 
-Functions are reusable pieces of code that can be called. They are defined with the `fnc` special form.
+Functions are subprocedures that can be called. They are defined with the `fnc` special form.
 
 ```
 fnc sayHello () () {

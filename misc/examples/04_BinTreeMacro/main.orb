@@ -29,7 +29,7 @@ eval (fnc symBinTreeEntries (name:id tree:raw) raw {
         if (&& isRaw (== (lenOf ([] tree i)) 0)) {
             = makeNodeCall (+ makeNodeCall \( null ));
         } {
-            sym (childName (genSym));
+            sym (childName (genId));
             = childEntries (+ childEntries (symBinTreeEntries childName ([] tree i)));
             = makeNodeCall (+ makeNodeCall \( (& ,childName) ));
         };

@@ -37,7 +37,7 @@ mac std.getArrPtr (list::preprocess) {
 mac std.range (it list::preprocess body) {
     base.assertIsOfType it id;
 
-    sym (i (genSym));
+    sym (i (genId));
 
     ret \(block {
         eval (sym (,it (pat { ret (escape (std.[] ,list ,i)); })));
@@ -48,7 +48,7 @@ mac std.range (it list::preprocess body) {
 mac std.rangeRev (it list::preprocess body) {
     base.assertIsOfType it id;
 
-    sym (i (genSym));
+    sym (i (genId));
 
     ret \(block {
         eval (sym (,it (pat { ret (escape (std.[] ,list ,i)); })));
@@ -113,7 +113,7 @@ mac std.makeListWith (elemTy::preprocess elem::preprocess rest::(variadic prepro
 mac std.-genFncList (name args retTy body) {
     sym (macArgsPastFirst \());
     repeat (lenOf args) {
-        = macArgsPastFirst (+ macArgsPastFirst \(,(genSym)::preprocess));
+        = macArgsPastFirst (+ macArgsPastFirst \(,(genId)::preprocess));
     };
 
     sym (fncArgs (+ \(this:((typeOf list) *)) args))

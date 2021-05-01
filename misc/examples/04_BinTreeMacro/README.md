@@ -139,15 +139,15 @@ In the case when the subtree does exist, recursively generate its entries and ap
 
 ```
         } {
-            sym (childName (genSym));
+            sym (childName (genId));
             = childEntries (+ childEntries (symBinTreeEntries childName ([] tree i)));
             = makeNodeCall (+ makeNodeCall \( (& ,childName) ));
         };
 ```
 
-Note the call to `genSym` to generate the name of the subtree's root.
+Note the call to `genId` to generate the name of the subtree's root.
 
-Using macros can be dangerous (look up hygienic macros to understand why). If the code you are returning defines new variables, make sure to use `genSym` to generate their names.
+Using macros can be dangerous (look up hygienic macros to understand why). If the code you are returning defines new variables, make sure to use `genId` to generate their names.
 
 The last thing left to do in `symBinTreeEntries` is return the concatenation of `childEntries` and the entry for the current node.
 
@@ -231,7 +231,7 @@ eval (fnc symBinTreeEntries (name:id tree:raw) raw {
         if (&& isRaw (== (lenOf ([] tree i)) 0)) {
             = makeNodeCall (+ makeNodeCall \( null ));
         } {
-            sym (childName (genSym));
+            sym (childName (genId));
             = childEntries (+ childEntries (symBinTreeEntries childName ([] tree i)));
             = makeNodeCall (+ makeNodeCall \( (& ,childName) ));
         };

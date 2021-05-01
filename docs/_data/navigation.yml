@@ -91,11 +91,17 @@
      link: /pages/17g_id_type_and_raw.html
    - name: Macros
      link: /pages/17h_macros.html
+   - name: Macro hygiene
+     link: /pages/17i_macro_hygiene.html
+   - name: Macro argument handling
+     link: /pages/17j_macro_argument_handling.html
+   - name: Macro drop unsafety
+     link: /pages/17k_macro_drop_unsafety.html
    - name: Attributes
-     link: /pages/17i_attributes.html
-   - name: Macros - revisited
-     link: /pages/17j_macros_revisited.html
+     link: /
    - name: Fractal syntax
-     link: /pages/17k_fractal_syntax.html
+     link: /
+   - name: Return as escaped
+     link: /
 - name: Conclusion
-  link: /pages/conclusion.html
+  link: /

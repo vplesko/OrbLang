@@ -1,10 +1,10 @@
 eval (sym (base.-widestU:(type cn) u64));
 
-eval (sym (base.-genSymToken 0:base.-widestU));
+eval (sym (base.-genIdToken 0:base.-widestU));
 
-eval (fnc genSym () id {
-    sym (s (+ \base.-genSym (cast id base.-genSymToken)));
-    = base.-genSymToken (+ base.-genSymToken 1);
+eval (fnc genId () id {
+    sym (s (+ \base.-genId (cast id base.-genIdToken)));
+    = base.-genIdToken (+ base.-genIdToken 1);
     ret s;
 });
 
@@ -134,7 +134,7 @@ mac range (i up::preprocess body) {
 };
 
 mac rangeRev (i up::preprocess body) {
-    sym (s (genSym));
+    sym (s (genId));
 
     ret \(range ,s ,up {
         (sym (,i (- ,up 1 ,s)))
@@ -147,7 +147,7 @@ mac range (i lo::preprocess hi::preprocess body) {
 };
 
 mac rangeRev (i hi::preprocess lo::preprocess body) {
-    sym (s (genSym));
+    sym (s (genId));
 
     ret \(range ,s ,lo ,hi {
         (sym (,i (+ ,lo (- ,hi ,s))))
@@ -160,7 +160,7 @@ mac range (i lo::preprocess hi::preprocess delta::preprocess body) {
 };
 
 mac rangeRev (i hi::preprocess lo::preprocess delta::preprocess body) {
-    sym (s (genSym));
+    sym (s (genId));
 
     ret \(range ,s ,lo ,hi ,delta {
         (sym (,i (+ ,lo (- ,hi ,s))))
@@ -169,7 +169,7 @@ mac rangeRev (i hi::preprocess lo::preprocess delta::preprocess body) {
 };
 
 mac repeat (n::preprocess body) {
-    sym (s (genSym));
+    sym (s (genId));
     ret \(range ,s ,n ,body);
 };
 
@@ -306,7 +306,7 @@ mac arr (ty::preprocess a::preprocess rest::(variadic preprocess)) {
     sym (elems (+ \(,a) rest));
     sym (arrTy (ty (lenOf elems)));
 
-    # genSym not needed since only visible in inner code, and elements are preprocessed
+    # genId not needed since only visible in inner code, and elements are preprocessed
     sym (innerCode \{ (sym res:,arrTy) });
     range i (lenOf elems) {
         = innerCode (+ innerCode \{ (= ([] res ,i) ,([] elems i)) });
@@ -330,7 +330,7 @@ mac tup (a::preprocess b::preprocess rest::(variadic preprocess)) {
     sym (elems (+ \(,a ,b) rest));
     sym (tupTy (base.-tupType a b rest));
 
-    # genSym not needed since only visible in inner code, and elements are preprocessed
+    # genId not needed since only visible in inner code, and elements are preprocessed
     sym (innerCode \{ (sym res:,tupTy) });
     range i (lenOf elems) {
         = innerCode (+ innerCode \{ (= ([] res ,i) ,([] elems i)) });
@@ -344,7 +344,7 @@ mac make (ty::preprocess pair rest::variadic) {
     base.assertIsOfType ty type;
 
     sym (pairs (+ \(,pair) rest));
-    sym (inst (genSym));
+    sym (inst (genId));
 
     sym (innerCode \{ (sym ,inst:ty) });
     range i (lenOf pairs) {
@@ -361,23 +361,23 @@ mac make (ty::preprocess pair rest::variadic) {
 };
 
 mac lam (body) {
-    ret \(fnc::global ,(genSym) () () ,body);
+    ret \(fnc::global ,(genId) () () ,body);
 };
 
 mac lam (retTy::preprocess body) {
-    ret \(fnc::global ,(genSym) () ,retTy ,body);
+    ret \(fnc::global ,(genId) () ,retTy ,body);
 };
 
 mac lam (args retTy::preprocess body) {
-    ret \(fnc::global ,(genSym) ,args ,retTy ,body);
+    ret \(fnc::global ,(genId) ,args ,retTy ,body);
 };
 
 mac pat (body) {
-    ret \(mac::global ,(genSym) () ,body);
+    ret \(mac::global ,(genId) () ,body);
 };
 
 mac pat (args body) {
-    ret \(mac::global ,(genSym) ,args ,body);
+    ret \(mac::global ,(genId) ,args ,body);
 };
 
 eval (fnc base.-enumValName (enumName:id valName:id) id {

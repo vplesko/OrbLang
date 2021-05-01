@@ -19,7 +19,7 @@ fnc main () () {
 ```
 {: .code-error}
 
-This does not apply to non-ref values. They are about to be dropped anyway, instead of which their values may be assigned to a symbol.
+This does not apply to non-ref values. They are about to be dropped anyway, instead of which their values may be copied off elsewhere.
 
 ```
 fnc makeCtrl (str:String) Control {
@@ -73,6 +73,7 @@ For convenience, `pass` and `ret` will implicitly move their argument if it is a
 fnc makeCtrl (str:String) Control {
     sym ctrl:Control;
     = ([] ctrl str) str;
+
     # no need to move
     ret ctrl;
 };
