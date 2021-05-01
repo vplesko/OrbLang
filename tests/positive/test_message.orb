@@ -24,4 +24,7 @@ fnc main () () {
 
     message "abcd"::loc 500;
     message::warning "abcd"::loc 600;
+
+    sym x:i32;
+    message x::loc 700;
 };

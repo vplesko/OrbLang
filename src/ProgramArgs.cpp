@@ -102,6 +102,9 @@ optional<ProgramArgs> ProgramArgs::parseArgs(int argc,  char** argv, std::ostrea
 void ProgramArgs::printHelp(std::ostream &out) {
     out << R"orbc_help(
 Usage: orbc [options] file...
+
+Files can be .orb or object files.
+
 Options:
   -c          Only process and compile, but do not link.
   -emit-llvm  Print the LLVM representation into a .ll file.

@@ -1364,7 +1364,6 @@ NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) 
     for (size_t i = 1; i < node.getChildrenCnt(); ++i) {
         NodeVal nodeVal = processNode(node.getChild(i));
         if (nodeVal.isInvalid()) return NodeVal();
-        if (!checkIsEvalVal(nodeVal, true)) return NodeVal();
 
         opers.push_back(move(nodeVal));
     }
@@ -1386,6 +1385,8 @@ NodeVal Processor::processMessage(const NodeVal &node, const NodeVal &starting) 
     }
 
     for (size_t i = indPrintStart; i < opers.size(); ++i) {
+        if (!checkIsEvalVal(opers[i], true)) return NodeVal();
+
         const EvalVal &evalVal = opers[i].getEvalVal();
 
         if (EvalVal::isI(evalVal, typeTable)) {
