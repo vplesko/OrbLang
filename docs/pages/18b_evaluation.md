@@ -108,3 +108,20 @@ fnc main () () {
     sym a:(i32 n);
 };
 ```
+
+Another useful special form is `isEval`, which is used to find out whether a value or current code is evaluated or not.
+
+```
+fnc main () () {
+    sym x:i32;
+    eval (sym y:i32);
+
+    # for values
+    isEval x; # false
+    isEval y; # true
+
+    # for current execution
+    isEval; # false
+    eval (isEval); # true
+};
+```
