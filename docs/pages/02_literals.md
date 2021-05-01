@@ -70,4 +70,4 @@ String literals are placed between double quotes, eg. `"Hello!"` and `""` (empty
 
 `null` is the null pointer literal.
 
-There is one other type of literals - identifiers. These can contain alphanumerics and any of the following characters: `=+-*/%<>&|^!~[]._?`. Therefore, all of the following are valid identifiers: `x`, `_foo`, `myId`, `val01`, `snake_case`, `kebab-case`, `*shiny*`, `?=`, `<<<`, `-||-`.
+There is one other type of literals - identifiers. These can contain alphanumerics and any of these characters: `=+-*/%<>&|^!~[]._?`. Therefore, all of the following are valid identifiers: `x`, `_foo`, `myId`, `val01`, `snake_case`, `kebab-case`, `*shiny*`, `?=`, `<<<`, `-||-`.

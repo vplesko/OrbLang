@@ -62,3 +62,28 @@ fnc main () () {
 ```
 
 `()` (or `{}`) represents an empty `raw` value, ie. a `raw` with no elements. Escaping it is not required.
+
+Values inside `raw` retain their ref properties.
+
+It is very important to remember that, regardless of their elements, **`raw` values are considered non-owning and their elements will not be dropped**! Bad usage of `raw` values can result in automatic cleanup not happening, which may manifest as memory leaks or worse.
+
+Just as hazardous is the fact that their careless usage may result in the same value being dropped multiple times. This code will compile, but will result in undefined behaviour:
+
+```
+import "base.orb";
+import "std/One.orb";
+
+fnc main () () {
+    # creates a raw containing a single owning non-ref value
+    sym (r::evaluated (base.makeRawWith (std.makeOne i32)));
+
+    # non-ref value is dropped, memory is freed
+    [] r 0;
+
+    # non-ref value is dropped again, resulting in double free
+    [] r 0;
+};
+```
+{: .code-error}
+
+Great caution must be exercised when using `raw` values! Really, their main intended usage is to write macros.

@@ -31,6 +31,10 @@ code {
     font-size: 14px;
 }
 
+h2 code {
+    font-size: 18px;
+}
+
 a.link-img {
     text-decoration: none;
 }
