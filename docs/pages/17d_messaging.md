@@ -8,6 +8,8 @@ Debugging evaluated code may be difficult, which is were the `message` special f
 
 ```
     message "Debug point 1, foo=" foo;
+
+    message "Type of var is " (typeOf var);
 ```
 
 It can only handle some types of arguments, and they must be evaluated values. On the plus side, it is variadic.

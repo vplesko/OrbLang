@@ -13,6 +13,12 @@ data Person {
 };
 ```
 
+`data` can be used to simply declare a data type, without specifying its elements.
+
+```
+data MyNode;
+```
+
 You can get the elements of a data type using the `[]` special form. They get be indexed either by name or by a compile-time known numeric index.
 
 ```

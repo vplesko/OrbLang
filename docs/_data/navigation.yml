@@ -66,36 +66,36 @@
       link: /pages/12m_function_types.html
 - name: Importing source files
   link: /pages/13_importing_source_files.html
-- name: Type and value inspection
-  link: /pages/14_type_and_value_inspection.html
 - name: Lambdas
-  link: /pages/15_lambdas.html
+  link: /pages/14_lambdas.html
 - name: Automatic cleanup
-  link: /pages/16_automatic_cleanup.html
+  link: /pages/15_automatic_cleanup.html
 - name: Move semantics
-  link: /pages/17_move_semantics.html
+  link: /pages/16_move_semantics.html
 - name: Advanced concepts
-  link: /pages/18_advanced_concepts.html
+  link: /pages/17_advanced_concepts.html
   subpages:
    - name: Control flow - revisited
-     link: /pages/18a_control_flow_revisited.html
+     link: /pages/17a_control_flow_revisited.html
    - name: Evaluation
-     link: /pages/18b_evaluation.html
+     link: /pages/17b_evaluation.html
+   - name: Type and value inspection
+     link: /pages/17c_type_and_value_inspection.html
    - name: Messaging
-     link: /pages/18c_messaging.html
+     link: /pages/17d_messaging.html
    - name: Node-based syntax
-     link: /pages/18d_node_based_syntax.html
+     link: /pages/17e_node_based_syntax.html
    - name: Escaping
-     link: /pages/18e_escaping.html
+     link: /pages/17f_escaping.html
    - name: Id, type, and raw
-     link: /pages/18f_id_type_and_raw.html
+     link: /pages/17g_id_type_and_raw.html
    - name: Macros
-     link: /pages/18g_macros.html
+     link: /pages/17h_macros.html
    - name: Attributes
-     link: /pages/18h_attributes.html
+     link: /pages/17i_attributes.html
    - name: Macros - revisited
-     link: /pages/18i_macros_revisited.html
+     link: /pages/17j_macros_revisited.html
    - name: Fractal syntax
-     link: /pages/18j_fractal_syntax.html
+     link: /pages/17k_fractal_syntax.html
 - name: Conclusion
   link: /pages/conclusion.html

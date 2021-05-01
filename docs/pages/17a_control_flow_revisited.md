@@ -6,7 +6,7 @@ title: Control flow - revisited
 
 We've previously learned how to control the flow of our program's execution using macros from **base.orb**. These are based on more primitive constructs, which we will explore now. For the most part, you should rely on macros instead. Using these primitives directly to express logic can make for very confusing code.
 
-## Block
+## `block`
 
 The `block` special form groups a set of instructions to be executed one after another.
 
@@ -43,7 +43,7 @@ Blocks can be named, and we may specify a passing type on them.
     };
 ```
 
-## Exit
+## `exit`
 
 The `exit` special form is used to prematurely exit a block if a condition resolves to `true`.
 
@@ -73,7 +73,7 @@ Normally, it exits the innermost block found. However, by specifying a block nam
 
 To unconditionally exit the block, simply set `true` as the condition.
 
-## Loop
+## `loop`
 
 The `loop` special form is used to jump back to the beginning of a block if a condition resolves to `true`.
 
@@ -90,7 +90,7 @@ fnc main () () {
 
 Just like with `exit`, you may specify the name of a specific block to target instead of the innermost one.
 
-## Pass
+## `pass`
 
 The `pass` special form exits a block, passing a value from it. This can only be done on blocks which have a passing type.
 
