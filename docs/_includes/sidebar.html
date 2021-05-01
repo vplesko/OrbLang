@@ -8,15 +8,28 @@
                     <li class="sidebar-li"><a href="{{ item.link | relative_url }}" class="sidebar-link">{{ item.name }}</a></li>
                 {% endif %}
                 {% if item.subpages %}
-                    <li class="sidebar-li"><ol class="sidebar-ol sidebar-subpage-ol">
+                    {% if page.url == item.link %}
+                        {% assign show_subitems = true %}
+                    {% else %}
+                        {% assign show_subitems = false %}
                         {% for subitem in item.subpages %}
                             {% if page.url == subitem.link %}
-                                <li class="sidebar-li sidebar-curr">{{ subitem.name }}</li>
-                            {% else %}
-                                <li class="sidebar-li"><a href="{{ subitem.link | relative_url }}" class="sidebar-link">{{ subitem.name }}</a></li>
+                                {% assign show_subitems = true %}
+                                {% break %}
                             {% endif %}
                         {% endfor %}
-                    </ol></li>
+                    {% endif %}
+                    {% if show_subitems %}
+                        <li class="sidebar-li"><ol class="sidebar-ol sidebar-subpage-ol">
+                            {% for subitem in item.subpages %}
+                                {% if page.url == subitem.link %}
+                                    <li class="sidebar-li sidebar-curr">{{ subitem.name }}</li>
+                                {% else %}
+                                    <li class="sidebar-li"><a href="{{ subitem.link | relative_url }}" class="sidebar-link">{{ subitem.name }}</a></li>
+                                {% endif %}
+                            {% endfor %}
+                        </ol></li>
+                    {% endif %}
                 {% endif %}
             {% endfor %}
         </ol>
