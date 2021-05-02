@@ -1,3 +1,5 @@
+# TODO! reference for call, invoke, type, literal, casting (implicit/explicit, eval/compile)
+
 program ::= exprs;
 
 exprs ::= expr exprs |
@@ -174,9 +176,12 @@ typeOf
 lenOf
 	lenOf val
 	if val is a type:
-		if val is a type arr, tuple, data, or raw, returns its num of elems
-		if val is a non-null eval string, returns its len (including terminal char)
+		if val is an arr, tuple, data, returns its num of elems
 		otherwise, error
+	else if val is a raw:
+		returns its num of elems
+	else if val is a non-null eval string:
+		returns its len (including null char)
 	else:
 		return lenOf its type
 	returns a u64

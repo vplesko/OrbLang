@@ -110,17 +110,29 @@
      link: /references/reference_orb_cast.html
    - name: Data
      link: /references/reference_orb_data.html
+   - name: Eval
+     link: /references/reference_orb_eval.html
    - name: Exit
      link: /references/reference_orb_exit.html
    - name: Explicit
      link: /references/reference_orb_explicit.html
    - name: Fnc
      link: /references/reference_orb_fnc.html
+   - name: IsDef
+     link: /references/reference_orb_isdef.html
+   - name: LenOf
+     link: /references/reference_orb_lenof.html
    - name: Loop
      link: /references/reference_orb_loop.html
    - name: Mac
      link: /references/reference_orb_mac.html
    - name: Pass
      link: /references/reference_orb_pass.html
+   - name: Ret
+     link: /references/reference_orb_ret.html
+   - name: SizeOf
+     link: /references/reference_orb_sizeof.html
    - name: Sym
      link: /references/reference_orb_sym.html
+   - name: TypeOf
+     link: /references/reference_orb_typeof.html
