@@ -603,6 +603,7 @@ NodeVal Processor::processExplicit(const NodeVal &node, const NodeVal &starting)
     return promoteType(node.getCodeLoc(), typeId.value());
 }
 
+// TODO noDrop on elements
 NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
     if (!checkBetweenChildren(node, 2, 4, true)) return NodeVal();
 
@@ -1010,12 +1011,7 @@ NodeVal Processor::processFnc(const NodeVal &node, const NodeVal &starting) {
         callable.setArgNoDrops(argNoDrops);
         callable.retType = retType;
         callable.variadic = variadic.value();
-        optional<TypeTable::Id> typeOpt = typeTable->addCallable(callable);
-        if (!typeOpt.has_value()) {
-            msgs->errorInternal(node.getCodeLoc());
-            return NodeVal();
-        }
-        type = typeOpt.value();
+        type = typeTable->addCallable(callable);
     }
 
     FuncValue funcVal;

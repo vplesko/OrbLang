@@ -112,7 +112,7 @@ exit
 	exit cond OR exit name cond
 	exits a block if cond is true
 	if name given, exits that block, otherwise innermost enclosing block
-	has to be non-retting block
+	has to be non-passing block
 
 loop
 	loop cond OR loop name cond
@@ -123,7 +123,7 @@ pass
 	pass val OR pass name val
 	exits a block, yielding val as ret
 	if name given, exits that block, otherwise innermost enclosing block
-	has to be retting block
+	has to be passing block
 
 explicit
 	explicit name t

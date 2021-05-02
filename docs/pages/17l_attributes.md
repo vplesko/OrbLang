@@ -66,3 +66,17 @@ fnc main () () {
     };
 };
 ```
+
+Attributes are useful in conjuction with macro arguments, as they preserve their attributes during the invocation.
+
+```
+import "base.orb";
+
+mac myFoo (a) {
+    if (&& (attr?? a selection) (== (attrOf a selection) diffBehaviour)) {
+        # ...
+    };
+
+    # ...
+};
+```

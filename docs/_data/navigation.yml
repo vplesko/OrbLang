@@ -101,3 +101,26 @@
      link: /pages/17l_attributes.html
    - name: Fractal syntax
      link: /pages/17m_fractal_syntax.html
+- name: 'Reference: Orb'
+  link: /references/reference_orb.html
+  subpages:
+   - name: Block
+     link: /references/reference_orb_block.html
+   - name: Cast
+     link: /references/reference_orb_cast.html
+   - name: Data
+     link: /references/reference_orb_data.html
+   - name: Exit
+     link: /references/reference_orb_exit.html
+   - name: Explicit
+     link: /references/reference_orb_explicit.html
+   - name: Fnc
+     link: /references/reference_orb_fnc.html
+   - name: Loop
+     link: /references/reference_orb_loop.html
+   - name: Mac
+     link: /references/reference_orb_mac.html
+   - name: Pass
+     link: /references/reference_orb_pass.html
+   - name: Sym
+     link: /references/reference_orb_sym.html
