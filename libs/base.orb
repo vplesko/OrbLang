@@ -14,22 +14,22 @@ mac alias (name ty) {
 
 alias String (c8 cn []);
 
-mac passthrough (x) {
-    ret x;
+mac passthrough (node) {
+    ret node;
 };
 
-mac process (x::preprocess) {
-    ret x;
+mac process (node::preprocess) {
+    ret node;
 };
 
-mac escape (x::plusEscape) {
-    ret x;
+mac escape (node::plusEscape) {
+    ret node;
 };
 
-mac base.isRaw (x::preprocess) {
+mac base.isRaw (val::preprocess) {
     block {
-        exit (== (typeOf x) raw);
-        exit (== (typeOf x) (raw cn));
+        exit (== (typeOf val) raw);
+        exit (== (typeOf val) (raw cn));
         ret false;
     };
     ret true;
@@ -39,11 +39,11 @@ mac base.makeRawWith (vals::(variadic preprocess)) {
     ret \(escape ,vals);
 };
 
-mac base.assertIsOfType (x::preprocess ty::preprocess) {
+mac base.assertIsOfType (val::preprocess ty::preprocess) {
     block {
-        exit (== (typeOf x) ty);
-        exit (== (typeOf x) (ty cn));
-        message::error x::loc "Value is not of type '" ty "'.";
+        exit (== (typeOf val) ty);
+        exit (== (typeOf val) (ty cn));
+        message::error val::loc "Value is not of type '" ty "'.";
     };
 
     ret ();
@@ -173,7 +173,7 @@ mac repeat (n::preprocess body) {
     ret \(range ,s ,n ,body);
 };
 
-mac switch (x::preprocess rest0 rest1 rest::variadic) {
+mac switch (val::preprocess rest0 rest1 rest::variadic) {
     sym (entries (+ \(,rest0 ,rest1) rest));
 
     sym (switchInnerCode {});
@@ -183,7 +183,7 @@ mac switch (x::preprocess rest0 rest1 rest::variadic) {
         sym (switchEntryExitInnerCode {});
         range j (lenOf ([] entries i)) {
             = switchEntryExitInnerCode (+ switchEntryExitInnerCode \{
-                (exit (== ,x ,([] entries i j)))
+                (exit (== ,val ,([] entries i j)))
             });
         };
         = switchEntryExitInnerCode (+ switchEntryExitInnerCode \{
@@ -209,56 +209,56 @@ mac switch (x::preprocess rest0 rest1 rest::variadic) {
     ret \(block base.-blockSwitch () ,switchInnerCode);
 };
 
-mac ++ (x::preprocess) {
-    ret \(= ,x (+ ,x 1));
+mac ++ (val::preprocess) {
+    ret \(= ,val (+ ,val 1));
 };
 
-mac -- (x::preprocess) {
-    ret \(= ,x (- ,x 1));
+mac -- (val::preprocess) {
+    ret \(= ,val (- ,val 1));
 };
 
-mac += (x::preprocess y::preprocess) {
-    ret \(= ,x (+ ,x ,y));
+mac += (val::preprocess by::preprocess) {
+    ret \(= ,val (+ ,val ,by));
 };
 
-mac -= (x::preprocess y::preprocess) {
-    ret \(= ,x (- ,x ,y));
+mac -= (val::preprocess by::preprocess) {
+    ret \(= ,val (- ,val ,by));
 };
 
-mac *= (x::preprocess y::preprocess) {
-    ret \(= ,x (* ,x ,y));
+mac *= (val::preprocess by::preprocess) {
+    ret \(= ,val (* ,val ,by));
 };
 
-mac /= (x::preprocess y::preprocess) {
-    ret \(= ,x (/ ,x ,y));
+mac /= (val::preprocess by::preprocess) {
+    ret \(= ,val (/ ,val ,by));
 };
 
-mac %= (x::preprocess y::preprocess) {
-    ret \(= ,x (% ,x ,y));
+mac %= (val::preprocess by::preprocess) {
+    ret \(= ,val (% ,val ,by));
 };
 
-mac <<= (x::preprocess y::preprocess) {
-    ret \(= ,x (<< ,x ,y));
+mac <<= (val::preprocess by::preprocess) {
+    ret \(= ,val (<< ,val ,by));
 };
 
-mac >>= (x::preprocess y::preprocess) {
-    ret \(= ,x (>> ,x ,y));
+mac >>= (val::preprocess by::preprocess) {
+    ret \(= ,val (>> ,val ,by));
 };
 
-mac &= (x::preprocess y::preprocess) {
-    ret \(= ,x (& ,x ,y));
+mac &= (val::preprocess by::preprocess) {
+    ret \(= ,val (& ,val ,by));
 };
 
-mac |= (x::preprocess y::preprocess) {
-    ret \(= ,x (| ,x ,y));
+mac |= (val::preprocess by::preprocess) {
+    ret \(= ,val (| ,val ,by));
 };
 
-mac ^= (x::preprocess y::preprocess) {
-    ret \(= ,x (^ ,x ,y));
+mac ^= (val::preprocess by::preprocess) {
+    ret \(= ,val (^ ,val ,by));
 };
 
-mac -> (x::preprocess m rest::variadic) {
-    sym (ops (+ \(,x ,m) rest));
+mac -> (val::preprocess m rest::variadic) {
+    sym (ops (+ \(,val ,m) rest));
 
     sym (code \(passthrough ,([] ops 0)));
     range i 1 (- (lenOf ops) 1) {
@@ -268,8 +268,8 @@ mac -> (x::preprocess m rest::variadic) {
     ret code;
 };
 
-mac && (a b rest::variadic) {
-    sym (ops (+ \(,a ,b) rest));
+mac && (val0 val1 rest::variadic) {
+    sym (ops (+ \(,val0 ,val1) rest));
 
     sym (innerCode {});
     range i (lenOf ops) {
@@ -284,8 +284,8 @@ mac && (a b rest::variadic) {
     ret \(block base.-blockLogAnd bool ,innerCode);
 };
 
-mac || (a b rest::variadic) {
-    sym (ops (+ \(,a ,b) rest));
+mac || (val0 val1 rest::variadic) {
+    sym (ops (+ \(,val0 ,val1) rest));
 
     sym (innerCode {});
     range i (lenOf ops) {

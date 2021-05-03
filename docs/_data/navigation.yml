@@ -150,3 +150,5 @@
      link: /references/reference_orb_sym.html
    - name: TypeOf
      link: /references/reference_orb_typeof.html
+- name: 'Reference: Base'
+  link: /references/reference_base.html
