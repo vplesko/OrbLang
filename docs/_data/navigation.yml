@@ -152,3 +152,32 @@
      link: /references/reference_orb_typeof.html
 - name: 'Reference: Base'
   link: /references/reference_base.html
+  subpages:
+    - name: Control flow
+      link: /references/reference_base_control_flow.html
+    - name: Operators
+      link: /references/reference_base_operators.html
+    - name: Constructors
+      link: /references/reference_base_constructors.html
+    - name: Misc
+      link: /references/reference_base_misc.html
+- name: 'Reference: Std'
+  link: /references/reference_std.html
+  subpages:
+    - name: Common
+      link: /references/reference_std_common.html
+    - name: IO
+      link: /references/reference_std_io.html
+    - name: One
+      link: /references/reference_std_one.html
+    - name: List
+      link: /references/reference_std_list.html
+- name: Quick examples
+  link: /examples/quick_examples.html
+  subpages:
+    - name: HelloWorld
+      link: /examples/quick_examples_helloworld.html
+    - name: FizzBuzz
+      link: /examples/quick_examples_fizzbuz.html
+    - name: Fibonacci
+      link: /examples/quick_examples_fibonacci.html
