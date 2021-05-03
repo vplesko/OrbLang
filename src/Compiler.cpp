@@ -541,7 +541,7 @@ optional<bool> Compiler::performOperComparison(CodeLoc codeLoc, const NodeVal &l
     bool isTypeU = typeTable->worksAsTypeU(lhsPromo.getType().value());
     bool isTypeC = typeTable->worksAsTypeC(lhsPromo.getType().value());
     bool isTypeF = typeTable->worksAsTypeF(lhsPromo.getType().value());
-    bool isTypeP = typeTable->worksAsTypeAnyP(lhsPromo.getType().value());
+    bool isTypeAnyP = typeTable->worksAsTypeAnyP(lhsPromo.getType().value());
     bool isTypeB = typeTable->worksAsTypeB(lhsPromo.getType().value());
     bool isTypeCall = typeTable->worksAsCallable(lhsPromo.getType().value());
 
@@ -553,7 +553,7 @@ optional<bool> Compiler::performOperComparison(CodeLoc codeLoc, const NodeVal &l
             llvmValueRes = llvmBuilder.CreateICmpEQ(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "cmp_eq_tmp");
         } else if (isTypeF) {
             llvmValueRes = llvmBuilder.CreateFCmpOEQ(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fcmp_eq_tmp");
-        } else if (isTypeP || isTypeCall) {
+        } else if (isTypeAnyP || isTypeCall) {
             llvmValueRes = llvmBuilder.CreateICmpEQ(
                 llvmBuilder.CreatePtrToInt(lhsPromo.getLlvmVal().val, makeLlvmPrimType(TypeTable::WIDEST_I)),
                 llvmBuilder.CreatePtrToInt(rhsPromo.getLlvmVal().val, makeLlvmPrimType(TypeTable::WIDEST_I)),
@@ -565,7 +565,7 @@ optional<bool> Compiler::performOperComparison(CodeLoc codeLoc, const NodeVal &l
             llvmValueRes = llvmBuilder.CreateICmpNE(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "cmp_ne_tmp");
         } else if (isTypeF) {
             llvmValueRes = llvmBuilder.CreateFCmpONE(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fcmp_ne_tmp");
-        } else if (isTypeP || isTypeCall) {
+        } else if (isTypeAnyP || isTypeCall) {
             llvmValueRes = llvmBuilder.CreateICmpNE(
                 llvmBuilder.CreatePtrToInt(lhsPromo.getLlvmVal().val, makeLlvmPrimType(TypeTable::WIDEST_I)),
                 llvmBuilder.CreatePtrToInt(rhsPromo.getLlvmVal().val, makeLlvmPrimType(TypeTable::WIDEST_I)),

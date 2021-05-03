@@ -1576,8 +1576,6 @@ NodeVal Processor::processAttrIsDef(const NodeVal &node) {
     if (name.isInvalid()) return NodeVal();
     NamePool::Id attrName = name.getEvalVal().id();
 
-    NamePool::Id typeId = getMeaningfulNameId(Meaningful::TYPE);
-
     bool attrIsDef = getAttributeFull(operand, attrName).has_value();
 
     if (!callDropFuncTmpVal(move(operand))) return NodeVal();
@@ -1943,18 +1941,20 @@ NodeVal Processor::getArrElement(CodeLoc codeLoc, NodeVal &array, size_t index) 
     return getArrElement(codeLoc, array, NodeVal(codeLoc, move(evalVal)));
 }
 
+// handles both arrays and array pointers
 NodeVal Processor::getArrElement(CodeLoc codeLoc, NodeVal &array, const NodeVal &index) {
     TypeTable::Id arrayType = array.getType().value();
+    bool isArrP = typeTable->worksAsTypeArrP(arrayType);
 
     optional<TypeTable::Id> elemType = typeTable->addTypeIndexOf(arrayType);
     if (!elemType.has_value()) {
         msgs->errorExprIndexOnBadType(array.getCodeLoc(), arrayType);
         return NodeVal();
     }
-    if (!checkIsNotUndefType(codeLoc, elemType.value(), true)) return NodeVal();
+    if (isArrP && !checkIsNotUndefType(codeLoc, elemType.value(), true)) return NodeVal();
 
     TypeTable::Id resType = elemType.value();
-    if (typeTable->worksAsTypeCn(arrayType)) resType = typeTable->addTypeCnOf(resType);
+    if (!isArrP && typeTable->worksAsTypeCn(arrayType)) resType = typeTable->addTypeCnOf(resType);
 
     if (checkIsEvalTime(array, false) && checkIsEvalTime(index, false)) {
         return evaluator->performOperIndexArr(codeLoc, array, index, resType);

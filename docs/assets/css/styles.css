@@ -4,6 +4,16 @@
 }
 
 :root {
+    --font-size-html: 16px;
+    --font-size-code: 14px;
+    --font-size-h2-code: 18px;
+    --font-size-sidebar: 14px;
+    --font-size-sidebar-curr: 15px;
+    --font-size-topbar-title: 24px;
+    --font-size-content: 15px;
+}
+
+:root {
     --color-body-bg: white;
     --color-sidebar-bg: #1f4566;
     --color-sidebar-item: #f7f7f7;
@@ -18,7 +28,7 @@
 
 html {
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 16px;
+    font-size: var(--font-size-html);
 }
 
 body {
@@ -28,11 +38,11 @@ body {
 
 code {
     font-family: "Courier New", Courier, monospace;
-    font-size: 14px;
+    font-size: var(--font-size-code);
 }
 
 h2 code {
-    font-size: 18px;
+    font-size: var(--font-size-h2-code);
 }
 
 a.link-img {
@@ -53,7 +63,7 @@ a.link-img {
     left: 0;
     bottom: 0;
     width: var(--sidebar-width);
-    font-size: 14px;
+    font-size: var(--font-size-sidebar);
     display: block;
     box-sizing: border-box;
     background-color: var(--color-sidebar-bg);
@@ -95,7 +105,12 @@ a.link-img {
 
 .sidebar-curr {
     color: var(--color-sidebar-item);
+    font-size: var(--font-size-sidebar-curr);
     font-weight: bold;
+}
+
+.sidebar-group {
+    color: var(--color-sidebar-item);
     text-decoration: underline;
 }
 
@@ -124,7 +139,7 @@ a.link-img {
 }
 
 .topbar-title {
-    font-size: 24px;
+    font-size: var(--font-size-topbar-title);
     font-weight: normal;
 }
 
@@ -148,7 +163,7 @@ a.link-img {
 
 .content {
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 15px;
+    font-size: var(--font-size-content);
 }
 
 code.highlighter-rouge {
@@ -186,7 +201,6 @@ blockquote {
 }
 
 .prev-next-wrap {
-    font-size: 24px;
     display: block;
 }
 

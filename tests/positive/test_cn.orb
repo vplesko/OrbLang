@@ -1,17 +1,31 @@
 import "util/print.orb";
 
 fnc main () () {
-    sym (a:(i32 cn) 100);
-    println_i32 a;
-    sym (b:(i32 cn) 101:i16);
-    println_i32 b;
+    block {
+        sym (a:(i32 cn) 100);
+        println_i32 a;
+        sym (b:(i32 cn) 101:i16);
+        println_i32 b;
+    };
 
-    sym (t0 200) (t1 201);
-    sym (c:(i32 cn *) (& t0));
-    println_i32 (* c);
-    = c (& t1);
-    println_i32 (* c);
-    = t0 202;
-    sym (d:(i32 * cn) (& t0));
-    println_i32 (* d);
+    block {
+        sym (t0 200) (t1 201);
+        sym (c:(i32 cn *) (& t0));
+        println_i32 (* c);
+        = c (& t1);
+        println_i32 (* c);
+        sym (d:(i32 * cn) (& t0));
+        = (* d) 202;
+        println_i32 (* d);
+    };
+
+    block {
+        sym t:(i32 2);
+        sym (c (cast (i32 cn []) (& t)));
+        = ([] t 0) 300;
+        println_i32 ([] c 0);
+        sym (d (cast (i32 [] cn) (& t)));
+        = ([] d 0) 301;
+        println_i32 ([] d 0);
+    };
 };

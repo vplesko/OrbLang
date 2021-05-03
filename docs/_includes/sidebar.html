@@ -3,9 +3,11 @@
         <ol class="sidebar-ol sidebar-page-ol">
             {% for item in site.data.navigation %}
                 {% if page.url == item.link %}
-                    <li class="sidebar-li sidebar-curr">{{ item.name }}</li>
+                    <li class="sidebar-li sidebar-curr {% if item.subpages %}sidebar-group{% endif %}">{{ item.name }}</li>
                 {% else %}
-                    <li class="sidebar-li"><a href="{{ item.link | relative_url }}" class="sidebar-link">{{ item.name }}</a></li>
+                    <li class="sidebar-li {% if item.subpages %}sidebar-group{% endif %}">
+                        <a href="{{ item.link | relative_url }}" class="sidebar-link">{{ item.name }}</a>
+                    </li>
                 {% endif %}
                 {% if item.subpages %}
                     {% if page.url == item.link %}

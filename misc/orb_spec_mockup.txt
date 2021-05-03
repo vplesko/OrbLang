@@ -1,4 +1,4 @@
-# TODO! reference for call, invoke, type, literal, casting (implicit/explicit, eval/compile)
+# TODO! reference for literal, casting (implicit/explicit, eval/compile)
 
 program ::= exprs;
 

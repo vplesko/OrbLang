@@ -104,6 +104,10 @@
 - name: 'Reference: Orb'
   link: /references/reference_orb.html
   subpages:
+   - name: AttrIsDef
+     link: /references/reference_orb_attrisdef.html
+   - name: AttrOf
+     link: /references/reference_orb_attrof.html
    - name: Block
      link: /references/reference_orb_block.html
    - name: Cast
@@ -118,14 +122,24 @@
      link: /references/reference_orb_explicit.html
    - name: Fnc
      link: /references/reference_orb_fnc.html
+   - name: Import
+     link: /references/reference_orb_import.html
    - name: IsDef
      link: /references/reference_orb_isdef.html
+   - name: IsEval
+     link: /references/reference_orb_iseval.html
    - name: LenOf
      link: /references/reference_orb_lenof.html
    - name: Loop
      link: /references/reference_orb_loop.html
    - name: Mac
      link: /references/reference_orb_mac.html
+   - name: Message
+     link: /references/reference_orb_message.html
+   - name: Operators - non-unary
+     link: /references/reference_orb_operators_nonunary.html
+   - name: Operators - unary
+     link: /references/reference_orb_operators_unary.html
    - name: Pass
      link: /references/reference_orb_pass.html
    - name: Ret
