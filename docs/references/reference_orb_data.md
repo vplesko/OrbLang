@@ -26,6 +26,6 @@ If elements aren't specified, this instruction declares a data type, instead of 
 
 `::global` must be placed on `data` if this instruction is not executed in the global scope.
 
-`::noZero` on `name` allows the compiler to omit zero initialization of that element when zero initializing values of this data type.
+`::noZero` on `name` allows the compiler to omit zero-initialization of that element when zero-initializing values of this data type.
 
 Non-type attributes on `(elems...)` will be stored as type attributes of this data type.

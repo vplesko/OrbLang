@@ -20,5 +20,5 @@ fnc valOrZero (x:(i32 bool)) i32 {
 Tuples can be constructed using the `tup` macro from **base.orb**.
 
 ```
-    sym (t (tup 100 'A'));
+    sym (t (tup 100 'A' true));
 ```

@@ -8,7 +8,7 @@ title: Break and continue
 
 ```
     while true {
-        sym (x (calcNewVal));
+        sym (x (std.scanI32));
         if (== x 0) {
             break;
         };
@@ -28,16 +28,10 @@ title: Break and continue
 
         std.print '\t' i;
 
-        sym (square (isSquare i))
-            (perfect (isPerfect i));
-
-        if (|| square perfect) {
-            std.print " (";
-
-            if square { std.print "square"; };
-            if perfect { std.print "perfect"; };
-
-            std.print ")";
+        if (isSquare i) {
+            std.print " (square)";
+        } (isPerfect i) {
+            std.print " (perfect)";
         };
 
         std.println;

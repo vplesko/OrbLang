@@ -62,7 +62,7 @@ Defines and returns a `std.List` type which points to an array of `elemTy`. If t
 
 ## `std.makeList elemTy<type> len`
 
-Defines a `std.List` type pointing to an array of `elemTy`, then returns a `std.List` value pointing to a zero initialized array of `elemTy` stored on heap.
+Defines a `std.List` type pointing to an array of `elemTy`, then returns a `std.List` value pointing to a zero-initialized array of `elemTy` stored on heap.
 
 ## `std.makeListWith elemTy<type> elem...`
 
@@ -70,7 +70,7 @@ Defines a `std.List` type pointing to an array of `elemTy`. Constructs and retur
 
 ## `std.resize list len`
 
-Resizes `list` to contain exactly `len` elements. If `len` is greater than the current length, appended elements will be zero initialized.
+Resizes `list` to contain exactly `len` elements. If `len` is greater than the current length, appended elements will be zero-initialized.
 
 ## `std.reserve list len`
 

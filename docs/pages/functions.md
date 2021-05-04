@@ -41,8 +41,10 @@ fnc square (x:i32) i64 {
 ```
 {: .code-error}
 
-Functions can be declared by ommiting the function body.
+Functions can be declared by ommiting the function body. A declared function may be defined later in the code.
 
 ```
 fnc square (x:f64) f64;
 ```
+
+> There is a convention to name your functions and macros as `MODULE_NAME.FUNCTION_NAME`. If the function or macro is not intended to be called directly by your users, its name should be prepended with a minus: `MODULE_NAME.-FUNCTION_NAME`. A lot of functions and macros from **base.orb** don't follow this convention for the sake of user convenience.

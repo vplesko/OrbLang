@@ -10,7 +10,7 @@ For takes four arguments:
  - step instruction,
  - block of instructions.
 
-It will execute the initial instruction, then repeatedly execute the block of instructions and the step instruction as long as the condition is met.
+It starts by executing the initial instruction. Then, it repeatedly executes the block of instructions and the step instruction as long as the condition is met.
 
 ```
     for (sym (i 0)) (< i 10) (++ i) {

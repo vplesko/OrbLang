@@ -28,14 +28,11 @@ import "std/io.orb";
 
 fnc main () () {
     sym x:i32;
-    = x 0.0; # error!
-    = x (<< 1:i64 40); # error!
+    = x 10.0; # error!
+    = x true; # error
 
-    sym y:u32;
+    sym y:i64;
     = y x; # error!
-
-    sym b:bool;
-    = x b; # error!
 };
 ```
 {: .code-error}
@@ -49,10 +46,10 @@ import "std/io.orb";
 
 fnc main () () {
     sym x:i32;
-    = x (cast i32 0.0);
+    = x (cast i32 10.0);
     = x (cast i32 true);
 
-    sym y:u32;
-    = y (cast u32 x);
+    sym y:i64;
+    = x (cast i32 y);
 };
 ```

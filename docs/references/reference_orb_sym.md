@@ -19,7 +19,7 @@ Registers symbols under the given name in the current scope.
 
 In 1., 2., and 4., the type of symbol will be `ty`. In 3., it will be the type of `init`.
 
-In 1. and 2., the symbol will be zero initialized and `ty` must not be a constant type. In 4., `init` will be implicitly cast into `ty`.
+In 1. and 2., the symbol will be zero-initialized and `ty` must not be a constant type. In 4., `init` will be implicitly cast into `ty`.
 
 There must not be a function, macro, or symbol with the same in the current scope. There must not be a special form or a type with the same name, and it must not be one of `cn`, `*`, or `[]`.
 
@@ -27,4 +27,4 @@ There must not be a function, macro, or symbol with the same in the current scop
 
 `::evaluated` on `name` will result in an evaluted symbol being registered.
 
-`::noZero` on `name` in 1. and 2. allows the compiler to omit zero initialization of the symbol.
+`::noZero` on `name` in 1. and 2. allows the compiler to omit zero-initialization of the symbol.

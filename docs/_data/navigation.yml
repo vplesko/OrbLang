@@ -1,106 +1,106 @@
 - name: Introduction
   link: /
 - name: HelloWorld
-  link: /pages/01_hello_world.html
+  link: /pages/hello_world.html
 - name: Literals
-  link: /pages/02_literals.html
+  link: /pages/literals.html
 - name: Comments
-  link: /pages/03_comments.html
+  link: /pages/comments.html
 - name: Operators
-  link: /pages/04_operators.html
+  link: /pages/operators.html
 - name: Primitive types
-  link: /pages/05_primitive_types.html
+  link: /pages/primitive_types.html
 - name: Symbols
-  link: /pages/06_symbols.html
+  link: /pages/symbols.html
 - name: Assignment
-  link: /pages/07_assignment.html
+  link: /pages/assignment.html
 - name: Casting
-  link: /pages/08_casting.html
+  link: /pages/casting.html
 - name: Control flow
-  link: /pages/09_control_flow.html
+  link: /pages/control_flow.html
   subpages:
    - name: If
-     link: /pages/09a_if.html
+     link: /pages/control_flow_if.html
    - name: While
-     link: /pages/09c_while.html
+     link: /pages/control_flow_while.html
    - name: For
-     link: /pages/09d_for.html
+     link: /pages/control_flow_for.html
    - name: Range
-     link: /pages/09e_range.html
+     link: /pages/control_flow_range.html
    - name: Repeat
-     link: /pages/09f_repeat.html
+     link: /pages/control_flow_repeat.html
    - name: Break and continue
-     link: /pages/09g_break_and_continue.html
+     link: /pages/control_flow_break_and_continue.html
 - name: Functions
-  link: /pages/10_functions.html
+  link: /pages/functions.html
 - name: Scopes
-  link: /pages/11_scopes.html
+  link: /pages/scopes.html
 - name: Type system - extended
-  link: /pages/12_type_system_extended.html
+  link: /pages/type_system_extended.html
   subpages:
     - name: Arrays
-      link: /pages/12a_arrays.html
+      link: /pages/type_system_extended_arrays.html
     - name: Tuples
-      link: /pages/12b_tuples.html
+      link: /pages/type_system_extended_tuples.html
     - name: Ref values
-      link: /pages/12c_ref_values.html
+      link: /pages/type_system_extended_ref_values.html
     - name: Pointers
-      link: /pages/12d_pointers.html
+      link: /pages/type_system_extended_pointers.html
     - name: Array pointers
-      link: /pages/12e_array_pointers.html
+      link: /pages/type_system_extended_array_pointers.html
     - name: Constant types
-      link: /pages/12f_constant_types.html
+      link: /pages/type_system_extended_constant_types.html
     - name: Combining
-      link: /pages/12g_combining.html
+      link: /pages/type_system_extended_combining.html
     - name: Alias
-      link: /pages/12h_alias.html
+      link: /pages/type_system_extended_alias.html
     - name: String
-      link: /pages/12i_string.html
+      link: /pages/type_system_extended_string.html
     - name: Explicit types
-      link: /pages/12j_explicit_types.html
+      link: /pages/type_system_extended_explicit_types.html
     - name: Data types
-      link: /pages/12k_data_types.html
+      link: /pages/type_system_extended_data_types.html
     - name: Enums
-      link: /pages/12l_enums.html
+      link: /pages/type_system_extended_enums.html
     - name: Function types
-      link: /pages/12m_function_types.html
+      link: /pages/type_system_extended_function_types.html
 - name: Importing source files
-  link: /pages/13_importing_source_files.html
+  link: /pages/importing_source_files.html
 - name: Lambdas
-  link: /pages/14_lambdas.html
+  link: /pages/lambdas.html
 - name: Automatic cleanup
-  link: /pages/15_automatic_cleanup.html
+  link: /pages/automatic_cleanup.html
 - name: Move semantics
-  link: /pages/16_move_semantics.html
+  link: /pages/move_semantics.html
 - name: Advanced concepts
-  link: /pages/17_advanced_concepts.html
+  link: /pages/advanced_concepts.html
   subpages:
    - name: Control flow - revisited
-     link: /pages/17a_control_flow_revisited.html
+     link: /pages/advanced_concepts_control_flow_revisited.html
    - name: Evaluation
-     link: /pages/17b_evaluation.html
+     link: /pages/advanced_concepts_evaluation.html
    - name: Type and value inspection
-     link: /pages/17c_type_and_value_inspection.html
+     link: /pages/advanced_concepts_type_and_value_inspection.html
    - name: Messaging
-     link: /pages/17d_messaging.html
+     link: /pages/advanced_concepts_messaging.html
    - name: Node-based syntax
-     link: /pages/17e_node_based_syntax.html
+     link: /pages/advanced_concepts_node_based_syntax.html
    - name: Escaping
-     link: /pages/17f_escaping.html
+     link: /pages/advanced_concepts_escaping.html
    - name: Id, type, and raw
-     link: /pages/17g_id_type_and_raw.html
+     link: /pages/advanced_concepts_id_type_and_raw.html
    - name: Macros
-     link: /pages/17h_macros.html
+     link: /pages/advanced_concepts_macros.html
    - name: Macro hygiene
-     link: /pages/17i_macro_hygiene.html
+     link: /pages/advanced_concepts_macro_hygiene.html
    - name: Macro argument handling
-     link: /pages/17j_macro_argument_handling.html
+     link: /pages/advanced_concepts_macro_argument_handling.html
    - name: Macro drop unsafety
-     link: /pages/17k_macro_drop_unsafety.html
+     link: /pages/advanced_concepts_macro_drop_unsafety.html
    - name: Attributes
-     link: /pages/17l_attributes.html
+     link: /pages/advanced_concepts_attributes.html
    - name: Fractal syntax
-     link: /pages/17m_fractal_syntax.html
+     link: /pages/advanced_concepts_fractal_syntax.html
 - name: 'Reference: Orb'
   link: /references/reference_orb.html
   subpages:

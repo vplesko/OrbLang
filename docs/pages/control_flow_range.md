@@ -4,7 +4,7 @@ title: Range
 ---
 # {{ page.title }}
 
-`range` instructions iterate a value on a given range. They can be used with a single, or both range bounds.
+`range` instructions iterate a value on a given range. There are a few possible usages.
 
 ```
     # 0, 1, 2, ..., 9
@@ -12,13 +12,13 @@ title: Range
         std.println i " is a digit.";
     };
 
-    # 65, 66, 67, ..., 94, 95
+    # 65, 66, 67, ..., 89, 90
     range i 65 90 {
         std.println (cast c8 i) " is a letter.";
     };
 ```
 
-You can also specify a delta by which the iterator will be increased after each iteration.
+You can also specify an increment by which the iterator will be increased after each iteration.
 
 ```
     # 0, 3, 6, 9, ..., 99

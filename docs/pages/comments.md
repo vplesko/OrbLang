@@ -26,6 +26,7 @@ fnc main () () {
     #$
     this is a multi-line comment
 
+    this will not be printed
     std.println "inside the comment";
     $#
 

@@ -6,7 +6,7 @@ title: Importing source files
 
 As your code grows larger, you may want to split it accross multiple source files. To import the definitions from a file into your project, use the `import` special form, providing the file path as a string.
 
-We've already used it to import some Orb libraries, for example as `import "std/io.orb";`. Know that you can use it to import your own code.
+We've already used it to import some Orb libraries, for example as `import "std/io.orb";`. You can use it to import your own code.
 
 Importing a file will cause all nodes within it to be processed. The compiler remembers which files it already processed, so importing a file more than once has no additional effect.
 
@@ -18,5 +18,5 @@ When calling **orbc** from the command line, you may specify multiple **.orb** f
 
 `import` looks for the source file path from the following locations (in order):
  - current directory where **orbc** was called
- - search paths given with the `-I` flag (in order given)
+ - search paths given with the `-I` flag (in order)
  - directory where Orb libraries were installed

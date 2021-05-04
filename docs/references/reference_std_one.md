@@ -20,7 +20,7 @@ Defines and returns a `std.One` type which points to `valTy`. If the same type w
 
 ## `std.makeOne valTy<type>`
 
-Defines a `std.One` type pointing to `valTy`, then returns a `std.One` value pointing to a zero initialized `valTy` stored on heap.
+Defines a `std.One` type pointing to `valTy`, then returns a `std.One` value pointing to a zero-initialized `valTy` stored on heap.
 
 ## `std.makeOneWith val`
 

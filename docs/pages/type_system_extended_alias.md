@@ -4,11 +4,9 @@ title: Alias
 ---
 # {{ page.title }}
 
-`alias` macro from **base.orb** can be used to refer to a type using a different name. This is useful for long type expressions, or types you anticipate wanting to refactor in the future.
+The `alias` macro from **base.orb** can be used to refer to a type using a different name. This is useful for long type expressions, or types you anticipate wanting to refactor in the future.
 
 ```
-import "base.orb";
-
 alias TransformationMatrix (f32 4 4);
 ```
 

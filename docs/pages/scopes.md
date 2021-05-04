@@ -4,7 +4,7 @@ title: Scopes
 ---
 # {{ page.title }}
 
-Every symbol exists within a single scope where it is defined. For example, declaring it inside a function body, makes it usable only within that function.
+Every symbol exists within a single scope where it was declared. For example, declaring it inside a function body, makes it usable only within that function.
 
 Control flow macros insert additional scopes, nested within the scope where they were invoked. For those that repeatedly execute a block, each block iteration has a separate scope.
 
@@ -24,17 +24,19 @@ fnc main () () {
 }; # x can no longer be referenced
 ```
 
-Symbols in a nested scope may have the same name as a symbol in a enclosing scope. Referring to that name will now fetch the symbol from the nested scope. This is called shadowing.
+Symbols in a nested scope may have the same name as a symbol in an enclosing scope. Referring to that name will now fetch the symbol from the nested scope. This is called shadowing.
 
 ```
 import "std/io.orb";
 
 fnc main () () {
     sym (x 100);
+
     if true {
         sym (x 'A'); # previous x is now shadowed
         std.println x; # prints 'A'
     };
+
     std.println x; # prints 100
 };
 ```

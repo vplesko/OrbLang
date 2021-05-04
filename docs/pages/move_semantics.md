@@ -4,22 +4,21 @@ title: Move semantics
 ---
 # {{ page.title }}
 
-Any value that has a drop function, or any of its descendant elements has a drop function, is considered to be an owning value. There are special restrictions regarding them.
+Any value that has a drop function, or any of its descended elements has a drop function, is considered to be an owning value.
 
-The intent is to not allow multuple values to own the same resource. Because of this, owning values may not be copied.
+Owning values may not be copied. The intent is to not allow multuple values to own the same resource.
 
 ```
 fnc main () () {
-    sym ctrl0:Control ctrl1:Control;
-
-    # assign to ctrl0
+    sym (ctrl0 "resource 0")
+        (ctrl1 "resource 1");
 
     = ctrl1 ctrl0; # error!
 };
 ```
 {: .code-error}
 
-This does not apply to non-ref values. They are about to be dropped anyway, instead of which their values may be copied off elsewhere.
+This does not apply to non-ref values. They are about to be dropped anyway, so their values may be copied off elsewhere, instead of dropping them.
 
 ```
 fnc makeCtrl (str:String) Control {
@@ -35,7 +34,7 @@ fnc main () () {
 };
 ```
 
-To explicitly release ownership of a ref owning value, use the unary `>>` operator. This is known as the move operator.
+To explicitly release ownership of a ref owning value, use the unary `>>` operator. This is called the move operator.
 
 Moving will reset the value to its zero state, while returning the owning value as a non-ref value.
 
@@ -54,7 +53,7 @@ Function arguments may be marked `::noDrop`. This tells the compiler that, even 
 import "std/io.orb";
 
 fnc printCtrl (ctrl:Control::noDrop) () {
-    std.println "Controlling: " ([] ctrl str);
+    std.println "Reading: " ([] ctrl str);
 
     # ctrl is not dropped
 };

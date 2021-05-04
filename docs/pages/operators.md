@@ -35,7 +35,7 @@ fnc main () () {
 };
 ```
 
-Bitwise operators perform operatons on individual bits. (Binary form is not a requirement.)
+Bitwise operators perform operations on individual bits. (Binary form is not a requirement.)
 
 ```
 import "std/io.orb";
@@ -112,4 +112,4 @@ fnc main () () {
 
 Unlike all the other operators we've seen so far, `&&` and `||` are not special forms - they are macros. They are defined in **base.orb**, which is why we needed to import this file.
 
-Just like comparison operators, `&&` ands `||` perform short-circuiting.
+Just like comparison operators, `&&` and `||` perform short-circuiting.

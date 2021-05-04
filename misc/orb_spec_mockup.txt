@@ -95,7 +95,7 @@ sym
 	sym a:t OR sym (a:t) OR sym (a b) OR sym (a:t b), variadic
 	a is id, t is type, b is init value
 	b cast to t, if no t then a is type of b
-	zero initialized (id to main, type to id, raw to empty)
+	zero-initialized (id to main, type to id, raw to empty)
 
 cast
 	cast t a

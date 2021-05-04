@@ -4,7 +4,7 @@ title: If
 ---
 # {{ page.title }}
 
-`if` will execute a block of intructions if a condition resolves to `true`.
+`if` will execute a block of instructions if a condition is `true`.
 
 ```
     if (!= x 42) {
@@ -12,7 +12,7 @@ title: If
     };
 ```
 
-A second block may be given to be executed if the condition resolves to `false`.
+A second block may be given to be executed if the condition is `false`.
 
 ```
     if (== (% x 2) 0) {

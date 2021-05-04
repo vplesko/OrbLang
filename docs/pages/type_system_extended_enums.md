@@ -4,7 +4,7 @@ title: Enums
 ---
 # {{ page.title }}
 
-Enums are types which have a set of named possible values. They are defined using the `enum` macro defined in **base.orb**.
+Enums are types with a set of possible values. They are defined using the `enum` macro defined in **base.orb**.
 
 ```
 enum CardSuite {
@@ -40,5 +40,3 @@ You can get the number of different values in your enum using `base.enumSize`.
 ```
     std.println (base.enumSize CardSuite); # prints 4
 ```
-
-> There is a convention to name your functions (and macros) as `MODULE_NAME.FUNCTION_NAME`. If the function (or macro) is not intended to be called directly by your users, its name should be prepended with a minus: `MODULE_NAME.-FUNCTION_NAME`. A lot of functions and macros from **base.orb** don't follow this convention for the sake of convenience.

@@ -4,7 +4,7 @@ title: Data types
 ---
 # {{ page.title }}
 
-Data types are named types which contain one or more named elements. They are defined in the global scope using the `data` special form.
+Data types are types which contain one or more named elements. They are defined in the global scope using the `data` special form.
 
 ```
 data Person {
@@ -13,7 +13,7 @@ data Person {
 };
 ```
 
-`data` can be used to simply declare a data type, without specifying its elements.
+Data types can also be declared, without specifying their elements.
 
 ```
 data MyNode;
