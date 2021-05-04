@@ -16,7 +16,7 @@ Returns a value equal to the value of `oper`.
 
 Returns the negated value of `oper`.
 
-`oper` must of a type based on one of signed integer of floating point types.
+`oper` must of a type based on one of signed integer of floating-point types.
 
 ## `~ oper`
 

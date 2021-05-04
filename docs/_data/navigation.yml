@@ -181,5 +181,7 @@
       link: /examples/quick_examples_logo.html
     - name: FizzBuzz
       link: /examples/quick_examples_fizzbuz.html
+    - name: Primes
+      link: /examples/quick_examples_primes.html
     - name: Fibonacci
       link: /examples/quick_examples_fibonacci.html

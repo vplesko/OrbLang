@@ -4,7 +4,7 @@ title: Pointers
 ---
 # {{ page.title }}
 
-Pointers refer to an element which may have been defined elsewhere. For example, `(i32 *)` is a pointer to an `i32`.
+Pointers refer to an element that may have been defined elsewhere. For example, `(i32 *)` is a pointer to an `i32`.
 
 You may use the unary `&` to get a pointer to a ref value.
 

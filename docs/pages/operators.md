@@ -35,7 +35,7 @@ fnc main () () {
 };
 ```
 
-Bitwise operators perform operations on individual bits. (Binary form is not a requirement.)
+Bitwise operators perform operations on individual bits. (The binary form is not a requirement.)
 
 ```
 import "std/io.orb";

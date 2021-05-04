@@ -4,7 +4,7 @@ title: Casting
 ---
 # {{ page.title }}
 
-In situations where we have a value of one type, but require a value of a different type, we need to cast it. Sometimes, Orb will do this automatically. This is referred to as implicit casting.
+In situations where we have a value of one type but require a value of a different type, we need to cast it. Sometimes, Orb will do this automatically. This is referred to as implicit casting.
 
 ```
 import "std/io.orb";
@@ -37,7 +37,7 @@ fnc main () () {
 ```
 {: .code-error}
 
-There are some exceptions to these rules, when the value is known at the time of compilation and guaranteed to not result in information loss. Even then, some of the strictness still holds.
+There are some exceptions to these rules when the value is known at the time of compilation and guaranteed to not result in information loss. Even then, some of the strictness still holds.
 
 In the cases where implicit casting is forbidden, we can cast explicitly by using the `cast` special form.
 

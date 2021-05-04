@@ -4,7 +4,7 @@ title: Scopes
 ---
 # {{ page.title }}
 
-Every symbol exists within a single scope where it was declared. For example, declaring it inside a function body, makes it usable only within that function.
+Every symbol exists within a single scope where it was declared. For example, declaring it inside a function body makes it usable only within that function.
 
 Control flow macros insert additional scopes, nested within the scope where they were invoked. For those that repeatedly execute a block, each block iteration has a separate scope.
 

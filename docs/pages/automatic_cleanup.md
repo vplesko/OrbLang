@@ -4,9 +4,9 @@ title: Automatic cleanup
 ---
 # {{ page.title }}
 
-Managing resources, most notably memory, in code can be toilsome and error-prone. Fortunately, Orb comes with scope-based memory management. This means that types which manage memory can be set up to "clean up after themselves" by defining special functions. These are called drop functions, and can only be defined for data types.
+Managing resources, most notably memory, in code can be toilsome and error-prone. Fortunately, Orb comes with scope-based memory management. This means that types that manage memory can be set up to "clean up after themselves" by defining special functions. These are called drop functions, and can only be defined for data types.
 
-To define a drop function, pass it as an extra argument when defining a data type. This argument must be a function which takes a single argument of that data type, marked with `::noDrop`.
+To define a drop function, pass it as an extra argument when defining a data type. This argument must be a function that takes a single argument of that data type, marked with `::noDrop`.
 
 This is best illustrated by an example.
 
@@ -18,7 +18,7 @@ data Control {
 });
 ```
 
-Drop functions are called as a symbol goes out of scope. Additonally, each of their elements are also dropped. As a rule, the order of dropping is inverse to the order in which the values were defined.
+Drop functions are called as a symbol goes out of scope. Additionally, each of their elements are also dropped. As a rule, the order of dropping is inverse to the order in which the values were defined.
 
 This may sound a bit complicated, but it simply means that the compiler will take care of automatically cleaning up any resources you are using, and you don't need to worry about them. Your responsibility is to define the drop function.
 

@@ -4,7 +4,7 @@ title: Importing source files
 ---
 # {{ page.title }}
 
-As your code grows larger, you may want to split it accross multiple source files. To import the definitions from a file into your project, use the `import` special form, providing the file path as a string.
+As your code grows larger, you may want to split it across multiple source files. To import the definitions from a file into your project, use the `import` special form, providing the file path as a string.
 
 We've already used it to import some Orb libraries, for example as `import "std/io.orb";`. You can use it to import your own code.
 

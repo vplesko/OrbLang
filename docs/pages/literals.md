@@ -29,7 +29,7 @@ fnc main () () {
 };
 ```
 
-Then, there are floating point literals.
+Then, there are floating-point literals.
 
 ```
 import "std/io.orb";
@@ -57,7 +57,7 @@ fnc main () () {
     # 64-bit signed integer
     std.println -100:i64;
 
-    # 32-bit floating point value
+    # 32-bit floating-point value
     std.println 0.0:f32;
 };
 ```

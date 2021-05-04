@@ -17,7 +17,7 @@ fnc main () () {
 
 Here we declare a symbol `x` and initialize it with an `i32` value read from the standard input. In this case, the type of `x` will be equal to the type of its initialization value. Then, we print `x` to the standard output.
 
-We can control the type of our symbol by specifying it after `:`. The initalization value will be implicitly cast to that type.
+We can control the type of our symbol by specifying it after `:`. The initialization value will be implicitly cast to that type.
 
 ```
     sym (x:i64 (std.scanI32));

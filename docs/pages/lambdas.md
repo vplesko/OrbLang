@@ -24,4 +24,4 @@ fnc main () () {
 
 You may omit one `lam` argument to create a function that takes no arguments. For example, `(lam i32 { ret 0; })` takes no arguments and always returns zero.
 
-Ommiting anotehr argument results in a function of type `(fnc () ())`, eg. `(lam { std.println; })`.
+Omitting another argument results in a function of type `(fnc () ())`, eg. `(lam { std.println; })`.

@@ -41,7 +41,7 @@ fnc square (x:i32) i64 {
 ```
 {: .code-error}
 
-Functions can be declared by ommiting the function body. A declared function may be defined later in the code.
+Functions can be declared by omitting the function body. A declared function may be defined later in the code.
 
 ```
 fnc square (x:f64) f64;

@@ -4,7 +4,7 @@ title: Data types
 ---
 # {{ page.title }}
 
-Data types are types which contain one or more named elements. They are defined in the global scope using the `data` special form.
+Data types are types that contain one or more named elements. They are defined in the global scope using the `data` special form.
 
 ```
 data Person {

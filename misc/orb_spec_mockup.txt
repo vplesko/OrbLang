@@ -267,7 +267,7 @@ types:
 bool - boolean
 i8, i16, i32, i64 - signed integrals
 u8, u16, u32, u64 - unsigned integrals
-f32, f64 - floating point numerals
+f32, f64 - floating-point numerals
 c8 - 8-bit char
 ptr - non-descript pointer (void* in C)
 id - identifier (first-class value at evaluation)

@@ -36,7 +36,7 @@ fnc sumElemsOf3dMatrix (a:(f32 10 10 10)) f32 {
 };
 ```
 
-Arrays are value types. In some languages, passing an array to a function is really passing a pointer to its elements. In Orb, however, all of the elements are copied and modifying the argument does not modify the original array.
+Arrays are value types. In some languages, passing an array to a function is really passing a pointer to its elements. In Orb, however, all of the elements are copied, and modifying the argument does not modify the original array.
 
 Arrays can be assigned new array values.
 
