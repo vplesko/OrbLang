@@ -22,6 +22,10 @@ Defines and returns a `std.One` type which points to `valTy`. If the same type w
 
 Defines a `std.One` type pointing to `valTy`, then returns a `std.One` value pointing to a zero initialized `valTy` stored on heap.
 
+## `std.makeOneWith val`
+
+Defines a `std.One` type pointing to the type of `val`, then returns a `std.One` value pointing to a copy of `val`.
+
 ## `std.* one`
 
 Returns the value `one` points to as a ref value.

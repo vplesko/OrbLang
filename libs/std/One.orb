@@ -32,6 +32,18 @@ mac std.makeOne (valTy::preprocess) {
     });
 };
 
+mac std.makeOneWith (val::preprocess) {
+    sym (valTy (typeOf val));
+    sym (oneTy (std.One valTy));
+
+    ret \(block ,oneTy {
+        sym x:,oneTy;
+        = ([] x -p) (cast ,(valTy *) (malloc ,(sizeOf valTy)));
+        = (* ([] x -p)) ,val;
+        pass x;
+    });
+};
+
 mac std.* (one::preprocess) {
     ret \(* ([] ,one -p));
 };

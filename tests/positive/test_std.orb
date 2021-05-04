@@ -71,6 +71,10 @@ fnc main () () {
         = ([] (std.* f) 0 x) 105;
         = ([] (std.* f) 1 x) 104;
     };
+    block {
+        sym (x (std.makeOneWith 106));
+        println_i32 (std.* x);
+    };
 
     block {
         sym x:(std.List i32);

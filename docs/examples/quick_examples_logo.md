@@ -34,3 +34,5 @@ fnc main () () {
                         `::::::::::.`                       ";
 };
 ```
+
+*(ASCII image created using an external tool at www.text-image.com/convert/ascii.html.)*

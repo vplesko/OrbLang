@@ -50,15 +50,13 @@ mac base.assertIsOfType (val::preprocess ty::preprocess) {
 };
 
 mac unref (val::preprocess) {
-    sym (s (genId));
-
     ret \(block ,(typeOf val) {
         # forbids usage on noDrop and invocation args
         >>::noZero ,val;
 
         # forbids usage on owning
-        sym (,s ,val);
-        pass ,s;
+        sym (t ,val);
+        pass t;
     });
 };
 
