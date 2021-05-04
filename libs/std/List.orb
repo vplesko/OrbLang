@@ -172,14 +172,24 @@ std.-genFncList std.reserve (cap:std.Size) () {
     };
 };
 
-std.-genFncList std.push (val:elemTy) () {
+std.-genFncList std.-push (elem:elemTy) () {
     sym (elemTy::evaluated (std.getElemTy (* this)));
 
     if (== (-> this -end) (-> this -bound)) {
         std.-reallocForCapOrOver (* this) (+ (std.getCap (* this)) 1);
     };
-    = (* (cast (elemTy *) (-> this -end))) (>> val);
+    = (* (cast (elemTy *) (-> this -end))) (>> elem);
     = (-> this -end) (std.getArrPtrToInd elemTy (-> this -end) 1);
+};
+
+mac std.push (list::preprocess elem::preprocess rest::(variadic preprocess)) {
+    sym (innerCode \{ std.-push ,list ,elem; });
+
+    range i (lenOf rest) {
+        = innerCode (+ innerCode \{ std.-push ,list ,([] rest i); });
+    };
+
+    ret \(block::bare ,innerCode);
 };
 
 std.-genFncList std.pop () () {

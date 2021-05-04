@@ -153,8 +153,7 @@ fnc main () () {
         println_i32 (std.getBack x);
         std.push x 222;
         println_i32 (std.getBack x);
-        std.push x 223;
-        std.push x -1;
+        std.push x -1 223 -1;
         std.pop x;
         println_i32 (std.getBack x);
     };
