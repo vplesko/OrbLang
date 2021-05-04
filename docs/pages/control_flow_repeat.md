@@ -11,3 +11,5 @@ title: Repeat
         std.println "Hello!";
     };
 ```
+
+Not specifying a number causes the block to be repeatedly executed indefinitely.

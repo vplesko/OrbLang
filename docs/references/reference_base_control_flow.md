@@ -128,6 +128,10 @@ If `lo` is greater than `hi`, will result in undefined behaviour.
     };
 ```
 
+## `repeat body<block>`
+
+Repeatedly executes instructions in `body`.
+
 ## `repeat n<numeric> body<block>`
 
 Executes instructions in `body` a number of times given by `n`.

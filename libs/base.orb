@@ -179,6 +179,10 @@ mac rangeRev (i hi::preprocess lo::preprocess delta::preprocess body) {
     });
 };
 
+mac repeat (body) {
+    ret \(while true ,body);
+};
+
 mac repeat (n::preprocess body) {
     sym (s (genId));
     ret \(range ,s ,n ,body);

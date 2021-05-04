@@ -135,6 +135,15 @@ fnc main () () {
     repeat 0 {
         println_i32 -1;
     };
+    block {
+        sym (x 3);
+        repeat {
+            = x (- x 1);
+            if (== x 0) {
+                break;
+            };
+        };
+    };
 
     block {
         sym (x 299);
