@@ -4,7 +4,7 @@ title: Automatic cleanup
 ---
 # {{ page.title }}
 
-Managing resources, most notably memory, in code can be toilsome and error-prone. Fortunately, Orb comes with scope-based memory management. This means that types that manage memory can be set up to "clean up after themselves" by defining special functions. These are called drop functions, and can only be defined for data types.
+Managing resources, most notably memory, in code can be toilsome and error-prone. Fortunately, Orb comes with scope-based memory management (also known as RAII). This means that types that manage memory can be set up to "clean up after themselves" by defining special functions. These are called drop functions, and can only be defined for data types.
 
 To define a drop function, pass it as an extra argument when defining a data type. This argument must be a function that takes a single argument of that data type, marked with `::noDrop`.
 

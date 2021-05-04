@@ -20,7 +20,7 @@ fnc main () () {
 };
 ```
 
-In Orb, there is no difference between the two types of parenthesis - there never was. Furthermore, what semicolons do is group up what was placed between them and the closest previous unclosed parenthesis.
+In Orb, there is no difference between the two types of parenthesis - there never was. Furthermore, semicolons simply group up what was placed between them and the closest previous unclosed parenthesis.
 
 So, the program from above could equivalently be rewritten as:
 
@@ -36,7 +36,7 @@ So, the program from above could equivalently be rewritten as:
 ))
 ```
 
-Back when we talked about primitive types, we mentioned `raw`, but said it would be explained later. As it turns out, we've been using this type the whole time - all of our codes consisted of `raw` values. Each parenthesised group in the program above is actually a `raw` value.
+Back when we talked about primitive types, we mentioned `raw` but never demonstrated it. As it turns out, we've been using this type the whole time - each parenthesised group we've written was actually a `raw` value.
 
 Like with many other languages, Orb code can be represented as an Abstract Syntax Tree (AST). Unlike most languages, the code is a direct representation of that AST.
 
@@ -44,4 +44,4 @@ Orb ASTs consist of nodes. There are two types of nodes. Non-leaf nodes are pare
 
 When a non-leaf is processed (either compiled or evaluated), the value of its starting element is processed first. How the compiler processes the node as a whole depends on what the starting element resolved to. For example, if it resolved to a function, the node represents a call to that function.
 
-This is also the reason why Orb uses prefix notation.
+This is also the reason why Orb uses prefix notation only.

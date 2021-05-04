@@ -48,7 +48,7 @@ Gets the underlying array pointer `list` uses to point to its array as a non-ref
 
 ## `std.range it<id> list body<block>`
 
-Iterates through the elements of `list`, executing `body` for each. The current iteration element can be fetched by invoking `it`, as `(it)`.
+Iterates through the elements of `list`, executing `body` for each. The current iteration element can be fetched by surrounding `it` in parenthesis, as `(it)`.
 
 Causing `list` to be resized, reassigned, or reallocated in `body` results in undefined behaviour.
 

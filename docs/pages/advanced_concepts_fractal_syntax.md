@@ -67,6 +67,8 @@ fnc main () () {
 };
 ```
 
+Feel free to experiment with the syntax!
+
 Overdoing this can result in some very odd-looking code.
 
 ```
@@ -77,6 +79,8 @@ eval (sym (mainRetTy i32));
 mac getRet () { ret ret; };
 
 fnc (eval (block id { pass \main; })) ,(getMainArgs) mainRetTy {
-    (getRet) 0;
+    (getRet) (block i32 {
+        pass 0;
+    });
 };
 ```

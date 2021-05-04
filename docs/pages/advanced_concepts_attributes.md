@@ -6,15 +6,15 @@ title: Attributes
 
 Attributes can be placed on a node to add extra information. There are two types of attributes.
 
-`:` is used to attach a type attribute on a node. We've used these in `sym` instructions and function arguments.
+`:` is used to attach a type attribute to a node. We've used these in `sym` instructions and function arguments.
 
 ```
     sym x:i32;
 ```
 
-`::` is used to attach non-type attributes on a node. For example, we've seen `::noDrop` on function arguments and `::preprocess` on macro arguments.
+`::` is used to attach non-type attributes to a node. For example, we've seen `::noDrop` on function arguments and `::preprocess` on macro arguments.
 
-There can be multiple non-type attributes attached to a single node. These attributes have a name and a value. If the value is not specified, it is implicitly set to the boolean value `true`.
+There can be multiple non-type attributes attached to a single node. Each has a name and a value. If the value is not specified, it will implicitly be set to `true`.
 
 ```
 # single attribute with no value provided
@@ -39,12 +39,11 @@ fnc main () () {
     eval (sym (x 0::((myAttr 10))));
 
     attr?? x myAttr; # true
-    attr?? x fakeAttr; # false
-
     attrOf x myAttr; # 10
 
-    attr?? 0:i32 type; # true
+    attr?? x fakeAttr; # false
 
+    attr?? 0:i32 type; # true
     attrOf 0:i32 type; # i32
 };
 ```
@@ -56,18 +55,18 @@ import "std/io.orb";
 
 data Foo {
     x:i32
-}::((myAttr 20));
+}::((xTy i32));
 
 fnc main () () {
-    sym x:Foo;
+    sym foo:Foo;
 
-    if (attr?? (typeOf x) myAttr) {
-        std.println (attrOf (typeOf x) myAttr); # prints 20
-    };
+    eval (if (attr?? (typeOf foo) xTy) {
+        message (attrOf (typeOf foo) xTy); # prints i32
+    });
 };
 ```
 
-Attributes are useful in conjuction with macro arguments, as they preserve their attributes during the invocation.
+Attributes are useful in conjunction with macro arguments, as they preserve their attributes during the invocation.
 
 ```
 import "base.orb";

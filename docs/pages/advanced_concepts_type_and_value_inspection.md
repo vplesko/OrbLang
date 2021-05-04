@@ -21,7 +21,7 @@ fnc main () () {
 
 ## `lenOf`
 
-The `lenOf` special form can be used to get the number of elements in an array, a tuple, a data type, or a `raw` value. It can be used either on a type or value of that type.
+The `lenOf` special form can be used to get the number of elements in an array, a tuple, a data type, or a `raw` value. It can be used either on a type or a value of that type.
 
 Alternatively, it can get the length of an evaluated string value, including the null character at the end.
 
@@ -38,10 +38,10 @@ fnc main () () {
 
 ## `sizeOf`
 
-The `sizeOf` special form returns the memory size in bytes of a compiled type. It can only be used on types which can be compiled. Note that the result depends on the machine architecture for which the program is being compiled.
+The `sizeOf` special form returns the memory size in bytes of a type. It can only be used on types that can be compiled. Note that the result depends on the machine architecture for which the program is being compiled.
 
 ```
-    sizeOf ((i32 c8) 4); # likely to be 32 on your machine
+    sizeOf ((i32 c8) 4); # 32 on most modern machines
 ```
 
 ## `??`

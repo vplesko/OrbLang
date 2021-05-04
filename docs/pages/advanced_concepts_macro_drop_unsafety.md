@@ -30,18 +30,16 @@ mac callPipeline (module::preprocess) {
 ```
 {: .code-error}
 
-Let's say `module` is an owning non-ref value. When processing the returned code snippet, this same value will appear three different times. That means it may end up being dropped three times, resulting in undefined behaviour.
+Let's say `module` is an owning non-ref value. When processing the returned code snippet, this same value will appear three different times. That means it will be dropped three times, resulting in undefined behaviour.
 
 **If a macro argument may be an owning non-ref value, it should be returned exactly once.**
 
 Following this rule will protect you from writing drop unsafe macros.
 
-There is another detail to know, which actually work in our favour.
+There is a circumstance that works in our favour.
 
 ```
 mac printDetails (res::preprocess) {
-    # verify res is of the expected type
-
     ret \(block {
         std.println ([] ,res resourceName);
         std.println ([] ,res countOfUses);
@@ -49,4 +47,4 @@ mac printDetails (res::preprocess) {
 };
 ```
 
-`[]` cannot be used on owning non-ref values. Because of this, `res` would have to be ref, otherwise the compiler would raise an error. Because of that, it does not need to and will not be dropped in the returned code snippet. We may rest assured that this macro is drop safe.
+`[]` cannot be used on owning non-ref values. Because of this, `res` would have to be ref, otherwise the compiler would raise an error. Because of that, it will not be dropped in the returned code snippet. We may rest assured that this macro is drop safe.

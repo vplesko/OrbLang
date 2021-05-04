@@ -31,13 +31,13 @@ mac printThrice (x::preprocess delim::preprocess) {
 };
 ```
 
-Whenever a macro argument may appear multiple times in the returned code snippet, it should be marked with `::preprocess`. This means that the code snippet used as the argument at the place of invocation will be executed before going into the argument.
+Whenever a macro argument may appear multiple times in the returned code snippet, it should be marked with `::preprocess`. This means that the code snippet used as the argument at the place of invocation will be executed before the invocation starts.
 
-So, in our program above, `x` will be moved only once, and the resulting non-ref value will be used for printing all three times.
+So, in our program above, `x` will be moved only once, and the resulting non-ref value will be printed three times.
 
 There are other useful argument settings. `::plusEscape` will escape the argument twice, and then process it and invoke the macro.
 
-`::variadic` can be used on the last macro argument to mark the argument as variadic. This argument will be able to take arbitrarily many arguments. All surplus arguments will be packed into a `raw` value and this value will be the last argument presented to the macro.
+`::variadic` can be used on the last macro argument to mark it as variadic. This argument will be able to take arbitrarily many arguments. They will be packed into a `raw` value as elements and this `raw` will be the last argument presented to the macro.
 
 ```
 mac foo (a b rest::variadic) {
@@ -62,6 +62,4 @@ fnc main () () {
 };
 ```
 
-`::variadic` can be combined with the other ones, as eg. `::(variadic preprocess)`.
-
-The type of `foo` can be expressed with `(mac 3::variadic)`.
+To make the last argument variadic and `preprocess`, mark it with `::(variadic preprocess)`.

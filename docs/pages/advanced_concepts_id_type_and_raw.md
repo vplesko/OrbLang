@@ -4,7 +4,7 @@ title: Id, type, and raw
 ---
 # {{ page.title }}
 
-As we already established, `id`, `type`, and `raw` are primitive types. These types (and values of their type) cannot be compiled - you can only use them in evaluation.
+As we already established, `id`, `type`, and `raw` are primitive types. These types (and values of these types) cannot be compiled - you can only use them in evaluated code.
 
 Just like with any other type, you can declare symbols of these types, reassign them with new values, and pass them as arguments to functions.
 
@@ -12,7 +12,7 @@ Just like with any other type, you can declare symbols of these types, reassign 
 
 `id` represents an identifier. Identifier literals are of this type.
 
-Normally, processing an identifier literal results in a lookup of what it represents. To surpress this behaviour, you need to escape the identifier. Then, you will get the value of type `id`.
+Normally, processing an identifier literal looks up what it refers to. To suppress this behaviour, you can escape the identifier (eg. `\foo`). Then, you will get the value of type `id`.
 
 You can combine two `id` values into a new one with `+`. Unsigned, boolean, and type values can be cast into `id`.
 
@@ -53,7 +53,9 @@ fnc main () () {
 
 ## Raw
 
-`raw` is a list that can contain almost anything that can be expressed in Orb. Most commonly, it represents unprocessed Orb code. As we've learned by now, the code we write consists of `raw` values. However, they quickly get processed into something else by the compiler. To surpress this behavour, you need to escape them.
+`raw` is a resizable list that can contain almost anything that can be expressed in Orb. Most commonly, it represents unprocessed Orb code.
+
+As we've learned by now, the code we write consists of `raw` values. However, they quickly get processed into something else by the compiler. To suppress this behavour, you need to escape them.
 
 ```
     # the escaped code will not be executed
@@ -63,7 +65,7 @@ fnc main () () {
 
 `()` (or `{}`) represents an empty `raw` value, ie. a `raw` with no elements. Escaping it is not required.
 
-Values inside `raw` retain their previous properties: being ref or non-ref, whether they were marked `::noDrop`, which attributes they had, etc.
+Values inside `raw` retain their non-value node properties (being ref or non-ref, their attributes, etc).
 
 It is very important to remember that, regardless of their elements, **`raw` values are considered non-owning and their elements will not be dropped**! Bad usage of `raw` values can result in automatic cleanup not happening, which may manifest as memory leaks or worse.
 
@@ -75,7 +77,7 @@ import "std/One.orb";
 
 fnc main () () {
     # creates a raw containing a single owning non-ref value
-    sym (r::evaluated (base.makeRawWith (std.makeOne i32)));
+    sym (r::evaluated \( ,(std.makeOne i32) ));
 
     # non-ref value is dropped, memory is freed
     [] r 0;
@@ -88,4 +90,4 @@ fnc main () () {
 
 Great caution must be exercised when using `raw` values! Really, their main intended usage is to write macros.
 
-> std.One is a set of smart pointer types - pointers that automatically allocate and deallocate memory. Read the `std` reference to find out more on this and other useful definitions.
+> std.One is a set of smart pointer types - pointers that automatically deallocate used memory. Read the standard library reference to find out more about this and other useful definitions.
