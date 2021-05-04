@@ -36,8 +36,8 @@ mac std.* (one::preprocess) {
     ret \(* ([] ,one -p));
 };
 
-mac std.-> (one::preprocess memb) {
-    ret \([] (* ([] ,one -p)) ,memb);
+mac std.-> (one::preprocess ind) {
+    ret \([] (* ([] ,one -p)) ,ind);
 };
 
 mac std.isNull (one::preprocess) {
@@ -45,5 +45,5 @@ mac std.isNull (one::preprocess) {
 };
 
 mac std.getPtr (one::preprocess) {
-    ret \([] ,one -p);
+    ret \(unref ([] ,one -p));
 };

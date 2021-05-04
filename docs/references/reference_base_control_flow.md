@@ -4,14 +4,6 @@ title: Control flow
 ---
 # {{ page.title }}
 
-## `cond<bool> onTrue onFalse`
-
-Conditionally processes either the `onTrue` or `onFalse` node depending on the value of `cond`.
-
-## `cond<bool> onTrue`
-
-Only processes the `onTrue` node if `cond` is `true`.
-
 ## `if cond<bool> then<block> rest...`
 
 Conditionally executes one of the provided blocks of instructions based on the conditions provided.

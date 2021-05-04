@@ -31,7 +31,7 @@ mac std.getBack (list::preprocess) {
 };
 
 mac std.getArrPtr (list::preprocess) {
-    ret \([] ,list -start);
+    ret \(unref ([] ,list -start));
 };
 
 mac std.range (it list::preprocess body) {

@@ -297,6 +297,10 @@ fnc main () () {
         cond true
             (println_i32 1111);
     };
+    block {
+        sym (x 1112);
+        println_i32 (unref x);
+    };
 
     block {
         arr Bar (make Bar (x 1200));

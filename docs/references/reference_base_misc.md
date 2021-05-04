@@ -40,6 +40,20 @@ Raises an error if `val` is not of type `ty` or `ty cn`.
 
 `val` must be a value with a type.
 
+## `unref val`
+
+Returns `val` as a non-ref value.
+
+If `val` is owning, will result in undefined behaviour.
+
+## `cond<bool> onTrue onFalse`
+
+Conditionally processes either the `onTrue` or `onFalse` node depending on the value of `cond`.
+
+## `cond<bool> onTrue`
+
+Only processes the `onTrue` node if `cond` is `true`.
+
 ## `base.enumSize ty<type>`
 
 Returns the number of initially created symbols of the `ty`, created by `enum`.

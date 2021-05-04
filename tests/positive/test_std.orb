@@ -164,6 +164,13 @@ fnc main () () {
         if (!= (std.getLen x) 0) {
             println_i32 -1;
         };
+        sym (y:(std.List i32));
+        if (!= (std.getLen y) 0) {
+            println_i32 -1;
+        };
+        if (!= (std.getCap y) 0) {
+            println_i32 -1;
+        };
     };
     block {
         sym (x (std.makeList Foo 2));

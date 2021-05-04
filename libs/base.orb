@@ -49,6 +49,10 @@ mac base.assertIsOfType (val::preprocess ty::preprocess) {
     ret ();
 };
 
+mac unref (val) {
+    ret \(>>::noZero ,val);
+};
+
 mac cond (cond_::preprocess onTrue onFalse) {
     block {
         exit (! cond_);
