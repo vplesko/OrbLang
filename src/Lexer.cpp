@@ -187,9 +187,9 @@ Token Lexer::next() {
         } else if (ch == '}') {
             tok = {.type=Token::T_BRACE_R_CUR};
         } else if (ch == '\'') {
-            UnescapePayload unesc = unescape(line, col-1, true);
+            UnescapePayload unesc = unescape(line, col, true);
 
-            if (unesc.success == false || unesc.unescaped.size() != 1) {
+            if (unesc.status != UnescapePayload::Status::Success || unesc.unescaped.size() != 1) {
                 CodeLocPoint codeLocPointEnd = codeLocPoint;
                 codeLocPointEnd.col += 1;
 
@@ -205,23 +205,46 @@ Token Lexer::next() {
             ch = line[col];
             nextCh();
         } else if (ch == '\"') {
-            UnescapePayload unesc = unescape(line, col-1, false);
+            stringstream ss;
+            bool success = true;
+            while (true) {
+                UnescapePayload unesc = unescape(line, col, false);
+                if (unesc.status == UnescapePayload::Status::Failure) {
+                    success = false;
+                    break;
+                }
 
-            if (unesc.success == false) {
+                ss << unesc.unescaped;
+                
+                if (unesc.status == UnescapePayload::Status::Success) {
+                    col = unesc.nextIndex-1;
+                    ch = line[col];
+                    nextCh();
+
+                    break;
+                } else {
+                    ss << endl;
+
+                    skipLine();
+                    if (over()) {
+                        // unclosed multiline string
+                        success = false;
+                        break;
+                    }
+                }
+            }
+
+            if (!success) {
                 CodeLocPoint codeLocPointEnd = codeLocPoint;
                 codeLocPointEnd.col += 1;
 
                 tok.type = Token::T_UNKNOWN;
                 msgs->errorBadLiteral({fileId, codeLocPoint, codeLocPointEnd});
                 return tok; // unclosed string literal error, so skip old token
-            } else {
-                tok.type = Token::T_STRING;
-                tok.stringId = stringPool->add(unesc.unescaped);
             }
 
-            col = unesc.nextIndex-1;
-            ch = line[col];
-            nextCh();
+            tok.type = Token::T_STRING;
+            tok.stringId = stringPool->add(ss.str());
         } else if (ch == '\\') {
             tok.type = Token::T_BACKSLASH;
         } else if (ch == ',') {

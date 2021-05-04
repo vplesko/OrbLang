@@ -177,6 +177,8 @@
   subpages:
     - name: HelloWorld
       link: /examples/quick_examples_helloworld.html
+    - name: Logo
+      link: /examples/quick_examples_logo.html
     - name: FizzBuzz
       link: /examples/quick_examples_fizzbuz.html
     - name: Fibonacci

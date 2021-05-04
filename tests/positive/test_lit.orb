@@ -29,6 +29,9 @@ fnc main () () {
     println_str "'";
     println_str "\n";
     println_str "\\n";
+    println_str "multiline
+string
+literal";
 
     println_i32 (cast i32 false);
     println_i32 (cast i32 true);

@@ -22,6 +22,9 @@ HELLO
 
 
 \n
+multiline
+string
+literal
 0
 1
 9

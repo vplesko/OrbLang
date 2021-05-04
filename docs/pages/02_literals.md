@@ -66,6 +66,15 @@ Character literals are placed between single quotes, for example: `'A'`, `'0'`, 
 
 String literals are placed between double quotes, eg. `"Hello!"` and `""` (empty string). Strings use the same escape sequences as character literals.
 
+String literals can spread multiple lines.
+
+```
+    sym (str
+"multiline
+string
+literal");
+```
+
 `true` and `false` are boolean literals.
 
 `null` is the null pointer literal.

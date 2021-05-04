@@ -26,12 +26,14 @@ pair<int, bool> nextHex(const string &str, size_t &index) {
     return hex;
 }
 
-UnescapePayload unescape(const string &str, std::size_t indexStartingQuote, bool isSingleQuote) {
+UnescapePayload unescape(const string &str, std::size_t indexStarting, bool isSingleQuote) {
     string out;
-    size_t ind = indexStartingQuote+1;
+    size_t ind = indexStarting;
     size_t afterLastSuccessful;
     while (true) {
         afterLastSuccessful = ind;
+
+        if (ind >= str.size()) return UnescapePayload(out, afterLastSuccessful, UnescapePayload::Status::SuccessUnclosed);
 
         pair<char, bool> ch = nextCh(str, ind);
         if (ch.second == false) break;
@@ -110,5 +112,7 @@ UnescapePayload unescape(const string &str, std::size_t indexStartingQuote, bool
             out.push_back(ch.first);
         }
     }
+
+    // failure
     return UnescapePayload(afterLastSuccessful);
 }
