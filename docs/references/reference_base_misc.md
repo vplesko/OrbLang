@@ -44,8 +44,6 @@ Raises an error if `val` is not of type `ty` or `ty cn`.
 
 Returns `val` as a non-ref value.
 
-If `val` is owning, will result in undefined behaviour.
-
 ## `cond<bool> onTrue onFalse`
 
 Conditionally processes either the `onTrue` or `onFalse` node depending on the value of `cond`.

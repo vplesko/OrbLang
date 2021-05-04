@@ -49,8 +49,17 @@ mac base.assertIsOfType (val::preprocess ty::preprocess) {
     ret ();
 };
 
-mac unref (val) {
-    ret \(>>::noZero ,val);
+mac unref (val::preprocess) {
+    sym (s (genId));
+
+    ret \(block ,(typeOf val) {
+        # forbids usage on noDrop and invocation args
+        >>::noZero ,val;
+
+        # forbids usage on owning
+        sym (,s ,val);
+        pass ,s;
+    });
 };
 
 mac cond (cond_::preprocess onTrue onFalse) {
