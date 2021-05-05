@@ -23,9 +23,7 @@ Drop functions are called as a symbol goes out of scope. Additionally, each of t
 This may sound a bit complicated, but it simply means that the compiler will take care of automatically cleaning up any resources you are using, and you don't need to worry about them. Your responsibility is to define the drop function.
 
 ```
-fnc makeCtrl (str:String) Control {
-    # ...
-};
+fnc makeCtrl (str:String) Control;
 
 fnc main () () {
     sym ctrl:Control;
@@ -43,4 +41,4 @@ fnc main () () {
 };
 ```
 
-There is another rule that may be worth remembering - if a value is guaranteed to be in its zero state, the compiler *may* omit dropping it. Practically speaking, if a value is zero-initialized, it is considered to not own any resources.
+There is another rule that may be worth remembering - if a value is guaranteed to be in its zero state, the compiler *may* omit dropping it. Practically speaking, when a value is zero-initialized, it is considered to not own any resources.

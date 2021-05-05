@@ -44,4 +44,4 @@ Orb ASTs consist of nodes. There are two types of nodes. Non-leaf nodes are pare
 
 When a non-leaf is processed (either compiled or evaluated), the value of its starting element is processed first. How the compiler processes the node as a whole depends on what the starting element resolved to. For example, if it resolved to a function, the node represents a call to that function.
 
-This is also the reason why Orb uses prefix notation only.
+This explains why Orb uses prefix notation only and why it requires placing so many semicolons.

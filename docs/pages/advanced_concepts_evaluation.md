@@ -117,7 +117,7 @@ fnc main () () {
     isEval y; # true
 
     # for current execution
-    isEval; # false
+    isEval;        # false
     eval (isEval); # true
 };
 ```

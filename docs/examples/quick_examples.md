@@ -10,3 +10,5 @@ These sections contain several example programs written in Orb. You can compile 
 orbc main.orb
 ./main
 ```
+
+Use the left and right arrows to navigate. You may also use the sidebar.

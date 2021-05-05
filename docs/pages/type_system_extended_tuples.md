@@ -13,6 +13,7 @@ fnc valOrZero (x:(i32 bool)) i32 {
     if ([] x 1) {
         ret ([] x 0);
     };
+
     ret 0;
 };
 ```

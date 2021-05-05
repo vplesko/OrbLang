@@ -16,21 +16,25 @@ For example, `(i32 * cn)` is a constant pointer (meaning it always points to the
 
 On the other hand, `(i32 cn *)` is a pointer to a constant `i32` value. The pointer itself is not constant.
 
+`(i32 cn * cn)` combines the two - the pointer always points to the same value, and cannot be used to modify that value.
+
 ```
 fnc main () () {
     sym x:i32;
 
     sym (p0:(i32 * cn) (& x));
-    = (* p0) 1; # this is ok
+    = (* p0) 0; # this is ok
     = p0 null; # error!
 
     sym (p1:(i32 cn *) (& x));
     = (* p1) 1; # error!
     = p1 null; # this is ok
+
+    sym (p2:(i32 cn * cn) (& x));
+    = (* p2) 2; # error!
+    = p2 null; # error!
 };
 ```
 {: .code-error}
-
-`(i32 cn * cn)` combines the two - the pointer always points to the same value, and cannot be used to modify that value.
 
 Casting a pointer to a constant value into a pointer to a non-constant value (eg. casting an `(i32 cn *)` into an `(i32 *)`) may result in undefined behaviour!

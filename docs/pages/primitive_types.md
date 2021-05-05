@@ -12,8 +12,8 @@ Another related group are unsigned integers: `u8`, `u16`, `u32`, and `u64`. Simi
 
 Floating-point types are `f32` and `f64`. The number in their name also denotes their bit size.
 
-`c8` is the character type, eg. `'A'` and `'\n'`. Their size is always a single byte.
+`c8` is the character type, eg. `'A'` and `'\n'`. Its size is a single byte.
 
-`ptr` is the nondescript pointer. They are equivalent to `void*` from the C programming language. `null` literal is of type `ptr`.
+`ptr` is the nondescript pointer. It is equivalent to `void*` from the C programming language. `null` literal is of type `ptr`.
 
-There are three more primitive types: `id`, `type`, and `raw`. Explaining these would require familiarity with Orb concepts we haven't touched on yet, so we will return to them later.
+There are three more primitive types: `id`, `type`, and `raw`. Explaining these would require familiarity with Orb concepts we haven't touched on yet, so we will return to them later in *Advanced concepts: Id, type, and raw*.

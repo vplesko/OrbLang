@@ -4,7 +4,7 @@ title: Operators
 ---
 # {{ page.title }}
 
-Operators perform calculations on values. As you will see, they are written in prefix notation - operators before the arguments. In fact, the entire language uses prefix notation. This fundamentally relates to how Orb is defined, but that will be explored at a later point in the guide.
+Operators perform calculations on values. As you will see, they are written in prefix notation - operators before the arguments. In fact, the entire language uses prefix notation. This fundamentally relates to how Orb is defined, but that will be explored in *Advanced concepts: Node-based syntax*.
 
 For now, try to get accustomed to this syntax. It has a benefit, however - a lot of the operators are variadic. This means they can handle more than two arguments, which can at times allow for shorter code.
 
@@ -68,14 +68,14 @@ fnc main () () {
     == 1 1; # true
     == 1 2; # false
     != 1 2; # true
-    < 1 2; # true
-    < 1 1; # false
+    < 1 2;  # true
+    < 1 1;  # false
     <= 1 2; # true
-    > 1 2; # false
+    > 1 2;  # false
     >= 1 2; # false
 
     < 1 2 3 4 5; # true
-    < 1 2 9 3; # false
+    < 1 2 9 3 4; # false
 };
 ```
 
@@ -99,17 +99,17 @@ Finally, we have the logical operators.
 import "base.orb";
 
 fnc main () () {
-    ! true; # false
+    ! true;  # false
     ! false; # true
 
-    && true true; # true
+    && true true;  # true
     && true false; # false
 
-    || false true; # true
+    || false true;  # true
     || false false; # false
 };
 ```
 
-Unlike all the other operators we've seen so far, `&&` and `||` are not special forms - they are macros. They are defined in **base.orb**, which is why we needed to import this file.
+Unlike all the other operators we've seen so far, `&&` and `||` are not special forms - they are macros. They are defined in **base.orb**, which is why we needed to import this file. We'll learn more about macros in *Advanced concepts: Macros*.
 
 Just like comparison operators, `&&` and `||` perform short-circuiting.

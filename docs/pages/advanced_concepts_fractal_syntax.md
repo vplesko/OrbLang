@@ -10,8 +10,7 @@ Orb's syntax tends to be more on the open-ended side. For example, call instruct
 import "std/io.orb";
 
 fnc main () () {
-    (lam (x:i32 y:i32) () { std.println x; std.println y; })
-        100 200;
+    (lam (x:i32 y:i32) () { std.println x; std.println y; }) 100 200;
 };
 ```
 
@@ -51,9 +50,8 @@ Operator arguments may be passed from blocks.
 
 ```
 fnc main () () {
-    +
-        (block i32 { pass 1; })
-        (block i32 { pass 2; });
+    + (block i32 { pass 1; })
+      (block i32 { pass 2; });
 };
 ```
 

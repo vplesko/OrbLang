@@ -21,9 +21,7 @@ fnc main () () {
 This does not apply to non-ref values. They are about to be dropped anyway, so their values may be copied off elsewhere, instead of dropping them.
 
 ```
-fnc makeCtrl (str:String) Control {
-    # ...
-};
+fnc makeCtrl (str:String) Control;
 
 fnc main () () {
     sym ctrl:Control;
@@ -53,7 +51,7 @@ Function arguments may be marked `::noDrop`. This tells the compiler that, even 
 import "std/io.orb";
 
 fnc printCtrl (ctrl:Control::noDrop) () {
-    std.println "Reading: " ([] ctrl str);
+    std.println "Printing: " ([] ctrl str);
 
     # ctrl is not dropped
 };

@@ -24,13 +24,13 @@ import "base.orb";
 fnc main () () {
     sym (x 1);
 
-    += x 2; # x is now 3
-    -= x 1; # x is now 2
-    *= x 6; # x is now 12
-    /= x 2; # x is now 6
-    %= x 4; # x is now 2
-    <<= x 1; # x is now 4
-    >>= x 1; # x is now 2
+    += x 2;      # x is now 3
+    -= x 1;      # x is now 2
+    *= x 6;      # x is now 12
+    /= x 2;      # x is now 6
+    %= x 4;      # x is now 2
+    <<= x 1;     # x is now 4
+    >>= x 1;     # x is now 2
     &= x 0b0011; # x is now 2
     |= x 0b0011; # x is now 3
     ^= x 0b1010; # x is now 9
