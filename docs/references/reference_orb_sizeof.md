@@ -15,3 +15,7 @@ If `oper` is not a `type`, operates on its type instead.
 The given type must not be undefined and must be compilable.
 
 The result depends on the machine architecture for which the program is compiled.
+
+```
+    sizeOf ((i32 c8) 4); # 32 on most modern machines
+```

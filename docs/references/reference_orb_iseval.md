@@ -14,8 +14,25 @@ Returns a `bool` of whether `val` is an evaluated value.
 
 The result is an evaluated value.
 
+```
+fnc main () () {
+    sym x:i32;
+    eval (sym y:i32);
+
+    isEval x; # false
+    isEval y; # true
+};
+```
+
 ## `isEval =bool`
 
 Returns whether this instruction was processed through evaluation.
 
 The result is an evaluated value.
+
+```
+fnc main () () {
+    isEval;        # false
+    eval (isEval); # true
+};
+```

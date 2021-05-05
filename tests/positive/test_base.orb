@@ -336,7 +336,7 @@ fnc main () () {
             println_i32 1503;
         };
 
-        println_i32 (+ 1501 (base.enumSize Baz));
+        println_i32 (+ 1501 (base.getEnumSize Baz));
 
         println_c8 (cast c8 Zab.a);
         println_c8 (cast c8 Zab.b);

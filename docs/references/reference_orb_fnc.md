@@ -12,6 +12,10 @@ Expresses a function type of given argument types and return type.
 
 If a type `retTy` is provided, that will be the return type. Otherwise, the function type is of a non-returning function.
 
+```
+    sym f0:(fnc (i32) ()) f1:(fnc (f32 f32) f32);
+```
+
 `::variadic` on the argument types node expresses a variadic function.
 
 `::noDrop` on `argTy` marks the argument as not being owned by the function.
@@ -35,6 +39,14 @@ Argument types and the return type must not be undefined types if this is a func
 When executing, the function will execute the list of instructions in `body` under a new scope.
 
 It is allowed to overload functions of the same name. There must not be conflicting function definitions among them. All functions declarations and the definition (where there is one) of the same signature must be conforming.
+
+```
+fnc sqrt (x:f32) f32;
+fnc sqrt (x:f64) f64;
+
+fnc square (x:f32) f32 { ret (* x x); };
+fnc square (x:f64) f64 { ret (* x x); };
+```
 
 `::global` must be placed on `fnc` if this instruction is not executed in the global scope.
 

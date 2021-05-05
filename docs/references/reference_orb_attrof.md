@@ -22,9 +22,9 @@ data Foo {
 }::((xTy i32));
 
 fnc main () () {
-    eval (sym foo:Foo::marked);
+    eval (sym (x 0::mark));
 
-    attrOf foo marked; # true
+    attrOf x mark;  # true
     attrOf Foo xTy; # i32
 };
 ```

@@ -459,6 +459,6 @@ mac enum (name vals) {
     ret \(enum ,name ,i32 ,vals);
 };
 
-eval (fnc base.enumSize (enumTy:type) base.-widestU {
+eval (fnc base.getEnumSize (enumTy:type) base.-widestU {
     ret ((base.-enumSizeName enumTy));
 });

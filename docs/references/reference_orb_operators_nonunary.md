@@ -16,6 +16,13 @@ All operands must be typed. All operands other than the last must be ref values 
 
 On each iteration, implicitly casts the right-hand side operand to the type of the left-hand side operand.
 
+```
+    sym x:i32 y:i32 z:i32;
+    # assign to x, y, and z
+
+    = x y z 1;
+```
+
 ## `op oper0 oper...`
 
 Performs arithmetic or bitwise operations on values.
@@ -38,9 +45,22 @@ If `op` is `-`, `*`, `/`, `%`, `>>`, or `<<`, the operands must be of a numeric 
 
 If `op` is `&`, `|`, or `^`, the operands must be of an integer type.
 
+```
+    std.println (+ 1 2 3 4);
+    std.println (/ 12 3 4);
+```
+
 If `op` is `+` and operands are of type `id`, the result is a new `id` guaranteed to be unique to the pairing of those two operand values.
 
+```
+    message (+ \foo (cast id i32));
+```
+
 If `op` is `+` and operands are of type `raw`, the result is a new `raw` with its list of elements being the concatenation of elements of the left and right-hand side operands. The elements preserve their non-value node properties.
+
+```
+    = r (+ r \{ += ,x 1; });
+```
 
 `::bare` on `op` when it is `+` and operands are of type `id` results in a new `id` being the concatenation of the identifier values of the left and right-hand side operand. This value is not guaranteed to be unique to the pairing of those two operand values.
 
@@ -59,6 +79,14 @@ If `op` is `!=`, there must be exactly two operands (it is not variadic).
 If `op` is `==` or `!=`, the operands must be of one of numeric, char, pointer, boolean, identifier, type, or callable types.
 
 If `op` is `<`, `<=`, `>`, or `>=`, the operands must be of one of numeric or char types.
+
+```
+    message (== a b 0);
+
+    message (< 1 2 3 4);
+
+    message (!= x 0);
+```
 
 ## `[] base ind<integer>...`
 
@@ -85,5 +113,11 @@ If the base is a `raw` and the indexed element is not a `raw`, it will preserve 
 If the base is an array pointer, the element type must not be an undefined type. The result will be a ref value.
 
 If the base is an evaluated array pointer which is a string and the index is an evaluated value, the result will be a non-ref value.
+
+```
+    std.println ([] array 0);
+
+    std.println ([] matrix i j);
+```
 
 > The base must not an owning non-ref value.

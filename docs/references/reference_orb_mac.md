@@ -12,6 +12,10 @@ Expresses a macro type of given number of arguments.
 
 `argCnt` must not be negative.
 
+```
+    sym m0:(mac 2);
+```
+
 `::variadic` on the list of argument types expresses a variadic macro.
 
 ## `mac name<id> ([argName<id>...]) body<block> =macro`
@@ -25,6 +29,12 @@ It is allowed to overload macros of the same name. There must not be conflicting
 There must not be multiple arguments of the same name.
 
 When executing, the macro will execute the list of instructions in `body` under a new scope. This is always done through evaluation. Macros are expected to return a value after they finish execution.
+
+```
+mac square (x::preprocess) {
+    ret \(* ,x ,x);
+};
+```
 
 `::global` must be placed on `mac` if this instruction is not executed in the global scope.
 

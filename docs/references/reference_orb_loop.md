@@ -14,4 +14,18 @@ Restarts the execution of the target block if `cond` is `true`. The new executio
 
 If `name` is given, the target is the innermost enclosing block of that name. Otherwise, the target is the innermost enclosing block.
 
+```
+    block {
+        # ...
+        loop (> i 0);
+    };
+
+    block b0 () {
+        block {
+            # ...
+            loop b0 true;
+        };
+    };
+```
+
 > Looping is allowed on passing blocks.

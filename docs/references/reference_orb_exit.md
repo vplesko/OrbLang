@@ -15,3 +15,17 @@ Exits the target block if `cond` is `true`.
 If `name` is given, the target is the innermost enclosing block of that name. Otherwise, the target is the innermost enclosing block.
 
 The target block must not be a passing block.
+
+```
+    block {
+        # ...
+        exit (== i 0);
+    };
+
+    block b0 () {
+        block {
+            # ...
+            exit b0 true;
+        };
+    };
+```

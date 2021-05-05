@@ -25,6 +25,13 @@ There must not be a function, macro, special form, type, or symbol in the same s
 
 `ty` must not be an undefined type.
 
+```
+    sym i:i32
+        (f:f32)
+        (b true)
+        (u:u64 1);
+```
+
 `::evaluated` on `name` will result in an evaluated symbol being registered.
 
 `::noZero` on `name` in 1. and 2. allows the compiler to omit zero-initialization of the symbol.

@@ -17,3 +17,21 @@ If `name` is given, the target is the innermost enclosing block of that name. Ot
 If `val` is a symbol in the current scope, it is moved.
 
 The value to be passed is implicitly cast to the passing type of the target block.
+
+```
+    block i32 {
+        sym x:i32;
+        # ...
+
+        pass x;
+    };
+
+    block b0 bool {
+        block {
+            # ...
+            pass b0 true;
+        };
+
+        pass false;
+    };
+```

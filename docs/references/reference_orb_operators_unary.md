@@ -10,9 +10,17 @@ Used to perform calculations and/or modify an operand.
 
 Returns a value equal to the value of `oper`.
 
+```
+    std.println (+ x);
+```
+
 ## `- oper<integer or float>`
 
 Returns the negated value of `oper`.
+
+```
+    std.println (- x);
+```
 
 ## `~ oper<integer>`
 
@@ -20,9 +28,17 @@ Returns the value of `oper` with all its bits complemented.
 
 `oper` must of an integer type.
 
+```
+    std.println (~ x);
+```
+
 ## `! oper<bool>`
 
 Returns the negated value of `oper`.
+
+```
+    exit (! cond);
+```
 
 ## `* oper`
 
@@ -36,11 +52,19 @@ If `oper` is an evaluated value, it must not be `null`. If `oper` is a compiled 
 
 The result is a ref value.
 
+```
+    = (* p) -1;
+```
+
 ## `& oper`
 
 Returns a pointer to `oper`.
 
 `oper` must be a ref value.
+
+```
+    sym (p (& x));
+```
 
 ## `>> oper`
 

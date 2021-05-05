@@ -35,8 +35,8 @@ enum HttpStatus u32 {
 };
 ```
 
-You can get the number of different values in your enum using `base.enumSize`.
+You can get the number of different values in your enum using `base.getEnumSize`.
 
 ```
-    std.println (base.enumSize CardSuite); # prints 4
+    std.println (base.getEnumSize CardSuite); # prints 4
 ```

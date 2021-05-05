@@ -20,6 +20,22 @@ If elements aren't given, this instruction declares a data type, instead of defi
 
 Element types must not be constant or undefined types.
 
+```
+data Complex {
+    x:f32
+    y:f32
+};
+
+data BinNode {
+    x:i32
+    l:(BinNode *)
+    r:(BinNode *)
+} (lam (this:BinNode::noDrop) () {
+    free (cast ptr r);
+    free (cast ptr l);
+});
+```
+
 If provided, `drop` must be a function that takes a single argument of this data type marked as `::noDrop`. That function will be used to drop values of this data type.
 
 `::global` must be placed on `data` if this instruction is not executed in the global scope.

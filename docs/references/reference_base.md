@@ -77,6 +77,16 @@ Repeatedly executes instructions in `body` as long as `cond` is `true`.
 
 Repeatedly executes instructions in `body`.
 
+```
+    repeat {
+        doThing;
+
+        if cond {
+            break;
+        };
+    };
+```
+
 ## `repeat n<integer> body<block>`
 
 Executes instructions in `body` the number of times given by `n`.
@@ -181,9 +191,17 @@ Prematurely ends the current iteration of a `for`, `while`, `repeat`, `range`, o
 
 Increases the value of `val` by one and returns it.
 
+```
+    ++ i;
+```
+
 ## `-- val<integer>`
 
 Decreases the value of `val` by one and returns it.
+
+```
+    -- i;
+```
 
 ## `+= val by`
 
@@ -207,11 +225,23 @@ Decreases the value of `val` by one and returns it.
 
 Assigns a new value to `val` based on the calculation with `val` and `by` as operands and returns `val`.
 
+```
+    += x k;
+
+    <<= n 1;
+```
+
 ## `&& val0<bool> val<bool>... =bool`
 
 Calculates the logical conjunction on arguments (AND operator), with short-circuiting.
 
 Iteratively going through the arguments, if any are `false`, finishes the instruction and returns `false`. Otherwise, returns `true`.
+
+```
+    if (&& b0 b1 b2) {
+        doThing;
+    };
+```
 
 ## `|| val0<bool> val<bool>... =bool`
 
@@ -219,9 +249,22 @@ Calculates the logical disjunction on arguments (OR operator), with short-circui
 
 Iteratively going through the arguments, if any are `true`, finishes the instruction and returns `true`. Otherwise, returns `false`.
 
+```
+    if (|| b0 b1 b2) {
+        doThing;
+    };
+```
+
 ## `-> val m...`
 
 Dereferences `val` and performs `[]` on the result with `m` as the index. Then, repeats this for the previous result and the next argument, until all arguments have been used.
+
+```
+    sym x:(Person *);
+    # = x ...;
+
+    std.println (-> x name);
+```
 
 ---
 
@@ -243,9 +286,17 @@ Constructs an array of `ty`. The length of the array is equal to the number of a
 
 Each value in `val...` is implicitly cast to `ty` and copied to the array.
 
+```
+    sym (array (arr i32 10 11 12 13 14 15));
+```
+
 ## `tup val...`
 
 Constructs a tuple with the given values as elements.
+
+```
+    sym (tuple (tup 100.0 true));
+```
 
 ## `make ty<type> pair...`
 
@@ -254,6 +305,10 @@ Constructs a value of data type `ty` and assigns its elements depending on the p
 `ty` must be a data type. Each pair must be a `raw` of two elements - an element name and value.
 
 For each pair, the element in the data type under that name will be assigned with the given value.
+
+```
+    make Person (name 'Alice') (age 32);
+```
 
 ## `lam body =function`
 
@@ -269,6 +324,14 @@ If `retTy` is given, it will be used to define the return type of the function. 
 
 `body` will be used as the body of the function.
 
+```
+    lam { std.println; };
+
+    lam i32 { ret (* 2 (std.scanI32)); };
+
+    lam (x:i32) i32 { ret (* x x); };
+```
+
 ## `pat body =macro`
 
 ## `pat args body =macro`
@@ -278,6 +341,12 @@ Defines and returns a macro.
 If `args` is given, it will be used to define the arguments of the macro. Otherwise, the macro will take no arguments.
 
 `body` will be used as the body of the macro.
+
+```
+    pat { ret \(block {}); };
+
+    pat (a) { ret \(sym ,a:i32); };
+```
 
 ## `enum name<id> vals`
 
@@ -293,9 +362,39 @@ If the value is not provided, and this is the first entry, its value will be zer
 
 Each symbol will be declared constant.
 
-## `base.enumSize ty<type> =unsigned`
+```
+enum CoinSide {
+    Head
+    Tails
+};
+
+fnc flipCoin () CoinSide {
+    if (< (myRandGen) 0.5) {
+        ret CoinSide.Head;
+    };
+    ret CoinSide.Tails;
+};
+
+enum HttpStatus u32 {
+    (Ok 200)
+    Created
+    Accepted
+    (BadRequest 400)
+    Unauthorized
+    PaymentRequired
+    Forbidden
+    NotFound
+    (InternalError 500)
+};
+```
+
+## `base.getEnumSize ty<type> =unsigned`
 
 Returns the number of enum entries (initially created symbols of the `ty`, created by `enum`).
+
+```
+    base.getEnumSize CoinSide; # 2
+```
 
 ---
 
@@ -303,13 +402,28 @@ Returns the number of enum entries (initially created symbols of the `ty`, creat
 
 Generates and returns an `id`. Returns a different value on each call.
 
+```
+    eval (sym (s:id (genId)));
+```
+
 ## `cond<bool> onTrue onFalse`
 
 Conditionally processes either the `onTrue` or `onFalse` node depending on the value of `cond`.
 
+```
+    cond verbose
+        (std.println "index=" ind " value=" ([] array ind))
+        (std.println ([] array ind));
+```
+
 ## `cond<bool> onTrue`
 
 Only processes the `onTrue` node if `cond` is `true`.
+
+```
+    cond enableDebugAsserts
+        (if (< ind 0) { exit 1; });
+```
 
 ## `passthrough node`
 

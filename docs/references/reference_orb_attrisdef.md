@@ -11,5 +11,5 @@ Used to check whether a node has an attribute with the given name.
 Returns whether using `attrOf` on `val` with `name` would result in a value (and not raise an error).
 
 ```
-    attr?? x global;
+    attr?? x mark;
 ```
