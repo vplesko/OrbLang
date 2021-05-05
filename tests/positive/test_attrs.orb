@@ -85,8 +85,8 @@ fnc main () () {
     println_i32 (foo 0::((foo 23)));
 
     attrOf ()::((a \badId)) a;
-    = p 24;
-    println_i32 (attrOf \()::((a ,p)) a);
+    eval (sym (e 24));
+    println_i32 (attrOf \()::((a ,e)) a);
 
     block {
         println_i32 (+ 24 (cast i32 (attrOf Foo attr0)));

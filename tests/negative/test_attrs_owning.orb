@@ -1,8 +1,0 @@
-data Foo {
-    x:i32
-} (fnc dropFoo (val:Foo::noDrop) () {});
-
-fnc main () () {
-    sym f:Foo;
-    sym (x 0::((abcd f)));
-};

@@ -1,3 +1,4 @@
 fnc main () () {
-    attr?? \()::((type 0)) foo;
+    sym (x 0);
+    sym (y x::((type 0)));
 };

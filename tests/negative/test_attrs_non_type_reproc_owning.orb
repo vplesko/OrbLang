@@ -1,0 +1,12 @@
+data Foo {
+    x:i32
+} (eval (fnc dropFoo (val:Foo::noDrop) () {}));
+
+mac bar () {
+    ret \(eval ([] f::((abcd f)) x));
+};
+
+fnc main () () {
+    eval (sym f:Foo);
+    bar;
+};
