@@ -12,9 +12,17 @@ Prints each of provided values to the standard output.
 
 Each value must be a numeric, a char, or a string.
 
+```
+    std.print x ' ' y;
+```
+
 ## `std.println val...`
 
 Does the same as `std.print` and then outputs an additional newline character.
+
+```
+    std.println "Value of x is " x;
+```
 
 ## `std.scanI8 =i8`
 
@@ -37,3 +45,7 @@ Does the same as `std.print` and then outputs an additional newline character.
 ## `std.scanF64 =f64`
 
 Reads a value of the corresponding type from the standard input and returns it.
+
+```
+    sym (x (std.scanI32));
+```
