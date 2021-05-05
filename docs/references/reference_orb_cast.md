@@ -4,10 +4,10 @@ title: Cast
 ---
 # {{ page.title }}
 
-## `cast ty<type> oper`
+## `cast ty<type> oper =ty`
 
 Returns the value of `oper` cast into `ty`.
 
-`ty` must not be an undefined type (eg. a data type that was only declared).
+`ty` must not be an undefined type.
 
 If the type of `oper` is `ty`, `oper` is returned, preserving its non-value node properties.

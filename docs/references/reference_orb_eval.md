@@ -4,8 +4,8 @@ title: Eval
 ---
 # {{ page.title }}
 
-Used to have a node be processed by evaluation.
+Used to have a node be processed through evaluation.
 
-## `eval oper`
+## `eval node`
 
-Redirects the processing of `oper` to be done by evaluation.
+Redirects the processing of `node` to be done through evaluation.

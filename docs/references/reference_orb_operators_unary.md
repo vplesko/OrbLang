@@ -6,23 +6,19 @@ title: Operators - unary
 
 Used to perform calculations and/or modify an operand.
 
-## `+ oper`
+## `+ oper<numeric>`
 
 Returns a value equal to the value of `oper`.
 
-`oper` must of a type based on one of the numeric types.
-
-## `- oper`
+## `- oper<integer or float>`
 
 Returns the negated value of `oper`.
 
-`oper` must of a type based on one of signed integer of floating-point types.
-
-## `~ oper`
+## `~ oper<integer>`
 
 Returns the value of `oper` with all its bits complemented.
 
-`oper` must of a type based on one of integer types.
+`oper` must of an integer type.
 
 ## `! oper<bool>`
 
@@ -50,7 +46,7 @@ Returns a pointer to `oper`.
 
 Resets `oper` to its zero state and returns its previous value as a non-ref value. This is known as moving a value.
 
-`oper` must be a value with a type. It must not be marked as `noDrop`. It must not be, nor be fetched from, an invocation argument.
+`oper` must be a typed value. It must not be marked as `noDrop`. It must not be, nor be fetched from, an invocation argument.
 
 If `oper` is a non-ref value, it is simply returned.
 

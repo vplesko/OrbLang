@@ -122,7 +122,7 @@ protected:
     std::optional<bool> getAttributeForBool(const NodeVal &node, NamePool::Id attrName, bool default_ = false);
     // nullopt on error, otherwise attribute value, or default value if not present
     std::optional<bool> getAttributeForBool(const NodeVal &node, const std::string &attrStrName, bool default_ = false);
-    // like getAttribute, but can lookup type specific attributes if node is a type
+    // like getAttribute, but can lookup type-specific attributes if node is a type
     std::optional<NodeVal> getAttributeFull(const NodeVal &node, NamePool::Id attrName);
 private:
     NodeVal promoteBool(CodeLoc codeLoc, bool b) const;

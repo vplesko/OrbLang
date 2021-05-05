@@ -32,13 +32,13 @@ Escapes `node`.
 
 Returns whether `val` is a `raw`.
 
-`val` must be a value with a type.
+`val` must be a typed value.
 
 ## `base.assertIsOfType val ty<type>`
 
 Raises an error if `val` is not of type `ty` or `ty cn`.
 
-`val` must be a value with a type.
+`val` must be a typed value.
 
 ## `unref val`
 

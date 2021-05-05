@@ -4,18 +4,18 @@ title: IsEval
 ---
 # {{ page.title }}
 
-Used to check whether a value is evaluated or if current processing is done by evaluation.
+Used to check whether a value is evaluated or if current processing is done through evaluation.
 
-## `isEval val`
+## `isEval val =bool`
 
 Returns a `bool` of whether `val` is an evaluated value.
 
-`val` must be a value with a type.
+`val` must be a typed value.
 
 The result is an evaluated value.
 
-## `isEval`
+## `isEval =bool`
 
-Returns a `bool` of whether this instruction was processed by evaluation.
+Returns whether this instruction was processed through evaluation.
 
 The result is an evaluated value.

@@ -13,7 +13,9 @@ data Person {
 };
 ```
 
-Data types can also be declared, without specifying their elements.
+Data types can also be declared, without specifying their elements. These data types are considered undefined types.
+
+> Furthermore, any type which contains an element of an undefined type is also an undefined type. Pointers and array pointers to undefined types are considered defined types.
 
 ```
 data MyNode;

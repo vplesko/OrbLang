@@ -6,11 +6,11 @@ title: Explicit
 
 Used to define explicit types.
 
-## `explicit name<id> ty<type>`
+## `explicit name<id> ty<type> =type`
 
-Creates a new explicit type under the given name. This type is defined for the remainder of the program.
+Creates a new explicit type under the given name and returns the created type.
 
-There must not be a function, macro, or symbol with the same in the global scope. There must not be a special form or a type with the same name, and it must not be one of `cn`, `*`, or `[]`.
+There must not be a function, macro, special form, type, or global symbol with the same. The name must not be one of `cn`, `*`, or `[]`.
 
 `::global` must be placed on `explicit` if this instruction is not executed in the global scope.
 

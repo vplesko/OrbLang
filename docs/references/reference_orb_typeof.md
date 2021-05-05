@@ -6,8 +6,6 @@ title: TypeOf
 
 Used to get the type of a value.
 
-## `typeOf oper`
+## `typeOf oper =type`
 
 Fetches the type of `oper`.
-
-`oper` must be a value with a type.
