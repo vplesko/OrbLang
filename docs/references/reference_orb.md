@@ -10,6 +10,6 @@ Argument details are sometimes placed inside angle braces `<>`. These may refer 
 
 Appending `...` to an argument name denotes that there may be one or more values given. Placing an argument in square braces `[]` denotes an optional argument.
 
-Sometimes, the return type or value will be given at the end with `=` prepended. If it is not specified, there may still be a return type and it will be explained in the text.
+If there is a guarantee on the return type, it will be given at the end with `=` prepended. If it is not specified, there may still be a return type explained in the text.
 
 Code examples may be given for better illustration.

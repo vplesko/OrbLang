@@ -25,6 +25,6 @@ There must not be a function, macro, special form, type, or symbol in the same s
 
 `ty` must not be an undefined type.
 
-`::evaluated` on `name` will result in an evaluted symbol being registered.
+`::evaluated` on `name` will result in an evaluated symbol being registered.
 
 `::noZero` on `name` in 1. and 2. allows the compiler to omit zero-initialization of the symbol.

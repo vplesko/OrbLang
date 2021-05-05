@@ -8,7 +8,7 @@ Used to fetch the value of an attribute with the given name of a node.
 
 ## `attrOf val name<id>`
 
-Returns the attribute named `name` from `val`. If `val` is a `type`, may perform lookup on its type-specific attributes.
+Returns the attribute named `name` from `val`. If `val` is a `type`, may perform a lookup on its type-specific attributes.
 
 If name is `type`, the lookup refers to the type attribute of the node. Otherwise, the lookup is performed on the node's non-type attributes.
 
@@ -33,7 +33,7 @@ fnc main () () {
 
 > Each non-type attribute has a name and a value. The name must not be the identifier `type`. Node attributes may not share names. If the value is not specified, it is implicitly `true`.
 
-> Atrtibute values must be evaluated, and of a non-owning type.
+> Attribute values must be evaluated, and of a non-owning type.
 
 > Node attributes are preserved in invocation arguments, `raw` elements, and evaluated ref values.
 

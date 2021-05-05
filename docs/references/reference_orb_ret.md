@@ -4,7 +4,7 @@ title: Ret
 ---
 # {{ page.title }}
 
-Used to return from a function of macro, optionally with a value.
+Used to return from a function or macro, optionally with a value.
 
 ## `ret =()`
 

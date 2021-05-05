@@ -25,12 +25,14 @@
      link: /pages/control_flow_while.html
    - name: For
      link: /pages/control_flow_for.html
-   - name: Range
-     link: /pages/control_flow_range.html
    - name: Repeat
      link: /pages/control_flow_repeat.html
+   - name: Range
+     link: /pages/control_flow_range.html
    - name: Break and continue
      link: /pages/control_flow_break_and_continue.html
+   - name: Switch
+     link: /pages/control_flow_switch.html
 - name: Functions
   link: /pages/functions.html
 - name: Scopes
@@ -152,15 +154,6 @@
      link: /references/reference_orb_typeof.html
 - name: 'Reference: Base'
   link: /references/reference_base.html
-  subpages:
-    - name: Control flow
-      link: /references/reference_base_control_flow.html
-    - name: Operators
-      link: /references/reference_base_operators.html
-    - name: Constructors
-      link: /references/reference_base_constructors.html
-    - name: Misc
-      link: /references/reference_base_misc.html
 - name: 'Reference: Std'
   link: /references/reference_std.html
   subpages:

@@ -24,7 +24,7 @@ Performs arithmetic or bitwise operations on values.
 
 Performs iteratively from left to right. The first iteration performs its calculation on the leftmost operand and the one on the right-hand side of it and returns the result. Each following iteration performs its calculation on the value returned by the previous iteration and the next right-hand side operand, until all operands are used. Returns the value returned by the last iteration.
 
-On each iteration, attempts to implicitly casts the right-hand side operand to the type of the left-hand side operand. If that is not allowed, implicitly casts the left-hand side operand to the type of the right-hand side operand.
+On each iteration, attempts to implicitly cast the right-hand side operand to the type of the left-hand side operand. If that is not allowed, implicitly casts the left-hand side operand to the type of the right-hand side operand.
 
 If `op` is `/` and the right-hand side operand is an evaluated value, it must not be equal to zero. If the right-hand side operand is a compiled value equal to zero, the compiled program will have undefined behaviour.
 
@@ -52,7 +52,7 @@ Performs comparisons on values.
 
 Performs iteratively from left to right. Each iteration performs its comparison on the next pair of left and right-hand side operands, until all operands are used. If any comparison is not satisfied, stops the instructions and returns `false`. Otherwise, returns `true` after the last iteration.
 
-On each iteration, attempts to implicitly casts the right-hand side operand to the type of the left-hand side operand. If that is not allowed, implicitly casts the left-hand side operand to the type of the right-hand side operand. The implicit casting is preserved for use by the next iteration.
+On each iteration, attempts to implicitly cast the right-hand side operand to the type of the left-hand side operand. If that is not allowed, implicitly casts the left-hand side operand to the type of the right-hand side operand. The implicit casting is preserved for use by the next iteration.
 
 If `op` is `!=`, there must be exactly two operands (it is not variadic).
 
@@ -74,7 +74,7 @@ If the base is a data type, the index must be an evaluated integer or an `id`. I
 
 If the base is an array or an array pointer, the index must be an integer. If it is an evaluated value, its value must be a valid element index for that array. If it or the base is a compiled value and its value is not a valid element index for that array, the compiled program will have undefined behaviour.
 
-If the base is an array pointer and an evaluted value, it must not be null.
+If the base is an array pointer and an evaluated value, it must not be null.
 
 If the base is an array pointer and the index is not a valid element index for the array pointed to, the compiled program will have undefined behaviour.
 
@@ -84,6 +84,6 @@ If the base is a `raw` and the indexed element is not a `raw`, it will preserve 
 
 If the base is an array pointer, the element type must not be an undefined type. The result will be a ref value.
 
-If the base is an evaluated array pointer which is a string and the index is an evaluted value, the result will be a non-ref value.
+If the base is an evaluated array pointer which is a string and the index is an evaluated value, the result will be a non-ref value.
 
 > The base must not an owning non-ref value.
