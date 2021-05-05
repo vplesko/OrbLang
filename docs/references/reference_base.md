@@ -4,7 +4,9 @@ title: 'Reference: Base'
 ---
 # {{ page.title }}
 
-This section documents definitions found in **base.orb**.
+This section documents definitions found in **base.orb**. To use these definitions, you need to import this file.
+
+Due to how importing works, you may place `import "base.orb";` at the start of your main Orb source file and not need to import it from any other file.
 
 Declarations use the same syntax used in the reference for Orb special forms.
 
@@ -231,7 +233,9 @@ Makes `name` refer to `ty`.
     alias myArray (i32 4);
 ```
 
-`String` is an already defined alias for the type of string literals.
+## `String`
+
+Alias for the type of string literals.
 
 ## `arr ty<type> val...`
 

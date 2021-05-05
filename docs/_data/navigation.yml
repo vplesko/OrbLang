@@ -157,14 +157,14 @@
 - name: 'Reference: Std'
   link: /references/reference_std.html
   subpages:
-    - name: Common
-      link: /references/reference_std_common.html
     - name: IO
       link: /references/reference_std_io.html
     - name: One
       link: /references/reference_std_one.html
     - name: List
       link: /references/reference_std_list.html
+    - name: Common
+      link: /references/reference_std_common.html
 - name: Quick examples
   link: /examples/quick_examples.html
   subpages:

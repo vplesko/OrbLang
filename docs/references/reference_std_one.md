@@ -6,38 +6,46 @@ title: One
 
 This section documents definitions found in **std/One.orb**.
 
-`std.One` is a class of smart pointer types, which automatically manage memory for an object stored on heap, without the need to manually deallocate it.
+`std.One` is a class of smart pointer types, which automatically manage memory for an object stored on the heap, without the need to manually deallocate it.
 
 These types must only be used by compiled symbols.
 
-## `std.getValTy one`
+## `std.One valTy<type> =type`
 
-Gets the type pointed to by `one`.
+Defines a `std.One` type pointing to `valTy`, if one wasn't previously defined.
 
-## `std.One valTy<type>`
+Returns that type.
 
-Defines and returns a `std.One` type which points to `valTy`. If the same type was already defined, returns it only.
+## `std.makeOne valTy<type> =std.One`
 
-## `std.makeOne valTy<type>`
+Defines a `std.One` type pointing to `valTy`, if one wasn't previously defined.
 
-Defines a `std.One` type pointing to `valTy`, then returns a `std.One` value pointing to a zero-initialized `valTy` stored on heap.
+Returns a `std.One` pointing to a zero-initialized `valTy` stored on the heap.
 
-## `std.makeOneWith val`
+## `std.makeOneWith val =std.One`
 
-Defines a `std.One` type pointing to the type of `val`, then returns a `std.One` value pointing to a copy of `val`.
+Defines a `std.One` type pointing to the type of `val`, if one wasn't previously defined.
 
-## `std.* one`
+Returns a `std.One` pointing to a copy of `val` stored on the heap.
+
+## `std.* one<std.One>`
 
 Returns the value `one` points to as a ref value.
 
-## `std.-> one ind`
+## `std.-> one<std.One> ind`
 
 Indexes the value `one` points to with index `ind` and returns that element as a ref value.
 
-## `std.isNull one`
+## `std.getValTy one<std.One> =type`
 
-Returns whether `one` does not point to a value.
+Gets the type pointed to by `one`.
 
-## `std.getPtr one`
+## `std.isNull one<std.One> =bool`
 
-Returns the underlying pointer `one` uses to point to its value as a non-ref value. If `one` does not point to a value, the returned pointer will be null.
+Returns whether `one` does not currently point to a value on the heap.
+
+## `std.getPtr one<std.One> =pointer`
+
+Returns the underlying pointer `one` uses to point to its value as a non-ref value.
+
+If `one` does not point to a value, the returned pointer will be null.
