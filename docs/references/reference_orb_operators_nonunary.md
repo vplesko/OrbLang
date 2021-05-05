@@ -90,7 +90,7 @@ If `op` is `<`, `<=`, `>`, or `>=`, the operands must be of one of numeric or ch
 
 ## `[] base ind<integer>...`
 
-Gets an element descendant of `base`.
+Gets an element of `base` or an element nested within it.
 
 Performs iteratively from left to right. The first iteration gets the element of `base` and the leftmost index and returns the result as a ref value. Each following iteration gets the element of the value returned by the previous iteration and the next index, until all indexes are used. Returns the value returned by the last iteration.
 

@@ -4,7 +4,7 @@ title: Ref values
 ---
 # {{ page.title }}
 
-In Orb, there is a distinction between ref and non-ref values. Loading a symbol or an element of a symbol yields a ref value. Ref values can be reassigned with new values.
+In Orb, there is a distinction between ref and non-ref values. Loading a symbol or an element of a ref value yields a ref value. Ref values can be reassigned with new values.
 
 ```
 fnc main () () {

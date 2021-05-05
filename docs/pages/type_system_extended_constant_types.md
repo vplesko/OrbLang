@@ -4,7 +4,7 @@ title: Constant types
 ---
 # {{ page.title }}
 
-A type can be expressed as constant by using the `cn` identifier. For example, `(i32 cn)` expresses a constant `i32`. Ref values of this type cannot be reassigned new values.
+A type can be expressed as constant by using the `cn` identifier. For example, `(i32 cn)` is a constant `i32`. Ref values of this type cannot be reassigned new values.
 
 Symbols of a constant type must be explicitly initialized (default zero-initialization is not allowed).
 

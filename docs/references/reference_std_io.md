@@ -12,6 +12,8 @@ Prints each of provided values to the standard output.
 
 Each value must be a numeric, a char, or a string.
 
+If a null string is provided, the result is undefined behaviour.
+
 ```
     std.print x ' ' y;
 ```

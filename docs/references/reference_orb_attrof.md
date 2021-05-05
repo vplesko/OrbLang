@@ -4,7 +4,7 @@ title: AttrOf
 ---
 # {{ page.title }}
 
-Used to fetch the value of an attribute with the given name of a node.
+Used to fetch an attribute of a node with the given name.
 
 ## `attrOf val name<id>`
 

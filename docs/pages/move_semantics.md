@@ -9,9 +9,10 @@ Any value that has a drop function, or any of its descended elements has a drop 
 Owning values may not be copied. The intent is to not allow multuple values to own the same resource.
 
 ```
+fnc makeCtrl (str:String) Control;
+
 fnc main () () {
-    sym (ctrl0 "resource 0")
-        (ctrl1 "resource 1");
+    sym (ctrl0 (makeCtrl "resource")) ctrl1:Control;
 
     = ctrl1 ctrl0; # error!
 };
@@ -38,9 +39,9 @@ Moving will reset the value to its zero state, while returning the owning value 
 
 ```
 fnc main () () {
-    sym (ctrl0:Control (makeCtrl "some resource"));
+    sym (ctrl0 (makeCtrl "resource")) ctrl1:Control;
 
-    sym (ctrl1 (>> ctrl0));
+    = ctrl1 (>> ctrl0);
     # ctrl1 now owns the resource, ctrl0 is in its zero state
 };
 ```

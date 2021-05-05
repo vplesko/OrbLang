@@ -22,4 +22,4 @@ fnc main () () {
 };
 ```
 
-Array pointers will usually point to a memory allocated on the heap. Check out the standard library references for more useful ways to deal with heap memory.
+Array pointers will usually point to memory allocated on the heap. Check out the standard library references for more convenient ways to deal with heap memory.

@@ -4,7 +4,7 @@ title: Arrays
 ---
 # {{ page.title }}
 
-Arrays contain one or more values of the same type. For example, `(i32 4)` expresses a type which is an array of four `i32` elements.
+Arrays contain one or more values of the same type. For example, `(i32 4)` is an array of four `i32` elements.
 
 Array elements are fetched using the `[]` special form, providing the element's index. Orb uses zero-based indexing.
 
@@ -18,7 +18,7 @@ fnc sumElems (a:(i32 4)) i32 {
 };
 ```
 
-Arrays can contain other arrays. `((i32 4) 4)` represents an array of four arrays of four elements of type `i32`. There is a total of sixteen `i32` values in this type. This type can be more simply expressed with `(i32 4 4)`.
+Arrays can contain other arrays. `((i32 4) 4)` is an array of four arrays of four elements of type `i32`. There is a total of sixteen `i32` values in this type. This type can be more simply expressed with `(i32 4 4)`.
 
 `[]` is variadic - it can handle more than a single index.
 

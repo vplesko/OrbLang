@@ -12,4 +12,12 @@ title: Repeat
     };
 ```
 
-Not specifying a number causes the block to be repeatedly executed indefinitely.
+If the number is not given, the block will keep executing.
+
+```
+    repeat {
+        handleInput;
+        update;
+        render;
+    };
+```
