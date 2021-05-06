@@ -223,10 +223,9 @@ public:
     Id addCallableSig(const Callable &call);
     Id addCallableSig(Id t);
 
-    llvm::Type* getType(Id id);
-    void setType(Id id, llvm::Type *type);
+    llvm::Type* getLlvmType(Id id);
+    void setLlvmType(Id id, llvm::Type *type);
 
-    llvm::Type* getPrimType(PrimIds id) const;
     Id getPrimTypeId(PrimIds id) const;
     const Tuple& getTuple(Id id) const;
     const TypeDescr& getTypeDescr(Id id) const;

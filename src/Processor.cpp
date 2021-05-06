@@ -2640,7 +2640,6 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
     return rhs;
 }
 
-// TODO! check when index on wrong type
 NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
     NodeVal lhs = processNode(*opers[0]);
     if (lhs.isInvalid()) return NodeVal();
@@ -2726,9 +2725,12 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
             lhs = getTupleElement(lhs.getCodeLoc(), lhs, (size_t) indexVal.value());
         } else if (isBaseData) {
             lhs = getDataElement(lhs.getCodeLoc(), lhs, (size_t) indexVal.value());
-        } else {
+        } else if (isBaseArr || isBaseArrP) {
             lhs = getArrElement(lhs.getCodeLoc(), lhs, index);
             if (lhs.isInvalid()) return NodeVal();
+        } else {
+            msgs->errorExprIndexOnBadType(lhs.getCodeLoc(), lhs.getType().value());
+            return NodeVal();
         }
     }
 

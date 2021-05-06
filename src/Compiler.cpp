@@ -290,7 +290,7 @@ bool Compiler::performPass(CodeLoc codeLoc, SymbolTable::Block block, NodeVal va
 
 bool Compiler::performDataDefinition(CodeLoc codeLoc, TypeTable::Id ty) {
     // replace a previous compiled declaration with a definition
-    if (typeTable->getType(ty) != nullptr) {
+    if (typeTable->getLlvmType(ty) != nullptr) {
         return makeLlvmTypeOrError(codeLoc, ty) != nullptr;
     }
 
@@ -1001,7 +1001,7 @@ llvm::FunctionType* Compiler::makeLlvmFunctionType(TypeTable::Id typeId) {
 }
 
 llvm::Type* Compiler::makeLlvmType(TypeTable::Id typeId) {
-    llvm::Type *llvmType = typeTable->getType(typeId);
+    llvm::Type *llvmType = typeTable->getLlvmType(typeId);
     if (llvmType != nullptr) {
         if (typeTable->isDataType(typeId)) {
             bool definitionCompiled = !((llvm::StructType*) llvmType)->isOpaque();
@@ -1051,7 +1051,7 @@ llvm::Type* Compiler::makeLlvmType(TypeTable::Id typeId) {
         // pre-declare
         if (llvmType == nullptr) {
             llvmType = llvm::StructType::create(llvmContext, namePool->get(data.name));
-            typeTable->setType(typeId, llvmType);
+            typeTable->setLlvmType(typeId, llvmType);
         }
 
         if (data.defined) {
@@ -1076,7 +1076,7 @@ llvm::Type* Compiler::makeLlvmType(TypeTable::Id typeId) {
 
     // supported primitive type are compiled at the start of compilation
     // in case of id or type, nullptr is returned
-    typeTable->setType(typeId, llvmType);
+    typeTable->setLlvmType(typeId, llvmType);
     return llvmType;
 }
 

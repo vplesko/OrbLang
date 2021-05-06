@@ -361,8 +361,7 @@ void TypeTable::addTypeStr() {
     strType = addTypeDescr(move(typeDescr));
 }
 
-// TODO! rename to getLlvmType
-llvm::Type* TypeTable::getType(Id id) {
+llvm::Type* TypeTable::getLlvmType(Id id) {
     switch (id.kind) {
     case Id::kPrim: return primTypes[id.index];
     case Id::kTuple: return tuples[id.index].second;
@@ -374,8 +373,7 @@ llvm::Type* TypeTable::getType(Id id) {
     }
 }
 
-// TODO! rename to setLlvmType
-void TypeTable::setType(Id id, llvm::Type *type) {
+void TypeTable::setLlvmType(Id id, llvm::Type *type) {
     switch (id.kind) {
     case Id::kPrim: primTypes[id.index] = type; break;
     case Id::kTuple: tuples[id.index].second = type; break;
@@ -384,10 +382,6 @@ void TypeTable::setType(Id id, llvm::Type *type) {
     case Id::kData: dataTypes[id.index].second = type; break;
     case Id::kCallable: callables[id.index].second = type; break;
     }
-}
-
-llvm::Type* TypeTable::getPrimType(PrimIds id) const {
-    return primTypes[id];
 }
 
 TypeTable::Id TypeTable::getPrimTypeId(PrimIds id) const {

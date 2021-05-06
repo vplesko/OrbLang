@@ -914,7 +914,7 @@ void CompilationMessages::errorExprAsgnOnCn(CodeLoc loc) {
 }
 
 void CompilationMessages::errorExprIndexInvalidBase(CodeLoc loc) {
-    error(loc, "Invalid expression on left side of '[]' operator.");
+    error(loc, "Invalid base when using '[]' operator.");
 }
 
 void CompilationMessages::errorExprMoveNoDrop(CodeLoc loc) {
