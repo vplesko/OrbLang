@@ -333,7 +333,7 @@ mac arr (ty::preprocess a::preprocess rest::(variadic preprocess)) {
     # genId not needed since only visible in inner code, and elements are preprocessed
     sym (innerCode \{ (sym res:,arrTy) });
     range i (lenOf elems) {
-        = innerCode (+ innerCode \{ (= ([] res ,i) ,([] elems i)) });
+        = innerCode (+ innerCode \{ (= ([] res ,i)::noDrop ,([] elems i)) });
     };
     = innerCode (+ innerCode \{ (pass res) });
 
@@ -357,7 +357,7 @@ mac tup (a::preprocess b::preprocess rest::(variadic preprocess)) {
     # genId not needed since only visible in inner code, and elements are preprocessed
     sym (innerCode \{ (sym res:,tupTy) });
     range i (lenOf elems) {
-        = innerCode (+ innerCode \{ (= ([] res ,i) ,([] elems i)) });
+        = innerCode (+ innerCode \{ (= ([] res ,i)::noDrop ,([] elems i)) });
     };
     = innerCode (+ innerCode \{ (pass res) });
 
@@ -377,7 +377,7 @@ mac make (ty::preprocess pair rest::variadic) {
             message::error ([] pairs i)::loc "Each entry must contain exactly two values - element name and initial value.";
         };
 
-        = innerCode (+ innerCode \{ (= ([] ,inst ,([] pairs i 0)) ,([] pairs i 1)) });
+        = innerCode (+ innerCode \{ (= ([] ,inst ,([] pairs i 0))::noDrop ,([] pairs i 1)) });
     };
     = innerCode (+ innerCode \{ (pass ,inst) });
 

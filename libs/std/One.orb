@@ -52,7 +52,7 @@ mac std.makeOneWith (val::preprocess) {
     ret \(block ,oneTy {
         sym x:,oneTy;
         = ([] x -p) (cast ,(valTy *) (malloc ,(sizeOf valTy)));
-        = (* ([] x -p)) ,val;
+        = (* ([] x -p))::noDrop ,val;
         pass x;
     });
 };

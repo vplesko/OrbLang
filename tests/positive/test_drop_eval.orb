@@ -200,7 +200,9 @@ fnc main () () {
     eval (block {
         sym f0:Foo f1:Foo;
         = ([] f0 x) 1500;
-        = f1 (>> f0);
+        = f1::noDrop (>> f0);
+        = f1 (foo7 1501);
+        = f1 (>> f1);
     });
 
     eval (block {
@@ -278,10 +280,14 @@ fnc main () () {
         foo16 (block Foo { pass (foo7 3003); }) (block Foo { exit b0 true; pass (foo7 -1); });
     });
     eval (block b0 () {
-        attrOf (foo7 3004) (block id { exit b0 true; pass \x; });
+        sym f:Foo;
+        = (* (block (Foo *) { exit b0 true; pass (& f); })) (foo7 3004);
     });
     eval (block b0 () {
-        attr?? (foo7 3005) (block id { exit b0 true; pass \x; });
+        attrOf (foo7 3005) (block id { exit b0 true; pass \x; });
+    });
+    eval (block b0 () {
+        attr?? (foo7 3006) (block id { exit b0 true; pass \x; });
     });
 
     eval (block {

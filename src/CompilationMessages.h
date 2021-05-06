@@ -191,6 +191,7 @@ public:
     void errorOwning(CodeLoc loc);
     void errorDropFuncBadSig(CodeLoc loc);
     void errorTransferNoDrop(CodeLoc loc);
+    void errorTransferInvokeArgs(CodeLoc loc);
     void errorNonTypeAttributeType(CodeLoc loc);
     void errorAttributeNotFound(CodeLoc loc, NamePool::Id name);
     void errorAttributesSameName(CodeLoc loc, NamePool::Id name);

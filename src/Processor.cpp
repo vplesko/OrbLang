@@ -278,7 +278,7 @@ NodeVal Processor::processSym(const NodeVal &node) {
             if (init.isInvalid()) return NodeVal();
             if (!checkHasType(init, true)) return NodeVal();
 
-            if (!checkTransferValueOk(init.getCodeLoc(), init, false, true)) return NodeVal();
+            if (!checkTransferValueOk(init.getCodeLoc(), init, false, false, true)) return NodeVal();
 
             varType = init.getType().value();
 
@@ -561,7 +561,7 @@ NodeVal Processor::processPass(const NodeVal &node) {
     NodeVal casted = implicitCast(moved, targetBlock.type.value());
     if (casted.isInvalid()) return NodeVal();
 
-    if (!checkTransferValueOk(casted.getCodeLoc(), casted, false, true)) return NodeVal();
+    if (!checkTransferValueOk(casted.getCodeLoc(), casted, false, false, true)) return NodeVal();
 
     if (!performPass(node.getCodeLoc(), targetBlock, move(casted))) return NodeVal();
     return NodeVal(node.getCodeLoc());
@@ -672,7 +672,7 @@ NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
             }
             if (!checkIsNotUndefType(elem.second.value().getCodeLoc(), elemType, true)) return NodeVal();
 
-            optional<bool> attrNoZero = getAttributeForBool(nodeElem, "noZero");
+            optional<bool> attrNoZero = getAttributeForBool(elem.first, "noZero");
             if (!attrNoZero.has_value()) return NodeVal();
 
             TypeTable::DataType::ElemEntry elemEntry;
@@ -1269,7 +1269,7 @@ NodeVal Processor::processRet(const NodeVal &node) {
             NodeVal casted = implicitCast(moved, optCallee.value().retType.value());
             if (casted.isInvalid()) return NodeVal();
 
-            if (!checkTransferValueOk(casted.getCodeLoc(), casted, false, true)) return NodeVal();
+            if (!checkTransferValueOk(casted.getCodeLoc(), casted, false, false, true)) return NodeVal();
 
             if (!performRet(node.getCodeLoc(), move(casted))) return NodeVal();
         } else {
@@ -1808,7 +1808,8 @@ NodeVal Processor::castNode(CodeLoc codeLoc, const NodeVal &node, CodeLoc codeLo
         return ret;
     }
 
-    if (!skipCheckNeedsDrop && !checkTransferValueOk(node.getCodeLoc(), node, node.isNoDrop(), true)) return NodeVal();
+    // cast result is noDrop iff node is noDrop
+    if (!skipCheckNeedsDrop && !checkTransferValueOk(node.getCodeLoc(), node, node.isNoDrop(), false, true)) return NodeVal();
 
     if (checkIsEvalTime(node, false) && !shouldNotDispatchCastToEval(node, ty)) {
         return evaluator->performCast(codeLoc, node, codeLocTy, ty);
@@ -1891,7 +1892,7 @@ bool Processor::implicitCastArgsAndVerifyCallOk(CodeLoc codeLoc, vector<NodeVal>
         args[i] = implicitCast(args[i], callable.getArgType(i), true);
         if (args[i].isInvalid()) return false;
 
-        if (!checkTransferValueOk(args[i].getCodeLoc(), args[i], callable.getArgNoDrop(i), true)) return false;
+        if (!checkTransferValueOk(args[i].getCodeLoc(), args[i], callable.getArgNoDrop(i), false, true)) return false;
     }
 
     return true;
@@ -2184,10 +2185,10 @@ bool Processor::checkNotNeedsDrop(CodeLoc codeLoc, const NodeVal &val, bool orEr
     return true;
 }
 
-BlockTmpValRaii Processor::createTmpValRaii(NodeVal &val) {
+BlockTmpValRaii Processor::createTmpValRaii(NodeVal val) {
     if (checkNotNeedsDrop(val.getCodeLoc(), val, false) || val.hasRef() || val.isInvokeArg()) return BlockTmpValRaii();
 
-    return BlockTmpValRaii(symbolTable, val);
+    return BlockTmpValRaii(symbolTable, move(val));
 }
 
 bool Processor::callDropFunc(CodeLoc codeLoc, NodeVal val) {
@@ -2604,22 +2605,16 @@ NodeVal Processor::processOperComparison(CodeLoc codeLoc, const std::vector<cons
 }
 
 NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
-    vector<NodeVal> procOpers;
-    procOpers.reserve(opers.size());
-    for (const NodeVal *oper : opers) {
-        NodeVal procOper = processAndCheckHasType(*oper);
-        if (procOper.isInvalid()) return NodeVal();
+    NodeVal rhs = processAndCheckHasType(*opers.back());
+    if (rhs.isInvalid()) return NodeVal();
 
-        procOpers.push_back(move(procOper));
-    }
+    BlockTmpValRaii rightmostRaii = createTmpValRaii(rhs);
 
-    NodeVal rhs = move(procOpers.back());
-    procOpers.pop_back();
+    for (size_t ind = 0; ind+1 < opers.size(); ++ind) {
+        size_t i = opers.size()-2-ind;
 
-    while (!procOpers.empty()) {
-        NodeVal lhs = move(procOpers.back());
-        procOpers.pop_back();
-
+        NodeVal lhs = processAndCheckHasType(*opers[i]);
+        if (lhs.isInvalid()) return NodeVal();
         if (!lhs.hasRef()) {
             msgs->errorExprAsgnNonRef(lhs.getCodeLoc());
             return NodeVal();
@@ -2629,12 +2624,22 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
             return NodeVal();
         }
 
+        optional<bool> attrNoDrop = getAttributeForBool(lhs, "noDrop");
+        if (!attrNoDrop.has_value()) return NodeVal();
+
         if (!implicitCastOperands(lhs, rhs, true)) return NodeVal();
 
-        if (!checkTransferValueOk(codeLoc, rhs, lhs.isNoDrop(), true)) return NodeVal();
+        if (!checkTransferValueOk(codeLoc, rhs, lhs.isNoDrop(), lhs.isInvokeArg(), true)) return NodeVal();
+
+        if (!attrNoDrop.value() && !callDropFunc(lhs.getCodeLoc(), lhs)) return NodeVal();
 
         rhs = dispatchAssignment(codeLoc, lhs, move(rhs));
         if (rhs.isInvalid()) return NodeVal();
+
+        // this is only needed on first iteration
+        // rightmost's value is placed in the next arg
+        // that arg is ref, so will be dropped elsewhere
+        BlockTmpValRaii::release(rightmostRaii);
     }
 
     return rhs;
@@ -3025,13 +3030,21 @@ bool Processor::checkIsNotUndefType(CodeLoc codeLoc, TypeTable::Id ty, bool orEr
     return true;
 }
 
-bool Processor::checkTransferValueOk(CodeLoc codeLoc, const NodeVal &src, bool dstNoDrop, bool orError) {
+bool Processor::checkTransferValueOk(CodeLoc codeLoc, const NodeVal &src, bool dstNoDrop, bool dstInvokeArg, bool orError) {
+    // if non-owning, no checks necessary
     if (!hasTrivialDrop(src.getType().value()) && !dstNoDrop) {
-        if (src.hasRef() || src.isInvokeArg()) {
+        // cannot copy from ref owning
+        // cannot copy from noDrop (non-owning) to owning
+        // cannot copy from invoke args to protect from misuse
+        // cannot copy to invoke arg, cuz reassign needs drop, which is skipped on invoke args
+        if (src.hasRef()) {
             if (orError) msgs->errorBadTransfer(codeLoc);
             return false;
         } else if (src.isNoDrop()) {
             if (orError) msgs->errorTransferNoDrop(codeLoc);
+            return false;
+        } else if (src.isInvokeArg() || dstInvokeArg) {
+            msgs->errorTransferInvokeArgs(codeLoc);
             return false;
         }
     }

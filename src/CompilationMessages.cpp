@@ -972,6 +972,10 @@ void CompilationMessages::errorTransferNoDrop(CodeLoc loc) {
     error(loc, "Attempted to transfer a value marked as 'noDrop'.");
 }
 
+void CompilationMessages::errorTransferInvokeArgs(CodeLoc loc) {
+    error(loc, "Attempted to transfer involving an invocation argument.");
+}
+
 void CompilationMessages::errorNonTypeAttributeType(CodeLoc loc) {
     error(loc, "Non-type attributes cannot be named 'type'.");
 }

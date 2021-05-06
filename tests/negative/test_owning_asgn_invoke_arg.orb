@@ -1,0 +1,15 @@
+data Foo {
+    x:i32
+} (eval (fnc dropFoo (val:Foo::noDrop) () {}));
+
+mac bar (f::preprocess) {
+    sym f1:Foo;
+    = f (>> f1);
+
+    ret ();
+};
+
+fnc main () () {
+    eval (sym f:Foo);
+    bar f;
+};

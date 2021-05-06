@@ -80,7 +80,7 @@ protected:
     bool checkIsType(const NodeVal &node, bool orError);
     bool checkIsBool(const NodeVal &node, bool orError);
     bool checkIsNotUndefType(CodeLoc codeLoc, TypeTable::Id ty, bool orError);
-    bool checkTransferValueOk(CodeLoc codeLoc, const NodeVal &src, bool dstNoDrop, bool orError);
+    bool checkTransferValueOk(CodeLoc codeLoc, const NodeVal &src, bool dstNoDrop, bool dstInvokeArg, bool orError);
     bool checkNotNeedsDrop(CodeLoc codeLoc, const NodeVal &val, bool orError);
     bool checkIsDropFuncType(const NodeVal &node, TypeTable::Id dropeeTy, bool orError);
     // Checks that the node is EvalVal or LlvmVal.
@@ -152,7 +152,7 @@ private:
     NodeVal moveNode(CodeLoc codeLoc, NodeVal val, bool noZero);
     NodeVal invoke(CodeLoc codeLoc, MacroId macroId, std::vector<NodeVal> args);
     bool hasTrivialDrop(TypeTable::Id ty);
-    BlockTmpValRaii createTmpValRaii(NodeVal &val);
+    BlockTmpValRaii createTmpValRaii(NodeVal val);
     bool callDropFunc(CodeLoc codeLoc, NodeVal val);
     bool callDropFuncTmpVal(NodeVal val);
     bool callDropFuncs(CodeLoc codeLoc, std::vector<std::variant<VarId, NodeVal>> vals);

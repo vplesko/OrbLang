@@ -115,7 +115,7 @@ mac std.makeListWith (elemTy::preprocess elem::preprocess rest::(variadic prepro
 
     range i (lenOf elems) {
         = innerCode (+ innerCode \{
-            = ([] x -start ,i) ,([] elems i);
+            = ([] x -start ,i)::noDrop ,([] elems i);
         });
     };
 
@@ -194,7 +194,7 @@ std.-genFncList std.-push (elem:elemTy) () {
     if (== (-> this -end) (-> this -bound)) {
         std.-reallocForCapOrOver (* this) (+ (std.getCap (* this)) 1);
     };
-    = (* (cast (elemTy *) (-> this -end))) (>> elem);
+    = (* (cast (elemTy *) (-> this -end)))::noDrop (>> elem);
     = (-> this -end) (std.getArrPtrToInd elemTy (-> this -end) 1);
 };
 

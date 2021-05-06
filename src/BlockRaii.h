@@ -31,6 +31,10 @@ public:
 class BlockTmpValRaii {
     SymbolTable *symbolTable = nullptr;
 
+    void free() {
+        if (symbolTable != nullptr) symbolTable->getLastBlockInternal().tmps.pop_back();
+    }
+
 public:
     BlockTmpValRaii() {}
     explicit BlockTmpValRaii(SymbolTable *symbolTable, NodeVal val) : symbolTable(symbolTable) {
@@ -46,13 +50,18 @@ public:
     }
     BlockTmpValRaii& operator=(BlockTmpValRaii &&other) {
         if (this != &other) {
+            free();
             symbolTable = other.symbolTable;
             other.symbolTable = nullptr;
         }
         return *this;
     }
 
+    static void release(BlockTmpValRaii &raii) {
+        raii = BlockTmpValRaii();
+    }
+
     ~BlockTmpValRaii() {
-        if (symbolTable != nullptr) symbolTable->getLastBlockInternal().tmps.pop_back();
+        free();
     }
 };

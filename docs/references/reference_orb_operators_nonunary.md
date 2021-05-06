@@ -16,6 +16,8 @@ All operands must be typed. All operands other than the last must be ref values 
 
 On each iteration, implicitly casts the right-hand side operand to the type of the left-hand side operand.
 
+`::noDrop` on any argument other than the rightmost will cause its old value to not be dropped. Normally, each argument other than the rightmost one is dropped before being reassigned with the new value.
+
 ```
     sym x:i32 y:i32 z:i32;
     # assign to x, y, and z
