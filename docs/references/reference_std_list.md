@@ -24,7 +24,7 @@ Returns that type.
 
 If `defineDrop` is provided and is `false`, will only declare the drop function of this `std.List` type. This is used when `elemTy` has a nested `std.List` element that somehow points to other `elemTy` values, creating a circular dependency in drop definitions.
 
-You must afterwards define the drop function using `std.defineDrop (std.List elemTy)`.
+You must afterwards define the drop function using `std.defineDrop`.
 
 ```
 data Tree {

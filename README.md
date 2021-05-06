@@ -53,13 +53,13 @@ mac reduce (coll::preprocess start::preprocess oper) {
 };
 
 mac reduce (coll::preprocess oper) {
-    ret \(reduce ,coll ([] ,coll 0) ,oper);
+    ret \(reduce ,coll 0 ,oper);
 };
 
 fnc main () () {
-    std.println (reduce (arr i32 10 20 30) 0 +);
+    std.println (reduce (arr i32 10 20 30) +);
 
-    std.println (reduce (arr i32 1 2 3 4) *);
+    std.println (reduce (arr i32 1 2 3 4) 1 *);
 };
 ```
 

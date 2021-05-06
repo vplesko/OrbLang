@@ -39,3 +39,9 @@ Returns an array pointer to `elemTy` to the element with index `ind` of `arrPtr`
 Resets the first `len` values of `elemTy` at the location to which `arrPtr` points to their zero state.
 
 Returns `arrPtr` cast to `(elemTy [])`.
+
+## `std.defineDrop stdTy<type>`
+
+Defines the drop function of a `std.One` or `std.List` type.
+
+This is used when such a type had its drop function declared, but not defined.

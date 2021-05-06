@@ -20,7 +20,7 @@ Returns that type.
 
 If `defineDrop` is provided and is `false`, will only declare the drop function of this `std.One` type. This is used when `valTy` has a nested `std.One` element that somehow points to another `valTy`, creating a circular dependency in drop definitions.
 
-You must afterwards define the drop function using `std.defineDrop (std.One valTy)`.
+You must afterwards define the drop function using `std.defineDrop`.
 
 ```
 data Chain {

@@ -84,10 +84,7 @@ TypeTable::PrimIds TypeTable::shortestFittingPrimTypeI(int64_t x) {
 }
 
 TypeTable::PrimIds TypeTable::shortestFittingPrimTypeF(double x) {
-    if (std::isinf(x) || std::isnan(x)) return P_F32;
-
-    return std::abs(x) >= numeric_limits<float>::min() &&
-        std::abs(x) <= numeric_limits<float>::max() ? P_F32 : P_F64;
+    return std::isinf(x) || std::isnan(x) || (std::abs(x) <= numeric_limits<float>::max()) ? P_F32 : P_F64;
 }
 
 TypeTable::TypeTable() {
@@ -866,7 +863,7 @@ bool TypeTable::fitsTypeF(double x, Id t) const {
     PrimIds primId = (PrimIds) extractBaseType(t).index;
 
     if (primId == P_F32) {
-        return std::isinf(x) || std::isnan(x) || (std::abs(x) <= numeric_limits<float>::max());
+        return shortestFittingPrimTypeF(x) == P_F32;
     } else if (primId == P_F64) {
         return true;
     } else {
