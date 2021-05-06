@@ -65,4 +65,4 @@ fnc main () () {
 
 `libs/` contains source files for standard use in Orb projects. Reading these will give you more ideas on what is possible with Orb.
 
-Additionally, you may also browse `.orb` files in `tests/positive/`. These are test files for the project. They may not be the best examples of a good code style, however.
+Additionally, you may also browse `.orb` files in `tests/positive/`. These are the test files for the project. They may not be the best examples of a good code style, however.

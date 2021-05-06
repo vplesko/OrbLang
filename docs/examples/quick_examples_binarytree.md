@@ -4,11 +4,17 @@ title: BinaryTree
 ---
 # {{ page.title }}
 
-## `main.orb`
+This example has a more complex macro definition called `makeBinTree`, used to construct a binary tree through more convenient syntax.
+
+Under the hood, a tree is a `std.One` value pointing to a `BinNode`. Using `std.One` makes it easy to allocate them, and they are automatically cleaned up after use. This cleans up the entire tree, including all direct and indirect children nodes.
+
+The macro uses various definitions from **base.orb** and **std/One.orb**. `make` is used to initialize `BinNode` and `std.makeOneWith` is used to allocate a copy of that value on the heap and return a `std.One` pointing to it. `base.isOfType` and `base.isEmptyRaw` help analyze user input.
+
+The `main` function uses this macro to build several trees more easily and perform some analysis on them.
+
+## `binTree.orb`
 
 ```
-import "base.orb";
-import "std/io.orb";
 import "std/One.orb";
 
 data BinNode {
@@ -20,9 +26,7 @@ data BinNode {
 std.defineDrop (std.One BinNode);
 
 mac makeBinTree (tree) {
-    if (|| (base.isOfType tree i32) (base.isOfType tree id)) {
-        ret \(std.makeOneWith (make BinNode (val ,tree)));
-    } (base.isOfType tree raw) {
+    if (base.isOfType tree raw) {
         if (!= (lenOf tree) 3) {
             message::error tree::loc "Bad binary tree structure.";
         };
@@ -39,9 +43,16 @@ mac makeBinTree (tree) {
         ret \(std.makeOneWith ,code);
     };
 
-    message::error tree::loc "Invalid type '"
-        (typeOf tree) "' for binary tree structure.";
+    ret \(std.makeOneWith (make BinNode (val ,tree)));
 };
+```
+
+## `main.orb`
+
+```
+import "base.orb";
+import "std/io.orb";
+import "binTree.orb";
 
 fnc sumAndCnt (node:(BinNode cn *)) (i32 i32) {
     if (== node null) {
@@ -78,10 +89,10 @@ fnc main () () {
             (-1
                 0
                 (5
-                    4
+                    ()
                     (1
                         0
-                        ())))));
+                        4)))));
 
     printSumAndCnt (makeBinTree (3 () ()));
 

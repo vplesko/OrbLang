@@ -4,6 +4,8 @@ title: Primes
 ---
 # {{ page.title }}
 
+In this example, we print all primes between 1 and 100. The limit can easily be changed by modifying the symbol `n`.
+
 ## `main.orb`
 
 ```

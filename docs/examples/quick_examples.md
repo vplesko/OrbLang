@@ -11,4 +11,4 @@ orbc main.orb
 ./main
 ```
 
-Use the left and right arrows to navigate. You may also use the sidebar.
+Use the left and right arrows to navigate this site. You may also use the sidebar.
