@@ -12,12 +12,26 @@ fnc sayHello () () {
 };
 ```
 
+This function can then be called with an instruction starting with that function's name. No additional parenthesis are required.
+
+```
+fnc main () () {
+    sayHello;
+};
+```
+
 Functions can return values by using the `ret` keyword. This function takes a single argument of type `i32` and returns a value of the same type:
 
 ```
 fnc square (x:i32) i32 {
     ret (* x x);
 };
+```
+
+To call this function we need to provide an argument.
+
+```
+    std.println (square 13);
 ```
 
 Functions can be overloaded by other functions of the same name.
@@ -32,7 +46,7 @@ fnc square (x:f32) f32 {
 };
 ```
 
-Overloaded functions must not conflict with each other, meaning they have to have different signatures. This definition would raise errors:
+Overloaded functions must not conflict with each other, meaning they have to have different signatures. This definition would now raise errors due to conflicts:
 
 ```
 fnc square (x:i32) i64 {
@@ -47,4 +61,4 @@ Functions can be declared by omitting the function body. A declared function may
 fnc square (x:f64) f64;
 ```
 
-> There is a convention to name your functions and macros as `MODULE_NAME.FUNCTION_NAME`. If the function or macro is not intended to be called directly by your users, its name should be prepended with a minus: `MODULE_NAME.-FUNCTION_NAME`. A lot of functions and macros from **base.orb** don't follow this convention for the sake of user convenience.
+> There is a convention to name your functions and macros as `MODULE_NAME.FUNCTION_NAME`. If the function or macro is not intended to be called directly by your users, its name should be prepended with a minus: `MODULE_NAME.-FUNCTION_NAME`. A lot of functions and macros from **base.orb** don't follow this convention for the sake of user convenience. If you are not writing a library for use by other programmers, you may forgo this convention.

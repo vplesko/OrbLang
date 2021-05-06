@@ -33,6 +33,8 @@
      link: /pages/control_flow_break_and_continue.html
    - name: Switch
      link: /pages/control_flow_switch.html
+- name: FizzBuzz
+  link: /pages/fizzbuzz.html
 - name: Functions
   link: /pages/functions.html
 - name: Scopes
@@ -173,7 +175,7 @@
     - name: Logo
       link: /examples/quick_examples_logo.html
     - name: FizzBuzz
-      link: /examples/quick_examples_fizzbuz.html
+      link: /examples/quick_examples_fizzbuzz.html
     - name: Primes
       link: /examples/quick_examples_primes.html
     - name: Fibonacci
