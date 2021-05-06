@@ -65,3 +65,67 @@ Returns whether `one` does not currently point to a value on the heap.
 Returns the underlying pointer `one` uses to point to its value as a non-ref value.
 
 If `one` does not point to a value, the returned pointer will be null.
+
+---
+
+```
+import "base.orb";
+import "std/io.orb";
+import "std/One.orb";
+
+data Controller {
+    res:String
+} (lam (this:Controller::noDrop) () {
+    if (!= ([] this res) null) {
+        std.println "Releasing resource: " ([] this res);
+    };
+});
+
+fnc changeResource (ctrl:(Controller *) res:String) () {
+    = (-> ctrl res) res;
+};
+
+fnc main () () {
+    block {
+        # nothing allocated
+        sym ctrl:(std.One Controller);
+
+        if (std.isNull ctrl) {
+            std.println "ctrl is null";
+        };
+
+        # allocated Controller in zero state
+        = ctrl (std.makeOne Controller);
+
+        if (std.isNull ctrl) {
+            std.println "this will not be printed";
+        };
+
+        # replaces previous std.One
+        # the new Controller is on the heap
+        = ctrl (std.makeOneWith (make Controller (res "resource00")));
+
+        # reassigns the value pointed to
+        # the old one is dropped
+        # no new memory is allocated
+        = (std.* ctrl) (make Controller (res "resource01"));
+
+        std.println "ctrl owns: " (std.-> ctrl res);
+
+        # pass the pointer to a function
+        # since std.One wasn't changed, no dropping happens
+        changeResource (std.getPtr ctrl) "resource02";
+
+        # releases the Controller ctrl points to
+    };
+};
+```
+
+Output:
+
+```
+ctrl is null
+Releasing resource: resource00
+ctrl owns: resource01
+Releasing resource: resource02
+```
