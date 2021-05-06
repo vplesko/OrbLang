@@ -12,9 +12,25 @@ These types must only be used by compiled symbols.
 
 ## `std.One valTy<type> =type`
 
+## `std.One valTy<type> defineDrop<bool> =type`
+
 Defines a `std.One` type pointing to `valTy`, if one wasn't previously defined.
 
 Returns that type.
+
+If `defineDrop` is provided and is `false`, will only declare the drop function of this `std.One` type. This is used when `valTy` has a nested `std.One` element that somehow points to another `valTy`, creating a circular dependency in drop definitions.
+
+You must afterwards define the drop function using `std.defineDrop (std.One valTy)`.
+
+```
+data Chain {
+    value:i32
+    next:(std.One Chain false)
+};
+
+# define the drop function for this std.One
+std.defineDrop (std.One Chain);
+```
 
 ## `std.makeOne valTy<type> =std.One`
 

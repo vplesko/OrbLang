@@ -15,6 +15,36 @@ fnc makeFoo (x:i32) Foo {
     ret f;
 };
 
+data Bar {
+    x:i32
+    next:(std.One Bar false)
+} (lam (this:Bar::noDrop) () {
+    println_i32 ([] this x);
+});
+
+std.defineDrop (std.One Bar);
+
+fnc makeBar (x:i32) Bar {
+    sym b:Bar;
+    = ([] b x) x;
+    ret b;
+};
+
+data Baz {
+    x:i32
+    next:(std.List Baz false)
+} (lam (this:Baz::noDrop) () {
+    println_i32 ([] this x);
+});
+
+std.defineDrop (std.List Baz);
+
+fnc makeBaz (x:i32) Baz {
+    sym b:Baz;
+    = ([] b x) x;
+    ret b;
+};
+
 fnc main () () {
     block {
         std.println -1:i8;
@@ -74,6 +104,10 @@ fnc main () () {
     block {
         sym (x (std.makeOneWith 106));
         println_i32 (std.* x);
+    };
+    block {
+        sym (x (makeBar 107));
+        = ([] x next) (std.makeOneWith (makeBar 108));
     };
 
     block {
@@ -199,5 +233,9 @@ fnc main () () {
     block {
         sym x:(std.List (Foo 2));
         std.push x (arr Foo (makeFoo 235) (makeFoo 234));
+    };
+    block {
+        sym (x (makeBaz 236));
+        = ([] x next) (std.makeListWith Baz (makeBaz 238) (makeBaz 237));
     };
 };

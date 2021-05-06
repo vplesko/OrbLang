@@ -56,7 +56,7 @@ mac std.rangeRev (it list::preprocess body) {
     });
 };
 
-eval (fnc std.List (elemTy:type) type {
+eval (fnc std.List (elemTy:type defineDrop:bool) type {
     sym (name (+ \std.List (cast id elemTy)));
 
     if (! (?? ,name)) {
@@ -64,18 +64,32 @@ eval (fnc std.List (elemTy:type) type {
             -start:(elemTy [])
             -end:(elemTy [])
             -bound:(elemTy [])
-        }::((std.class std.List) (std.elemTy ,elemTy)) (fnc::global std.-dropList::(compilable (evaluable false)) (this:,name::noDrop) () {
-            std.rangeRev it this {
-                >>::noZero (it);
-            };
-            free (cast ptr ([] this -start));
-        });
+        }::((std.class std.List) (std.elemTy ,elemTy))
+            (cond defineDrop
+                (std.defineDrop ,name)
+                (fnc::global std.-dropList::(compilable (evaluable false)) (this:,name::noDrop) ()));
     };
 
     ret (name);
 });
 
+eval (fnc std.List (elemTy:type) type {
+    ret (std.List elemTy true);
+});
+
+mac (+ \std.-defineDrop \std.List) (listTy::preprocess) {
+    # define function here and return it (intentionally not escaped)
+    ret (fnc::global std.-dropList::(compilable (evaluable false)) (this:listTy::noDrop) () {
+        std.rangeRev it this {
+            >>::noZero (it);
+        };
+        free (cast ptr ([] this -start));
+    });
+};
+
 mac std.makeList (elemTy::preprocess len::preprocess) {
+    base.assertIsOfType elemTy type;
+
     sym (listTy (std.List elemTy));
 
     ret \(block ,listTy {
@@ -87,6 +101,8 @@ mac std.makeList (elemTy::preprocess len::preprocess) {
 };
 
 mac std.makeListWith (elemTy::preprocess elem::preprocess rest::(variadic preprocess)) {
+    base.assertIsOfType elemTy type;
+
     sym (elems (+ \(,elem) rest));
 
     sym (listTy (std.List elemTy));

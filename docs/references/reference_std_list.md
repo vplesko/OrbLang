@@ -16,9 +16,25 @@ Capacity refers to the capacity of a list, ie. how many elements can its current
 
 ## `std.List elemTy<type> =type`
 
+## `std.List elemTy<type> defineDrop<bool> =type`
+
 Defines a `std.List` type pointing to an array of `elemTy`, if one wasn't previously defined.
 
 Returns that type.
+
+If `defineDrop` is provided and is `false`, will only declare the drop function of this `std.List` type. This is used when `elemTy` has a nested `std.List` element that somehow points to other `elemTy` values, creating a circular dependency in drop definitions.
+
+You must afterwards define the drop function using `std.defineDrop (std.List elemTy)`.
+
+```
+data Tree {
+    value:i32
+    next:(std.List Tree false)
+};
+
+# define the drop function for this std.List
+std.defineDrop (std.List Tree);
+```
 
 ## `std.makeList elemTy<type> len<unsigned> =std.List`
 

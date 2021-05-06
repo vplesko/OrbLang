@@ -26,3 +26,16 @@ mac std.getArrPtrToInd (elemTy::preprocess arrPtr::preprocess ind::preprocess) {
 mac std.setElemsToZero (elemTy::preprocess arrPtr::preprocess len::preprocess) {
     ret \(cast ,(elemTy []) (memset (cast ptr ,arrPtr) 0 (* ,len ,(sizeOf elemTy))));
 };
+
+mac std.defineDrop (stdTy::preprocess) {
+    base.assertIsOfType stdTy type;
+
+    if (! (attr?? stdTy std.class)) {
+        message::error stdTy::loc "Type does not belong to any class of std types.";
+    };
+
+    sym (class (attrOf stdTy std.class));
+    sym (defineDropMacName (+ \std.-defineDrop class));
+
+    ret \(,defineDropMacName ,stdTy);
+};

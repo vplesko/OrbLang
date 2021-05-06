@@ -1,28 +1,41 @@
-import "base.orb";
-import "clib.orb";
+import "std/common.orb";
 
 mac std.getValTy (one::preprocess) {
     ret (attrOf (typeOf one) std.valTy);
 };
 
-eval (fnc std.One (valTy:type) type {
+eval (fnc std.One (valTy:type defineDrop:bool) type {
     sym (name (+ \std.One (cast id valTy)));
 
     if (! (?? ,name)) {
         data::global ,name {
             -p:(valTy *)
-        }::((std.class std.One) (std.valTy ,valTy)) (fnc::global std.-dropOne::(compilable (evaluable false)) (this:,name::noDrop) () {
-            if (!= ([] this -p) null) {
-                >>::noZero (* ([] this -p));
-            };
-            free (cast ptr ([] this -p));
-        });
+        }::((std.class std.One) (std.valTy ,valTy))
+            (cond defineDrop
+                (std.defineDrop ,name)
+                (fnc::global std.-dropOne::(compilable (evaluable false)) (this:,name::noDrop) ()));
     };
 
     ret (name);
 });
 
+eval (fnc std.One (valTy:type) type {
+    ret (std.One valTy true);
+});
+
+mac (+ \std.-defineDrop \std.One) (oneTy::preprocess) {
+    # define function here and return it (intentionally not escaped)
+    ret (fnc::global std.-dropOne::(compilable (evaluable false)) (this:oneTy::noDrop) () {
+        if (!= ([] this -p) null) {
+            >>::noZero (* ([] this -p));
+        };
+        free (cast ptr ([] this -p));
+    });
+};
+
 mac std.makeOne (valTy::preprocess) {
+    base.assertIsOfType valTy type;
+
     sym (oneTy (std.One valTy));
 
     ret \(block ,oneTy {
