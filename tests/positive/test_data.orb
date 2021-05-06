@@ -43,9 +43,18 @@ data Chain {
 };
 
 data Elem;
+
+data List;
+
+fnc fooList (l:(List *)) ();
+
 data List {
     e:(Elem *)
     next:(List *)
+};
+
+fnc fooList (l:(List *)) () {
+    [] (* l) e;
 };
 
 fnc main () () {
@@ -67,6 +76,7 @@ fnc main () () {
     };
     block {
         sym l:List;
+        fooList (& l);
     };
     block {
         sym z:Point3;

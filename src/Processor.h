@@ -38,6 +38,7 @@ protected:
     virtual bool performExit(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) =0;
     virtual bool performLoop(CodeLoc codeLoc, SymbolTable::Block block, const NodeVal &cond) =0;
     virtual bool performPass(CodeLoc codeLoc, SymbolTable::Block block, NodeVal val) =0;
+    virtual bool performDataDefinition(CodeLoc codeLoc, TypeTable::Id ty) =0;
     virtual NodeVal performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, const NodeVal &func, const std::vector<NodeVal> &args) =0;
     virtual NodeVal performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, FuncId funcId, const std::vector<NodeVal> &args) =0;
     virtual NodeVal performInvoke(CodeLoc codeLoc, MacroId macroId, std::vector<NodeVal> args) =0;

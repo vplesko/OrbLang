@@ -701,6 +701,11 @@ NodeVal Processor::processData(const NodeVal &node, const NodeVal &starting) {
                 symbolTable->registerDropFunc(typeIdOpt.value(), move(nodeDrop));
             }
         }
+
+        if (!performDataDefinition(node.getCodeLoc(), typeIdOpt.value())) {
+            msgs->errorInternal(node.getCodeLoc());
+            return NodeVal();
+        }
     }
 
     return promoteType(node.getCodeLoc(), typeIdOpt.value());
@@ -817,7 +822,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
     return ret;
 }
 
-// TODO passing attributes on macro itself
+// TODO passing attributes on macro itself (just like can be done for special forms, eg. fnc::global)
 NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
     optional<MacroId> macroId;
     if (starting.isUndecidedCallableVal()) {
@@ -2635,6 +2640,7 @@ NodeVal Processor::processOperAssignment(CodeLoc codeLoc, const std::vector<cons
     return rhs;
 }
 
+// TODO! check when index on wrong type
 NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const NodeVal*> &opers) {
     NodeVal lhs = processNode(*opers[0]);
     if (lhs.isInvalid()) return NodeVal();

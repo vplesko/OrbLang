@@ -288,6 +288,16 @@ bool Compiler::performPass(CodeLoc codeLoc, SymbolTable::Block block, NodeVal va
     return true;
 }
 
+bool Compiler::performDataDefinition(CodeLoc codeLoc, TypeTable::Id ty) {
+    // replace a previous compiled declaration with a definition
+    if (typeTable->getType(ty) != nullptr) {
+        return makeLlvmTypeOrError(codeLoc, ty) != nullptr;
+    }
+
+    // otherwise, it was either already compiled or will lazily be compiled when needed
+    return true;
+}
+
 NodeVal Compiler::performCall(CodeLoc codeLoc, CodeLoc codeLocFunc, const NodeVal &func, const std::vector<NodeVal> &args) {
     if (!checkInLocalScope(codeLocFunc, true)) return NodeVal();
 

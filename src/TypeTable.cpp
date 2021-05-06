@@ -361,6 +361,7 @@ void TypeTable::addTypeStr() {
     strType = addTypeDescr(move(typeDescr));
 }
 
+// TODO! rename to getLlvmType
 llvm::Type* TypeTable::getType(Id id) {
     switch (id.kind) {
     case Id::kPrim: return primTypes[id.index];
@@ -373,6 +374,7 @@ llvm::Type* TypeTable::getType(Id id) {
     }
 }
 
+// TODO! rename to setLlvmType
 void TypeTable::setType(Id id, llvm::Type *type) {
     switch (id.kind) {
     case Id::kPrim: primTypes[id.index] = type; break;
