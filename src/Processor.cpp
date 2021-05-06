@@ -2646,10 +2646,6 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
 
     for (size_t i = 1; i < opers.size(); ++i) {
         if (!checkHasType(lhs, true)) return NodeVal();
-        if (!lhs.hasRef() && !checkNotNeedsDrop(lhs.getCodeLoc(), lhs, true)) {
-            msgs->hintIndexTempOwning();
-            return NodeVal();
-        }
 
         TypeTable::Id baseType = lhs.getType().value();
 
@@ -2658,6 +2654,15 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
         bool isBaseData = typeTable->worksAsDataType(baseType);
         bool isBaseArr = typeTable->worksAsTypeArr(baseType);
         bool isBaseArrP = typeTable->worksAsTypeArrP(baseType);
+        if (!isBaseRaw && !isBaseTup && !isBaseData && !isBaseArr && !isBaseArrP) {
+            msgs->errorExprIndexOnBadType(lhs.getCodeLoc(), lhs.getType().value());
+            return NodeVal();
+        }
+
+        if (!lhs.hasRef() && !checkNotNeedsDrop(lhs.getCodeLoc(), lhs, true)) {
+            msgs->hintIndexTempOwning();
+            return NodeVal();
+        }
 
         optional<size_t> baseLen;
         if (isBaseRaw) {
@@ -2729,7 +2734,7 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
             lhs = getArrElement(lhs.getCodeLoc(), lhs, index);
             if (lhs.isInvalid()) return NodeVal();
         } else {
-            msgs->errorExprIndexOnBadType(lhs.getCodeLoc(), lhs.getType().value());
+            msgs->errorInternal(lhs.getCodeLoc());
             return NodeVal();
         }
     }

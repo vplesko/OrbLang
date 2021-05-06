@@ -26,13 +26,26 @@ mac escape (node::plusEscape) {
     ret node;
 };
 
-mac base.isRaw (val::preprocess) {
+mac base.isOfType (val::preprocess ty::preprocess) {
     block {
-        exit (== (typeOf val) raw);
-        exit (== (typeOf val) (raw cn));
+        exit (== (typeOf val) ty);
+        exit (== (typeOf val) (ty cn));
         ret false;
     };
     ret true;
+};
+
+mac base.isRaw (val::preprocess) {
+    ret (base.isOfType val raw);
+};
+
+mac base.isEmptyRaw (val::preprocess) {
+    block {
+        exit (! (base.isRaw val));
+        exit (!= (lenOf val) 0);
+        ret true;
+    };
+    ret false;
 };
 
 mac base.makeRawWith (vals::(variadic preprocess)) {
@@ -41,8 +54,7 @@ mac base.makeRawWith (vals::(variadic preprocess)) {
 
 mac base.assertIsOfType (val::preprocess ty::preprocess) {
     block {
-        exit (== (typeOf val) ty);
-        exit (== (typeOf val) (ty cn));
+        exit (base.isOfType val ty);
         message::error val::loc "Value is not of type '" ty "'.";
     };
 
@@ -51,9 +63,6 @@ mac base.assertIsOfType (val::preprocess ty::preprocess) {
 
 mac unref (val::preprocess) {
     ret \(block ,(typeOf val) {
-        # forbids usage on noDrop and invocation args
-        >>::noZero ,val;
-
         # forbids usage on owning
         sym (t ,val);
         pass t;
