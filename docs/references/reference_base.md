@@ -410,6 +410,8 @@ Generates and returns an `id`. Returns a different value on each call.
 
 Conditionally processes either the `onTrue` or `onFalse` node depending on the value of `cond`.
 
+`cond` must be an evaluated value.
+
 ```
     cond verbose
         (std.println "index=" ind " value=" ([] array ind))
@@ -419,6 +421,8 @@ Conditionally processes either the `onTrue` or `onFalse` node depending on the v
 ## `cond<bool> onTrue`
 
 Only processes the `onTrue` node if `cond` is `true`.
+
+`cond` must be an evaluated value.
 
 ```
     cond enableDebugAsserts

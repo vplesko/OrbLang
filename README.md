@@ -8,40 +8,7 @@ It offers a powerful macro system - procedures that return Orb code to be compil
 
 To learn more about the language, please read [the Orb documentation](https://vplesko.github.io/OrbLang/).
 
-## Examples
-
-**Visit [the quick examples sections](https://vplesko.github.io/OrbLang/examples/quick_examples.html) of the Orb documentation to see what Orb code looks like.**
-
-```
-import "std/io.orb";
-
-eval (sym (n 100));
-
-fnc main () () {
-    std.print "Primes:";
-
-    sym arr:(bool (+ n 1));
-    range i 2 n {
-        if ([] arr i) {
-            continue;
-        };
-
-        std.print ' ' i;
-
-        range j (* i i) n i {
-            = ([] arr j) true;
-        };
-    };
-
-    std.println;
-};
-```
-
-`libs/` contains source files for standard use in Orb projects. Reading these will give you more ideas on what is possible with Orb.
-
-Additionally, you may also browse `.orb` files in `tests/positive/`. These are test files for the project.
-
-## Install
+## Installing
 
 The following are required:
  - CMake version 3.4.3 or greater
@@ -64,3 +31,38 @@ Optionally, you can also run the tests with:
 cd tests
 python3 run_tests.py orbc
 ```
+
+## Examples
+
+**Visit [the quick examples sections](https://vplesko.github.io/OrbLang/examples/quick_examples.html) of the Orb documentation to see what Orb code looks like.**
+
+```
+import "base.orb";
+import "std/io.orb";
+
+mac reduce (coll::preprocess start::preprocess oper) {
+    sym (acc (genId)) (iter (genId));
+
+    ret \(block ,(typeOf start) {
+        sym (,acc ,start);
+        range ,iter ,(lenOf coll) {
+            = ,acc (,oper ,acc ([] ,coll ,iter));
+        };
+        pass ,acc;
+    });
+};
+
+mac reduce (coll::preprocess oper) {
+    ret \(reduce ,coll ([] ,coll 0) ,oper);
+};
+
+fnc main () () {
+    std.println (reduce (arr i32 10 20 30) 0 +);
+
+    std.println (reduce (arr i32 1 2 3 4) *);
+};
+```
+
+`libs/` contains source files for standard use in Orb projects. Reading these will give you more ideas on what is possible with Orb.
+
+Additionally, you may also browse `.orb` files in `tests/positive/`. These are test files for the project. They may not be the best examples of a good code style, however.

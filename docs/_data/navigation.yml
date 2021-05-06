@@ -180,3 +180,5 @@
       link: /examples/quick_examples_primes.html
     - name: Fibonacci
       link: /examples/quick_examples_fibonacci.html
+    - name: Reduce
+      link: /examples/quick_examples_reduce.html
