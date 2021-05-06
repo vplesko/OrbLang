@@ -182,3 +182,5 @@
       link: /examples/quick_examples_fibonacci.html
     - name: Reduce
       link: /examples/quick_examples_reduce.html
+    - name: BinaryTree
+      link: /examples/quick_examples_binarytree.html
