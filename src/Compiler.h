@@ -76,7 +76,7 @@ class Compiler : public Processor {
     NodeVal performOperAssignment(CodeLoc codeLoc, const NodeVal &lhs, NodeVal rhs) override;
     NodeVal performOperIndexArr(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) override;
     NodeVal performOperIndex(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) override;
-    NodeVal performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, bool bare) override;
+    NodeVal performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, OperRegAttrs attrs) override;
     std::optional<std::uint64_t> performSizeOf(CodeLoc codeLoc, TypeTable::Id ty) override;
 
 public:

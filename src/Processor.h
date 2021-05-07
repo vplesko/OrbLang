@@ -24,6 +24,11 @@ protected:
     Processor *compiler;
 
 protected:
+    struct OperRegAttrs {
+        bool noWrap = false;
+        bool bare = false;
+    };
+
     virtual NodeVal performLoad(CodeLoc codeLoc, VarId varId) =0;
     virtual NodeVal performLoad(CodeLoc codeLoc, FuncId funcId) =0;
     virtual NodeVal performLoad(CodeLoc codeLoc, MacroId macroId) =0;
@@ -58,7 +63,7 @@ protected:
     virtual NodeVal performOperIndexArr(CodeLoc codeLoc, NodeVal &base, const NodeVal &ind, TypeTable::Id resTy) =0;
     // Called for raws, tuples, and data types.
     virtual NodeVal performOperIndex(CodeLoc codeLoc, NodeVal &base, std::uint64_t ind, TypeTable::Id resTy) =0;
-    virtual NodeVal performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, bool bare) =0;
+    virtual NodeVal performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, OperRegAttrs attrs) =0;
     virtual std::optional<std::uint64_t> performSizeOf(CodeLoc codeLoc, TypeTable::Id ty) =0;
 
 protected:

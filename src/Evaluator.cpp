@@ -696,7 +696,7 @@ NodeVal Evaluator::performOperIndex(CodeLoc codeLoc, NodeVal &base, std::uint64_
 }
 
 // TODO warn on over/underflow; are results correct in these cases?
-NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, bool bare) {
+NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const NodeVal &rhs, Oper op, OperRegAttrs attrs) {
     if (!checkIsEvalVal(lhs, true) || !checkIsEvalVal(rhs, true)) return NodeVal();
 
     TypeTable::Id ty = lhs.getType().value();
@@ -736,7 +736,7 @@ NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const
         } else if (isTypeF) {
             if (assignBasedOnTypeF(evalVal, fl.value()+fr.value(), ty)) success = true;
         } else if (isTypeId) {
-            evalVal.id() = makeIdConcat(lhs.getEvalVal().id(), rhs.getEvalVal().id(), bare);
+            evalVal.id() = makeIdConcat(lhs.getEvalVal().id(), rhs.getEvalVal().id(), attrs.bare);
             success = true;
         } else if (isTypeRaw) {
             evalVal.elems() = makeRawConcat(lhs.getEvalVal(), rhs.getEvalVal());

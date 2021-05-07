@@ -2749,6 +2749,9 @@ NodeVal Processor::processOperIndex(CodeLoc codeLoc, const std::vector<const Nod
 }
 
 NodeVal Processor::processOperRegular(CodeLoc codeLoc, const NodeVal &starting, const std::vector<const NodeVal*> &opers, Oper op) {
+    optional<bool> attrNoWrap = getAttributeForBool(starting, "noWrap");
+    if (!attrNoWrap.has_value()) return NodeVal();
+
     optional<bool> attrBare = getAttributeForBool(starting, "bare");
     if (!attrBare.has_value()) return NodeVal();
 
@@ -2788,11 +2791,15 @@ NodeVal Processor::processOperRegular(CodeLoc codeLoc, const NodeVal &starting, 
             }
         }
 
+        OperRegAttrs attrs;
+        attrs.noWrap = attrNoWrap.value();
+        attrs.bare = attrBare.value();
+
         NodeVal nextLhs;
         if (checkIsEvalTime(lhs, false) && checkIsEvalTime(rhs, false)) {
-            nextLhs = evaluator->performOperRegular(codeLoc, lhs, rhs, op, attrBare.value());
+            nextLhs = evaluator->performOperRegular(codeLoc, lhs, rhs, op, attrs);
         } else {
-            nextLhs = performOperRegular(codeLoc, lhs, rhs, op, attrBare.value());
+            nextLhs = performOperRegular(codeLoc, lhs, rhs, op, attrs);
         }
         if (nextLhs.isInvalid()) return NodeVal();
 
