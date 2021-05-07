@@ -6,6 +6,8 @@ title: Primes
 
 In this example, we print all primes between 1 and 100. The limit can easily be changed by modifying the symbol `n`.
 
+The algorithm used is the sieve of Eratosthenes, with the optimization of starting from prime's square.
+
 ## `main.orb`
 
 ```

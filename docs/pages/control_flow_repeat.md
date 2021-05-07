@@ -12,7 +12,7 @@ title: Repeat
     };
 ```
 
-If the number is not given, the block will keep executing.
+If the number is not given, the block will keep executing until otherwise terminated.
 
 ```
     repeat {

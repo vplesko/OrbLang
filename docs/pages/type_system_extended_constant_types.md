@@ -6,8 +6,6 @@ title: Constant types
 
 A type can be expressed as constant by using the `cn` identifier. For example, `(i32 cn)` is a constant `i32`. Ref values of this type cannot be reassigned new values.
 
-Symbols of a constant type must be explicitly initialized (default zero-initialization is not allowed).
-
 ```
 fnc main () () {
     sym (x:(i32 cn) 100);
@@ -30,3 +28,5 @@ fnc main () () {
 };
 ```
 {: .code-error}
+
+Symbols of a constant type must be explicitly initialized (default zero-initialization is not allowed).

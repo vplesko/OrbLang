@@ -25,10 +25,10 @@ Arrays can contain other arrays. `((i32 4) 4)` is an array of four arrays of fou
 ```
 fnc sumElemsOf3dMatrix (a:(f32 10 10 10)) f32 {
     sym sum:f32;
-    range x 10 {
-        range y 10 {
-            range z 10 {
-                += sum ([] a x y z);
+    range i 10 {
+        range j 10 {
+            range k 10 {
+                += sum ([] a i j k);
             };
         };
     };
@@ -36,20 +36,23 @@ fnc sumElemsOf3dMatrix (a:(f32 10 10 10)) f32 {
 };
 ```
 
-Arrays are value types. In some languages, passing an array to a function is really passing a pointer to its elements. In Orb, however, all of the elements are copied, and modifying the argument does not modify the original array.
+Arrays are value types. In some languages, passing an array to a function is really passing a pointer to its elements. In Orb, however, all elements get copied, and modifying the argument does not modify the original array.
 
 Arrays can be assigned new array values.
 
 ```
 fnc main () () {
     sym a:(i32 4) b:(i32 4);
-    # construct elements of a and b
 
-    = b a; # reassign b with the current value of a
+    range i 4 {
+        = ([] a i) i;
+    };
+
+    = b a; # reassign b with the current elements of a
 };
 ```
 
-Arrays can be constructed using the `arr` macro from **base.orb**. This code snippet declares `a` as an array of `i32` containing given values:
+Arrays can be constructed using the `arr` macro from **base.orb**. This code declares `a` as an array of `i32` containing given values:
 
 ```
     sym (a (arr i32 10 11 12 13));

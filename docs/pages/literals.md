@@ -57,22 +57,23 @@ fnc main () () {
     # 64-bit signed integer
     std.println -100:i64;
 
-    # 32-bit floating-point value
-    std.println 0.0:f32;
+    # 64-bit floating-point value
+    std.println 10.0:f64;
 };
 ```
 
-Character literals are placed between single quotes, for example: `'A'`, `'0'`, `'.'`, and `' '`. Some characters require special escape sequences: `'\n'` (newline), `'\t'` (tab), `'\\'` (backslash), `'\''` (single quote), `'\"'` (double quote), and `'\0'` (null character).
+Character literals are placed between single quotes, for example: `'A'`, `'5'`, `'.'`, and `' '`. Some characters require special escape sequences: `'\n'` (newline), `'\t'` (tab), `'\\'` (backslash), `'\''` (single quote), `'\"'` (double quote), and `'\0'` (null character).
 
 String literals are placed between double quotes, eg. `"Hello!"` and `""` (empty string). Strings use the same escape sequences as character literals.
 
 String literals can spread multiple lines.
 
 ```
-    sym (str
-"multiline
-string
-literal");
+    sym (str "
+            this is a
+            multiline
+            string
+            literal");
 ```
 
 `true` and `false` are boolean literals.

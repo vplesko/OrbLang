@@ -750,21 +750,21 @@ NodeVal Compiler::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const 
     switch (op) {
     case Oper::ADD:
         if (isTypeI || isTypeU) {
-            llvmVal.val = llvmBuilder.CreateAdd(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "add_tmp");
+            llvmVal.val = llvmBuilder.CreateAdd(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "add_tmp", false, true);
         } else if (isTypeF) {
             llvmVal.val = llvmBuilder.CreateFAdd(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fadd_tmp");
         }
         break;
     case Oper::SUB:
         if (isTypeI || isTypeU) {
-            llvmVal.val = llvmBuilder.CreateSub(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "sub_tmp");
+            llvmVal.val = llvmBuilder.CreateSub(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "sub_tmp", false, true);
         } else if (isTypeF) {
             llvmVal.val = llvmBuilder.CreateFSub(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fsub_tmp");
         }
         break;
     case Oper::MUL:
         if (isTypeI || isTypeU) {
-            llvmVal.val = llvmBuilder.CreateMul(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "mul_tmp");
+            llvmVal.val = llvmBuilder.CreateMul(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "mul_tmp", false, true);
         } else if (isTypeF) {
             llvmVal.val = llvmBuilder.CreateFMul(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "fmul_tmp");
         }
@@ -789,7 +789,7 @@ NodeVal Compiler::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const 
         break;
     case Oper::SHL:
         if (isTypeI || isTypeU) {
-            llvmVal.val = llvmBuilder.CreateShl(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "shl_tmp");
+            llvmVal.val = llvmBuilder.CreateShl(lhsPromo.getLlvmVal().val, rhsPromo.getLlvmVal().val, "shl_tmp", false, true);
         }
         break;
     case Oper::SHR:

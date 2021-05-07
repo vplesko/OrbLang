@@ -8,7 +8,7 @@ This section documents definitions found in **std/List.orb**.
 
 `std.List` is a class of resizable array types, which store their elements on the heap and will automatically deallocate all used memory.
 
-These types must only be used by compiled symbols.
+These types must only be used by compiled values.
 
 Length refers to the number of elements currently held by a list. If the list is not allocated, its length is zero.
 

@@ -8,7 +8,7 @@ We've seen that `*` expresses a pointer, `[]` an array pointer, `cn` a constant 
 
 Following this, you can have some very long type definitions. An easy way to read them is from right to the left. For example, `(i32 [] 4 *)` is a pointer (right-most `*`) of an array of four (from `4`) array pointers (from `[]`) of `i32` values (base type).
 
-The base does not need to a primitive type. For example, `((i32 f32) [])` is an array pointer to tuples that have elements of types `i32` and `f32`.
+The base does not need to be a primitive type. For example, `((i32 f32) [])` is an array pointer to tuples that have elements of types `i32` and `f32`.
 
 `cn` affects what is found to the left of it up to the first pointer or array pointer.
 

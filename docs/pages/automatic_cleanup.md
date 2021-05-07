@@ -29,12 +29,12 @@ fnc makeCtrl (str:String) Control;
 
 fnc main () () {
     sym ctrl:Control;
-    # assign a value to ctrl
+    # = ctrl ...;
 
     sym ctrlArr:(Control 4);
-    # assign values to elements of ctrlArr
+    # = ctrlArr ...;
 
-    # this Control is not stored anywhere, so it is immediately dropped
+    # returned Control is not stored anywhere, so it is immediately dropped
     makeCtrl "some resource";
 
     # end of function scope:

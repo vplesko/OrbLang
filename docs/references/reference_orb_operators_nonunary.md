@@ -19,9 +19,6 @@ On each iteration, implicitly casts the right-hand side operand to the type of t
 `::noDrop` on any argument other than the rightmost will cause its old value to not be dropped. Normally, each argument other than the rightmost one is dropped before being reassigned with the new value.
 
 ```
-    sym x:i32 y:i32 z:i32;
-    # assign to x, y, and z
-
     = x y z 1;
 ```
 
@@ -63,6 +60,8 @@ If `op` is `+` and operands are of type `raw`, the result is a new `raw` with it
 ```
     = r (+ r \{ += ,x 1; });
 ```
+
+If `op` is `+`, `-`, `*`, or `<<` and the operands are signed integers, any overflowing will result in undefined behaviour. If the operands are unsigned integers, overflowing will cause the result to wrap around the limits of representable value ranges.
 
 `::bare` on `op` when it is `+` and operands are of type `id` results in a new `id` being the concatenation of the identifier values of the left and right-hand side operand. This value is not guaranteed to be unique to the pairing of those two operand values.
 

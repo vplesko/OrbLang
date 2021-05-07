@@ -1,9 +1,7 @@
 :root {
     --sidebar-width: 300px;
     --page-wrap-max-width: 750px;
-}
 
-:root {
     --font-size-html: 16px;
     --font-size-code: 14px;
     --font-size-h2-code: 18px;
@@ -11,9 +9,7 @@
     --font-size-sidebar-curr: 15px;
     --font-size-topbar-title: 24px;
     --font-size-content: 15px;
-}
 
-:root {
     --color-body-bg: white;
     --color-sidebar-bg: #1f4566;
     --color-sidebar-item: #f7f7f7;

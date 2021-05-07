@@ -4,9 +4,9 @@ title: Scopes
 ---
 # {{ page.title }}
 
-Every symbol exists within a single scope where it was declared. For example, declaring it inside a function body makes it usable only within that function.
+Every symbol exists within a single scope where it is accessible. This scope is the same as the scope where it was declared. For example, declaring it inside a function body makes it accessible only within that function.
 
-Control flow macros insert additional scopes, nested within the scope where they were invoked. For those that repeatedly execute a block, each block iteration has a separate scope.
+Control flow macros create new scopes, nested within the scope where they were invoked. For those that repeatedly execute a block, each block iteration has a separate scope.
 
 ```
 fnc main () () {
@@ -19,9 +19,9 @@ fnc main () () {
             # z from the previous iteration no longer exists
 
             sym z:bool; # z is now defined
-        }; # z can no longer be referenced
-    }; # y can no longer be referenced
-}; # x can no longer be referenced
+        }; # z is no longer be accessible
+    }; # y is no longer be accessible
+}; # x is no longer be accessible
 ```
 
 Symbols in a nested scope may have the same name as a symbol in an enclosing scope. Referring to that name will now fetch the symbol from the nested scope. This is called shadowing.

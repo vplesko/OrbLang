@@ -16,4 +16,6 @@ They are defined using the `explicit` special form.
 explicit TableId u64;
 ```
 
-The reason to use them over aliases is that they provide extra type-safety for the newly introduced type. For example, if you have several different storage types, you may want to define different key types to index into them. Defining these as explicit types lets the compiler ensure you don't use a key of one storage to index another one.
+The reason to use them over aliases is that they provide extra type-safety for the newly introduced type.
+
+For example, if you have several different storage types, you may want to define different key types to index into them. Defining these as explicit types lets the compiler ensure you don't mistakenly use one type of key on a wrong storage.

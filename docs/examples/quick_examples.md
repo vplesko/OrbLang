@@ -4,7 +4,9 @@ title: Quick examples
 ---
 # {{ page.title }}
 
-These sections contain several example programs written in Orb. You can compile and run them by copying the contents into **.orb** files and running this from the command line:
+These sections contain several example programs written in Orb. They can give you an idea of how to code in Orb, though they may not make perfect sense until you've read the programming guide.
+
+If you've installed **orbc**, you can compile and run a program by copying the example code into **.orb** files and running this from the command line:
 
 ```
 orbc main.orb

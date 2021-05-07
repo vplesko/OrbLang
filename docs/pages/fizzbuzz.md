@@ -36,4 +36,4 @@ orbc main.orb
 ./main
 ```
 
-This may be a simple program, but it nicely showcases usages of some important Orb concepts.
+This may be a simple program, but it nicely showcases some of the Orb concepts we learned so far.

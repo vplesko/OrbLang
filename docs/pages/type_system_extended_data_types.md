@@ -19,9 +19,9 @@ Data types can also be declared, without specifying their elements. These data t
 data MyNode;
 ```
 
-> Furthermore, any type which contains an element of an undefined type is also an undefined type. Pointers and array pointers to undefined types are considered defined types.
+> Furthermore, any type which contains an element of an undefined type is also an undefined type. Pointers and array pointers are always considered defined types.
 
-You can get the elements of a data type using the `[]` special form. They can be indexed either by name or by a compile-time known numeric index.
+You can get an element of a data type using the `[]` special form. They can be indexed either by name or by a compile-time known numeric index.
 
 ```
 fnc print (p:Person) () {
@@ -30,7 +30,6 @@ fnc print (p:Person) () {
 
     #$
     This would also work:
-
     std.println "Name: " ([] p 0);
     std.println "Age: " ([] p 1);
     $#

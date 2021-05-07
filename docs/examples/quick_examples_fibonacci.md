@@ -4,7 +4,7 @@ title: Fibonacci
 ---
 # {{ page.title }}
 
-In this example, we calculate a number in the Fibonacci sequence. This is done in a function, which can also be executed at compile-time. The algorithm is iterative and executes in linear time with constant memory usage.
+In this example, we calculate a number in the Fibonacci sequence. This is done in a function that can also be executed at compile-time. The algorithm is iterative and executes in linear time with constant memory usage.
 
 ## `main.orb`
 

@@ -6,7 +6,7 @@ It offers a powerful macro system - procedures that return Orb code to be compil
 
 > This project is a hobby effort and not mature enough for anything beyond writing toy programs.
 
-To learn more about the language, please read [the Orb documentation](https://vplesko.github.io/OrbLang/).
+**To learn more about the language, please read [the Orb documentation](https://vplesko.github.io/OrbLang/).**
 
 ## Installing
 

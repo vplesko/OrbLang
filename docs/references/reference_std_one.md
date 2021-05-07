@@ -8,7 +8,7 @@ This section documents definitions found in **std/One.orb**.
 
 `std.One` is a class of smart pointer types, which automatically manage memory for an object stored on the heap, without the need to manually deallocate it.
 
-These types must only be used by compiled symbols.
+These types must only be used by compiled values.
 
 ## `std.One valTy<type> =type`
 
@@ -86,38 +86,41 @@ fnc changeResource (ctrl:(Controller *) res:String) () {
 };
 
 fnc main () () {
-    block {
-        # nothing allocated
-        sym ctrl:(std.One Controller);
+    # std.One zero initialized
+    # no memory allocated
+    sym ctrl:(std.One Controller);
 
-        if (std.isNull ctrl) {
-            std.println "ctrl is null";
-        };
-
-        # allocated Controller in zero state
-        = ctrl (std.makeOne Controller);
-
-        if (std.isNull ctrl) {
-            std.println "this will not be printed";
-        };
-
-        # replaces previous std.One
-        # the new Controller is on the heap
-        = ctrl (std.makeOneWith (make Controller (res "resource00")));
-
-        # reassigns the value pointed to
-        # the old one is dropped
-        # no new memory is allocated
-        = (std.* ctrl) (make Controller (res "resource01"));
-
-        std.println "ctrl owns: " (std.-> ctrl res);
-
-        # pass the pointer to a function
-        # since std.One wasn't changed, no dropping happens
-        changeResource (std.getPtr ctrl) "resource02";
-
-        # releases the Controller ctrl points to
+    if (std.isNull ctrl) {
+        std.println "ctrl is null";
     };
+
+    # reassigns std.One value
+    # memory allocated
+    # point to a zero initialized value
+    = ctrl (std.makeOne Controller);
+
+    if (std.isNull ctrl) {
+        std.println "this will not be printed";
+    };
+
+    # replaces previous std.One
+    # old memory deallocated
+    # new memory allocated
+    = ctrl (std.makeOneWith (make Controller (res "resource00")));
+
+    # reassigns the value pointed to
+    # the old one is dropped
+    # no new memory is allocated
+    = (std.* ctrl) (make Controller (res "resource01"));
+
+    std.println "ctrl owns: " (std.-> ctrl res);
+
+    # pass the pointer to a function
+    # since std.One wasn't changed, no dropping happens
+    # no memory allocated nor deallocated
+    changeResource (std.getPtr ctrl) "resource02";
+
+    # releases the Controller ctrl points to
 };
 ```
 

@@ -23,6 +23,7 @@ data BinNode {
     right:(std.One BinNode false)
 };
 
+# couldn't define the drop function earlier due to circular definitions
 std.defineDrop (std.One BinNode);
 
 mac makeBinTree (tree) {
@@ -43,6 +44,7 @@ mac makeBinTree (tree) {
         ret \(std.makeOneWith ,code);
     };
 
+    # else, it's a leaf node
     ret \(std.makeOneWith (make BinNode (val ,tree)));
 };
 ```
@@ -54,6 +56,7 @@ import "base.orb";
 import "std/io.orb";
 import "binTree.orb";
 
+# recursively calculates the sum and number of all values in a binary tree
 fnc sumAndCnt (node:(BinNode cn *)) (i32 i32) {
     if (== node null) {
         ret (tup 0 0);

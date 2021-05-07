@@ -4,9 +4,7 @@ title: Array pointers
 ---
 # {{ page.title }}
 
-Array pointers are pointers that point to multiple values, which are contiguously laid out in memory. They contain no information on how many elements they point to, so using them incorrectly may result in undefined behaviour.
-
-> Undefined behaviour means that the faulty code would not raise compilation errors, but the program execution cannot be expected to give desired results. You should never rely on undefined behaviour in your code.
+Array pointers are pointers that point to multiple values, which are contiguously laid out in memory.
 
 Array pointers are indexed with `[]`. Unlike regular pointers, they cannot be dereferenced with `*`.
 
@@ -21,5 +19,9 @@ fnc main () () {
     = ([] arrayPtr 0) 1;
 };
 ```
+
+Array pointers contain no information on how many elements they point to. Indexing them with invalid indexes may result in undefined behaviour.
+
+> Undefined behaviour means that the faulty code would not raise compilation errors, but the program execution cannot be expected to give desired results. You should never rely on undefined behaviour in your code.
 
 Array pointers will usually point to memory allocated on the heap. Check out the standard library references for more convenient ways to deal with heap memory.

@@ -42,6 +42,8 @@ Like with many other languages, Orb code can be represented as an Abstract Synta
 
 Orb ASTs consist of nodes. There are two types of nodes. Non-leaf nodes are parenthesised groups, which are also `raw` values. Leaf nodes are literals (remember that identifiers are also literals).
 
-When a non-leaf is processed (either compiled or evaluated), the value of its starting element is processed first. How the compiler processes the node as a whole depends on what the starting element resolved to. For example, if it resolved to a function, the node represents a call to that function.
+When a non-leaf is processed (either compiled or evaluated), the value of its starting element is processed first. How the compiler processes the node as a whole depends on what the starting element resolved to. For example, if it resolved to a function, the node represents a call to that function. If it resolved to a special form, the node represents usage of that special form.
 
-This explains why Orb uses prefix notation only and why it requires placing so many semicolons.
+This is the reason why Orb uses prefix notation, even in expressions - operators are just special forms (and macros), and they are processed in the same way as all other nodes.
+
+It also explains why you are required to terminate every non-parenthesised instruction with a semicolon - this is to group its individual nodes into a single one.

@@ -23,7 +23,7 @@ We can control the type of our symbol by specifying it after `:`. The initializa
     sym (x:i64 (std.scanI32));
 ```
 
-We can omit the initialization, but then we have to specify the type. This will zero-initialize our symbol.
+We can omit the initialization, but then we must specify the symbol's type. This will zero-initialize our symbol.
 
 ```
     sym i:i32  # i is 0

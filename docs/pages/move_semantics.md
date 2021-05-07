@@ -46,7 +46,7 @@ fnc main () () {
 };
 ```
 
-Function arguments may be marked `::noDrop`. This tells the compiler that, even though the type is owning, the argument itself is not.
+Function arguments may be marked `::noDrop`. This tells the compiler that, even though the type is owning, the argument itself is not. They will not be dropped when the function returns.
 
 ```
 import "std/io.orb";

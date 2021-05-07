@@ -1,4 +1,10 @@
-eval (sym (base.-widestU:(type cn) u64));
+mac alias (name ty) {
+    ret \(eval (sym (,name:(type cn) ,ty)));
+};
+
+alias String (c8 cn []);
+
+alias base.-widestU u64;
 
 eval (sym (base.-genIdToken 0:base.-widestU));
 
@@ -7,12 +13,6 @@ eval (fnc genId () id {
     = base.-genIdToken (+ base.-genIdToken 1);
     ret s;
 });
-
-mac alias (name ty) {
-    ret \(eval (sym (,name:(type cn) ,ty)));
-};
-
-alias String (c8 cn []);
 
 mac passthrough (node) {
     ret node;
@@ -331,7 +331,7 @@ mac arr (ty::preprocess a::preprocess rest::(variadic preprocess)) {
     sym (arrTy (ty (lenOf elems)));
 
     # genId not needed since only visible in inner code, and elements are preprocessed
-    sym (innerCode \{ (sym res:,arrTy) });
+    sym (innerCode \{ (sym res:,arrTy::noZero) });
     range i (lenOf elems) {
         = innerCode (+ innerCode \{ (= ([] res ,i)::noDrop ,([] elems i)) });
     };
@@ -355,7 +355,7 @@ mac tup (a::preprocess b::preprocess rest::(variadic preprocess)) {
     sym (tupTy (base.-tupType a b rest));
 
     # genId not needed since only visible in inner code, and elements are preprocessed
-    sym (innerCode \{ (sym res:,tupTy) });
+    sym (innerCode \{ (sym res:,tupTy::noZero) });
     range i (lenOf elems) {
         = innerCode (+ innerCode \{ (= ([] res ,i)::noDrop ,([] elems i)) });
     };
@@ -377,7 +377,7 @@ mac make (ty::preprocess pair rest::variadic) {
             message::error ([] pairs i)::loc "Each entry must contain exactly two values - element name and initial value.";
         };
 
-        = innerCode (+ innerCode \{ (= ([] ,inst ,([] pairs i 0))::noDrop ,([] pairs i 1)) });
+        = innerCode (+ innerCode \{ (= ([] ,inst ,([] pairs i 0)) ,([] pairs i 1)) });
     };
     = innerCode (+ innerCode \{ (pass ,inst) });
 

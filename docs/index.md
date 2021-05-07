@@ -18,4 +18,4 @@ Ultimately, Orb is about control. You are in control of your code, its writing, 
 
 When you are ready, click on the right arrow to start learning Orb.
 
-Alternatively, you may browse the language and library references, or look at quick examples of Orb programs. Use the sidebar to navigate this site.
+Alternatively, you may browse the language and library references, or take a look at examples of Orb programs. Use the sidebar to navigate this site.

@@ -4,7 +4,7 @@ title: Enums
 ---
 # {{ page.title }}
 
-Enums are types with a set of possible values. They are defined using the `enum` macro defined in **base.orb**.
+Enums are types with a set of possible values. They are defined using the `enum` macro from **base.orb**.
 
 ```
 enum CardSuite {

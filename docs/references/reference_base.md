@@ -10,8 +10,6 @@ Due to how importing works, you may place `import "base.orb";` at the start of y
 
 Declarations use the same syntax used in the reference for Orb special forms.
 
----
-
 ## `if cond<bool> then<block> [rest...]`
 
 Conditionally executes one of the provided blocks of instructions based on the conditions provided.

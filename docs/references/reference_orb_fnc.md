@@ -18,7 +18,7 @@ If a type `retTy` is provided, that will be the return type. Otherwise, the func
 
 `::variadic` on the argument types node expresses a variadic function.
 
-`::noDrop` on `argTy` marks the argument as not being owned by the function.
+`::noDrop` on `argTy` marks the argument as non-owning.
 
 ## `fnc name<id> ([arg<id:type>...]) retTy<type or ()> =function`
 
@@ -60,4 +60,4 @@ Functions must not be marked as neither evaluable nor compilable.
 
 `::variadic` on the arguments node makes this a variadic function.
 
-`::noDrop` on an argument name marks the argument as not being owned by the function.
+`::noDrop` on `argTy` marks the argument as non-owning.

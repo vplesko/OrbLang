@@ -19,7 +19,7 @@ fnc main () () {
 };
 ```
 
-If you want pass a value to a function and have it modified, you must pass a pointer to it instead.
+If you want to pass a value to a function and have it modified, you must pass a pointer to it instead.
 
 ```
 fnc setToNextVal (x:(i32 *)) () {

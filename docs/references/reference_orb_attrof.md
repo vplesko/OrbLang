@@ -8,7 +8,7 @@ Used to fetch an attribute of a node with the given name.
 
 ## `attrOf val name<id>`
 
-Returns the attribute named `name` from `val`. If `val` is a `type`, may perform a lookup on its type-specific attributes.
+Returns the attribute named `name` from `val`.
 
 If name is `type`, the lookup refers to the type attribute of the node. Otherwise, the lookup is performed on the node's non-type attributes.
 
