@@ -61,7 +61,7 @@ If `op` is `+` and operands are of type `raw`, the result is a new `raw` with it
     = r (+ r \{ += ,x 1; });
 ```
 
-If `op` is `+`, `-`, `*`, or `<<` and the operands are signed integers, any overflowing will result in undefined behaviour. If the operands are unsigned integers, overflowing will cause the result to wrap around the limits of representable value ranges.
+If operands are integers (signed or unsigned), overflowing will cause the result to wrap around the limits of representable value ranges for their type.
 
 `::bare` on `op` when it is `+` and operands are of type `id` results in a new `id` being the concatenation of the identifier values of the left and right-hand side operand. This value is not guaranteed to be unique to the pairing of those two operand values.
 

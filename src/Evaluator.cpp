@@ -2,6 +2,7 @@
 #include <sstream>
 #include "BlockRaii.h"
 #include "exceptions.h"
+#include "utils.h"
 using namespace std;
 
 Evaluator::Evaluator(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs)
@@ -729,7 +730,7 @@ NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const
     switch (op) {
     case Oper::ADD:
         if (isTypeI) {
-            if (assignBasedOnTypeI(evalVal, il.value()+ir.value(), ty)) success = true;
+            if (assignBasedOnTypeI(evalVal, addWithWrap(il.value(), ir.value()), ty)) success = true;
         } else if (isTypeU) {
             if (assignBasedOnTypeU(evalVal, ul.value()+ur.value(), ty)) success = true;
         } else if (isTypeF) {
@@ -744,7 +745,7 @@ NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const
         break;
     case Oper::SUB:
         if (isTypeI) {
-            if (assignBasedOnTypeI(evalVal, il.value()-ir.value(), ty)) success = true;
+            if (assignBasedOnTypeI(evalVal, subWithWrap(il.value(), ir.value()), ty)) success = true;
         } else if (isTypeU) {
             if (assignBasedOnTypeU(evalVal, ul.value()-ur.value(), ty)) success = true;
         } else if (isTypeF) {
@@ -753,7 +754,7 @@ NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const
         break;
     case Oper::MUL:
         if (isTypeI) {
-            if (assignBasedOnTypeI(evalVal, il.value()*ir.value(), ty)) success = true;
+            if (assignBasedOnTypeI(evalVal, mulWithWrap(il.value(), ir.value()), ty)) success = true;
         } else if (isTypeU) {
             if (assignBasedOnTypeU(evalVal, ul.value()*ur.value(), ty)) success = true;
         } else if (isTypeF) {
@@ -785,7 +786,7 @@ NodeVal Evaluator::performOperRegular(CodeLoc codeLoc, const NodeVal &lhs, const
         break;
     case Oper::SHL:
         if (isTypeI) {
-            if (assignBasedOnTypeI(evalVal, il.value()<<ir.value(), ty)) success = true;
+            if (assignBasedOnTypeI(evalVal, shlWithWrap(il.value(), ir.value()), ty)) success = true;
         } else if (isTypeU) {
             if (assignBasedOnTypeU(evalVal, ul.value()<<ur.value(), ty)) success = true;
         }

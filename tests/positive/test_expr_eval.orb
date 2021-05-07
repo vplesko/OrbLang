@@ -47,6 +47,16 @@ fnc main() () {
 
     println_i32 (+ 499 (cast i32 glob0));
 
+    println_i8 (+ 127:i8 1:i8);
+    println_i8 (- -128:i8 1:i8);
+    println_i8 (* 64:i8 2:i8);
+    println_i8 (<< 64:i8 1:i8);
+
+    println_u8 (+ 255:u8 1:i8);
+    println_u8 (- 0:u8 1:i8);
+    println_u8 (* 128:u8 2:i8);
+    println_u8 (<< 128:u8 1:i8);
+
     println_c8 ([] glob1 1);
     println_i32 (cast i32 ([] glob1 4));
 };
