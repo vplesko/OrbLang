@@ -826,7 +826,7 @@ NodeVal Processor::processCall(const NodeVal &node, const NodeVal &starting) {
 NodeVal Processor::processInvoke(const NodeVal &node, const NodeVal &starting) {
     optional<MacroId> macroId;
     if (starting.isUndecidedCallableVal()) {
-        SymbolTable::MacroCallSite callSite;
+        SymbolTable::InvokeSite callSite;
         callSite.name = starting.getUndecidedCallableVal().name;
         callSite.argCnt = node.getChildrenCnt()-1;
 

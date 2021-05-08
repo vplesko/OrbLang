@@ -311,17 +311,18 @@ vector<MacroId> SymbolTable::getMacros(NamePool::Id name) const {
     return ret;
 }
 
-optional<MacroId> SymbolTable::getMacroId(MacroCallSite callSite, const TypeTable *typeTable) const {
-    if (macros.find(callSite.name) == macros.end()) return nullopt;
+optional<MacroId> SymbolTable::getMacroId(InvokeSite invokeSite, const TypeTable *typeTable) const {
+    auto loc = macros.find(invokeSite.name);
+    if (loc == macros.end()) return nullopt;
 
-    for (size_t i = 0; i < macros.at(callSite.name).size(); ++i) {
-        const MacroValue &it = macros.at(callSite.name)[i];
+    for (size_t i = 0; i < loc->second.size(); ++i) {
+        const MacroValue &it = loc->second[i];
 
         TypeTable::Callable callable = MacroValue::getCallable(it, typeTable);
 
-        if (it.getArgCnt() == callSite.argCnt || (callable.variadic && it.getArgCnt()-1 <= callSite.argCnt)) {
+        if (it.getArgCnt() == invokeSite.argCnt || (callable.variadic && it.getArgCnt()-1 <= invokeSite.argCnt)) {
             MacroId macroId;
-            macroId.name = callSite.name;
+            macroId.name = invokeSite.name;
             macroId.index = i;
             return macroId;
         }

@@ -77,7 +77,7 @@ public:
         bool skipDrop = false;
     };
 
-    struct MacroCallSite {
+    struct InvokeSite {
         NamePool::Id name;
         std::size_t argCnt;
     };
@@ -169,7 +169,7 @@ public:
     MacroValue& getMacro(MacroId macroId);
     bool isMacroName(NamePool::Id name) const;
     std::vector<MacroId> getMacros(NamePool::Id name) const;
-    std::optional<MacroId> getMacroId(MacroCallSite callSite, const TypeTable *typeTable) const;
+    std::optional<MacroId> getMacroId(InvokeSite invokeSite, const TypeTable *typeTable) const;
 
     void registerDataAttrs(TypeTable::Id ty, AttrMap attrs);
     const AttrMap* getDataAttrs(TypeTable::Id ty);
