@@ -17,19 +17,22 @@ fnc fibonacci::evaluable (n:u32) u32 {
         ret n;
     };
 
-    sym (a (arr u32 0 1 1));
+    sym (fib (arr u32 0 1 1));
 
     repeat (- n 1) {
-        = ([] a 2) (+ ([] a 0) ([] a 1));
+        = ([] fib 2) (+ ([] fib 0) ([] fib 1));
         
-        = ([] a 0) ([] a 1);
-        = ([] a 1) ([] a 2);
+        = ([] fib 0) ([] fib 1);
+        = ([] fib 1) ([] fib 2);
     };
 
-    ret ([] a 2);
+    ret ([] fib 2);
 };
 
 fnc main () () {
+    # this number will be calculated at compile-time
     std.println (fibonacci 20);
+
+    std.println (fibonacci (std.scanU32));
 };
 ```

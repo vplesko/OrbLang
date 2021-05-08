@@ -6,7 +6,7 @@ title: BinaryTree
 
 This example has a more complex macro definition called `makeBinTree`, used to construct a binary tree through more convenient syntax.
 
-Under the hood, a tree is a `std.One` value pointing to a `BinNode`. Using `std.One` makes it easy to allocate them, and they are automatically cleaned up after use. This cleans up the entire tree, including all direct and indirect children nodes.
+Under the hood, a tree is a `std.One` value pointing to a `BinNode`. Using `std.One` makes it easy to allocate nodes, and automatically cleans up the tree after use. This cleans up the entire tree, including all direct and indirect children nodes.
 
 The macro uses various definitions from **base.orb** and **std/One.orb**. `make` is used to initialize `BinNode` and `std.makeOneWith` is used to allocate a copy of that value on the heap and return a `std.One` pointing to it. `base.isOfType` and `base.isEmptyRaw` help analyze user input.
 
@@ -28,12 +28,15 @@ std.defineDrop (std.One BinNode);
 
 mac makeBinTree (tree) {
     if (base.isOfType tree raw) {
+        # expecting three entries for each field of BinNode
         if (!= (lenOf tree) 3) {
             message::error tree::loc "Bad binary tree structure.";
         };
 
+        # create a code snippet for initializing BinNode
         sym (code \(make BinNode (val ,([] tree 0))));
 
+        # recursively construct left and right subtree
         if (! (base.isEmptyRaw ([] tree 1))) {
             = code (+ code \((left (makeBinTree ,([] tree 1)))));
         };
@@ -41,6 +44,7 @@ mac makeBinTree (tree) {
             = code (+ code \((right (makeBinTree ,([] tree 2)))));
         };
 
+        # return code that initializes std.One pointing to a BinNode
         ret \(std.makeOneWith ,code);
     };
 
@@ -97,8 +101,11 @@ fnc main () () {
                         0
                         4)))));
 
+    # single node tree
     printSumAndCnt (makeBinTree (3 () ()));
 
+    # single node tree given as a single value
+    # this proves the macro works on identifiers
     sym (x 8);
     printSumAndCnt (makeBinTree x);
 };

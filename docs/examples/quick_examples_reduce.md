@@ -42,6 +42,7 @@ fnc main () () {
 
     std.println (reduce (arr i32 1 2 3 4) 1 *);
 
+    # polynomial calculation
     std.println (reduce (arr f32 1.0 7.0 12.0 6.0)
         (lam (res:f32 coef:f32) f32 { ret (+ (* res 0.1) coef); }));
 };
