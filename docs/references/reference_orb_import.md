@@ -6,7 +6,7 @@ title: Import
 
 Used to import definitions from a source file into the current project.
 
-## `import file<String> =()`
+## `import file<String>`
 
 Switches compiler context to process nodes in the file `file`. Once finished, returns to this file to process proceeding nodes.
 

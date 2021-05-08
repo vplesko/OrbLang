@@ -6,7 +6,7 @@ title: SizeOf
 
 Used to get the compiled memory size of a type or a value.
 
-## `sizeOf oper =unsigned`
+## `sizeOf oper -> unsigned`
 
 Gets the memory size of a type or a value in bytes, after it would have been compiled.
 

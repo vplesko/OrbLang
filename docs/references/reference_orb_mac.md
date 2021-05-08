@@ -6,7 +6,7 @@ title: Mac
 
 Used to express macro types, or to define macros.
 
-## `mac argCnt<integer> =type`
+## `mac argCnt<integer> -> type`
 
 Expresses a macro type of given number of arguments.
 
@@ -18,7 +18,7 @@ Expresses a macro type of given number of arguments.
 
 `::variadic` on the list of argument types expresses a variadic macro.
 
-## `mac name<id> ([argName<id>...]) body<block> =macro`
+## `mac name<id> ([argName<id>...]) body<block> -> macro`
 
 Defines a macro under the given name. Returns that macro.
 

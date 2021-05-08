@@ -6,9 +6,9 @@ title: Exit
 
 Used to conditionally exit a block prematurely.
 
-## `exit cond<bool> =()`
+## `exit cond<bool>`
 
-## `exit name<id> cond<bool> =()`
+## `exit name<id> cond<bool>`
 
 Exits the target block if `cond` is `true`.
 

@@ -53,7 +53,7 @@ fnc main () () {
 
 Macro invocations are always evaluated, though their arguments may be compiled values. This works, since usually macros simply pack their arguments in a code snippet and return it, without directly interacting with those values.
 
-Just like functions, macros have types. For example, `(mac 1)` expresses the type of macros that take a single argument. You may have symbols of macro types and even pass them as arguments to functions. Whether or not you should do this is up to you. If you do, you may find `pat` macros (patterns) useful - patterns are to macros what lambdas are to functions.
+Just like functions, macros have types. For example, `(mac 1)` expresses the type of macros that take a single argument. You may have symbols of macro types and even pass them as arguments to functions. Whether or not you should do this is up to you. If you do, you may find the `pat` macros useful - patterns are to macros what lambdas are to functions.
 
 **Macros are dangerous!** If you are not careful, your code may result in errors that will be very hard to debug. When writing macros, keep the following dangers in mind:
 

@@ -6,7 +6,7 @@ title: Explicit
 
 Used to define explicit types.
 
-## `explicit name<id> ty<type> =type`
+## `explicit name<id> ty<type> -> type`
 
 Creates a new explicit type under the given name. Returns the created type.
 

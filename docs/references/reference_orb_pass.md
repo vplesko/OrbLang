@@ -6,9 +6,9 @@ title: Pass
 
 Used to pass a value from a passing block, exiting it in the process.
 
-## `pass val =()`
+## `pass val`
 
-## `pass name<id> val =()`
+## `pass name<id> val`
 
 Passes a value from the target block, also exiting that block.
 

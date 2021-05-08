@@ -6,9 +6,9 @@ title: Ret
 
 Used to return from a function or macro, optionally with a value.
 
-## `ret =()`
+## `ret`
 
-## `ret val =()`
+## `ret val`
 
 Returns from a function or a macro.
 

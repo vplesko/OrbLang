@@ -6,7 +6,7 @@ title: Message
 
 Used to print information to the programmer while compiling.
 
-## `message val... =()`
+## `message val...`
 
 Prints information to the programmer based on arguments. The exact output depends on the compiler implementation.
 

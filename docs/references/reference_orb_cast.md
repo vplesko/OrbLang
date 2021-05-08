@@ -4,7 +4,7 @@ title: Cast
 ---
 # {{ page.title }}
 
-## `cast ty<type> oper =ty`
+## `cast ty<type> oper -> ty`
 
 Returns the value of `oper` cast into `ty`.
 

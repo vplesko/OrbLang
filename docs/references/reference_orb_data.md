@@ -6,11 +6,11 @@ title: Data
 
 Used to define or declare data types.
 
-## `data name<id> =type`
+## `data name<id> -> type`
 
-## `data name<id> (elem<id:type>...) =type`
+## `data name<id> (elem<id:type>...) -> type`
 
-## `data name<id> (elem<id:type>...) drop<function or ()> =type`
+## `data name<id> (elem<id:type>...) drop<function or ()> -> type`
 
 Creates a new data type under the given name. Returns the created type.
 

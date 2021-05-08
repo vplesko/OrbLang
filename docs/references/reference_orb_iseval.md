@@ -6,7 +6,7 @@ title: IsEval
 
 Used to check whether a value is evaluated or if current processing is done through evaluation.
 
-## `isEval val =bool`
+## `isEval val -> bool`
 
 Returns a `bool` of whether `val` is an evaluated value.
 
@@ -24,7 +24,7 @@ fnc main () () {
 };
 ```
 
-## `isEval =bool`
+## `isEval -> bool`
 
 Returns whether this instruction was processed through evaluation.
 

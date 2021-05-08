@@ -6,7 +6,7 @@ title: LenOf
 
 Used to get the length of a type or a value.
 
-## `lenOf oper =unsigned`
+## `lenOf oper -> unsigned`
 
 Fetches the length of `oper`.
 

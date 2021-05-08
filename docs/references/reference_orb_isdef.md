@@ -6,7 +6,7 @@ title: IsDef
 
 Used to check whether there is a definition under a given name.
 
-## `?? name<id> =bool`
+## `?? name<id> -> bool`
 
 Returns whether a lookup on the given name would result in a typed value.
 

@@ -229,7 +229,7 @@ Assigns a new value to `val` based on the calculation with `val` and `by` as ope
     <<= n 1;
 ```
 
-## `&& val0<bool> val<bool>... =bool`
+## `&& val0<bool> val<bool>... -> bool`
 
 Calculates the logical conjunction on arguments (AND operator), with short-circuiting.
 
@@ -241,7 +241,7 @@ Iteratively going through the arguments, if any are `false`, finishes the instru
     };
 ```
 
-## `|| val0<bool> val<bool>... =bool`
+## `|| val0<bool> val<bool>... -> bool`
 
 Calculates the logical disjunction on arguments (OR operator), with short-circuiting.
 
@@ -308,11 +308,11 @@ For each pair, the element in the data type under that name will be assigned wit
     make Person (name 'Alice') (age 32);
 ```
 
-## `lam body =function`
+## `lam body -> function`
 
-## `lam retTy body =function`
+## `lam retTy body -> function`
 
-## `lam args retTy body =function`
+## `lam args retTy body -> function`
 
 Defines and returns a function.
 
@@ -330,9 +330,9 @@ If `retTy` is given, it will be used to define the return type of the function. 
     lam (x:i32) i32 { ret (* x x); };
 ```
 
-## `pat body =macro`
+## `pat body -> macro`
 
-## `pat args body =macro`
+## `pat args body -> macro`
 
 Defines and returns a macro.
 
@@ -386,7 +386,7 @@ enum HttpStatus u32 {
 };
 ```
 
-## `base.getEnumSize ty<type> =unsigned`
+## `base.getEnumSize ty<type> -> unsigned`
 
 Returns the number of enum entries (initially created symbols of the `ty`, created by `enum`).
 
@@ -396,7 +396,7 @@ Returns the number of enum entries (initially created symbols of the `ty`, creat
 
 ---
 
-## `genId =id`
+## `genId -> id`
 
 Generates and returns an `id`. Returns a different value on each call.
 
@@ -447,19 +447,19 @@ Escapes `node`.
 
 Returns `val` as a non-ref value.
 
-## `base.isOfType val ty<type> =bool`
+## `base.isOfType val ty<type> -> bool`
 
 Returns whether `val` is of type `ty` or `ty cn`.
 
 `val` must be a typed value.
 
-## `base.isRaw val =true`
+## `base.isRaw val -> bool`
 
 Returns whether `val` is of type `raw` or `raw cn`.
 
 `val` must be a typed value.
 
-## `base.isEmptyRaw val =true`
+## `base.isEmptyRaw val -> bool`
 
 Returns whether `val` is an empty `raw` value (ie. `()`).
 
@@ -469,7 +469,7 @@ Returns whether `val` is an empty `raw` value (ie. `()`).
 
 Raises an error if `val` is not of type `ty` or `ty cn`.
 
-## `base.makeRawWith val... =raw`
+## `base.makeRawWith val... -> raw`
 
 Creates a `raw` with arguments as its elements.
 

@@ -6,7 +6,7 @@ title: AttrIsDef
 
 Used to check whether a node has an attribute with the given name.
 
-## `attr?? val name<id> =bool`
+## `attr?? val name<id> -> bool`
 
 Returns whether using `attrOf` on `val` with `name` would result in a value (and not raise an error).
 

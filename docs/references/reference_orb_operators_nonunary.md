@@ -67,7 +67,7 @@ If operands are integers (signed or unsigned), overflowing will cause the result
 
 `::bare` on `op` when it is `+` and operands are of type `id` results in a new `id` being the concatenation of the identifier values of the left and right-hand side operand. This value is not guaranteed to be unique to the pairing of those two operand values.
 
-## `opComp oper0 oper... =bool`
+## `opComp oper0 oper... -> bool`
 
 Performs comparisons on values.
 

@@ -6,7 +6,7 @@ title: Fnc
 
 Used to express function types, or to define or declare functions.
 
-## `fnc ([argTy<type>...]) retTy<type or ()> =type`
+## `fnc ([argTy<type>...]) retTy<type or ()> -> type`
 
 Expresses a function type of given argument types and return type.
 
@@ -20,9 +20,9 @@ If a type `retTy` is provided, that will be the return type. Otherwise, the func
 
 `::noDrop` on `argTy` marks the argument as non-owning.
 
-## `fnc name<id> ([arg<id:type>...]) retTy<type or ()> =function`
+## `fnc name<id> ([arg<id:type>...]) retTy<type or ()> -> function`
 
-## `fnc name<id> ([arg<id:type>...]) retTy<type or ()> body<block> =function`
+## `fnc name<id> ([arg<id:type>...]) retTy<type or ()> body<block> -> function`
 
 Declares of defines a function under the given name. Returns that function.
 

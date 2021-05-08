@@ -14,9 +14,9 @@ Length refers to the number of elements currently held by a list. If the list is
 
 Capacity refers to the capacity of a list, ie. how many elements can its current memory allocation hold. If the list is not allocated, its capacity is zero. Capacity is always greater than or equal to the length.
 
-## `std.List elemTy<type> =type`
+## `std.List elemTy<type> -> type`
 
-## `std.List elemTy<type> defineDrop<bool> =type`
+## `std.List elemTy<type> defineDrop<bool> -> type`
 
 Defines a `std.List` type pointing to an array of `elemTy`, if one wasn't previously defined.
 
@@ -36,13 +36,13 @@ data Tree {
 std.defineDrop (std.List Tree);
 ```
 
-## `std.makeList elemTy<type> len<unsigned> =std.List`
+## `std.makeList elemTy<type> len<unsigned> -> std.List`
 
 Defines a `std.List` type pointing to an array of `elemTy`, if one wasn't previously defined.
 
 Returns a `std.List` pointing to a zero-initialized array of `len` amount of `elemTy` stored on the heap.
 
-## `std.makeListWith elemTy<type> elem... =std.List`
+## `std.makeListWith elemTy<type> elem... -> std.List`
 
 Defines a `std.List` type pointing to an array of `elemTy`, if one wasn't previously defined.
 
@@ -50,19 +50,19 @@ Constructs and returns a `std.List` pointing to an array stored on the heap, con
 
 Each element is implicitly cast into `elemTy`.
 
-## `std.getElemTy list<std.List> =type`
+## `std.getElemTy list<std.List> -> type`
 
 Gets the type of elements of the array pointed to by `list`.
 
-## `std.getLen list<std.List> =std.Size`
+## `std.getLen list<std.List> -> std.Size`
 
 Returns the current length of `list`.
 
-## `std.getCap list<std.List> =std.Size`
+## `std.getCap list<std.List> -> std.Size`
 
 Returns the current capacity of `list`.
 
-## `std.isEmpty list<std.List> =bool`
+## `std.isEmpty list<std.List> -> bool`
 
 Returns `true` if the array `list` points to is empty, or if `list` is not allocated.
 
