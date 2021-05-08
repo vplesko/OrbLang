@@ -70,13 +70,17 @@ Feel free to experiment with the syntax!
 Overdoing this can result in some very odd-looking code.
 
 ```
-mac getMainArgs () { ret \(); };
+import "base.orb";
+
+eval (sym (mainName \main));
+
+mac getMainArgs () { ret (); };
 
 eval (sym (mainRetTy i32));
 
 mac getRet () { ret ret; };
 
-fnc (eval (block id { pass \main; })) ,(getMainArgs) mainRetTy {
+fnc ,mainName ,(getMainArgs) mainRetTy {
     (getRet) (block i32 {
         pass 0;
     });

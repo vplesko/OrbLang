@@ -78,3 +78,5 @@ fnc main () () {
 This code has undefined behaviour. Why? In the code returned from `printThrice`, the first argument to `std.println` would return the value of `x`, but then also reset it to `null`. The next time we attempt to print `x`, it will be `null`, and `std.println` cannot handle that.
 
 There is actually a rather short and easy fix to this problem. Read the following sections to find out how to protect against these dangers.
+
+> The move operator above was used to reset a non-owning value to its zero state. This was done for the sake of demonstration, though it is a valid use case for the move operator.

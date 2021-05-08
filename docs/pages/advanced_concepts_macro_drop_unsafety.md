@@ -47,4 +47,4 @@ mac printDetails (res::preprocess) {
 };
 ```
 
-`[]` cannot be used on owning non-ref values. Because of this, `res` would have to be ref, otherwise the compiler would raise an error. Because of that, it will not be dropped in the returned code snippet. We may rest assured that this macro is drop safe.
+`[]` cannot be used on owning non-ref values. Because of this, `res` must be ref, or the compiler will raise an error. Ref values are dropped only when their corresponding symbol goes out of scope. We may rest assured that this macro is drop safe.

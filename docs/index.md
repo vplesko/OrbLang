@@ -8,7 +8,7 @@ If you are here, you are likely interested in learning more about the Orb progra
 
 But first, a few words on Orb from a very high level.
 
-From a technical standpoint, Orb can be thought of as a procedural, statically typed, compiled language with scope-based memory management and an intentionally limited core feature set.
+From a technical standpoint, Orb can be thought of as a procedural, statically typed, compiled language with scope-based resource management and an intentionally limited core feature set.
 
 There are actually two different, though similar, languages working together that comprise Orb. One is the language of compilations - code written in this language is what will be compiled into binary form. The other is the language of evaluations - code written in this language is executed by the Orb compiler, and controls what and how the first one compiles. Every run of the Orb compiler is, in a way, an execution of your code, whose output is the final executable file.
 

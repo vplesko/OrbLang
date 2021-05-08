@@ -34,7 +34,7 @@ The user is expecting this code to print `111222333444555`. What it actually pri
 
 If you look at our definition of `myRepeat`, you will see we used `i` to name the iterator variable. The user of our macro also used `i` to name their own variable. Due to how shadowing works, our `i` is the one being caught in the nested block.
 
-Orb's macros are unhygienic because they can interfere with the user's naming scheme. There are multiple types of scenarios where issues like these can show up, and some of them can be surprising. It is advised to read more about macro hygiene to really understand the issue.
+Orb's macros are unhygienic because they can interfere with the user's naming scheme. There are multiple types of scenarios where issues like these can show up and catch you off guard. It is advised to read more about macro hygiene to really understand the issue.
 
 One way we can fix `myRepeat` is to use a unique identifier for the iterator variable and use a different identifier on every invocation.
 

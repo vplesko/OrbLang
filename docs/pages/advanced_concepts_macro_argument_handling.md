@@ -21,7 +21,7 @@ fnc main () () {
 ```
 {: .code-error}
 
-By default, macro arguments are escaped and then processed, before the invocation begins. By specifying `::preprocess` on a macro argument, it will not be escaped, but only processed.
+By default, macro arguments are escaped and then processed, before the invocation begins. By specifying `::preprocess` on a macro argument, it will not be escaped, only processed.
 
 This is actually the fix to our problem.
 
@@ -31,7 +31,7 @@ mac printThrice (x::preprocess delim::preprocess) {
 };
 ```
 
-Whenever a macro argument may appear multiple times in the returned code snippet, it should be marked with `::preprocess`. This means that the code snippet used as the argument at the place of invocation will be executed before the invocation starts.
+Whenever a macro argument may appear multiple times in the returned code snippet, it should be marked with `::preprocess`. This means that the code snippet used as the argument will be executed before the invocation starts.
 
 So, in our program above, `x` will be moved only once, and the resulting non-ref value will be printed three times.
 

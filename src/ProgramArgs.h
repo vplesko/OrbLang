@@ -11,6 +11,6 @@ struct ProgramArgs {
     bool link = true;
     std::optional<unsigned> optLvl;
 
-    static std::optional<ProgramArgs> parseArgs(int argc,  char** argv, std::ostream &out);
+    static std::optional<ProgramArgs> parseArgs(int argc, char** argv, std::ostream &out);
     static void printHelp(std::ostream &out);
 };
