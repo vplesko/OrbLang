@@ -51,8 +51,7 @@ EvalVal EvalVal::makeVal(TypeTable::Id t, TypeTable *typeTable) {
         size_t len = typeTable->extractLenOfArr(t).value();
         TypeTable::Id elemType = typeTable->addTypeIndexOf(t).value();
 
-        evalVal.value = vector<NodeVal>();
-        evalVal.elems() = vector<NodeVal>(len, NodeVal(CodeLoc(), makeVal(elemType, typeTable)));
+        evalVal.value = vector<NodeVal>(len, NodeVal(CodeLoc(), makeVal(elemType, typeTable)));
     } else {
         evalVal.value = EasyZeroVals();
     }
@@ -98,8 +97,7 @@ EvalVal EvalVal::makeZero(TypeTable::Id t, NamePool *namePool, TypeTable *typeTa
         size_t len = typeTable->extractLenOfArr(t).value();
         TypeTable::Id elemType = typeTable->addTypeIndexOf(t).value();
 
-        evalVal.value = vector<NodeVal>();
-        evalVal.elems() = vector<NodeVal>(len, NodeVal(CodeLoc(), makeZero(elemType, namePool, typeTable)));
+        evalVal.value = vector<NodeVal>(len, NodeVal(CodeLoc(), makeZero(elemType, namePool, typeTable)));
     } else {
         evalVal.value = EasyZeroVals();
     }

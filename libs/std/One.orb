@@ -40,6 +40,7 @@ mac std.makeOne (valTy::preprocess) {
 
     ret \(block ,oneTy {
         sym x:,oneTy;
+        # TODO check if setting all bytes to zero portably zeroes any type
         = ([] x -p) (cast ,(valTy *) (calloc 1 ,(sizeOf valTy)));
         pass x;
     });

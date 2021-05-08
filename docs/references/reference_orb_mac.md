@@ -20,7 +20,7 @@ Expresses a macro type of given number of arguments.
 
 ## `mac name<id> ([argName<id>...]) body<block> =macro`
 
-Defines a macro under the given name.
+Defines a macro under the given name. Returns that macro.
 
 There must not be a function, special form, type, or global symbol with the same. The name must not be one of `cn`, `*`, or `[]`.
 

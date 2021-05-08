@@ -8,7 +8,7 @@ Used to define explicit types.
 
 ## `explicit name<id> ty<type> =type`
 
-Creates a new explicit type under the given name and returns the created type.
+Creates a new explicit type under the given name. Returns the created type.
 
 There must not be a function, macro, special form, type, or global symbol with the same. The name must not be one of `cn`, `*`, or `[]`.
 

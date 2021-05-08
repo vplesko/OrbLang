@@ -38,6 +38,7 @@ private:
 
         EasyZeroVals() {
             // because of union, this takes care of all primitives
+            // TODO check if this is really portable
             u64 = 0LL;
         }
     };

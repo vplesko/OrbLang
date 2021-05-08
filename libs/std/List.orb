@@ -94,6 +94,7 @@ mac std.makeList (elemTy::preprocess len::preprocess) {
 
     ret \(block ,listTy {
         sym x:,listTy;
+        # TODO check if setting all bytes to zero portably zeroes any type
         = ([] x -start) (std.calloc ,elemTy ,len);
         = ([] x -end) ([] x -bound) (std.getArrPtrToInd ,elemTy ([] x -start) ,len);
         pass x;
