@@ -25,9 +25,9 @@ optional<ProgramArgs> ProgramArgs::parseArgs(int argc,  char** argv, std::ostrea
             programArgs.outputBin = argv[++i];
         } else if (arg.rfind("-O", 0) == 0) {
             char *end = nullptr;
-            optional<unsigned> num;
-            if (arg.size() > 2) num = strtoll(arg.c_str()+2, &end, 10);
-            if (!num.has_value() || num > 3 || end != &*arg.end() || errno == ERANGE) {
+            unsigned long num;
+            if (arg.size() > 2) num = strtoul(arg.c_str()+2, &end, 10);
+            if (errno == ERANGE || end != &*arg.end() || num > 3) {
                 out << "Bad optimization level specified." << endl;
                 return nullopt;
             }
@@ -37,7 +37,7 @@ optional<ProgramArgs> ProgramArgs::parseArgs(int argc,  char** argv, std::ostrea
                 return nullopt;
             }
 
-            programArgs.optLvl = num;
+            programArgs.optLvl = static_cast<unsigned>(num);
         } else if (arg.rfind("-I", 0) == 0) {
             string importPath = arg.substr(2);
             if (importPath.empty()) {
