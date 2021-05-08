@@ -11,6 +11,7 @@
 #include "SymbolTable.h"
 
 class CompilationOrchestrator {
+    ProgramArgs args;
     std::unique_ptr<NamePool> namePool;
     std::unique_ptr<StringPool> stringPool;
     std::unique_ptr<TypeTable> typeTable;
@@ -23,11 +24,11 @@ class CompilationOrchestrator {
     void genPrimTypes();
 
 public:
-    CompilationOrchestrator(std::ostream &out);
+    CompilationOrchestrator(ProgramArgs programArgs, std::ostream &out);
 
-    bool process(const ProgramArgs &args);
-    void printout(const std::string &filename) const;
-    bool compile(const ProgramArgs &args);
+    bool process();
+    void printout() const;
+    bool compile();
 
     bool isInternalError() const;
 };

@@ -80,7 +80,7 @@ class Compiler : public Processor {
     std::optional<std::uint64_t> performSizeOf(CodeLoc codeLoc, TypeTable::Id ty) override;
 
 public:
-    Compiler(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs);
+    Compiler(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs, const ProgramArgs &args);
 
     llvm::Type* genPrimTypeBool();
     llvm::Type* genPrimTypeI(unsigned bits);
@@ -89,8 +89,6 @@ public:
     llvm::Type* genPrimTypeF32();
     llvm::Type* genPrimTypeF64();
     llvm::Type* genPrimTypePtr();
-
-    void setArgs(const ProgramArgs &args);
 
     void printout(const std::string &filename) const;
     bool binary(const std::string &filename);

@@ -10,14 +10,14 @@
 #include "SymbolTable.h"
 using namespace std;
 
-CompilationOrchestrator::CompilationOrchestrator(ostream &out) {
+CompilationOrchestrator::CompilationOrchestrator(ProgramArgs programArgs, ostream &out) : args(move(programArgs)) {
     namePool = make_unique<NamePool>();
     stringPool = make_unique<StringPool>();
     typeTable = make_unique<TypeTable>();
     symbolTable = make_unique<SymbolTable>();
     msgs = make_unique<CompilationMessages>(namePool.get(), stringPool.get(), typeTable.get(), symbolTable.get(), out);
     evaluator = make_unique<Evaluator>(namePool.get(), stringPool.get(), typeTable.get(), symbolTable.get(), msgs.get());
-    compiler = make_unique<Compiler>(namePool.get(), stringPool.get(), typeTable.get(), symbolTable.get(), msgs.get());
+    compiler = make_unique<Compiler>(namePool.get(), stringPool.get(), typeTable.get(), symbolTable.get(), msgs.get(), args);
     evaluator->setCompiler(compiler.get());
     compiler->setEvaluator(evaluator.get());
 
@@ -229,10 +229,8 @@ static ImportTransRes followImport(
     }
 }
 
-bool CompilationOrchestrator::process(const ProgramArgs &args) {
+bool CompilationOrchestrator::process() {
     if (args.inputsSrc.empty()) return true;
-
-    compiler->setArgs(args);
 
     Parser par(stringPool.get(), typeTable.get(), msgs.get());
 
@@ -301,11 +299,13 @@ bool CompilationOrchestrator::process(const ProgramArgs &args) {
     return true;
 }
 
-void CompilationOrchestrator::printout(const std::string &filename) const {
-    compiler->printout(filename);
+void CompilationOrchestrator::printout() const {
+    if (args.outputLlvm.has_value()) {
+        compiler->printout(args.outputLlvm.value());
+    }
 }
 
-bool CompilationOrchestrator::compile(const ProgramArgs &args) {
+bool CompilationOrchestrator::compile() {
     if (!args.link) {
         return compiler->binary(args.outputBin);
     } else if (!args.inputsSrc.empty()) {

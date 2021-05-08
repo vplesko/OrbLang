@@ -21,21 +21,20 @@ int main(int argc,  char** argv) {
         return BAD_ARGS;
     }
 
+    CompilationOrchestrator co(move(programArgs.value()), cerr);
+
     try {
-        CompilationOrchestrator co(cerr);
-        if (!co.process(programArgs.value())) {
+        if (!co.process()) {
             cerr << "Processing failed." << endl;
             return co.isInternalError() ? INTERNAL : PROCESS_FAIL;
         }
 
-        if (!co.compile(programArgs.value())) {
+        if (!co.compile()) {
             cerr << "Compilation failed." << endl;
             return co.isInternalError() ? INTERNAL : COMPILE_FAIL;
         }
 
-        if (programArgs.value().outputLlvm.has_value()) {
-            co.printout(programArgs.value().outputLlvm.value());
-        }
+        co.printout();
     } catch (ExceptionEvaluatorJump ex) {
         cerr << "Something went wrong when compiling!" << endl;
         return INTERNAL;

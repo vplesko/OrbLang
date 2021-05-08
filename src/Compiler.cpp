@@ -12,16 +12,18 @@
 #include "BlockRaii.h"
 using namespace std;
 
-Compiler::Compiler(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs)
+Compiler::Compiler(NamePool *namePool, StringPool *stringPool, TypeTable *typeTable, SymbolTable *symbolTable, CompilationMessages *msgs, const ProgramArgs &args)
     : Processor(namePool, stringPool, typeTable, symbolTable, msgs), llvmBuilder(llvmContext), llvmBuilderAlloca(llvmContext), targetMachine(nullptr) {
     setCompiler(this);
 
     llvmModule = std::make_unique<llvm::Module>(llvm::StringRef("module"), llvmContext);
 
     llvmPmb = make_unique<llvm::PassManagerBuilder>();
-
+    if (args.optLvl.has_value()) llvmPmb->OptLevel = args.optLvl.value();
     llvmFpm = make_unique<llvm::legacy::FunctionPassManager>(llvmModule.get());
     llvmPmb->populateFunctionPassManager(*llvmFpm);
+
+    link = args.link;
 }
 
 void Compiler::printout(const std::string &filename) const {
@@ -62,11 +64,6 @@ bool Compiler::binary(const std::string &filename) {
     dest.flush();
 
     return true;
-}
-
-void Compiler::setArgs(const ProgramArgs &args) {
-    if (args.optLvl.has_value()) llvmPmb->OptLevel = args.optLvl.value();
-    link = args.link;
 }
 
 llvm::Type* Compiler::genPrimTypeBool() {
