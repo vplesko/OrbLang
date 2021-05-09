@@ -44,6 +44,14 @@ Defines a `std.One` type pointing to the type of `val`, if one wasn't previously
 
 Returns a `std.One` pointing to a copy of `val` stored on the heap.
 
+## `std.isNull one<std.One> -> bool`
+
+Returns whether `one` does not currently point to a value on the heap.
+
+## `std.getValTy one<std.One> -> type`
+
+Gets the type pointed to by `one`.
+
 ## `std.* one<std.One>`
 
 Returns the value `one` points to as a ref value.
@@ -51,14 +59,6 @@ Returns the value `one` points to as a ref value.
 ## `std.-> one<std.One> ind`
 
 Indexes the value `one` points to with index `ind` and returns that element as a ref value.
-
-## `std.getValTy one<std.One> -> type`
-
-Gets the type pointed to by `one`.
-
-## `std.isNull one<std.One> -> bool`
-
-Returns whether `one` does not currently point to a value on the heap.
 
 ## `std.getPtr one<std.One> -> pointer`
 
@@ -86,7 +86,7 @@ fnc changeResource (ctrl:(Controller *) res:String) () {
 };
 
 fnc main () () {
-    # std.One zero-initialized
+    # std.One zero-initialized as non-allocated
     sym ctrl:(std.One Controller);
 
     if (== (std.getValTy ctrl) Controller) {
@@ -97,14 +97,14 @@ fnc main () () {
         std.println "ctrl is null.";
     };
 
-    # reassigns std.One to point to a zero-initialized value
+    # reassigns ctrl to point to a zero-initialized value
     = ctrl (std.makeOne Controller);
 
     if (! (std.isNull ctrl)) {
         std.println "ctrl is not null.";
     };
 
-    # reassigns std.One to point to the given value
+    # reassigns ctrl to point to the given value
     = ctrl (std.makeOneWith (make Controller (res "resource00")));
 
     # reassigns the value pointed to by std.One
@@ -113,10 +113,10 @@ fnc main () () {
     std.println "ctrl owns: " (std.-> ctrl res);
 
     # pass the underlying pointer to a function
-    # since std.One wasn't reassigned, no dropping happens
+    # since ctrl and the value weren't reassigned, no dropping happens
     changeResource (std.getPtr ctrl) "resource02";
 
-    # releases the Controller ctrl points to
+    # drops the value std.One points to
 };
 ```
 

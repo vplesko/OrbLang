@@ -50,10 +50,6 @@ Constructs and returns a `std.List` pointing to an array stored on the heap, con
 
 Each element is implicitly cast into `elemTy`.
 
-## `std.getElemTy list<std.List> -> type`
-
-Gets the type of elements of the array pointed to by `list`.
-
 ## `std.getLen list<std.List> -> std.Size`
 
 Returns the current length of `list`.
@@ -66,6 +62,10 @@ Returns the current capacity of `list`.
 
 Returns `true` if the array `list` points to is empty, or if `list` is not allocated.
 
+## `std.getElemTy list<std.List> -> type`
+
+Gets the type of elements of the array pointed to by `list`.
+
 ## `std.[] list<std.List> ind<integer>`
 
 Returns the element at index `ind` in the array `list` points to. If `list` is not allocated, or `ind` is out of bounds, the result is undefined behaviour.
@@ -74,7 +74,7 @@ Returns the element at index `ind` in the array `list` points to. If `list` is n
 
 Returns the first element in the array `list` points to. If `list` is not allocated, or the array is empty, the result is undefined behaviour.
 
-## `std.getLast list<std.List>`
+## `std.getBack list<std.List>`
 
 Returns the last element in the array `list` points to. If `list` is not allocated, or the array is empty, the result is undefined behaviour.
 
@@ -121,3 +121,102 @@ Causing `list` to be resized, reassigned, or reallocated in `body` results in un
 ## `std.rangeRev it<id> list<std.List> body<block>`
 
 Same as `std.range`, but iterates through the elements in reverse order.
+
+---
+
+```
+import "base.orb";
+import "std/io.orb";
+import "std/List.orb";
+
+fnc printElems (list:(std.List i32)::noDrop) () {
+    std.print "list elements:";
+    # iterate on all elements of list
+    std.range it list {
+        std.print ' ' (it);
+    };
+    std.println;
+};
+
+fnc main () () {
+    # std.List zero-initialized as non-allocated
+    sym list:(std.List i32);
+
+    if (== (std.getElemTy list) i32) {
+        std.println "list has an array pointer to i32.";
+    };
+
+    if (std.isEmpty list) {
+        std.println "list is empty.";
+    };
+
+    # reassigns list to point to an array of 10 zero-initialized values
+    = list (std.makeList i32 10);
+
+    std.println "list length: " (std.getLen list);
+    std.println "list capacity: " (std.getCap list);
+    printElems list;
+
+    # reassigns list to point to an array of given values
+    = list (std.makeListWith i32 1 2 3 4);
+
+    std.println "list length: " (std.getLen list);
+    std.println "Front element of list is " (std.getFront list) ".";
+    std.println "Element 1 of list is " (std.[] list 1) ".";
+    std.println "Element 2 of list is " (std.[] list 2) ".";
+    std.println "Back element of list is " (std.getBack list) ".";
+
+    # reserves capacity for at least 7 elements
+    std.reserve list 7;
+
+    std.println "list length: " (std.getLen list);
+    std.println "list capacity: " (std.getCap list);
+
+    # appends new values to the list
+    std.push list 5 6 7;
+
+    printElems list;
+
+    # removes the back element from the list
+    std.pop list;
+
+    printElems list;
+
+    # resizes the list up
+    std.resize list 10;
+
+    printElems list;
+
+    # resizes the list down
+    std.resize list 2;
+
+    printElems list;
+
+    # removes all elements from the list
+    std.clear list;
+
+    std.println "list length: " (std.getLen list);
+};
+```
+
+Output:
+
+```
+list has an array pointer to i32.
+list is empty.
+list length: 10
+list capacity: 10
+list elements: 0 0 0 0 0 0 0 0 0 0
+list length: 4
+Front element of list is 1.
+Element 1 of list is 2.
+Element 2 of list is 3.
+Back element of list is 4.
+list length: 4
+list capacity: 7
+list elements: 1 2 3 4 5 6 7
+list elements: 1 2 3 4 5 6
+list elements: 1 2 3 4 5 6 0 0 0 0
+list elements: 1 2
+list length: 0
+```
