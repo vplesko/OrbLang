@@ -1,0 +1,1 @@
+This directory is considered **obsolete**, but kept in the project just in case.

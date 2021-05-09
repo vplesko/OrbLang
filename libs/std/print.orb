@@ -18,6 +18,7 @@ fnc std.-print (x:c8) () { putchar x; };
 
 fnc std.-print (str:(c8 cn [])) () { printf str; };
 
+# TODO print as a single call to printf
 mac std.print (first::preprocess rest::(variadic preprocess)) {
     sym (innerCode \{ std.-print ,first; });
     range i (lenOf rest) {

@@ -8,30 +8,6 @@ It offers a powerful macro system - procedures that return Orb code to be compil
 
 **To learn more about the language, please read [the Orb documentation](https://vplesko.github.io/OrbLang/).**
 
-## Installing
-
-The following are required:
- - CMake version 3.4.3 or greater
- - LLVM version 12
- - Clang version 12
- - Python 3 (for testing, optional)
-
-From the top directory of the project, execute the following:
-
-```
-mkdir build
-cd build
-cmake ..
-make install
-```
-
-Optionally, you can also run the tests with:
-
-```
-cd tests
-python3 run_tests.py orbc
-```
-
 ## Examples
 
 **Visit [the quick examples sections](https://vplesko.github.io/OrbLang/examples/quick_examples.html) of the Orb documentation to see what Orb code looks like.**
@@ -66,3 +42,27 @@ fnc main () () {
 `libs/` contains source files for standard use in Orb projects. Reading these will give you more ideas on what is possible with Orb.
 
 Additionally, you may also browse `.orb` files in `tests/positive/`. These are the test files for the project. They may not be the best examples of a good code style, however.
+
+## Installing
+
+The following are required:
+ - CMake version 3.4.3 or greater
+ - LLVM version 12
+ - Clang version 12
+ - Python 3 (for testing, optional)
+
+From the top directory of the project, execute the following:
+
+```
+mkdir build
+cd build
+cmake ..
+make install
+```
+
+Optionally, you can also run the tests with:
+
+```
+cd tests
+python3 run_tests.py orbc
+```

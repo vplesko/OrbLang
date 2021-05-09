@@ -1302,6 +1302,7 @@ NodeVal Processor::processEval(const NodeVal &node) {
     return evaluator->processNode(node.getChild(1));
 }
 
+// TODO allow asking if invocation was from eval code
 NodeVal Processor::processIsEval(const NodeVal &node) {
     if (!checkBetweenChildren(node, 1, 2, true)) {
         return NodeVal();

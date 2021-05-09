@@ -1,5 +1,7 @@
 # Architecture
 
+*Last updated: 2021/05/09*
+
 This document briefly lists different parts of this repository and how they interact. It should be a good starting point to understanding the project structure. It is written as an info dump and intentionally kept as short as possible.
 
 ## Directories
@@ -38,7 +40,7 @@ This document briefly lists different parts of this repository and how they inte
 
 `TypeTable` contains all types defined in the program. They are keyed by `TypeTable::Id`, which callers use to interact with this class.
 
-`SymbolTable` contains all symbols which are currently defined and maintains all scopes which are currently in effect. It contains all currently declared/defined functions and macros. Additionally, it keeps track of some other things, eg. attributes and drop functions of data types. `BlockRaii` is a utility class for opening and closing new scopes.
+`SymbolTable` contains all symbols which are currently defined and maintains all scopes which are currently in effect. It contains all currently declared/defined functions and macros. Additionally, it keeps track of other things, eg. attributes and drop functions of data types. `BlockRaii` is a utility class for opening and closing new scopes.
 
 `CompilationMessages` is used to print various messages (eg. errors, warnings, user messages) during compilation. It also keeps track of whether compilation has failed.
 

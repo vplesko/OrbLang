@@ -16,18 +16,14 @@ title: Range
     range i 65 90 {
         std.println (cast c8 i) " is a letter.";
     };
-```
 
-You can also specify an increment by which the iterator will be increased after each iteration.
-
-```
     # 0, 3, 6, 9, ..., 99
     range i 0 100 3 {
         std.println i " is divisible by 3.";
     };
 ```
 
-`rangeRev` is similar, but iterates through its values in reverse.
+`rangeRev` is similar, but iterates through the values in reverse.
 
 ```
     # 99, 98, ..., 1, 0
