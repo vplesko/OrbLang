@@ -4,17 +4,19 @@ title: Fractal syntax
 ---
 # {{ page.title }}
 
-Orb's syntax tends to be more on the open-ended side. For example, call instructions can get their function from another instruction.
+Orb's syntax tends to be more on the open-ended side. We saw that each node is processed by first processing its starting node, then operating on the arguments depending on what the starting node represented. Very often, these child nodes can be nested code that returns something.
+
+For example, we can define a function in a call instruction and then immediately call it.
 
 ```
 import "std/io.orb";
 
 fnc main () () {
-    (lam (x:i32 y:i32) () { std.println x; std.println y; }) 100 200;
+    (lam (x:i32 y:i32) () { std.println (+ x y); }) 100 200;
 };
 ```
 
-Special forms can be returned from macros.
+You may even return special forms from a macro and use them as the starting node, should you ever need to.
 
 ```
 mac getSym () {
@@ -26,27 +28,7 @@ fnc main () () {
 };
 ```
 
-Types can be provided by symbols.
-
-```
-fnc main () () {
-    eval (sym (arrTy (i32 4)));
-
-    sym a:arrTy;
-};
-```
-
-They may also be passed from an evaluated block.
-
-```
-fnc main () () {
-    sym x:(eval (block type {
-            pass bool;
-        }));
-};
-```
-
-Operator arguments may be passed from blocks.
+Arguments can almost always be returned from a call, invocation, or block.
 
 ```
 fnc main () () {
@@ -55,7 +37,31 @@ fnc main () () {
 };
 ```
 
-Some arguments in special forms are implictly escaped. To override this, unescape them.
+This even applies to types (remember that types can only be used in evaluated code).
+
+```
+fnc main () () {
+    sym a:(eval (block type {
+        pass i32;
+    }));
+};
+```
+
+It also applies to the names of new symbols, functions, macros, and types.
+
+```
+eval (fnc makeName (baseName:id ty:type) id {
+    ret (+ baseName (cast id ty));
+});
+
+eval (sym (ty i32));
+
+data (makeName \foo ty) {
+    x:ty
+};
+```
+
+However, if you want to load the name from another symbol, you must escape it first.
 
 ```
 fnc main () () {
@@ -67,7 +73,7 @@ fnc main () () {
 
 Feel free to experiment with the syntax!
 
-Overdoing this can result in some very odd-looking code.
+Be warned that overdoing this can result in some very odd-looking code.
 
 ```
 import "base.orb";

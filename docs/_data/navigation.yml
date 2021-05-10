@@ -103,6 +103,8 @@
      link: /pages/advanced_concepts_macro_drop_unsafety.html
    - name: Attributes
      link: /pages/advanced_concepts_attributes.html
+   - name: Local definitions
+     link: /pages/local_definitions.html
    - name: Fractal syntax
      link: /pages/advanced_concepts_fractal_syntax.html
 - name: 'Reference: Orb'
