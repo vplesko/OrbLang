@@ -9,7 +9,7 @@ Every symbol exists within a single scope where it is accessible. This scope is 
 Control flow macros create new scopes, nested within the scope where they were invoked. For those that repeatedly execute a block, each block iteration has a separate scope.
 
 ```
-fnc main () () {
+fnc foo () () {
     sym x:i32; # x is now defined
 
     if true {
@@ -27,6 +27,7 @@ fnc main () () {
 Symbols in a nested scope may have the same name as a symbol in an enclosing scope. Referring to that name will now fetch the symbol from the nested scope. This is called shadowing.
 
 ```
+import "base.orb";
 import "std/io.orb";
 
 fnc main () () {

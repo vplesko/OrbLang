@@ -105,16 +105,16 @@ fnc main () () {
     };
 
     # reassigns ctrl to point to the given value
-    = ctrl (std.makeOneWith (make Controller (res "resource00")));
+    = ctrl (std.makeOneWith (make Controller (res "resource0")));
 
     # reassigns the value pointed to by std.One
-    = (std.* ctrl) (make Controller (res "resource01"));
+    = (std.* ctrl) (make Controller (res "resource1"));
 
     std.println "ctrl owns: " (std.-> ctrl res);
 
     # pass the underlying pointer to a function
     # since ctrl and the value weren't reassigned, no dropping happens
-    changeResource (std.getPtr ctrl) "resource02";
+    changeResource (std.getPtr ctrl) "resource2";
 
     # drops the value std.One points to
 };
@@ -126,7 +126,7 @@ Output:
 ctrl has a pointer to Controller.
 ctrl is null.
 ctrl is not null.
-Releasing resource: resource00
-ctrl owns: resource01
-Releasing resource: resource02
+Releasing resource: resource0
+ctrl owns: resource1
+Releasing resource: resource2
 ```

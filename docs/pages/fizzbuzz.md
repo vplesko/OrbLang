@@ -4,7 +4,7 @@ title: FizzBuzz
 ---
 # {{ page.title }}
 
-We have learned enough to write a FizzBuzz program. This is a somewhat (in)famous programming exercise that is fairly simple to code. The problem statement is this (quoted from source):
+We have learned enough to write a *FizzBuzz* program. This is a somewhat (in)famous programming exercise that is fairly simple to code. The problem statement is this (quoted from source):
 
 *Write a program that prints the numbers from 1 to 100. But for multiples of three print "Fizz" instead of the number and for the multiples of five print "Buzz". For numbers which are multiples of both three and five print "FizzBuzz".*
 

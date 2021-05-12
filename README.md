@@ -56,9 +56,11 @@ From the top directory of the project, execute the following:
 ```
 mkdir build
 cd build
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make install
 ```
+
+(The last command may require root privileges.)
 
 Optionally, you can also run the tests with:
 
@@ -66,3 +68,5 @@ Optionally, you can also run the tests with:
 cd tests
 python3 run_tests.py orbc
 ```
+
+If the compiler was successfully installed, you can call it with `orbc`. It will print a help text on the correct usage of the program.

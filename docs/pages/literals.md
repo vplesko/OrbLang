@@ -69,11 +69,11 @@ String literals are placed between double quotes, eg. `"Hello!"` and `""` (empty
 String literals can spread multiple lines.
 
 ```
-    sym (str "
+    std.println "
             this is a
             multiline
             string
-            literal");
+            literal";
 ```
 
 `true` and `false` are boolean literals.

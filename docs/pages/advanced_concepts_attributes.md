@@ -58,7 +58,7 @@ data Foo {
 }::((xTy i32));
 
 fnc main () () {
-    sym foo:Foo;
+    eval (sym foo:Foo);
 
     eval (if (attr?? (typeOf foo) xTy) {
         message (attrOf (typeOf foo) xTy); # prints i32

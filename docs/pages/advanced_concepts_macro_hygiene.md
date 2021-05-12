@@ -18,9 +18,7 @@ mac myRepeat (n body) {
 Seems good? Now let's look at this code:
 
 ```
-import "std/io.orb";
-
-fnc main () () {
+fnc foo () () {
     range i 1 5 {
         myRepeat 3 {
             std.print i;

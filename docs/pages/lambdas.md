@@ -9,6 +9,9 @@ You can declare nameless (or anonymous) functions in any scope by using `lam` ma
 Lambdas are still functions and can be passed as arguments to other functions.
 
 ```
+import "base.orb";
+import "std/io.orb";
+
 fnc callOnEach (func:(fnc (i32) ()) a:(i32 3)) () {
     range i 3 {
         func ([] a i);

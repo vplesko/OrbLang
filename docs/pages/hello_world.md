@@ -4,7 +4,7 @@ title: HelloWorld
 ---
 # {{ page.title }}
 
-As tradition dictates, we will start by writing a simple HelloWorld program. Here is the **main.orb** file containing the code:
+As tradition dictates, we will start by writing a simple *HelloWorld* program. Orb source files have the extension **.orb**. Here is the **main.orb** file containing the code:
 
 ```
 import "std/io.orb";

@@ -106,10 +106,10 @@ Usage: orbc [options] file...
 Files can be .orb or object files.
 
 Options:
-  -c          Only process and compile, but do not link.
-  -emit-llvm  Print the LLVM representation into a .ll file.
-  -I<dir>     Add directory to import search paths.
-  -o <file>   Place the binary output into <file>.
-  -O<number>  Set the optimization level. Valid values are -O0, -O1, -O2, and -O3.
+  -c         Only process and compile, but do not link.
+  -emit-llvm Print the LLVM representation into a .ll file.
+  -I<dir>    Add directory <dir> to import search paths.
+  -o <file>  Place the binary output into <file>.
+  -O<num>    Set the optimization level. -O0, -O1, -O2, and -O3 are valid.
 )orbc_help";
 }

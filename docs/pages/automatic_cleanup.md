@@ -43,4 +43,4 @@ fnc main () () {
 };
 ```
 
-There is another rule that may be worth remembering - if a value is guaranteed to be in its zero state, the compiler *may* omit dropping it. Practically speaking, when a value is zero-initialized, it is considered to not own any resources.
+There is another rule that is worth remembering - if a value is guaranteed to be in its zero state, the compiler *may* omit dropping it. Practically speaking, when a value is zero-initialized, it is considered to not own any resources.
