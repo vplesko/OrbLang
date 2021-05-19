@@ -80,6 +80,7 @@ eval (fnc std.List (elemTy:type) type {
 mac (+ \std.-defineDrop \std.List) (listTy::preprocess) {
     # define function here and return it (intentionally not escaped)
     ret (fnc::global std.-dropList::(compilable (evaluable false)) (this:listTy::noDrop) () {
+        # TODO due to CPU caching, iterating in reverse may be slower (same for arrays/tuples/data types?)
         std.rangeRev it this {
             >>::noZero (it);
         };
